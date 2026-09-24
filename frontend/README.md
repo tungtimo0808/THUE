@@ -18,6 +18,8 @@ Mở http://127.0.0.1:5173. Giao diện mẫu chạy độc lập, không cần 
 
 - Tổng quan: chỉ tiêu, biểu đồ dòng tiền, việc chờ duyệt, chứng từ gần đây.
 - Khung điều hướng responsive, sidebar thu gọn, doanh nghiệp và kỳ kế toán trong URL.
+- App Shell và Module Shell theo đặc tả ERP: sidebar phân hệ lớn, quick-create theo nhóm, context dữ liệu kế toán và tab ngang theo từng phân hệ.
+- Kho → Lệnh sản xuất: tìm kiếm, lọc trạng thái, chọn hàng loạt, phân trang, trạng thái lệnh và quick detail nguyên vật liệu.
 - Tiền mặt, tiền gửi, mua hàng, bán hàng, hóa đơn và tổng hợp dùng chung bảng giao dịch, quy trình, phân tích.
 - Tìm kiếm toàn cục bằng Ctrl+K; lọc loại/trạng thái; phân trang; chọn chứng từ xuất CSV.
 - Form tạo nháp: đối tượng, ngày, diễn giải, thêm/sao chép/xóa dòng và tính tổng số tiền; lưu trên trình duyệt.
@@ -31,7 +33,7 @@ Mở http://127.0.0.1:5173. Giao diện mẫu chạy độc lập, không cần 
 **Đây là frontend tương tác với dữ liệu mẫu, chưa phải hệ thống kế toán production.**
 
 - Dữ liệu minh họa tháng 4–9/2026 cho hai doanh nghiệp; chọn tháng 9, tháng 8 hoặc cả năm.
-- Kho, tài sản, lương, danh mục, thiết lập mới có khung phân hệ và thông báo rõ phạm vi.
+- Các màn Kho ngoài `Lệnh sản xuất`, tài sản, lương, danh mục và thiết lập mới có khung phân hệ và thông báo rõ phạm vi.
 - Không xác thực hoặc phân quyền thật, không gọi API nghiệp vụ, không hạch toán, không phê duyệt thật, không ký/nộp thuế.
 - Mua/bán/hóa đơn hiện minh họa chứng từ tổng tiền, chưa có bảng hàng hóa, công nợ hoặc liên kết hóa đơn thật.
 - Dữ liệu nháp dùng localStorage với khóa `soviet-demo-documents-v1`; không dùng cho dữ liệu thật/nhạy cảm. Xóa khóa này để về dữ liệu mẫu ban đầu. Các doanh nghiệp chỉ được phân tách để minh họa, không phải ranh giới bảo mật.

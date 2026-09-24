@@ -8,20 +8,20 @@
 @import "@fontsource/be-vietnam-pro/vietnamese-700.css";
 :root {
   font-family: "Be Vietnam Pro", sans-serif;
-  color: #192b43;
-  background: #f4f6fa;
+  color: #2f3423;
+  background: #ffe8d6;
   font-synthesis: none;
   font-size: 13px;
   font-weight: 400;
   line-height: 1.6;
-  --navy: #142b49;
-  --primary: #2563eb;
-  --canvas: #f4f6fa;
-  --surface: #fff;
-  --ink: #192b43;
-  --muted: #586980;
-  --border: #e6eaf0;
-  --teal: #087f6b;
+  --navy: #354020;
+  --primary: #606c38;
+  --canvas: #ffe8d6;
+  --surface: #fffaf6;
+  --ink: #2f3423;
+  --muted: #667050;
+  --border: #e3d3c6;
+  --teal: #606c38;
   color-scheme: light;
 }
 * {
@@ -114,7 +114,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #76a4ff;
+  outline: 3px solid #87965a;
   outline-offset: 3px;
 }
 input,
@@ -223,7 +223,7 @@ table caption {
   box-shadow: 0 2px 3px #1c54c718;
 }
 .button.primary:hover {
-  background: #1d4ed8;
+  background: #4d572d;
 }
 .icon-button {
   border: 0;
@@ -245,7 +245,7 @@ table caption {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #2563d5;
+  color: #53602f;
   border: 0;
   background: transparent;
   font-weight: 500;
@@ -253,7 +253,7 @@ table caption {
 }
 .text-button:hover,
 .text-link:hover {
-  color: #14398b;
+  color: #323a1d;
   text-decoration: underline;
 }
 .card {
@@ -279,16 +279,16 @@ table caption {
   white-space: nowrap;
 }
 .blue {
-  color: #2866dc;
-  background: #eaf1ff;
+  color: #53602f;
+  background: #f0f3e4;
 }
 .orange {
   color: #b96512;
   background: #fff3e3;
 }
 .teal {
-  color: #087f6b;
-  background: #e5f5f0;
+  color: #4d572d;
+  background: #edf1df;
 }
 .violet {
   color: #7551c2;

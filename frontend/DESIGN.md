@@ -2,17 +2,17 @@
 
 ## Hướng thiết kế
 
-Người dùng chính là kế toán doanh nghiệp, cần đọc số liệu, tìm chứng từ và biết việc cần xử lý. Điểm nhấn là thanh điều hướng navy cùng vùng làm việc sáng; không dùng hình trang trí trong màn hình nghiệp vụ.
+Người dùng chính là kế toán doanh nghiệp, cần đọc số liệu, tìm chứng từ và biết việc cần xử lý. Điểm nhấn là thanh điều hướng xanh rêu cùng vùng làm việc kem đào; không dùng hình trang trí trong màn hình nghiệp vụ.
 
-- Navy `#142b49`: nhận diện và điều hướng.
-- Blue `#2563eb`: hành động chính, dữ liệu doanh thu.
-- Canvas `#f4f6fa`, surface `#ffffff`: vùng làm việc và bảng.
-- Ink `#192b43`: chữ và số liệu.
-- Teal `#087f6b`: trạng thái thành công, dòng tiền vào.
+- Moss `#606C38`: nhận diện, điều hướng và hành động chính.
+- Peach cream `#FFE8D6`: nền workspace và vùng phân tách.
+- Surface `#FFFAF6`: bảng, form và lớp nội dung chính.
+- Ink `#2F3423`: chữ và số liệu; các sắc olive đậm/nhạt dùng cho trạng thái và hover.
 - Be Vietnam Pro, tự phục vụ qua npm: tiếng Việt rõ ràng, số tabular.
-- Sidebar 232px; header 72px; nội dung căn trái; khoảng cách 8/12/16/24/32px.
+- Sidebar 182px; header 46px ở desktop; nội dung căn trái; khoảng cách theo nhịp 4/8/12/16/24px.
 - Dashboard: tổng quan → chỉ tiêu → dòng tiền + việc cần làm → chứng từ gần đây.
-- Các phân hệ: tiêu đề → tab trong URL → bộ lọc → bảng → drawer chi tiết.
+- Các phân hệ: tên phân hệ/quick menu → tab trong URL → bộ lọc → bảng → quick detail.
+- Màn hình chuẩn đầu tiên: `Kho → Lệnh sản xuất`, gồm search, thời gian, toolbar, bulk action, phân trang và quick detail.
 
 Đã đối chiếu với tài liệu: giữ ngữ cảnh doanh nghiệp/kỳ, navigation theo nhóm nghiệp vụ, quick action, bảng tìm kiếm/lọc, trạng thái rỗng và timeline. Không áp dụng gợi ý marketing hero/dark OLED của lần tìm skill đầu tiên vì không phù hợp với màn hình làm việc kế toán.
 

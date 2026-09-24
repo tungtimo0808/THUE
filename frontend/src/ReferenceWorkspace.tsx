@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import {
   companies,
-  kinds,
   persistTransactions,
   readTransactions,
   type Kind,
@@ -49,6 +48,7 @@ import {
   ReferenceProcess,
   ReferenceTransactions,
 } from "./ReferencePages";
+import { InventoryProductionOrders } from "./InventoryWorkspace";
 import "./App.css";
 import "./reference.css";
 
@@ -56,6 +56,56 @@ export type ReferenceHref = (
   path: string,
   extra?: Record<string, string>,
 ) => string;
+
+const quickCreateGroups: {
+  title: string;
+  items: { label: string; kind?: Kind }[];
+}[] = [
+  {
+    title: "TIỀN MẶT",
+    items: [
+      { label: "Thu tiền mặt", kind: "receipt" },
+      { label: "Chi tiền mặt", kind: "payment" },
+    ],
+  },
+  {
+    title: "TIỀN GỬI",
+    items: [
+      { label: "Thu tiền gửi", kind: "bank" },
+      { label: "Chi tiền gửi", kind: "payment" },
+    ],
+  },
+  {
+    title: "KHO",
+    items: [
+      { label: "Nhập kho" },
+      { label: "Xuất kho" },
+      { label: "Chuyển kho" },
+    ],
+  },
+  {
+    title: "MUA HÀNG",
+    items: [
+      { label: "Mua hàng", kind: "purchase" },
+      { label: "Mua dịch vụ", kind: "purchase" },
+    ],
+  },
+  {
+    title: "BÁN HÀNG",
+    items: [
+      { label: "Bán hàng", kind: "sale" },
+      { label: "Bán dịch vụ", kind: "sale" },
+    ],
+  },
+  {
+    title: "TỔNG HỢP",
+    items: [
+      { label: "Chứng từ nghiệp vụ khác" },
+      { label: "Quyết toán tạm ứng" },
+    ],
+  },
+];
+
 function ReferenceWorkspace() {
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
@@ -78,7 +128,7 @@ function ReferenceWorkspace() {
   const [collapsed, setCollapsed] = useState(false),
     [mobileOpen, setMobileOpen] = useState(false);
   const [panel, setPanel] = useState<
-    "quick" | "settings" | "notifications" | "help" | null
+    "quick" | "settings" | "notifications" | "help" | "module" | null
   >(null);
   const [createKind, setCreateKind] = useState<Kind | null>(null),
     [detailId, setDetailId] = useState<string | null>(null);
@@ -182,6 +232,13 @@ function ReferenceWorkspace() {
             ))}
           </select>
         </label>
+        <label className="ref-dataset">
+          <span className="sr-only">Dữ liệu kế toán</span>
+          <select aria-label="Dữ liệu kế toán" defaultValue="accounting-2026">
+            <option value="accounting-2026">Dữ liệu kế toán 2026</option>
+            <option value="management-2026">Dữ liệu quản trị 2026</option>
+          </select>
+        </label>
         <label className="ref-period">
           <span className="ref-dot" />
           <select
@@ -278,7 +335,6 @@ function ReferenceWorkspace() {
       )}
       <aside
         className={`ref-sidebar ${mobileOpen ? "open" : ""}`}
-        aria-label="Điều hướng chính"
       >
         <div className="ref-quick">
           <button onClick={() => setPanel("quick")} aria-label="Thêm nhanh">
@@ -297,21 +353,23 @@ function ReferenceWorkspace() {
             <Pencil size={13} />
           </button>
         </div>
-        <nav>
-          {referenceNav.map((m) => (
-            <NavLink
-              key={m.id}
-              title={m.label}
-              className={() =>
-                `ref-nav-item ${moduleId === m.id ? "active" : ""}`
-              }
-              to={href(`/${m.id}`)}
-              onClick={() => setMobileOpen(false)}
-            >
-              <m.icon size={16} />
-              <span>{m.label}</span>
-            </NavLink>
-          ))}
+        <nav aria-label="Điều hướng chính">
+          {referenceNav
+            .filter((m) => m.id !== "overview")
+            .map((m) => (
+              <NavLink
+                key={m.id}
+                title={m.label}
+                className={() =>
+                  `ref-nav-item ${moduleId === m.id ? "active" : ""}`
+                }
+                to={href(`/${m.id}`)}
+                onClick={() => setMobileOpen(false)}
+              >
+                <m.icon size={16} />
+                <span>{m.label}</span>
+              </NavLink>
+            ))}
         </nav>
         <button
           className="ref-collapse"
@@ -325,6 +383,14 @@ function ReferenceWorkspace() {
       <main id="reference-main" className="ref-main" tabIndex={-1}>
         <h1 className="sr-only">{module?.label || "Không tìm thấy"}</h1>
         <div className="ref-module-bar">
+          <button
+            className="ref-module-menu"
+            onClick={() => setPanel("module")}
+            aria-label={`Mở truy cập nhanh phân hệ ${module?.label || "Kế toán"}`}
+          >
+            <strong>{module?.label || "Kế toán"}</strong>
+            <ChevronDown size={12} />
+          </button>
           <nav aria-label="Chức năng phân hệ">
             {tabs.map(([id, label]) => (
               <Link
@@ -382,6 +448,8 @@ function ReferenceWorkspace() {
             notify={setNotice}
             onInfo={infoAction}
           />
+        ) : moduleId === "inventory" && tab === "production-orders" ? (
+          <InventoryProductionOrders onInfo={infoAction} notify={setNotice} />
         ) : moduleId === "reports" || tab === "reports" || tab === "chart" ? (
           <div className="ref-report-page">
             <Reports items={scoped} notify={setNotice} />
@@ -440,18 +508,30 @@ function ReferenceWorkspace() {
               ? "Thêm nhanh chứng từ"
               : panel === "help"
                 ? "Hướng dẫn sử dụng"
-                : "Thông báo"
+                : panel === "module"
+                  ? `${module?.label || "Phân hệ"} — truy cập nhanh`
+                  : "Thông báo"
           }
           onClose={() => setPanel(null)}
         >
           <div className="modal-body">
             {panel === "quick" ? (
-              <div className="quick-grid">
-                {Object.entries(kinds).map(([kind, label]) => (
-                  <button key={kind} onClick={() => create(kind as Kind)}>
-                    <Plus size={16} />
-                    {label}
-                  </button>
+              <div className="quick-create-groups">
+                {quickCreateGroups.map((group) => (
+                  <section key={group.title}>
+                    <h3>{group.title}</h3>
+                    {group.items.map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={() =>
+                          item.kind ? create(item.kind) : infoAction(item.label)
+                        }
+                      >
+                        <Plus size={15} />
+                        {item.label}
+                      </button>
+                    ))}
+                  </section>
                 ))}
               </div>
             ) : panel === "help" ? (
@@ -472,6 +552,32 @@ function ReferenceWorkspace() {
                   toán, phân quyền và thuế.
                 </p>
               </>
+            ) : panel === "module" ? (
+              <div className="module-quick-menu">
+                <section>
+                  <h3>NGHIỆP VỤ</h3>
+                  {tabs.slice(0, 6).map(([, label]) => (
+                    <button key={label} onClick={() => infoAction(label)}>
+                      {label}
+                    </button>
+                  ))}
+                </section>
+                <section>
+                  <h3>TIỆN ÍCH</h3>
+                  <button onClick={() => infoAction("Kiểm tra đối chiếu")}>
+                    Kiểm tra đối chiếu
+                  </button>
+                  <button onClick={() => infoAction("Nhập dữ liệu")}>
+                    Nhập dữ liệu
+                  </button>
+                </section>
+                <section>
+                  <h3>BÁO CÁO</h3>
+                  <button onClick={() => navigate(href("/reports"))}>
+                    Mở trung tâm báo cáo
+                  </button>
+                </section>
+              </div>
             ) : pending.length ? (
               pending.map((t) => (
                 <button
