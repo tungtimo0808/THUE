@@ -19,6 +19,8 @@ Mở URL Vite in ra trong terminal, thường là http://127.0.0.1:5173. Giao di
 - Tổng quan: chỉ tiêu, biểu đồ dòng tiền, việc chờ duyệt, chứng từ gần đây.
 - Khung điều hướng responsive, sidebar thu gọn, doanh nghiệp và kỳ kế toán trong URL.
 - App Shell và Module Shell theo đặc tả ERP: ngữ cảnh doanh nghiệp/dữ liệu/chi nhánh/kỳ, ba chế độ Kế toán–Thủ kho–Thủ quỹ, sidebar phân hệ, quick-create và tab có thể cấu hình.
+- Cây điều hướng V5 phân biệt Module tab → Inner tab → Document tab; rê chuột hoặc focus bàn phím vào phân hệ sẽ mở flyout các mục con.
+- CCDC, TSCĐ, Tiền lương, Thuế, Giá thành và Tổng hợp đã được audit lại cấp tab; action trong Quy trình không còn bị làm phẳng thành tab ngang.
 - Tìm kiếm thông minh theo nhóm chứng từ, hàng hóa/dịch vụ và danh mục; hỗ trợ Ctrl+K.
 - Kho → Lệnh sản xuất: tìm kiếm, lọc trạng thái, chọn hàng loạt, phân trang, trạng thái lệnh và quick detail nguyên vật liệu.
 - Mua hàng → Đơn mua hàng: KPI, bộ lọc, bulk action, quick detail và hồ sơ đầy đủ gồm dòng hàng, tổng tiền, chứng từ liên quan, tệp đính kèm và lịch sử.
@@ -58,7 +60,7 @@ $env:PLAYWRIGHT_CHANNEL = 'chrome'
 npm run test:e2e
 ```
 
-Kiểm thử bao gồm app shell, màu thương hiệu, tab/công ty/kỳ, deep link, quick-create, tìm kiếm thông minh, chế độ làm việc, đơn mua hàng, hóa đơn đầu vào, báo cáo, danh mục, số dư, lệnh sản xuất, lưu nháp nhiều dòng, lỗi lưu trữ, mobile và accessibility bằng axe.
+Kiểm thử bao gồm app shell, màu thương hiệu, tab/công ty/kỳ, deep link, flyout khi hover/focus, phân cấp tab V5, quick-create, tìm kiếm thông minh, chế độ làm việc, đơn mua hàng, hóa đơn đầu vào, báo cáo, danh mục, số dư, lệnh sản xuất, lưu nháp nhiều dòng, lỗi lưu trữ, mobile và accessibility bằng axe.
 
 `npm run format` để định dạng mã. `npm run build` tạo thư mục `dist/`; khi triển khai SPA cần cấu hình máy chủ trả `index.html` cho route frontend và giữ `/api` riêng.
 

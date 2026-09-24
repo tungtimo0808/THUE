@@ -39,7 +39,7 @@ export const referenceNav = [
   { id: "opening", label: "Số dư ban đầu", icon: ListChecks },
   { id: "connections", label: "Kết nối vay vốn", icon: PlugZap },
 ];
-export const referenceTabs: Record<string, [string, string][]> = {
+const previousReferenceTabs: Record<string, [string, string][]> = {
   overview: [
     ["overview", "Tổng quan"],
     ["news", "Tính năng mới"],
@@ -214,6 +214,141 @@ export const referenceTabs: Record<string, [string, string][]> = {
     ["repayment", "Lịch trả nợ"],
   ],
 };
+
+export type ReferenceTabNode = {
+  id: string;
+  label: string;
+  configurable?: boolean;
+  children?: ReferenceTabNode[];
+  menuLabel?: string;
+  screenTitle?: string;
+};
+
+const node = (
+  id: string,
+  label: string,
+  children?: ReferenceTabNode[],
+  options?: Pick<
+    ReferenceTabNode,
+    "configurable" | "menuLabel" | "screenTitle"
+  >,
+): ReferenceTabNode => ({ id, label, children, ...options });
+
+const auditedTabs: Record<string, ReferenceTabNode[]> = {
+  cash: [
+    node("process", "Quy trình"),
+    node("transactions", "Thu, chi tiền"),
+    node("inventory", "Kiểm kê"),
+    node("cashflow", "Dự báo dòng tiền"),
+  ],
+  sales: previousReferenceTabs.sales
+    .filter(([id]) => id !== "chart")
+    .map(([id, label]) => node(id, label)),
+  inventory: previousReferenceTabs.inventory.map(([id, label]) =>
+    node(id, label, undefined, {
+      configurable: ["chart", "reports", "items"].includes(id),
+    }),
+  ),
+  tools: [
+    node("process", "Quy trình"),
+    node("register", "Sổ theo dõi công cụ dụng cụ", [
+      node("by-tool", "Theo công cụ dụng cụ", undefined, {
+        screenTitle: "Sổ CCDC theo công cụ dụng cụ",
+      }),
+      node("by-department", "Theo đơn vị sử dụng", undefined, {
+        screenTitle: "Sổ CCDC theo đơn vị sử dụng",
+      }),
+    ]),
+    node("management", "Quản lý công cụ dụng cụ", [
+      node("increase", "Ghi tăng", undefined, {
+        menuLabel: "Ghi tăng CCDC",
+        screenTitle: "Ghi tăng CCDC",
+      }),
+      node("allocation", "Phân bổ chi phí"),
+      node("adjustment", "Điều chỉnh"),
+      node("transfer", "Điều chuyển"),
+      node("decrease", "Ghi giảm"),
+      node("stocktake", "Kiểm kê"),
+    ]),
+    node("prepaid", "Chi phí trả trước", [
+      node("list", "Danh sách chi phí trả trước"),
+      node("allocation", "Phân bổ chi phí trả trước"),
+      node("decrease", "Ghi giảm"),
+    ]),
+    node("reports", "Báo cáo", [
+      node("tools", "Báo cáo CCDC"),
+      node("prepaid", "Báo cáo chi phí trả trước"),
+      node("reconciliation", "Báo cáo đối chiếu"),
+    ]),
+  ],
+  assets: [
+    node("register", "Sổ tài sản"),
+    node("increase", "Ghi tăng"),
+    node("revaluation", "Đánh giá lại"),
+    node("depreciation", "Tính khấu hao"),
+    node("transfer", "Điều chuyển"),
+    node("decrease", "Ghi giảm"),
+    node("stocktake", "Kiểm kê"),
+    node("leased-conversion", "Chuyển TSCĐ thuê tài chính", undefined, {
+      configurable: true,
+    }),
+  ],
+  payroll: [
+    node("process", "Quy trình"),
+    node("attendance", "Chấm công"),
+    node("attendance-summary", "Tổng hợp chấm công"),
+    node("calculation", "Tính lương"),
+    node("posting", "Hạch toán chi phí"),
+  ],
+  tax: [node("declarations", "Khai thuế")],
+  cost: [
+    node("simple", "Sản xuất liên tục – Giản đơn"),
+    node("coefficient", "Sản xuất liên tục – Hệ số, tỷ lệ"),
+    node("step", "Sản xuất liên tục – Phân bước"),
+    node("projects", "Công trình"),
+    node("orders", "Đơn hàng"),
+    node("contracts", "Hợp đồng"),
+  ],
+  ledger: [
+    node("process", "Quy trình"),
+    node("transactions", "Chứng từ nghiệp vụ khác"),
+    node("statements", "Lập báo cáo tài chính", [
+      node("standard", "Lập báo cáo tài chính"),
+      node("consolidated", "Báo cáo tài chính tổng hợp"),
+      node("interim", "Báo cáo tài chính giữa niên độ"),
+    ]),
+    node("consolidation-data", "Dữ liệu phục vụ hợp nhất", undefined, {
+      configurable: true,
+    }),
+  ],
+  budget: [
+    node("planning", "Kế hoạch ngân sách"),
+    node("chart", "Biểu đồ"),
+    node("alerts", "Cảnh báo vượt dự toán"),
+  ],
+  analysis: [
+    node("ratios", "Chỉ số tài chính"),
+    node("reports", "Báo cáo phân tích"),
+  ],
+};
+
+export const referenceTabHierarchy: Record<string, ReferenceTabNode[]> = {
+  ...Object.fromEntries(
+    Object.entries(previousReferenceTabs).map(([moduleId, tabs]) => [
+      moduleId,
+      tabs.map(([id, label]) => node(id, label)),
+    ]),
+  ),
+  ...auditedTabs,
+};
+
+export const referenceTabs: Record<string, [string, string][]> =
+  Object.fromEntries(
+    Object.entries(referenceTabHierarchy).map(([moduleId, tabs]) => [
+      moduleId,
+      tabs.map(({ id, label }) => [id, label]),
+    ]),
+  );
 export const reportNames: Record<string, string[]> = {
   cash: [
     "Bảng kê số dư tiền theo ngày",

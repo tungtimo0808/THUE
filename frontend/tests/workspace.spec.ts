@@ -307,3 +307,118 @@ test("a configured module tab never falls back to an unavailable placeholder", a
     page.getByText("Chưa có dữ liệu nghiệp vụ cho chức năng này."),
   ).toHaveCount(0);
 });
+
+test("sidebar hover reveals audited child navigation and supports deep links", async ({
+  page,
+}) => {
+  const sidebar = page.getByRole("navigation", { name: "Điều hướng chính" });
+  const tools = sidebar.getByRole("link", {
+    name: "Công cụ dụng cụ",
+    exact: true,
+  });
+
+  await tools.hover();
+  const flyout = page.getByRole("menu", {
+    name: "Mục con Công cụ dụng cụ",
+  });
+  await expect(flyout).toBeVisible();
+  await expect(
+    flyout.getByRole("menuitem", {
+      name: "Quản lý công cụ dụng cụ",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    flyout.getByRole("menuitem", { name: "Ghi tăng CCDC", exact: true }),
+  ).toBeVisible();
+  await expect(
+    flyout.getByRole("menuitem", {
+      name: "Danh sách chi phí trả trước",
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  await tools.focus();
+  await expect(flyout).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(flyout).toBeHidden();
+  await page.locator(".ref-brand").hover();
+  await tools.hover();
+  await expect(flyout).toBeVisible();
+
+  await flyout
+    .getByRole("menuitem", { name: "Ghi tăng CCDC", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/tools\/management\/increase/);
+  await expect(
+    page.getByRole("heading", { name: "Ghi tăng CCDC", exact: true }),
+  ).toBeVisible();
+  const innerTabs = page.getByRole("navigation", {
+    name: "Chức năng bên trong Quản lý công cụ dụng cụ",
+  });
+  await expect(
+    innerTabs.getByRole("link", { name: "Phân bổ chi phí" }),
+  ).toBeVisible();
+  await expect(innerTabs.getByRole("link", { name: "Kiểm kê" })).toBeVisible();
+});
+
+test("V5 keeps actions and document concerns out of the module tab bar", async ({
+  page,
+}) => {
+  await page.goto("/tools/management?company=minh-an&period=2026-09");
+  const toolsTabs = page.getByRole("navigation", {
+    name: "Chức năng phân hệ",
+  });
+  await expect(toolsTabs.getByRole("link")).toHaveCount(5);
+  await expect(
+    toolsTabs.getByRole("link", {
+      name: "Quản lý công cụ dụng cụ",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    toolsTabs.getByRole("link", { name: "Ghi tăng", exact: true }),
+  ).toHaveCount(0);
+
+  await page.goto("/tax/declarations?company=minh-an&period=2026-09");
+  const taxTabs = page.getByRole("navigation", { name: "Chức năng phân hệ" });
+  await expect(taxTabs.getByRole("link")).toHaveCount(1);
+  await expect(
+    taxTabs.getByRole("link", { name: "Khai thuế", exact: true }),
+  ).toBeVisible();
+
+  await page.goto("/ledger/process?company=minh-an&period=2026-09");
+  const ledgerTabs = page.getByRole("navigation", {
+    name: "Chức năng phân hệ",
+  });
+  await expect(
+    ledgerTabs.getByRole("link", { name: "Khóa sổ", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Quy trình Tổng hợp", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Khóa sổ", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Kiểm tra đối chiếu", exact: true }),
+  ).toBeVisible();
+});
+
+test("process nodes navigate to their audited workspace routes", async ({
+  page,
+}) => {
+  await page.goto("/bank/process?company=minh-an&period=2026-09");
+  await page
+    .locator(".ref-process-canvas")
+    .getByRole("link", { name: "Đối chiếu ngân hàng", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/bank\/reconciliation/);
+
+  await page.goto("/purchases/process?company=minh-an&period=2026-09");
+  await page
+    .locator(".ref-process-canvas")
+    .getByRole("link", { name: "Xử lý hóa đơn đầu vào", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/purchases\/invoice-processing/);
+});

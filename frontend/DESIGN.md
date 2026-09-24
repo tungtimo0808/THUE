@@ -12,6 +12,7 @@ Người dùng chính là kế toán doanh nghiệp, cần đọc số liệu, t
 - Sidebar 182px; header 46px ở desktop; nội dung căn trái; khoảng cách theo nhịp 4/8/12/16/24px.
 - Dashboard: tổng quan → chỉ tiêu → dòng tiền + việc cần làm → chứng từ gần đây.
 - Các phân hệ: tên phân hệ/quick menu → tab trong URL → KPI/bộ lọc → bảng → quick detail → hồ sơ đầy đủ.
+- Cấu trúc V5: Sidebar module (cấp 1) → Module tab (cấp 2) → Inner tab (cấp 3) → Document tab (cấp 4). Flyout sidebar dùng chung cùng một cây config với thanh tab và deep link, tránh lệch cấp hoặc làm phẳng action thành tab.
 - Màn hình trọng điểm: `Kho → Lệnh sản xuất`, `Mua hàng → Đơn mua hàng`, `Mua hàng → Xử lý hóa đơn đầu vào`, trung tâm báo cáo, danh mục và số dư ban đầu.
 
 Đã đối chiếu với tài liệu: giữ ngữ cảnh doanh nghiệp/kỳ, navigation theo nhóm nghiệp vụ, quick action, bảng tìm kiếm/lọc, trạng thái rỗng và timeline. Không áp dụng gợi ý marketing hero/dark OLED của lần tìm skill đầu tiên vì không phù hợp với màn hình làm việc kế toán.

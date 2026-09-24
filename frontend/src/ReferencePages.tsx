@@ -91,8 +91,16 @@ export function ReferenceProcess({
   const nodes = purchase
     ? [
         { label: "Đơn mua hàng", type: "box", tab: "orders" },
-        { label: "Nhận hàng hóa, dịch vụ", type: "box", tab: "receive" },
-        { label: "Xử lý hóa đơn đầu vào", type: "blue", tab: "invoices" },
+        {
+          label: "Nhận hàng hóa, dịch vụ",
+          type: "box",
+          tab: "transactions",
+        },
+        {
+          label: "Xử lý hóa đơn đầu vào",
+          type: "blue",
+          tab: "invoice-processing",
+        },
         { label: "Trả tiền theo hóa đơn", type: "money", tab: "payments" },
         { label: "Hợp đồng mua hàng", type: "contract", tab: "contracts" },
         { label: "Nhận hóa đơn", type: "doc", tab: "invoices" },
@@ -199,7 +207,9 @@ export function ReferenceProcess({
                 />
                 <Link
                   className="ref-process-action process-reconcile"
-                  to={href(`/${moduleId}/${bank ? "reconcile" : "inventory"}`)}
+                  to={href(
+                    `/${moduleId}/${bank ? "reconciliation" : "inventory"}`,
+                  )}
                 >
                   <BusinessIcon type="check" />
                   <span>{bank ? "Đối chiếu ngân hàng" : "Kiểm kê quỹ"}</span>

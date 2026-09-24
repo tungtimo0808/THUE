@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Link,
-  NavLink,
   useLocation,
   useNavigate,
   useSearchParams,
@@ -38,6 +37,7 @@ import { DocumentDetail, DocumentForm, Modal } from "./components";
 import { TaxPage } from "./TaxPage";
 import {
   referenceNav,
+  referenceTabHierarchy,
   referenceTabs,
   settingsGroups,
 } from "./reference-config";
@@ -48,7 +48,6 @@ import {
 } from "./ReferencePages";
 import { InventoryProductionOrders } from "./InventoryWorkspace";
 import {
-  ConfiguredListWorkspace,
   DirectoryWorkspace,
   IncomingInvoiceWorkspace,
   OpeningBalanceWorkspace,
@@ -60,6 +59,9 @@ import {
   TabSettingsModal,
   WorkModeModal,
 } from "./GlobalShellPanels";
+import { SidebarNavigation } from "./SidebarNavigation";
+import { NestedWorkspace } from "./NestedWorkspace";
+import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import "./App.css";
 import "./reference.css";
 import "./detailed-workspaces.css";
@@ -122,10 +124,18 @@ function ReferenceWorkspace() {
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
-  const moduleId = location.pathname.split("/")[1] || "overview",
+  const pathParts = location.pathname.split("/");
+  const moduleId = pathParts[1] || "overview",
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
-  const tab = location.pathname.split("/")[2] || tabs[0][0],
+  const requestedTab = pathParts[2];
+  const tab = tabs.some(([id]) => id === requestedTab)
+      ? requestedTab
+      : tabs[0][0],
+    childTab = pathParts[3],
     module = referenceNav.find((m) => m.id === moduleId);
+  const activeTabNode = referenceTabHierarchy[moduleId]?.find(
+    (item) => item.id === tab,
+  );
   const company =
     companies.find((c) => c.id === params.get("company")) || companies[0];
   const period = ["2026-09", "2026-08", "2026"].includes(
@@ -397,24 +407,11 @@ function ReferenceWorkspace() {
             <Pencil size={13} />
           </button>
         </div>
-        <nav aria-label="Điều hướng chính">
-          {referenceNav
-            .filter((m) => m.id !== "overview")
-            .map((m) => (
-              <NavLink
-                key={m.id}
-                title={m.label}
-                className={() =>
-                  `ref-nav-item ${moduleId === m.id ? "active" : ""}`
-                }
-                to={href(`/${m.id}`)}
-                onClick={() => setMobileOpen(false)}
-              >
-                <m.icon size={16} />
-                <span>{m.label}</span>
-              </NavLink>
-            ))}
-        </nav>
+        <SidebarNavigation
+          moduleId={moduleId}
+          href={href}
+          onNavigate={() => setMobileOpen(false)}
+        />
         <button
           className="ref-collapse"
           onClick={() => setCollapsed(!collapsed)}
@@ -491,6 +488,12 @@ function ReferenceWorkspace() {
             create={create}
             onInfo={infoAction}
           />
+        ) : tab === "process" ? (
+          <AuditedProcessWorkspace
+            moduleId={moduleId}
+            moduleLabel={module?.label || "Kế toán"}
+            notify={setNotice}
+          />
         ) : tab === "transactions" &&
           ["cash", "bank", "purchases", "sales", "ledger"].includes(
             moduleId,
@@ -511,13 +514,20 @@ function ReferenceWorkspace() {
             <TaxPage href={href} />
           </div>
         ) : (
-          <ConfiguredListWorkspace
+          <NestedWorkspace
             moduleId={moduleId}
-            title={
-              tabs.find((t) => t[0] === tab)?.[1] ||
-              module?.label ||
-              "Danh sách nghiệp vụ"
+            moduleLabel={module?.label || "Phân hệ"}
+            tab={
+              activeTabNode || {
+                id: tab,
+                label:
+                  tabs.find((item) => item[0] === tab)?.[1] ||
+                  module?.label ||
+                  "Danh sách nghiệp vụ",
+              }
             }
+            childId={childTab}
+            href={href}
             notify={setNotice}
           />
         )}
