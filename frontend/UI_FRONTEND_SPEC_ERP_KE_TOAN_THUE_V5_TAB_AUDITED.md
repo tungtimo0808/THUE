@@ -6316,3 +6316,235 @@ Sau vòng research cuối, tài liệu được kiểm tra lại theo tiêu chí
 | Onboarding | Có |
 
 **Kết luận audit:** Ở cấp **Information Architecture + UI Function Map**, bản này đã đủ rộng để bắt đầu thiết kế toàn bộ frontend. Phần còn lại cần làm theo từng screen là **field-level specification**, không phải mở rộng thêm sitemap chung.
+
+---
+
+# 49. CHƯƠNG ĐẶC BIỆT: RESEARCH BỔ SUNG TỪ MISA AMIS 2026 (BẢN PHÁT HÀNH R90 – R95) & THÔNG TƯ 99/2025/TT-BTC
+
+> **Mục tiêu của chương này:** Tổng hợp toàn bộ các tính năng, phân hệ, tiện ích và luồng nghiệp vụ hiện đại nhất được nghiên cứu trực tiếp từ Trung tâm trợ giúp MISA AMIS (`helpact.misa.vn`), các bản phát hành mới nhất từ R90 đến R95 (2025 – 2026) và các quy định pháp luật mới (Thông tư 99/2025/TT-BTC, Nghị định 254/2026/NĐ-CP về hóa đơn điện tử).  
+> Các bổ sung này giúp nâng cấp kiến trúc từ bản V5 lên bản **V6 Siêu hoàn chỉnh (Ultimate Master Architecture)**.
+
+---
+
+## 49.1. Đột phá Trí tuệ Nhân tạo: Trợ lý số MISA AVA Kế toán (Smart AI Copilot)
+
+MISA AMIS Kế toán 2025 – 2026 đã tích hợp sâu trợ lý AI (AVA) vào từng nghiệp vụ kế toán, giải quyết triệt để vấn đề nhập liệu thủ công và rà soát sai sót. Frontend cần bố trí các điểm tương tác AI sau:
+
+### A. Floating AVA Assistant & Chat Drawer toàn hệ thống
+* **Vị trí UI:** Nút AVA icon nổi ở góc dưới bên phải màn hình hoặc cạnh thanh tìm kiếm thông minh trên Global Header.
+* **Tính năng:**
+  - Nhập lệnh bằng văn bản hoặc giọng nói (Generative AI & Natural Language Generation).
+  - Tra cứu số liệu tức thì: *"Doanh thu hôm nay bao nhiêu?"*, *"Công nợ quá hạn của khách hàng ABC là bao nhiêu?"*, *"Dự báo dòng tiền tuần tới có bị âm không?"*.
+  - Tự động phân tích biểu đồ tài chính, tóm tắt tình hình sức khỏe doanh nghiệp và soạn email báo cáo gửi Giám đốc/Kế toán trưởng.
+
+### B. "Thêm bằng AI" (AI Smart Capture / OCR Document Extraction) trên Toolbar
+* **Xuất hiện tại:** Đơn đặt hàng, Đơn mua hàng, Chứng từ mua hàng, Chứng từ bán hàng, Chứng từ nghiệp vụ khác.
+* **Luồng tương tác:**
+  1. Người dùng bấm `[Thêm bằng AI]` trên Toolbar.
+  2. Kéo thả file ảnh hóa đơn, file PDF, file XML hoặc dán đoạn văn bản nội dung kinh tế.
+  3. AI OCR đọc thông tin, tự động bóc tách các trường: Nhà cung cấp/Khách hàng, Mã số thuế, Ngày chứng từ, Diễn giải, Danh sách mặt hàng, Số lượng, Đơn giá, Thuế suất, Tổng tiền.
+  4. Hiển thị màn hình preview so sánh 2 cột: `[Ảnh/File gốc]` bên trái và `[Form chứng từ nháp]` bên phải.
+  5. Người dùng kiểm tra các trường đã nhận diện (có đánh dấu màu theo độ tin cậy confidence), bấm `[Cất & Ghi sổ]` hoặc `[Lưu nháp]`.
+
+### C. AVA tự động gợi ý tài khoản hạch toán Nợ/Có (R94)
+* **Ứng dụng:** Chứng từ nghiệp vụ khác, Phiếu thu, Phiếu chi, Chi mua ngoài có hóa đơn.
+* **Cơ chế:** Dựa vào nội dung diễn giải nghiệp vụ và lịch sử hạch toán của doanh nghiệp, AVA tự động hiển thị chip gợi ý tài khoản Nợ/Có phù hợp nhất. Ví dụ: nhập diễn giải *"Thanh toán tiền điện tháng 9"* -> AVA tự động gợi ý Nợ TK 6422 / Có TK 1111 hoặc 1121 mà kế toán không cần tra cứu danh mục tài khoản.
+
+### D. AVA tự động gợi ý mặt hàng / VTHH (R91)
+* **Ứng dụng:** Xử lý hóa đơn đầu vào.
+* **Cơ chế:** Khi nhận hóa đơn điện tử đầu vào từ nhà cung cấp, tên mặt hàng thường khác với tên mã VTHH trong kho của doanh nghiệp (ví dụ: trên HĐ là *"Giấy in Double A Khổ A4 ĐL 70gsm"* -> trong kho là *"VTHH001: Giấy A4 Double A 70g"*). AVA sử dụng AI Semantic Matching để tự động gợi ý ghép mã VTHH tương ứng với độ chính xác cao.
+
+### E. AVA tự động hạch toán giao dịch ngân hàng & hóa đơn dịch vụ đầu vào (R92)
+* Khi tải sao kê điện tử từ ngân hàng hoặc hóa đơn dịch vụ (điện, nước, viễn thông, cước vận chuyển, phí chuyển tiền), AVA tự động nhận diện mẫu giao dịch và tự động lập chứng từ hạch toán Nợ/Có tương ứng.
+
+### F. Đối chiếu công nợ thông minh & Soạn email tự động bằng AVA (R94)
+* AVA tự động rà soát công nợ phải thu, phải trả, phát hiện chênh lệch và tự động soạn thư xác nhận / nhắc nợ theo 3 phong cách văn phong tùy chọn:
+  - *Chuyên nghiệp (Formal)*
+  - *Thân thiện, hợp tác (Friendly)*
+  - *Ngắn gọn, dứt khoát (Concise)*
+* Kế toán có thể chỉnh sửa nội dung trước khi gửi email hàng loạt trực tiếp từ phần mềm.
+
+### G. Smart Compliance Checklist: Gợi ý hồ sơ chứng từ hợp lệ
+* AVA phân tích từng loại nghiệp vụ kinh tế và hiển thị checklist các giấy tờ, chứng từ cần đi kèm để đảm bảo tính hợp lý, hợp lệ khi quyết toán thuế:
+  - Mua hàng trên 20 triệu: Cảnh báo bắt buộc phải có Ủy nhiệm chi / chứng từ thanh toán không dùng tiền mặt, Hợp đồng kinh tế, Biên bản bàn giao.
+  - Chi phí tiếp khách: Gợi ý Bảng kê chi tiết món ăn, Hóa đơn VAT, Giấy mời/kế hoạch tiếp khách.
+  - Sửa chữa tài sản: Gợi ý Biên bản đánh giá hiện trạng, Dự toán, Hợp đồng, Biên bản nghiệm thu bàn giao hoàn thành.
+
+---
+
+## 49.2. Kiểm soát Rủi ro Hóa đơn & Phòng tránh gian lận Thuế (Tax Compliance & Risk Radar)
+
+Xu hướng cơ quan thuế tăng cường thanh tra hóa đơn điện tử đòi hỏi hệ thống ERP phải có cơ chế phòng ngừa rủi ro tự động:
+
+### A. Cảnh báo Nhà cung cấp rủi ro cao về thuế
+* **Cơ chế:** Tích hợp trực tiếp dữ liệu từ Tổng cục Thuế để tự động tra cứu MST nhà cung cấp:
+  - Nhà cung cấp không hoạt động tại địa chỉ đã đăng ký (Doanh nghiệp bỏ trốn).
+  - Nhà cung cấp tạm ngừng hoạt động kinh doanh có thời hạn hoặc ngừng hoạt động chưa hoàn thành thủ tục đóng MST.
+  - Nhà cung cấp thuộc danh sách doanh nghiệp có rủi ro cao về hóa đơn.
+* **Hiển thị trên UI:** Khi nhập chứng từ mua hàng hoặc mở Hộp thư hóa đơn đầu vào, các hóa đơn từ nhà cung cấp có rủi ro sẽ bị gắn cờ cảnh báo đỏ `[NCC RỦI RO THUẾ]`, khóa chức năng thanh toán hoặc hiển thị cảnh báo xác nhận khi ghi sổ.
+
+### B. Kiểm tra tính hợp lệ kỹ thuật của file XML Hóa đơn điện tử
+* Tự động kiểm tra cấu trúc XML hóa đơn theo chuẩn Nghị định 254/2026/NĐ-CP:
+  - Kiểm tra chữ ký số người bán: Chứng thư số còn hiệu lực, đúng nhà cung cấp CA được cấp phép.
+  - Kiểm tra mã của Cơ quan Thuế: Hóa đơn có mã hợp lệ, đã được CQT cấp mã thành công.
+  - Kiểm tra thông tin người mua: So khớp tên công ty, MST, địa chỉ trên hóa đơn với thông tin đăng ký kinh doanh của doanh nghiệp để cảnh báo sai sót trước khi kê khai thuế.
+
+### C. Cảnh báo thanh toán tiền mặt vượt ngưỡng (> 5 triệu & > 20 triệu đồng)
+* Phần mềm tự động theo dõi tổng số tiền chi trả bằng tiền mặt trong cùng một ngày cho một nhà cung cấp:
+  - Nếu >= 5.000.000 VNĐ: Cảnh báo nhắc nhở kiểm soát chi phí.
+  - Nếu >= 20.000.000 VNĐ: Cảnh báo vi phạm điều kiện thanh toán không dùng tiền mặt, không được khấu trừ thuế GTGT đầu vào và không được tính vào chi phí được trừ khi xác định thuế TNDN.
+
+### D. Đối chiếu Bảng kê mua vào / bán ra với Dữ liệu Cổng Hóa đơn điện tử của CQT
+* **Workspace:** `Thuế → Đối chiếu HĐ với Tổng cục Thuế`.
+* Cho phép kết nối trực tiếp tài khoản Cổng HĐĐT của Tổng cục Thuế (`hoadondientu.gdt.gov.vn`) để tự động tải toàn bộ hóa đơn mua vào/bán ra đã gửi lên CQT và đối chiếu với Sổ kế toán:
+  - Phát hiện hóa đơn có trên CQT nhưng kế toán chưa hạch toán (bỏ sót).
+  - Phát hiện hóa đơn đã hạch toán nhưng bị người bán hủy/thay thế trên CQT.
+  - Phát hiện sai lệch số tiền, tiền thuế giữa phần mềm và dữ liệu CQT.
+
+---
+
+## 49.3. Bổ sung Phân hệ Bán hàng: Kết nối Sàn Thương mại Điện tử (Shopee, TikTok Shop, Lazada, Tiki) (R91)
+
+Trong bối cảnh thương mại điện tử bùng nổ, doanh nghiệp bán lẻ/bán buôn cần quản lý tập trung đơn hàng sàn TMĐT ngay trong phần mềm kế toán:
+
+### A. Level 2 / Module Tab "Sàn TMĐT" trong Bán hàng
+```text
+BÁN HÀNG
+├─ Quy trình
+├─ Biểu đồ
+├─ Báo giá
+├─ Đơn đặt hàng
+├─ Hợp đồng bán hàng
+├─ Bán hàng
+├─ Hóa đơn
+├─ Tự động hạch toán HĐ
+├─ SÀN TMĐT                      [BỔ SUNG MỚI TỪ MISA R91]
+│  ├─ Đồng bộ đơn hàng
+│  ├─ Đối chiếu doanh thu & phí sàn
+│  └─ Đồng bộ tồn kho 2 chiều
+├─ Trả lại hàng bán
+├─ Giảm giá hàng bán
+├─ Phân bổ doanh thu nhận trước
+├─ Công nợ
+├─ Thu nợ
+└─ Báo cáo
+```
+
+### B. Các chức năng chi tiết của Sàn TMĐT
+1. **Đồng bộ đơn hàng đa kênh:**
+   - Kết nối API với các gian hàng Shopee, TikTok Shop, Lazada.
+   - Tự động kéo đơn hàng về theo các trạng thái: *Chờ xác nhận, Đang vận chuyển, Giao thành công, Hoàn hàng, Hủy đơn*.
+   - Cho phép thiết lập quy tắc tự động sinh chứng từ bán hàng (kèm phiếu xuất kho) khi đơn hàng chuyển sang trạng thái "Giao thành công".
+2. **Đối chiếu doanh thu, chi phí & phí sàn TMĐT:**
+   - Bóc tách chi tiết:
+     + Doanh thu giá niêm yết
+     + Chiết khấu / Voucher của shop
+     + Trợ giá khuyến mại của sàn
+     + Phí thanh toán của sàn
+     + Phí cố định
+     + Phí tiếp thị liên kết (Affiliate commission)
+     + Phí dịch vụ sàn
+     + Số tiền thực nhận về tài khoản ngân hàng của doanh nghiệp.
+   - Đối chiếu chênh lệch giữa số tiền sàn báo thanh toán và số tiền thực chuyển vào tài khoản ngân hàng.
+3. **Đồng bộ tồn kho 2 chiều (Bi-directional Stock Sync):**
+   - Khi có giao dịch bán tại quầy hoặc xuất kho nội bộ, tồn kho trên Shopee/TikTok Shop tự động giảm theo.
+   - Khi có đơn đặt trên sàn, tồn kho khả dụng trong phần mềm tự động được giữ chỗ (allocated stock).
+
+---
+
+## 49.4. Nâng cấp Toàn diện theo Thông tư 99/2025/TT-BTC (Chính thức áp dụng từ 01/01/2026)
+
+Thông tư 99/2025/TT-BTC thay thế hoàn toàn Thông tư 200/2014/TT-BTC từ ngày 01/01/2026. Kiến trúc hệ thống cần bổ sung các công cụ hỗ trợ chuyển đổi và mẫu báo cáo tài chính mới:
+
+### A. Wizard Chuyển đổi Dữ liệu Kế toán sang TT99/2025/TT-BTC
+* **Vị trí UI:** `Tổng hợp → Chuyển đổi dữ liệu TT99` hoặc trong `⚙ Các tiện ích và thiết lập → Công cụ khác`.
+* **Quy trình chuyển đổi 4 bước:**
+  1. *Bước 1 - Sao lưu dữ liệu cũ:* Tạo bản sao lưu an toàn trước khi chuyển đổi.
+  2. *Bước 2 - Ghép tài khoản (Account Mapping Table):* Hệ thống tự động ánh xạ các tài khoản từ TT200/TT133 sang hệ thống tài khoản mới theo TT99. Cho phép kế toán tùy chỉnh ghép các tài khoản con đặc thù của doanh nghiệp.
+  3. *Bước 3 - Chuyển đổi số dư đầu kỳ:* Tự động kết chuyển số dư Nợ/Có đầu kỳ từ ngày 01/01/2026 sang hệ thống tài khoản mới, đảm bảo tổng số dư Nợ = tổng số dư Có.
+  4. *Bước 4 - Xác nhận và hoàn tất:* Kiểm tra đối chiếu trước/sau chuyển đổi và chuyển trạng thái sổ kế toán sang chế độ TT99.
+
+### B. Bộ Báo cáo Tài chính chuẩn Thông tư 99/2025/TT-BTC
+* Không còn dùng tên "Bảng cân đối kế toán" mà sử dụng đúng tên chuẩn theo TT99:
+  1. **Báo cáo tình hình tài chính:** Phân loại tài sản ngắn hạn, dài hạn, nợ phải trả, vốn chủ sở hữu theo các chỉ tiêu quy định mới.
+  2. **Báo cáo kết quả hoạt động kinh doanh:** Cập nhật các chỉ tiêu doanh thu, giá vốn, chi phí tài chính, chi phí quản lý, chi phí bán hàng.
+  3. **Báo cáo lưu chuyển tiền tệ:** Cả 2 phương pháp Trực tiếp và Gián tiếp, có công cụ ánh xạ hoạt động LCTT (Kinh doanh, Đầu tư, Tài chính) trực tiếp từ các tài khoản đối ứng.
+  4. **Bản thuyết minh Báo cáo tài chính:** Hỗ trợ tự động điền các bảng biểu chi tiết theo quy định của TT99.
+
+---
+
+## 49.5. Cải tiến Phân hệ Kho: Quản lý Vị trí kho (Shelf / Bin Location) (R93)
+
+* **Bổ sung Tab:** `Kho → Vị trí kho (Kệ/Ô)` (configurable).
+* **Cấu trúc quản lý đa cấp:** `Kho (Warehouse) → Khu vực (Zone) → Dãy (Aisle) → Kệ (Rack) → Tầng (Shelf) → Ô (Bin)`.
+* **Tính năng nghiệp vụ:**
+  - Nhập kho: Chỉ định vị trí cất hàng cụ thể cho từng lô hàng/mặt hàng.
+  - Xuất kho: In Phiếu xuất kho / Picking List có ghi rõ vị trí lấy hàng (ví dụ: KHO1-A02-K3-T2) giúp thủ kho tìm hàng nhanh chóng, không bị nhầm lẫn.
+  - Quản lý sơ đồ kho trực quan (Warehouse Visual Map).
+
+---
+
+## 49.6. Cải tiến Phân hệ Giá thành: Đối tượng Tập hợp Chi phí Cha - Con (R93)
+
+* **Bổ sung:** Cấu trúc phân cấp Đối tượng THCP cha - con trong tất cả các phương pháp tính giá thành (Giản đơn, Hệ số/Tỷ lệ, Phân bước, Công trình, Đơn hàng, Hợp đồng).
+* **Ứng dụng thực tế:**
+  - Doanh nghiệp xây dựng: Dự án lớn (Cha) → Gói thầu / Hạng mục (Con).
+  - Doanh nghiệp sản xuất: Dòng sản phẩm (Cha) → Mã quy cách / Biến thể (Con); hoặc Phân xưởng sản xuất (Cha) → Dây chuyền / Tổ đội (Con).
+* **Lợi ích:** Cho phép tập hợp chi phí ở cấp con, tự động tổng hợp lên cấp cha và hỗ trợ phân bổ chi phí chung đa tầng chính xác.
+
+---
+
+## 49.7. Cải tiến Phân hệ Tiền gửi: Quản lý Hợp đồng Bảo lãnh Ngân hàng
+
+* **Bổ sung Tab:** `Tiền gửi → Bảo lãnh ngân hàng` (configurable).
+* **Theo dõi đầy đủ các loại bảo lãnh phát sinh trong doanh nghiệp:**
+  - Bảo lãnh dự thầu (Bid Guarantee).
+  - Bảo lãnh thực hiện hợp đồng (Performance Guarantee).
+  - Bảo lãnh hoàn trả tiền tạm ứng (Advance Payment Guarantee).
+  - Bảo lãnh thanh toán (Payment Guarantee).
+  - Bảo lãnh bảo hành (Warranty Guarantee).
+* **Chức năng chi tiết:**
+  - Theo dõi số tiền bảo lãnh, tài sản thế chấp/ký quỹ bảo lãnh, phí bảo lãnh định kỳ.
+  - Theo dõi ngày phát hành, ngày hết hạn bảo lãnh, cảnh báo sắp hết hạn để gia hạn kịp thời.
+  - Hạch toán phí bảo lãnh và các khoản ký quỹ (TK 244).
+
+---
+
+## 49.8. Ký số Từ xa (Remote Signing / SmartCA / Cloud CA) & Phê duyệt Điện tử
+
+* **Loại bỏ sự phụ thuộc vào USB Token phần cứng:**
+  - Tích hợp chuẩn ký số từ xa HSM / Cloud CA (MISA eSign, VNPT SmartCA, Viettel MySign...).
+  - Ký duyệt chứng từ, hóa đơn, ủy nhiệm chi, báo cáo tài chính ngay trên trình duyệt web hoặc thiết bị di động thông qua thông báo đẩy (Push Notification) và xác thực sinh trắc học (FaceID / Vân tay) hoặc mã OTP.
+* **Quy trình phê duyệt chứng từ nhiều cấp (Maker - Checker Workflow):**
+  - Cấu hình hạn mức phê duyệt theo số tiền (ví dụ: chi < 50 triệu: Kế toán trưởng duyệt; chi >= 50 triệu: Giám đốc ký duyệt).
+  - Cấu hình luồng duyệt theo phòng ban / loại chứng từ.
+  - Lưu trữ đầy đủ vết kiểm toán (Audit Trail): ai duyệt, vào thời gian nào, địa chỉ IP, trạng thái chứng thư số.
+
+---
+
+## 49.9. Mô hình Quản lý Tập đoàn & Đa chi nhánh (Group Accounting V2) (R91)
+
+Dành cho các doanh nghiệp có nhiều công ty con, tổng công ty hoặc chuỗi chi nhánh:
+* Hỗ trợ mô hình chi nhánh hạch toán phụ thuộc và chi nhánh hạch toán độc lập.
+* **Đối chiếu giao dịch nội bộ:** Tự động đối chiếu các khoản phải thu / phải trả nội bộ giữa công ty mẹ và công ty con hoặc giữa các chi nhánh thành viên.
+* **Báo cáo tài chính tổng hợp & Báo cáo tài chính hợp nhất:** Thu thập dữ liệu kế toán từ các đơn vị thành viên, tự động tạo bút toán loại trừ giao dịch nội bộ và kết xuất bộ BCTC hợp nhất hoàn chỉnh.
+
+---
+
+## 49.10. Bảng Tổng hợp So sánh Nâng cấp từ V5 lên V6
+
+| Phân hệ / Khu vực | Tài liệu V5 hiện tại | Bổ sung mới từ MISA AMIS 2026 (Bản V6) |
+|---|---|---|
+| **Toàn hệ thống (AI)** | AI Add đơn giản trên một số màn hình | **Trợ lý số AVA toàn diện:** Floating Chat Drawer, AVA gợi ý TK Nợ/Có (R94), AVA mapping VTHH (R91), Tự động hạch toán giao dịch NH & DV (R92), Đối chiếu công nợ thông minh & soạn email tự động |
+| **Hóa đơn & Mua hàng** | Xử lý HĐ đầu vào cơ bản | **Kiểm soát rủi ro thuế:** Cảnh báo NCC rủi ro cao từ dữ liệu Tổng cục Thuế, Kiểm tra hợp lệ XML/chữ ký số, Cảnh báo tiền mặt trong ngày > 5tr và > 20tr |
+| **Bán hàng** | Báo giá, Đơn hàng, Bán hàng, Công nợ | **Tích hợp Sàn TMĐT (R91):** Đồng bộ đơn hàng Shopee/TikTok Shop, Tự động hạch toán, Đối chiếu doanh thu và phí sàn chi tiết, Đồng bộ tồn kho 2 chiều |
+| **Chế độ Kế toán** | Tiếp cận nền tảng TT99 | **Bộ Wizard chuyển đổi dữ liệu TT99:** Bảng ghép tài khoản TT200 -> TT99, Chuyển đổi số dư đầu kỳ, Bộ 4 BCTC hoàn chỉnh chuẩn TT99/2025/TT-BTC |
+| **Kho** | Kho, Nhập/Xuất, LSX, Kiểm kê | **Quản lý Vị trí kho (R93):** Quản lý chi tiết theo Kệ/Tầng/Ô (Bin Location), In phiếu xuất kho/Picking List có chỉ dẫn vị trí |
+| **Giá thành** | 6 phương pháp tính giá thành | **Đối tượng THCP Cha - Con (R93):** Cấu trúc phân cấp đa tầng, phân bổ chi phí chung nhiều cấp |
+| **Tiền gửi** | Thu/Chi, Đối chiếu, NHĐT, Khế ước | **Quản lý Bảo lãnh ngân hàng:** Theo dõi các loại bảo lãnh dự thầu, thực hiện HĐ, thanh toán, ký quỹ và cảnh báo hết hạn |
+| **Tiền lương** | Chấm công, Tính lương, Hạch toán | **Tích hợp AMIS Tiền lương:** Workspace nhận đề nghị hạch toán chi phí lương & đề nghị chi trả tiền lương |
+| **Thuế** | Khai thuế, tờ khai, XML | **Đối chiếu HĐ với CQT:** Kết nối Cổng hoadondientu.gdt.gov.vn, tự động so sánh bảng kê với hóa đơn thực tế trên cơ quan thuế |
+| **Bảo mật & Ký số** | Ký số cơ bản | **Ký số từ xa (SmartCA/Cloud CA):** Ký mọi lúc mọi nơi không cần USB Token, luồng duyệt chứng từ đa cấp (Maker - Checker) |
+
+---
+

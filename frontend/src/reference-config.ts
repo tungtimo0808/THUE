@@ -240,15 +240,97 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("transactions", "Thu, chi tiền"),
     node("inventory", "Kiểm kê"),
     node("cashflow", "Dự báo dòng tiền"),
+    node("reports", "Báo cáo"),
   ],
-  sales: previousReferenceTabs.sales
-    .filter(([id]) => id !== "chart")
-    .map(([id, label]) => node(id, label)),
-  inventory: previousReferenceTabs.inventory.map(([id, label]) =>
-    node(id, label, undefined, {
-      configurable: ["chart", "reports", "items"].includes(id),
+  bank: [
+    node("process", "Quy trình"),
+    node("transactions", "Thu, chi tiền"),
+    node("reconciliation", "Đối chiếu ngân hàng", [
+      node("online", "Đối chiếu online"),
+      node("offline", "Đối chiếu sao kê file"),
+      node("ava", "Đối chiếu tự động với AVA"),
+    ]),
+    node("cashflow", "Dự báo dòng tiền"),
+    node("ebanking", "Ngân hàng điện tử", [
+      node("transfers", "Chuyển tiền trực tuyến"),
+      node("approvals", "Phê duyệt lệnh chuyển tiền"),
+      node("statement", "Sao kê & biến động số dư"),
+      node("rules", "Quy tắc hạch toán tự động"),
+    ]),
+    node("borrowings", "Khế ước đi vay"),
+    node("loans", "Khế ước cho vay"),
+    node("guarantees", "Bảo lãnh ngân hàng", undefined, {
+      configurable: true,
     }),
-  ),
+    node("reports", "Báo cáo"),
+  ],
+  purchases: [
+    node("process", "Quy trình"),
+    node("chart", "Biểu đồ", undefined, { configurable: true }),
+    node("orders", "Đơn mua hàng"),
+    node("contracts", "Hợp đồng mua hàng"),
+    node("transactions", "Mua hàng"),
+    node("invoices", "Nhận hóa đơn"),
+    node("invoice-processing", "Xử lý hóa đơn đầu vào", [
+      node("inbox", "Hộp thư hóa đơn & AI OCR"),
+      node("supplier-risk", "Kiểm tra rủi ro nhà cung cấp"),
+      node("xml-validation", "Kiểm tra tính hợp lệ XML"),
+    ]),
+    node("returns", "Trả lại hàng mua"),
+    node("discounts", "Giảm giá hàng mua"),
+    node("payments", "Trả tiền theo hóa đơn"),
+    node("reports", "Báo cáo"),
+  ],
+  sales: [
+    node("process", "Quy trình"),
+    node("chart", "Biểu đồ", undefined, { configurable: true }),
+    node("quotes", "Báo giá"),
+    node("orders", "Đơn đặt hàng"),
+    node("contracts", "Hợp đồng bán hàng"),
+    node("transactions", "Bán hàng"),
+    node("invoices", "Hóa đơn"),
+    node("auto-posting", "Tự động hạch toán HĐ"),
+    node("ecommerce", "Sàn TMĐT", [
+      node("sync-orders", "Đồng bộ đơn hàng (Shopee, TikTok)"),
+      node("reconciliation", "Đối chiếu doanh thu & phí sàn"),
+      node("inventory-sync", "Đồng bộ tồn kho 2 chiều"),
+    ]),
+    node("returns", "Trả lại hàng bán"),
+    node("discounts", "Giảm giá hàng bán"),
+    node("deferred-revenue", "Phân bổ doanh thu nhận trước"),
+    node("receivables", "Công nợ"),
+    node("collections", "Thu nợ"),
+    node("other", "Khác"),
+    node("reports", "Báo cáo"),
+  ],
+  invoices: [
+    node("incoming", "Hóa đơn đầu vào", [
+      node("inbox", "Hộp thư hóa đơn & AI OCR"),
+      node("unprocessed", "Hóa đơn chưa hạch toán"),
+      node("processed", "Hóa đơn đã hạch toán"),
+    ]),
+    node("outgoing", "Hóa đơn đầu ra & Phát hành"),
+    node("risk-warning", "Cảnh báo rủi ro hóa đơn", [
+      node("supplier-risk", "Nhà cung cấp rủi ro cao về thuế"),
+      node("cash-limit", "Cảnh báo chi tiền mặt trong ngày > 5 triệu"),
+      node("xml-errors", "Hóa đơn sai thông tin / Chữ ký số lỗi"),
+    ]),
+    node("adjustments", "Xử lý sai sót, điều chỉnh, thay thế"),
+    node("reports", "Báo cáo hóa đơn điện tử"),
+  ],
+  inventory: [
+    node("process", "Quy trình"),
+    node("chart", "Biểu đồ", undefined, { configurable: true }),
+    node("receipts", "Nhập kho"),
+    node("issues", "Xuất kho"),
+    node("transfers", "Chuyển kho"),
+    node("production-orders", "Lệnh sản xuất"),
+    node("assembly", "Lắp ráp, tháo dỡ"),
+    node("stocktake", "Kiểm kê"),
+    node("locations", "Vị trí kho (Kệ/Ô)", undefined, { configurable: true }),
+    node("reports", "Báo cáo", undefined, { configurable: true }),
+    node("items", "Hàng hóa, dịch vụ", undefined, { configurable: true }),
+  ],
   tools: [
     node("process", "Quy trình"),
     node("register", "Sổ theo dõi công cụ dụng cụ", [
@@ -292,6 +374,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("leased-conversion", "Chuyển TSCĐ thuê tài chính", undefined, {
       configurable: true,
     }),
+    node("reports", "Báo cáo"),
   ],
   payroll: [
     node("process", "Quy trình"),
@@ -299,8 +382,26 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("attendance-summary", "Tổng hợp chấm công"),
     node("calculation", "Tính lương"),
     node("posting", "Hạch toán chi phí"),
+    node("tax-deduction", "Khấu trừ thuế TNCN"),
+    node("amis-integration", "Đề nghị từ AMIS Tiền lương", [
+      node("cost-requests", "Đề nghị hạch toán chi phí lương"),
+      node("payment-requests", "Đề nghị chi trả tiền lương"),
+    ]),
+    node("reports", "Báo cáo"),
   ],
-  tax: [node("declarations", "Khai thuế")],
+  tax: [
+    node("declarations", "Khai thuế", [
+      node("list", "Danh sách tờ khai đã lập"),
+      node("create", "Lập tờ khai mới"),
+      node("supplementary", "Khai bổ sung (KHBS)"),
+      node("registration", "Đăng ký tờ khai sử dụng"),
+    ]),
+    node("gdt-reconciliation", "Đối chiếu HĐ với Tổng cục Thuế", [
+      node("incoming", "Đối chiếu bảng kê mua vào với CQT"),
+      node("outgoing", "Đối chiếu bảng kê bán ra với CQT"),
+    ]),
+    node("reports", "Báo cáo thuế"),
+  ],
   cost: [
     node("simple", "Sản xuất liên tục – Giản đơn"),
     node("coefficient", "Sản xuất liên tục – Hệ số, tỷ lệ"),
@@ -308,18 +409,27 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("projects", "Công trình"),
     node("orders", "Đơn hàng"),
     node("contracts", "Hợp đồng"),
+    node("cost-objects", "Đối tượng THCP cha - con", undefined, {
+      configurable: true,
+    }),
+    node("reports", "Báo cáo"),
   ],
   ledger: [
     node("process", "Quy trình"),
     node("transactions", "Chứng từ nghiệp vụ khác"),
     node("statements", "Lập báo cáo tài chính", [
-      node("standard", "Lập báo cáo tài chính"),
+      node("standard", "Báo cáo tài chính (TT 99/2025/TT-BTC)"),
       node("consolidated", "Báo cáo tài chính tổng hợp"),
       node("interim", "Báo cáo tài chính giữa niên độ"),
+    ]),
+    node("tt99-migration", "Chuyển đổi dữ liệu TT99", [
+      node("mapping", "Bảng ghép tài khoản TT200 sang TT99"),
+      node("balances", "Chuyển đổi số dư đầu kỳ"),
     ]),
     node("consolidation-data", "Dữ liệu phục vụ hợp nhất", undefined, {
       configurable: true,
     }),
+    node("reports", "Báo cáo sổ sách"),
   ],
   budget: [
     node("planning", "Kế hoạch ngân sách"),
@@ -390,7 +500,10 @@ export const settingsGroups = [
       "Phục hồi chứng từ đã xóa nhầm",
       "Lấy chứng từ từ dữ liệu khác",
       "Kiểm tra đối chiếu chứng từ, sổ sách",
+      "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế",
+      "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế",
       "Kiểm soát hồ sơ và hạch toán",
+      "Trợ lý AI MISA AVA: Cấu hình gợi ý hạch toán",
       "Gợi ý, nhắc nhở thông minh",
       "Tra cứu thông tin doanh nghiệp",
       "Nhật ký truy cập",
@@ -400,6 +513,7 @@ export const settingsGroups = [
   {
     title: "Công cụ khác",
     items: [
+      "Chuyển đổi dữ liệu sang Thông tư 99/2025/TT-BTC",
       "Hướng dẫn chuyển đổi từ SME",
       "Chuyển đổi từ AMIS Kế toán bản cũ",
       "Danh sách lệnh tính giá, bảo trì… đang thực hiện",
@@ -421,9 +535,11 @@ export const settingsGroups = [
       "Tùy chọn",
       "Ngày hạch toán",
       "Kết nối ứng dụng",
+      "Thiết lập kết nối sàn TMĐT (Shopee, TikTok Shop)",
+      "Thiết lập kết nối Ngân hàng điện tử (mBank)",
       "Ngôn ngữ",
       "Thiết lập cấu hình gửi email",
-      "Thiết lập ký số",
+      "Thiết lập ký số từ xa (SmartCA / eSign)",
       "Thiết lập màu sắc và hiển thị",
     ],
   },

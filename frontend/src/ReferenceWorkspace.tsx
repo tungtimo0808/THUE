@@ -11,6 +11,7 @@ import {
   Check,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   CircleHelp,
   Download,
   Grip,
@@ -18,6 +19,8 @@ import {
   Megaphone,
   Menu,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Plus,
   Search,
@@ -147,8 +150,24 @@ function ReferenceWorkspace() {
   const scoped = items.filter(
     (t) => t.company === company.id && t.date.startsWith(period),
   );
-  const [collapsed, setCollapsed] = useState(false),
-    [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("ref_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("ref_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
   const [panel, setPanel] = useState<
     | "quick"
     | "settings"
@@ -182,6 +201,10 @@ function ReferenceWorkspace() {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         document.getElementById("reference-search")?.focus();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleCollapsed();
       }
       if (e.key === "Escape") {
         setMobileOpen(false);
@@ -243,6 +266,22 @@ function ReferenceWorkspace() {
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           <Menu size={20} />
+        </button>
+        <button
+          className="ref-icon ref-sidebar-toggle"
+          title={
+            collapsed
+              ? "Mở rộng thanh tác vụ bên trái (Ctrl+B)"
+              : "Thu nhỏ thanh tác vụ bên trái (Ctrl+B)"
+          }
+          aria-label={
+            collapsed
+              ? "Mở rộng thanh tác vụ bên trái"
+              : "Thu nhỏ thanh tác vụ bên trái"
+          }
+          onClick={toggleCollapsed}
+        >
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
         <Link to={href("/overview")} className="ref-brand">
           <Grip size={17} />
@@ -391,7 +430,11 @@ function ReferenceWorkspace() {
       )}
       <aside className={`ref-sidebar ${mobileOpen ? "open" : ""}`}>
         <div className="ref-quick">
-          <button onClick={() => setPanel("quick")} aria-label="Thêm nhanh">
+          <button
+            onClick={() => setPanel("quick")}
+            aria-label="Thêm nhanh"
+            title="Thêm nhanh chứng từ (+)"
+          >
             <Plus size={13} />
             <span>Thêm nhanh</span>
           </button>
@@ -400,12 +443,24 @@ function ReferenceWorkspace() {
           <strong>
             PHÂN HỆ <ChevronDown size={10} />
           </strong>
-          <button
-            aria-label="Thiết lập phân hệ"
-            onClick={() => infoAction("Thiết lập phân hệ")}
-          >
-            <Pencil size={13} />
-          </button>
+          <div className="ref-nav-heading-actions">
+            <button
+              className="ref-heading-btn"
+              aria-label="Thu nhỏ thanh bên (Ctrl+B)"
+              title="Thu nhỏ thanh bên (Ctrl+B)"
+              onClick={toggleCollapsed}
+            >
+              <PanelLeftClose size={13} />
+            </button>
+            <button
+              className="ref-heading-btn"
+              aria-label="Thiết lập phân hệ"
+              title="Thiết lập phân hệ"
+              onClick={() => infoAction("Thiết lập phân hệ")}
+            >
+              <Pencil size={13} />
+            </button>
+          </div>
         </div>
         <SidebarNavigation
           moduleId={moduleId}
@@ -414,11 +469,20 @@ function ReferenceWorkspace() {
         />
         <button
           className="ref-collapse"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+          onClick={toggleCollapsed}
+          title={
+            collapsed
+              ? "Mở rộng thanh tác vụ bên trái (Ctrl+B)"
+              : "Thu nhỏ thanh tác vụ bên trái (Ctrl+B)"
+          }
+          aria-label={
+            collapsed
+              ? "Mở rộng thanh tác vụ bên trái"
+              : "Thu nhỏ thanh tác vụ bên trái"
+          }
         >
-          <ChevronLeft size={15} />
-          <span>Thu gọn</span>
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+          <span>{collapsed ? "Mở rộng" : "Thu nhỏ"}</span>
         </button>
       </aside>
       <main id="reference-main" className="ref-main" tabIndex={-1}>

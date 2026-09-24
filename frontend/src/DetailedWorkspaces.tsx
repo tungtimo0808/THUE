@@ -579,23 +579,275 @@ export function IncomingInvoiceWorkspace({ notify }: { notify: Notify }) {
   );
 }
 
-const genericRows = [
-  [
-    "CT-2609-018",
-    "18/09/2026",
-    "Công ty TNHH Gỗ Việt",
-    "128.600.000",
-    "Đã ghi sổ",
-  ],
-  ["CT-2609-017", "17/09/2026", "Công ty An Phú", "86.400.000", "Chờ duyệt"],
-  [
-    "CT-2609-016",
-    "15/09/2026",
-    "Nội bộ doanh nghiệp",
-    "42.750.000",
-    "Bản nháp",
-  ],
-];
+function getSpecializedWorkspaceData(moduleId: string, title: string) {
+  const t = title.toLowerCase();
+
+  // 1. Công cụ dụng cụ
+  if (moduleId === "tools") {
+    if (t.includes("trả trước") || t.includes("cptt")) {
+      return {
+        noun: "Chi phí trả trước",
+        headers: ["Mã CPTT", "Khoản chi phí", "Ngày ghi nhận", "Tổng số tiền (VND)", "Kỳ PB", "Đã PB", "PB kỳ này", "Còn lại", "Trạng thái"],
+        rows: [
+          ["CPTT-2026-01", "Thuê trụ sở văn phòng Hà Nội 12T", "01/01/2026", "240.000.000", "12 tháng", "160.000.000", "20.000.000", "60.000.000", "Đang phân bổ"],
+          ["CPTT-2026-02", "Bảo hiểm cháy nổ nhà xưởng và kho", "01/03/2026", "36.000.000", "12 tháng", "18.000.000", "3.000.000", "15.000.000", "Đang phân bổ"],
+          ["CPTT-2026-03", "Phí bản quyền ERP & Microsoft 365", "15/04/2026", "68.400.000", "12 tháng", "28.500.000", "5.700.000", "34.200.000", "Đang phân bổ"],
+          ["CPTT-2026-04", "Sửa chữa lớn nhà xưởng khu B", "01/06/2026", "120.000.000", "24 tháng", "15.000.000", "5.000.000", "100.000.000", "Đang phân bổ"],
+        ],
+        kpis: [
+          { label: "Tổng CPTT đang theo dõi", value: "464.400.000", hint: "4 khoản chi phí" },
+          { label: "Đã phân bổ lũy kế", value: "221.500.000", hint: "Tính đến kỳ này" },
+          { label: "Mức phân bổ tháng 9", value: "33.700.000", hint: "Đã tạo bút toán Nợ 642" },
+        ]
+      };
+    }
+    if (t.includes("ghi tăng")) {
+      return {
+        noun: "Chứng từ ghi tăng CCDC",
+        headers: ["Số chứng từ", "Ngày ghi tăng", "Tên công cụ dụng cụ", "Số lượng", "Đơn giá", "Tổng giá trị (VND)", "Kỳ PB", "Đơn vị sử dụng", "Trạng thái"],
+        rows: [
+          ["GT-CCDC-2609", "15/09/2026", "Laptop Dell Vostro 15 3520", "5 chiếc", "18.500.000", "92.500.000", "24 tháng", "Phòng Kỹ thuật", "Đã ghi sổ"],
+          ["GT-CCDC-2608", "28/08/2026", "Bộ bàn ghế nhân viên 6 chỗ", "4 bộ", "12.000.000", "48.000.000", "36 tháng", "Phòng Kinh doanh", "Đã ghi sổ"],
+          ["GT-CCDC-2607", "10/08/2026", "Máy in mã vạch Zebra ZT411", "2 chiếc", "22.500.000", "45.000.000", "24 tháng", "Bộ phận Kho vận", "Đã ghi sổ"],
+        ],
+        kpis: [
+          { label: "Tổng ghi tăng trong kỳ", value: "185.500.000", hint: "3 chứng từ ghi tăng" },
+          { label: "Từ nguồn Mua hàng", value: "140.500.000", hint: "Kèm hóa đơn VAT" },
+          { label: "Từ nguồn Xuất kho", value: "45.000.000", hint: "Xuất CCDC dùng ngay" },
+        ]
+      };
+    }
+    return {
+      noun: "Công cụ dụng cụ",
+      headers: ["Mã CCDC", "Tên công cụ dụng cụ", "Ngày ghi tăng", "Nguyên giá (VND)", "Kỳ PB", "Đã phân bổ", "Còn lại", "Đơn vị sử dụng", "Trạng thái"],
+      rows: [
+        ["CCDC-2026-001", "Laptop Dell Vostro 15 3520", "15/01/2026", "24.500.000", "24 tháng", "8.166.666", "16.333.334", "Phòng Kế toán", "Đang sử dụng"],
+        ["CCDC-2026-002", "Máy in laser HP LaserJet M428fdw", "02/02/2026", "14.800.000", "18 tháng", "4.933.333", "9.866.667", "Phòng Hành chính", "Đang sử dụng"],
+        ["CCDC-2026-003", "Bộ bàn ghế giám đốc gỗ sồi tự nhiên", "10/03/2026", "38.000.000", "36 tháng", "6.333.333", "31.666.667", "Ban Giám đốc", "Đang sử dụng"],
+        ["CCDC-2025-089", "Máy chiếu Epson EB-X06 phòng họp A1", "12/08/2025", "12.500.000", "24 tháng", "6.770.833", "5.729.167", "Phòng Họp A1", "Đang sử dụng"],
+        ["CCDC-2025-042", "Bộ máy hàn cáp quang Comway C6", "25/04/2025", "45.000.000", "24 tháng", "31.875.000", "13.125.000", "Đội Kỹ thuật", "Đang sử dụng"],
+      ],
+      kpis: [
+        { label: "Tổng số CCDC đang dùng", value: "32 CCDC", hint: "8 đơn vị sử dụng" },
+        { label: "Nguyên giá toàn bộ", value: "386.400.000", hint: "Giá trị sổ sách" },
+        { label: "Giá trị còn lại", value: "194.250.000", hint: "Chờ phân bổ tiếp" },
+      ]
+    };
+  }
+
+  // 2. Tài sản cố định
+  if (moduleId === "assets") {
+    return {
+      noun: "Tài sản cố định",
+      headers: ["Mã TSCĐ", "Tên tài sản cố định", "Nhóm TSCĐ", "Ngày sử dụng", "Nguyên giá (VND)", "Hao mòn lũy kế", "Giá trị còn lại", "Đơn vị sử dụng", "Tình trạng"],
+      rows: [
+        ["TSCD-2025-01", "Xe tải vận chuyển Hyundai New Porter 150", "Phương tiện vận tải", "15/02/2025", "465.000.000", "124.000.000", "341.000.000", "Đội Xe Vận tải", "Đang sử dụng"],
+        ["TSCD-2024-03", "Máy cắt CNC tự động 4 đầu Woodmaster", "Máy móc thiết bị", "10/06/2024", "780.000.000", "286.000.000", "494.000.000", "Xưởng Mộc CNC", "Đang sử dụng"],
+        ["TSCD-2023-08", "Hệ thống máy chủ Dell R750 + Storage SAN", "Thiết bị IT", "20/08/2023", "350.000.000", "218.750.000", "131.250.000", "Phòng IT", "Đang sử dụng"],
+        ["TSCD-2022-02", "Tòa nhà văn phòng điều hành 5 tầng Láng Hạ", "Nhà cửa kiến trúc", "01/01/2022", "4.800.000.000", "800.000.000", "4.000.000.000", "Tổng Cty", "Đang sử dụng"],
+        ["TSCD-2021-12", "Dây chuyền sơn tĩnh điện công nghệ Đức", "Dây chuyền SX", "15/11/2021", "1.250.000.000", "750.000.000", "500.000.000", "Xưởng Sơn", "Chờ bảo dưỡng"],
+      ],
+      kpis: [
+        { label: "Tổng nguyên giá TSCĐ", value: "7.645.000.000", hint: "5 nhóm tài sản" },
+        { label: "Hao mòn lũy kế (TK 214)", value: "2.178.750.000", hint: "Tính đến 09/2026" },
+        { label: "Giá trị còn lại", value: "5.466.250.000", hint: "Khấu hao tháng: 48.5 tr" },
+      ]
+    };
+  }
+
+  // 3. Tiền gửi
+  if (moduleId === "bank") {
+    if (t.includes("đối chiếu")) {
+      return {
+        noun: "Đối chiếu ngân hàng",
+        headers: ["Số tài khoản", "Ngân hàng", "Số dư sổ KT (VND)", "Số dư sao kê NH", "Chênh lệch", "Số GD", "Phương thức", "Kết quả"],
+        rows: [
+          ["1121-BIDV-01", "BIDV - Chi nhánh Cầu Giấy (VND)", "1.820.400.000", "1.820.400.000", "0", "48 GD", "Online Open Banking", "✓ Khớp 100% (AVA Verified)"],
+          ["1121-VCB-02", "Vietcombank - Sở Giao dịch (VND)", "2.450.800.000", "2.450.800.000", "0", "32 GD", "Online Open Banking", "✓ Khớp 100% (AVA Verified)"],
+          ["1122-TCB-01", "Techcombank - USD (125,000 $)", "3.156.250.000", "3.156.250.000", "0", "14 GD", "Sao kê điện tử MT940", "✓ Khớp 100%"],
+          ["1121-MB-03", "MB Bank - Chi nhánh Ba Đình", "645.200.000", "650.200.000", "-5.000.000", "19 GD", "Đối chiếu tự động", "⚠ Lệch phí duy trì NH"],
+        ],
+        kpis: [
+          { label: "Tổng số dư tiền gửi", value: "8.072.650.000", hint: "4 tài khoản ngân hàng" },
+          { label: "Tỷ lệ khớp số liệu", value: "99.94%", hint: "Đã khớp 93/94 giao dịch" },
+          { label: "Chênh lệch cần xử lý", value: "-5.000.000", hint: "1 khoản phí sao kê" },
+        ]
+      };
+    }
+    if (t.includes("ngân hàng điện tử") || t.includes("lệnh")) {
+      return {
+        noun: "Ngân hàng điện tử",
+        headers: ["Mã lệnh", "Ngày lập", "Tài khoản nguồn", "Đơn vị thụ hưởng", "Ngân hàng nhận", "Số tiền (VND)", "Ký số", "Trạng thái lệnh"],
+        rows: [
+          ["MBK-2609-001", "24/09/2026", "1121-BIDV-01", "Công ty CP Gỗ Việt Nam", "VietinBank", "185.000.000", "SmartCA HSM", "Đã chuyển tiền thành công"],
+          ["MBK-2609-002", "24/09/2026", "1121-VCB-02", "Tổng công ty Điện lực Hà Nội", "BIDV", "34.500.000", "SmartCA HSM", "Đã chuyển tiền thành công"],
+          ["MBK-2609-003", "23/09/2026", "1121-BIDV-01", "Kho bạc Nhà nước Cầu Giấy (Thuế)", "KBNN", "68.200.000", "SmartCA HSM", "Đã chuyển tiền thành công"],
+        ],
+        kpis: [
+          { label: "Lệnh chuyển trong ngày", value: "3 lệnh", hint: "Tổng giá trị: 287.7 tr" },
+          { label: "Phê duyệt Maker-Checker", value: "100% duyệt", hint: "Ký số SmartCA" },
+          { label: "Tự động sinh hạch toán", value: "3 chứng từ", hint: "Nợ 331, 642 / Có 1121" },
+        ]
+      };
+    }
+    if (t.includes("bảo lãnh")) {
+      return {
+        noun: "Bảo lãnh ngân hàng",
+        headers: ["Số cam kết BL", "Ngân hàng bảo lãnh", "Loại bảo lãnh", "Dự án / Hợp đồng", "Giá trị bảo lãnh", "Tài sản ký quỹ", "Hạn hiệu lực", "Tình trạng"],
+        rows: [
+          ["BL-2026-BIDV-08", "BIDV Cầu Giấy", "Bảo lãnh thực hiện HĐ", "Gói thầu Nội thất Tòa nhà Hòa Bình", "350.000.000", "175.000.000 (TK 244)", "31/12/2026", "Đang hiệu lực"],
+          ["BL-2026-VCB-12", "Vietcombank", "Bảo lãnh hoàn trả tạm ứng", "HĐ Cung cấp thiết bị trường học", "200.000.000", "100.000.000 (TK 244)", "15/11/2026", "Đang hiệu lực"],
+          ["BL-2026-TCB-03", "Techcombank", "Bảo lãnh dự thầu", "Gói thầu Bàn ghế Bệnh viện TW", "80.000.000", "Tín chấp theo hạn mức", "15/10/2026", "Sắp hết hạn"],
+        ],
+        kpis: [
+          { label: "Tổng giá trị bảo lãnh", value: "630.000.000", hint: "3 hợp đồng bảo lãnh" },
+          { label: "Ký quỹ ngân hàng (TK 244)", value: "275.000.000", hint: "Được quản lý chặt chẽ" },
+          { label: "Sắp hết hạn (dưới 30 ngày)", value: "1 bảo lãnh", hint: "Cần theo dõi gia hạn" },
+        ]
+      };
+    }
+    return {
+      noun: "Khế ước vay vốn",
+      headers: ["Số hợp đồng", "Ngày ký", "Bên cho vay / Ngân hàng", "Mục đích vay", "Hạn mức (VND)", "Dư nợ hiện tại", "Lãi suất (%/năm)", "Hạn tất toán", "Trạng thái"],
+      rows: [
+        ["KU-2026-VCB01", "15/01/2026", "Vietcombank - CN Thăng Long", "Bổ sung vốn lưu động sản xuất", "2.000.000.000", "850.000.000", "7.2% / năm", "15/01/2027", "Đang thực hiện"],
+        ["KU-2025-BIDV02", "10/05/2025", "BIDV - CN Cầu Giấy", "Đầu tư máy móc dây chuyền CNC", "1.500.000.000", "420.000.000", "8.5% / năm", "10/05/2028", "Đang thực hiện"],
+      ],
+      kpis: [
+        { label: "Tổng hạn mức tín dụng", value: "3.500.000.000", hint: "2 hợp đồng tín dụng" },
+        { label: "Dư nợ vay ngắn hạn", value: "1.270.000.000", hint: "Lãi vay kỳ này: 8.6 tr" },
+        { label: "Tình trạng thanh toán", value: "Đúng hạn", hint: "Không có nợ quá hạn" },
+      ]
+    };
+  }
+
+  // 4. Bán hàng & Sàn TMĐT
+  if (moduleId === "sales") {
+    if (t.includes("sàn") || t.includes("tmđt") || t.includes("shopee") || t.includes("tiktok")) {
+      return {
+        noun: "Đơn hàng sàn TMĐT",
+        headers: ["Mã đơn sàn", "Kênh / Gian hàng", "Khách hàng", "Doanh thu gộp", "Voucher Shop", "Phí sàn khấu trừ", "Thực nhận về NH", "Thời gian giao", "Trạng thái ERP"],
+        rows: [
+          ["SP-2609-8834921", "Shopee Mall - Nội thất Official", "Nguyễn Văn Tuấn", "1.450.000", "-50.000", "-108.750 (7.5%)", "1.291.250", "23/09/2026", "Đã sinh PX & HĐĐT"],
+          ["TT-2609-9482103", "TikTok Shop - Sổ Việt Studio", "Trần Thu Thảo", "890.000", "-30.000", "-71.200 (8.0%)", "788.800", "23/09/2026", "Đã sinh PX & HĐĐT"],
+          ["LZ-2609-7721840", "Lazada Flagship Store", "Phạm Hoàng Nam", "2.150.000", "-100.000", "-153.750 (7.5%)", "1.896.250", "22/09/2026", "Đã đối chiếu VCB"],
+          ["SP-2609-8834990", "Shopee Mall - Nội thất Official", "Lê Mai Anh", "620.000", "0", "-46.500 (7.5%)", "573.500", "24/09/2026", "Chờ giao hàng"],
+        ],
+        kpis: [
+          { label: "Doanh thu sàn tháng 9", value: "248.500.000", hint: "Tăng 18% so với T8" },
+          { label: "Tổng phí sàn bóc tách", value: "19.880.000", hint: "Tỷ lệ phí TB: 8.0%" },
+          { label: "Đã tự động hạch toán", value: "186 đơn hàng", hint: "Đồng bộ tồn kho 2 chiều" },
+        ]
+      };
+    }
+  }
+
+  // 5. Thuế
+  if (moduleId === "tax") {
+    return {
+      noun: "Hồ sơ khai thuế",
+      headers: ["Kỳ tính thuế", "Mẫu tờ khai", "Tên loại tờ khai thuế", "Doanh thu chịu thuế", "Thuế phát sinh", "Thuế được khấu trừ", "Hạn nộp hồ sơ", "Trạng thái mTax", "Đối chiếu CQT"],
+      rows: [
+        ["Quý 3/2026", "01/GTGT", "Tờ khai thuế GTGT khấu trừ (TT80/2021)", "4.850.000.000", "485.000.000", "312.400.000", "30/10/2026", "Đã ký số - Đang hoàn tất", "✓ Khớp 100% với CQT"],
+        ["Quý 3/2026", "05/KK-TNCN", "Tờ khai khấu trừ thuế TNCN từ lương", "850.000.000", "32.450.000", "0", "30/10/2026", "Chờ KTT phê duyệt", "Đã đối chiếu bảng lương"],
+        ["Quý 3/2026", "03/TNDN", "Tạm nộp thuế TNDN Quý 3 (Tạm tính)", "1.420.000.000", "82.500.000", "0", "30/10/2026", "Đã lập Giấy nộp tiền", "Đã tạo bút toán Nợ 821"],
+      ],
+      kpis: [
+        { label: "Thuế GTGT còn được khấu trừ", value: "172.600.000", hint: "Chuyển sang Quý 4" },
+        { label: "Thuế TNDN tạm nộp kỳ này", value: "82.500.000", hint: "Hạn nộp: 30/10/2026" },
+        { label: "Tình trạng đối chiếu CQT", value: "100% Khớp", hint: "Cổng hoadondientu.gdt" },
+      ]
+    };
+  }
+
+  // 6. Tổng hợp & Thông tư 99
+  if (moduleId === "ledger") {
+    if (t.includes("tt99") || t.includes("chuyển đổi") || t.includes("ghép")) {
+      return {
+        noun: "Chuyển đổi dữ liệu TT99",
+        headers: ["TK cũ (TT200)", "Tên tài khoản cũ", "TK mới (TT99)", "Tên tài khoản mới", "Dư Nợ đầu kỳ (VND)", "Dư Có đầu kỳ (VND)", "Quy tắc chuyển đổi", "Trạng thái ghép"],
+        rows: [
+          ["155", "Thành phẩm", "155", "Thành phẩm (Phân loại mới TT99)", "450.000.000", "0", "Chuyển nguyên trạng số dư", "✓ Ghép tự động hoàn tất"],
+          ["156", "Hàng hóa", "156", "Hàng hóa (Quy định chi tiết TT99)", "1.280.000.000", "0", "Chuyển chi tiết theo kho", "✓ Ghép tự động hoàn tất"],
+          ["242", "Chi phí trả trước", "242", "Chi phí chờ phân bổ (TT99)", "285.000.000", "0", "Chuyển tiếp kỳ phân bổ", "✓ Ghép tự động hoàn tất"],
+          ["4111", "Vốn góp chủ sở hữu", "4111", "Vốn góp của chủ sở hữu (TT99)", "0", "5.000.000.000", "Chuyển nguyên trạng số dư", "✓ Ghép tự động hoàn tất"],
+        ],
+        kpis: [
+          { label: "Tổng tài khoản cần ghép", value: "68 tài khoản", hint: "Ánh xạ TT200 -> TT99" },
+          { label: "Đã tự động ghép hoàn tất", value: "68 / 68 (100%)", hint: "Không có lỗi sai lệch" },
+          { label: "Kiểm tra cân đối số dư", value: "✓ Khớp tuyệt đối", hint: "Tổng Nợ = Tổng Có" },
+        ]
+      };
+    }
+    return {
+      noun: "Báo cáo tài chính TT99",
+      headers: ["Kỳ BCTC", "Mã biểu mẫu", "Tên báo cáo tài chính (TT99)", "Kỳ so sánh", "Ngày lập", "Người ký số", "Cân đối kế toán", "Tình trạng nộp"],
+      rows: [
+        ["Năm 2026", "B01-DN", "Báo cáo tình hình tài chính (Thay Bảng CĐKT)", "Năm 2025", "20/09/2026", "KTT: Nguyễn Thị Mai (SmartCA)", "✓ Tổng TS = Tổng NV", "Bản nháp niên độ"],
+        ["Năm 2026", "B02-DN", "Báo cáo kết quả hoạt động kinh doanh", "Năm 2025", "20/09/2026", "KTT: Nguyễn Thị Mai (SmartCA)", "✓ Doanh thu thuần: 18.5 tỷ", "Bản nháp niên độ"],
+        ["Năm 2026", "B03-DN", "Báo cáo lưu chuyển tiền tệ (Trực tiếp)", "Năm 2025", "20/09/2026", "KTT: Nguyễn Thị Mai (SmartCA)", "✓ Dòng tiền thuần: +2.1 tỷ", "Bản nháp niên độ"],
+        ["Năm 2026", "B09-DN", "Bản thuyết minh Báo cáo tài chính TT99", "Năm 2025", "20/09/2026", "KTT: Nguyễn Thị Mai", "Đã điền 18/18 phụ lục", "Bản nháp niên độ"],
+      ],
+      kpis: [
+        { label: "Bộ BCTC chuẩn Thông tư 99", value: "4 báo cáo", hint: "Áp dụng từ 01/01/2026" },
+        { label: "Lợi nhuận sau thuế năm 2026", value: "+1.680.000.000", hint: "Tăng 14.5% cùng kỳ" },
+        { label: "Ký số từ xa qua SmartCA", value: "Sẵn sàng", hint: "Không cần USB Token" },
+      ]
+    };
+  }
+
+  // 7. Giá thành
+  if (moduleId === "cost") {
+    return {
+      noun: "Kỳ tính giá thành",
+      headers: ["Kỳ tính giá", "Phương pháp tính giá", "Đối tượng THCP / Sản phẩm", "Chi phí NVL (621)", "Chi phí NC (622)", "Chi phí SXC (627)", "Dở dang CK", "Tổng giá thành", "Giá thành ĐV", "Tình trạng"],
+      rows: [
+        ["Tháng 09/2026", "Giản đơn", "Bàn làm việc gỗ sồi Hòa Bình (60 cái)", "185.000.000", "45.000.000", "28.000.000", "12.000.000", "246.000.000", "4.100.000 đ/cái", "Đã nghiệm thu nhập kho"],
+        ["Tháng 09/2026", "Hệ số, tỷ lệ", "Nhóm Ghế xoay văn phòng GX01-GX03", "120.000.000", "32.000.000", "19.500.000", "8.500.000", "163.000.000", "Hệ số 1.0 - 1.2", "Đã phân bổ hoàn tất"],
+        ["Tháng 09/2026", "Công trình", "Công trình Showroom Vincom Megamall", "540.000.000", "145.000.000", "88.000.000", "0", "773.000.000", "Nghiệm thu trọn gói", "Đã kết chuyển GV 632"],
+      ],
+      kpis: [
+        { label: "Tổng chi phí sản xuất kỳ này", value: "1.182.000.000", hint: "Tập hợp TK 621, 622, 627" },
+        { label: "Thành phẩm nhập kho", value: "1.161.500.000", hint: "Nhập kho TK 155" },
+        { label: "Chi phí dở dang cuối kỳ (154)", value: "20.500.000", hint: "Đánh giá theo NVL trực tiếp" },
+      ]
+    };
+  }
+
+  // 8. Tiền lương
+  if (moduleId === "payroll") {
+    return {
+      noun: "Bảng lương & Đề nghị chi trả",
+      headers: ["Mã bảng lương", "Kỳ tính lương", "Khối / Phòng ban", "Số nhân sự", "Tổng quỹ lương", "Trích nộp BHXH", "Thuế TNCN", "Thực lĩnh chuyển NH", "Trạng thái"],
+      rows: [
+        ["BL-2026-09-VP", "Tháng 09/2026", "Khối Văn phòng & Điều hành", "28 người", "385.000.000", "40.425.000", "24.150.000", "320.425.000", "Đã duyệt chi lương qua VCB"],
+        ["BL-2026-09-SX", "Tháng 09/2026", "Phân xưởng Sản xuất & Thi công", "45 người", "495.000.000", "51.975.000", "14.200.000", "428.825.000", "Đã duyệt chi lương qua BIDV"],
+        ["YC-2026-09-01", "Tháng 09/2026", "Đề nghị hạch toán chi phí lương từ AMIS", "73 người", "880.000.000", "92.400.000", "38.350.000", "749.250.000", "Đã tạo chứng từ hạch toán"],
+      ],
+      kpis: [
+        { label: "Tổng quỹ lương tháng 9", value: "880.000.000", hint: "73 cán bộ nhân viên" },
+        { label: "Bảo hiểm trích theo lương", value: "92.400.000", hint: "BHXH, BHYT, BHTN" },
+        { label: "Thuế TNCN khấu trừ nộp NSNN", value: "38.350.000", hint: "Đã nộp giấy nộp tiền" },
+      ]
+    };
+  }
+
+  // Mặc định
+  return {
+    noun: moduleNouns[moduleId] || title,
+    headers: ["Mã chứng từ", "Ngày hạch toán", "Đối tượng / Khách hàng", "Diễn giải nghiệp vụ", "Giá trị (VND)", "Trạng thái"],
+    rows: [
+      ["CT-2609-018", "18/09/2026", "Công ty TNHH Gỗ Việt", "Mua nguyên vật liệu gỗ sồi xẻ theo hợp đồng", "128.600.000", "Đã ghi sổ"],
+      ["CT-2609-017", "17/09/2026", "Công ty An Phú Gia", "Thanh toán dịch vụ vận tải hàng về kho", "86.400.000", "Chờ duyệt KTT"],
+      ["CT-2609-016", "15/09/2026", "Nội bộ doanh nghiệp", "Điều chuyển hàng hóa giữa các kho chi nhánh", "42.750.000", "Đã hoàn tất"],
+    ],
+    kpis: [
+      { label: "Tổng số chứng từ", value: "24", hint: "Trong kỳ hiện tại" },
+      { label: "Cần xử lý phê duyệt", value: "5 việc", hint: "2 việc quá hạn" },
+      { label: "Tỷ lệ hoàn tất", value: "79%", hint: "Tăng 6% so với kỳ trước" },
+    ]
+  };
+}
 
 export function ConfiguredListWorkspace({
   moduleId,
@@ -606,73 +858,38 @@ export function ConfiguredListWorkspace({
   title: string;
   notify: Notify;
 }) {
-  const noun = moduleNouns[moduleId] || title;
-  const rows = useMemo(
-    () =>
-      moduleId === "assets"
-        ? [
-            [
-              "TSCD-0012",
-              "01/01/2025",
-              "Máy cắt CNC Woodmaster",
-              "680.000.000",
-              "Đang sử dụng",
-            ],
-            [
-              "TSCD-0011",
-              "12/06/2024",
-              "Xe tải giao hàng",
-              "520.000.000",
-              "Đang sử dụng",
-            ],
-            [
-              "TSCD-0008",
-              "20/03/2023",
-              "Hệ thống hút bụi",
-              "185.000.000",
-              "Chờ thanh lý",
-            ],
-          ]
-        : genericRows,
-    [moduleId],
-  );
-  const [selected, setSelected] = useState<string | null>(null);
+  const wsData = useMemo(() => getSpecializedWorkspaceData(moduleId, title), [moduleId, title]);
+  const [selectedRow, setSelectedRow] = useState<string[] | null>(null);
+  const [modalRow, setModalRow] = useState<string[] | null>(null);
+
   return (
     <div className="erp3-workspace">
       <WorkspaceHeader
         title={title}
-        description={`Quản lý ${noun.toLocaleLowerCase("vi")} theo kỳ, trạng thái và đối tượng liên quan.`}
-        action={`Thêm ${noun.toLocaleLowerCase("vi")}`}
+        description={`Quản lý ${wsData.noun.toLocaleLowerCase("vi")} theo kỳ kế toán, trạng thái phê duyệt và đối tượng liên quan.`}
+        action={`Thêm ${wsData.noun.toLocaleLowerCase("vi")}`}
         notify={notify}
       />
       <div className="erp3-kpis">
-        <article>
-          <span>Tổng số</span>
-          <strong>24</strong>
-          <small>Trong kỳ hiện tại</small>
-        </article>
-        <article>
-          <span>Cần xử lý</span>
-          <strong>5</strong>
-          <small>2 việc quá hạn</small>
-        </article>
-        <article>
-          <span>Hoàn tất</span>
-          <strong>79%</strong>
-          <small>Tăng 6% so với kỳ trước</small>
-        </article>
+        {wsData.kpis.map((kpi, idx) => (
+          <article key={idx}>
+            <span>{kpi.label}</span>
+            <strong>{kpi.value}</strong>
+            <small>{kpi.hint}</small>
+          </article>
+        ))}
       </div>
       <section className="erp3-list-card">
         <ListToolbar title={title} notify={notify} />
         <div className="erp3-view-chips">
           <button className="active">
-            Tất cả <span>24</span>
+            Tất cả <span>{wsData.rows.length}</span>
           </button>
           <button>
-            Cần xử lý <span>5</span>
+            Cần xử lý <span>1</span>
           </button>
           <button>
-            Hoàn tất <span>19</span>
+            Đã hoàn tất <span>{wsData.rows.length - 1}</span>
           </button>
         </div>
         <div className="erp3-table-wrap">
@@ -682,40 +899,61 @@ export function ConfiguredListWorkspace({
                 <th>
                   <input aria-label="Chọn tất cả bản ghi" type="checkbox" />
                 </th>
-                <th>Mã</th>
-                <th>Ngày</th>
-                <th>{moduleId === "assets" ? "Tên tài sản" : "Đối tượng"}</th>
-                <th>Giá trị</th>
-                <th>Tình trạng</th>
-                <th></th>
+                {wsData.headers.map((h, i) => (
+                  <th key={i}>{h}</th>
+                ))}
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {wsData.rows.map((row) => (
                 <tr key={row[0]}>
                   <td>
                     <input aria-label={`Chọn ${row[0]}`} type="checkbox" />
                   </td>
+                  {row.map((cell, cIdx) => {
+                    const isStatus = cIdx === row.length - 1;
+                    const isNumeric = cell.includes(".") && (cell.includes("000") || cell.includes("%") || cell.includes("đ/"));
+                    if (cIdx === 0) {
+                      return (
+                        <td key={cIdx}>
+                          <button
+                            className="erp3-link"
+                            onClick={() => {
+                              setSelectedRow(row);
+                              setModalRow(row);
+                            }}
+                          >
+                            {cell}
+                          </button>
+                        </td>
+                      );
+                    }
+                    if (isStatus) {
+                      const isSuccess = cell.includes("Đã") || cell.includes("Đang") || cell.includes("✓") || cell.includes("An toàn") || cell.includes("Hoàn thành") || cell.includes("Sẵn sàng");
+                      const isWarning = cell.includes("Chờ") || cell.includes("Sắp") || cell.includes("⚠") || cell.includes("Tạm") || cell.includes("nháp");
+                      return (
+                        <td key={cIdx}>
+                          <span className={`erp3-status ${isSuccess ? "success" : isWarning ? "warning" : "danger"}`}>
+                            {cell}
+                          </span>
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={cIdx} className={isNumeric ? "numeric" : ""}>
+                        {cell}
+                      </td>
+                    );
+                  })}
                   <td>
                     <button
-                      className="erp3-link"
-                      onClick={() => setSelected(row[0])}
+                      aria-label={`Thao tác ${row[0]}`}
+                      onClick={() => {
+                        setSelectedRow(row);
+                        setModalRow(row);
+                      }}
                     >
-                      {row[0]}
-                    </button>
-                  </td>
-                  <td>{row[1]}</td>
-                  <td>{row[2]}</td>
-                  <td className="numeric">{row[3]}</td>
-                  <td>
-                    <span
-                      className={`erp3-status ${row[4].includes("Đã") || row[4].includes("Đang") ? "success" : "warning"}`}
-                    >
-                      {row[4]}
-                    </span>
-                  </td>
-                  <td>
-                    <button aria-label={`Thao tác ${row[0]}`}>
                       <MoreHorizontal size={16} />
                     </button>
                   </td>
@@ -725,14 +963,14 @@ export function ConfiguredListWorkspace({
           </table>
         </div>
         <footer className="erp3-pagination">
-          <span>1–3 / 24 bản ghi</span>
+          <span>1–{wsData.rows.length} / {wsData.rows.length} bản ghi</span>
           <button disabled>Trước</button>
           <button className="active">1</button>
-          <button>2</button>
-          <button>Sau</button>
+          <button disabled>Sau</button>
         </footer>
       </section>
-      {selected && (
+
+      {selectedRow && (
         <aside
           className="erp3-quick-detail"
           role="region"
@@ -740,39 +978,165 @@ export function ConfiguredListWorkspace({
         >
           <header>
             <div>
-              <span>{noun}</span>
-              <h3>{selected}</h3>
+              <span>{wsData.noun}</span>
+              <h3>{selectedRow[0]}</h3>
             </div>
             <button
               aria-label="Đóng chi tiết nhanh"
-              onClick={() => setSelected(null)}
+              onClick={() => setSelectedRow(null)}
             >
               ×
             </button>
           </header>
           <dl>
+            {wsData.headers.slice(1, 5).map((h, i) => (
+              <div key={i}>
+                <dt>{h}</dt>
+                <dd>{selectedRow[i + 1] || "—"}</dd>
+              </div>
+            ))}
             <div>
-              <dt>Tình trạng</dt>
-              <dd>Đang theo dõi</dd>
+              <dt>Trạng thái</dt>
+              <dd>{selectedRow[selectedRow.length - 1]}</dd>
             </div>
             <div>
               <dt>Người phụ trách</dt>
-              <dd>Nguyễn Thị Lan</dd>
+              <dd>Nguyễn Thị Lan (Kế toán)</dd>
             </div>
             <div>
-              <dt>Cập nhật</dt>
+              <dt>Thời gian ghi sổ</dt>
               <dd>Hôm nay, 09:42</dd>
             </div>
           </dl>
-          <h4>Lịch sử</h4>
-          <p>Tạo mới từ dữ liệu mẫu</p>
+          <h4>Lịch sử & Vết kiểm toán</h4>
+          <p>Tạo từ quy trình nghiệp vụ · Đã xác thực SmartCA</p>
           <button
             className="erp3-primary erp3-full"
-            onClick={() => notify(`Đã mở hồ sơ ${selected}.`)}
+            onClick={() => setModalRow(selectedRow)}
           >
-            Mở chi tiết <ChevronRight size={14} />
+            Mở toàn bộ chứng từ <ChevronRight size={14} />
           </button>
         </aside>
+      )}
+
+      {modalRow && (
+        <Modal
+          title={`Chi tiết: ${modalRow[0]} · ${wsData.noun}`}
+          onClose={() => setModalRow(null)}
+          wide
+        >
+          <div className="erp3-document">
+            <header className="erp3-document-state">
+              <span>Mã hồ sơ: <strong>{modalRow[0]}</strong></span>
+              <span>·</span>
+              <span>Ngày: <strong>{modalRow[1] || "24/09/2026"}</strong></span>
+              <span>·</span>
+              <span className="erp3-status success">
+                {modalRow[modalRow.length - 1]}
+              </span>
+            </header>
+            <section className="erp3-info-card">
+              <h3>Thông tin chung</h3>
+              <dl className="erp3-definition-grid">
+                {wsData.headers.slice(0, 6).map((h, i) => (
+                  <div key={i}>
+                    <dt>{h}</dt>
+                    <dd>{modalRow[i] || "—"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+            <div className="erp3-tabs" role="tablist">
+              <button role="tab" aria-selected="true">
+                Chi tiết hạch toán & Bút toán
+              </button>
+              <button role="tab" aria-selected="false">
+                Thuế & Phí liên quan
+              </button>
+              <button role="tab" aria-selected="false">
+                Nguồn gốc & Chứng từ tham chiếu
+              </button>
+              <button role="tab" aria-selected="false">
+                Tệp đính kèm (XML / PDF)
+              </button>
+            </div>
+            <div className="erp3-table-wrap" style={{ marginTop: "12px" }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Nội dung diễn giải nghiệp vụ</th>
+                    <th>TK Nợ</th>
+                    <th>TK Có</th>
+                    <th>Số tiền (VND)</th>
+                    <th>Đối tượng / Đơn vị THCP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>{modalRow[1] ? `Hạch toán phát sinh ${modalRow[1]}` : `Nghiệp vụ chi tiết cho ${modalRow[0]}`}</td>
+                    <td><strong>{moduleId === "tools" ? "242" : moduleId === "assets" ? "211" : moduleId === "bank" ? "1121" : "642"}</strong></td>
+                    <td><strong>{moduleId === "bank" ? "331" : moduleId === "sales" ? "511" : "1121"}</strong></td>
+                    <td className="numeric"><strong>{modalRow[3] || "128.600.000"}</strong></td>
+                    <td>Cty CP Tập đoàn Hòa Bình</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Thuế GTGT hoặc chi phí bổ sung theo Thông tư 99/2025/TT-BTC</td>
+                    <td><strong>1331</strong></td>
+                    <td><strong>1121</strong></td>
+                    <td className="numeric"><strong>12.860.000</strong></td>
+                    <td>Cục Thuế TP Hà Nội</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="erp3-document-bottom">
+              <section>
+                <h3>Chứng từ tham chiếu & Truy vết</h3>
+                <p className="erp3-related">
+                  <Link2 size={14} /> Hóa đơn điện tử gốc: 0001293 (CQT đã cấp mã)
+                </p>
+                <p>
+                  <Paperclip size={14} /> Chung-tu-goc-dinh-kem.pdf · 1.4 MB (Đã ký số SmartCA)
+                </p>
+              </section>
+              <dl className="erp3-summary">
+                <div>
+                  <dt>Giá trị phát sinh</dt>
+                  <dd>{modalRow[3] || "128.600.000"}</dd>
+                </div>
+                <div>
+                  <dt>Thuế / Phí liên quan</dt>
+                  <dd>12.860.000</dd>
+                </div>
+                <div className="total">
+                  <dt>Tổng quyết toán</dt>
+                  <dd style={{ color: "#0284c7", fontSize: "16px" }}>141.460.000 VND</dd>
+                </div>
+              </dl>
+            </div>
+            <footer className="erp3-document-actions">
+              <button onClick={() => notify(`Bản in mẫu cho ${modalRow[0]} đã sẵn sàng.`)}>
+                <Printer size={14} /> In phiếu TT99
+              </button>
+              <button onClick={() => notify(`Đã nhân bản chứng từ ${modalRow[0]}.`)}>
+                Nhân bản
+              </button>
+              <button onClick={() => setModalRow(null)}>Đóng</button>
+              <button
+                className="erp3-primary"
+                onClick={() => {
+                  notify(`Đã xác thực và ghi sổ thành công ${modalRow[0]}.`);
+                  setModalRow(null);
+                }}
+              >
+                Ghi sổ kế toán
+              </button>
+            </footer>
+          </div>
+        </Modal>
       )}
     </div>
   );
