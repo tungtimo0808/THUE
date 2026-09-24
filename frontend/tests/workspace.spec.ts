@@ -185,3 +185,125 @@ test("storage failure keeps unsaved document input", async ({ page }) => {
     "100000",
   );
 });
+
+test("global shell exposes branch, work mode, grouped search and tab settings", async ({
+  page,
+}) => {
+  await expect(page.getByLabel("Chi nhánh, đơn vị")).toBeVisible();
+  await page.getByRole("button", { name: /Chế độ làm việc: Kế toán/ }).click();
+  const modeMenu = page.getByRole("dialog", { name: "Chọn chế độ làm việc" });
+  await expect(modeMenu.getByRole("button", { name: "Thủ kho" })).toBeVisible();
+  await expect(modeMenu.getByRole("button", { name: "Thủ quỹ" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByLabel("Tìm kiếm thông minh").fill("phiếu");
+  const results = page.getByRole("region", {
+    name: "Kết quả tìm kiếm thông minh",
+  });
+  await expect(
+    results.getByRole("heading", { name: "Chứng từ" }),
+  ).toBeVisible();
+  await expect(
+    results.getByRole("heading", { name: "Hàng hóa, dịch vụ" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Tùy chọn hiển thị" }).click();
+  const tabSettings = page.getByRole("dialog", { name: "Thiết lập tab Kho" });
+  await expect(tabSettings.getByLabel("Hiển thị Biểu đồ")).toBeChecked();
+  await expect(
+    tabSettings.getByText("Kéo thả hoặc dùng nút mũi tên"),
+  ).toBeVisible();
+});
+
+test("purchase orders use a detailed list, quick detail and full document", async ({
+  page,
+}) => {
+  await page.goto("/purchases/orders?company=minh-an&period=2026-09");
+  await expect(
+    page.getByRole("heading", { name: "Đơn mua hàng" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Nhà cung cấp" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Tình trạng" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Xem nhanh PO-2609-001" }).click();
+  await expect(
+    page.getByRole("region", { name: "Chi tiết nhanh" }),
+  ).toContainText("Công ty TNHH Gỗ Việt");
+  await page.getByRole("button", { name: "Mở đầy đủ PO-2609-001" }).click();
+  const document = page.getByRole("dialog", {
+    name: /Đơn mua hàng PO-2609-001/,
+  });
+  await expect(
+    document.getByRole("heading", { name: "Thông tin nhà cung cấp" }),
+  ).toBeVisible();
+  await expect(
+    document.getByRole("tab", { name: "Hàng hóa, dịch vụ" }),
+  ).toBeVisible();
+  await expect(document).toContainText("Chứng từ mua hàng đã lập");
+});
+
+test("incoming invoice processing has inbox, preview and accounting actions", async ({
+  page,
+}) => {
+  await page.goto(
+    "/purchases/invoice-processing?company=minh-an&period=2026-09",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Xử lý hóa đơn đầu vào" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Danh sách hóa đơn đầu vào" }),
+  ).toBeVisible();
+  const preview = page.getByRole("region", { name: "Xem trước hóa đơn" });
+  await expect(preview).toContainText("Công ty TNHH Gỗ Việt");
+  await expect(
+    preview.getByRole("button", { name: "Lập chứng từ mua hàng" }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole("button", { name: "Liên kết chứng từ" }),
+  ).toBeVisible();
+});
+
+test("report center, master data and opening balances are real workspaces", async ({
+  page,
+}) => {
+  await page.goto("/reports?company=minh-an&period=2026-09");
+  await expect(
+    page.getByRole("heading", { name: "Trung tâm báo cáo" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Tìm báo cáo")).toBeVisible();
+  await expect(
+    page.getByText("Báo cáo tình hình tài chính", { exact: true }),
+  ).toBeVisible();
+
+  await page.goto("/directory?company=minh-an&period=2026-09");
+  await expect(page.getByRole("heading", { name: "Danh mục" })).toBeVisible();
+  await expect(page.getByRole("tree", { name: "Nhóm danh mục" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Mã" })).toBeVisible();
+
+  await page.goto("/opening?company=minh-an&period=2026-09");
+  await expect(
+    page.getByRole("heading", { name: "Số dư ban đầu" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("tab", { name: "Số dư tài khoản" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Nhập từ Excel" }),
+  ).toBeVisible();
+});
+
+test("a configured module tab never falls back to an unavailable placeholder", async ({
+  page,
+}) => {
+  await page.goto("/assets/register?company=minh-an&period=2026-09");
+  await expect(page.getByRole("heading", { name: "Sổ tài sản" })).toBeVisible();
+  await expect(page.getByLabel("Tìm trong Sổ tài sản")).toBeVisible();
+  await expect(
+    page.getByText("Chưa có dữ liệu nghiệp vụ cho chức năng này."),
+  ).toHaveCount(0);
+});

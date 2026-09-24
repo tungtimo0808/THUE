@@ -2,15 +2,15 @@
 
 ## Giao diện Sổ Việt
 
-Frontend kế toán – thuế nằm trong [`frontend/`](./frontend/README.md), xây dựng bằng React + TypeScript + Vite.
+Frontend kế toán – thuế nằm trong [`FRONTEND/`](./FRONTEND/README.md), xây dựng bằng React + TypeScript + Vite.
 
 ```powershell
-cd frontend
+cd D:\THUẾ\FRONTEND
 npm install
 npm run dev
 ```
 
-Mở http://127.0.0.1:5173 để xem bản trải nghiệm với dữ liệu mẫu. Chi tiết chức năng, giới hạn, kiểm thử và skill đã cài xem trong [frontend/README.md](./frontend/README.md).
+Mở URL Vite in ra trong terminal (thường là http://127.0.0.1:5173) để xem bản trải nghiệm với dữ liệu mẫu. Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd install` và `npm.cmd run dev`. Chi tiết chức năng, giới hạn và kiểm thử xem trong [FRONTEND/README.md](./FRONTEND/README.md).
 
 Dự án Backend xây dựng trên nền tảng **Django** và **Django REST Framework (DRF)**.
 

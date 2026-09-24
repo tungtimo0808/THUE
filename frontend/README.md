@@ -7,21 +7,24 @@ React + TypeScript + Vite, React Router, Recharts, Lucide và font Be Vietnam Pr
 Yêu cầu Node.js 22.12+ hoặc 24 LTS.
 
 ```powershell
-cd C:\Users\Admin\LapTrinh\Thue\frontend
+cd D:\THUẾ\FRONTEND
 npm install
 npm run dev
 ```
 
-Mở http://127.0.0.1:5173. Giao diện mẫu chạy độc lập, không cần chạy Django. Nếu phát triển API, Vite đã cấu hình proxy `/api` tới `http://127.0.0.1:8000`.
+Mở URL Vite in ra trong terminal, thường là http://127.0.0.1:5173. Giao diện mẫu chạy độc lập, không cần chạy Django. Nếu PowerShell chặn `npm.ps1`, thay `npm` bằng `npm.cmd`. Khi phát triển API, Vite proxy `/api` tới `http://127.0.0.1:8000`.
 
 ## Đã triển khai
 
 - Tổng quan: chỉ tiêu, biểu đồ dòng tiền, việc chờ duyệt, chứng từ gần đây.
 - Khung điều hướng responsive, sidebar thu gọn, doanh nghiệp và kỳ kế toán trong URL.
-- App Shell và Module Shell theo đặc tả ERP: sidebar phân hệ lớn, quick-create theo nhóm, context dữ liệu kế toán và tab ngang theo từng phân hệ.
+- App Shell và Module Shell theo đặc tả ERP: ngữ cảnh doanh nghiệp/dữ liệu/chi nhánh/kỳ, ba chế độ Kế toán–Thủ kho–Thủ quỹ, sidebar phân hệ, quick-create và tab có thể cấu hình.
+- Tìm kiếm thông minh theo nhóm chứng từ, hàng hóa/dịch vụ và danh mục; hỗ trợ Ctrl+K.
 - Kho → Lệnh sản xuất: tìm kiếm, lọc trạng thái, chọn hàng loạt, phân trang, trạng thái lệnh và quick detail nguyên vật liệu.
-- Tiền mặt, tiền gửi, mua hàng, bán hàng, hóa đơn và tổng hợp dùng chung bảng giao dịch, quy trình, phân tích.
-- Tìm kiếm toàn cục bằng Ctrl+K; lọc loại/trạng thái; phân trang; chọn chứng từ xuất CSV.
+- Mua hàng → Đơn mua hàng: KPI, bộ lọc, bulk action, quick detail và hồ sơ đầy đủ gồm dòng hàng, tổng tiền, chứng từ liên quan, tệp đính kèm và lịch sử.
+- Xử lý hóa đơn đầu vào: inbox, xem trước XML/PDF, kiểm tra hợp lệ, liên kết hoặc lập chứng từ mua hàng dạng nháp.
+- Tất cả tab của tiền, mua/bán, hóa đơn, kho, CCDC, tài sản, lương, thuế, giá thành, tổng hợp, ngân sách, phân tích và vay vốn đều có workspace dữ liệu mẫu thay cho placeholder.
+- Trung tâm báo cáo, danh mục phân nhóm và khai báo số dư ban đầu có màn hình chuyên biệt.
 - Form tạo nháp: đối tượng, ngày, diễn giải, thêm/sao chép/xóa dòng và tính tổng số tiền; lưu trên trình duyệt.
 - Chi tiết chứng từ, lịch sử nghiệp vụ minh họa, chuyển nháp sang chờ duyệt thử.
 - Thuế: tổng quan GTGT/TNCN/TNDN, danh mục hồ sơ, liên kết đến dữ liệu nguồn; không tính hoặc gửi thuế.
@@ -33,9 +36,9 @@ Mở http://127.0.0.1:5173. Giao diện mẫu chạy độc lập, không cần 
 **Đây là frontend tương tác với dữ liệu mẫu, chưa phải hệ thống kế toán production.**
 
 - Dữ liệu minh họa tháng 4–9/2026 cho hai doanh nghiệp; chọn tháng 9, tháng 8 hoặc cả năm.
-- Các màn Kho ngoài `Lệnh sản xuất`, tài sản, lương, danh mục và thiết lập mới có khung phân hệ và thông báo rõ phạm vi.
+- Các workspace ngoài màn hình trọng điểm dùng mẫu danh sách cấu hình chung; dữ liệu, quy tắc phê duyệt và phân quyền vẫn chỉ là minh họa.
 - Không xác thực hoặc phân quyền thật, không gọi API nghiệp vụ, không hạch toán, không phê duyệt thật, không ký/nộp thuế.
-- Mua/bán/hóa đơn hiện minh họa chứng từ tổng tiền, chưa có bảng hàng hóa, công nợ hoặc liên kết hóa đơn thật.
+- Các nút ghi sổ, phê duyệt, liên kết, lập chứng từ, in và xuất dữ liệu chỉ mô phỏng phản hồi frontend; không tạo giao dịch kế toán thật.
 - Dữ liệu nháp dùng localStorage với khóa `soviet-demo-documents-v1`; không dùng cho dữ liệu thật/nhạy cảm. Xóa khóa này để về dữ liệu mẫu ban đầu. Các doanh nghiệp chỉ được phân tách để minh họa, không phải ranh giới bảo mật.
 - Trạng thái và timeline của dữ liệu mẫu chỉ để trình bày, không phải audit log.
 
@@ -55,18 +58,8 @@ $env:PLAYWRIGHT_CHANNEL = 'chrome'
 npm run test:e2e
 ```
 
-Kiểm thử bao gồm thay đổi kỳ, bộ lọc/deep link, CSV, lưu nháp nhiều dòng, phân tách doanh nghiệp, lỗi lưu trữ, modal, thuế, layout điện thoại và kiểm tra accessibility bằng axe. Ảnh kiểm tra nằm trong `test-results/`.
+Kiểm thử bao gồm app shell, màu thương hiệu, tab/công ty/kỳ, deep link, quick-create, tìm kiếm thông minh, chế độ làm việc, đơn mua hàng, hóa đơn đầu vào, báo cáo, danh mục, số dư, lệnh sản xuất, lưu nháp nhiều dòng, lỗi lưu trữ, mobile và accessibility bằng axe.
 
 `npm run format` để định dạng mã. `npm run build` tạo thư mục `dist/`; khi triển khai SPA cần cấu hình máy chủ trả `index.html` cho route frontend và giữ `/api` riêng.
-
-## Skill thiết kế đã cài
-
-Trong `C:/Users/Admin/.codex/skills/`:
-
-- `frontend-design` — anthropics/skills, `skills/frontend-design`.
-- `web-design-guidelines` — vercel-labs/agent-skills, `skills/web-design-guidelines`.
-- `ui-ux-pro-max` — nextlevelbuilder/ui-ux-pro-max-skill, `.claude/skills/ui-ux-pro-max`.
-
-Cài bằng script `skill-installer` của Codex; có thể dùng từ lượt trò chuyện tiếp theo. Trong lượt triển khai này đã đọc và áp dụng trực tiếp các SKILL.md.
 
 Thiết kế và nguồn tham khảo: [DESIGN.md](./DESIGN.md).

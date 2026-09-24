@@ -9,7 +9,6 @@ import {
 } from "react-router-dom";
 import {
   Bell,
-  Bot,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -37,7 +36,6 @@ import {
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
 import { TaxPage } from "./TaxPage";
-import { Reports } from "./pages";
 import {
   referenceNav,
   referenceTabs,
@@ -49,8 +47,22 @@ import {
   ReferenceTransactions,
 } from "./ReferencePages";
 import { InventoryProductionOrders } from "./InventoryWorkspace";
+import {
+  ConfiguredListWorkspace,
+  DirectoryWorkspace,
+  IncomingInvoiceWorkspace,
+  OpeningBalanceWorkspace,
+  PurchaseOrdersWorkspace,
+  ReportCenterWorkspace,
+} from "./DetailedWorkspaces";
+import {
+  SmartSearchResults,
+  TabSettingsModal,
+  WorkModeModal,
+} from "./GlobalShellPanels";
 import "./App.css";
 import "./reference.css";
+import "./detailed-workspaces.css";
 
 export type ReferenceHref = (
   path: string,
@@ -128,13 +140,21 @@ function ReferenceWorkspace() {
   const [collapsed, setCollapsed] = useState(false),
     [mobileOpen, setMobileOpen] = useState(false);
   const [panel, setPanel] = useState<
-    "quick" | "settings" | "notifications" | "help" | "module" | null
+    | "quick"
+    | "settings"
+    | "notifications"
+    | "help"
+    | "module"
+    | "mode"
+    | "tabs"
+    | null
   >(null);
   const [createKind, setCreateKind] = useState<Kind | null>(null),
     [detailId, setDetailId] = useState<string | null>(null);
   const [notice, setNotice] = useState(""),
     [info, setInfo] = useState(""),
-    [query, setQuery] = useState("");
+    [query, setQuery] = useState(""),
+    [workMode, setWorkMode] = useState("Kế toán");
   const href: ReferenceHref = (path, extra) =>
     `${path}?${new URLSearchParams({ company: company.id, period, ...extra })}`;
   const detail = items.find((t) => t.id === detailId),
@@ -153,7 +173,10 @@ function ReferenceWorkspace() {
         e.preventDefault();
         document.getElementById("reference-search")?.focus();
       }
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setQuery("");
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -239,6 +262,13 @@ function ReferenceWorkspace() {
             <option value="management-2026">Dữ liệu quản trị 2026</option>
           </select>
         </label>
+        <label className="ref-branch">
+          <span className="sr-only">Chi nhánh, đơn vị</span>
+          <select aria-label="Chi nhánh, đơn vị" defaultValue="head-office">
+            <option value="head-office">Trụ sở chính</option>
+            <option value="hcm">Chi nhánh TP. Hồ Chí Minh</option>
+          </select>
+        </label>
         <label className="ref-period">
           <span className="ref-dot" />
           <select
@@ -252,24 +282,40 @@ function ReferenceWorkspace() {
           </select>
         </label>
         <div className="ref-header-tools">
-          <form
-            className="ref-global-search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate(href("/ledger/transactions", { q: query }));
-              setQuery("");
-            }}
-          >
-            <Search size={13} />
-            <input
-              id="reference-search"
-              aria-label="Tìm kiếm toàn bộ chứng từ"
-              placeholder="Tìm kiếm thông minh…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+          <div className="ref-search-shell">
+            <form
+              className="ref-global-search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate(href("/ledger/transactions", { q: query }));
+                setQuery("");
+              }}
+            >
+              <Search size={13} />
+              <input
+                id="reference-search"
+                aria-label="Tìm kiếm thông minh"
+                placeholder="Tìm kiếm thông minh…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <span>AI</span>
+            </form>
+            <SmartSearchResults
+              query={query}
+              onSelect={(label) => {
+                setQuery("");
+                setNotice(`Đã mở ${label}.`);
+              }}
             />
-            <span>AI</span>
-          </form>
+          </div>
+          <button
+            className="ref-work-mode"
+            aria-label={`Chế độ làm việc: ${workMode}`}
+            onClick={() => setPanel("mode")}
+          >
+            {workMode} <ChevronDown size={11} />
+          </button>
           <button className="ref-help" onClick={() => setPanel("help")}>
             <span>▶</span> Hướng dẫn
           </button>
@@ -333,9 +379,7 @@ function ReferenceWorkspace() {
           onClick={() => setMobileOpen(false)}
         />
       )}
-      <aside
-        className={`ref-sidebar ${mobileOpen ? "open" : ""}`}
-      >
+      <aside className={`ref-sidebar ${mobileOpen ? "open" : ""}`}>
         <div className="ref-quick">
           <button onClick={() => setPanel("quick")} aria-label="Thêm nhanh">
             <Plus size={13} />
@@ -381,7 +425,9 @@ function ReferenceWorkspace() {
         </button>
       </aside>
       <main id="reference-main" className="ref-main" tabIndex={-1}>
-        <h1 className="sr-only">{module?.label || "Không tìm thấy"}</h1>
+        <span className="sr-only">
+          Phân hệ {module?.label || "Không tìm thấy"}
+        </span>
         <div className="ref-module-bar">
           <button
             className="ref-module-menu"
@@ -414,7 +460,7 @@ function ReferenceWorkspace() {
             <button
               className="ref-icon"
               aria-label="Tùy chọn hiển thị"
-              onClick={() => infoAction("Tùy chọn hiển thị")}
+              onClick={() => setPanel("tabs")}
             >
               <SlidersHorizontal size={17} />
             </button>
@@ -427,6 +473,16 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
+        ) : moduleId === "purchases" && tab === "orders" ? (
+          <PurchaseOrdersWorkspace notify={setNotice} />
+        ) : moduleId === "purchases" && tab === "invoice-processing" ? (
+          <IncomingInvoiceWorkspace notify={setNotice} />
+        ) : moduleId === "reports" ? (
+          <ReportCenterWorkspace notify={setNotice} />
+        ) : moduleId === "directory" ? (
+          <DirectoryWorkspace notify={setNotice} />
+        ) : moduleId === "opening" ? (
+          <OpeningBalanceWorkspace notify={setNotice} />
         ) : ["cash", "bank", "purchases", "sales"].includes(moduleId) &&
           tab === "process" ? (
           <ReferenceProcess
@@ -435,8 +491,8 @@ function ReferenceWorkspace() {
             create={create}
             onInfo={infoAction}
           />
-        ) : ["transactions", "orders", "invoices"].includes(tab) &&
-          ["cash", "bank", "purchases", "sales", "invoices", "ledger"].includes(
+        ) : tab === "transactions" &&
+          ["cash", "bank", "purchases", "sales", "ledger"].includes(
             moduleId,
           ) ? (
           <ReferenceTransactions
@@ -450,32 +506,20 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "inventory" && tab === "production-orders" ? (
           <InventoryProductionOrders onInfo={infoAction} notify={setNotice} />
-        ) : moduleId === "reports" || tab === "reports" || tab === "chart" ? (
-          <div className="ref-report-page">
-            <Reports items={scoped} notify={setNotice} />
-          </div>
         ) : moduleId === "tax" ? (
           <div className="ref-report-page">
             <TaxPage href={href} />
           </div>
         ) : (
-          <div className="ref-unavailable">
-            <Bot size={42} strokeWidth={1} />
-            <h2>{tabs.find((t) => t[0] === tab)?.[1] || module?.label}</h2>
-            <p>Chưa có dữ liệu nghiệp vụ cho chức năng này.</p>
-            <button
-              className="ref-button"
-              onClick={() =>
-                infoAction(
-                  tabs.find((t) => t[0] === tab)?.[1] ||
-                    module?.label ||
-                    "Chức năng",
-                )
-              }
-            >
-              Xem thông tin
-            </button>
-          </div>
+          <ConfiguredListWorkspace
+            moduleId={moduleId}
+            title={
+              tabs.find((t) => t[0] === tab)?.[1] ||
+              module?.label ||
+              "Danh sách nghiệp vụ"
+            }
+            notify={setNotice}
+          />
         )}
       </main>
       {panel === "settings" && (
@@ -501,7 +545,21 @@ function ReferenceWorkspace() {
           </div>
         </Modal>
       )}
-      {panel && panel !== "settings" && (
+      {panel === "mode" && (
+        <WorkModeModal
+          current={workMode}
+          onChange={setWorkMode}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === "tabs" && (
+        <TabSettingsModal
+          moduleName={module?.label || "Kế toán"}
+          tabs={tabs}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel && !["settings", "mode", "tabs"].includes(panel) && (
         <Modal
           title={
             panel === "quick"

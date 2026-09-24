@@ -16,6 +16,7 @@ import {
   List,
   ListChecks,
   PlugZap,
+  ChartSpline,
 } from "lucide-react";
 export const referenceNav = [
   { id: "overview", label: "Tổng quan", icon: ChartPie },
@@ -32,6 +33,7 @@ export const referenceNav = [
   { id: "cost", label: "Giá thành", icon: Tags },
   { id: "ledger", label: "Tổng hợp", icon: BookOpen },
   { id: "budget", label: "Ngân sách", icon: NotebookPen },
+  { id: "analysis", label: "Phân tích tài chính", icon: ChartSpline },
   { id: "reports", label: "Báo cáo", icon: ChartNoAxesCombined },
   { id: "directory", label: "Danh mục", icon: List },
   { id: "opening", label: "Số dư ban đầu", icon: ListChecks },
@@ -168,6 +170,48 @@ export const referenceTabs: Record<string, [string, string][]> = {
     ["currency", "Đánh giá ngoại tệ"],
     ["period-close", "Khóa sổ"],
     ["statements", "Lập báo cáo tài chính"],
+  ],
+  budget: [
+    ["overview", "Tổng quan ngân sách"],
+    ["planning", "Lập ngân sách"],
+    ["approval", "Phê duyệt"],
+    ["execution", "Thực hiện ngân sách"],
+    ["variance", "Phân tích chênh lệch"],
+    ["reports", "Báo cáo"],
+  ],
+  analysis: [
+    ["overview", "Tổng quan tài chính"],
+    ["profitability", "Doanh thu và lợi nhuận"],
+    ["cashflow", "Dòng tiền"],
+    ["working-capital", "Vốn lưu động"],
+    ["ratios", "Chỉ số tài chính"],
+    ["forecast", "Dự báo"],
+  ],
+  reports: [
+    ["library", "Thư viện báo cáo"],
+    ["favorites", "Đã ghim"],
+    ["recent", "Gần đây"],
+    ["templates", "Mẫu của tôi"],
+  ],
+  directory: [
+    ["partners", "Đối tượng"],
+    ["items", "Hàng hóa, dịch vụ"],
+    ["organization", "Tổ chức"],
+    ["accounting", "Danh mục kế toán"],
+  ],
+  opening: [
+    ["accounts", "Số dư tài khoản"],
+    ["receivables", "Công nợ phải thu"],
+    ["payables", "Công nợ phải trả"],
+    ["inventory", "Tồn kho"],
+    ["assets", "Tài sản & CCDC"],
+  ],
+  connections: [
+    ["overview", "Tổng quan vay vốn"],
+    ["applications", "Hồ sơ vay"],
+    ["offers", "Đề nghị tài trợ"],
+    ["contracts", "Khoản vay"],
+    ["repayment", "Lịch trả nợ"],
   ],
 };
 export const reportNames: Record<string, string[]> = {
