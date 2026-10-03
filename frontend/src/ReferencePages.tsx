@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   BadgeDollarSign,
@@ -211,7 +211,7 @@ export function ReferenceProcess({
                     `/${moduleId}/${bank ? "reconciliation" : "inventory"}`,
                   )}
                 >
-                  <BusinessIcon type="check" />
+                  <BusinessIcon type="check" text={bank ? "ĐC" : "KK"} />
                   <span>{bank ? "Đối chiếu ngân hàng" : "Kiểm kê quỹ"}</span>
                 </Link>
               </>
@@ -288,7 +288,7 @@ export function ReferenceProcess({
     </div>
   );
 }
-function BusinessIcon({ type }: { type: string }) {
+function BusinessIcon({ type, text }: { type: string; text?: string }) {
   const Icon =
     type === "check"
       ? ClipboardCheck
@@ -302,9 +302,15 @@ function BusinessIcon({ type }: { type: string }) {
   return (
     <span className={`ref-business-icon ${type}`}>
       <span className="ref-document-sheet">
-        {type === "receive" || type === "pay" ? (
+        {type === "receive" || type === "pay" || type === "check" ? (
           <>
-            <b>{type === "receive" ? "THU" : "CHI"}</b>
+            <b>
+              {type === "receive"
+                ? "THU"
+                : type === "pay"
+                  ? "CHI"
+                  : text || "KK"}
+            </b>
             <i />
             <i />
             <i />
@@ -315,7 +321,7 @@ function BusinessIcon({ type }: { type: string }) {
       </span>
       <span className="ref-gold-icon">
         {type === "check" ? (
-          <Calculator size={17} />
+          <ClipboardCheck size={15} />
         ) : type === "box" ? (
           <Package size={18} />
         ) : (

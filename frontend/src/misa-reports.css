@@ -1,0 +1,331 @@
+/* MISA Report Center (Báo cáo) Styles - Pixel-perfect match to Screenshot */
+
+.misa-reports-workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: inherit;
+  overflow-y: auto;
+}
+
+/* Header bar with subtabs and right announcement banner */
+.misa-reports-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-height: 44px;
+}
+
+.misa-reports-subtabs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 100%;
+}
+
+.misa-reports-subtab-btn {
+  background: transparent;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #475569;
+  padding: 12px 2px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+
+.misa-reports-subtab-btn:hover {
+  color: #00a862;
+}
+
+.misa-reports-subtab-btn.active {
+  color: #00a862;
+  font-weight: 600;
+}
+
+.misa-reports-subtab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #00a862;
+  border-radius: 2px 2px 0 0;
+}
+
+.misa-reports-badge-orange {
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 14px;
+}
+
+/* Right Announcement Banner */
+.misa-reports-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #334155;
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.misa-reports-banner:hover {
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.misa-reports-banner-tag {
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.misa-reports-banner-link {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+/* Toolbar */
+.misa-reports-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.misa-reports-search-wrap {
+  position: relative;
+  width: 280px;
+}
+
+.misa-reports-search-wrap input {
+  width: 100%;
+  height: 32px;
+  padding: 0 12px 0 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.misa-reports-search-wrap input:focus {
+  border-color: #00a862;
+  box-shadow: 0 0 0 2px rgba(0, 168, 98, 0.1);
+}
+
+.misa-reports-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.misa-reports-ai-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6366f1;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.misa-reports-ai-link:hover {
+  text-decoration: underline;
+}
+
+.misa-reports-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 2-Pane Body */
+.misa-reports-body {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 180px);
+}
+
+/* Left Category Sidebar */
+.misa-reports-categories {
+  width: 210px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.misa-reports-cat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.misa-reports-cat-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.misa-reports-cat-btn.active {
+  background: #e6f7ef;
+  color: #00a862;
+  font-weight: 600;
+}
+
+/* Right Reports Grid */
+.misa-reports-content {
+  flex: 1;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.misa-reports-content-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+.misa-reports-grid-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.misa-reports-grid-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.misa-reports-grid-col:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.misa-reports-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.misa-reports-item-row:hover {
+  background: #f8fafc;
+}
+
+.misa-reports-item-row:last-child {
+  border-bottom: none;
+}
+
+.misa-reports-item-link {
+  font-size: 13.5px;
+  color: #1e293b;
+  cursor: pointer;
+  text-decoration: none;
+  flex: 1;
+  padding-right: 12px;
+  transition: color 0.15s;
+}
+
+.misa-reports-item-link:hover {
+  color: #00a862;
+}
+
+.misa-reports-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.misa-reports-action-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  transition: all 0.15s;
+}
+
+.misa-reports-action-icon:hover {
+  color: #00a862;
+  background: #f1f5f9;
+}
+
+.misa-reports-star-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  transition: all 0.15s;
+}
+
+.misa-reports-star-btn.starred {
+  color: #00a862;
+}
+
+.misa-reports-star-btn:hover {
+  transform: scale(1.1);
+}

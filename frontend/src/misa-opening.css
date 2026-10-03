@@ -1,0 +1,443 @@
+/* MISA Opening Balances (Nhập số dư ban đầu) Styles */
+
+.misa-opening-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: #f1f5f9;
+  color: #1e293b;
+  font-family: inherit;
+  overflow-y: auto;
+}
+
+/* Hub View */
+.misa-opening-hub {
+  padding: 24px 32px 60px;
+  display: flex;
+  flex-direction: column;
+  max-width: 1500px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.misa-opening-hub-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 24px 0;
+}
+
+.misa-opening-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1300px) {
+  .misa-opening-tiles-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 850px) {
+  .misa-opening-tiles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.misa-opening-tile {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 30px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 160px;
+}
+
+.misa-opening-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: #00a862;
+}
+
+.misa-opening-tile-icon {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.misa-opening-tile-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+/* Detail Top Header */
+.misa-opening-detail-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.misa-opening-detail-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.misa-opening-detail-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.misa-opening-catalog-link {
+  font-size: 12.5px;
+  color: #00a862;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.misa-opening-catalog-link:hover {
+  text-decoration: underline;
+}
+
+.misa-opening-detail-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.misa-opening-info-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.misa-opening-info-link {
+  color: #0284c7;
+  text-decoration: none;
+}
+
+.misa-opening-info-link:hover {
+  text-decoration: underline;
+}
+
+.misa-opening-help-btn {
+  background: transparent;
+  border: none;
+  font-size: 12.5px;
+  color: #00a862;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.misa-opening-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.misa-opening-close-btn:hover {
+  color: #0f172a;
+}
+
+/* Detail Landing View */
+.misa-opening-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
+  padding: 40px 20px 80px;
+  background: #ffffff;
+  position: relative;
+}
+
+.misa-opening-illustration {
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.misa-opening-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: center;
+  max-width: 680px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.misa-opening-landing-btns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.misa-opening-btn-primary {
+  height: 36px;
+  padding: 0 24px;
+  background: #00a862;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 168, 98, 0.2);
+  transition: all 0.15s;
+}
+
+.misa-opening-btn-primary:hover {
+  background: #009355;
+}
+
+.misa-opening-btn-secondary {
+  height: 36px;
+  padding: 0 20px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.misa-opening-btn-secondary:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.misa-opening-tooltip-bubble {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 10px;
+  background: linear-gradient(135deg, #38bdf8, #34d399);
+  color: #064e3b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.misa-opening-tooltip-bubble::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #38bdf8 transparent;
+}
+
+.misa-opening-bottom-btn {
+  position: absolute;
+  bottom: 24px;
+  height: 32px;
+  padding: 0 18px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.misa-opening-bottom-btn:hover {
+  border-color: #00a862;
+  color: #00a862;
+}
+
+/* Modals */
+.misa-opening-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.misa-opening-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 620px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.misa-opening-modal.large {
+  max-width: 1040px;
+  width: 95vw;
+  max-height: 90vh;
+}
+
+.misa-opening-modal-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.misa-opening-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.misa-opening-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.misa-opening-modal-footer {
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Form controls */
+.misa-opening-form-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.misa-opening-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.misa-opening-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.misa-opening-input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+}
+
+.misa-opening-input:focus {
+  border-color: #00a862;
+}
+
+.misa-opening-select {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.misa-opening-collapsible-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.misa-opening-collapsible-title {
+  padding: 8px 14px;
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.misa-opening-table-mini {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.misa-opening-table-mini th {
+  padding: 8px 10px;
+  background: #eef2f6;
+  border-bottom: 1px solid #cbd5e1;
+  color: #334155;
+  font-weight: 600;
+  text-align: left;
+}
+
+.misa-opening-table-mini td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f1f5f9;
+}

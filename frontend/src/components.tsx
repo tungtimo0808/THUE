@@ -31,12 +31,14 @@ export function Modal({
   onClose,
   wide = false,
   drawer = false,
+  className = "",
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
   drawer?: boolean;
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -47,7 +49,7 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      className={`modal ${wide ? "wide" : ""} ${drawer ? "drawer" : ""}`}
+      className={`modal ${wide ? "wide" : ""} ${drawer ? "drawer" : ""} ${className}`}
       aria-labelledby="dialog-title"
       onCancel={(e) => {
         e.preventDefault();

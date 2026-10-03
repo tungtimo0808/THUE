@@ -8,20 +8,20 @@
 @import "@fontsource/be-vietnam-pro/vietnamese-700.css";
 :root {
   font-family: "Be Vietnam Pro", sans-serif;
-  color: #2f3423;
-  background: #ffe8d6;
+  color: #1e293b;
+  background: #f8fafc;
   font-synthesis: none;
   font-size: 13px;
   font-weight: 400;
   line-height: 1.6;
-  --navy: #354020;
-  --primary: #606c38;
-  --canvas: #ffe8d6;
-  --surface: #fffaf6;
-  --ink: #2f3423;
-  --muted: #667050;
-  --border: #e3d3c6;
-  --teal: #606c38;
+  --navy: #0f172a;
+  --primary: #00a862;
+  --canvas: #f8fafc;
+  --surface: #ffffff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --teal: #00a862;
   color-scheme: light;
 }
 * {
@@ -128,6 +128,73 @@ select {
 input::placeholder {
   color: #586980;
 }
+
+/* Ensure borderless inputs inside custom containers, bordered wrappers, and combo boxes fill their container */
+div[style*="border"] > input:not([type="checkbox"]):not([type="radio"]):not([type="button"]),
+div[style*="border"] > select,
+.misa-combo-input input,
+.misa-voucher-combo-input input {
+  height: 100% !important;
+  min-height: 26px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+}
+
+.misa-voucher-combo-input {
+  height: 32px !important;
+}
+
+/* Ensure table inputs never stretch beyond 28px */
+table input:not([type="checkbox"]):not([type="radio"]):not([type="button"]),
+table select {
+  max-height: 28px !important;
+  box-sizing: border-box !important;
+}
+
+/* Remove default browser arrow on selects inside custom bordered wrappers with custom icons or sibling chevrons */
+.misa-purchase-modal-window div[style*="border"] > select,
+.misa-modal-backdrop div[style*="border"] > select,
+.misa-modal-card div[style*="border"] > select,
+.reference-app div[style*="border"] > select,
+.ref-nested-workspace div[style*="border"] > select,
+div:has(svg) > select,
+label:has(svg) > select,
+select:has(+ svg),
+select:has(~ svg),
+.misa-select-wrapper select,
+.misa-combo-input select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+/* Ensure standalone modal form inputs & selects have strict 28px uniform height and reset 10px padding */
+.misa-purchase-modal-window input:not([type="checkbox"]):not([type="radio"]):not(table input),
+.misa-purchase-modal-window select:not(table select):not(.misa-pagination-select),
+.misa-modal-backdrop input:not([type="checkbox"]):not([type="radio"]):not(table input),
+.misa-modal-backdrop select:not(table select):not(.misa-pagination-select) {
+  box-sizing: border-box !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.misa-purchase-modal-window div[style*="height: 28"] > input:not([type="checkbox"]):not([type="radio"]),
+.misa-purchase-modal-window div[style*="height: 28px"] > input:not([type="checkbox"]):not([type="radio"]),
+.misa-purchase-modal-window div[style*="height: 28"] > select,
+.misa-purchase-modal-window div[style*="height: 28px"] > select,
+.misa-modal-backdrop div[style*="height: 28"] > input:not([type="checkbox"]):not([type="radio"]),
+.misa-modal-backdrop div[style*="height: 28px"] > input:not([type="checkbox"]):not([type="radio"]),
+.misa-modal-backdrop div[style*="height: 28"] > select,
+.misa-modal-backdrop div[style*="height: 28px"] > select {
+  height: 100% !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -335,3 +402,26 @@ table caption {
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes misaSlideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes misaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
