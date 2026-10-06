@@ -2591,6 +2591,7 @@ export function SaleReturnModal({
             }}
           >
             <table
+              className="misa-table"
               style={{
                 width: "100%",
                 borderCollapse: "collapse",
@@ -2603,10 +2604,10 @@ export function SaleReturnModal({
                 {tableTab === "items" && (
                   <tr
                     style={{
-                      background: "#e8f2ec",
-                      borderBottom: "1px solid #cbd5e1",
-                      height: 32,
-                      color: "#1e293b",
+                      background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)",
+                      borderBottom: "2px solid #00a862",
+                      height: 34,
+                      color: "#065f46",
                       fontWeight: 600,
                     }}
                   >
@@ -2784,10 +2785,10 @@ export function SaleReturnModal({
                 {tableTab === "cost" && (
                   <tr
                     style={{
-                      background: "#e8f2ec",
-                      borderBottom: "1px solid #cbd5e1",
-                      height: 32,
-                      color: "#1e293b",
+                      background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)",
+                      borderBottom: "2px solid #00a862",
+                      height: 34,
+                      color: "#065f46",
                       fontWeight: 600,
                     }}
                   >
@@ -2833,11 +2834,12 @@ export function SaleReturnModal({
                 {/* Summary / Total row directly under header */}
                 <tr
                   style={{
-                    background: "#f8fafc",
+                    background: "linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%)",
+                    borderTop: "2px solid #a7f3d0",
                     borderBottom: "1px solid #cbd5e1",
                     fontWeight: 600,
-                    height: 30,
-                    color: "#1e293b",
+                    height: 32,
+                    color: "#065f46",
                   }}
                 >
                   <td style={{ textAlign: "center", borderRight: "1px solid #cbd5e1" }}></td>

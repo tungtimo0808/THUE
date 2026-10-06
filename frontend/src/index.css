@@ -148,8 +148,12 @@ div[style*="border"] > select,
 
 /* Ensure table inputs never stretch beyond 28px */
 table input:not([type="checkbox"]):not([type="radio"]):not([type="button"]),
-table select {
+table select,
+.misa-table select {
   max-height: 28px !important;
+  height: 26px !important;
+  padding: 0 4px !important;
+  line-height: 24px !important;
   box-sizing: border-box !important;
 }
 
@@ -423,5 +427,87 @@ table caption {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* MISA Enterprise Data Tables & Modal Styling */
+.misa-table thead tr,
+.misa-modal-backdrop table thead tr,
+.misa-purchase-modal-window table thead tr {
+  background: linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%) !important;
+  border-bottom: 2px solid #00a862 !important;
+}
+
+.misa-table thead th,
+.misa-modal-backdrop table thead th,
+.misa-purchase-modal-window table thead th {
+  background: transparent !important;
+  color: #065f46 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 6px 8px !important;
+  height: 34px !important;
+  white-space: nowrap !important;
+  border-right: 1px solid #bbf7d0 !important;
+  border-bottom: 2px solid #00a862 !important;
+}
+
+.misa-table thead th:last-child,
+.misa-modal-backdrop table thead th:last-child,
+.misa-purchase-modal-window table thead th:last-child {
+  border-right: none !important;
+}
+
+.misa-table tbody tr,
+.misa-modal-backdrop table tbody tr,
+.misa-purchase-modal-window table tbody tr {
+  transition: background-color 0.12s ease !important;
+}
+
+.misa-table tbody tr:hover,
+.misa-modal-backdrop table tbody tr:hover,
+.misa-purchase-modal-window table tbody tr:hover {
+  background-color: #f0fdf4 !important;
+}
+
+.misa-table tbody tr:hover td,
+.misa-modal-backdrop table tbody tr:hover td,
+.misa-purchase-modal-window table tbody tr:hover td {
+  background-color: transparent !important;
+}
+
+.misa-table tbody td,
+.misa-modal-backdrop table tbody td:not([style*="height"]),
+.misa-purchase-modal-window table tbody td:not([style*="height"]) {
+  height: 32px !important;
+  padding: 3px 6px !important;
+  font-size: 12.5px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.misa-table tbody tr.misa-total-row,
+.misa-modal-backdrop table tbody tr.misa-total-row,
+.misa-purchase-modal-window table tbody tr.misa-total-row,
+.misa-table tfoot tr,
+.misa-modal-backdrop table tfoot tr {
+  background: linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%) !important;
+  border-top: 2px solid #86efac !important;
+  font-weight: 700 !important;
+}
+
+.misa-table tbody tr.misa-total-row td,
+.misa-modal-backdrop table tbody tr.misa-total-row td,
+.misa-table tfoot td,
+.misa-modal-backdrop table tfoot td {
+  background: transparent !important;
+  border-right: 1px solid #bbf7d0 !important;
+}
+
+/* Card hover micro-interaction */
+.misa-card-hover {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+.misa-card-hover:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
 }
 

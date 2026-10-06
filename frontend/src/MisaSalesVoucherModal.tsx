@@ -552,7 +552,7 @@ export function SaleVoucherModal({
           maxWidth: 1560,
           height: "min(930px, 96vh)",
           maxHeight: "96vh",
-          background: "#ffffff",
+          background: "#e9ecef",
           borderRadius: 6,
           display: "flex",
           flexDirection: "column",
@@ -849,11 +849,11 @@ export function SaleVoucherModal({
         <div
           style={{
             padding: "8px 20px 0 20px",
-            borderBottom: "1px solid #e2e8f0",
+            borderBottom: "1px solid #cbd5e1",
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "space-between",
-            background: "#ffffff",
+            background: "#f1f5f9",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1060,11 +1060,11 @@ export function SaleVoucherModal({
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "14px 20px",
+            padding: "14px 18px",
             display: "flex",
             flexDirection: "column",
             gap: 12,
-            background: "#ffffff",
+            background: "#e9ecef",
           }}
         >
           {/* =============================================================== */}
@@ -1073,15 +1073,26 @@ export function SaleVoucherModal({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 220px",
-              gap: 20,
-              alignItems: "start",
+              gridTemplateColumns: "1fr 230px",
+              gap: 12,
+              alignItems: "stretch",
             }}
           >
             {/* ------------------------------------------------------------- */}
             {/* LEFT COLUMN: DYNAMIC BASED ON voucherTab & collectionType      */}
             {/* ------------------------------------------------------------- */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                background: "#ffffff",
+                borderRadius: 6,
+                padding: "14px 16px",
+                border: "1px solid #d1d5db",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+              }}
+            >
               {/* TAB: CHỨNG TỪ GHI NỢ / PHIẾU THU (main) */}
               {voucherTab === "main" && (
                 <>
@@ -2459,7 +2470,21 @@ export function SaleVoucherModal({
             {/* ------------------------------------------------------------- */}
             {/* RIGHT COLUMN: VOUCHER METADATA BASED ON voucherTab            */}
             {/* ------------------------------------------------------------- */}
-            <div style={{ width: 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div
+              style={{
+                width: 230,
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                background: "#ffffff",
+                borderRadius: 6,
+                padding: "14px 16px",
+                border: "1px solid #d1d5db",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+                boxSizing: "border-box",
+              }}
+            >
               {voucherTab !== "invoice" ? (
                 <>
                   {/* Row 1: Ngày hạch toán */}
@@ -2647,9 +2672,18 @@ export function SaleVoucherModal({
           </div>
 
           {/* =============================================================== */}
-          {/* 4. DETAIL TABLE TABS & CONTROLS                                 */}
+          {/* 4. DETAIL TABLE TABS & CONTROLS (WHITE CARD PANEL)              */}
           {/* =============================================================== */}
-          <div style={{ marginTop: 6 }}>
+          <div
+            style={{
+              marginTop: 2,
+              background: "#ffffff",
+              borderRadius: 6,
+              padding: "12px 16px",
+              border: "1px solid #d1d5db",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
             <div
               style={{
                 display: "flex",
@@ -2771,40 +2805,40 @@ export function SaleVoucherModal({
                   position: "relative",
                 }}
               >
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
+                <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                   <thead>
                     {isService ? (
-                      <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
-                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
-                        <th style={{ width: 110, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid #00a862" }}>
+                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
+                        <th style={{ width: 110, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            <Pin size={12} style={{ color: "#64748b" }} />
+                            <Pin size={12} style={{ color: "#059669" }} />
                             <span>Mã hàng</span>
                           </div>
                         </th>
-                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Tên dịch vụ
                         </th>
                         {showAccounts && (
                           <>
-                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                               {collectionType === "collected_now" ? "TK tiền" : "TK công nợ"}
                             </th>
-                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                               TK doanh thu
                             </th>
                           </>
                         )}
-                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           ĐVT
                         </th>
-                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Số lượng
                         </th>
-                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Đơn giá
                         </th>
-                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Thành tiền
                         </th>
                         <th
@@ -2813,44 +2847,46 @@ export function SaleVoucherModal({
                           style={{
                             width: 90,
                             textAlign: "right",
-                            borderRight: "1px solid #cbd5e1",
-                            padding: "4px 8px",
+                            borderRight: "1px solid #bbf7d0",
+                            padding: "6px 8px",
                             cursor: "help",
                             position: "relative",
+                            fontWeight: 600,
+                            color: "#065f46",
                           }}
                         >
                           % Thuế GTGT
                         </th>
-                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Tiền thuế GTGT
                         </th>
-                        <th style={{ width: 36, textAlign: "center", padding: "4px" }}></th>
+                        <th style={{ width: 36, textAlign: "center", padding: "6px 4px" }}></th>
                       </tr>
                     ) : (
-                      <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
-                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
-                        <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid #00a862" }}>
+                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
+                        <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            <Pin size={12} style={{ color: "#64748b" }} />
+                            <Pin size={12} style={{ color: "#059669" }} />
                             <span>Mã hàng</span>
                           </div>
                         </th>
-                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Tên hàng
                         </th>
-                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                             <span>ĐVT</span>
-                            <FileText size={11} style={{ color: "#00b06b" }} />
+                            <FileText size={11} style={{ color: "#059669" }} />
                           </div>
                         </th>
-                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Số lượng
                         </th>
 
                         {/* Type 1: Chiết khấu thương mại */}
                         {saleType === 1 && (
-                          <th style={{ width: 130, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px 6px" }}>
+                          <th style={{ width: 130, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 6px", fontWeight: 600, color: "#065f46" }}>
                             Chiết khấu thương mại
                           </th>
                         )}
@@ -2860,30 +2896,30 @@ export function SaleVoucherModal({
                           <>
                             {saleType === 1 && (
                               <>
-                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                                   {collectionType === "collected_now" ? "TK tiền" : "TK công nợ"}
                                 </th>
-                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                                   TK doanh thu
                                 </th>
                               </>
                             )}
                             {saleType === 2 && (
                               <>
-                                <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                                <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                                   {collectionType === "collected_now" ? "TK tiền/ chi phí" : "TK công nợ/ chi phí"}
                                 </th>
-                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                                   TK doanh thu
                                 </th>
                               </>
                             )}
                             {(saleType === 3 || saleType === 4) && (
                               <>
-                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                                   TK nợ
                                 </th>
-                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                                   TK có
                                 </th>
                               </>
@@ -2891,10 +2927,10 @@ export function SaleVoucherModal({
                           </>
                         )}
 
-                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Đơn giá
                         </th>
-                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           Thành tiền
                         </th>
 
@@ -2907,41 +2943,43 @@ export function SaleVoucherModal({
                               style={{
                                 width: 90,
                                 textAlign: "right",
-                                borderRight: "1px solid #cbd5e1",
-                                padding: "4px 8px",
+                                borderRight: "1px solid #bbf7d0",
+                                padding: "6px 8px",
                                 cursor: "help",
                                 position: "relative",
+                                fontWeight: 600,
+                                color: "#065f46",
                               }}
                             >
                               % Thuế GTGT
                             </th>
-                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                               Tiền thuế GTGT
                             </th>
                           </>
                         )}
 
                         {(saleType === 3 || saleType === 4) && (
-                          <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                          <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                             % Thuế GTGT
                           </th>
                         )}
 
                         {saleType === 2 && (
                           <>
-                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                               Giá tính thuế XK
                             </th>
-                            <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                            <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                               % thuế XK
                             </th>
-                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
+                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                               Tiền thuế XK
                             </th>
                           </>
                         )}
 
-                        <th style={{ width: 36, textAlign: "center", padding: "4px" }}></th>
+                        <th style={{ width: 36, textAlign: "center", padding: "6px 4px" }}></th>
                       </tr>
                     )}
                   </thead>
@@ -2967,7 +3005,7 @@ export function SaleVoucherModal({
                               value={it.code}
                               onChange={(e) => handleItemChange(idx, "code", e.target.value)}
                               list={`voucher-catalog-items-${idx}`}
-                              style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
+                              style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#0284c7" }}
                             />
                             <datalist id={`voucher-catalog-items-${idx}`}>
                               {SAMPLE_SALE_ITEMS.map((si) => (
@@ -2996,7 +3034,7 @@ export function SaleVoucherModal({
                                     type="text"
                                     value={it.debitAccount}
                                     onChange={(e) => handleItemChange(idx, "debitAccount", e.target.value)}
-                                    style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
+                                    style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#047857" }}
                                   />
                                 </div>
                               </td>
@@ -3005,7 +3043,7 @@ export function SaleVoucherModal({
                                   type="text"
                                   value={it.creditAccount}
                                   onChange={(e) => handleItemChange(idx, "creditAccount", e.target.value)}
-                                  style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
+                                  style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#047857" }}
                                 />
                               </td>
                             </>
@@ -3027,7 +3065,7 @@ export function SaleVoucherModal({
                               type="text"
                               value={it.quantity === 0 ? "0,00" : it.quantity.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               onChange={(e) => handleItemChange(idx, "quantity", e.target.value.replace(",", "."))}
-                              style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5 }}
+                              style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5, fontWeight: 600, color: "#0f172a" }}
                             />
                           </td>
 
@@ -3045,7 +3083,7 @@ export function SaleVoucherModal({
                           </td>
 
                           {/* Thành tiền */}
-                          <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right" }}>
+                          <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#047857" }}>
                             {it.amount === 0 ? "0" : formatVND(it.amount)}
                           </td>
 
@@ -3066,7 +3104,7 @@ export function SaleVoucherModal({
                           </td>
 
                           {/* Tiền thuế GTGT */}
-                          <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right" }}>
+                          <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#0369a1" }}>
                             {it.vatAmount === 0 ? "0" : formatVND(it.vatAmount)}
                           </td>
 
@@ -3112,7 +3150,7 @@ export function SaleVoucherModal({
                             value={it.code}
                             onChange={(e) => handleItemChange(idx, "code", e.target.value)}
                             list={`voucher-catalog-items-${idx}`}
-                            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
+                            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#0284c7" }}
                           />
                           <datalist id={`voucher-catalog-items-${idx}`}>
                             {SAMPLE_SALE_ITEMS.map((si) => (
@@ -3147,7 +3185,7 @@ export function SaleVoucherModal({
                             type="text"
                             value={it.quantity === 0 ? "0,00" : Number(it.quantity).toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             onChange={(e) => handleItemChange(idx, "quantity", e.target.value.replace(",", "."))}
-                            style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5 }}
+                            style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5, fontWeight: 600, color: "#0f172a" }}
                           />
                         </td>
 
@@ -3171,7 +3209,7 @@ export function SaleVoucherModal({
                                 type="text"
                                 value={it.debitAccount}
                                 onChange={(e) => handleItemChange(idx, "debitAccount", e.target.value)}
-                                style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
+                                style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#047857" }}
                               />
                             </td>
                             <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px" }}>
@@ -3179,7 +3217,7 @@ export function SaleVoucherModal({
                                 type="text"
                                 value={it.creditAccount}
                                 onChange={(e) => handleItemChange(idx, "creditAccount", e.target.value)}
-                                style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
+                                style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#047857" }}
                               />
                             </td>
                           </>
@@ -3199,7 +3237,7 @@ export function SaleVoucherModal({
                         </td>
 
                         {/* Thành tiền */}
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right" }}>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#047857" }}>
                           {it.amount === 0 ? "0" : formatVND(it.amount)}
                         </td>
 
@@ -3219,7 +3257,7 @@ export function SaleVoucherModal({
                                 <option value="KCT">KCT</option>
                               </select>
                             </td>
-                            <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right" }}>
+                            <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#0369a1" }}>
                               {it.vatAmount === 0 ? "0" : formatVND(it.vatAmount)}
                             </td>
                           </>
@@ -3292,66 +3330,66 @@ export function SaleVoucherModal({
 
                   {/* SUMMARY ROW (MATCHING SCREENSHOTS) */}
                   {isService ? (
-                    <tr style={{ background: "#f8fafc", fontWeight: 600, height: 30, borderBottom: "1px solid #cbd5e1" }}>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                    <tr className="misa-total-row" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%)", fontWeight: 600, height: 32, borderTop: "2px solid #a7f3d0", borderBottom: "1px solid #cbd5e1" }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
                       {showAccounts && (
                         <>
-                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
                         </>
                       )}
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0f172a" }}>
                         {totalQuantity.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#047857", fontWeight: 700 }}>
                         {totalAmount === 0 ? "0" : formatVND(totalAmount)}
                       </td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0369a1", fontWeight: 700 }}>
                         {totalVat === 0 ? "0" : formatVND(totalVat)}
                       </td>
                       <td></td>
                     </tr>
                   ) : (
-                    <tr style={{ background: "#f8fafc", fontWeight: 600, height: 30, borderBottom: "1px solid #cbd5e1" }}>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                    <tr className="misa-total-row" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%)", fontWeight: 600, height: 32, borderTop: "2px solid #a7f3d0", borderBottom: "1px solid #cbd5e1" }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0f172a" }}>
                         {totalQuantity.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      {saleType === 1 && <td style={{ borderRight: "1px solid #cbd5e1" }}></td>}
+                      {saleType === 1 && <td style={{ borderRight: "1px solid #bbf7d0" }}></td>}
                       {showAccounts && (
                         <>
-                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
                         </>
                       )}
-                      <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                      <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#047857", fontWeight: 700 }}>
                         {totalAmount === 0 ? "0" : formatVND(totalAmount)}
                       </td>
                       {saleType === 1 && (
                         <>
-                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                          <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0369a1", fontWeight: 700 }}>
                             {totalVat === 0 ? "0" : formatVND(totalVat)}
                           </td>
                         </>
                       )}
                       {(saleType === 3 || saleType === 4) && (
-                        <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                        <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
                       )}
                       {saleType === 2 && (
                         <>
-                          <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>0</td>
-                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                          <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
+                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px" }}>0</td>
+                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0369a1", fontWeight: 700 }}>
                             {totalExportTax === 0 ? "0" : formatVND(totalExportTax)}
                           </td>
                         </>
@@ -3390,34 +3428,34 @@ export function SaleVoucherModal({
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", background: "#ffffff" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                   <thead>
-                    <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
-                      <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
-                      <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>Mã hàng</th>
-                      <th style={{ width: 220, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>Tên hàng</th>
-                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>Kho xuất</th>
-                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>TK giá vốn</th>
-                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>TK kho</th>
-                      <th style={{ width: 70, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>ĐVT</th>
-                      <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>Số lượng</th>
-                      <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>Đơn giá vốn</th>
-                      <th style={{ width: 120, textAlign: "right", padding: "4px 8px" }}>Tiền vốn</th>
+                    <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid #00a862" }}>
+                      <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
+                      <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Mã hàng</th>
+                      <th style={{ width: 220, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Tên hàng</th>
+                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Kho xuất</th>
+                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>TK giá vốn</th>
+                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>TK kho</th>
+                      <th style={{ width: 70, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>ĐVT</th>
+                      <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Số lượng</th>
+                      <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Đơn giá vốn</th>
+                      <th style={{ width: 120, textAlign: "right", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Tiền vốn</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((it, idx) => (
-                      <tr key={it.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32 }}>
+                      <tr key={it.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
                         <td style={{ textAlign: "center", borderRight: "1px solid #cbd5e1", color: "#64748b" }}>{idx + 1}</td>
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#0284c7" }}>{it.code || "—"}</td>
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px" }}>{it.name || "—"}</td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#0284c7", fontWeight: 600 }}>{it.code || "—"}</td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#0f172a" }}>{it.name || "—"}</td>
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px" }}>Kho 1561</td>
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px" }}>632</td>
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px" }}>1561</td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#047857", fontWeight: 500 }}>632</td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#047857", fontWeight: 500 }}>1561</td>
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px" }}>{it.unit || "—"}</td>
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right" }}>{it.quantity}</td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 600 }}>{it.quantity}</td>
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right" }}>
                           {formatVND(Math.round(it.unitPrice * 0.7))}
                         </td>
-                        <td style={{ padding: "2px 8px", textAlign: "right", fontWeight: 600 }}>
+                        <td style={{ padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#047857" }}>
                           {formatVND(Math.round(it.amount * 0.7))}
                         </td>
                       </tr>
@@ -3904,74 +3942,76 @@ export function SaleVoucherModal({
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 8,
-                    padding: "12px 14px",
-                    background: "#ffffff",
-                    borderRadius: 4,
+                    gap: 10,
+                    padding: "14px 16px",
+                    background: "#f8fafc",
+                    borderRadius: 6,
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.02)",
                   }}
                 >
                   {isService ? (
                     <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Tổng tiền dịch vụ</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Tổng tiền dịch vụ:</span>
                         <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalAmount === 0 ? "0" : formatVND(totalAmount)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Thuế GTGT</span>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Thuế GTGT:</span>
+                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
-                        <span>Tổng tiền thanh toán</span>
-                        <span style={{ fontWeight: 700, color: "#1e293b" }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
+                        <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
+                        <span style={{ fontWeight: 700, color: "#047857", fontSize: 15 }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
                       </div>
                     </>
                   ) : saleType === 4 ? (
                     <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Tổng tiền hàng</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Tổng tiền hàng:</span>
                         <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalAmount === 0 ? "0" : formatVND(totalAmount)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Thuế GTGT</span>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Thuế GTGT:</span>
+                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
-                        <span>Tổng tiền thanh toán</span>
-                        <span style={{ fontWeight: 700, color: "#1e293b" }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
+                        <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
+                        <span style={{ fontWeight: 700, color: "#047857", fontSize: 15 }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Thuế xuất khẩu</span>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Thuế xuất khẩu:</span>
+                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
                       </div>
                     </>
                   ) : saleType === 2 ? (
                     <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Tổng tiền hàng</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Tổng tiền hàng:</span>
                         <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalAmount === 0 ? "0" : formatVND(totalAmount)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155", fontWeight: 700 }}>
-                        <span>Tổng tiền thanh toán</span>
-                        <span style={{ fontWeight: 700, color: "#1e293b" }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: "#475569", fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
+                        <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
+                        <span style={{ fontWeight: 700, color: "#047857", fontSize: 15 }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Thuế xuất khẩu</span>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Thuế xuất khẩu:</span>
+                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Tổng tiền hàng</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Tổng tiền hàng:</span>
                         <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalAmount === 0 ? "0" : formatVND(totalAmount)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#334155" }}>
-                        <span>Thuế GTGT</span>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
+                        <span>Thuế GTGT:</span>
+                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
-                        <span>Tổng tiền thanh toán</span>
-                        <span style={{ fontWeight: 700, color: "#1e293b" }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
+                        <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
+                        <span style={{ fontWeight: 700, color: "#047857", fontSize: 15 }}>{grandTotal === 0 ? "0" : formatVND(grandTotal)}</span>
                       </div>
                     </>
                   )}

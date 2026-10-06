@@ -834,7 +834,7 @@ export function SaleQuoteModal({
               }}
             >
               <thead>
-                <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
+                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
                   <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>
                     #
                   </th>
@@ -2494,7 +2494,7 @@ export function SaleOrderModal({
               }}
             >
               <thead>
-                <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
+                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
                   <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>
                     #
                   </th>
@@ -4498,7 +4498,7 @@ export function SaleContractModal({
                 <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", background: "#ffffff" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                     <thead>
-                      <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
+                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
                         <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                         <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
