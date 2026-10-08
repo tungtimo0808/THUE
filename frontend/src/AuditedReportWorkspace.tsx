@@ -19,6 +19,7 @@ import {
 import { auditedFixtureRows } from "./audited-report-fixtures";
 import AuditedReportParameters from "./AuditedReportParameters";
 import AuditedReportTable from "./AuditedReportTable";
+import AuditedPrintedReport from "./AuditedPrintedReport";
 import "./misa-purchase-contract-reports.css";
 import "./audited-reports.css";
 
@@ -224,17 +225,26 @@ export default function AuditedReportWorkspace({
           ))}
         </section>
       )}
-      <section className="pc-preview" aria-label="Nội dung báo cáo">
-        <h1>{definition.name.toLocaleUpperCase("vi")}</h1>
-        <p>{subtitle}</p>
-        <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
-        <AuditedReportTable
-          name={definition.name}
-          headers={definition.headers}
+      {definition.printLayout ? (
+        <AuditedPrintedReport
+          definition={definition}
+          parameters={applied}
           rows={rows}
           hidden={hidden}
         />
-      </section>
+      ) : (
+        <section className="pc-preview" aria-label="Nội dung báo cáo">
+          <h1>{definition.name.toLocaleUpperCase("vi")}</h1>
+          <p>{subtitle}</p>
+          <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
+          <AuditedReportTable
+            name={definition.name}
+            headers={definition.headers}
+            rows={rows}
+            hidden={hidden}
+          />
+        </section>
+      )}
       {drawer && (
         <AuditedReportParameters
           definition={definition}

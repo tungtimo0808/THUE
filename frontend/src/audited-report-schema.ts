@@ -24,6 +24,7 @@ export interface AuditedReportDefinition {
     default?: string;
   }[];
   radios?: { label: string; checked: boolean }[];
+  printLayout?: "receivablesItems";
 }
 export const canonicalReportName = (name: string) =>
   name

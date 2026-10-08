@@ -109,3 +109,120 @@
     padding: 8px !important;
   }
 }
+.ar-print-canvas {
+  background: #e6e6e6;
+  padding: 20px;
+  overflow: auto;
+}
+.ar-print-paper {
+  box-sizing: border-box;
+  background: white;
+  color: #111;
+  font-family: "Times New Roman", serif;
+  width: 1120px;
+  min-height: 790px;
+  margin: auto;
+  padding: 40px 56px;
+  box-shadow: 0 0 3px #bbb;
+}
+.ar-print-paper h1 {
+  font-size: 20px;
+  text-align: center;
+  margin: 8px 0;
+}
+.ar-print-company {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.ar-print-period {
+  text-align: center;
+  font-weight: bold;
+  font-style: italic;
+  margin: 4px 0;
+}
+.ar-print-account {
+  text-align: center;
+  font-weight: bold;
+  margin: 4px 0 16px;
+}
+.ar-print-customer {
+  margin-bottom: 32px;
+}
+.ar-print-customer > p {
+  margin: 5px 0;
+}
+.ar-print-paper table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  font-family: inherit;
+  font-size: 12px;
+}
+.ar-print-paper .pc-report-scroll {
+  overflow: visible;
+}
+.ar-print-paper table th,
+.ar-print-paper table td {
+  border: 1px solid #111;
+  background: white;
+  padding: 5px 3px;
+  height: auto;
+  min-width: 0;
+  white-space: normal;
+  color: #111;
+}
+.ar-print-paper table th {
+  font-weight: bold;
+}
+.ar-print-balances {
+  width: 48%;
+  font-size: 13px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+.ar-print-balances > div {
+  display: flex;
+  justify-content: space-between;
+  margin: 7px 0;
+}
+.ar-print-balances dd {
+  margin: 0;
+}
+.ar-print-sign-date {
+  text-align: right;
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 20px !important;
+}
+.ar-print-signatures {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin-top: 4px;
+}
+.ar-print-signatures i {
+  display: block;
+  margin: 7px 0 25px;
+  font-size: 14px;
+}
+.ar-print-fixture {
+  color: #777;
+}
+.ar-print-empty {
+  text-align: center;
+  margin: 60px 0;
+}
+@media print {
+  .ar-print-canvas {
+    padding: 0;
+    background: white;
+  }
+  .ar-print-paper {
+    width: 100%;
+    box-shadow: none;
+    padding: 0;
+  }
+  .ar-print-customer {
+    break-inside: avoid;
+  }
+}

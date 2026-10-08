@@ -4459,5 +4459,108 @@
         "label": "Cùng kỳ giữa các năm"
       }
     ]
+  },
+  "Chi tiết công nợ phải thu theo mặt hàng (tĩnh)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "printLayout": "receivablesItems",
+    "printHeaders": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/Giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/Giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ]
   }
 }

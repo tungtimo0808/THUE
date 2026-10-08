@@ -31,13 +31,15 @@ function titleFor(headers) {
 const definitions = rows
   .filter(
     (row) =>
-      (row.viewer ??
+      ((row.viewer ??
         (row.url.includes("RPDynamicViewer") ? "dynamic" : "parameterOnly")) ===
-        "dynamic" && row.tables?.[0]?.length,
+        "dynamic" &&
+        row.tables?.[0]?.length) ||
+      metadata[row.name]?.printLayout,
   )
   .map((row) => {
     const selectors = row.tables
-      .slice(1)
+      .slice(metadata[row.name]?.printLayout ? 0 : 1)
       .map((table) => {
         const headers = (table.at(-1) || [])
           .map((cell) => cell.text)
@@ -49,6 +51,12 @@ const definitions = rows
       /^Chọn (tất cả|khách hàng|nhà cung cấp|vật tư)/.test(check.label),
     );
     selectors.forEach((selector, index) => {
+      if (metadata[row.name]?.printLayout && selector.title === "Tài khoản")
+        return;
+      if (metadata[row.name]?.printLayout && selector.title === "Khách hàng") {
+        selector.selectAllLabel = selectLabels[0]?.label;
+        return;
+      }
       if (selectLabels[index])
         selector.selectAllLabel = selectLabels[index].label;
     });
@@ -64,7 +72,10 @@ const definitions = rows
       name: row.name,
       category: row.category,
       viewer: "dynamic",
-      headers: normalizeReportHeaders(row.tables[0]),
+      headers: normalizeReportHeaders(
+        metadata[row.name]?.printHeaders ?? row.tables[0],
+      ),
+      printLayout: metadata[row.name]?.printLayout,
       labels: [
         ...new Set([...row.labels, ...fields.map((field) => field.label)]),
       ],

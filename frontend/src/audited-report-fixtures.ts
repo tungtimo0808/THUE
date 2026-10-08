@@ -14,7 +14,19 @@ export const numericReportHeader = (header: string) =>
 export function selectorSampleRows(selector: ReportSelector) {
   return [1, 2].map((index) => ({
     id: String(index),
-    cells: selector.headers.map((header) => sampleCell(header, index)),
+    cells: selector.headers.map((header) =>
+      selector.title === "Tài khoản" && header === "Số tài khoản"
+        ? index === 1
+          ? "131"
+          : "136"
+        : selector.title === "Tài khoản" && header === "Tên tài khoản"
+          ? index === 1
+            ? "Phải thu của khách hàng"
+            : "Phải thu nội bộ"
+          : header === "Bậc"
+            ? "1"
+            : sampleCell(header, index),
+    ),
   }));
 }
 export function reportReferenceChoices(label: string) {
@@ -54,7 +66,7 @@ export function sampleCell(header: string, index: number): string {
   if (/Số hóa đơn/.test(header)) return `00000${index}`;
   if (/Số hợp đồng/.test(header)) return `HD00${index}`;
   if (/^Mã/.test(header))
-    return `${/kho/.test(header) ? "KHO" : /hàng|vật tư/.test(header) ? "HH" : /nhân viên/.test(header) ? "NV" : /NCC|nhà cung cấp/.test(header) ? "NCC" : /khách hàng/.test(header) ? "KH" : "DT"}00${index}`;
+    return `${/kho/.test(header) ? "KHO" : /khách hàng/.test(header) ? "KH" : /NCC|nhà cung cấp/.test(header) ? "NCC" : /hàng|vật tư/.test(header) ? "HH" : /nhân viên/.test(header) ? "NV" : "DT"}00${index}`;
   if (/Tên kho|Từ kho|Đến kho/.test(header))
     return index === 1 ? "Kho chính" : "Kho chi nhánh";
   if (/Tên hàng|Tên vật tư/.test(header))
@@ -89,8 +101,10 @@ export function auditedFixtureRows(
       if (fields["Tháng"] && fields["Tháng"] !== "2026-10") return false;
       if (
         definition.selectors.some(
-          (_, position) =>
-            !parameters.selected[String(position)]?.includes(String(index)),
+          (selector, position) =>
+            !parameters.selected[String(position)]?.includes(
+              selector.title === "Tài khoản" ? "1" : String(index),
+            ),
         )
       )
         return false;

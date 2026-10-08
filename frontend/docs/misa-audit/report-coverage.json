@@ -36,7 +36,7 @@
       "category": "Bán hàng",
       "total": 67,
       "dedicated": 3,
-      "generic": 8
+      "generic": 7
     },
     {
       "category": "Kho",
@@ -756,7 +756,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Chi tiết công nợ phải thu theo mặt hàng (tỉnh)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {

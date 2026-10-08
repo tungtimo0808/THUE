@@ -2225,6 +2225,186 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
     }
   },
   {
+    "name": "Chi tiết công nợ phải thu theo mặt hàng (tĩnh)",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/Giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/Giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "printLayout": "receivablesItems",
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ]
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả khách hàng"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp tiền chiết khấu, tiền thuế của các mặt hàng khác nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm khách hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
     "name": "Chi tiết công nợ phải thu theo mặt hàng",
     "category": "Bán hàng",
     "viewer": "dynamic",
