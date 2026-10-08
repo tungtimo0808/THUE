@@ -2860,91 +2860,6 @@
   },
   {
     "category": "Bán hàng",
-    "name": "Biên bản đối chiếu và xác nhận công nợ",
-    "url": "https://actapp.misa.vn/app/RP/ReportList",
-    "viewer": "parameterOnly",
-    "checkboxes": [
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      },
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      },
-      {
-        "checked": false,
-        "label": "Không hiển thị công nợ lũy kế năm và công nợ quá hạn"
-      },
-      {
-        "checked": false,
-        "label": "Không hiển thị khách hàng có số dư cuối kỳ bằng 0"
-      }
-    ],
-    "labels": [
-      "Kỳ báo cáo",
-      "Từ ngày",
-      "Đến ngày",
-      "Nhóm khách hàng"
-    ],
-    "tables": [
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Số tài khoản"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên tài khoản"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Bậc"
-          }
-        ]
-      ],
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Địa chỉ"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã số thuế"
-          }
-        ]
-      ]
-    ]
-  },
-  {
-    "category": "Bán hàng",
     "name": "Chi tiết công nợ phải thu theo mặt hàng",
     "url": "https://actapp.misa.vn/app/RP/ReportList/RPDynamicViewer/ReceivableDetailByInventoryItem",
     "viewer": "dynamic",
@@ -3508,92 +3423,6 @@
   },
   {
     "category": "Bán hàng",
-    "name": "Thông báo công nợ",
-    "url": "https://actapp.misa.vn/app/RP/ReportList",
-    "viewer": "parameterOnly",
-    "checkboxes": [
-      {
-        "checked": false,
-        "label": "Hiển thị hóa đơn có công nợ bằng 0"
-      },
-      {
-        "checked": false,
-        "label": "Hiển thị chi tiết chứng từ phát sinh: thu tiền, trả lại..."
-      },
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      },
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      }
-    ],
-    "labels": [
-      "Kỳ báo cáo",
-      "Từ ngày",
-      "Đến ngày",
-      "Nhóm khách hàng",
-      "Ngày thông báo"
-    ],
-    "tables": [
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Số tài khoản"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên tài khoản"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Bậc"
-          }
-        ]
-      ],
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Địa chỉ"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã số thuế"
-          }
-        ]
-      ]
-    ]
-  },
-  {
-    "category": "Bán hàng",
     "name": "Chi tiết công nợ phải thu (Chi tiết theo các khoản giảm trừ)",
     "url": "https://actapp.misa.vn/app/RP/ReportList/RPDynamicViewer/ReceivableDetailByInvoiceDiscountReturn",
     "viewer": "dynamic",
@@ -4002,85 +3831,6 @@
   },
   {
     "category": "Bán hàng",
-    "name": "Thông báo công nợ (Mẫu 2)",
-    "url": "https://actapp.misa.vn/app/RP/ReportList",
-    "viewer": "parameterOnly",
-    "checkboxes": [
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      },
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      }
-    ],
-    "labels": [
-      "Kỳ báo cáo",
-      "Từ ngày",
-      "Đến ngày",
-      "Ngày thông báo",
-      "TK ngân hàng yêu cầu thanh toán",
-      "Nhóm khách hàng"
-    ],
-    "tables": [
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Số tài khoản"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên tài khoản"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Bậc"
-          }
-        ]
-      ],
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Địa chỉ"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã số thuế"
-          }
-        ]
-      ]
-    ]
-  },
-  {
-    "category": "Bán hàng",
     "name": "Chi tiết công nợ phải thu theo tuổi nợ",
     "url": "https://actapp.misa.vn/app/RP/ReportList/RPDynamicViewer/ReceivableDetailByDebtAge",
     "viewer": "dynamic",
@@ -4426,58 +4176,6 @@
           }
         ]
       ],
-      [
-        [
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": ""
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Tên khách hàng"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Địa chỉ"
-          },
-          {
-            "colSpan": 1,
-            "rowSpan": 1,
-            "text": "Mã số thuế"
-          }
-        ]
-      ]
-    ]
-  },
-  {
-    "category": "Bán hàng",
-    "name": "Giấy đề nghị thanh toán công nợ",
-    "url": "https://actapp.misa.vn/app/RP/ReportList",
-    "viewer": "parameterOnly",
-    "checkboxes": [
-      {
-        "checked": false,
-        "label": "Chọn tất cả"
-      }
-    ],
-    "labels": [
-      "Kỳ báo cáo",
-      "Từ ngày",
-      "Đến ngày",
-      "Tài khoản",
-      "Tài khoản ngân hàng",
-      "Ngày đề nghị",
-      "Nhóm khách hàng"
-    ],
-    "tables": [
       [
         [
           {
@@ -32449,5 +32147,307 @@
       "Đến tháng"
     ],
     "tables": []
+  },
+  {
+    "category": "Bán hàng",
+    "name": "Thông báo công nợ",
+    "url": "https://actapp.misa.vn/app/RP/ReportList",
+    "viewer": "parameterOnly",
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị hóa đơn có công nợ bằng 0"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị chi tiết chứng từ phát sinh: thu tiền, trả lại..."
+      },
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      },
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      }
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng",
+      "Ngày thông báo"
+    ],
+    "tables": [
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Số tài khoản"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên tài khoản"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Bậc"
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Địa chỉ"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã số thuế"
+          }
+        ]
+      ]
+    ]
+  },
+  {
+    "category": "Bán hàng",
+    "name": "Thông báo công nợ (Mẫu 2)",
+    "url": "https://actapp.misa.vn/app/RP/ReportList",
+    "viewer": "parameterOnly",
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      },
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      }
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Ngày thông báo",
+      "TK ngân hàng yêu cầu thanh toán",
+      "Nhóm khách hàng"
+    ],
+    "tables": [
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Số tài khoản"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên tài khoản"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Bậc"
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Địa chỉ"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã số thuế"
+          }
+        ]
+      ]
+    ]
+  },
+  {
+    "category": "Bán hàng",
+    "name": "Biên bản đối chiếu và xác nhận công nợ",
+    "url": "https://actapp.misa.vn/app/RP/ReportList",
+    "viewer": "parameterOnly",
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      },
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị công nợ lũy kế năm và công nợ quá hạn"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị khách hàng có số dư cuối kỳ bằng 0"
+      }
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng"
+    ],
+    "tables": [
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Số tài khoản"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên tài khoản"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Bậc"
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Địa chỉ"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã số thuế"
+          }
+        ]
+      ]
+    ]
+  },
+  {
+    "category": "Bán hàng",
+    "name": "Giấy đề nghị thanh toán công nợ",
+    "url": "https://actapp.misa.vn/app/RP/ReportList",
+    "viewer": "parameterOnly",
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chọn tất cả"
+      }
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Tài khoản ngân hàng",
+      "Ngày đề nghị",
+      "Nhóm khách hàng"
+    ],
+    "tables": [
+      [
+        [
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": ""
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Tên khách hàng"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Địa chỉ"
+          },
+          {
+            "colSpan": 1,
+            "rowSpan": 1,
+            "text": "Mã số thuế"
+          }
+        ]
+      ]
+    ]
   }
 ]

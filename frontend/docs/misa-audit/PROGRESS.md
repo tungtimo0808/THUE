@@ -1,23 +1,21 @@
-# Audit frontend MISA — cập nhật 08/10/2026
+# Tiến độ frontend MISA — 08/10/2026
 
-Đã ghi nhận 245 tên báo cáo duy nhất từ các nhóm trong danh mục MISA (263 mục khi tính cả tên xuất hiện ở nhiều nhóm).
+Chưa hoàn tất toàn bộ audit. 263 mục báo cáo trong danh mục, 82 mục màn hình riêng được giữ lại, 168 mục từ bảng chung đã được nối vào cấu hình riêng và 13 mục vẫn dùng bảng chung. Có 218 cấu hình, gồm 213 dạng bảng và 5 mẫu in. Số lượng cấu hình không chứng minh giao diện và mọi thao tác đã giống hoàn toàn.
 
-Frontend giữ 82 mục có màn hình riêng trước đó. 164 mục trước đây dùng bảng chung đã được nối vào cấu hình riêng theo tham số và tiêu đề cột ghi nhận trên MISA. 17 mục vẫn dùng bảng chung. Đây là số liệu phạm vi triển khai, không phải chứng nhận giao diện giống hoàn toàn.
+Ngoài Báo cáo: đã bổ sung Đối chiếu ngân hàng offline, trang quy trình Đề nghị chi tiền cho Tiền mặt/Tiền gửi, cột và chọn dòng/tổng/phân trang Thu chi tiền, bộ lọc kỳ hoạt động. Danh mục mới có 29 mục theo 10 nhóm, bảng theo các tiêu đề cột đã ghi nhận, 8 bộ trường form đã đọc, các tab Khách hàng và bảng tài khoản nhiều dòng. Màn hình Danh mục cũ vẫn có ở Danh sách hiện có. Các form còn lại dùng trường suy ra từ cột và cần audit tiếp; Biểu tính thuế thu nhập cần kiểm tra tiêu đề hai tầng.
 
-214 cấu hình (213 dạng bảng và 1 dạng trang in) được tạo trong mã nguồn; một phần trùng các màn hình riêng nên không thay thế các màn hình đó. Có bộ chọn kỳ, ngày DD/MM/YYYY, bảng chọn đối tượng, tiêu đề nhiều tầng, tìm kiếm, ẩn cột và lưu tham số cục bộ. Dữ liệu minh họa chỉ ở frontend.
+Đã kiểm tra thủ công: chọn dòng Thu chi; đối chiếu ngân hàng về chênh lệch 0; quy trình đề nghị chi; thêm và cất Khách hàng có tài khoản ngân hàng; mẫu Thông báo công nợ đầu tiên. Các mẫu in mới hơn cần kiểm tra thêm trên frontend.
 
-Kiểm tra: 13 bài kiểm tra logic đạt; TypeScript cho các mô-đun mới đạt; Vite build đạt. Lệnh npm run build toàn dự án vẫn có các lỗi TypeScript có sẵn từ trước.
+Kiểm tra gần nhất: 18 bài kiểm tra logic đạt, TypeScript mô-đun mới đạt, Vite build đạt. npm run build toàn dự án còn lỗi TypeScript có sẵn trước tác vụ.
 
-Còn phải hoàn thiện: mẫu in riêng dưới đây; toàn bộ lựa chọn trong các combobox; cột biến đổi sau khi chọn kỳ/chi nhánh; mẫu in/xuất; audit sâu các màn hình đã có và các phân hệ ngoài Báo cáo. Mẫu in công nợ theo mặt hàng đã tải xong, được đối chiếu và bổ sung bố cục trang giấy, 14 cột, phần tổng hợp công nợ và chữ ký.
+Edge đọc được tab MISA 1909807807; tab frontend 1909807529 vẫn báo Debugger unattached. Không dùng phương thức điều khiển khác để vượt qua hạn chế này.
 
-## 17 mục còn dùng bảng chung
+Công việc tiếp: hoàn thiện 13 báo cáo dưới đây; audit sâu các tùy chọn của báo cáo đã có; các form/tab con của toàn bộ phân hệ; Quản lý hóa đơn, Số dư ban đầu và Phân tích tài chính. Chỉ sửa frontend, không cất hoặc sửa dữ liệu thực trên MISA. Ba file người dùng sửa trước tác vụ phải giữ nguyên và không stage.
+
+## Báo cáo còn dùng bảng chung
 
 - Bán hàng: Tổng hợp xuất kho bán hàng
 - Bán hàng: Phân tích công nợ phải thu theo tuổi nợ
-- Bán hàng: Biên bản đối chiếu và xác nhận công nợ
-- Bán hàng: Thông báo công nợ
-- Bán hàng: Thông báo công nợ (Mẫu 2)
-- Bán hàng: Giấy đề nghị thanh toán công nợ
 - Bán hàng: Báo cáo chi tiết tình hình thực hiện đơn đặt hàng
 - Kho: Tổng hợp tồn kho theo nhóm VTHH
 - Tài sản cố định: S21 - DN: Sổ tài sản cố định
@@ -29,4 +27,3 @@ Còn phải hoàn thiện: mẫu in riêng dưới đây; toàn bộ lựa chọ
 - Giá thành: S36-DN: Sổ chi phí sản xuất, kinh doanh theo công trình
 - Giá thành: S37-DN: Thẻ tính giá thành công trình - theo khoản mục chi phí
 - Tổng hợp: S03b-DN: Sổ cái (Hình thức Nhật ký chung)
-

@@ -4562,5 +4562,248 @@
         }
       ]
     ]
+  },
+  "Thông báo công nợ": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng",
+        "required": false
+      },
+      {
+        "kind": "date",
+        "label": "Ngày thông báo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "printLayout": "debtNotice",
+    "printHeaders": [
+      [
+        {
+          "text": "Ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ]
+  },
+  "Thông báo công nợ (Mẫu 2)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "date",
+        "label": "Ngày thông báo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "TK ngân hàng yêu cầu thanh toán",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "printLayout": "debtNoticeTwo",
+    "printHeaders": [
+      [
+        {
+          "text": "Ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thanh toán / Giảm trừ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ]
+  },
+  "Biên bản đối chiếu và xác nhận công nợ": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "printLayout": "receivablesReconciliation",
+    "printHeaders": [
+      [
+        {
+          "text": "Nội dung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ]
+  },
+  "Giấy đề nghị thanh toán công nợ": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "131",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản ngân hàng",
+        "required": false
+      },
+      {
+        "kind": "date",
+        "label": "Ngày đề nghị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "printLayout": "paymentDemand",
+    "printHeaders": [
+      [
+        {
+          "text": "Khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ]
   }
 }

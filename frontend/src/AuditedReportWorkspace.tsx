@@ -20,6 +20,10 @@ import { auditedFixtureRows } from "./audited-report-fixtures";
 import AuditedReportParameters from "./AuditedReportParameters";
 import AuditedReportTable from "./AuditedReportTable";
 import AuditedPrintedReport from "./AuditedPrintedReport";
+import MisaDebtNoticePrinted from "./MisaDebtNoticePrinted";
+import MisaDebtNoticeTwoPrinted from "./MisaDebtNoticeTwoPrinted";
+import MisaReceivablesReconciliationPrinted from "./MisaReceivablesReconciliationPrinted";
+import MisaPaymentDemandPrinted from "./MisaPaymentDemandPrinted";
 import "./misa-purchase-contract-reports.css";
 import "./audited-reports.css";
 
@@ -225,7 +229,28 @@ export default function AuditedReportWorkspace({
           ))}
         </section>
       )}
-      {definition.printLayout ? (
+      {definition.printLayout === "paymentDemand" ? (
+        <MisaPaymentDemandPrinted parameters={applied} rows={rows} />
+      ) : definition.printLayout === "receivablesReconciliation" ? (
+        <MisaReceivablesReconciliationPrinted
+          parameters={applied}
+          rows={rows}
+        />
+      ) : definition.printLayout === "debtNoticeTwo" ? (
+        <MisaDebtNoticeTwoPrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout === "debtNotice" ? (
+        <MisaDebtNoticePrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout ? (
         <AuditedPrintedReport
           definition={definition}
           parameters={applied}
@@ -257,7 +282,7 @@ export default function AuditedReportWorkspace({
           }}
           error={error}
           onApply={() => {
-            const problem = validateAuditedParameters(draft);
+            const problem = validateAuditedParameters(draft, definition);
             if (problem) {
               setError(problem);
               return;

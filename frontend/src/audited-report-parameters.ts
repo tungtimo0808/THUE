@@ -116,6 +116,7 @@ export function initialAuditedParameters(
 }
 export function validateAuditedParameters(
   parameters: AuditedParameters,
+  definition?: AuditedReportDefinition,
 ): string {
   const { fields } = parameters;
   if ("Năm" in fields && !/^\d{4}$/.test(fields["Năm"]))
@@ -131,5 +132,10 @@ export function validateAuditedParameters(
     fields["Từ ngày"] > fields["Đến ngày"]
   )
     return "Từ ngày phải nhỏ hơn hoặc bằng đến ngày.";
+  const missing = definition?.fields?.find(
+    (field) => field.required && !fields[field.label]?.trim(),
+  );
+  if (missing)
+    return `Vui lòng chọn hoặc nhập ${missing.label.toLocaleLowerCase("vi")}.`;
   return "";
 }

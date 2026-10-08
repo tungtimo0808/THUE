@@ -36,7 +36,7 @@
       "category": "Bán hàng",
       "total": 67,
       "dedicated": 3,
-      "generic": 7
+      "generic": 3
     },
     {
       "category": "Kho",
@@ -763,7 +763,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Biên bản đối chiếu và xác nhận công nợ",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
@@ -791,7 +791,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Thông báo công nợ",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
@@ -819,7 +819,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Thông báo công nợ (Mẫu 2)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
@@ -840,7 +840,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Giấy đề nghị thanh toán công nợ",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {

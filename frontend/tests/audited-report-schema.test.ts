@@ -8,7 +8,34 @@ import {
 import {
   auditedPeriodRange,
   isAuditedParameters,
+  validateAuditedParameters,
 } from "../src/audited-report-parameters.ts";
+test("required report fields block an incomplete application of filters", () => {
+  const parameters = {
+    fields: { "Tài khoản": "" },
+    selected: {},
+    checks: {},
+    radio: "",
+  };
+  const definition = {
+    name: "Giấy đề nghị thanh toán công nợ",
+    category: "Bán hàng",
+    viewer: "dynamic" as const,
+    labels: ["Tài khoản"],
+    headers: [],
+    selectors: [],
+    checkboxes: [],
+    fields: [{ label: "Tài khoản", kind: "combo", required: true }],
+  };
+  assert.match(validateAuditedParameters(parameters, definition), /tài khoản/);
+  assert.equal(
+    validateAuditedParameters(
+      { ...parameters, fields: { "Tài khoản": "131" } },
+      definition,
+    ),
+    "",
+  );
+});
 
 test("saved report parameters reject malformed browser storage", () => {
   const valid = {

@@ -85,21 +85,25 @@ export default function AuditedReportParameters({
                 field?.kind === "date" || /^Ngày|ngày$|thời điểm$/.test(label);
               const values =
                 definition.options?.[label] ??
-                (label === "Đơn vị tính"
-                  ? ["Đơn vị tính chính"]
-                  : label === "Nhân viên"
-                    ? ["", "NV001", "NV002"]
-                    : /Tài khoản|tài khoản/.test(label)
-                      ? [
-                          "",
-                          draft.fields[label] ||
-                            (/phải trả/.test(definition.name) ? "331" : "131"),
-                          "131",
-                          "331",
-                          "112",
-                          "111",
-                        ]
-                      : undefined);
+                (/ngân hàng/i.test(label)
+                  ? ["", "VCB — 0011000123456", "BIDV — 1201000123456"]
+                  : label === "Đơn vị tính"
+                    ? ["Đơn vị tính chính"]
+                    : label === "Nhân viên"
+                      ? ["", "NV001", "NV002"]
+                      : /Tài khoản|tài khoản/.test(label)
+                        ? [
+                            "",
+                            draft.fields[label] ||
+                              (/phải trả/.test(definition.name)
+                                ? "331"
+                                : "131"),
+                            "131",
+                            "331",
+                            "112",
+                            "111",
+                          ]
+                        : undefined);
               return (
                 <label key={label}>
                   <span className="pc-label">
@@ -116,8 +120,8 @@ export default function AuditedReportParameters({
                     <input
                       aria-label={label}
                       type="number"
-                      min="1900"
-                      max="9999"
+                      min={label === "Năm" ? 1900 : 0}
+                      max={label === "Năm" ? 9999 : undefined}
                       value={draft.fields[label]}
                       onInput={(event) =>
                         updateField(label, event.currentTarget.value)
@@ -147,11 +151,18 @@ export default function AuditedReportParameters({
                       }
                     >
                       {!values.includes("") && draft.fields[label] === "" && (
-                        <option value="">Tất cả</option>
+                        <option value="">
+                          {field?.required
+                            ? "Chọn " + label.toLocaleLowerCase("vi")
+                            : "Tất cả"}
+                        </option>
                       )}
                       {[...new Set(values)].map((value) => (
                         <option key={value} value={value}>
-                          {value || "Tất cả"}
+                          {value ||
+                            (field?.required
+                              ? "Chọn " + label.toLocaleLowerCase("vi")
+                              : "Tất cả")}
                         </option>
                       ))}
                     </select>

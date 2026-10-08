@@ -8,7 +8,7 @@ export const numericReportHeader = (header: string) =>
   !/^(Mã|Tên|Ngày|TK|Tài khoản|Số chứng từ|Số hóa đơn|Số hợp đồng|Tình trạng|Trạng thái)/.test(
     header,
   ) &&
-  /Số lượng|Số dư|Phát sinh|Doanh|Tiền|Giá trị|Đơn giá|Lương|lương|BHXH|BHYT|BHTN|Lãi|Chiết khấu|Thuế|thuế|Chi phí|chi phí|Chênh lệch|Hệ số|Tổng số|Tổng cộng|Tỷ lệ|Nợ|Có|Số tiền|Bậc|Số ngày/.test(
+  /Số lượng|Số dư|Phát sinh|Doanh|Tiền|Giá trị|Đơn giá|Lương|lương|BHXH|BHYT|BHTN|Lãi|Chiết khấu|Thuế|thuế|Chi phí|chi phí|Chênh lệch|Hệ số|Tổng số|Tổng cộng|Tỷ lệ|Nợ|Có|Số tiền|Bậc|Số ngày|Phải thu|Phải trả|Thanh toán|Giảm trừ|Trả lại|Số đã thu|Số phải thu/.test(
     header,
   );
 export function selectorSampleRows(selector: ReportSelector) {
@@ -62,7 +62,7 @@ export function sampleCell(header: string, index: number): string {
   if (/Mã số thuế|Địa chỉ|Ký nhận/.test(header)) return "";
   if (/^Ngày|ngày$/.test(header)) return `0${index + 5}/10/2026`;
   if (/^(TK|Tài khoản)|TK /.test(header)) return "131";
-  if (/Số chứng từ/.test(header)) return `CT00${index}`;
+  if (/Số chứng từ/.test(header) || header === "Số") return `CT00${index}`;
   if (/Số hóa đơn/.test(header)) return `00000${index}`;
   if (/Số hợp đồng/.test(header)) return `HD00${index}`;
   if (/^Mã/.test(header))
@@ -136,7 +136,9 @@ export function auditedFixtureRows(
       for (const [label, checked] of Object.entries(parameters.checks)) {
         if (
           checked &&
-          /Chỉ (lấy|hiển thị)|Không hiển thị/.test(label) &&
+          /Chỉ (lấy|hiển thị)|Không hiển thị (khách hàng|nhà cung cấp|hàng hóa|nhân viên)/.test(
+            label,
+          ) &&
           index === 2
         )
           return false;
