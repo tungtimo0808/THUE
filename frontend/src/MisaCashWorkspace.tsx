@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
+import {matchesTransactionPeriod} from './transaction-period';
 import {
   Filter,
   Plus,
@@ -7546,9 +7547,9 @@ export default function MisaCashWorkspace({
         statusFilter === "all" || item.status === statusFilter;
       const matchKind =
         voucherTypeFilter === "all" || item.kind === voucherTypeFilter;
-      return matchQuery && matchStatus && matchKind;
+      return matchQuery && matchStatus && matchKind && matchesTransactionPeriod(item.date,filterPeriod);
     });
-  }, [transactions, searchQuery, statusFilter, voucherTypeFilter]);
+  }, [transactions, searchQuery, statusFilter, voucherTypeFilter,filterPeriod]);
   const cashPageCount = Math.max(1, Math.ceil(filteredList.length / cashPageSize));
   const visibleCashPage = Math.min(cashPage, cashPageCount);
 
@@ -7948,6 +7949,7 @@ export default function MisaCashWorkspace({
                 type="text"
                 placeholder="Tìm kiếm"
                 value={searchQuery}
+                onInput={e=>setSearchQuery(e.currentTarget.value)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: "100%",
@@ -7986,6 +7988,7 @@ export default function MisaCashWorkspace({
             {/* Period select: Đầu năm tới hiện tại */}
             <select
               value={filterPeriod}
+              aria-label="Kỳ thu chi tiền mặt"
               onChange={(e) => setFilterPeriod(e.target.value)}
               style={{
                 height: 32,

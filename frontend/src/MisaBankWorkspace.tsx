@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import {useNavigate} from 'react-router-dom';
 import {
   Filter,
   Search,
@@ -49,10 +50,12 @@ import {
 import "./misa-cash.css";
 import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
+import {matchesTransactionPeriod} from './transaction-period';
 
 export default function MisaBankWorkspace({
   tab = "transactions",
   notify,
+  href,
 }: {
   company: { id: string; name: string };
   period: string;
@@ -60,6 +63,7 @@ export default function MisaBankWorkspace({
   href: (path: string) => string;
   notify: (msg: string) => void;
 }) {
+  const navigate=useNavigate();
   // Modal states
   const [showTaxModal, setShowTaxModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
@@ -101,6 +105,7 @@ export default function MisaBankWorkspace({
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [filterPeriod,setFilterPeriod]=useState('ytd');
   const [showAvaBanner, setShowAvaBanner] = useState(true);
   const [detailExpanded, setDetailExpanded] = useState(true);
   const [kpiCollapsed, setKpiCollapsed] = useState(false);
@@ -254,9 +259,9 @@ export default function MisaBankWorkspace({
         (filterType === "receipt" && t.kind === "receipt") ||
         (filterType === "payment" && t.kind === "payment") ||
         (filterType === "transfer" && t.kind === "transfer");
-      return matchQuery && matchType;
+      return matchQuery && matchType && matchesTransactionPeriod(t.dateHachToan,filterPeriod);
     });
-  }, [transactions, searchQuery, filterType]);
+  }, [transactions, searchQuery, filterType,filterPeriod]);
 
   // Handlers
   const handleTaxPayment = (taxData: any) => {
@@ -925,6 +930,7 @@ export default function MisaBankWorkspace({
                 type="text"
                 placeholder="Tìm kiếm"
                 value={searchQuery}
+                onInput={e=>setSearchQuery(e.currentTarget.value)}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: "100%",
@@ -964,7 +970,9 @@ export default function MisaBankWorkspace({
 
             {/* Period select: Đầu năm tới hiện tại */}
             <select
-              defaultValue="ytd"
+              value={filterPeriod}
+              onChange={e=>setFilterPeriod(e.target.value)}
+              aria-label="Kỳ thu chi tiền gửi"
               style={{
                 height: 32,
                 padding: "0 8px",
@@ -2202,7 +2210,11 @@ export default function MisaBankWorkspace({
               }}
               onClick={() => {
                 notify("Chuyển tới tính năng Đối chiếu ngân hàng...");
+                navigate(href('/bank/reconciliation'));
               }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();navigate(href('/bank/reconciliation'));}}}
               title="Đối chiếu ngân hàng"
             >
               <span className="ref-business-icon reconcile" style={{ marginBottom: 6 }}>
