@@ -1,0 +1,111 @@
+.ar-report .pc-header h2 {
+  max-width: 650px;
+  line-height: 1.5;
+}
+.ar-check {
+  margin: 12px 0;
+  line-height: 1.5;
+}
+.ar-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.ar-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ar-report .pc-preview > p {
+  line-height: 1.6;
+}
+.ar-report .pc-report-scroll {
+  max-width: 100%;
+}
+.ar-report .pc-report-scroll th {
+  min-width: 80px;
+}
+.ar-reference-picker {
+  position: relative;
+  width: 100%;
+  font-weight: 400;
+}
+.ar-reference-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #cdd3da;
+  border-radius: 3px;
+  background: #fff;
+  height: 32px;
+}
+.pc-report .ar-reference-input > input {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  padding: 4px 8px;
+  background: transparent;
+  height: 30px;
+}
+.pc-report .ar-reference-input > button {
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+}
+.ar-reference-options {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  width: max(100%, 250px);
+  z-index: 2;
+  background: #fff;
+  border: 1px solid #ccd4d7;
+  box-shadow: 0 4px 10px #0002;
+  max-height: 180px;
+  overflow: auto;
+}
+.pc-report .ar-reference-options > button {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  padding: 8px;
+}
+.ar-reference-options > button[aria-selected="true"] {
+  background: #eaf7f0;
+}
+.ar-reference-empty {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  color: #687582;
+}
+@media print {
+  .reference-header,
+  .ref-sidebar,
+  .ref-module-bar,
+  .ref-topbar,
+  .reference-sidebar,
+  .ref-toolbar,
+  aside,
+  .ref-main > header {
+    display: none !important;
+  }
+  .reference-main,
+  .ref-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  .ar-report {
+    width: 100% !important;
+  }
+  .ar-report .pc-preview {
+    padding: 8px !important;
+  }
+}

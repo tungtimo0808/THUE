@@ -36,61 +36,61 @@
       "category": "Bán hàng",
       "total": 67,
       "dedicated": 3,
-      "generic": 64
+      "generic": 8
     },
     {
       "category": "Kho",
       "total": 15,
       "dedicated": 1,
-      "generic": 14
+      "generic": 1
     },
     {
       "category": "Công cụ dụng cụ",
       "total": 9,
       "dedicated": 0,
-      "generic": 9
+      "generic": 0
     },
     {
       "category": "Tài sản cố định",
       "total": 5,
       "dedicated": 0,
-      "generic": 5
+      "generic": 2
     },
     {
       "category": "Tiền lương",
       "total": 3,
       "dedicated": 0,
-      "generic": 3
+      "generic": 0
     },
     {
       "category": "Thuế",
       "total": 6,
       "dedicated": 0,
-      "generic": 6
+      "generic": 1
     },
     {
       "category": "Giá thành",
       "total": 40,
       "dedicated": 0,
-      "generic": 40
+      "generic": 5
     },
     {
       "category": "Tổng hợp",
       "total": 26,
       "dedicated": 0,
-      "generic": 26
+      "generic": 1
     },
     {
       "category": "Ngân sách",
       "total": 4,
       "dedicated": 0,
-      "generic": 4
+      "generic": 0
     },
     {
       "category": "Báo cáo đối chiếu",
       "total": 13,
       "dedicated": 3,
-      "generic": 10
+      "generic": 0
     }
   ],
   "reports": [
@@ -99,462 +99,462 @@
       "group": "",
       "report": "Bảng cân đối tài khoản (Mẫu quản trị)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B09 - DN: Thuyết minh báo cáo tài chính",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "Tình hình thực hiện nghĩa vụ với nhà nước",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B01a - DN: Báo cáo tình hình tài chính giữa niên độ (Dạng đầy đủ)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B01 - DN: Báo cáo tình hình tài chính",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B02a - DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ (Dạng đầy đủ)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B02 - DN: Báo cáo kết quả hoạt động kinh doanh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B03a - DN: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP trực tiếp)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B03 - DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B03a - DN - GT: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP gián tiếp)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo tài chính",
       "group": "",
       "report": "B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích doanh thu, chi phí, tài sản giữa các chi nhánh",
       "report": "Bảng cân đối tài khoản theo nhiều chi nhánh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích doanh thu, chi phí, tài sản giữa các chi nhánh",
       "report": "Bảng cân đối kế toán theo nhiều chi nhánh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích doanh thu, chi phí, tài sản giữa các chi nhánh",
       "report": "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều chi nhánh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích doanh thu, chi phí, tài sản giữa các chi nhánh",
       "report": "Báo cáo kết quả hoạt động kinh doanh theo nhiều chi nhánh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích doanh thu, chi phí, tài sản giữa các chi nhánh",
       "report": "Báo cáo phân tích chi tiết doanh thu theo nhiều chi nhánh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích doanh thu, chi phí, tài sản giữa các chi nhánh",
       "report": "Báo cáo phân tích chi tiết chi phí theo nhiều chi nhánh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Bảng cân đối tài khoản phân tích theo thời gian",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích báo cáo kết quả hoạt động kinh doanh (so sánh tỷ lệ trên doanh thu)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Báo cáo phân tích chi tiết doanh thu theo nhiều kỳ",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích tăng trưởng các chỉ tiêu bảng cân đối kế toán",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Báo cáo phân tích chi tiết chi phí theo nhiều kỳ",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích cơ cấu tài sản, nguồn vốn trên bảng cân đối kế toán",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều kỳ",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích tăng trưởng các chỉ tiêu bảng cân đối kế toán dạng tóm lược",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo đơn vị",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích khả năng tạo tiền của từng hoạt động theo thời gian (PP trực tiếp)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích tăng trưởng các chỉ tiêu kết quả hoạt động kinh doanh",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Báo cáo phân tích",
       "group": "Phân tích báo cáo tài chính",
       "report": "Phân tích báo cáo lưu chuyển tiền tệ theo thời gian (PP trực tiếp)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Tiền mặt",
       "group": "Tiền mặt",
       "report": "S03a1 - DN: Sổ nhật ký thu tiền",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền mặt",
       "group": "Tiền mặt",
       "report": "Dòng tiền",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền mặt",
       "group": "Tiền mặt",
       "report": "Bảng kê số dư tiền theo ngày",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền mặt",
       "group": "Tiền mặt",
       "report": "S03a2 - DN: Sổ nhật ký chi tiền",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền mặt",
       "group": "Tiền mặt",
       "report": "Sổ kế toán chi tiết quỹ tiền mặt",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo tiền gửi",
       "report": "Bảng kê số dư tiền theo ngày",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo tiền gửi",
       "report": "S03a1 - DN: Sổ nhật ký thu tiền",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo tiền gửi",
       "report": "Sổ tiền gửi ngân hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo tiền gửi",
       "report": "S03a2 - DN: Sổ nhật ký chi tiền",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo tiền gửi",
       "report": "Bảng kê số dư ngân hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo tiền gửi",
       "report": "Sổ chi tiết chuyển tiền nội bộ",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo khế ước đi vay",
       "report": "Báo cáo tổng hợp tình hình khế ước vay",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo khế ước đi vay",
       "report": "S34 - DN: Sổ chi tiết tiền vay",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo khế ước đi vay",
       "report": "Bảng kê chứng từ theo khế ước vay",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo khế ước đi vay",
       "report": "Tổng hợp lịch trả nợ khế ước vay",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo khế ước cho vay",
       "report": "Báo cáo tổng hợp tình hình khế ước cho vay",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền gửi",
       "group": "Báo cáo khế ước cho vay",
       "report": "Bảng kê chứng từ theo khế ước cho vay",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo mua hàng theo nhà cung cấp, mặt hàng",
       "report": "Sổ chi tiết mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo mua hàng theo nhà cung cấp, mặt hàng",
       "report": "Tổng hợp mua hàng theo mặt hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo mua hàng theo nhà cung cấp, mặt hàng",
       "report": "Tổng hợp mua hàng theo mặt hàng và nhà cung cấp",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo mua hàng theo nhà cung cấp, mặt hàng",
       "report": "Tổng hợp mua hàng theo nhà cung cấp",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo mua hàng theo nhà cung cấp, mặt hàng",
       "report": "Sổ nhật ký mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Tổng hợp công nợ phải trả nhà cung cấp",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Chi tiết công nợ phải trả theo mặt hàng (tĩnh)",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Chi tiết công nợ phải trả theo hóa đơn",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Chi tiết công nợ phải trả theo mặt hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Chi tiết công nợ phải trả nhà cung cấp",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Phân tích công nợ phải trả theo tuổi nợ",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Biên bản đối chiếu và xác nhận công nợ phải trả",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Chi tiết công nợ phải trả theo tuổi nợ",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo công nợ nhà cung cấp",
       "report": "Thông báo công nợ với nhà cung cấp",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo theo nhân viên mua hàng",
       "report": "Tổng hợp mua hàng theo mặt hàng và nhân viên",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo theo nhân viên mua hàng",
       "report": "Tổng hợp công nợ phải trả theo nhân viên",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo theo nhân viên mua hàng",
       "report": "Chi tiết công nợ phải trả theo nhân viên",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo đơn mua hàng",
       "report": "Tình hình thực hiện đơn mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo đơn mua hàng",
       "report": "Chi tiết công nợ phải trả theo đơn mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo đơn mua hàng",
       "report": "Tổng hợp công nợ phải trả theo đơn mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
@@ -582,48 +582,48 @@
       "group": "Báo cáo theo công trình",
       "report": "Tổng hợp mua hàng theo nhà cung cấp và công trình",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo theo công trình",
       "report": "Chi tiết công nợ phải trả theo công trình",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo theo công trình",
       "report": "Tổng hợp công nợ phải trả theo công trình",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu chứng từ công nợ phải trả và chứng từ thanh toán",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu chi phí mua hàng trên chứng từ chi phí và chứng từ mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Mua hàng",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu chi phí mua hàng trên chứng từ mua hàng và chứng từ chi phí",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "S35 - DN: Sổ chi tiết bán hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -637,14 +637,14 @@
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Số chi tiết bán hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Báo cáo so sánh số lượng bán, doanh số bán theo thời gian (Khách hàng và mặt hàng)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -658,7 +658,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Tổng hợp bán hàng theo nhóm khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -672,14 +672,14 @@
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Phân tích chi tiết doanh thu sản phẩm/nhóm sản phẩm theo thời gian",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Tổng hợp bán hàng theo mã thống kê và mặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -693,49 +693,49 @@
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Tổng hợp bán hàng theo sàn thương mại điện tử",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Báo cáo so sánh số lượng bán, doanh số bán theo thời gian (Nhân viên và mặt hàng)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Số nhật ký bán hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Tổng hợp bán hàng theo nhóm mặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Tổng hợp bán hàng theo địa phương",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo bán hàng theo khách hàng, mặt hàng",
       "report": "Sổ chi tiết theo dõi tình trạng bảo hành",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Tổng hợp công nợ phải thu khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -749,7 +749,7 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Tổng hợp công nợ phải thu theo nhóm khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -770,21 +770,21 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Chi tiết công nợ phải thu theo mặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Chi tiết công nợ phải thu khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Tổng hợp công nợ phải thu (chi tiết theo các khoản giảm trừ)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -798,21 +798,21 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Chi tiết công nợ phải thu (Chi tiết theo các khoản giảm trừ)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Báo cáo ngày thanh toán theo khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Tổng hợp thanh toán công nợ khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -826,14 +826,14 @@
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Chi tiết công nợ phải thu theo tuổi nợ",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo công nợ khách hàng",
       "report": "Chi tiết công nợ phải thu theo hóa đơn",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -847,119 +847,119 @@
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp bán hàng theo nhân viên và khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp bán hàng theo mặt hàng và nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Số chi tiết bán hàng theo nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp công nợ phải thu theo nhân viên và khách hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp công nợ phải thu theo nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp bán hàng theo nhân viên, khách hàng và mặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp bán hàng theo nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Tổng hợp thanh toán công nợ khách hàng theo nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo nhân viên bán hàng",
       "report": "Chi tiết công nợ phải thu theo nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn vị kinh doanh",
       "report": "Tổng hợp bán hàng theo đơn vị kinh doanh",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn vị kinh doanh",
       "report": "Tổng hợp bán hàng theo đơn vị kinh doanh và mặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn vị kinh doanh",
       "report": "Tổng hợp công nợ phải thu khách hàng theo đơn vị kinh doanh",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn vị kinh doanh",
       "report": "Chi tiết công nợ phải thu khách hàng theo đơn vị kinh doanh",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn hàng",
       "report": "Tình hình thực hiện đơn đặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn hàng",
       "report": "Báo cáo tổng hợp lãi lỗ theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn hàng",
       "report": "Tổng hợp công nợ phải thu theo đơn đặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn hàng",
       "report": "Thống kê số lượng tồn kho và số lượng đặt hàng chưa giao",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -973,357 +973,357 @@
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn hàng",
       "report": "Báo cáo chi tiết lãi lỗ theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo đơn hàng",
       "report": "Chi tiết công nợ phải thu theo đơn đặt hàng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tình hình thực hiện hợp đồng bán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tổng hợp doanh số mặt hàng theo hợp đồng bán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tình hình thanh toán của hợp đồng (theo đợt thanh toán)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Chi tiết công nợ phải thu theo hợp đồng bán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Báo cáo tổng hợp lãi lỗ theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tổng hợp tình hình chi theo hợp đồng bán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Báo cáo chi tiết lãi lỗ theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tổng hợp chi phí hợp đồng bán theo khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tổng hợp doanh số hợp đồng theo đơn vị",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Số chi tiết tài khoản theo hợp đồng và khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Tổng hợp công nợ phải thu theo hợp đồng bán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo hợp đồng",
       "report": "Báo cáo tổng hợp công nợ phải thu - công nợ phải trả theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo công trình",
       "report": "Chi tiết công nợ phải thu theo công trình",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo theo công trình",
       "report": "Tổng hợp công nợ phải thu theo công trình",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Bán hàng",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu chứng từ công nợ phải thu và chứng từ thanh toán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo tổng hợp tồn kho",
       "report": "Tổng hợp tồn kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo tổng hợp tồn kho",
       "report": "Tổng hợp tồn trên nhiều kho (Dạng bảng chéo)",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo tổng hợp tồn kho",
       "report": "Tổng hợp tồn kho theo nhiều đơn vị tính",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo tổng hợp tồn kho",
       "report": "Tổng hợp nhập xuất tồn trên nhiều kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo tổng hợp tồn kho",
       "report": "Tổng hợp tồn kho theo nhóm VTHH",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Kho",
       "group": "Báo cáo tổng hợp tồn kho",
       "report": "Báo cáo tồn theo chứng từ nhập chưa chuyển kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo chi tiết kho",
       "report": "Số chi tiết vật tư hàng hóa",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo chi tiết kho",
       "report": "Sổ chuyển kho nội bộ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo sản xuất",
       "report": "Báo cáo tiến độ sản xuất",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo sản xuất",
       "report": "Tổng hợp xuất kho theo lệnh sản xuất",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo đối chiếu",
       "report": "Báo cáo đối chiếu kho và sổ cái",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu chi phí mua hàng trên chứng từ chi phí và chứng từ mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu nhập xuất giữa kế toán và thủ kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo đối chiếu",
       "report": "Báo cáo đối chiếu giá thành và giá trị nhập kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Kho",
       "group": "Báo cáo đối chiếu",
       "report": "Đối chiếu giá trị nhập, xuất kho của lệnh lắp ráp, tháo dỡ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo công cụ dụng cụ",
       "report": "Bảng tính phân bổ công cụ dụng cụ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo công cụ dụng cụ",
       "report": "Sổ theo dõi công cụ dụng cụ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo công cụ dụng cụ",
       "report": "Bảng tính phân bổ công cụ dụng cụ theo năm",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo công cụ dụng cụ",
       "report": "Báo cáo chi tiết giảm công cụ dụng cụ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo công cụ dụng cụ",
       "report": "Sổ theo dõi công cụ dụng cụ theo đơn vị sử dụng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo chi phí trả trước",
       "report": "Tình hình phân bổ chi phí trả trước",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo chi phí trả trước",
       "report": "Bảng tính phân bổ chi phí trả trước",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo chi phí trả trước",
       "report": "Tình hình phân bổ chi phí trả trước theo năm",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Công cụ dụng cụ",
       "group": "Báo cáo đối chiếu",
       "report": "Báo cáo đối chiếu sổ theo dõi CCDC, chi phí trả trước và sổ cái",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tài sản cố định",
       "group": "Báo cáo tài sản",
       "report": "S21 - DN: Sổ tài sản cố định",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Tài sản cố định",
       "group": "Báo cáo tài sản",
       "report": "Sổ tài sản cố định",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tài sản cố định",
       "group": "Báo cáo tài sản",
       "report": "Thẻ tài sản cố định",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Tài sản cố định",
       "group": "Báo cáo tài sản",
       "report": "Bảng tính khấu hao tài sản cố định theo năm",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tài sản cố định",
       "group": "Báo cáo đối chiếu",
       "report": "Báo cáo đối chiếu sổ tài sản và sổ cái",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền lương",
       "group": "",
       "report": "Bảng tổng hợp thanh toán tiền lương (Bảng lương cố định)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền lương",
       "group": "",
       "report": "Bảng tổng hợp thanh toán tiền lương (Bảng lương thời gian)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tiền lương",
       "group": "",
       "report": "Báo cáo tổng hợp lương nhân viên",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Thuế",
       "group": "",
       "report": "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ mua vào (Mẫu quản trị)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Thuế",
       "group": "",
       "report": "Bảng tổng hợp quyết toán thuế GTGT năm",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -1337,21 +1337,21 @@
       "category": "Thuế",
       "group": "",
       "report": "Báo cáo đối chiếu bảng kê thuế và sổ cái",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Thuế",
       "group": "",
       "report": "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ bán ra (Mẫu quản trị)",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Thuế",
       "group": "",
       "report": "Đối chiếu thông tin hóa đơn trên bảng kê mua vào và chứng từ",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
@@ -1359,581 +1359,581 @@
       "group": "Sản xuất liên tục",
       "report": "S36-DN: Sổ chi phí sản xuất, kinh doanh",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Tổng hợp chi phí sản xuất kinh doanh theo đối tượng tập hợp chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Bảng kê phiếu nhập, phiếu xuất theo đối tượng tập hợp chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Số chi tiết tài khoản theo đối tượng tập hợp chi phí và khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo yếu tố chi phí",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Số chi tiết tài khoản theo đối tượng tập hợp chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo khoản mục chi phí",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Bảng tính giá thành",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Bảng tổng hợp chi phí theo đối tượng tập hợp chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Sản xuất liên tục",
       "report": "Tổng hợp nhập xuất kho theo đối tượng tập hợp chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "S36-DN: Sổ chi phí sản xuất, kinh doanh theo công trình",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Tổng hợp nhập xuất kho theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Bảng tổng hợp chi phí theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Báo cáo chi tiết lãi lỗ theo công trình (Mẫu ngang)",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "S37-DN: Thẻ tính giá thành công trình - theo khoản mục chi phí",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Báo cáo chi tiết lãi lỗ theo công trình (Mẫu dọc)",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Tổng hợp chi phí công trình theo khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Bảng kê phiếu nhập, phiếu xuất theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Tổng hợp chi phí sản xuất kinh doanh theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Bảng so sánh định mức dự toán vật tư",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Số chi tiết tài khoản theo công trình và khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Tổng hợp công nợ nhân viên theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Số chi tiết tài khoản theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Chi tiết công nợ nhân viên theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Báo cáo tổng hợp lãi lỗ theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành công trình",
       "report": "Báo cáo so sánh chi phí dự toán và thực tế theo công trình",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành đơn hàng",
       "report": "Tổng hợp nhập xuất kho theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành đơn hàng",
       "report": "Bảng tổng hợp chi phí theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành đơn hàng",
       "report": "Bảng kê phiếu nhập, phiếu xuất theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành đơn hàng",
       "report": "Số chi tiết tài khoản theo đơn hàng và khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành đơn hàng",
       "report": "Tổng hợp chi phí sản xuất kinh doanh theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành đơn hàng",
       "report": "S36-DN: Sổ chi phí sản xuất, kinh doanh theo đơn hàng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành hợp đồng",
       "report": "Tổng hợp nhập xuất kho theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành hợp đồng",
       "report": "Bảng tổng hợp chi phí theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành hợp đồng",
       "report": "Bảng kê phiếu nhập, phiếu xuất theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành hợp đồng",
       "report": "Số chi tiết tài khoản theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành hợp đồng",
       "report": "Tổng hợp chi phí sản xuất kinh doanh theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Giá thành hợp đồng",
       "report": "S36-DN: Sổ chi phí sản xuất, kinh doanh theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Báo cáo đối chiếu",
       "report": "Liệt kê danh sách chứng từ chi phí chung theo kỳ tính giá thành",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Giá thành",
       "group": "Báo cáo đối chiếu",
       "report": "Báo cáo đối chiếu giá thành và giá trị nhập kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "Số chi tiết các tài khoản",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "S03b-DN: Sổ cái (Hình thức Nhật ký chung)",
       "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi hộp tham số; chưa đối chiếu mẫu in"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "Số chi tiết phát sinh tài khoản (Chỉ lấy phát sinh)",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "Bảng tổng hợp chứng từ gốc cùng loại (Ghi Có TK)",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "Số nhật ký chung",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "Báo cáo phát sinh theo từng cặp định khoản",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Sổ sách kế toán",
       "report": "Bảng tổng hợp chứng từ gốc cùng loại (Ghi Nợ TK)",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo tổng hợp theo tài khoản",
       "report": "Bảng tổng hợp phát sinh tài khoản",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo tổng hợp theo tài khoản",
       "report": "Báo cáo tổng hợp theo mã thống kê",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Báo cáo tổng hợp lãi lỗ theo mã thống kê",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Tổng hợp chi phí không hợp lý",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Báo cáo chi tiết lãi lỗ theo mã thống kê",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Tổng hợp chi phí theo đơn vị",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Tổng hợp chi phí theo khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Báo cáo tổng hợp lãi lỗ theo đơn vị",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Chi tiết phát sinh tài khoản theo đơn vị",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Tổng hợp chi phí theo đơn vị và khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Chi tiết phát sinh tài khoản theo đơn vị và khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Báo cáo chi tiết lãi lỗ theo đơn vị",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo chi phí, lãi lỗ",
       "report": "Chi tiết phát sinh tài khoản theo khoản mục chi phí",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo công nợ",
       "report": "Tổng hợp công nợ nhân viên",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo công nợ",
       "report": "Số chi tiết tài khoản theo đối tượng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo công nợ",
       "report": "Tổng hợp công nợ nhân viên theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo công nợ",
       "report": "Chi tiết công nợ nhân viên theo hợp đồng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo công nợ",
       "report": "Tổng hợp công nợ theo đối tượng",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Tổng hợp",
       "group": "Báo cáo công nợ",
       "report": "Tình hình quyết toán tạm ứng nhân viên chi tiết theo từng chứng từ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Ngân sách",
       "group": "",
       "report": "Kế hoạch ngân sách",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Ngân sách",
       "group": "",
       "report": "Tình hình thực hiện doanh thu so với kế hoạch",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Ngân sách",
       "group": "",
       "report": "Tình hình thực hiện ngân sách",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Ngân sách",
       "group": "",
       "report": "Tình hình chi phí thực tế so với kế hoạch",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu chứng từ công nợ phải trả và chứng từ thanh toán",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Báo cáo đối chiếu sổ theo dõi CCDC, chi phí trả trước và sổ cái",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu chi phí mua hàng trên chứng từ mua hàng và chứng từ chi phí",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Báo cáo đối chiếu sổ tài sản và sổ cái",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu chi phí mua hàng trên chứng từ chi phí và chứng từ mua hàng",
       "rendering": "Màn hình riêng (cần audit từng thao tác)",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Báo cáo đối chiếu bảng kê thuế và sổ cái",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu chứng từ công nợ phải thu và chứng từ thanh toán",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu thông tin hóa đơn trên bảng kê mua vào và chứng từ",
-      "rendering": "Bảng mẫu chung",
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
       "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Báo cáo đối chiếu kho và sổ cái",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Liệt kê danh sách chứng từ chi phí chung theo kỳ tính giá thành",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu nhập xuất giữa kế toán và thủ kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Báo cáo đối chiếu giá thành và giá trị nhập kho",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     },
     {
       "category": "Báo cáo đối chiếu",
       "group": "",
       "report": "Đối chiếu giá trị nhập, xuất kho của lệnh lắp ráp, tháo dỡ",
-      "rendering": "Bảng mẫu chung",
-      "misaVerified": "Danh mục đã đọc; màn hình chi tiết chưa kiểm tra trong đợt này"
+      "rendering": "Cấu hình riêng theo MISA (cần audit tùy chọn)",
+      "misaVerified": "Đã ghi nhãn tham số và tiêu đề cột; chưa kiểm tra hết tùy chọn"
     }
   ],
   "misaCounts": [
@@ -1998,5 +1998,5 @@
       "total": 13
     }
   ],
-  "schemasCaptured": 79
+  "schemasCaptured": 245
 }

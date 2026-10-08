@@ -82,6 +82,9 @@ import MisaPurchaseContractReports from "./MisaPurchaseContractReports";
 import { CONTRACT_REPORT_TITLES } from "./purchase-contract-data";
 import MisaSalesSummaryReports from "./MisaSalesSummaryReports";
 import { SALES_SUMMARY_TITLES } from "./sales-summary-data";
+import AuditedReportWorkspace from "./AuditedReportWorkspace";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
+import { canonicalReportName } from "./audited-report-schema";
 
 export type MisaReportCenterWorkspaceProps = {
   notify?: (msg: string) => void;
@@ -1715,6 +1718,11 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
         reportType="purchase_cost_match"
       />
     );
+  }
+
+  const auditedDefinition = selectedReport ? MISA_REPORT_DEFINITIONS.find(definition => canonicalReportName(definition.name) === canonicalReportName(selectedReport)) : undefined;
+  if (auditedDefinition) {
+    return <AuditedReportWorkspace key={auditedDefinition.name} definition={auditedDefinition} onBack={() => setSelectedReport(null)} notify={notify} />;
   }
 
   return (

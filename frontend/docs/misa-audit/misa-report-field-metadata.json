@@ -1,0 +1,4463 @@
+{
+  "Tình hình phân bổ chi phí trả trước theo năm": {
+    "fields": [
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S21-DN: Sổ tài sản cố định": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị sử dụng",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Loại tài sản cố định",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ tài sản cố định": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị sử dụng",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Loại tài sản cố định",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Thẻ tài sản cố định": {
+    "fields": [
+      {
+        "default": "08/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tính khấu hao tài sản cố định theo năm": {
+    "fields": [
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị sử dụng",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Loại tài sản cố định",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo đối chiếu sổ tài sản và sổ cái": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết các tài khoản": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S03b-DN: Sổ cái (Hình thức Nhật ký chung)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết phát sinh tài khoản (Chỉ lấy phát sinh)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp chứng từ gốc cùng loại (Ghi Có TK)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Loại chứng từ",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản Có",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ nhật ký chung": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo phát sinh theo từng cặp định khoản": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp chứng từ gốc cùng loại (Ghi Nợ TK)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Loại chứng từ",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản nợ",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp phát sinh tài khoản": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo tổng hợp theo mã thống kê": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo tổng hợp lãi lỗ theo mã thống kê": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí không hợp lý": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo chi tiết lãi lỗ theo mã thống kê": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí theo đơn vị": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí theo khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo tổng hợp lãi lỗ theo đơn vị": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết phát sinh tài khoản theo đơn vị": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí theo đơn vị và khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết phát sinh tài khoản theo đơn vị và khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo chi tiết lãi lỗ theo đơn vị": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết phát sinh tài khoản theo khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ nhân viên": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "<<Tất cả>>",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo đối tượng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Loại đối tượng",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm KH/NCC",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ nhân viên theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "141",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ nhân viên theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "141",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ theo đối tượng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "<<Tất cả>>",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Loại đối tượng",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm KH/NCC",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tình hình quyết toán tạm ứng nhân viên chi tiết theo từng chứng từ": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Kế hoạch ngân sách": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Xem theo",
+        "required": true
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      }
+    ]
+  },
+  "Tình hình thực hiện doanh thu so với kế hoạch": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Xem theo",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      }
+    ]
+  },
+  "Tình hình thực hiện ngân sách": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Xem theo",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      }
+    ]
+  },
+  "Tình hình chi phí thực tế so với kế hoạch": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Đơn vị",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Xem theo",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      },
+      {
+        "checked": true,
+        "label": "Khi ghi nhận chi phí"
+      },
+      {
+        "checked": false,
+        "label": "Khi thực chi bằng tiền"
+      }
+    ]
+  },
+  "S36-DN: Sổ chi phí sản xuất, kinh doanh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí sản xuất kinh doanh theo đối tượng tập hợp chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê phiếu nhập, phiếu xuất theo đối tượng tập hợp chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo đối tượng tập hợp chi phí và khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo yếu tố chi phí": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Kỳ tính giá thành",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo đối tượng tập hợp chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo khoản mục chi phí": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Kỳ tính giá thành",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tính giá thành": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Phương pháp tính giá thành",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Kỳ tính giá thành",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp chi phí theo đối tượng tập hợp chi phí": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Kỳ tính giá thành",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp nhập xuất kho theo đối tượng tập hợp chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S36-DN: Sổ chi phí sản xuất, kinh doanh theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "154",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp nhập xuất kho theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp chi phí theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo chi tiết lãi lỗ theo công trình (Mẫu ngang)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S37-DN: Thẻ tính giá thành công trình - theo khoản mục chi phí": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Kỳ tính giá thành",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo chi tiết lãi lỗ theo công trình (Mẫu dọc)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí công trình theo khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê phiếu nhập, phiếu xuất theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí sản xuất kinh doanh theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng so sánh định mức dự toán vật tư": {
+    "fields": [],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo công trình và khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ nhân viên theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "141",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ nhân viên theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "141",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo tổng hợp lãi lỗ theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo so sánh chi phí dự toán và thực tế theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp nhập xuất kho theo đơn hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp chi phí theo đơn hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê phiếu nhập, phiếu xuất theo đơn hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo đơn hàng và khoản mục chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí sản xuất kinh doanh theo đơn hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S36-DN: Sổ chi phí sản xuất, kinh doanh theo đơn hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp nhập xuất kho theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng tổng hợp chi phí theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê phiếu nhập, phiếu xuất theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "default": "Đơn vị tính chính",
+        "kind": "combo",
+        "label": "Đơn vị tính",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết tài khoản theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp chi phí sản xuất kinh doanh theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S36-DN: Sổ chi phí sản xuất, kinh doanh theo hợp đồng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      }
+    ],
+    "radios": []
+  },
+  "Liệt kê danh sách chứng từ chi phí chung theo kỳ tính giá thành": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo đối chiếu giá thành và giá trị nhập kho": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Đối chiếu chứng từ công nợ phải trả và chứng từ thanh toán": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo đối chiếu sổ theo dõi CCDC, chi phí trả trước và sổ cái": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      }
+    ],
+    "radios": []
+  },
+  "Đối chiếu chi phí mua hàng trên chứng từ mua hàng và chứng từ chi phí": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Đối chiếu chi phí mua hàng trên chứng từ chi phí và chứng từ mua hàng": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Khoảng thời gian",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo đối chiếu bảng kê thuế và sổ cái": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "10",
+        "kind": "combo",
+        "label": "Tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Theo tháng"
+      },
+      {
+        "checked": false,
+        "label": "Theo quý"
+      },
+      {
+        "checked": false,
+        "label": "Theo năm"
+      }
+    ]
+  },
+  "Đối chiếu chứng từ công nợ phải thu và chứng từ thanh toán": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Đối chiếu thông tin hóa đơn trên bảng kê mua vào và chứng từ": {
+    "fields": [
+      {
+        "default": "true",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "10",
+        "kind": "combo",
+        "label": "Tháng",
+        "required": true
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Theo tháng"
+      },
+      {
+        "checked": false,
+        "label": "Theo quý"
+      }
+    ]
+  },
+  "Báo cáo đối chiếu kho và sổ cái": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Kỳ đối chiếu",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Đối chiếu nhập xuất giữa kế toán và thủ kho": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Kho",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Đối chiếu giá trị nhập, xuất kho của lệnh lắp ráp, tháo dỡ": {
+    "fields": [
+      {
+        "default": "Đầu tháng đến hiện tại",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "08/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết mua hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "NV mua hàng",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp mua hàng theo mặt hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp mua hàng theo mặt hàng và nhà cung cấp": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp mua hàng theo nhà cung cấp": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ nhật ký mua hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ phải trả nhà cung cấp": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo mặt hàng (tĩnh)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm NCC",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo hóa đơn": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "NV mua hàng",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo mặt hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm NCC",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả nhà cung cấp": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Phân tích công nợ phải trả theo tuổi nợ": {
+    "fields": [
+      {
+        "default": "07/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Biên bản đối chiếu và xác nhận công nợ phải trả": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo tuổi nợ": {
+    "fields": [
+      {
+        "default": "08/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Thông báo công nợ với nhà cung cấp": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      },
+      {
+        "kind": "date",
+        "label": "Ngày thông báo",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp mua hàng theo mặt hàng và nhân viên": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ phải trả theo nhân viên": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo nhân viên": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tình hình thực hiện đơn mua hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm NCC",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhân viên",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo đơn mua hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ phải trả theo đơn mua hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp mua hàng theo nhà cung cấp và công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Chi tiết công nợ phải trả theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp công nợ phải trả theo công trình": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "331",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S03a1-DN: Sổ nhật ký thu tiền": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "111",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản ngân hàng",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Dòng tiền": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê số dư tiền theo ngày": {
+    "fields": [
+      {
+        "default": "08/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S03a2-DN: Sổ nhật ký chi tiền": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "111",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản ngân hàng",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ kế toán chi tiết quỹ tiền mặt": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Sổ tiền gửi ngân hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản ngân hàng",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê số dư ngân hàng": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "",
+        "kind": "combo",
+        "label": "Tài khoản",
+        "required": true
+      }
+    ],
+    "radios": []
+  },
+  "Sổ chi tiết chuyển tiền nội bộ": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo tổng hợp tình hình khế ước vay": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "S34-DN: Sổ chi tiết tiền vay": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê chứng từ theo khế ước vay": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tổng hợp lịch trả nợ khế ước vay": {
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo tổng hợp tình hình khế ước cho vay": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng kê chứng từ theo khế ước cho vay": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng cân đối tài khoản (Mẫu quản trị)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc tài khoản",
+        "required": false
+      },
+      {
+        "kind": "radio",
+        "label": "Lấy lũy kế phát sinh từ",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": false,
+        "label": "Ngày bắt đầu dữ liệu"
+      },
+      {
+        "checked": true,
+        "label": "Ngày bắt đầu năm tài chính của kỳ báo cáo"
+      }
+    ]
+  },
+  "B09-DN: Thuyết minh báo cáo tài chính": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Tình hình thực hiện nghĩa vụ với nhà nước": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B01a-DN: Báo cáo tình hình tài chính giữa niên độ (Dạng đầy đủ)": {
+    "fields": [
+      {
+        "default": "Quý 4",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/12/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B01-DN: Báo cáo tình hình tài chính": {
+    "fields": [
+      {
+        "default": "Năm",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "date",
+        "label": "Từ",
+        "required": false
+      },
+      {
+        "kind": "date",
+        "label": "Đến",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B02a-DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ (Dạng đầy đủ)": {
+    "fields": [
+      {
+        "default": "Quý 4",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/12/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B02-DN: Báo cáo kết quả hoạt động kinh doanh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B03a-DN: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP trực tiếp)": {
+    "fields": [
+      {
+        "default": "Quý 4",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/12/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B03-DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B03a-DN-GT: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP gián tiếp)": {
+    "fields": [
+      {
+        "default": "Quý 4",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/12/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "B03-DN-GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng cân đối tài khoản theo nhiều chi nhánh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc tài khoản",
+        "required": false
+      },
+      {
+        "kind": "radio",
+        "label": "Lấy lũy kế phát sinh từ",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": false,
+        "label": "Ngày bắt đầu dữ liệu"
+      },
+      {
+        "checked": true,
+        "label": "Ngày bắt đầu năm tài chính của kỳ báo cáo"
+      }
+    ]
+  },
+  "Bảng cân đối kế toán theo nhiều chi nhánh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều chi nhánh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "radio",
+        "label": "Chi phí bán hàng và QLDN phân tích theo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Cấp khoản mục chi phí",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Khoản mục chi phí"
+      },
+      {
+        "checked": false,
+        "label": "Tài khoản chi phí"
+      }
+    ]
+  },
+  "Báo cáo kết quả hoạt động kinh doanh theo nhiều chi nhánh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo phân tích chi tiết doanh thu theo nhiều chi nhánh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo phân tích chi tiết chi phí theo nhiều chi nhánh": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Cấp khoản mục chi phí",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Bảng cân đối tài khoản phân tích theo thời gian": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Bậc tài khoản",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      }
+    ]
+  },
+  "Phân tích báo cáo kết quả hoạt động kinh doanh (so sánh tỷ lệ trên doanh thu)": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "6 tháng"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Cùng kỳ giữa các năm"
+      }
+    ]
+  },
+  "Báo cáo phân tích chi tiết doanh thu theo nhiều kỳ": {
+    "fields": [
+      {
+        "kind": "radio",
+        "label": "Kỳ",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "checkbox",
+        "label": "Doanh thu phân tích",
+        "required": false
+      },
+      {
+        "kind": "checkbox",
+        "label": "Phân tích theo",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Tùy chọn"
+      }
+    ]
+  },
+  "Phân tích tăng trưởng các chỉ tiêu bảng cân đối kế toán": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "6 tháng"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Cùng kỳ giữa các năm"
+      }
+    ]
+  },
+  "Báo cáo phân tích chi tiết chi phí theo nhiều kỳ": {
+    "fields": [
+      {
+        "kind": "radio",
+        "label": "Kỳ",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "checkbox",
+        "label": "Chi phí phân tích",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Cấp khoản mục chi phí",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Tùy chọn"
+      }
+    ]
+  },
+  "Phân tích cơ cấu tài sản, nguồn vốn trên bảng cân đối kế toán": {
+    "fields": [
+      {
+        "default": "Tháng 10",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      }
+    ],
+    "radios": []
+  },
+  "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều kỳ": {
+    "fields": [
+      {
+        "kind": "radio",
+        "label": "Kỳ",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Cấp khoản mục chi phí",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Tùy chọn"
+      }
+    ]
+  },
+  "Phân tích tăng trưởng các chỉ tiêu bảng cân đối kế toán dạng tóm lược": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "6 tháng"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Cùng kỳ giữa các năm"
+      }
+    ]
+  },
+  "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo đơn vị": {
+    "fields": [
+      {
+        "default": "Tháng này",
+        "kind": "combo",
+        "label": "Kỳ báo cáo",
+        "required": true
+      },
+      {
+        "default": "01/10/2026",
+        "kind": "date",
+        "label": "Từ ngày",
+        "required": false
+      },
+      {
+        "default": "31/10/2026",
+        "kind": "date",
+        "label": "Đến ngày",
+        "required": false
+      },
+      {
+        "kind": "radio",
+        "label": "Chi phí phân tích theo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Cấp khoản mục chi phí",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Khoản mục chi phí"
+      },
+      {
+        "checked": false,
+        "label": "Tài khoản chi phí"
+      }
+    ]
+  },
+  "Phân tích khả năng tạo tiền của từng hoạt động theo thời gian (PP trực tiếp)": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "6 tháng"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Cùng kỳ giữa các năm"
+      }
+    ]
+  },
+  "Phân tích tăng trưởng các chỉ tiêu kết quả hoạt động kinh doanh": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "6 tháng"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Cùng kỳ giữa các năm"
+      }
+    ]
+  },
+  "Phân tích báo cáo lưu chuyển tiền tệ theo thời gian (PP trực tiếp)": {
+    "fields": [
+      {
+        "default": "1",
+        "kind": "radio",
+        "label": "Kỳ báo cáo",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Từ tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      },
+      {
+        "kind": "combo",
+        "label": "Đến tháng",
+        "required": false
+      },
+      {
+        "default": "2026",
+        "kind": "number",
+        "label": "Năm",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "6 tháng"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Cùng kỳ giữa các năm"
+      }
+    ]
+  }
+}

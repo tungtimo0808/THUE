@@ -1,0 +1,31130 @@
+import type { AuditedReportDefinition } from './audited-report-schema';
+export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
+  {
+    "name": "Tổng hợp bán hàng theo khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Nhân viên",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả khách hàng"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ lấy khách hàng có phát sinh"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "S35-DN: Sổ chi tiết bán hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày, tháng ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Các khoản tính trừ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày, tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khác (521)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm vật tư hàng hóa"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết bán hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng trên chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mô tả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm vật tư hàng hóa",
+      "Đơn vị",
+      "Nhân viên",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo so sánh số lượng bán, doanh số bán theo thời gian (Khách hàng và mặt hàng)",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "So sánh",
+      "Đơn vị tính",
+      "Nhóm vật tư hàng hóa",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo mặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả vật tư"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo nhóm khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhóm khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhóm khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã nhóm khách hàng",
+          "Tên nhóm khách hàng",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo mặt hàng và khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm vật tư hàng hóa",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Phân tích chi tiết doanh thu sản phẩm/nhóm sản phẩm theo thời gian",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "STT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ",
+      "Từ tháng",
+      "Đến tháng",
+      "Đơn vị tính",
+      "Doanh thu phân tích"
+    ],
+    "selectors": [
+      {
+        "title": "Mã nhóm",
+        "headers": [
+          "Mã nhóm",
+          "Tên nhóm",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Đánh giá tăng/giảm giữa các kỳ"
+      },
+      {
+        "checked": true,
+        "label": "Phân tích theo vật tư hàng hóa"
+      },
+      {
+        "checked": true,
+        "label": "Phân tích theo nhóm vật tư hàng hóa"
+      },
+      {
+        "checked": false,
+        "label": "Lấy lên cả những sản phẩm/nhóm sản phẩm không phát sinh nhưng chưa ngừng theo dõi"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo mã thống kê và mặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã thống kê",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên thống kê",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm vật tư hàng hóa",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Mã thống kê",
+        "headers": [
+          "Mã thống kê",
+          "Tên thống kê",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo sàn thương mại điện tử",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Sàn thương mại điện tử",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên shop",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phí sàn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Sàn thương mại điện tử"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo so sánh số lượng bán, doanh số bán theo thời gian (Nhân viên và mặt hàng)",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "So sánh",
+      "Đơn vị tính",
+      "Nhóm vật tư hàng hóa",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ nhật ký bán hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu hàng hóa",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu dịch vụ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ hiển thị hóa đơn bán hàng chưa thu tiền"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo nhóm mặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Mã nhóm VTHH",
+        "headers": [
+          "Mã nhóm VTHH",
+          "Tên nhóm VTHH",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Xem chi tiết vật tư hàng hóa"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo địa phương",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tỉnh/Thành phố",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Quận/Huyện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xã/Phường",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Nhân viên",
+      "Tỉnh/Thành phố",
+      "Nhóm VTHH",
+      "Quận/Huyện",
+      "VTHH",
+      "Xã/Phường"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết theo dõi tình trạng bảo hành",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời hạn bảo hành",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hết hạn bảo hành",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời hạn BH còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tình trạng bảo hành",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đến ngày",
+      "Tình trạng bảo hành"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ lấy khách hàng có số dư hoặc phát sinh trong kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị báo cáo theo từng tài khoản chi tiết"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị khách hàng hết số dư cuối kỳ"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu theo nhóm khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Nhóm khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã nhóm khách hàng",
+          "Tên nhóm khách hàng",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị báo cáo theo từng tài khoản chi tiết"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị khách hàng hết số dư cuối kỳ"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo mặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/Giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/Giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả khách hàng"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ]
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp tiền chiết khấu, tiền thuế của các mặt hàng khác nhau"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị hàng khuyến mại không thu tiền"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu (chi tiết theo các khoản giảm trừ)",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/Giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/Giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu (Chi tiết theo các khoản giảm trừ)",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/Giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/Giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị chi tiết từng mặt hàng"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo ngày thanh toán theo khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày CT thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày CT bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số ngày trả tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số ngày trả quá hạn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp thanh toán công nợ khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo tuổi nợ",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Không có hạn nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nợ trước hạn",
+          "colSpan": 6,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ quá hạn",
+          "colSpan": 6,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "0-30 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "31-60 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "61-90 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "91-120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trên 120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "1-30 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "31-60 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "61-90 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "91-120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trên 120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo hóa đơn",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải thu ĐK",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch tỷ giá do đánh giá lại tài khoản ngoại tệ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ lấy hóa đơn trong kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Lấy cả chứng từ thanh toán chưa đối trừ với chứng từ công nợ"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo nhân viên và khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo mặt hàng và nhân viên",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả nhân viên"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết bán hàng theo nhân viên",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng trên chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu theo nhân viên và khách hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị chi tiết số thanh toán và giảm trừ khác"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu theo nhân viên",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo nhân viên, khách hàng và mặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Nhóm khách hàng",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo nhân viên",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp thanh toán công nợ khách hàng theo nhân viên",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhóm KH",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo nhân viên",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị hàng khuyến mại không thu tiền"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo đơn vị kinh doanh",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp bán hàng theo đơn vị kinh doanh và mặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị chính (ĐVC)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL bán không KM",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL bán không KM theo ĐVC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng khuyến mại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng KM theo ĐVC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng bán theo ĐVC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại không KM",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại không KM theo ĐVC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL hàng KM trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL hàng KM trả lại theo ĐVC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại theo ĐVC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền vốn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi gộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ lãi gộp (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu khách hàng theo đơn vị kinh doanh",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu khách hàng theo đơn vị kinh doanh",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện đơn đặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày giao hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đặt hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đã giao",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số đặt hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số đã thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số chưa thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tình trạng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Nhân viên",
+      "Nhóm khách hàng",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy tình hình đã thực hiện đến cuối kì báo cáo"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp lãi lỗ theo đơn hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giảm trừ doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn hàng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CP bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CP quản lý",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi/Lỗ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ suất lợi nhuận/Doanh thu %",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả đơn hàng"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu theo đơn đặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK Công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Thống kê số lượng tồn kho và số lượng đặt hàng chưa giao",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đặt hàng chưa giao",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng tồn kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đặt mua chưa nhận",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải đặt mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm vật tư hàng hóa"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết lãi lỗ theo đơn hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả đơn hàng"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo đơn đặt hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát Sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện hợp đồng bán",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hợp đồng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đã giao",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số hợp đồng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số đã thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số chưa thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tình trạng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm vật tư hàng hóa",
+      "Đơn vị",
+      "Nhân viên",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp doanh số mặt hàng theo hợp đồng bán",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả vật tư"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thanh toán của hợp đồng (theo đợt thanh toán)",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đợt thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã thu năm trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Ngày ký",
+          "Số hợp đồng",
+          "Tên khách hàng",
+          "Địa chỉ giao hàng",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo hợp đồng bán",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp lãi lỗ theo hợp đồng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Hợp đồng/dự án",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giảm trừ doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn hàng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí quản lý",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi/Lỗ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ suất lợi nhuận/Doanh thu (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp tình hình chi theo hợp đồng bán",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ghi doanh số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hợp đồng/dự án",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phải chi trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đã chi trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phải chi lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đã chi lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Còn phải chi",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tình trạng hợp đồng",
+      "Tình trạng ghi doanh số",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết lãi lỗ theo hợp đồng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí hợp đồng bán theo khoản mục chi phí",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trích yếu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản chi phí"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp doanh số hợp đồng theo đơn vị",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ghi doanh số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hợp đồng/dự án",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dự kiến chi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi lỗ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tình trạng hợp đồng",
+      "Đơn vị"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo hợp đồng và khoản mục chi phí",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu theo hợp đồng bán",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Hợp đồng/dự án",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp công nợ phải thu - công nợ phải trả theo hợp đồng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số hợp đồng bán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Hạn thanh toán HĐ bán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Công nợ phải thu (với khách hàng)",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Công nợ phải trả (nhà cung cấp, ...)",
+          "colSpan": 7,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Tổng công nợ phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hợp đồng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn thanh toán HĐ mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng công nợ phải trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền đã trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đơn vị",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải thu theo công trình",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải thu theo công trình",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải trả theo hợp đồng mua",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng",
+          "Ngày ký",
+          "Nhà cung cấp",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện hợp đồng mua",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hợp đồng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn giao hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đã giao",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị hợp đồng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị đã thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị chưa thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tình trạng thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Nhóm NCC",
+      "Nhân viên"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      },
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo hợp đồng mua",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng",
+          "Ngày ký",
+          "Nhà cung cấp",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp thanh toán tiền lương (Bảng lương cố định)",
+    "category": "Tiền lương",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Họ và tên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Hệ số lương",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lương cơ bản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phụ cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng số",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tạm ứng lương trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Các khoản phải khấu trừ vào lương",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ II được lĩnh",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "BHXH",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "BHYT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "BHTN",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế TNCN phải nộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ký nhận",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Tháng"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp thanh toán tiền lương (Bảng lương thời gian)",
+    "category": "Tiền lương",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Họ và tên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đơn giá công",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lương thời gian",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lương nghỉ việc không hưởng 100% lương",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phụ cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng số",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Các khoản phải khấu trừ vào lương",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền thực lĩnh",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Số công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "BHXH",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "BHYT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "BHTN",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế TNCN",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Tháng"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp lương nhân viên",
+    "category": "Tiền lương",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thu nhập chịu thuế TNCN",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Các khoản giảm trừ",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thu nhập tính thuế TNCN",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thuế TNCN đã khấu trừ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thu nhập sau thuế",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Giảm trừ gia cảnh",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Bảo hiểm được trừ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ mua vào (Mẫu quản trị)",
+    "category": "Thuế",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên người bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số thuế người bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mặt hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị HHDV mua vào chưa có thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế suất",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế GTGT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp theo từng hóa đơn"
+      },
+      {
+        "checked": false,
+        "label": "Lấy số liệu ĐVT, số lượng, đơn giá lên báo cáo"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp quyết toán thuế GTGT năm",
+    "category": "Thuế",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Kỳ tính thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn được khấu trừ kỳ trước chuyển sang",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số thuế đầu ra",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số thuế đầu vào",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số được khấu trừ trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải nộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số thuế đề nghị hoàn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn được khấu trừ chuyển kỳ sau",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ tính thuế"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ bán ra (Mẫu quản trị)",
+    "category": "Thuế",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên người mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số thuế người mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mặt hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh số bán chưa có thuế GTGT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế suất",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế GTGT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp theo từng hóa đơn"
+      },
+      {
+        "checked": false,
+        "label": "Lấy số liệu ĐVT, số lượng, đơn giá lên báo cáo"
+      },
+      {
+        "checked": false,
+        "label": "Lấy lên các hóa đơn thuộc kỳ khác thay thế/điều chỉnh cho hóa đơn kỳ này"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp tồn kho",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả kho"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp tồn trên nhiều kho (Dạng bảng chéo)",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ hiển thị các kho còn tồn"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị giá trị tồn"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp tồn kho theo nhiều đơn vị tính",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị số lượng theo loại nhập xuất"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp nhập xuất tồn trên nhiều kho",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tồn theo chứng từ nhập chưa chuyển kho",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ nhập",
+          "colSpan": 6,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chứng từ chuyển kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng tồn",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng nhập",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ lấy chứng từ nhập còn tồn"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết vật tư hàng hóa",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mô tả",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tồn",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Kho",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chuyển kho nội bộ",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Từ kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đến kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tiến độ sản xuất",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng yêu cầu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng sản xuất",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Ngày",
+        "headers": [
+          "Ngày",
+          "Số lệnh sản xuất"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp xuất kho theo lệnh sản xuất",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "SL thành phẩm định mức",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã nguyên vật liệu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nguyên vật liệu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng định mức",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng NVL trong kỳ",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng NVL lũy kế",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch NVL",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Xuất kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhập lại kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực tế sử dụng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhập lại kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực tế sử dụng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Kỳ lệnh sản xuất"
+    ],
+    "selectors": [
+      {
+        "title": "Ngày",
+        "headers": [
+          "Ngày",
+          "Số lệnh sản xuất",
+          "Tình trạng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tính phân bổ công cụ dụng cụ",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ phân bổ còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phân bổ trong kỳ",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế đã PB",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK chờ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Đối tượng phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Loại công cụ dụng cụ"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Không lấy CCDC đã hết giá trị tính đến đầu kỳ"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ theo dõi công cụ dụng cụ",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lý do ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số kỳ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số kỳ PB còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế SL đã giảm",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị PB hàng kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phân bổ trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế đã PB",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK chờ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Loại công cụ dụng cụ"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tính phân bổ công cụ dụng cụ theo năm",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị phân bổ tháng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ đã phân bổ trước đó",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị đã phân bổ trước đó",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị phân bổ theo tháng",
+          "colSpan": 13,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số kỳ đã phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng giá trị đã phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản chờ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Tháng 1",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 2",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 3",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 4",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 5",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 6",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 7",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 8",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 9",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 10",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 11",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 12",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Từ tháng",
+      "Đến tháng",
+      "Loại công cụ dụng cụ"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Không lấy CCDC đã phân bổ hết từ kỳ trước"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết giảm công cụ dụng cụ",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị CCDC",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị đã phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lý do giảm",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Loại CCDC",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả CCDC"
+      },
+      {
+        "title": "Mã CCDC",
+        "headers": [
+          "Mã CCDC",
+          "Tên CCDC"
+        ]
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ theo dõi công cụ dụng cụ theo đơn vị sử dụng",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên CCDC",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng tăng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng giảm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị của CCDC còn lại",
+          "colSpan": 3,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Tổng giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Loại công cụ dụng cụ",
+      "Đơn vị"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình phân bổ chi phí trả trước",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã chi phí trả trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên chi phí trả trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày ghi nhận",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số kỳ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số kỳ PB còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền PB hàng kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phân bổ trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế đã PB",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số ghi giảm",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản chờ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tính phân bổ chi phí trả trước",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã chi phí trả trước",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên chi phí trả trước",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ghi nhận",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ PB còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phân bổ trong kỳ",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế đã PB",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số ghi giảm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK chờ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Đối tượng phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền PB trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình phân bổ chi phí trả trước theo năm",
+    "category": "Công cụ dụng cụ",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã chi phí trả trước",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên chi phí trả trước",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ghi nhận",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ đã PB trước đó",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền PB hàng kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền lũy kế đã PB trước đó",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền phân bổ theo tháng",
+          "colSpan": 13,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số kỳ đã phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng số tiền lũy kế đã PB",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số kỳ PB còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số ghi giảm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản chờ phân bổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Tháng 1",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 2",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 3",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 4",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 5",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 6",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 7",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 8",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 9",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 10",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 11",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 12",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ tài sản cố định",
+    "category": "Tài sản cố định",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị sử dụng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày bắt đầu tính KH",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời gian SD (tháng)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời gian SD còn lại (tháng)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nguyên giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị tính KH",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hao mòn trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hao mòn lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị KH tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK nguyên giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK khấu hao",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị sử dụng",
+      "Loại tài sản cố định"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Không lấy TSCĐ đã ghi giảm trong kỳ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Đơn vị sử dụng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Loại tài sản cố định",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tính khấu hao tài sản cố định theo năm",
+    "category": "Tài sản cố định",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ghi tăng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày bắt đầu tính khấu hao",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nguyên giá TSCĐ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị tính KH",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thời gian sử dụng (tháng)",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị khấu hao tháng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thời gian sử dụng lũy kế đầu kỳ (tháng)",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Hao mòn lũy kế đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị khấu hao theo tháng",
+          "colSpan": 13,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời gian sử dụng lũy kế cuối kỳ (tháng)",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Hao mòn lũy kế cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thời gian SD còn lại (tháng)",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị còn lại",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Tháng 1",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 2",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 3",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 4",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 5",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 6",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 7",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 8",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 9",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 10",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 11",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 12",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đơn vị sử dụng",
+      "Loại tài sản cố định",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy TSCĐ còn sử dụng và có giá trị còn lại bằng 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Đơn vị sử dụng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Loại tài sản cố định",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết các tài khoản",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dư Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dư Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết phát sinh tài khoản (Chỉ lấy phát sinh)",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp chứng từ gốc cùng loại (Ghi Có TK)",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi Có TK",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Loại chứng từ",
+      "Tài khoản Có",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số hiệu tài khoản Nợ",
+          "Tên tài khoản Nợ",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Loại chứng từ",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Tài khoản Có",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ nhật ký chung",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị số lũy kế kỳ trước chuyển sang"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo phát sinh theo từng cặp định khoản",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đối tượng Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đối tượng Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp chứng từ gốc cùng loại (Ghi Nợ TK)",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi Nợ TK",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Loại chứng từ",
+      "Tài khoản nợ",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số hiệu tài khoản Có",
+          "Tên tài khoản Có",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Loại chứng từ",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Tài khoản nợ",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp phát sinh tài khoản",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "TK đối ứng là TK tổng hợp"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp theo mã thống kê",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã thống kê",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên thống kê",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Mã thống kê",
+        "headers": [
+          "Mã thống kê",
+          "Tên thống kê",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp lãi lỗ theo mã thống kê",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã thống kê",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên thống kê",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giảm trừ doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn hàng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí quản lý",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi/Lỗ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ suất lợi nhuận/Doanh thu (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Mã thống kê",
+        "headers": [
+          "Mã thống kê",
+          "Tên thống kê",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí không hợp lý",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Loại chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết lãi lỗ theo mã thống kê",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Mã thống kê",
+        "headers": [
+          "Mã thống kê",
+          "Tên thống kê",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí theo đơn vị",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ này",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế từ đầu năm",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ]
+      },
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí theo khoản mục chi phí",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khoản mục CP",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ này",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế từ đầu năm",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp lãi lỗ theo đơn vị",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giảm trừ doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá vốn hàng bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CP bán hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CP quản lý",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi/Lỗ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ suất LN/DT %",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết phát sinh tài khoản theo đơn vị",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Chỉ lấy lên chi phí đã xác định đơn vị sử dụng"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí theo đơn vị và khoản mục chi phí",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Khoản mục",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ này",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết phát sinh tài khoản theo đơn vị và khoản mục chi phí",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Chỉ lấy lên chi phí đã xác định đơn vị sử dụng"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết lãi lỗ theo đơn vị",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn vị",
+        "headers": [
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết phát sinh tài khoản theo khoản mục chi phí",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dư Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dư Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ nhân viên",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "<<Tất cả>>"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo đối tượng",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Loại đối tượng",
+      "Nhóm KH/NCC"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Cộng gộp theo chứng từ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": ""
+      },
+      {
+        "label": "Loại đối tượng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhóm KH/NCC",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ nhân viên theo hợp đồng",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Hợp đồng/Dự án",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Trích yếu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Loại hợp đồng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "141"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ nhân viên theo hợp đồng",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Loại hợp đồng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "141"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ theo đối tượng",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đối tượng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên đối tượng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK Công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Loại đối tượng",
+      "Nhóm KH/NCC"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ lấy đối tượng có số dư hoặc phát sinh trong kỳ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "<<Tất cả>>"
+      },
+      {
+        "label": "Loại đối tượng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhóm KH/NCC",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình quyết toán tạm ứng nhân viên chi tiết theo từng chứng từ",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền tạm ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền đã quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền chưa quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đã quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời hạn quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số ngày quá hạn quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ quyết toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Kế hoạch ngân sách",
+    "category": "Ngân sách",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đơn vị",
+      "Xem theo",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Xem theo",
+        "kind": "combo",
+        "required": true
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện doanh thu so với kế hoạch",
+    "category": "Ngân sách",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu doanh thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đơn vị",
+      "Xem theo",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Xem theo",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện ngân sách",
+    "category": "Ngân sách",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đơn vị",
+      "Xem theo",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Xem theo",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình chi phí thực tế so với kế hoạch",
+    "category": "Ngân sách",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng cộng",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 1",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 2",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 3",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 4",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 5",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 6",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 7",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 8",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 9",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 10",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 11",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tháng 12",
+          "colSpan": 4,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kế hoạch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tỷ lệ TH/KH \n(%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đơn vị",
+      "Xem theo",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Đơn vị",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Xem theo",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Xem nhiều kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Xem một kỳ"
+      },
+      {
+        "checked": true,
+        "label": "Khi ghi nhận chi phí"
+      },
+      {
+        "checked": false,
+        "label": "Khi thực chi bằng tiền"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí sản xuất kinh doanh theo đối tượng tập hợp chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã Đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên Đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Mã đối tượng THCP",
+        "headers": [
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê phiếu nhập, phiếu xuất theo đối tượng tập hợp chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Mã đối tượng THCP",
+        "headers": [
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo đối tượng tập hợp chi phí và khoản mục chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Mã đối tượng THCP",
+        "headers": [
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo đối tượng tập hợp chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng THCP",
+        "headers": [
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tính giá thành",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên Đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá thành",
+          "colSpan": 8,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá thành đơn vị",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL gián tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công gián tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khấu hao",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí mua ngoài",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Phương pháp tính giá thành",
+      "Kỳ tính giá thành"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Phương pháp tính giá thành",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Kỳ tính giá thành",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp chi phí theo đối tượng tập hợp chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Loại đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Dở dang đầu kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khoản giảm giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Dở dang cuối kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ tính giá thành"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng THCP",
+        "headers": [
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP",
+          "Quy trình sản xuất"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ tính giá thành",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp nhập xuất kho theo đối tượng tập hợp chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã đối tượng THCP",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Mã đối tượng THCP",
+        "headers": [
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP",
+          "Quy trình sản xuất"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp nhập xuất kho theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp chi phí theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế đã nghiệm thu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chưa nghiệm thu đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chưa nghiệm thu cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế phát sinh kỳ trước",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khoản giảm giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế cuối kỳ",
+          "colSpan": 5,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Máy thi công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Máy thi công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Máy thi công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết lãi lỗ theo công trình (Mẫu ngang)",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "CP Phát sinh",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khoản giảm giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá vốn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "CP bán hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "CP quản lý",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "CP khác",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lãi lỗ",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Phát sinh",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giảm trừ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CP máy thi công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy diễn giải theo từng dòng chi tiết"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo chi tiết lãi lỗ theo công trình (Mẫu dọc)",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy diễn giải theo từng dòng chi tiết"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí công trình theo khoản mục chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": ""
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê phiếu nhập, phiếu xuất theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí sản xuất kinh doanh theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng so sánh định mức dự toán vật tư",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Từ ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đến ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên vật tư",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL định mức",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá định mức",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền định mức",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "SL thực tế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền thực tế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch SL",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Từ ngày",
+          "Đến ngày",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo công trình và khoản mục chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ nhân viên theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "141"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ nhân viên theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "141"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp lãi lỗ theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Doanh thu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giảm trừ doanh thu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Doanh thu thuần",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Dở dang đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chi phí phát sinh",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khoản giảm giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Dở dang cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá vốn hàng bán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chi phí bán hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chi phí quản lý",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chi phí khác",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lãi/Lỗ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tỷ suất lợi nhuận/Doanh thu (%)",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí máy thi công",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cộng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo so sánh chi phí dự toán và thực tế theo công trình",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khoản mục chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị dự toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị thực tế",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Lũy kế đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chọn chi tiết khoản mục chi phí"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp nhập xuất kho theo đơn hàng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp chi phí theo đơn hàng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế đã nghiệm thu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chưa nghiệm thu đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chưa nghiệm thu cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế phát sinh kỳ trước",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khoản giảm giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế cuối kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả đơn hàng"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê phiếu nhập, phiếu xuất theo đơn hàng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo đơn hàng và khoản mục chi phí",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã khoản mục CP",
+          "Tên khoản mục CP",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí sản xuất kinh doanh theo đơn hàng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng",
+          "Diễn giải"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "S36-DN: Sổ chi phí sản xuất, kinh doanh theo đơn hàng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày tháng ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày, tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả đơn hàng"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị số hóa đơn"
+      },
+      {
+        "checked": true,
+        "label": "Hiển thị theo dạng mở rộng"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị số lượng và ĐVT chính của vật tư"
+      },
+      {
+        "checked": true,
+        "label": "Chỉ lấy các đơn hàng có phát sinh chi phí trong kỳ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": ""
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp nhập xuất kho theo hợp đồng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Trích yếu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhóm VTHH",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng tổng hợp chi phí theo hợp đồng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số hợp đồng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ký",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Trích yếu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế chi phí",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế đã nghiệm thu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chưa nghiệm thu đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chưa nghiệm thu cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế phát sinh kỳ trước",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh trong kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Khoản giảm giá thành",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế cuối kỳ",
+          "colSpan": 4,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "NVL trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân công trực tiếp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi phí chung",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê phiếu nhập, phiếu xuất theo hợp đồng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu",
+          "Khách hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Đơn vị tính",
+        "kind": "combo",
+        "required": false,
+        "default": "Đơn vị tính chính"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết tài khoản theo hợp đồng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp chi phí sản xuất kinh doanh theo hợp đồng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Hợp đồng/dự án",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Trích yếu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "S36-DN: Sổ chi phí sản xuất, kinh doanh theo hợp đồng",
+    "category": "Giá thành",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày tháng ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày, tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [
+      {
+        "title": "Hợp đồng",
+        "headers": [
+          "Số hợp đồng/Mã dự án",
+          "Ngày ký",
+          "Trích yếu"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị số hóa đơn"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị số lượng và ĐVT chính của vật tư"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": ""
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu chứng từ công nợ phải trả và chứng từ thanh toán",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ công nợ",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chứng từ thanh toán",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả nhà cung cấp"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo đối chiếu sổ theo dõi CCDC, chi phí trả trước và sổ cái",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Sổ theo dõi CCDC, chi phí trả trước",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Sổ cái",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các dòng phát sinh chênh lệch"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": ""
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu chi phí mua hàng trên chứng từ mua hàng và chứng từ chi phí",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ mua hàng",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chứng từ chi phí mua hàng",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK kho/chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK kho/chi phí",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các dòng phát sinh chênh lệch"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo đối chiếu sổ tài sản và sổ cái",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Sổ tài sản",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Sổ cái",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các dòng phát sinh chênh lệch"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu chi phí mua hàng trên chứng từ chi phí và chứng từ mua hàng",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ chi phí mua hàng",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chứng từ mua hàng",
+          "colSpan": 5,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK chi phí/TK kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK chi phí/TK kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Khoảng thời gian",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các chứng từ chi phí chưa phân bổ hết"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị chi tiết theo từng TK chi phí/TK kho"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Khoảng thời gian",
+        "kind": "combo",
+        "required": true
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo đối chiếu bảng kê thuế và sổ cái",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Sổ cái",
+          "colSpan": 6,
+          "rowSpan": 1
+        },
+        {
+          "text": "Bảng kê thuế GTGT",
+          "colSpan": 6,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi chú",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhóm HHDV",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuế suất (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ kê khai lên bảng thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Tháng",
+      "Tài khoản",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các dòng phát sinh chênh lệch"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "radio",
+        "required": false,
+        "default": "1"
+      },
+      {
+        "label": "Tháng",
+        "kind": "combo",
+        "required": false,
+        "default": "10"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": ""
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Theo tháng"
+      },
+      {
+        "checked": false,
+        "label": "Theo quý"
+      },
+      {
+        "checked": false,
+        "label": "Theo năm"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu chứng từ công nợ phải thu và chứng từ thanh toán",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chứng từ công nợ",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chứng từ thanh toán",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Ngày CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số CT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm khách hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu thông tin hóa đơn trên bảng kê mua vào và chứng từ",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thông tin trên bảng kê mua vào",
+          "colSpan": 10,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thông tin trên chứng từ",
+          "colSpan": 10,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ký hiệu HĐ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mẫu số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhóm HHDV mua vào",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Người bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "MST",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị chưa thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ kê khai",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ký hiệu HĐ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mẫu số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhóm HHDV mua vào",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Người bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "MST",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị chưa thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tiền thuế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ghi chú",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Tháng",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "radio",
+        "required": false,
+        "default": "true"
+      },
+      {
+        "label": "Tháng",
+        "kind": "combo",
+        "required": true,
+        "default": "10"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Theo tháng"
+      },
+      {
+        "checked": false,
+        "label": "Theo quý"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo đối chiếu kho và sổ cái",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Kỳ đối chiếu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Theo sổ cái",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Theo sổ kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi tiết chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tồn kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "PS Nợ - Nhập kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "PS Có - Xuất kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư - Tồn kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Kỳ đối chiếu",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các dòng phát sinh chênh lệch"
+      },
+      {
+        "checked": false,
+        "label": "Lấy chứng từ chuyển kho hạch toán cùng TK Nợ/Có lên số liệu theo sổ kho"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Kỳ đối chiếu",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Liệt kê danh sách chứng từ chi phí chung theo kỳ tính giá thành",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền phân bổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ghi chú",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại giá thành",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tên kỳ tính giá thành",
+        "headers": [
+          "Tên kỳ tính giá thành",
+          "Từ ngày",
+          "Đến ngày"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu nhập xuất giữa kế toán và thủ kho",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày ghi sổ kho",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số lượng nhập",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng xuất",
+          "colSpan": 3,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Sổ kế toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Sổ kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Sổ kế toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Sổ kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chêch lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Kho",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Kho",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo đối chiếu giá thành và giá trị nhập kho",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Bảng tính giá thành",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phiếu nhập kho",
+          "colSpan": 3,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi chú",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Số lượng thành phẩm",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá thành đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá thành",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng nhập kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị nhập kho",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tên kỳ tính giá thành",
+        "headers": [
+          "Tên kỳ tính giá thành",
+          "Từ ngày",
+          "Đến ngày"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ lấy lên Thành phẩm/Đối tượng THCP có sai lệch"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Đối chiếu giá trị nhập, xuất kho của lệnh lắp ráp, tháo dỡ",
+    "category": "Báo cáo đối chiếu",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày lệnh LR/TD",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lệnh LR/TD",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày phiếu nhập",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phiếu nhập",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị nhập",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày phiếu xuất",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phiếu xuất",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị xuất",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chênh lệch",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Loại chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ hiển thị các dòng phát sinh chênh lệch"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Đầu tháng đến hiện tại"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "08/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết mua hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Nhóm nhà cung cấp",
+      "NV mua hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "NV mua hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp mua hàng theo mặt hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp mua hàng theo mặt hàng và nhà cung cấp",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp mua hàng theo nhà cung cấp",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ nhật ký mua hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Hàng hóa",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nguyên vật liệu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản khác",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phải trả người bán",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ hiển thị hóa đơn mua hàng chưa thanh toán ngay"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải trả nhà cung cấp",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK Công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Đối tượng",
+        "headers": [
+          "Đối tượng",
+          "Tên đối tượng",
+          "Mã số thuế",
+          "Địa chỉ",
+          "Điện thoại"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Chỉ lấy nhà cung cấp có số dư và phát sinh trong kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị báo cáo theo từng tài khoản chi tiết"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị nhà cung cấp hết số dư cuối kỳ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": ""
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo hóa đơn",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hạn thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải trả ĐK",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CL tỷ giá do đánh giá lại NT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp",
+      "NV mua hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả nhà cung cấp"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Chỉ lấy hóa đơn trong kỳ"
+      },
+      {
+        "checked": false,
+        "label": "Lấy cả chứng từ thanh toán chưa đối trừ với chứng từ công nợ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "NV mua hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo mặt hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trả lại/Giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "CK thanh toán/Giảm trừ khác",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm NCC"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả tài khoản"
+      },
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả nhà cung cấp"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp tiền thuế của các mặt hàng khác nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm NCC",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả nhà cung cấp",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên công trình",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả nhà cung cấp"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán thuế giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": ""
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo tuổi nợ",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số hóa đơn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Không có hạn nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nợ trước hạn",
+          "colSpan": 6,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ quá hạn",
+          "colSpan": 6,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "0-30 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "31-60 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "61-90 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "91-120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trên 120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "1-30 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "31-60 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "61-90 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "91-120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trên 120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "08/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp mua hàng theo mặt hàng và nhân viên",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhân viên",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải trả theo nhân viên",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo nhân viên",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Nhân viên",
+        "headers": [
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Đơn vị"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện đơn mua hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày giao hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đặt hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng đã nhận",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng còn lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị đặt hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị đã thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị chưa thực hiện",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm VTHH",
+      "Nhóm NCC",
+      "Nhân viên"
+    ],
+    "selectors": [
+      {
+        "title": "Vật tư, hàng hóa",
+        "headers": [
+          "Mã hàng",
+          "Tên hàng"
+        ],
+        "selectAllLabel": "Chọn tất cả hàng hóa"
+      },
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm VTHH",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhóm NCC",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Nhân viên",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo đơn mua hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Nhà cung cấp",
+          "Tình trạng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải trả theo đơn mua hàng",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày đơn hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Đơn hàng",
+        "headers": [
+          "Số đơn hàng",
+          "Ngày đơn hàng",
+          "Nhà cung cấp",
+          "Tình trạng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp mua hàng theo nhà cung cấp và công trình",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chiết khấu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị trả lại",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị giảm giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng số lượng mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá trị mua",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Chi tiết công nợ phải trả theo công trình",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp công nợ phải trả theo công trình",
+    "category": "Mua hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên nhà cung cấp",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK công nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm nhà cung cấp"
+    ],
+    "selectors": [
+      {
+        "title": "Nhà cung cấp",
+        "headers": [
+          "Mã NCC",
+          "Tên NCC",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Công trình",
+        "headers": [
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": false,
+        "default": "331"
+      },
+      {
+        "label": "Nhóm nhà cung cấp",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Dòng tiền",
+    "category": "Tiền mặt",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã mục thu/chi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên mục thu/chi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ này",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ kế toán chi tiết quỹ tiền mặt",
+    "category": "Tiền mặt",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số phiếu thu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số phiếu chi",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số phát sinh",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tồn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Người nhận/Người nộp",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Cộng gộp theo chứng từ"
+      },
+      {
+        "checked": false,
+        "label": "Sắp xếp chứng từ theo thứ tự lập"
+      },
+      {
+        "checked": false,
+        "label": "Sắp xếp chứng từ thu trước chứng từ chi trong cùng một ngày"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê số dư tiền theo ngày",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "So sánh với"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "08/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "S03a1-DN: Sổ nhật ký thu tiền",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày, tháng ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi nợ TK",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi có các TK",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ghi có các TK khác",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Tài khoản ngân hàng"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": "111"
+      },
+      {
+        "label": "Tài khoản ngân hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ tiền gửi ngân hàng",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Chi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tồn",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Tài khoản ngân hàng"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Cộng gộp theo chứng từ"
+      },
+      {
+        "checked": true,
+        "label": "Sắp xếp chứng từ theo thứ tự lập"
+      },
+      {
+        "checked": false,
+        "label": "Sắp xếp chứng từ thu trước chứng từ chi trong cùng một ngày"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": false,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": ""
+      },
+      {
+        "label": "Tài khoản ngân hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "S03a2-DN: Sổ nhật ký chi tiền",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày, tháng ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi có TK",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ghi nợ các TK",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ghi nợ các TK khác",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": ".....",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Tài khoản ngân hàng"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": "111"
+      },
+      {
+        "label": "Tài khoản ngân hàng",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê số dư ngân hàng",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tài khoản ngân hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên ngân hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số dư cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "required": true,
+        "default": ""
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Sổ chi tiết chuyển tiền nội bộ",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản đi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên tài khoản đi",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản đến",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên tài khoản đến",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lý do chuyển",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "TK Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp tình hình khế ước vay",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Khế ước vay",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên đối tượng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày giải ngân",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày đáo hạn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lãi suất (%)",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị khoản vay",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị giải ngân",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Dư nợ gốc đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đã trả gốc",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dư nợ gốc cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đã trả lãi",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê chứng từ theo khế ước vay",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên đối tượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đã giải ngân",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ gốc đã trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi đã trả",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Số khế ước đi vay",
+        "headers": [
+          "Số khế ước đi vay",
+          "Ngày giải ngân",
+          "Đối tượng cho vay"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp lịch trả nợ khế ước vay",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số khế ước đi vay",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hợp đồng tín dụng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đối tượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên đối tượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị khoản vay",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi suất (%)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thời hạn vay",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Từ tháng",
+      "Đến tháng",
+      "Năm"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Từ tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Đến tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo tổng hợp tình hình khế ước cho vay",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "khế ước cho vay",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên đối tượng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày giải ngân",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Ngày đáo hạn",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lãi suất (%)",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị khoản vay",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Giá trị giải ngân",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Dư nợ gốc đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đã thu gốc",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Dư nợ gốc cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đã thu lãi",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trong kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng kê chứng từ theo khế ước cho vay",
+    "category": "Tiền gửi",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Tên đối tượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày hạch toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số chứng từ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đã giải ngân",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ gốc đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Lãi đã thu",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [
+      {
+        "title": "Mã đối tượng",
+        "headers": [
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
+      {
+        "title": "Số khế ước cho vay",
+        "headers": [
+          "Số khế ước cho vay",
+          "Ngày giải ngân",
+          "Đối tượng vay"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng cân đối tài khoản (Mẫu quản trị)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên tài khoản",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Phát sinh",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có lũy kế",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc tài khoản",
+      "Lấy lũy kế phát sinh từ"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Hiển thị số dư hai bên"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc tài khoản",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Lấy lũy kế phát sinh từ",
+        "kind": "radio",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": false,
+        "label": "Ngày bắt đầu dữ liệu"
+      },
+      {
+        "checked": true,
+        "label": "Ngày bắt đầu năm tài chính của kỳ báo cáo"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Tình hình thực hiện nghĩa vụ với nhà nước",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số còn phải nộp kỳ trước chuyển sang",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số phát sinh trong kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phát sinh lũy kế",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số còn phải nộp cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Số phải nộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã nộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số phải nộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đã nộp",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B01a-DN: Báo cáo tình hình tài chính giữa niên độ (Dạng đầy đủ)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã báo cáo",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên báo cáo",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính giữa niên độ đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Quý 4"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/12/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B01-DN: Báo cáo tình hình tài chính",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã báo cáo",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên báo cáo",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ",
+      "Đến",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính đã lập"
+      },
+      {
+        "checked": false,
+        "label": "BCTC đã được kiểm toán"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Năm"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Từ",
+        "kind": "date",
+        "required": false
+      },
+      {
+        "label": "Đến",
+        "kind": "date",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B02a-DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ (Dạng đầy đủ)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Năm nay",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Năm trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Năm nay",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Năm trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính giữa niên độ đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Quý 4"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/12/2026"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B02-DN: Báo cáo kết quả hoạt động kinh doanh",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số cuối kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số đầu kỳ",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B03a-DN: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP trực tiếp)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế từ đầu năm tới cuối kỳ này",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Năm nay",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Năm trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Quý 4"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/12/2026"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B03-DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ này",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B03a-DN-GT: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP gián tiếp)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Lũy kế từ đầu năm tới cuối kỳ này",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Năm nay",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Năm trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Lấy dữ liệu từ báo cáo tài chính đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Quý 4"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/12/2026"
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "B03-DN-GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)",
+    "category": "Báo cáo tài chính",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ này",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Kỳ trước",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Lấy dữ liệu từ báo cáo tài chính đã lập"
+      },
+      {
+        "checked": false,
+        "label": "Không hiển thị các chỉ tiêu có số liệu = 0"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng cân đối tài khoản theo nhiều chi nhánh",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Số tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc tài khoản",
+      "Lấy lũy kế phát sinh từ"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Hiển thị số dư hai bên"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc tài khoản",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Lấy lũy kế phát sinh từ",
+        "kind": "radio",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": false,
+        "label": "Ngày bắt đầu dữ liệu"
+      },
+      {
+        "checked": true,
+        "label": "Ngày bắt đầu năm tài chính của kỳ báo cáo"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Bảng cân đối kế toán theo nhiều chi nhánh",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thuyết minh",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều chi nhánh",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Chi phí bán hàng và QLDN phân tích theo",
+      "Cấp khoản mục chi phí"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Chi phí bán hàng và QLDN phân tích theo",
+        "kind": "radio",
+        "required": false
+      },
+      {
+        "label": "Cấp khoản mục chi phí",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Khoản mục chi phí"
+      },
+      {
+        "checked": false,
+        "label": "Tài khoản chi phí"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo kết quả hoạt động kinh doanh theo nhiều chi nhánh",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo phân tích chi tiết doanh thu theo nhiều chi nhánh",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Doanh thu bán hàng hóa, dịch vụ"
+      },
+      {
+        "checked": false,
+        "label": "Doanh thu hoạt động tài chính"
+      },
+      {
+        "checked": false,
+        "label": "Thu nhập khác"
+      },
+      {
+        "checked": true,
+        "label": "Tài khoản doanh thu"
+      },
+      {
+        "checked": false,
+        "label": "Nhóm vật tư hàng hóa"
+      },
+      {
+        "checked": true,
+        "label": "Vật tư hàng hóa"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo phân tích chi tiết chi phí theo nhiều chi nhánh",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Cấp khoản mục chi phí"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Giá vốn"
+      },
+      {
+        "checked": false,
+        "label": "Chi phí tài chính"
+      },
+      {
+        "checked": true,
+        "label": "Chi phí theo KMCP"
+      },
+      {
+        "checked": false,
+        "label": "Chi phí khác"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Cấp khoản mục chi phí",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo phân tích chi tiết doanh thu theo nhiều kỳ",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tài khoản",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ",
+      "Từ tháng",
+      "Đến tháng",
+      "Doanh thu phân tích",
+      "Phân tích theo",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "So sánh với cùng kỳ năm trước"
+      },
+      {
+        "checked": true,
+        "label": "Doanh thu bán hàng hóa, dịch vụ"
+      },
+      {
+        "checked": false,
+        "label": "Doanh thu hoạt động tài chính"
+      },
+      {
+        "checked": false,
+        "label": "Thu nhập khác"
+      },
+      {
+        "checked": true,
+        "label": "Tài khoản doanh thu"
+      },
+      {
+        "checked": false,
+        "label": "Nhóm vật tư hàng hóa"
+      },
+      {
+        "checked": true,
+        "label": "Vật tư hàng hóa"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ",
+        "kind": "radio",
+        "required": false
+      },
+      {
+        "label": "Từ tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Đến tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Doanh thu phân tích",
+        "kind": "checkbox",
+        "required": false
+      },
+      {
+        "label": "Phân tích theo",
+        "kind": "checkbox",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Tùy chọn"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo phân tích chi tiết chi phí theo nhiều kỳ",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ",
+      "Từ tháng",
+      "Đến tháng",
+      "Chi phí phân tích",
+      "Cấp khoản mục chi phí",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Giá vốn"
+      },
+      {
+        "checked": true,
+        "label": "Chi phí bán hàng và QLDN theo"
+      },
+      {
+        "checked": false,
+        "label": "Chi phí tài chính"
+      },
+      {
+        "checked": false,
+        "label": "Chi phí khác"
+      },
+      {
+        "checked": true,
+        "label": "So sánh với cùng kỳ năm trước"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ",
+        "kind": "radio",
+        "required": false
+      },
+      {
+        "label": "Từ tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Đến tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Chi phí phân tích",
+        "kind": "checkbox",
+        "required": false
+      },
+      {
+        "label": "Cấp khoản mục chi phí",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Tùy chọn"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều kỳ",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Chỉ tiêu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã số",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ",
+      "Từ tháng",
+      "Đến tháng",
+      "Cấp khoản mục chi phí",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "So sánh với cùng kỳ năm trước"
+      },
+      {
+        "checked": false,
+        "label": "Đánh giá chênh lệch giữa các kỳ"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ",
+        "kind": "radio",
+        "required": false
+      },
+      {
+        "label": "Từ tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Đến tháng",
+        "kind": "combo",
+        "required": false
+      },
+      {
+        "label": "Năm",
+        "kind": "number",
+        "required": false,
+        "default": "2026"
+      },
+      {
+        "label": "Cấp khoản mục chi phí",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Tháng"
+      },
+      {
+        "checked": false,
+        "label": "Quý"
+      },
+      {
+        "checked": false,
+        "label": "Năm"
+      },
+      {
+        "checked": false,
+        "label": "Tùy chọn"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  },
+  {
+    "name": "Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo đơn vị",
+    "category": "Báo cáo phân tích",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên đơn vị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Bậc",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Chi phí phân tích theo",
+      "Cấp khoản mục chi phí"
+    ],
+    "selectors": [],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Chi phí phân tích theo",
+        "kind": "radio",
+        "required": false
+      },
+      {
+        "label": "Cấp khoản mục chi phí",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [
+      {
+        "checked": true,
+        "label": "Khoản mục chi phí"
+      },
+      {
+        "checked": false,
+        "label": "Tài khoản chi phí"
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Đầu năm đến hiện tại",
+        "Tháng 3",
+        "Đầu tuần tới hiện tại",
+        "Quý này",
+        "Đầu tháng đến hiện tại",
+        "Tháng này",
+        "Tuần này",
+        "Hôm nay",
+        "Năm nay",
+        "Đầu quý đến hiện tại",
+        "Tháng 1",
+        "Sáu tháng cuối năm",
+        "Sáu tháng đầu năm",
+        "Tháng 4",
+        "Tháng 2",
+        "Tháng 6",
+        "Tháng 5",
+        "Tháng 9",
+        "Tháng 8",
+        "Tháng 7",
+        "Tháng 12",
+        "Tháng 11",
+        "Tháng 10",
+        "Quý 3",
+        "Quý 2",
+        "Quý 1",
+        "Tuần trước",
+        "Hôm qua",
+        "Quý 4",
+        "Năm trước",
+        "Quý trước",
+        "Tháng trước",
+        "Tháng sau",
+        "Tuần sau",
+        "Ngày mai",
+        "Tùy chọn",
+        "Năm sau",
+        "Quý sau"
+      ]
+    }
+  }
+];

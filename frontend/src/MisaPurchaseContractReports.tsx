@@ -56,6 +56,7 @@ type SelectionProps = {
   rows: { id: string; cells: string[] }[];
   selected: string[];
   onChange: (ids: string[]) => void;
+  selectAllLabel?: string;
 };
 export function SelectionTable({
   title,
@@ -63,6 +64,7 @@ export function SelectionTable({
   rows,
   selected,
   onChange,
+  selectAllLabel,
 }: SelectionProps) {
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState("20");
@@ -85,9 +87,9 @@ export function SelectionTable({
       <div className="pc-selection-bar">
         <label>
           <input type="checkbox" checked={all} onChange={toggleAll} />
-          {title === "Hàng hóa"
+          {selectAllLabel ?? (title === "Hàng hóa"
             ? "Chọn tất cả hàng hóa"
-            : `Chọn tất cả ${title.toLowerCase()}`}
+            : `Chọn tất cả ${title.toLowerCase()}`)}
         </label>
         <div className="pc-search">
           <Search size={15} />
