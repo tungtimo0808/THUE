@@ -329,3 +329,174 @@
 .misa-reports-star-btn:hover {
   transform: scale(1.1);
 }
+
+/* Structured Reports Layout Matching Screenshots */
+.misa-reports-structured-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* AVA Banner (as in Screenshot 1 - Báo cáo tài chính) */
+.misa-reports-ava-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #eff6ff 0%, #f5f3ff 60%, #faf5ff 100%);
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 18px 28px;
+  margin-bottom: 8px;
+}
+
+.misa-reports-ava-banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.misa-reports-ava-banner-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.misa-reports-ava-highlight {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.misa-reports-ava-banner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: opacity 0.15s;
+}
+
+.misa-reports-ava-banner-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.misa-reports-ava-banner-mascot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+}
+
+/* Collapsible Section Header (as in Screenshot 2 & Screenshot 4) */
+.misa-reports-group-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.misa-reports-group-header {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.misa-reports-group-header:hover {
+  background: #e2e8f0;
+}
+
+.misa-reports-group-header.collapsible:not(.collapsed) {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.misa-reports-group-header.collapsed {
+  margin-bottom: 8px;
+}
+
+.misa-reports-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.misa-reports-group-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+/* Two-column Structured Table */
+.misa-reports-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #ffffff;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.misa-reports-table.attached {
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.misa-reports-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.misa-reports-row:last-child {
+  border-bottom: none;
+}
+
+.misa-reports-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  min-height: 40px;
+  transition: background 0.15s;
+}
+
+.misa-reports-cell:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.misa-reports-cell:hover:not(.empty) {
+  background: #f8fafc;
+}
+
+.misa-reports-cell.empty {
+  background: #ffffff;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+
