@@ -1,0 +1,360 @@
+[
+  {
+    "name": "Khách hàng",
+    "checks": [
+      "Là nhà cung cấp",
+      "Là Đối tượng nội bộ"
+    ],
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Mã số thuế/CCCD chủ hộ"
+      },
+      {
+        "kind": "text",
+        "label": "Mã số ĐVQHNS"
+      },
+      {
+        "kind": "text",
+        "label": "Mã khách hàng"
+      },
+      {
+        "kind": "text",
+        "label": "Tên khách hàng"
+      },
+      {
+        "kind": "text",
+        "label": "Điện thoại"
+      },
+      {
+        "kind": "text",
+        "label": "Website"
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm khách hàng"
+      },
+      {
+        "kind": "combo",
+        "label": "Nhân viên bán hàng"
+      },
+      {
+        "kind": "text",
+        "label": "Đại diện theo PL"
+      }
+    ],
+    "tabs": [
+      "Thông tin liên hệ",
+      "Điều khoản thanh toán",
+      "Tài khoản ngân hàng",
+      "Địa chỉ khác",
+      "Ghi chú",
+      "Thông tin bổ sung"
+    ]
+  },
+  {
+    "name": "Nhà cung cấp",
+    "checks": [
+      "Là khách hàng",
+      "Là Đối tượng nội bộ"
+    ],
+    "fields": [
+      {
+        "kind": "combo",
+        "label": "Mã số thuế/CCCD chủ hộ"
+      },
+      {
+        "kind": "text",
+        "label": "Mã số ĐVQHNS"
+      },
+      {
+        "kind": "text",
+        "label": "Mã nhà cung cấp"
+      },
+      {
+        "kind": "text",
+        "label": "Tên nhà cung cấp"
+      },
+      {
+        "kind": "text",
+        "label": "Điện thoại"
+      },
+      {
+        "kind": "text",
+        "label": "Website"
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm nhà cung cấp"
+      },
+      {
+        "kind": "combo",
+        "label": "Nhân viên mua hàng"
+      },
+      {
+        "kind": "text",
+        "label": "Đại diện theo PL"
+      }
+    ],
+    "tabs": [
+      "Thông tin liên hệ",
+      "Điều khoản thanh toán",
+      "Tài khoản ngân hàng",
+      "Địa chỉ khác",
+      "Ghi chú",
+      "Thông tin bổ sung"
+    ]
+  },
+  {
+    "name": "Nhân viên",
+    "checks": [
+      "Là khách hàng",
+      "Là nhà cung cấp"
+    ],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Mã"
+      },
+      {
+        "kind": "text",
+        "label": "Tên"
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị"
+      },
+      {
+        "kind": "combo",
+        "label": "Chức danh"
+      },
+      {
+        "kind": "text",
+        "label": "Ngày sinh"
+      },
+      {
+        "kind": "text",
+        "label": "Số CCCD"
+      },
+      {
+        "kind": "text",
+        "label": "Ngày cấp"
+      },
+      {
+        "kind": "text",
+        "label": "Nơi cấp"
+      },
+      {
+        "kind": "text",
+        "label": "Số hộ chiếu"
+      }
+    ],
+    "tabs": [
+      "Thông tin liên hệ",
+      "Thông tin tiền lương",
+      "Tài khoản ngân hàng",
+      "Thông tin người phụ thuộcMới"
+    ]
+  },
+  {
+    "name": "Nhóm khách hàng, nhà cung cấp",
+    "checks": [],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Mã"
+      },
+      {
+        "kind": "text",
+        "label": "Tên"
+      },
+      {
+        "kind": "combo",
+        "label": "Thuộc"
+      }
+    ],
+    "tabs": []
+  },
+  {
+    "name": "Vật tư hàng hóa",
+    "checks": [],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Tên"
+      },
+      {
+        "kind": "text",
+        "label": "Mã"
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm VTHH"
+      },
+      {
+        "kind": "combo",
+        "label": "Đơn vị tính chính"
+      },
+      {
+        "kind": "combo",
+        "label": "Giảm thuế theo quy định"
+      },
+      {
+        "kind": "number",
+        "label": "Thời hạn bảo hành"
+      },
+      {
+        "kind": "number",
+        "label": "Số lượng tồn tối thiểu"
+      },
+      {
+        "kind": "text",
+        "label": "Nguồn gốc"
+      },
+      {
+        "kind": "text",
+        "label": "Diễn giải khi mua"
+      },
+      {
+        "kind": "text",
+        "label": "Diễn giải khi bán"
+      },
+      {
+        "kind": "combo",
+        "label": "Loại hàng hóa đặc trưng"
+      },
+      {
+        "kind": "combo",
+        "label": "Kho ngầm định"
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản kho"
+      },
+      {
+        "kind": "combo",
+        "label": "TK doanh thu"
+      },
+      {
+        "kind": "combo",
+        "label": "TK chiết khấu"
+      },
+      {
+        "kind": "combo",
+        "label": "TK giảm giá"
+      },
+      {
+        "kind": "combo",
+        "label": "TK trả lại"
+      },
+      {
+        "kind": "combo",
+        "label": "TK Chi phí"
+      },
+      {
+        "kind": "number",
+        "label": "Tỷ lệ CKMH (%)"
+      },
+      {
+        "kind": "number",
+        "label": "Đơn giá mua cố định"
+      },
+      {
+        "kind": "number",
+        "label": "Đơn giá mua gần nhất"
+      },
+      {
+        "kind": "number",
+        "label": "Đơn giá bán"
+      },
+      {
+        "kind": "combo",
+        "label": "Thuế suất GTGT (%)"
+      },
+      {
+        "kind": "number",
+        "label": "Thuế suất thuế NK (%)"
+      },
+      {
+        "kind": "number",
+        "label": "Thuế suất thuế XK (%)"
+      },
+      {
+        "kind": "combo",
+        "label": "Nhóm HHDV chịu thuế TTĐB"
+      },
+      {
+        "kind": "combo",
+        "label": "Chiết khấu bán hàng"
+      },
+      {
+        "kind": "combo",
+        "label": "Công thức tính số lượng"
+      }
+    ],
+    "tabs": []
+  },
+  {
+    "name": "Kho",
+    "checks": [],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Mã"
+      },
+      {
+        "kind": "text",
+        "label": "Tên"
+      },
+      {
+        "kind": "combo",
+        "label": "Tài khoản kho"
+      }
+    ],
+    "tabs": []
+  },
+  {
+    "name": "Điều khoản thanh toán",
+    "checks": [],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Mã"
+      },
+      {
+        "kind": "text",
+        "label": "Tên"
+      },
+      {
+        "kind": "number",
+        "label": "Thời hạn hưởng chiết khấu"
+      },
+      {
+        "kind": "number",
+        "label": "Tỷ lệ chiết khấu"
+      }
+    ],
+    "tabs": []
+  },
+  {
+    "name": "Mục thu/chi",
+    "checks": [
+      "Là khoản phát sinh định kỳ hàng tháng"
+    ],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Mã mục thu/chi"
+      },
+      {
+        "kind": "text",
+        "label": "Tên mục thu/chi"
+      },
+      {
+        "kind": "combo",
+        "label": "Thuộc"
+      }
+    ],
+    "tabs": []
+  }
+]

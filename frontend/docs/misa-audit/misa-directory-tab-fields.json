@@ -1,0 +1,116 @@
+[
+  {
+    "name": "Khách hàng",
+    "tab": "Thông tin liên hệ",
+    "checks": [],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Đại diện theo PL"
+      },
+      {
+        "kind": "text",
+        "label": "Xưng hô"
+      },
+      {
+        "kind": "text",
+        "label": "Họ và tên"
+      },
+      {
+        "kind": "text",
+        "label": "Email"
+      },
+      {
+        "kind": "text",
+        "label": "Số điện thoại"
+      },
+      {
+        "kind": "text",
+        "label": "Email (Ngăn cách nhiều email bởi dấu \";\")"
+      }
+    ],
+    "headers": []
+  },
+  {
+    "name": "Khách hàng",
+    "tab": "Điều khoản thanh toán",
+    "checks": [],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Điều khoản thanh toán"
+      },
+      {
+        "kind": "number",
+        "label": "Số ngày được nợ"
+      },
+      {
+        "kind": "number",
+        "label": "Số nợ tối đa"
+      },
+      {
+        "kind": "text",
+        "label": "Tài khoản công nợ phải thu"
+      }
+    ],
+    "headers": []
+  },
+  {
+    "name": "Khách hàng",
+    "tab": "Tài khoản ngân hàng",
+    "checks": [],
+    "fields": [],
+    "headers": [
+      [
+        "Số tài khoản",
+        "Tên ngân hàng",
+        "Chi nhánh",
+        "Tỉnh/TP của ngân hàng"
+      ]
+    ]
+  },
+  {
+    "name": "Khách hàng",
+    "tab": "Địa chỉ khác",
+    "checks": [
+      "Giống địa chỉ khách hàng"
+    ],
+    "fields": [
+      {
+        "kind": "text",
+        "label": "Quốc gia"
+      },
+      {
+        "kind": "text",
+        "label": "Tỉnh/Thành phố"
+      },
+      {
+        "kind": "text",
+        "label": "Quận/Huyện"
+      },
+      {
+        "kind": "text",
+        "label": "Xã/Phường"
+      }
+    ],
+    "headers": [
+      [
+        "Địa điểm giao hàng"
+      ]
+    ]
+  },
+  {
+    "name": "Khách hàng",
+    "tab": "Ghi chú",
+    "checks": [],
+    "fields": [],
+    "headers": []
+  },
+  {
+    "name": "Khách hàng",
+    "tab": "Thông tin bổ sung",
+    "checks": [],
+    "fields": [],
+    "headers": []
+  }
+]

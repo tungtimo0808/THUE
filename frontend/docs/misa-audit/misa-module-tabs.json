@@ -1,0 +1,162 @@
+[
+  {
+    "module": "Mua hàng",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Biểu đồ",
+      "Đơn mua hàng",
+      "Hợp đồng mua hàng",
+      "Mua hàng",
+      "Nhận hóa đơn",
+      "Trả lại hàng mua",
+      "Giảm giá hàng mua",
+      "Xử lý hóa đơn đầu vào",
+      "Hàng hóa, dịch vụ",
+      "Đối chiếu công nợ",
+      "Nhà cung cấp",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/PU/PUProcess"
+  },
+  {
+    "module": "Bán hàng",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Biểu đồ",
+      "Báo giá",
+      "Đơn đặt hàng",
+      "Hợp đồng bán hàng",
+      "Bán hàng",
+      "Hóa đơn",
+      "Tự động hạch toán HĐ",
+      "Trả lại hàng bán",
+      "Giảm giá hàng bán",
+      "Công nợ",
+      "Hàng hóa, dịch vụ",
+      "Đối chiếu công nợ",
+      "Báo cáo",
+      "Khách hàng"
+    ],
+    "url": "https://actapp.misa.vn/app/SA/SAProcess"
+  },
+  {
+    "module": "Kho",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Biểu đồ",
+      "Nhập kho",
+      "Xuất kho",
+      "Chuyển kho",
+      "Lệnh sản xuất",
+      "Lắp ráp, tháo dỡ",
+      "Kiểm kê",
+      "Báo cáo",
+      "Hàng hóa, dịch vụ"
+    ],
+    "url": "https://actapp.misa.vn/app/IN/INProcess"
+  },
+  {
+    "module": "Công cụ dụng cụ",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Sổ theo dõi công cụ dụng cụ",
+      "Quản lý công cụ dụng cụ",
+      "Chi phí trả trước",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/SU/SUProcess"
+  },
+  {
+    "module": "Tài sản cố định",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Sổ tài sản",
+      "Ghi tăng",
+      "Tính khấu hao",
+      "Đánh giá lại",
+      "Điều chuyển",
+      "Ghi giảm",
+      "Kiểm kê",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/FA/FAProcess"
+  },
+  {
+    "module": "Tiền lương",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Chấm công",
+      "Tổng hợp chấm công",
+      "Tính lương",
+      "Hạch toán chi phí",
+      "Khấu trừ thuế TNCN",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/PA/PASalaryProcess"
+  },
+  {
+    "module": "Thuế",
+    "headers": [
+      "Tờ khaiKỳ kê khai"
+    ],
+    "tabs": [
+      "Khai thuế",
+      "Giấy nộp tiền",
+      "Danh sách NCC có rủi ro",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/TA/TAList"
+  },
+  {
+    "module": "Giá thành",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Sản xuất liên tục - Giản đơn",
+      "Sản xuất liên tục - Hệ số, tỷ lệ",
+      "Sản xuất liên tục - Phân bước",
+      "Công trình",
+      "Đơn hàng",
+      "Hợp đồng",
+      "Báo cáo",
+      "Giản đơn",
+      "Hệ số, Tỷ lệ",
+      "Phân bước",
+      "Công trình",
+      "Đơn hàng",
+      "Hợp đồng",
+      "Hướng dẫn",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/JC/JCProcess/JCProcessSimple"
+  },
+  {
+    "module": "Tổng hợp",
+    "headers": [],
+    "tabs": [
+      "Quy trình",
+      "Đề nghị quyết toán tạm ứng",
+      "Chứng từ nghiệp vụ khác",
+      "Kết chuyển lãi lỗ",
+      "Lập báo cáo tài chính",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/GL/GLProcess"
+  },
+  {
+    "module": "Ngân sách",
+    "headers": [],
+    "tabs": [
+      "Biểu đồ",
+      "Kế hoạch ngân sách",
+      "Báo cáo"
+    ],
+    "url": "https://actapp.misa.vn/app/BUD/BUDDashboard"
+  }
+]

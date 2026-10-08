@@ -1,0 +1,807 @@
+[
+  {
+    "module": "Tiền mặt",
+    "page": "Thu tiền",
+    "buttons": [
+      "Thêm bằng AI",
+      "Thu tiền",
+      "Chi tiền",
+      "Hướng dẫn sử dụng",
+      "Dịch thông minh, đa ngôn ngữ với  AVA Kế toán",
+      "AVA Kế toán",
+      "Thêm dòng",
+      "Xóa hết dòng",
+      "Thêm ghi chú",
+      "Cất và Thêm",
+      "Cất",
+      "Hủy"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Ngày hạch toán",
+          "Số chứng từ",
+          "Diễn giải",
+          "Số tiền",
+          "Đối tượng",
+          "Lý do thu/chi",
+          "Loại chứng từ",
+          "Hạch toán gộp nhiều hóa đơn",
+          "Chức năng"
+        ]
+      ],
+      [
+        [
+          "#",
+          "Diễn giải",
+          "TK Nợ",
+          "TK Có",
+          "Số tiền",
+          "Đối tượng",
+          "Tên đối tượng"
+        ]
+      ],
+      [
+        [
+          "",
+          "#",
+          "Diễn giải",
+          "TK Nợ",
+          "TK Có",
+          "Số tiền",
+          "Đối tượng",
+          "Tên đối tượng",
+          "",
+          ""
+        ]
+      ]
+    ],
+    "labels": [
+      "Mã đối tượng",
+      "Tên đối tượng",
+      "Người nộp",
+      "Địa chỉ",
+      "Nhân viên",
+      "Lý do nộp",
+      "Kèm theo",
+      "Ngày hạch toán",
+      "Ngày phiếu thu",
+      "Số phiếu thu"
+    ]
+  },
+  {
+    "module": "Tiền mặt",
+    "page": "Đề nghị chi tiền",
+    "buttons": [
+      "Thiết lập tự động"
+    ],
+    "headers": [],
+    "labels": []
+  },
+  {
+    "module": "Tiền gửi",
+    "page": "Đối chiếu offline",
+    "buttons": [
+      "Lấy dữ liệu",
+      "Bỏ đối chiếu",
+      "Cất tạm",
+      "Xác nhận đối chiếu"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Ngày",
+          "Số",
+          "Số tiền",
+          "Đối tượng"
+        ]
+      ],
+      [
+        [
+          "",
+          "Ngày",
+          "Số",
+          "Số tiền",
+          "Đối tượng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Tài sản cố định",
+    "page": "Khai báo TSCĐ đầu kỳ",
+    "buttons": [
+      "Đóng",
+      "Cất",
+      "Cất và Thêm"
+    ],
+    "headers": [],
+    "labels": [
+      "Số CT ghi tăng",
+      "Ngày ghi tăng",
+      "Mã tài sản",
+      "Tên tài sản",
+      "Loại tài sản",
+      "Đơn vị sử dụng",
+      "TK nguyên giá",
+      "Nguyên giá",
+      "TK khấu hao",
+      "Giá trị tính khấu hao",
+      "Ngày bắt đầu tính KH",
+      "Thời gian sử dụng",
+      "Thời gian SD còn lại",
+      "Tỷ lệ tính KH tháng (%)",
+      "Tỷ lệ tính KH năm (%)",
+      "Giá trị khấu hao tháng",
+      "Giá trị khấu hao năm",
+      "Hao mòn lũy kế",
+      "Giá trị còn lại",
+      "Giá trị tính KH theo luật",
+      "Giá trị KH tháng theo luật"
+    ]
+  },
+  {
+    "module": "Thuế",
+    "page": "Đăng ký tờ khai sử dụng",
+    "buttons": [
+      "Hoàn thành"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Tờ khai",
+          "Kỳ kê khai"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Khách hàng",
+    "buttons": [
+      "Cập nhật địa chỉ",
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Công nợ",
+          "Mã số thuế/CCCD chủ hộ",
+          "Điện thoại",
+          "ĐT di động NLH",
+          "Là Đối tượng nội bộ",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Thêm khách hàng",
+    "buttons": [
+      "Cập nhật địa chỉ",
+      "Thêm",
+      "Cất",
+      "Cất và Thêm",
+      "Hủy"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Công nợ",
+          "Mã số thuế/CCCD chủ hộ",
+          "Điện thoại",
+          "ĐT di động NLH",
+          "Là Đối tượng nội bộ",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": [
+      "Mã số thuế/CCCD chủ hộ",
+      "Mã số ĐVQHNS",
+      "Mã khách hàng",
+      "Tên khách hàng",
+      "Điện thoại",
+      "Website",
+      "Nhóm khách hàng",
+      "Nhân viên bán hàng",
+      "Đại diện theo PL"
+    ]
+  },
+  {
+    "module": "Danh mục",
+    "page": "Nhà cung cấp",
+    "buttons": [
+      "Cập nhật địa chỉ",
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã nhà cung cấp",
+          "Tên nhà cung cấp",
+          "Địa chỉ",
+          "Số tiền nợ",
+          "Mã số thuế/CCCD chủ hộ",
+          "Rủi ro về hóa đơn",
+          "Văn bản tham chiếu",
+          "Điện thoại",
+          "Là Đối tượng nội bộ",
+          "Là Tổng công ty/chi nhánh",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Nhân viên",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã nhân viên",
+          "Tên nhân viên",
+          "Chức danh",
+          "Trạng thái người dùng",
+          "Tên đơn vị",
+          "Số tài khoản",
+          "Tên ngân hàng",
+          "Trạng thái",
+          "Là danh mục tập đoàn",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Nhóm khách hàng, nhà cung cấp",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã nhóm KH, NCC",
+          "Tên nhóm khách hàng, nhà cung cấp",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Vật tư hàng hóa",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Tên",
+          "Mã",
+          "Giảm thuế theo quy định",
+          "Tính chất",
+          "Số lượng tồn",
+          "Giá trị tồn",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Kho",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã kho",
+          "Tên kho",
+          "Địa chỉ",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Nhóm vật tư, hàng hóa, dịch vụ",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã nhóm vật tư, hàng hóa, dịch vụ",
+          "Tên nhóm vật tư, hàng hóa, dịch vụ",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Đơn vị tính",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Đơn vị tính",
+          "Mô tả",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Hệ thống tài khoản",
+    "buttons": [
+      "Chuyển tài khoản hạch toán",
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Tài khoản kết chuyển",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Thứ tự kết chuyển",
+          "Mã kết chuyển",
+          "Kết chuyển từ",
+          "Kết chuyển đến",
+          "Bên kết chuyển",
+          "Loại kết chuyến",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Tài khoản ngầm định",
+    "buttons": [
+      "Thêm tài khoản ngầm định"
+    ],
+    "headers": [
+      [
+        [
+          "Loại",
+          "TK Nợ",
+          "TK Có",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": [
+      "Loại chứng từ"
+    ]
+  },
+  {
+    "module": "Danh mục",
+    "page": "Đối tượng tập hợp chi phí",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã đối tượng THCP",
+          "Tên đối tượng THCP",
+          "Loại",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Khoản mục chi phí",
+    "buttons": [
+      "Chuyển phát sinh danh mục KMCP",
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã khoản mục chi phí",
+          "Tên khoản mục chi phí",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Công trình",
+    "buttons": [
+      "Chuyển phát sinh danh mục công trình",
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã công trình",
+          "Tên công trình",
+          "Loại công trình",
+          "Tình trạng",
+          "Ngày bắt đầu",
+          "Ngày kết thúc",
+          "Dự toán",
+          "Chủ đầu tư",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Loại công trình",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã loại công trình",
+          "Tên loại công trình",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Ngân hàng",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Logo",
+          "Tên viết tắt",
+          "Tên đầy đủ",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Tài khoản ngân hàng",
+    "buttons": [
+      "Kết nối ngay",
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Số tài khoản",
+          "Tên ngân hàng",
+          "Tên chi nhánh ngân hàng",
+          "Chủ tài khoản",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Cơ cấu tổ chức",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã đơn vị",
+          "Tên đơn vị",
+          "Đơn vị cha",
+          "Địa chỉ",
+          "Cấp tổ chức",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Loại công cụ dụng cụ",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã loại CCDC",
+          "Tên loại CCDC",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Loại tài sản cố định",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã loại TSCĐ",
+          "Tên loại TSCĐ",
+          "TK nguyên giá",
+          "TK khấu hao",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Ký hiệu chấm công",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Ký hiệu chấm công",
+          "Diễn giải",
+          "Tỷ lệ hưởng lương (%)",
+          "Là ký hiệu mặc định",
+          "Là ký hiệu nửa ngày",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Biểu tính thuế thu nhập",
+    "buttons": [],
+    "headers": [
+      [
+        [
+          "Bậc",
+          "Biểu tính thuế theo tháng",
+          "Biểu tính thuế theo năm",
+          "Thuế suất (%)",
+          "Chức năng"
+        ],
+        [
+          "Từ",
+          "Đến",
+          "Từ",
+          "Đến"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Biểu thuế tiêu thụ đặc biệt",
+    "buttons": [],
+    "headers": [
+      [
+        [
+          "Mã",
+          "Tên nhóm HHDV chịu thuế TTĐB",
+          "Đơn vị tính",
+          "Thuế suất (%)",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Biểu thuế tài nguyên",
+    "buttons": [],
+    "headers": [
+      [
+        [
+          "Mã",
+          "Tên tài nguyên",
+          "Đơn vị tính",
+          "Thuế suất(%)",
+          "Ngày hiệu lực từ",
+          "Ngày hiệu lực đến",
+          "GT thuế TN của tỉnh",
+          "Giá tối thiểu của BTC",
+          "Giá tối đa của BTC",
+          "Ngày hiệu lực của VBQP",
+          "Mục",
+          "Tiểu mục",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Mã thống kê",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "",
+          "Mã thống kê",
+          "Tên thống kê",
+          "Diễn giải",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Loại tiền",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã loại tiền",
+          "Tên loại tiền",
+          "Tỷ giá quy đổi",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Loại chứng từ",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã loại chứng từ",
+          "Tên loại chứng từ",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Điều khoản thanh toán",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã điều khoản",
+          "Tên điều khoản",
+          "Số ngày được nợ",
+          "Thời hạn hưởng CK (Ngày)",
+          "Tỉ lệ CK (%)",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  },
+  {
+    "module": "Danh mục",
+    "page": "Mục thu/chi",
+    "buttons": [
+      "Thêm"
+    ],
+    "headers": [
+      [
+        [
+          "Mã mục thu/chi",
+          "Tên mục thu/chi",
+          "Loại",
+          "Phát sinh định kỳ",
+          "Trạng thái",
+          "Chức năng"
+        ]
+      ]
+    ],
+    "labels": []
+  }
+]

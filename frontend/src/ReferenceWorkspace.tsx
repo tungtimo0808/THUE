@@ -70,6 +70,7 @@ import {
 import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
+import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
 import MisaCashWorkspace from "./MisaCashWorkspace";
 import MisaBankWorkspace from "./MisaBankWorkspace";
 import MisaPurchaseWorkspace from "./MisaPurchaseWorkspace";
@@ -862,7 +863,7 @@ function ReferenceWorkspace() {
         ) : moduleId === "reports" ? (
           <MisaReportCenterWorkspace notify={setNotice} />
         ) : moduleId === "directory" ? (
-          <DirectoryWorkspace notify={setNotice} />
+          <MisaDirectoryWorkspace notify={setNotice} legacy={<DirectoryWorkspace notify={setNotice}/>}/>
         ) : moduleId === "opening" ? (
           <MisaOpeningBalanceWorkspace notify={setNotice} />
         ) : moduleId === "cash" ? (

@@ -1,0 +1,351 @@
+.md-home,
+.md-list {
+  background: white;
+  min-height: calc(100vh - 100px);
+  font-size: 13px;
+  color: #252b31;
+  padding: 18px 22px;
+}
+.md-home button,
+.md-list button,
+.md-legacy-bar button {
+  font: inherit;
+  border: 1px solid #d4d9de;
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.md-home input,
+.md-list input,
+.md-list select,
+.md-list textarea {
+  font: inherit;
+  border: 1px solid #d2d7dd;
+  border-radius: 3px;
+  padding: 7px 9px;
+  box-sizing: border-box;
+}
+.md-home > header,
+.md-list > header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+.md-home h1,
+.md-list h1 {
+  font-size: 24px;
+  margin: 0;
+}
+.md-home > header > label {
+  margin-left: auto;
+}
+.md-home label,
+.md-toolbar > label {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d2d7dd;
+  border-radius: 3px;
+  padding-left: 9px;
+}
+.md-home label input,
+.md-toolbar > label input {
+  border: 0;
+  outline: 0;
+  width: 240px;
+}
+.md-groups {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  gap: 30px 40px;
+  max-width: 1350px;
+  padding: 18px 8px;
+}
+.md-groups h2 {
+  font-size: 15px;
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+.md-groups section > button {
+  display: block;
+  border: 0;
+  padding: 6px 0;
+  color: #267bb5;
+  text-align: left;
+  border-radius: 0;
+  line-height: 1.5;
+}
+.md-groups section > button:hover {
+  text-decoration: underline;
+  color: #009b60;
+}
+.md-list > header > button:last-child {
+  margin-left: auto;
+  background: #009b60;
+  color: white;
+  border-color: #009b60;
+}
+.md-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 5px 0 16px;
+}
+.md-toolbar > span {
+  flex: 1;
+}
+.md-column-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px;
+  background: #f3f6f5;
+  border: 1px solid #dce6e1;
+}
+.md-column-picker label {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.md-table {
+  overflow: auto;
+  border: 1px solid #d7dfe5;
+  min-height: 350px;
+}
+.md-table table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 850px;
+  font-size: 12px;
+}
+.md-table th {
+  background: #d8e9e4;
+  text-align: left;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.md-table th,
+.md-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e0e4e8;
+  border-right: 1px solid #e0e4e8;
+  height: auto;
+}
+.md-table th:first-child {
+  width: 32px;
+}
+.md-table tr:hover td {
+  background: #f0f8f5;
+}
+.md-table button {
+  border: 0;
+  padding: 0;
+  color: #008f5d;
+}
+.md-list input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #009b60;
+}
+.md-empty {
+  text-align: center;
+  padding: 30px !important;
+  color: #6e7781;
+}
+.md-list > footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+}
+.md-list > footer > span:first-child {
+  margin-right: auto;
+}
+.md-list button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.md-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: #0006;
+  display: flex;
+  justify-content: end;
+}
+.md-editor {
+  background: white;
+  width: 66vw;
+  min-width: 750px;
+  max-width: 96vw;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.md-editor > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e1e5e9;
+}
+.md-editor h2 {
+  font-size: 20px;
+  margin: 0;
+}
+.md-editor > header button {
+  border: 0;
+  padding: 4px;
+}
+.md-editor-body {
+  padding: 22px 24px;
+  overflow: auto;
+  flex: 1;
+}
+.md-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+}
+.md-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  position: relative;
+}
+.md-fields em {
+  color: #c52b22;
+  font-style: normal;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.md-checks {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.md-checks label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.md-editor nav {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #dfe4e9;
+  margin-top: 25px;
+}
+.md-editor nav button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 12px 8px;
+}
+.md-editor nav .active {
+  color: #009b60;
+  border-bottom-color: #009b60;
+}
+.md-extra-label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 22px 0;
+}
+.md-extra-label textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.md-editor > footer {
+  display: flex;
+  justify-content: end;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #f5f6f7;
+  border-top: 1px solid #e0e4e8;
+}
+.md-editor .md-primary {
+  background: #009b60;
+  color: white;
+  border-color: #009b60;
+}
+.md-error {
+  color: #c42b22;
+  margin: 8px 24px;
+}
+.md-legacy-bar {
+  padding: 12px;
+  background: white;
+}
+@media (max-width: 1100px) {
+  .md-groups {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 800px) {
+  .md-groups {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .md-editor {
+    min-width: 0;
+    width: 96vw;
+  }
+  .md-fields {
+    grid-template-columns: 1fr;
+  }
+  .md-home > header {
+    flex-wrap: wrap;
+  }
+  .md-home > header > label {
+    margin-left: 0;
+  }
+}
+.md-tab-content {
+  margin-top: 22px;
+}
+.md-tab-grid {
+  margin: 20px 0;
+  overflow: auto;
+}
+.md-tab-grid table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+.md-tab-grid th {
+  background: #d8e9e4;
+  text-align: left;
+}
+.md-tab-grid th,
+.md-tab-grid td {
+  padding: 8px;
+  border: 1px solid #d8dfe4;
+  height: auto;
+}
+.md-tab-grid td input {
+  width: 100%;
+  border: 0;
+}
+.md-tab-grid > div {
+  margin: 10px 0;
+  display: flex;
+  gap: 10px;
+}
+.md-radio-types {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+.md-radio-types label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.md-radio-types input {
+  accent-color: #009b60;
+}
