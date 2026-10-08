@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 import {
   Filter,
   Plus,
@@ -6974,7 +6975,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
 // ----------------------------------------------------------------------
 // 4A. PAYMENT REQUESTS TAB ("Đề nghị chi tiền")
 // ----------------------------------------------------------------------
-function PaymentRequestsTab({
+export function PaymentRequestsTab({
   notify,
   onOpenCreatePayment,
 }: {
@@ -7397,6 +7398,9 @@ export default function MisaCashWorkspace({
   const [voucherTypeFilter, setVoucherTypeFilter] = useState("all");
   const [filterPeriod, setFilterPeriod] = useState("ytd");
   const [kpiCollapsed, setKpiCollapsed] = useState(false);
+  const [checkedCashRows, setCheckedCashRows] = useState<string[]>([]);
+  const [cashPageSize, setCashPageSize] = useState(20);
+  const [cashPage, setCashPage] = useState(1);
 
   // Selected voucher for print preview (Default matching Image 5)
   const [selectedVoucher, setSelectedVoucher] = useState({
@@ -7545,6 +7549,8 @@ export default function MisaCashWorkspace({
       return matchQuery && matchStatus && matchKind;
     });
   }, [transactions, searchQuery, statusFilter, voucherTypeFilter]);
+  const cashPageCount = Math.max(1, Math.ceil(filteredList.length / cashPageSize));
+  const visibleCashPage = Math.min(cashPage, cashPageCount);
 
   // Total summary
   const totalReceipt = useMemo(
@@ -8551,7 +8557,7 @@ export default function MisaCashWorkspace({
             <thead>
               <tr>
                 <th style={{ width: 36, textAlign: "center" }}>
-                  <input type="checkbox" aria-label="Chọn tất cả" />
+                  <input type="checkbox" aria-label="Chọn tất cả" checked={filteredList.length > 0 && filteredList.every(t => checkedCashRows.includes(t.id))} onChange={event => setCheckedCashRows(event.target.checked ? filteredList.map(t => t.id) : [])} />
                 </th>
                 <th style={{ width: 95 }}>Ngày hạch toán</th>
                 <th style={{ width: 95 }}>Ngày chứng từ</th>
@@ -8561,13 +8567,15 @@ export default function MisaCashWorkspace({
                   Số tiền
                 </th>
                 <th style={{ width: 180 }}>Đối tượng</th>
-                <th style={{ width: 90 }}>Loại</th>
+                <th style={{ width: 130 }}>Lý do thu/chi</th>
+                <th style={{ width: 110 }}>Loại chứng từ</th>
+                <th style={{ width: 160 }}>Hạch toán gộp nhiều hóa đơn</th>
                 <th style={{ width: 95 }}>Trạng thái</th>
                 <th style={{ width: 100, textAlign: "center" }}>Chức năng</th>
               </tr>
             </thead>
             <tbody>
-              {filteredList.map((t) => (
+              {filteredList.slice((visibleCashPage - 1) * cashPageSize, visibleCashPage * cashPageSize).map((t) => (
                 <tr
                   key={t.id}
                   className={selectedRowId === t.id ? "selected" : ""}
@@ -8575,7 +8583,7 @@ export default function MisaCashWorkspace({
                   style={{ cursor: "pointer" }}
                 >
                   <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" aria-label={`Chọn ${t.code}`} />
+                    <input type="checkbox" aria-label={`Chọn ${t.code}`} checked={checkedCashRows.includes(t.id)} onChange={event => setCheckedCashRows(previous => event.target.checked ? [...previous, t.id] : previous.filter(id => id !== t.id))} />
                   </td>
                   <td>{t.date.split("-").reverse().join("/")}</td>
                   <td>{t.date.split("-").reverse().join("/")}</td>
@@ -8593,7 +8601,9 @@ export default function MisaCashWorkspace({
                     {formatVND(t.amount)}
                   </td>
                   <td>{t.partner}</td>
+                  <td>{t.reasonLabel || (t.kind === "receipt" ? "Thu khác" : "Chi khác")}</td>
                   <td>{t.kind === "receipt" ? "Phiếu thu" : "Phiếu chi"}</td>
+                  <td>{t.combineInvoices ? "Có" : ""}</td>
                   <td>
                     <span
                       style={{
@@ -8672,8 +8682,14 @@ export default function MisaCashWorkspace({
                   </td>
                 </tr>
               ))}
+              {!filteredList.length && <tr><td colSpan={12} style={{textAlign: 'center', padding: 24}}>Không có chứng từ phù hợp với điều kiện tìm kiếm</td></tr>}
             </tbody>
+            <tfoot><tr><td/><td colSpan={4}><strong>Tổng</strong></td><td className="numeric"><strong>{formatVND(filteredList.reduce((sum,t)=>sum+t.amount,0))}</strong></td><td colSpan={6}/></tr></tfoot>
           </table>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',fontSize:13}}>
+            <span>Tổng số: <strong>{filteredList.length}</strong>{checkedCashRows.length > 0 && ` · Đã chọn ${checkedCashRows.length}`}</span>
+            <div style={{display:'flex',alignItems:'center',gap:8}}><label>Số dòng/trang <select aria-label="Số dòng/trang thu chi" value={cashPageSize} onChange={event=>{setCashPageSize(Number(event.target.value));setCashPage(1);}}>{[20,50,100].map(size=><option key={size} value={size}>{size}</option>)}</select></label><button aria-label="Trang trước thu chi" disabled={visibleCashPage===1} onClick={()=>setCashPage(visibleCashPage-1)}>‹</button><span>{visibleCashPage}/{cashPageCount}</span><button aria-label="Trang sau thu chi" disabled={visibleCashPage===cashPageCount} onClick={()=>setCashPage(visibleCashPage+1)}>›</button></div>
+          </div>
         </div>
 
         {/* Split Detail Pane (Bottom Tab) */}
@@ -8741,6 +8757,7 @@ export default function MisaCashWorkspace({
                     <th style={{ width: 80 }}>TK Có</th>
                     <th className="numeric" style={{ width: 140 }}>Số tiền</th>
                     <th>Đối tượng</th>
+                    <th>Tên đối tượng</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -8750,6 +8767,7 @@ export default function MisaCashWorkspace({
                     <td><strong style={{ color: "#2563eb" }}>{selectedTransaction.debit || "1111"}</strong></td>
                     <td><strong style={{ color: "#7c3aed" }}>{selectedTransaction.credit || "141"}</strong></td>
                     <td className="numeric"><strong>{formatVND(selectedTransaction.amount)}</strong></td>
+                    <td>{selectedTransaction.partner}</td>
                     <td>{selectedTransaction.partner}</td>
                   </tr>
                 </tbody>
@@ -9014,10 +9032,12 @@ export default function MisaCashWorkspace({
   // --------------------------------------------------------------------
   if (tab === "payment-requests") {
     return (
+      <><MisaPaymentWorkflow notify={notify}>
       <PaymentRequestsTab
         notify={notify}
         onOpenCreatePayment={() => setShowCreateVoucher("payment")}
       />
+      </MisaPaymentWorkflow>{showCreateVoucher && <CreateVoucherModal kind={showCreateVoucher} onClose={()=>setShowCreateVoucher(null)} onSave={handleSaveVoucher}/>}</>
     );
   }
 

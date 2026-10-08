@@ -1,0 +1,93 @@
+import { useState } from "react";
+import type { ReactNode } from "react";
+import "./misa-payment-workflow.css";
+export default function MisaPaymentWorkflow({
+  children,
+  notify,
+}: {
+  children: ReactNode;
+  notify: (text: string) => void;
+}) {
+  const [view, setView] = useState("workflow");
+  return (
+    <div className="pw-workspace">
+      <nav aria-label="Đề nghị chi tiền">
+        <button
+          className={view === "workflow" ? "active" : ""}
+          onClick={() => setView("workflow")}
+        >
+          Quy trình tự động
+        </button>
+        <button
+          className={view === "list" ? "active" : ""}
+          onClick={() => setView("list")}
+        >
+          Danh sách đề nghị
+        </button>
+      </nav>
+      {view === "list" ? (
+        children
+      ) : (
+        <>
+          <header>
+            <div>
+              <h1>LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA ĐỀ NGHỊ CHI TIỀN</h1>
+              <p>
+                Hệ thống liên thông thông suốt giữa AMIS Quy trình và AMIS Kế
+                toán
+              </p>
+            </div>
+            <button
+              onClick={() =>
+                notify("Đang xem mô phỏng quy trình phê duyệt trên frontend.")
+              }
+            >
+              Thiết lập tự động
+            </button>
+          </header>
+          <div className="pw-steps">
+            <article>
+              <span>BƯỚC 1</span>
+              <small>AMIS Quy trình</small>
+              <h2>Nhân viên lập đề nghị chi tiền trên AMIS Quy trình</h2>
+              <p>Nhân viên chủ động tạo các đề nghị phát sinh như:</p>
+              <ul>
+                {[
+                  "Đề nghị trả tiền nhà cung cấp",
+                  "Đề nghị tạm ứng nhân viên",
+                  "Đề nghị thanh toán hóa đơn",
+                  "Đề nghị thanh toán khác",
+                  "Đề nghị quyết toán tạm ứng",
+                ].map((text) => (
+                  <li key={text}>{text}</li>
+                ))}
+              </ul>
+              <footer>Tạo đề nghị nhanh chóng trên web và mobile</footer>
+            </article>
+            <article>
+              <span>BƯỚC 2</span>
+              <small>AMIS Quy trình</small>
+              <h2>Giám đốc/Kế toán phê duyệt</h2>
+              <p>
+                Đề nghị được chuyển đến đúng người phụ trách để kiểm tra, trao
+                đổi, bổ sung thông tin và phê duyệt trực tiếp trên AMIS Quy
+                trình.
+              </p>
+              <footer>Tạo đề nghị nhanh chóng trên web và mobile</footer>
+            </article>
+            <article>
+              <span>BƯỚC 3</span>
+              <small>AMIS Kế toán</small>
+              <h2>Đồng bộ đề nghị về AMIS Kế toán</h2>
+              <p>
+                Kế toán kế thừa thông tin từ đề nghị chi đã duyệt để lập chứng
+                từ hạch toán nhanh chóng, không cần nhập lại thủ công.
+              </p>
+              <footer>Kế thừa dữ liệu &amp; tự động sinh hạch toán</footer>
+            </article>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

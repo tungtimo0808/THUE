@@ -1,0 +1,119 @@
+.pw-workspace {
+  background: #f6f7f8;
+  min-height: 100%;
+  padding: 16px;
+  color: #26313a;
+  font-size: 14px;
+}
+.pw-workspace > nav {
+  display: flex;
+  gap: 18px;
+  border-bottom: 1px solid #e0e3e7;
+  margin-bottom: 20px;
+}
+.pw-workspace button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  padding: 8px 14px;
+  background: white;
+  border-radius: 3px;
+}
+.pw-workspace > nav button {
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+.pw-workspace > nav .active {
+  color: #009b60;
+  border-bottom-color: #009b60;
+  font-weight: 600;
+}
+.pw-workspace > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 15px;
+}
+.pw-workspace h1 {
+  font-size: 21px;
+  margin: 0 0 12px;
+}
+.pw-workspace > header p {
+  color: #68737e;
+  margin: 0;
+}
+.pw-workspace > header button {
+  background: #009b60;
+  color: white;
+  border-color: #009b60;
+}
+.pw-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin: 25px 15px;
+}
+.pw-steps article {
+  position: relative;
+  background: white;
+  border: 1px solid #dfe4e8;
+  border-radius: 7px;
+  padding: 28px 26px;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.7;
+}
+.pw-steps article + article:before {
+  content: "›";
+  position: absolute;
+  left: -23px;
+  top: 45%;
+  font-size: 36px;
+  color: #009b60;
+}
+.pw-steps span {
+  font-size: 12px;
+  color: #73818c;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.pw-steps small {
+  color: #009b60;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.pw-steps h2 {
+  font-size: 19px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+.pw-steps p {
+  margin: 8px 0;
+}
+.pw-steps ul {
+  padding-left: 18px;
+  margin: 8px 0 25px;
+}
+.pw-steps footer {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #eef0f2;
+  color: #009b60;
+  font-size: 13px;
+}
+@media (max-width: 850px) {
+  .pw-steps {
+    grid-template-columns: 1fr;
+  }
+  .pw-steps article + article:before {
+    display: none;
+  }
+  .pw-workspace > header {
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+}

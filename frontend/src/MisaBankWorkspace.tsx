@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import {
   TaxPaymentModal,
+  PaymentRequestsTab,
   SupplierPaymentModal,
   AccountingVoucherModal,
   CreateVoucherModal,
@@ -46,6 +47,8 @@ import {
   CreditOverviewView,
 } from "./MisaCreditModals";
 import "./misa-cash.css";
+import MisaBankReconciliation from './MisaBankReconciliation';
+import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 
 export default function MisaBankWorkspace({
   tab = "transactions",
@@ -630,6 +633,9 @@ export default function MisaBankWorkspace({
       )}
     </>
   );
+
+  if (tab === 'reconciliation') return <MisaBankReconciliation transactions={transactions} notify={notify}/>;
+  if (tab === 'payment-requests') return <><MisaPaymentWorkflow notify={notify}><PaymentRequestsTab notify={notify} onOpenCreatePayment={()=>setShowCreateVoucher('payment')}/></MisaPaymentWorkflow>{renderModals()}</>;
 
   // --------------------------------------------------------------------
   // RENDER TAB: "Khế ước cho vay" & "Khế ước đi vay" (MATCHING SCREENSHOT 5)
