@@ -71,6 +71,7 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
+import MisaInvoiceWorkspace from './MisaInvoiceWorkspace';
 import MisaCashWorkspace from "./MisaCashWorkspace";
 import MisaBankWorkspace from "./MisaBankWorkspace";
 import MisaPurchaseWorkspace from "./MisaPurchaseWorkspace";
@@ -849,6 +850,8 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
+        ) : moduleId === 'invoices' && ['process','meinvoice','error-guide'].includes(tab) ? (
+          <MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice}/>
         ) : moduleId === "purchases" && tab === "invoice-processing" ? (
           <IncomingInvoiceWorkspace notify={setNotice} />
         ) : moduleId === "purchases" ? (

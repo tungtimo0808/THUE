@@ -430,3 +430,156 @@
   display: block;
   margin: 8px 0;
 }
+.ar-aging-paper {
+  width: 100%;
+  max-width: 1500px;
+  min-width: 1100px;
+  min-height: 1050px;
+  padding: 28px;
+  font-size: 10px;
+}
+.ar-aging-paper h1 {
+  font-size: 15px;
+  margin: 8px 0 4px;
+}
+.ar-aging-paper .ar-print-company {
+  font-size: 10px;
+  margin: 0 0 8px;
+}
+.ar-aging-paper .ar-print-period {
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.ar-aging-paper table th,
+.ar-aging-paper table td {
+  font-size: 9px;
+  padding: 3px 2px;
+}
+.ar-aging-paper .ar-aging-group {
+  border: 0;
+}
+.ar-aging-group td {
+  border-top: 0;
+}
+.ar-aging-paper .ar-print-signatures {
+  font-size: 11px;
+}
+.ar-aging-paper .ar-print-signatures i {
+  font-size: 10px;
+}
+.si-print h1 {
+  font-size: 20px;
+  margin: 30px 0 8px;
+}
+.si-print .si-stock {
+  margin: 25px 0 8px;
+}
+.si-print table th:first-child {
+  width: 8%;
+}
+.si-print .ar-print-signatures {
+  font-size: 13px;
+}
+.si-print .ar-print-signatures i {
+  font-size: 12px;
+}
+.sg-print {
+  width: 1120px;
+  font-size: 13px;
+}
+.sg-print h1 {
+  font-size: 21px;
+  margin: 15px 0 8px;
+}
+.sg-print > p {
+  margin: 6px 0;
+}
+.sg-print .ar-print-period {
+  margin-bottom: 15px;
+}
+.sg-group {
+  border: 0;
+}
+.sg-group td {
+  border-top: 0;
+}
+.sg-print .ar-print-signatures {
+  margin-top: 15px;
+}
+.up-print {
+  width: 1120px;
+  font-size: 14px;
+  padding: 38px;
+}
+.up-form-number {
+  border: 1px solid #333;
+  padding: 6px;
+  width: 190px;
+  text-align: center;
+  font-size: 13px;
+}
+.up-form-number p {
+  margin: 7px 0;
+}
+.up-print h1 {
+  font-size: 22px;
+  margin: 20px 0 10px;
+  line-height: 1.3;
+}
+.up-company {
+  margin: 20px 0 0;
+}
+.up-company p {
+  margin: 7px 0;
+}
+.up-print .up-total {
+  margin: 18px 0;
+}
+.up-print .ar-print-signatures {
+  justify-content: space-between;
+  padding: 0 65px;
+}
+.gl-print {
+  font-size: 13px;
+  padding: 30px 38px;
+}
+.gl-print > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 12px;
+}
+.gl-print > header > div {
+  text-align: center;
+  width: 270px;
+}
+.gl-print > header p {
+  margin: 4px 0;
+}
+.gl-print h1 {
+  margin: 15px 0 4px;
+  font-size: 23px;
+}
+.gl-description {
+  text-align: center;
+  margin: 4px 0;
+}
+.gl-account {
+  display: flex;
+  justify-content: space-between;
+  margin: 26px 0 8px;
+}
+.gl-print table th,
+.gl-print table td {
+  font-size: 11px;
+  padding: 4px 2px;
+}
+.gl-print .gl-page-note {
+  margin-top: 14px;
+}
+.gl-print .ar-print-signatures {
+  font-size: 12px;
+}
+.gl-print .ar-print-signatures i {
+  font-size: 11px;
+}

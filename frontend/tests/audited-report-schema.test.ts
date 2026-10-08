@@ -9,7 +9,31 @@ import {
   auditedPeriodRange,
   isAuditedParameters,
   validateAuditedParameters,
+  initialAuditedParameters,
+  taxMonthRange,
 } from "../src/audited-report-parameters.ts";
+test("monthly tax parameters produce a complete month and reject invalid months", () => {
+  assert.deepEqual(taxMonthRange("2", "2024"), ["2024-02-01", "2024-02-29"]);
+  assert.deepEqual(taxMonthRange("9", "2026"), ["2026-09-01", "2026-09-30"]);
+  assert.equal(taxMonthRange("13", "2026"), null);
+  assert.equal(taxMonthRange("0", "2026"), null);
+});
+test("point-in-time reports use the observed cutoff date instead of month end", () => {
+  const definition = {
+    name: "Tuổi nợ",
+    category: "Bán hàng",
+    viewer: "dynamic" as const,
+    labels: ["Đến ngày"],
+    headers: [],
+    selectors: [],
+    checkboxes: [],
+    fields: [{ label: "Đến ngày", kind: "date", default: "08/10/2026" }],
+  };
+  assert.equal(
+    initialAuditedParameters(definition).fields["Đến ngày"],
+    "2026-10-08",
+  );
+});
 test("required report fields block an incomplete application of filters", () => {
   const parameters = {
     fields: { "Tài khoản": "" },

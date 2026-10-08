@@ -221,11 +221,6 @@ export default function MisaBankWorkspace({
 
   const [selectedRowId, setSelectedRowId] = useState("unc-028");
 
-  const selectedTransaction = useMemo(
-    () => transactions.find((t) => t.id === selectedRowId) || transactions[0],
-    [transactions, selectedRowId],
-  );
-
   const totalPayment = useMemo(
     () =>
       transactions
@@ -262,6 +257,10 @@ export default function MisaBankWorkspace({
       return matchQuery && matchType && matchesTransactionPeriod(t.dateHachToan,filterPeriod);
     });
   }, [transactions, searchQuery, filterType,filterPeriod]);
+  const selectedTransaction = useMemo(
+    () => filteredTransactions.find((item) => item.id === selectedRowId) || filteredTransactions[0],
+    [filteredTransactions, selectedRowId],
+  );
 
   // Handlers
   const handleTaxPayment = (taxData: any) => {

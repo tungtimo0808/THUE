@@ -7530,11 +7530,6 @@ export default function MisaCashWorkspace({
   // Selected row for inline detail
   const [selectedRowId, setSelectedRowId] = useState<string>("pt-05");
 
-  const selectedTransaction = useMemo(
-    () => transactions.find((t) => t.id === selectedRowId) || transactions[0],
-    [transactions, selectedRowId],
-  );
-
   // Filtered list
   const filteredList = useMemo(() => {
     return transactions.filter((item) => {
@@ -7552,6 +7547,10 @@ export default function MisaCashWorkspace({
   }, [transactions, searchQuery, statusFilter, voucherTypeFilter,filterPeriod]);
   const cashPageCount = Math.max(1, Math.ceil(filteredList.length / cashPageSize));
   const visibleCashPage = Math.min(cashPage, cashPageCount);
+  const selectedTransaction = useMemo(
+    () => filteredList.find((item) => item.id === selectedRowId) || filteredList[0],
+    [filteredList, selectedRowId],
+  );
 
   // Total summary
   const totalReceipt = useMemo(

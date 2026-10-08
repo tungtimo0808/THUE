@@ -24,6 +24,11 @@ import MisaDebtNoticePrinted from "./MisaDebtNoticePrinted";
 import MisaDebtNoticeTwoPrinted from "./MisaDebtNoticeTwoPrinted";
 import MisaReceivablesReconciliationPrinted from "./MisaReceivablesReconciliationPrinted";
 import MisaPaymentDemandPrinted from "./MisaPaymentDemandPrinted";
+import MisaReceivablesAgingPrinted from "./MisaReceivablesAgingPrinted";
+import MisaSalesInventoryPrinted from "./MisaSalesInventoryPrinted";
+import MisaStockGroupsPrinted from "./MisaStockGroupsPrinted";
+import MisaUninvoicedPurchasesPrinted from "./MisaUninvoicedPurchasesPrinted";
+import MisaGeneralLedgerPrinted from "./MisaGeneralLedgerPrinted";
 import "./misa-purchase-contract-reports.css";
 import "./audited-reports.css";
 
@@ -229,7 +234,42 @@ export default function AuditedReportWorkspace({
           ))}
         </section>
       )}
-      {definition.printLayout === "paymentDemand" ? (
+      {definition.printLayout === "generalLedger" ? (
+        <MisaGeneralLedgerPrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout === "taxUninvoiced" ? (
+        <MisaUninvoicedPurchasesPrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout === "stockGroups" ? (
+        <MisaStockGroupsPrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout === "salesInventory" ? (
+        <MisaSalesInventoryPrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout === "receivablesAging" ? (
+        <MisaReceivablesAgingPrinted
+          definition={definition}
+          parameters={applied}
+          rows={rows}
+          hidden={hidden}
+        />
+      ) : definition.printLayout === "paymentDemand" ? (
         <MisaPaymentDemandPrinted parameters={applied} rows={rows} />
       ) : definition.printLayout === "receivablesReconciliation" ? (
         <MisaReceivablesReconciliationPrinted

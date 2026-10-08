@@ -14,6 +14,7 @@ const metadata = fs.existsSync(metaPath)
   : {};
 function titleFor(headers) {
   const text = headers.join(" ");
+  if (/Số chứng từ/.test(text)) return "Chứng từ";
   if (/Mã kho|Tên kho/.test(text)) return "Kho";
   if (/Mã hàng|Tên hàng|Mã vật tư/.test(text)) return "Vật tư, hàng hóa";
   if (/Mã NCC|Tên NCC|nhà cung cấp/.test(text)) return "Nhà cung cấp";

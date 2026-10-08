@@ -160,7 +160,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const [projectDetailOpen, setProjectDetailOpen] = useState(true);
 
   // Form states for modals
-  const [bankAccountCode, setBankAccountCode] = useState("112");
+  const [bankAccountCode, setBankAccountCode] = useState("1121");
   const [bankAccNumber, setBankAccNumber] = useState("");
   const [bankDebit, setBankDebit] = useState(0);
   const [bankCredit, setBankCredit] = useState(0);
@@ -197,6 +197,14 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   };
 
   const handleSaveModal = (type: string, andAdd = false) => {
+    if(type==='Số dư TK ngân hàng'&&!bankAccNumber){notify?.('Vui lòng chọn tài khoản ngân hàng.');return;}
+    const requiredPartner = type === "Công nợ khách hàng" ? partnerName
+      : type === "Công nợ nhà cung cấp" ? supplierName
+      : type === "Công nợ nhân viên" ? employeeName : undefined;
+    if (requiredPartner === "") {
+      notify?.(`Vui lòng chọn ${type === "Công nợ khách hàng" ? "khách hàng" : type === "Công nợ nhà cung cấp" ? "nhà cung cấp" : "nhân viên"}.`);
+      return;
+    }
     notify?.(`Đã lưu thành công ${type}.`);
     if (!andAdd) {
       setActiveModal(null);
@@ -558,7 +566,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             <div className="misa-opening-modal-body">
               <div className="misa-opening-field">
                 <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
-                <select className="misa-opening-select" value={bankAccountCode} onChange={(e) => setBankAccountCode(e.target.value)}>
+                <select aria-label="Số tài khoản đầu kỳ" className="misa-opening-select" value={bankAccountCode} onChange={(e) => setBankAccountCode(e.target.value)}>
                   <option value="112">112 - Tiền gửi ngân hàng</option>
                   <option value="1121">1121 - Tiền Việt Nam</option>
                   <option value="1122">1122 - Ngoại tệ</option>
@@ -567,7 +575,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-field">
                 <label className="misa-opening-label">Tài khoản ngân hàng <span style={{ color: "#ef4444" }}>*</span></label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <select className="misa-opening-select" style={{ flex: 1 }} value={bankAccNumber} onChange={(e) => setBankAccNumber(e.target.value)}>
+                  <select aria-label="Tài khoản ngân hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={bankAccNumber} onChange={(e) => setBankAccNumber(e.target.value)}>
                     <option value="">-- Chọn số tài khoản ngân hàng --</option>
                     <option value="VCB-001">0011004234567 - Vietcombank Sở giao dịch</option>
                     <option value="TCB-002">1903456789001 - Techcombank Ba Đình</option>
@@ -581,11 +589,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Dư Nợ</label>
-                  <input type="number" className="misa-opening-input" value={bankDebit} onChange={(e) => setBankDebit(Number(e.target.value) || 0)} />
+                  <input aria-label="Dư Nợ ngân hàng đầu kỳ" type="number" className="misa-opening-input" value={bankDebit} onChange={(e) => setBankDebit(Number(e.target.value) || 0)} />
                 </div>
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Dư Có</label>
-                  <input type="number" className="misa-opening-input" value={bankCredit} onChange={(e) => setBankCredit(Number(e.target.value) || 0)} />
+                  <input aria-label="Dư Có ngân hàng đầu kỳ" type="number" className="misa-opening-input" value={bankCredit} onChange={(e) => setBankCredit(Number(e.target.value) || 0)} />
                 </div>
               </div>
             </div>
@@ -621,7 +629,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
-                  <select className="misa-opening-select" value={partnerAccCode} onChange={(e) => setPartnerAccCode(e.target.value)}>
+                  <select aria-label="Số tài khoản công nợ khách hàng" className="misa-opening-select" value={partnerAccCode} onChange={(e) => setPartnerAccCode(e.target.value)}>
                     <option value="131">131 - Phải thu của khách hàng</option>
                     <option value="1361">1361 - Vốn kinh doanh ở các đơn vị trực thuộc</option>
                     <option value="1362">1362 - Phải thu nội bộ về chênh lệch tỷ giá</option>
@@ -632,7 +640,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <div className="misa-opening-field" style={{ flex: 2 }}>
                   <label className="misa-opening-label">Khách hàng <span style={{ color: "#ef4444" }}>*</span></label>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <select className="misa-opening-select" style={{ flex: 1 }} value={partnerName} onChange={(e) => setPartnerName(e.target.value)}>
+                    <select aria-label="Khách hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={partnerName} onChange={(e) => setPartnerName(e.target.value)}>
                       <option value="">-- Chọn khách hàng --</option>
                       <option value="KH001">KH001 - Công ty Cổ phần Công nghệ Sao Việt</option>
                       <option value="KH002">KH002 - Công ty TNHH Đầu tư & Thương mại Thăng Long</option>

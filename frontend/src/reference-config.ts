@@ -298,6 +298,9 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("customers", "Khách hàng"),
   ],
   invoices: [
+    node('process','Quy trình'),
+    node('meinvoice','Kết nối MeInvoice'),
+    node('error-guide','Hướng dẫn xử lý hóa đơn đã lập sai'),
     node("incoming", "Hóa đơn đầu vào", [
       node("inbox", "Hộp thư hóa đơn & AI OCR"),
       node("unprocessed", "Hóa đơn chưa hạch toán"),

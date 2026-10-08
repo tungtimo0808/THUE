@@ -85,19 +85,31 @@ export function initialAuditedParameters(
     const recorded = definition.fields?.find(
       (field) => field.label === label,
     )?.default;
+    const recordedDate =
+      recorded && /^\d{2}\/\d{2}\/\d{4}$/.test(recorded)
+        ? recorded.split("/").reverse().join("-")
+        : recorded && /^\d{4}-\d{2}-\d{2}$/.test(recorded)
+          ? recorded
+          : undefined;
     fields[label] =
-      label === "Kỳ báo cáo"
+      label === "Kỳ báo cáo" || label === "Khoảng thời gian"
         ? "Tháng này"
         : label === "Từ ngày"
-          ? from
+          ? recordedDate || from
           : label === "Đến ngày"
-            ? to
+            ? recordedDate ||
+              (definition.labels.includes("Kỳ báo cáo") ||
+              definition.labels.includes("Khoảng thời gian")
+                ? to
+                : iso(today))
             : label.includes("Ngày") || label.includes("ngày")
-              ? iso(today)
+              ? recordedDate || iso(today)
               : label === "Năm"
                 ? String(today.getFullYear())
                 : label === "Tháng"
-                  ? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
+                  ? definition.printLayout === "taxUninvoiced"
+                    ? String(today.getMonth() + 1)
+                    : `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
                   : (recorded ?? "");
   });
   return {
@@ -119,7 +131,18 @@ export function validateAuditedParameters(
   definition?: AuditedReportDefinition,
 ): string {
   const { fields } = parameters;
-  if ("Năm" in fields && !/^\d{4}$/.test(fields["Năm"]))
+  if (
+    definition?.printLayout === "taxUninvoiced" &&
+    parameters.radio === "Theo tháng" &&
+    !taxMonthRange(fields.Tháng, fields.Năm)
+  )
+    return "Vui lòng chọn tháng và năm hợp lệ.";
+  if (
+    (definition?.printLayout !== "taxUninvoiced" ||
+      parameters.radio === "Theo tháng") &&
+    "Năm" in fields &&
+    !/^\d{4}$/.test(fields["Năm"])
+  )
     return "Vui lòng nhập năm báo cáo hợp lệ.";
   if (
     ("Từ ngày" in fields && !fields["Từ ngày"]) ||
@@ -138,4 +161,20 @@ export function validateAuditedParameters(
   if (missing)
     return `Vui lòng chọn hoặc nhập ${missing.label.toLocaleLowerCase("vi")}.`;
   return "";
+}
+export function taxMonthRange(
+  month: string,
+  year: string,
+): [string, string] | null {
+  const m = Number(month),
+    y = Number(year);
+  if (
+    !/^\d{4}$/.test(year) ||
+    y < 1000 ||
+    !Number.isInteger(m) ||
+    m < 1 ||
+    m > 12
+  )
+    return null;
+  return auditedPeriodRange(`Tháng ${m}`, new Date(y, 0, 1));
 }

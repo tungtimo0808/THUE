@@ -97,8 +97,18 @@ export function auditedFixtureRows(
       const date = `2026-10-0${index + 5}`;
       if (fields["Từ ngày"] && date < fields["Từ ngày"]) return false;
       if (fields["Đến ngày"] && date > fields["Đến ngày"]) return false;
-      if (fields["Năm"] && fields["Năm"] !== "2026") return false;
-      if (fields["Tháng"] && fields["Tháng"] !== "2026-10") return false;
+      const useMonthFields =
+        definition.printLayout !== "taxUninvoiced" ||
+        parameters.radio === "Theo tháng";
+      if (useMonthFields && fields["Năm"] && fields["Năm"] !== "2026")
+        return false;
+      if (
+        useMonthFields &&
+        fields["Tháng"] &&
+        fields["Tháng"] !==
+          (definition.printLayout === "taxUninvoiced" ? "10" : "2026-10")
+      )
+        return false;
       if (
         definition.selectors.some(
           (selector, position) =>

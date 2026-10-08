@@ -1204,6 +1204,126 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
     }
   },
   {
+    "name": "Tổng hợp xuất kho bán hàng",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "STT",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng hóa, dịch vụ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn vị tính",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Thành tiền",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "printLayout": "salesInventory",
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Ngày in báo cáo"
+    ],
+    "selectors": [
+      {
+        "title": "Chứng từ",
+        "headers": [
+          "Ngày hạch toán",
+          "Ngày chứng từ",
+          "Số chứng từ",
+          "Số hóa đơn",
+          "Mã đối tượng",
+          "Tên đối tượng",
+          "Diễn giải",
+          "Tổng tiền",
+          "Nhân viên bán hàng",
+          "Nhóm KH",
+          "Chi nhánh"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các mặt hàng giống nhau, cùng ĐVT, đơn giá khác nhau trên chứng từ"
+      }
+    ],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Hôm nay",
+        "Tuần này",
+        "Đầu tuần tới hiện tại",
+        "Tháng này",
+        "Đầu tháng đến hiện tại",
+        "Quý này",
+        "Đầu quý đến hiện tại",
+        "Năm nay",
+        "Đầu năm đến hiện tại",
+        "Sáu tháng đầu năm",
+        "Sáu tháng cuối năm",
+        "Tháng 1",
+        "Tháng 2",
+        "Tháng 3",
+        "Tháng 4",
+        "Tháng 5",
+        "Tháng 6",
+        "Tháng 7",
+        "Tháng 8",
+        "Tháng 9",
+        "Tháng 10",
+        "Tháng 11",
+        "Tháng 12",
+        "Quý 1",
+        "Quý 2",
+        "Quý 3",
+        "Quý 4",
+        "Hôm qua",
+        "Tuần trước",
+        "Tháng trước",
+        "Quý trước",
+        "Năm trước",
+        "Ngày mai",
+        "Tuần sau",
+        "Tháng sau",
+        "Quý sau",
+        "Năm sau",
+        "Tùy chọn"
+      ]
+    }
+  },
+  {
     "name": "Tổng hợp bán hàng theo sàn thương mại điện tử",
     "category": "Bán hàng",
     "viewer": "dynamic",
@@ -2033,6 +2153,190 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       }
     ],
     "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Hôm nay",
+        "Tuần này",
+        "Đầu tuần tới hiện tại",
+        "Tháng này",
+        "Đầu tháng đến hiện tại",
+        "Quý này",
+        "Đầu quý đến hiện tại",
+        "Năm nay",
+        "Đầu năm đến hiện tại",
+        "Sáu tháng đầu năm",
+        "Sáu tháng cuối năm",
+        "Tháng 1",
+        "Tháng 2",
+        "Tháng 3",
+        "Tháng 4",
+        "Tháng 5",
+        "Tháng 6",
+        "Tháng 7",
+        "Tháng 8",
+        "Tháng 9",
+        "Tháng 10",
+        "Tháng 11",
+        "Tháng 12",
+        "Quý 1",
+        "Quý 2",
+        "Quý 3",
+        "Quý 4",
+        "Hôm qua",
+        "Tuần trước",
+        "Tháng trước",
+        "Quý trước",
+        "Năm trước",
+        "Ngày mai",
+        "Tuần sau",
+        "Tháng sau",
+        "Quý sau",
+        "Năm sau",
+        "Tùy chọn"
+      ]
+    }
+  },
+  {
+    "name": "Phân tích công nợ phải thu theo tuổi nợ",
+    "category": "Bán hàng",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Mã khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên khách hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Địa chỉ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tổng nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Không có hạn nợ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nợ trước hạn",
+          "colSpan": 6,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ quá hạn",
+          "colSpan": 6,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "0-30 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "31-60 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "61-90 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "91-120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trên 120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "1-30 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "31-60 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "61-90 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "91-120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trên 120 ngày",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "printLayout": "receivablesAging",
+    "labels": [
+      "Đến ngày",
+      "Tài khoản",
+      "Nhóm khách hàng"
+    ],
+    "selectors": [
+      {
+        "title": "Khách hàng",
+        "headers": [
+          "Mã khách hàng",
+          "Tên khách hàng",
+          "Địa chỉ",
+          "Mã số thuế"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "default": "08/10/2026"
+      },
+      {
+        "label": "Tài khoản",
+        "kind": "combo",
+        "default": "131"
+      },
+      {
+        "label": "Nhóm khách hàng",
+        "kind": "combo"
+      }
+    ],
     "radios": [],
     "options": {
       "Kỳ báo cáo": [
@@ -9052,6 +9356,217 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
     }
   },
   {
+    "name": "02/TNDN: Bảng kê thu mua hàng hóa, dịch vụ mua vào không có hóa đơn",
+    "category": "Thuế",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày tháng năm mua hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Người bán",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Hàng hóa mua vào",
+          "colSpan": 4,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ghi chú",
+          "colSpan": 1,
+          "rowSpan": 2
+        }
+      ],
+      [
+        {
+          "text": "Tên người bán",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Địa chỉ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số căn cước",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số điện thoại (nếu có)",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tên hàng hóa, dịch vụ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng, trọng lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Đơn giá",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Tổng giá thanh toán",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "printLayout": "taxUninvoiced",
+    "labels": [
+      "Kỳ báo cáo",
+      "Khoảng thời gian",
+      "Từ ngày",
+      "Đến ngày",
+      "Địa chỉ nơi tổ chức thu mua",
+      "Tháng",
+      "Năm"
+    ],
+    "selectors": [],
+    "checkboxes": [
+      {
+        "checked": false,
+        "label": "Hiển thị số chứng từ trong phần ghi chú"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị báo cáo chi tiết theo từng nhà cung cấp"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Khoảng thời gian",
+        "kind": "combo",
+        "required": true
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date"
+      },
+      {
+        "label": "Tháng",
+        "kind": "number"
+      },
+      {
+        "label": "Năm",
+        "kind": "number"
+      },
+      {
+        "label": "Địa chỉ nơi tổ chức thu mua",
+        "kind": "text"
+      }
+    ],
+    "radios": [
+      {
+        "label": "Theo ngày",
+        "checked": true
+      },
+      {
+        "label": "Theo tháng",
+        "checked": false
+      }
+    ],
+    "options": {
+      "Kỳ báo cáo": [
+        "Hôm nay",
+        "Tuần này",
+        "Đầu tuần tới hiện tại",
+        "Tháng này",
+        "Đầu tháng đến hiện tại",
+        "Quý này",
+        "Đầu quý đến hiện tại",
+        "Năm nay",
+        "Đầu năm đến hiện tại",
+        "Sáu tháng đầu năm",
+        "Sáu tháng cuối năm",
+        "Tháng 1",
+        "Tháng 2",
+        "Tháng 3",
+        "Tháng 4",
+        "Tháng 5",
+        "Tháng 6",
+        "Tháng 7",
+        "Tháng 8",
+        "Tháng 9",
+        "Tháng 10",
+        "Tháng 11",
+        "Tháng 12",
+        "Quý 1",
+        "Quý 2",
+        "Quý 3",
+        "Quý 4",
+        "Hôm qua",
+        "Tuần trước",
+        "Tháng trước",
+        "Quý trước",
+        "Năm trước",
+        "Ngày mai",
+        "Tuần sau",
+        "Tháng sau",
+        "Quý sau",
+        "Năm sau",
+        "Tùy chọn"
+      ],
+      "Khoảng thời gian": [
+        "Hôm nay",
+        "Tuần này",
+        "Đầu tuần tới hiện tại",
+        "Tháng này",
+        "Đầu tháng đến hiện tại",
+        "Quý này",
+        "Đầu quý đến hiện tại",
+        "Năm nay",
+        "Đầu năm đến hiện tại",
+        "Sáu tháng đầu năm",
+        "Sáu tháng cuối năm",
+        "Tháng 1",
+        "Tháng 2",
+        "Tháng 3",
+        "Tháng 4",
+        "Tháng 5",
+        "Tháng 6",
+        "Tháng 7",
+        "Tháng 8",
+        "Tháng 9",
+        "Tháng 10",
+        "Tháng 11",
+        "Tháng 12",
+        "Quý 1",
+        "Quý 2",
+        "Quý 3",
+        "Quý 4",
+        "Hôm qua",
+        "Tuần trước",
+        "Tháng trước",
+        "Quý trước",
+        "Năm trước",
+        "Ngày mai",
+        "Tuần sau",
+        "Tháng sau",
+        "Quý sau",
+        "Năm sau",
+        "Tùy chọn"
+      ]
+    }
+  },
+  {
     "name": "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ bán ra (Mẫu quản trị)",
     "category": "Thuế",
     "viewer": "dynamic",
@@ -9606,6 +10121,168 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       "Nhóm VTHH"
     ],
     "selectors": [
+      {
+        "title": "Kho",
+        "headers": [
+          "Mã kho",
+          "Tên kho"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      }
+    ],
+    "checkboxes": [],
+    "fields": [],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Hôm nay",
+        "Tuần này",
+        "Đầu tuần tới hiện tại",
+        "Tháng này",
+        "Đầu tháng đến hiện tại",
+        "Quý này",
+        "Đầu quý đến hiện tại",
+        "Năm nay",
+        "Đầu năm đến hiện tại",
+        "Sáu tháng đầu năm",
+        "Sáu tháng cuối năm",
+        "Tháng 1",
+        "Tháng 2",
+        "Tháng 3",
+        "Tháng 4",
+        "Tháng 5",
+        "Tháng 6",
+        "Tháng 7",
+        "Tháng 8",
+        "Tháng 9",
+        "Tháng 10",
+        "Tháng 11",
+        "Tháng 12",
+        "Quý 1",
+        "Quý 2",
+        "Quý 3",
+        "Quý 4",
+        "Hôm qua",
+        "Tuần trước",
+        "Tháng trước",
+        "Quý trước",
+        "Năm trước",
+        "Ngày mai",
+        "Tuần sau",
+        "Tháng sau",
+        "Quý sau",
+        "Năm sau",
+        "Tùy chọn"
+      ]
+    }
+  },
+  {
+    "name": "Tổng hợp tồn kho theo nhóm VTHH",
+    "category": "Kho",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "STT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Mã hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Tên hàng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "ĐVT",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Đầu kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nhập kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Xuất kho",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Cuối kỳ",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số lượng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Giá trị",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "printLayout": "stockGroups",
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị tính"
+    ],
+    "selectors": [
+      {
+        "title": "Mã nhóm",
+        "headers": [
+          "Mã nhóm",
+          "Tên nhóm",
+          "Bậc"
+        ],
+        "selectAllLabel": "Chọn tất cả"
+      },
       {
         "title": "Kho",
         "headers": [
@@ -12022,6 +12699,172 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       {
         "checked": false,
         "label": "Cộng gộp các bút toán giống nhau"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Kỳ báo cáo",
+        "kind": "combo",
+        "required": true,
+        "default": "Tháng này"
+      },
+      {
+        "label": "Từ ngày",
+        "kind": "date",
+        "required": false,
+        "default": "01/10/2026"
+      },
+      {
+        "label": "Đến ngày",
+        "kind": "date",
+        "required": false,
+        "default": "31/10/2026"
+      },
+      {
+        "label": "Bậc",
+        "kind": "combo",
+        "required": false
+      }
+    ],
+    "radios": [],
+    "options": {
+      "Kỳ báo cáo": [
+        "Hôm nay",
+        "Tuần này",
+        "Đầu tuần tới hiện tại",
+        "Tháng này",
+        "Đầu tháng đến hiện tại",
+        "Quý này",
+        "Đầu quý đến hiện tại",
+        "Năm nay",
+        "Đầu năm đến hiện tại",
+        "Sáu tháng đầu năm",
+        "Sáu tháng cuối năm",
+        "Tháng 1",
+        "Tháng 2",
+        "Tháng 3",
+        "Tháng 4",
+        "Tháng 5",
+        "Tháng 6",
+        "Tháng 7",
+        "Tháng 8",
+        "Tháng 9",
+        "Tháng 10",
+        "Tháng 11",
+        "Tháng 12",
+        "Quý 1",
+        "Quý 2",
+        "Quý 3",
+        "Quý 4",
+        "Hôm qua",
+        "Tuần trước",
+        "Tháng trước",
+        "Quý trước",
+        "Năm trước",
+        "Ngày mai",
+        "Tuần sau",
+        "Tháng sau",
+        "Quý sau",
+        "Năm sau",
+        "Tùy chọn"
+      ]
+    }
+  },
+  {
+    "name": "S03b-DN: Sổ cái (Hình thức Nhật ký chung)",
+    "category": "Tổng hợp",
+    "viewer": "dynamic",
+    "headers": [
+      [
+        {
+          "text": "Ngày, tháng ghi sổ",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Chứng từ",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Diễn giải",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Nhật ký chung",
+          "colSpan": 2,
+          "rowSpan": 1
+        },
+        {
+          "text": "Số hiệu TK đối ứng",
+          "colSpan": 1,
+          "rowSpan": 2
+        },
+        {
+          "text": "Số tiền",
+          "colSpan": 2,
+          "rowSpan": 1
+        }
+      ],
+      [
+        {
+          "text": "Số hiệu",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Ngày, tháng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Trang sổ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "STT dòng",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Nợ",
+          "colSpan": 1,
+          "rowSpan": 1
+        },
+        {
+          "text": "Có",
+          "colSpan": 1,
+          "rowSpan": 1
+        }
+      ]
+    ],
+    "printLayout": "generalLedger",
+    "labels": [
+      "Kỳ báo cáo",
+      "Từ ngày",
+      "Đến ngày",
+      "Bậc"
+    ],
+    "selectors": [
+      {
+        "title": "Tài khoản",
+        "headers": [
+          "Số tài khoản",
+          "Tên tài khoản",
+          "Bậc"
+        ]
+      }
+    ],
+    "checkboxes": [
+      {
+        "checked": true,
+        "label": "Cộng gộp các bút toán giống nhau"
+      },
+      {
+        "checked": false,
+        "label": "Hiển thị phát sinh theo tiết khoản của TK tổng hợp"
       }
     ],
     "fields": [

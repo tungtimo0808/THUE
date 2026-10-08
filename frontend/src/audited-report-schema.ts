@@ -29,7 +29,12 @@ export interface AuditedReportDefinition {
     | "debtNotice"
     | "debtNoticeTwo"
     | "receivablesReconciliation"
-    | "paymentDemand";
+    | "paymentDemand"
+    | "receivablesAging"
+    | "salesInventory"
+    | "stockGroups"
+    | "taxUninvoiced"
+    | "generalLedger";
 }
 export const canonicalReportName = (name: string) =>
   name
