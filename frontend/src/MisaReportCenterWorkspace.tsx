@@ -78,6 +78,10 @@ import MisaStaffPurchasesReports from "./MisaStaffPurchasesReports";
 import MisaPurchaseOrderReports from "./MisaPurchaseOrderReports";
 import MisaProjectPurchasesReports from "./MisaProjectPurchasesReports";
 import MisaPurchaseReconciliationReports from "./MisaPurchaseReconciliationReports";
+import MisaPurchaseContractReports from "./MisaPurchaseContractReports";
+import { CONTRACT_REPORT_TITLES } from "./purchase-contract-data";
+import MisaSalesSummaryReports from "./MisaSalesSummaryReports";
+import { SALES_SUMMARY_TITLES } from "./sales-summary-data";
 
 export type MisaReportCenterWorkspaceProps = {
   notify?: (msg: string) => void;
@@ -967,6 +971,15 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
     );
   };
 
+  const contractReportType = (Object.keys(CONTRACT_REPORT_TITLES) as Array<keyof typeof CONTRACT_REPORT_TITLES>).find(type => CONTRACT_REPORT_TITLES[type] === selectedReport);
+  const salesSummaryType = (Object.keys(SALES_SUMMARY_TITLES) as Array<keyof typeof SALES_SUMMARY_TITLES>).find(type => SALES_SUMMARY_TITLES[type] === selectedReport);
+  if (salesSummaryType) {
+    return <MisaSalesSummaryReports key={salesSummaryType} reportType={salesSummaryType} onBack={() => setSelectedReport(null)} notify={notify} />;
+  }
+  if (contractReportType) {
+    return <MisaPurchaseContractReports key={contractReportType} reportType={contractReportType} onBack={() => setSelectedReport(null)} notify={notify} />;
+  }
+
   if (selectedReport === "Bảng cân đối tài khoản (Mẫu quản trị)") {
     return (
       <MisaTrialBalanceManagementReport
@@ -1754,6 +1767,7 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
               type="text"
               placeholder="Tìm theo tên báo cáo"
               value={searchKeyword}
+              onInput={(e) => setSearchKeyword(e.currentTarget.value)}
               onChange={(e) => setSearchKeyword(e.target.value)}
             />
           </div>
