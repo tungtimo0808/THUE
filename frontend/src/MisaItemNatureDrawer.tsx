@@ -5,9 +5,8 @@ import {
   Package,
   Briefcase,
   Layers,
-  Box,
-  Wrench,
-  ShoppingBag,
+  Boxes,
+  Tag,
 } from "lucide-react";
 
 export interface ItemNatureOption {
@@ -47,19 +46,24 @@ export const ITEM_NATURES: ItemNatureOption[] = [
     id: "finished_goods",
     name: "Thành phẩm",
     description: "Là sản phẩm đầu ra của quá trình sản xuất",
-    icon: <Box size={22} color="#ffffff" />,
+    icon: <Boxes size={22} color="#ffffff" />,
   },
   {
     id: "tools",
     name: "Công cụ dụng cụ",
     description: "Công cụ dụng cụ mua về nhập kho chưa đưa vào sử dụng",
-    icon: <Wrench size={22} color="#ffffff" />,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        <line x1="4" y1="20" x2="11" y2="13" />
+      </svg>
+    ),
   },
   {
     id: "combo",
     name: "Combo sản phẩm",
     description: "Các sản phẩm, hàng hóa được bán theo combo",
-    icon: <ShoppingBag size={22} color="#ffffff" />,
+    icon: <Tag size={22} color="#ffffff" />,
   },
 ];
 
@@ -99,7 +103,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header matching Screenshot 2 */}
         <div
           style={{
             padding: "16px 20px",
@@ -133,6 +137,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
                 padding: 4,
                 display: "grid",
                 placeItems: "center",
+                borderRadius: 4,
               }}
             >
               <HelpCircle size={18} />
@@ -149,6 +154,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
                 padding: 4,
                 display: "grid",
                 placeItems: "center",
+                borderRadius: 4,
               }}
             >
               <X size={18} />
@@ -162,7 +168,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
             padding: "16px 20px",
             display: "flex",
             flexDirection: "column",
-            gap: 16,
+            gap: 12,
             flex: 1,
           }}
         >
@@ -175,20 +181,20 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
                 display: "flex",
                 alignItems: "flex-start",
                 gap: 16,
-                padding: "14px 16px",
+                padding: "12px 14px",
                 borderRadius: 8,
-                border: "1px solid #e2e8f0",
+                border: "1px solid transparent",
                 background: "#ffffff",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#00a862";
+                e.currentTarget.style.borderColor = "#86efac";
                 e.currentTarget.style.background = "#f0fdf4";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 168, 98, 0.08)";
+                e.currentTarget.style.boxShadow = "0 3px 10px rgba(0, 168, 98, 0.08)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#e2e8f0";
+                e.currentTarget.style.borderColor = "transparent";
                 e.currentTarget.style.background = "#ffffff";
                 e.currentTarget.style.boxShadow = "none";
               }}
@@ -202,7 +208,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
                   display: "grid",
                   placeItems: "center",
                   flexShrink: 0,
-                  boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
+                  boxShadow: "0 2px 6px rgba(0, 168, 98, 0.22)",
                 }}
               >
                 {nature.icon}
@@ -211,8 +217,8 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
               <div style={{ flex: 1 }}>
                 <h4
                   style={{
-                    margin: "0 0 4px 0",
-                    fontSize: 14.5,
+                    margin: "0 0 3px 0",
+                    fontSize: 15,
                     fontWeight: 600,
                     color: "#1e293b",
                   }}

@@ -1,3 +1,5 @@
+import {CASH_PERIODS,cashPeriodDates} from "./cash-report-periods";
+import {currentCashDate} from './cash-date';
 import { useState, useMemo } from "react";
 import {
   X,
@@ -23,19 +25,20 @@ export interface SingleCustomerInvoiceCollectionModalProps {
     employee: string;
     collectDate: string;
     totalAmount: number;
+    totalDiscount?: number;
     invoices: any[];
   }) => void;
 }
 
 export function SingleCustomerInvoiceCollectionModal({
-  initialMethod = "bank",
+  initialMethod = "cash",
   onClose,
   onSubmit,
 }: SingleCustomerInvoiceCollectionModalProps) {
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [customer, setCustomer] = useState("");
   const [employee, setEmployee] = useState("");
-  const [collectDate, setCollectDate] = useState("30/09/2026");
+  const [collectDate, setCollectDate] = useState(currentCashDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [quickAmount, setQuickAmount] = useState("");
   const [hasFetched, setHasFetched] = useState(false);
@@ -55,6 +58,8 @@ export function SingleCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT 30 ngày",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -70,6 +75,8 @@ export function SingleCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT 30 ngày",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -85,6 +92,8 @@ export function SingleCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT ngay",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -100,6 +109,8 @@ export function SingleCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT 30 ngày",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -115,6 +126,8 @@ export function SingleCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT ngay",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
   ]);
@@ -138,10 +151,14 @@ export function SingleCustomerInvoiceCollectionModal({
       prev.map((r) => {
         if (r.id === id) {
           const nextChecked = !r.checked;
+          const collectAmt = nextChecked ? r.remainingDebt : 0;
+          const rate = parseFloat(r.discountRate) || 0;
+          const discountAmt = Math.round((collectAmt * rate) / 100);
           return {
             ...r,
             checked: nextChecked,
-            collectAmount: nextChecked ? r.remainingDebt : 0,
+            collectAmount: collectAmt,
+            discountAmount: discountAmt,
           };
         }
         return r;
@@ -159,11 +176,17 @@ export function SingleCustomerInvoiceCollectionModal({
   const toggleAll = () => {
     const nextVal = !allChecked;
     setRecords((prev) =>
-      prev.map((r) => ({
-        ...r,
-        checked: nextVal,
-        collectAmount: nextVal ? r.remainingDebt : 0,
-      })),
+      prev.map((r) => {
+        const collectAmt = nextVal ? r.remainingDebt : 0;
+        const rate = parseFloat(r.discountRate) || 0;
+        const discountAmt = Math.round((collectAmt * rate) / 100);
+        return {
+          ...r,
+          checked: nextVal,
+          collectAmount: collectAmt,
+          discountAmount: discountAmt,
+        };
+      }),
     );
   };
 
@@ -174,14 +197,65 @@ export function SingleCustomerInvoiceCollectionModal({
       prev.map((r) => {
         if (r.id === id) {
           const bounded = Math.min(cleanNum, r.remainingDebt);
+          const rate = parseFloat(r.discountRate) || 0;
+          const discountAmt = Math.round((bounded * rate) / 100);
           return {
             ...r,
             collectAmount: bounded,
+            discountAmount: discountAmt,
             checked: bounded > 0,
           };
         }
         return r;
       }),
+    );
+  };
+
+  // Discount rate change
+  const handleDiscountRateChange = (id: string, val: string) => {
+    const cleanVal = val.replace(/[^\d.]/g, "");
+    setRecords((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          const rate = parseFloat(cleanVal) || 0;
+          const discountAmt = Math.round((r.collectAmount * rate) / 100);
+          return {
+            ...r,
+            discountRate: cleanVal,
+            discountAmount: discountAmt,
+          };
+        }
+        return r;
+      }),
+    );
+  };
+
+  // Discount amount change
+  const handleDiscountAmountChange = (id: string, val: string) => {
+    const cleanNum = parseInt(val.replace(/\D/g, "") || "0", 10);
+    setRecords((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          return {
+            ...r,
+            discountAmount: cleanNum,
+            discountRate:
+              r.collectAmount > 0
+                ? ((cleanNum / r.collectAmount) * 100)
+                    .toFixed(1)
+                    .replace(/\.0$/, "")
+                : r.discountRate,
+          };
+        }
+        return r;
+      }),
+    );
+  };
+
+  // Discount account change
+  const handleDiscountAccountChange = (id: string, val: string) => {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, discountAccount: val } : r)),
     );
   };
 
@@ -192,13 +266,16 @@ export function SingleCustomerInvoiceCollectionModal({
     setRecords((prev) =>
       prev.map((r) => {
         if (remainingToAllocate <= 0) {
-          return { ...r, collectAmount: 0, checked: false };
+          return { ...r, collectAmount: 0, discountAmount: 0, checked: false };
         }
         const allocated = Math.min(remainingToAllocate, r.remainingDebt);
         remainingToAllocate -= allocated;
+        const rate = parseFloat(r.discountRate) || 0;
+        const discountAmt = Math.round((allocated * rate) / 100);
         return {
           ...r,
           collectAmount: allocated,
+          discountAmount: discountAmt,
           checked: allocated > 0,
         };
       }),
@@ -219,6 +296,14 @@ export function SingleCustomerInvoiceCollectionModal({
       displayedRecords.reduce((s, r) => s + (r.checked ? r.collectAmount : 0), 0),
     [displayedRecords],
   );
+  const totalDiscountSum = useMemo(
+    () =>
+      displayedRecords.reduce(
+        (s, r) => s + (r.checked ? (Number(r.discountAmount) || 0) : 0),
+        0,
+      ),
+    [displayedRecords],
+  );
 
   const handleSubmit = () => {
     if (totalCollectedSum <= 0) {
@@ -231,6 +316,7 @@ export function SingleCustomerInvoiceCollectionModal({
       employee,
       collectDate,
       totalAmount: totalCollectedSum,
+      totalDiscount: totalDiscountSum,
       invoices: displayedRecords.filter((r) => r.checked && r.collectAmount > 0),
     });
   };
@@ -492,7 +578,7 @@ export function SingleCustomerInvoiceCollectionModal({
               </div>
             </div>
 
-            {/* Table Header and Rows (Exact Screenshot 1) */}
+            {/* Table Header and Rows (Exact MISA Screen) */}
             <div className="misa-invoice-table-wrapper">
               <table className="misa-invoice-table">
                 <thead>
@@ -505,19 +591,21 @@ export function SingleCustomerInvoiceCollectionModal({
                         style={{ accentColor: "#00b06b", cursor: "pointer" }}
                       />
                     </th>
-                    <th style={{ width: 110, textAlign: "center" }}>Ngày chứng từ</th>
+                    <th style={{width:110}}>Ngày chứng từ</th>
                     <th style={{ width: 110 }}>Số chứng từ</th>
                     <th style={{ width: 100 }}>Số hóa đơn</th>
-                    <th style={{ minWidth: 260 }}>Diễn giải</th>
+                    <th style={{ minWidth: 240 }}>Diễn giải</th>
                     <th style={{ width: 110, textAlign: "center" }}>Hạn thanh toán</th>
                     <th style={{ width: 120, textAlign: "right" }}>Số phải thu</th>
                     <th style={{ width: 120, textAlign: "right" }}>Số chưa thu</th>
                     <th style={{ width: 130, textAlign: "right" }}>Số thu</th>
-                    <th style={{ width: 90, textAlign: "center" }}>TK Phải thu</th>
+                    <th style={{ width: 95, textAlign: "center" }}>TK Phải thu</th>
                     <th style={{ width: 120 }}>Điều khoản TT</th>
-                    <th style={{ width: 100, textAlign: "right" }}>Tỷ lệ CK (%)</th>
+                    <th style={{ width: 95, textAlign: "right" }}>Tỷ lệ CK (%)</th>
+                    <th style={{ width: 120, textAlign: "right" }}>Tiền chiết khấu</th>
+                    <th style={{ width: 95, textAlign: "center" }}>TK Chiết khấu</th>
                   </tr>
-                  {/* Summary row directly under Header (Screenshot 2: Cộng) */}
+                  {/* Summary row directly under Header (Screenshot MISA: Cộng) */}
                   <tr className="misa-invoice-summary-row">
                     <td></td>
                     <td></td>
@@ -537,13 +625,17 @@ export function SingleCustomerInvoiceCollectionModal({
                     <td></td>
                     <td></td>
                     <td></td>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: totalDiscountSum > 0 ? "#00b06b" : "#111827" }}>
+                      {hasFetched ? (totalDiscountSum === 0 ? "0" : formatVND(totalDiscountSum)) : "0"}
+                    </td>
+                    <td></td>
                   </tr>
                 </thead>
                 <tbody>
                   {!hasFetched || displayedRecords.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={12}
+                        colSpan={14}
                         style={{
                           height: 480,
                           background: "#f4f5f8",
@@ -567,9 +659,7 @@ export function SingleCustomerInvoiceCollectionModal({
                             style={{ accentColor: "#00b06b", cursor: "pointer" }}
                           />
                         </td>
-                        <td style={{ textAlign: "center", color: "#374151" }}>
-                          {r.voucherDate}
-                        </td>
+                        <td>{r.voucherDate}</td>
                         <td>
                           <span
                             style={{
@@ -616,8 +706,61 @@ export function SingleCustomerInvoiceCollectionModal({
                           {r.account}
                         </td>
                         <td style={{ color: "#6b7280" }}>{r.paymentTerms}</td>
-                        <td style={{ textAlign: "right", color: "#6b7280" }}>
-                          {r.discountRate}
+                        <td style={{ textAlign: "right", padding: "4px 8px" }}>
+                          <input
+                            type="text"
+                            value={r.discountRate || "0"}
+                            onChange={(e) => handleDiscountRateChange(r.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 26,
+                              padding: "0 4px",
+                              textAlign: "right",
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              fontSize: 12.5,
+                              outline: "none",
+                              background: "#ffffff",
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: "right", padding: "4px 8px" }}>
+                          <input
+                            type="text"
+                            value={r.discountAmount ? formatVND(r.discountAmount) : "0"}
+                            onChange={(e) => handleDiscountAmountChange(r.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 26,
+                              padding: "0 6px",
+                              textAlign: "right",
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              fontSize: 12.5,
+                              fontWeight: 600,
+                              color: r.discountAmount > 0 ? "#00b06b" : "#374151",
+                              outline: "none",
+                              background: "#ffffff",
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: "center", padding: "4px 8px" }}>
+                          <input
+                            type="text"
+                            value={r.discountAccount || "635"}
+                            onChange={(e) => handleDiscountAccountChange(r.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 26,
+                              padding: "0 4px",
+                              textAlign: "center",
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              fontSize: 12.5,
+                              outline: "none",
+                              background: "#ffffff",
+                            }}
+                          />
                         </td>
                       </tr>
                     ))
@@ -676,11 +819,11 @@ export function MultiCustomerInvoiceCollectionModal({
 }: MultiCustomerInvoiceCollectionModalProps) {
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [timeRange, setTimeRange] = useState("Hôm nay");
-  const [fromDate, setFromDate] = useState("30/09/2026");
-  const [toDate, setToDate] = useState("30/09/2026");
+  const [fromDate, setFromDate] = useState(currentCashDate);
+  const [toDate, setToDate] = useState(currentCashDate);
   const [employee, setEmployee] = useState("");
   const [customerGroup, setCustomerGroup] = useState("");
-  const [collectDate, setCollectDate] = useState("30/09/2026");
+  const [collectDate, setCollectDate] = useState(currentCashDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [quickAmount, setQuickAmount] = useState("");
   const [hasFetched, setHasFetched] = useState(false);
@@ -703,6 +846,8 @@ export function MultiCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT 30 ngày",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -721,6 +866,8 @@ export function MultiCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT 30 ngày",
       discountRate: "1.5",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -739,6 +886,8 @@ export function MultiCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT 15 ngày",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -757,6 +906,8 @@ export function MultiCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT ngay",
       discountRate: "2.0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
     {
@@ -775,6 +926,8 @@ export function MultiCustomerInvoiceCollectionModal({
       account: "131",
       paymentTerms: "TT ngay",
       discountRate: "0",
+      discountAmount: 0,
+      discountAccount: "635",
       checked: false,
     },
   ]);
@@ -805,10 +958,14 @@ export function MultiCustomerInvoiceCollectionModal({
       prev.map((r) => {
         if (r.id === id) {
           const nextChecked = !r.checked;
+          const collectAmt = nextChecked ? r.remainingDebt : 0;
+          const rate = parseFloat(r.discountRate) || 0;
+          const discountAmt = Math.round((collectAmt * rate) / 100);
           return {
             ...r,
             checked: nextChecked,
-            collectAmount: nextChecked ? r.remainingDebt : 0,
+            collectAmount: collectAmt,
+            discountAmount: discountAmt,
           };
         }
         return r;
@@ -826,11 +983,17 @@ export function MultiCustomerInvoiceCollectionModal({
   const toggleAll = () => {
     const nextVal = !allChecked;
     setRecords((prev) =>
-      prev.map((r) => ({
-        ...r,
-        checked: nextVal,
-        collectAmount: nextVal ? r.remainingDebt : 0,
-      })),
+      prev.map((r) => {
+        const collectAmt = nextVal ? r.remainingDebt : 0;
+        const rate = parseFloat(r.discountRate) || 0;
+        const discountAmt = Math.round((collectAmt * rate) / 100);
+        return {
+          ...r,
+          checked: nextVal,
+          collectAmount: collectAmt,
+          discountAmount: discountAmt,
+        };
+      }),
     );
   };
 
@@ -841,14 +1004,65 @@ export function MultiCustomerInvoiceCollectionModal({
       prev.map((r) => {
         if (r.id === id) {
           const bounded = Math.min(cleanNum, r.remainingDebt);
+          const rate = parseFloat(r.discountRate) || 0;
+          const discountAmt = Math.round((bounded * rate) / 100);
           return {
             ...r,
             collectAmount: bounded,
+            discountAmount: discountAmt,
             checked: bounded > 0,
           };
         }
         return r;
       }),
+    );
+  };
+
+  // Discount rate change
+  const handleDiscountRateChange = (id: string, val: string) => {
+    const cleanVal = val.replace(/[^\d.]/g, "");
+    setRecords((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          const rate = parseFloat(cleanVal) || 0;
+          const discountAmt = Math.round((r.collectAmount * rate) / 100);
+          return {
+            ...r,
+            discountRate: cleanVal,
+            discountAmount: discountAmt,
+          };
+        }
+        return r;
+      }),
+    );
+  };
+
+  // Discount amount change
+  const handleDiscountAmountChange = (id: string, val: string) => {
+    const cleanNum = parseInt(val.replace(/\D/g, "") || "0", 10);
+    setRecords((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          return {
+            ...r,
+            discountAmount: cleanNum,
+            discountRate:
+              r.collectAmount > 0
+                ? ((cleanNum / r.collectAmount) * 100)
+                    .toFixed(1)
+                    .replace(/\.0$/, "")
+                : r.discountRate,
+          };
+        }
+        return r;
+      }),
+    );
+  };
+
+  // Discount account change
+  const handleDiscountAccountChange = (id: string, val: string) => {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, discountAccount: val } : r)),
     );
   };
 
@@ -859,13 +1073,16 @@ export function MultiCustomerInvoiceCollectionModal({
     setRecords((prev) =>
       prev.map((r) => {
         if (remainingToAllocate <= 0) {
-          return { ...r, collectAmount: 0, checked: false };
+          return { ...r, collectAmount: 0, discountAmount: 0, checked: false };
         }
         const allocated = Math.min(remainingToAllocate, r.remainingDebt);
         remainingToAllocate -= allocated;
+        const rate = parseFloat(r.discountRate) || 0;
+        const discountAmt = Math.round((allocated * rate) / 100);
         return {
           ...r,
           collectAmount: allocated,
+          discountAmount: discountAmt,
           checked: allocated > 0,
         };
       }),
@@ -884,6 +1101,14 @@ export function MultiCustomerInvoiceCollectionModal({
   const totalCollectedSum = useMemo(
     () =>
       displayedRecords.reduce((s, r) => s + (r.checked ? r.collectAmount : 0), 0),
+    [displayedRecords],
+  );
+  const totalDiscountSum = useMemo(
+    () =>
+      displayedRecords.reduce(
+        (s, r) => s + (r.checked ? (Number(r.discountAmount) || 0) : 0),
+        0,
+      ),
     [displayedRecords],
   );
 
@@ -992,22 +1217,7 @@ export function MultiCustomerInvoiceCollectionModal({
                     onChange={(e) => {
                       const val = e.target.value;
                       setTimeRange(val);
-                      if (val === "Hôm nay") {
-                        setFromDate("30/09/2026");
-                        setToDate("30/09/2026");
-                      } else if (val === "Tuần này") {
-                        setFromDate("28/09/2026");
-                        setToDate("04/10/2026");
-                      } else if (val === "Tháng này") {
-                        setFromDate("01/09/2026");
-                        setToDate("30/09/2026");
-                      } else if (val === "Quý này") {
-                        setFromDate("01/07/2026");
-                        setToDate("30/09/2026");
-                      } else if (val === "Năm nay") {
-                        setFromDate("01/01/2026");
-                        setToDate("31/12/2026");
-                      }
+                      const range = cashPeriodDates(val); if(range){setFromDate(range[0]);setToDate(range[1]);}
                     }}
                     style={{
                       width: "100%",
@@ -1021,12 +1231,7 @@ export function MultiCustomerInvoiceCollectionModal({
                       cursor: "pointer",
                     }}
                   >
-                    <option value="Hôm nay">Hôm nay</option>
-                    <option value="Tuần này">Tuần này</option>
-                    <option value="Tháng này">Tháng này</option>
-                    <option value="Quý này">Quý này</option>
-                    <option value="Năm nay">Năm nay</option>
-                    <option value="Tùy chọn">Tùy chọn</option>
+                    {CASH_PERIODS.map(period=><option key={period} value={period}>{period}</option>)}
                   </select>
                   <ChevronDown
                     size={14}
@@ -1311,7 +1516,9 @@ export function MultiCustomerInvoiceCollectionModal({
                     <th style={{ width: 130, textAlign: "right" }}>Số thu</th>
                     <th style={{ width: 90, textAlign: "center" }}>TK Phải thu</th>
                     <th style={{ width: 120 }}>Điều khoản TT</th>
-                    <th style={{ width: 100, textAlign: "right" }}>Tỷ lệ CK (%)</th>
+                    <th style={{ width: 95, textAlign: "right" }}>Tỷ lệ CK (%)</th>
+                    <th style={{ width: 120, textAlign: "right" }}>Tiền chiết khấu</th>
+                    <th style={{ width: 95, textAlign: "center" }}>TK Chiết khấu</th>
                   </tr>
                   {/* Summary row directly under Header (Screenshot 3: Tổng) */}
                   <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
@@ -1336,13 +1543,17 @@ export function MultiCustomerInvoiceCollectionModal({
                     <td></td>
                     <td></td>
                     <td></td>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: totalDiscountSum > 0 ? "#00b06b" : "#111827" }}>
+                      {hasFetched ? (totalDiscountSum === 0 ? "0" : formatVND(totalDiscountSum)) : ""}
+                    </td>
+                    <td></td>
                   </tr>
                 </thead>
                 <tbody>
                   {!hasFetched || displayedRecords.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={15}
+                        colSpan={17}
                         style={{
                           height: 480,
                           background: "#f4f5f8",
@@ -1418,8 +1629,61 @@ export function MultiCustomerInvoiceCollectionModal({
                           {r.account}
                         </td>
                         <td style={{ color: "#6b7280" }}>{r.paymentTerms}</td>
-                        <td style={{ textAlign: "right", color: "#6b7280" }}>
-                          {r.discountRate}
+                        <td style={{ textAlign: "right", padding: "4px 8px" }}>
+                          <input
+                            type="text"
+                            value={r.discountRate || "0"}
+                            onChange={(e) => handleDiscountRateChange(r.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 26,
+                              padding: "0 4px",
+                              textAlign: "right",
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              fontSize: 12.5,
+                              outline: "none",
+                              background: "#ffffff",
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: "right", padding: "4px 8px" }}>
+                          <input
+                            type="text"
+                            value={r.discountAmount ? formatVND(r.discountAmount) : "0"}
+                            onChange={(e) => handleDiscountAmountChange(r.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 26,
+                              padding: "0 6px",
+                              textAlign: "right",
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              fontSize: 12.5,
+                              fontWeight: 600,
+                              color: r.discountAmount > 0 ? "#00b06b" : "#374151",
+                              outline: "none",
+                              background: "#ffffff",
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: "center", padding: "4px 8px" }}>
+                          <input
+                            type="text"
+                            value={r.discountAccount || "635"}
+                            onChange={(e) => handleDiscountAccountChange(r.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 26,
+                              padding: "0 4px",
+                              textAlign: "center",
+                              borderRadius: 4,
+                              border: "1px solid #d1d5db",
+                              fontSize: 12.5,
+                              outline: "none",
+                              background: "#ffffff",
+                            }}
+                          />
                         </td>
                       </tr>
                     ))

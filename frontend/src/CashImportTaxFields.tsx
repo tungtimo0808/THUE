@@ -1,0 +1,12 @@
+import {useState} from 'react';
+const GROUPS=[{name:'Thuế hàng nhập khẩu',short:'NK'},{name:'Thuế chống bán phá giá',short:'CBPG'},{name:'Thuế tiêu thụ đặc biệt',short:'TTĐB'},{name:'Thuế bảo vệ môi trường',short:'BVMT'},{name:'Thuế GTGT',short:'GTGT'}];
+export default function CashImportTaxFields(){
+ const [enabled,setEnabled]=useState(GROUPS.map(group=>group.short));const [exclude133,setExclude133]=useState(false);const [query,setQuery]=useState('');
+ const visible=GROUPS.filter(group=>enabled.includes(group.short));
+ return <section className="ce-form" aria-label="Thuế hàng nhập khẩu" style={{margin:'14px 0'}}>
+ <div className="ce-toolbar">{GROUPS.map(group=><label key={group.short}><input type="checkbox" checked={enabled.includes(group.short)} onChange={event=>setEnabled(previous=>event.target.checked?[...previous,group.short]:previous.filter(value=>value!==group.short))}/>{group.short==='NK'?'Thuế hàng nhập khẩu':`Thuế ${group.short}`}</label>)}</div>
+ <label><input type="checkbox" checked={exclude133} onChange={event=>setExclude133(event.target.checked)}/>Không lấy thuế GTGT hàng nhập khẩu có TKĐƯ thuế GTGT là 133</label>
+ <div className="ce-toolbar"><strong>Chứng từ mua hàng</strong><input aria-label="Tìm chứng từ mua hàng nộp thuế" placeholder="Tìm số chứng từ, số hóa đơn" value={query} onChange={event=>setQuery(event.target.value)} style={{width:280}}/></div>
+ <div className="ce-table-scroll"><table style={{minWidth:Math.max(900,450+visible.length*330)}}><thead><tr><th rowSpan={2}><input aria-label="Chọn tất cả chứng từ nhập khẩu" type="checkbox" disabled/></th>{['Ngày hạch toán','Ngày chứng từ','Số chứng từ','Số hóa đơn'].map(label=><th rowSpan={2} key={label}>{label}</th>)}{visible.map(group=><th key={group.short} colSpan={group.short==='GTGT'?5:3}>{group.name}</th>)}</tr><tr>{visible.flatMap(group=>['Số phải nộp','Số nộp lần này',...(group.short==='GTGT'?['TKĐƯ thuế GTGT','TK Thuế GTGT khấu trừ','TK Thuế GTGT']:[`TK thuế ${group.short}`])].map(label=><th key={group.short+label}>{label}</th>))}</tr></thead><tbody><tr className="ce-total"><td colSpan={5}>Cộng</td>{visible.map(group=><td key={group.short} colSpan={group.short==='GTGT'?5:3} className="ce-numeric">0</td>)}</tr><tr><td colSpan={5+visible.reduce((sum,group)=>sum+(group.short==='GTGT'?5:3),0)} style={{textAlign:'center',height:130}}>Không có dữ liệu</td></tr></tbody></table></div>
+ </section>;
+}

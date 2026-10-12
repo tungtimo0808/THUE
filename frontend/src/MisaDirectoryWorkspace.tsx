@@ -1,3 +1,5 @@
+import DirectoryChoiceField from "./DirectoryChoiceField";
+import VoucherDateField from "./VoucherDateField";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -40,13 +42,19 @@ const seedRows = (definition: DirectoryDefinition): DirectoryRow[] =>
   }));
 export default function MisaDirectoryWorkspace({
   legacy,
+  initialName,
+  initialCreate = false,
+  onEntrySaved,
   notify,
 }: {
   legacy: ReactNode;
+  initialName?: string|null;
+  initialCreate?: boolean;
+  onEntrySaved?: (values: Record<string,string>)=>void;
   notify: (text: string) => void;
 }) {
   const [definition, setDefinition] = useState<DirectoryDefinition | null>(
-    null,
+    MISA_DIRECTORY_DEFINITIONS.find(item=>item.name===initialName) || null,
   );
   const [legacyView, setLegacyView] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
@@ -55,11 +63,11 @@ export default function MisaDirectoryWorkspace({
   const [selected, setSelected] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
-  const [editor, setEditor] = useState<DirectoryRow | null>(null);
+  const [editor, setEditor] = useState<DirectoryRow | null>(():DirectoryRow|null=>initialCreate&&definition?{id:crypto.randomUUID(),values:definition.radios.length?{Loại:definition.radios[0]}:{}}:null);
   const [error, setError] = useState("");
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
-  const [tab, setTab] = useState("");
+  const [tab, setTab] = useState(initialCreate?definition?.tabs[0]||"":"");
   const editorRef = useRef<HTMLDivElement>(null);
   const updateEditor = (key: string, value: string) =>
     setEditor((previous) =>
@@ -180,6 +188,7 @@ export default function MisaDirectoryWorkspace({
         : [...allRows, normalized],
     }));
     notify("Đã cất dữ liệu danh mục trên frontend.");
+    onEntrySaved?.(normalized.values);
     if (addAnother) {
       setEditor({
         id: crypto.randomUUID(),
@@ -436,7 +445,7 @@ export default function MisaDirectoryWorkspace({
                 <div
                   className="md-radio-types"
                   role="radiogroup"
-                  aria-label="Loại đối tượng"
+                  aria-label={definition.name==="Nhân viên"?"Giới tính":"Loại đối tượng"}
                 >
                   {definition.radios.map((value) => (
                     <label key={value}>
@@ -455,8 +464,8 @@ export default function MisaDirectoryWorkspace({
                 {editFields.map((field) => (
                   <label key={field.label}>
                     {field.label}
-                    {requiredDirectoryField(field.label) && <em>*</em>}
-                    {field.kind === "textarea" ? (
+                    {(requiredDirectoryField(field.label)||(definition.name==="Nhân viên"&&["Đơn vị","Chức danh"].includes(field.label))||(definition.name==="Tài khoản ngân hàng"&&field.label==="Số tài khoản")) && <em>*</em>}
+                    {field.kind==="combo"?<DirectoryChoiceField label={field.label} value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} options={"options" in field?field.options as string[]:[]}/> : ["Ngày sinh","Ngày cấp"].includes(field.label)?<VoucherDateField value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} label={field.label}/> : field.kind === "textarea" ? (
                       <textarea
                         value={editor.values[field.label] || ""}
                         onChange={(e) =>

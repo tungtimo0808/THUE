@@ -58,14 +58,130 @@ export const SAMPLE_SUPPLIERS = [
   },
 ];
 
-// Common items sample data
-export const SAMPLE_ITEMS = [
-  { code: "VT001", name: "Thép cuộn mạ kẽm Ø6", unit: "Kg", price: 21500, vat: 10, stock: "1561", stockName: "1561 - Hàng hóa" },
-  { code: "VT002", name: "Ống thép đúc phi 90 dày 3.5mm", unit: "Cây", price: 345000, vat: 10, stock: "1561", stockName: "1561 - Hàng hóa" },
-  { code: "VT003", name: "Bulong nở inox M12x100", unit: "Bộ", price: 12500, vat: 8, stock: "1561", stockName: "1561 - Hàng hóa" },
-  { code: "VT004", name: "Sơn chống rỉ Alkyd xám 20L", unit: "Thùng", price: 850000, vat: 8, stock: "152", stockName: "152 - Nguyên vật liệu" },
-  { code: "DV001", name: "Dịch vụ vận chuyển bốc dỡ hàng hóa", unit: "Chuyến", price: 1500000, vat: 8, stock: "1562", stockName: "1562 - Chi phí thu mua" },
+// Common items sample data with Supplier mapping
+export interface SampleInventoryItem {
+  code: string;
+  name: string;
+  unit: string;
+  price: number;
+  vat: number;
+  stock: string;
+  stockName: string;
+  supplierCode?: string;
+  supplierName?: string;
+}
+
+export const SAMPLE_ITEMS: SampleInventoryItem[] = [
+  {
+    code: "VT001",
+    name: "Thép cuộn mạ kẽm Ø6",
+    unit: "Kg",
+    price: 21500,
+    vat: 10,
+    stock: "1561",
+    stockName: "1561 - Hàng hóa",
+    supplierCode: "NCC002",
+    supplierName: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
+  },
+  {
+    code: "VT002",
+    name: "Ống thép đúc phi 90 dày 3.5mm",
+    unit: "Cây",
+    price: 345000,
+    vat: 10,
+    stock: "1561",
+    stockName: "1561 - Hàng hóa",
+    supplierCode: "NCC002",
+    supplierName: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
+  },
+  {
+    code: "VT003",
+    name: "Bulong nở inox M12x100",
+    unit: "Bộ",
+    price: 12500,
+    vat: 8,
+    stock: "1561",
+    stockName: "1561 - Hàng hóa",
+    supplierCode: "NCC001",
+    supplierName: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
+  },
+  {
+    code: "VT004",
+    name: "Sơn chống rỉ Alkyd xám 20L",
+    unit: "Thùng",
+    price: 850000,
+    vat: 8,
+    stock: "152",
+    stockName: "152 - Nguyên vật liệu",
+    supplierCode: "NCC003",
+    supplierName: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
+  },
+  {
+    code: "VT005",
+    name: "Máy mài góc công nghiệp Bosch GWS",
+    unit: "Chiếc",
+    price: 1850000,
+    vat: 10,
+    stock: "153",
+    stockName: "153 - Công cụ dụng cụ",
+    supplierCode: "NCC001",
+    supplierName: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
+  },
+  {
+    code: "VT006",
+    name: "Thép hình chữ I 150x75x5x7mm",
+    unit: "Mét",
+    price: 285000,
+    vat: 10,
+    stock: "1561",
+    stockName: "1561 - Hàng hóa",
+    supplierCode: "NCC002",
+    supplierName: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
+  },
+  {
+    code: "VT007",
+    name: "Vòng bi bạc đạn công nghiệp SKF 6205",
+    unit: "Cái",
+    price: 95000,
+    vat: 8,
+    stock: "1561",
+    stockName: "1561 - Hàng hóa",
+    supplierCode: "NCC003",
+    supplierName: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
+  },
+  {
+    code: "DV001",
+    name: "Dịch vụ vận chuyển bốc dỡ hàng hóa",
+    unit: "Chuyến",
+    price: 1500000,
+    vat: 8,
+    stock: "1562",
+    stockName: "1562 - Chi phí thu mua",
+    supplierCode: "NCC003",
+    supplierName: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
+  },
+  {
+    code: "DV002",
+    name: "Dịch vụ bảo trì hiệu chuẩn thiết bị",
+    unit: "Lần",
+    price: 3200000,
+    vat: 10,
+    stock: "6427",
+    stockName: "6427 - Chi phí dịch vụ mua ngoài",
+    supplierCode: "NCC001",
+    supplierName: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
+  },
 ];
+
+export function getItemsBySupplier(supplierCodeOrName?: string) {
+  if (!supplierCodeOrName) return SAMPLE_ITEMS;
+  const filtered = SAMPLE_ITEMS.filter(
+    (it) =>
+      it.supplierCode === supplierCodeOrName ||
+      it.supplierName?.toLowerCase().includes(supplierCodeOrName.toLowerCase())
+  );
+  return filtered.length > 0 ? filtered : SAMPLE_ITEMS;
+}
 
 // ============================================================================
 // 1. MODAL: ĐƠN MUA HÀNG (MATCHING IMAGE 2)
@@ -5797,37 +5913,108 @@ export function ReconciliationPeriodModal({
 export interface SupplierModalProps {
   onClose: () => void;
   onSubmit?: (data: any) => void;
+  initialData?: any;
 }
 
 export function SupplierModal({
   onClose,
   onSubmit,
+  initialData,
 }: SupplierModalProps) {
   // Radio options
-  const [partnerType, setPartnerType] = useState<"org" | "individual">("org");
-  const [isCustomer, setIsCustomer] = useState(false);
-  const [isInternal, setIsInternal] = useState(false);
+  const [partnerType, setPartnerType] = useState<"org" | "individual">(initialData?.partnerType || "org");
+  const [isCustomer, setIsCustomer] = useState(Boolean(initialData?.isCustomer));
+  const [isInternal, setIsInternal] = useState(Boolean(initialData?.isInternal));
 
   // Master fields
-  const [taxCode, setTaxCode] = useState("");
-  const [budgetCode, setBudgetCode] = useState("");
-  const [supplierCode, setSupplierCode] = useState("NCC00001");
-  const [phone, setPhone] = useState("");
-  const [website, setWebsite] = useState("");
-  const [supplierName, setSupplierName] = useState("");
-  const [supplierGroup, setSupplierGroup] = useState("Nhà cung cấp vật tư chính");
-  const [address, setAddress] = useState("");
-  const [employee, setEmployee] = useState("");
+  // Master fields
+  const [taxCode, setTaxCode] = useState(initialData?.taxCode || "");
+  const [budgetCode, setBudgetCode] = useState(initialData?.budgetCode || "");
+  const [supplierCode, setSupplierCode] = useState(initialData?.code || "NCC00002");
+  const [phone, setPhone] = useState(initialData?.phone || "");
+  const [website, setWebsite] = useState(initialData?.website || "");
+  const [supplierName, setSupplierName] = useState(initialData?.name || "");
+  const [supplierGroup, setSupplierGroup] = useState(initialData?.supplierGroup || "");
+  const [address, setAddress] = useState(initialData?.address || "");
+  const [employee, setEmployee] = useState(initialData?.employee || "");
+
+  // Individual-specific fields
+  const [idCardNo, setIdCardNo] = useState(initialData?.idCardNo || (initialData?.partnerType === "individual" ? initialData?.taxCode || "001098012345" : ""));
+  const [idCardDate, setIdCardDate] = useState(initialData?.idCardDate || "15/05/2021");
+  const [idCardPlace, setIdCardPlace] = useState(initialData?.idCardPlace || "Cục Cảnh sát QLHC về TTXH");
+  const [individualSalutation, setIndividualSalutation] = useState(initialData?.salutation || "Ông");
+  const [individualName, setIndividualName] = useState(initialData?.name || "");
+  const [mobilePhone, setMobilePhone] = useState(initialData?.mobilePhone || initialData?.phone || "");
+  const [landlinePhone, setLandlinePhone] = useState(initialData?.landlinePhone || "");
+
+  // Mapped items state (Nhà cung cấp - Hàng hóa dịch vụ)
+  const [supplierItems, setSupplierItems] = useState<SampleInventoryItem[]>(
+    initialData?.items || getItemsBySupplier(initialData?.code || "NCC001")
+  );
 
   // Subtabs
-  const [activeTab, setActiveTab] = useState<"contact" | "terms" | "bank" | "other_address" | "notes" | "extra">("contact");
+  const [activeTab, setActiveTab] = useState<"contact" | "terms" | "bank" | "other_address" | "notes" | "extra" | "items">("contact");
 
   // Contact tab fields
-  const [salutation, setSalutation] = useState("Ông");
-  const [contactName, setContactName] = useState("");
-  const [legalRepresentative, setLegalRepresentative] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
+  const [salutation, setSalutation] = useState(initialData?.salutation || "");
+  const [contactName, setContactName] = useState(initialData?.contactName || "");
+  const [legalRepresentative, setLegalRepresentative] = useState(initialData?.legalRepresentative || "");
+  const [contactEmail, setContactEmail] = useState(initialData?.contactEmail || "");
+  const [contactPhone, setContactPhone] = useState(initialData?.contactPhone || "");
+
+  // Terms tab fields
+  const [paymentTerms, setPaymentTerms] = useState(initialData?.paymentTerms || "Gối đầu 30 ngày");
+  const [debtDays, setDebtDays] = useState(initialData?.debtDays || 30);
+  const [maxDebt, setMaxDebt] = useState(initialData?.maxDebt || "");
+  const [payableAccount, setPayableAccount] = useState(initialData?.payableAccount || "331 - Phải trả cho người bán");
+
+  // Bank tab fields
+  const [bankAccount, setBankAccount] = useState(initialData?.bankAccount || "");
+  const [bankName, setBankName] = useState(initialData?.bankName || "");
+  const [bankBranch, setBankBranch] = useState(initialData?.bankBranch || "");
+  const [bankProvince, setBankProvince] = useState(initialData?.bankProvince || "");
+
+  // Other address tab
+  const [shippingAddress, setShippingAddress] = useState(initialData?.shippingAddress || "");
+  const [invoiceAddress, setInvoiceAddress] = useState(initialData?.invoiceAddress || "");
+
+  // Notes tab
+  const [notes, setNotes] = useState(initialData?.notes || "");
+
+  // Extra info tab
+  const [country, setCountry] = useState(initialData?.country || "Việt Nam");
+  const [province, setProvince] = useState(initialData?.province || "");
+  const [district, setDistrict] = useState(initialData?.district || "");
+  const [ward, setWard] = useState(initialData?.ward || "");
+
+  const handleLookupTax = () => {
+    if (partnerType === "individual") {
+      const searchKey = (idCardNo || taxCode).trim();
+      if (!searchKey) return;
+      if (searchKey === "030178006908" || searchKey === "001098012345") {
+        setIndividualName("Trần Thị Hương");
+        setSupplierName("Trần Thị Hương");
+        setMobilePhone("097775611");
+        setPhone("097775611");
+        setAddress("Số 15 Phố Huế, P. Hàng Bài, Hoàn Kiếm, Hà Nội");
+      } else {
+        setIndividualName("Nguyễn Văn Bình");
+        setSupplierName("Nguyễn Văn Bình");
+        setMobilePhone("0912888999");
+        setPhone("0912888999");
+        setAddress("Căn hộ 1204 Tòa R2 Royal City, Thanh Xuân, Hà Nội");
+      }
+      return;
+    }
+    if (!taxCode) return;
+    if (taxCode.trim() === "030178006908") {
+      setSupplierName("Tran Thi Huong");
+      setPhone("097775611");
+    } else {
+      setSupplierName("Công ty TNHH Giải pháp Phần mềm & Công nghệ");
+      setAddress("Số 82 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội");
+    }
+  };
 
   const handleSave = (andNew = false) => {
     onSubmit?.({
@@ -5837,69 +6024,95 @@ export function SupplierModal({
       taxCode,
       budgetCode,
       code: supplierCode,
-      phone,
+      phone: partnerType === "individual" ? mobilePhone || phone : phone,
       website,
-      name: supplierName,
+      name: partnerType === "individual" ? (individualName || supplierName) : supplierName,
       supplierGroup,
       address,
       employee,
-      salutation,
+      idCardNo,
+      idCardDate,
+      idCardPlace,
+      salutation: partnerType === "individual" ? individualSalutation : salutation,
+      mobilePhone,
+      landlinePhone,
       contactName,
       legalRepresentative,
       contactEmail,
       contactPhone,
+      paymentTerms,
+      debtDays,
+      maxDebt,
+      payableAccount,
+      bankAccount,
+      bankName,
+      bankBranch,
+      bankProvince,
+      shippingAddress,
+      invoiceAddress,
+      notes,
+      country,
+      province,
+      district,
+      ward,
+      items: supplierItems,
     });
     if (andNew) {
       setSupplierCode(`NCC0000${Math.floor(Math.random() * 90 + 10)}`);
       setSupplierName("");
+      setIndividualName("");
+      setIdCardNo("");
       setTaxCode("");
       setAddress("");
       setContactName("");
+      setPhone("");
+      setMobilePhone("");
+      setWebsite("");
     } else {
       onClose();
     }
   };
 
   return (
-    <div className="misa-modal-backdrop" role="dialog" aria-modal="true">
-      <div style={{ width: 940, maxWidth: "96vw", background: "#ffffff", borderRadius: 6, overflow: "hidden", boxShadow: "0 25px 60px rgba(0,0,0,0.35)", border: "1px solid #cbd5e1" }}>
-        {/* Header (Screenshot 4) */}
+    <div className="misa-modal-backdrop" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 920, maxWidth: "96vw", background: "#ffffff", borderRadius: 6, overflow: "hidden", boxShadow: "0 25px 60px rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
+        {/* Header (Screenshot 3) */}
         <header style={{ height: 48, background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#111827" }}>
               Thông tin nhà cung cấp
             </h3>
 
             {/* Radio / Checkbox group */}
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", fontWeight: 500, color: "#334155" }}>
                 <input
                   type="radio"
                   name="supplierPartnerType"
                   checked={partnerType === "org"}
                   onChange={() => setPartnerType("org")}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "#00a862" }}
                 />
                 <span>Tổ chức</span>
               </label>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", fontWeight: 500, color: "#334155" }}>
                 <input
                   type="radio"
                   name="supplierPartnerType"
                   checked={partnerType === "individual"}
                   onChange={() => setPartnerType("individual")}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "#00a862" }}
                 />
                 <span>Cá nhân</span>
               </label>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", fontWeight: 500, color: "#334155" }}>
                 <input
                   type="checkbox"
                   checked={isCustomer}
                   onChange={(e) => setIsCustomer(e.target.checked)}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "#00a862" }}
                 />
                 <span>Là khách hàng</span>
               </label>
@@ -5907,143 +6120,357 @@ export function SupplierModal({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button type="button" className="misa-invoice-circle-btn" title="Trợ giúp"><HelpCircle size={17} /></button>
-            <button type="button" className="misa-invoice-circle-btn" onClick={onClose} title="Đóng"><X size={18} /></button>
+            <button type="button" style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }} title="Trợ giúp"><HelpCircle size={18} /></button>
+            <button type="button" style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }} onClick={onClose} title="Đóng"><X size={18} /></button>
           </div>
         </header>
 
-        {/* Master Form Area (Screenshot 4) */}
-        <div style={{ padding: "14px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-          {/* Row 1: MST/CCCD, Mã ĐVQHNS, Mã NCC, Điện thoại, Website */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr 1.4fr", gap: 10, marginBottom: 10 }}>
-            <div>
-              <label className="misa-purchase-label">Mã số thuế/CCCD chủ hộ</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  value={taxCode}
-                  onChange={(e) => setTaxCode(e.target.value)}
-                  style={{ width: "100%", height: 28, padding: "0 26px 0 8px", borderRadius: 3, border: "1px solid #00b06b", fontSize: 12.5 }}
-                />
-                <Search size={13} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
-              </div>
-            </div>
+        {/* Master Form Area: Dynamic switch between Tổ chức and Cá nhân */}
+        <div style={{ padding: "16px 20px 12px", background: "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
+          {partnerType === "individual" ? (
+            /* ================= FORM CÁ NHÂN (MATCHING MISA AMIS INDIVIDUAL FORM) ================= */
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* Row 1: Số CCCD (search), Ngày cấp, Nơi cấp, Nhóm nhà cung cấp */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1.3fr 1.6fr", gap: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Số CCCD/CMND
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={idCardNo}
+                      onChange={(e) => setIdCardNo(e.target.value)}
+                      placeholder="001098012345"
+                      style={{ width: "100%", height: 30, padding: "0 28px 0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleLookupTax}
+                      title="Tra cứu thông tin cá nhân theo CCCD"
+                      style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "#00a862", display: "flex", alignItems: "center" }}
+                    >
+                      <Search size={14} />
+                    </button>
+                  </div>
+                </div>
 
-            <div>
-              <label className="misa-purchase-label">Mã số ĐVQHNS</label>
-              <input
-                type="text"
-                value={budgetCode}
-                onChange={(e) => setBudgetCode(e.target.value)}
-                style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-              />
-            </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Ngày cấp
+                  </label>
+                  <input
+                    type="text"
+                    value={idCardDate}
+                    onChange={(e) => setIdCardDate(e.target.value)}
+                    placeholder="DD/MM/YYYY"
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
 
-            <div>
-              <label className="misa-purchase-label">Mã nhà cung cấp <span style={{ color: "#ef4444" }}>*</span></label>
-              <input
-                type="text"
-                value={supplierCode}
-                onChange={(e) => setSupplierCode(e.target.value)}
-                style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5, fontWeight: 600 }}
-              />
-            </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Nơi cấp
+                  </label>
+                  <input
+                    type="text"
+                    value={idCardPlace}
+                    onChange={(e) => setIdCardPlace(e.target.value)}
+                    placeholder="Cục CS QLHC về TTXH"
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
 
-            <div>
-              <label className="misa-purchase-label">Điện thoại</label>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-              />
-            </div>
-
-            <div>
-              <label className="misa-purchase-label">Website</label>
-              <input
-                type="text"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Tên NCC & Nhóm NCC */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 14, marginBottom: 10 }}>
-            <div>
-              <label className="misa-purchase-label">Tên nhà cung cấp <span style={{ color: "#ef4444" }}>*</span></label>
-              <input
-                type="text"
-                value={supplierName}
-                onChange={(e) => setSupplierName(e.target.value)}
-                style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-              />
-            </div>
-
-            <div>
-              <label className="misa-purchase-label">Nhóm nhà cung cấp</label>
-              <div style={{ display: "flex", gap: 4 }}>
-                <select
-                  value={supplierGroup}
-                  onChange={(e) => setSupplierGroup(e.target.value)}
-                  style={{ flex: 1, height: 28, padding: "0 6px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                >
-                  <option value="Nhà cung cấp vật tư chính">Nhà cung cấp vật tư chính</option>
-                  <option value="Nhà cung cấp dịch vụ">Nhà cung cấp dịch vụ</option>
-                  <option value="Nhà cung cấp nước ngoài">Nhà cung cấp nước ngoài</option>
-                </select>
-                <button type="button" style={{ width: 28, height: 28, borderRadius: 3, border: "1px solid #d1d5db", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b" }}><Plus size={14} /></button>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 3: Địa chỉ, Nhân viên mua hàng, Là đối tượng nội bộ */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 14 }}>
-            <div>
-              <label className="misa-purchase-label">Địa chỉ</label>
-              <textarea
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                rows={2}
-                placeholder="VD: Số 82 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội"
-                style={{ width: "100%", padding: "6px 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5, fontFamily: "inherit" }}
-              />
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-              <div>
-                <label className="misa-purchase-label">Nhân viên mua hàng</label>
-                <div style={{ display: "flex", gap: 4 }}>
-                  <select
-                    value={employee}
-                    onChange={(e) => setEmployee(e.target.value)}
-                    style={{ flex: 1, height: 28, padding: "0 6px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                  >
-                    <option value="">Chọn nhân viên...</option>
-                    <option value="Nguyễn Văn A">Nguyễn Văn A</option>
-                    <option value="Trần Thị B">Trần Thị B</option>
-                  </select>
-                  <button type="button" style={{ width: 28, height: 28, borderRadius: 3, border: "1px solid #d1d5db", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b" }}><Plus size={14} /></button>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Nhóm nhà cung cấp
+                  </label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <input
+                      type="text"
+                      value={supplierGroup}
+                      onChange={(e) => setSupplierGroup(e.target.value)}
+                      placeholder="Cá nhân, hộ kinh doanh"
+                      style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
+                  </div>
                 </div>
               </div>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "#374151" }}>
-                <input
-                  type="checkbox"
-                  checked={isInternal}
-                  onChange={(e) => setIsInternal(e.target.checked)}
-                  style={{ accentColor: "#00b06b" }}
-                />
-                <span>Là Đối tượng nội bộ (?)</span>
-              </label>
+              {/* Row 2: Mã NCC *, Mã số thuế cá nhân, Nhân viên mua hàng */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.4fr 2.4fr", gap: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Mã nhà cung cấp <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={supplierCode}
+                    onChange={(e) => setSupplierCode(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Mã số thuế cá nhân
+                  </label>
+                  <input
+                    type="text"
+                    value={taxCode}
+                    onChange={(e) => setTaxCode(e.target.value)}
+                    placeholder="8001234567"
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Nhân viên mua hàng
+                  </label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <input
+                      type="text"
+                      value={employee}
+                      onChange={(e) => setEmployee(e.target.value)}
+                      placeholder="NV01 - Nguyễn Văn An"
+                      style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Tên nhà cung cấp * ([Xưng hô] + [Họ và tên]), [ ] Là Đối tượng nội bộ */}
+              <div style={{ display: "grid", gridTemplateColumns: "3.4fr 1.8fr", gap: 10, alignItems: "center" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
+                    Tên nhà cung cấp <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <select
+                      value={individualSalutation}
+                      onChange={(e) => setIndividualSalutation(e.target.value)}
+                      style={{ width: 85, height: 30, padding: "0 6px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", background: "#ffffff" }}
+                    >
+                      <option value="Ông">Ông</option>
+                      <option value="Bà">Bà</option>
+                      <option value="Anh">Anh</option>
+                      <option value="Chị">Chị</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={individualName || supplierName}
+                      onChange={(e) => {
+                        setIndividualName(e.target.value);
+                        setSupplierName(e.target.value);
+                      }}
+                      placeholder="Họ và tên cá nhân"
+                      style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 18 }}>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, cursor: "pointer", color: "#374151" }}>
+                    <input
+                      type="checkbox"
+                      checked={isInternal}
+                      onChange={(e) => setIsInternal(e.target.checked)}
+                      style={{ accentColor: "#00a862" }}
+                    />
+                    <span>Là Đối tượng nội bộ</span>
+                    <HelpCircle size={13} style={{ color: "#0284c7" }} />
+                  </label>
+                </div>
+              </div>
+
+              {/* Row 4: Địa chỉ, ĐT di động, ĐT cố định */}
+              <div style={{ display: "grid", gridTemplateColumns: "2.8fr 1.2fr 1.2fr", gap: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Địa chỉ cư trú/liên hệ</label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Số nhà, đường phố, phường/xã, quận/huyện, tỉnh/thành..."
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>ĐT di động</label>
+                  <input
+                    type="text"
+                    value={mobilePhone || phone}
+                    onChange={(e) => {
+                      setMobilePhone(e.target.value);
+                      setPhone(e.target.value);
+                    }}
+                    placeholder="0912..."
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>ĐT cố định</label>
+                  <input
+                    type="text"
+                    value={landlinePhone}
+                    onChange={(e) => setLandlinePhone(e.target.value)}
+                    placeholder="024..."
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* ================= FORM TỔ CHỨC (MATCHING MISA AMIS ORG FORM) ================= */
+            <>
+              {/* Row 1: MST/CCCD, Mã ĐVQHNS, Mã NCC, Điện thoại, Website */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr 1.4fr", gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Mã số thuế/CCCD chủ hộ</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={taxCode}
+                      onChange={(e) => setTaxCode(e.target.value)}
+                      placeholder=""
+                      style={{ width: "100%", height: 30, padding: "0 28px 0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleLookupTax}
+                      title="Tra cứu mã số thuế"
+                      style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "#00a862", display: "flex", alignItems: "center" }}
+                    >
+                      <Search size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Mã số ĐVQHNS</label>
+                  <input
+                    type="text"
+                    value={budgetCode}
+                    onChange={(e) => setBudgetCode(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Mã nhà cung cấp <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input
+                    type="text"
+                    value={supplierCode}
+                    onChange={(e) => setSupplierCode(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Điện thoại</label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Website</label>
+                  <input
+                    type="text"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Tên NCC (span 3 cols) & Nhóm NCC (span 2 cols) */}
+              <div style={{ display: "grid", gridTemplateColumns: "3.4fr 2.6fr", gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Tên nhà cung cấp <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input
+                    type="text"
+                    value={supplierName}
+                    onChange={(e) => setSupplierName(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Nhóm nhà cung cấp</label>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <input
+                      type="text"
+                      value={supplierGroup}
+                      onChange={(e) => setSupplierGroup(e.target.value)}
+                      placeholder=""
+                      style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Địa chỉ (span 3 cols), Nhân viên mua hàng + Là đối tượng nội bộ (span 2 cols) */}
+              <div style={{ display: "grid", gridTemplateColumns: "3.4fr 2.6fr", gap: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Địa chỉ</label>
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    rows={2}
+                    placeholder="VD: Số 82 Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội"
+                    style={{ width: "100%", padding: "6px 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, fontFamily: "inherit", outline: "none", resize: "none", boxSizing: "border-box", height: 60 }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Nhân viên mua hàng</label>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <input
+                        type="text"
+                        value={employee}
+                        onChange={(e) => setEmployee(e.target.value)}
+                        placeholder=""
+                        style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      />
+                      <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                      <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, cursor: "pointer", color: "#374151" }}>
+                      <input
+                        type="checkbox"
+                        checked={isInternal}
+                        onChange={(e) => setIsInternal(e.target.checked)}
+                        style={{ accentColor: "#00a862" }}
+                      />
+                      <span>Là Đối tượng nội bộ</span>
+                      <HelpCircle size={13} style={{ color: "#0284c7" }} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Subtabs Area (Screenshot 4) */}
-        <div style={{ padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", gap: 18, background: "#ffffff" }}>
+        {/* Subtabs Area (Screenshot 3) */}
+        <div style={{ padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", gap: 20, background: "#ffffff" }}>
           {[
             { id: "contact", label: "Thông tin liên hệ" },
             { id: "terms", label: "Điều khoản thanh toán" },
@@ -6051,6 +6478,7 @@ export function SupplierModal({
             { id: "other_address", label: "Địa chỉ khác" },
             { id: "notes", label: "Ghi chú" },
             { id: "extra", label: "Thông tin bổ sung" },
+            { id: "items", label: "Hàng hóa, dịch vụ cung cấp" },
           ].map((t) => (
             <button
               key={t.id}
@@ -6060,11 +6488,12 @@ export function SupplierModal({
                 height: 38,
                 background: "transparent",
                 border: "none",
-                borderBottom: activeTab === t.id ? "2px solid #00b06b" : "none",
-                color: activeTab === t.id ? "#00b06b" : "#475569",
+                borderBottom: activeTab === t.id ? "2px solid #00a862" : "2px solid transparent",
+                color: activeTab === t.id ? "#00a862" : "#475569",
                 fontSize: 12.5,
                 fontWeight: activeTab === t.id ? 600 : 500,
                 cursor: "pointer",
+                padding: "0 2px",
               }}
             >
               {t.label}
@@ -6072,110 +6501,469 @@ export function SupplierModal({
           ))}
         </div>
 
-        {/* Subtab Content: Thông tin liên hệ */}
-        <div style={{ padding: "16px 20px", minHeight: 180, background: "#ffffff" }}>
+        {/* Subtab Content: matching Screenshot 3 */}
+        <div style={{ padding: "16px 20px", minHeight: 180, flex: 1, overflow: "auto", background: "#ffffff" }}>
           {activeTab === "contact" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 840 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+              {/* Left column */}
               <div>
-                <label className="misa-purchase-label">Người liên hệ</label>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <select
-                    value={salutation}
-                    onChange={(e) => setSalutation(e.target.value)}
-                    style={{ width: 80, height: 28, padding: "0 4px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                  >
-                    <option value="Ông">Ông</option>
-                    <option value="Bà">Bà</option>
-                    <option value="Anh">Anh</option>
-                    <option value="Chị">Chị</option>
-                  </select>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Người liên hệ</label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ position: "relative", width: 100 }}>
+                      <select
+                        value={salutation}
+                        onChange={(e) => setSalutation(e.target.value)}
+                        style={{ width: "100%", height: 30, padding: "0 20px 0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", appearance: "none", background: "#ffffff" }}
+                      >
+                        <option value="">Xưng hô</option>
+                        <option value="Ông">Ông</option>
+                        <option value="Bà">Bà</option>
+                        <option value="Anh">Anh</option>
+                        <option value="Chị">Chị</option>
+                      </select>
+                      <ChevronDown size={13} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#64748b" }} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Họ và tên"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none" }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Email</label>
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Số điện thoại</label>
                   <input
                     type="text"
-                    placeholder="Họ và tên"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    style={{ flex: 1, height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
+                    placeholder="Số điện thoại"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
               </div>
 
+              {/* Right column */}
               <div>
-                <label className="misa-purchase-label">Đại diện theo PL</label>
-                <input
-                  type="text"
-                  placeholder="Đại diện theo PL"
-                  value={legalRepresentative}
-                  onChange={(e) => setLegalRepresentative(e.target.value)}
-                  style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                />
-              </div>
-
-              <div>
-                <label className="misa-purchase-label">Email</label>
-                <input
-                  type="email"
-                  placeholder="contact@nhacungcap.vn"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                />
-              </div>
-
-              <div>
-                <label className="misa-purchase-label">Số điện thoại</label>
-                <input
-                  type="text"
-                  placeholder="0912 345 678"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                />
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Đại diện theo PL</label>
+                  <input
+                    type="text"
+                    placeholder="Đại diện theo PL"
+                    value={legalRepresentative}
+                    onChange={(e) => setLegalRepresentative(e.target.value)}
+                    style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
               </div>
             </div>
           )}
 
           {activeTab === "terms" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 600 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
-                <label className="misa-purchase-label">Điều khoản thanh toán ngầm định</label>
-                <select style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}>
-                  <option>Gối đầu 30 ngày</option>
-                  <option>Thanh toán ngay</option>
-                  <option>Công nợ 45 ngày</option>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Điều khoản thanh toán ngầm định</label>
+                <select
+                  value={paymentTerms}
+                  onChange={(e) => setPaymentTerms(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                >
+                  <option value="Gối đầu 30 ngày">Gối đầu 30 ngày</option>
+                  <option value="Thanh toán ngay">Thanh toán ngay</option>
+                  <option value="Công nợ 45 ngày">Công nợ 45 ngày</option>
+                  <option value="Công nợ 60 ngày">Công nợ 60 ngày</option>
                 </select>
               </div>
               <div>
-                <label className="misa-purchase-label">Số ngày được nợ</label>
-                <input type="number" defaultValue={30} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }} />
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Số ngày được nợ</label>
+                <input
+                  type="number"
+                  value={debtDays}
+                  onChange={(e) => setDebtDays(Number(e.target.value) || 0)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Số nợ tối đa</label>
+                <input
+                  type="text"
+                  placeholder="0"
+                  value={maxDebt}
+                  onChange={(e) => setMaxDebt(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Tài khoản công nợ phải trả</label>
+                <select
+                  value={payableAccount}
+                  onChange={(e) => setPayableAccount(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                >
+                  <option value="331 - Phải trả cho người bán">331 - Phải trả cho người bán</option>
+                  <option value="3311 - Phải trả cho người bán ngắn hạn">3311 - Phải trả cho người bán ngắn hạn</option>
+                </select>
               </div>
             </div>
           )}
 
           {activeTab === "bank" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
-                <label className="misa-purchase-label">Số tài khoản ngân hàng</label>
-                <input type="text" placeholder="VD: 1903348199201" style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }} />
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Số tài khoản ngân hàng</label>
+                <input
+                  type="text"
+                  placeholder="VD: 1903348199201"
+                  value={bankAccount}
+                  onChange={(e) => setBankAccount(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
               </div>
               <div>
-                <label className="misa-purchase-label">Tên ngân hàng</label>
-                <input type="text" placeholder="Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)" style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }} />
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Tên ngân hàng</label>
+                <input
+                  type="text"
+                  placeholder="Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Chi nhánh ngân hàng</label>
+                <input
+                  type="text"
+                  placeholder="Chi nhánh Hoàn Kiếm"
+                  value={bankBranch}
+                  onChange={(e) => setBankBranch(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Tỉnh/Thành phố của ngân hàng</label>
+                <input
+                  type="text"
+                  placeholder="Hà Nội"
+                  value={bankProvince}
+                  onChange={(e) => setBankProvince(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
               </div>
             </div>
           )}
 
-          {activeTab !== "contact" && activeTab !== "terms" && activeTab !== "bank" && (
-            <div style={{ color: "#64748b", fontSize: 13, padding: "20px 0" }}>
-              Các trường thông tin bổ sung sẽ được lưu kèm hồ sơ nhà cung cấp.
+          {activeTab === "other_address" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Địa chỉ giao hàng</label>
+                <input
+                  type="text"
+                  placeholder="Địa chỉ giao hàng mặc định"
+                  value={shippingAddress}
+                  onChange={(e) => setShippingAddress(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Địa chỉ nhận hóa đơn</label>
+                <input
+                  type="text"
+                  placeholder="Địa chỉ xuất/nhận hóa đơn"
+                  value={invoiceAddress}
+                  onChange={(e) => setInvoiceAddress(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "notes" && (
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Ghi chú thông tin nhà cung cấp</label>
+              <textarea
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Nhập ghi chú hoặc lưu ý khi giao dịch với nhà cung cấp này..."
+                style={{ width: "100%", padding: "8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+              />
+            </div>
+          )}
+
+          {activeTab === "extra" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Quốc gia</label>
+                <input
+                  type="text"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Tỉnh/Thành phố</label>
+                <input
+                  type="text"
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Quận/Huyện</label>
+                <input
+                  type="text"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Xã/Phường</label>
+                <input
+                  type="text"
+                  value={ward}
+                  onChange={(e) => setWard(e.target.value)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "items" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 700 }}>
+                    Danh mục Hàng hóa, dịch vụ cung cấp ({supplierItems.length} mặt hàng)
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "#64748b" }}>
+                    Tự động liên kết và gợi ý đơn giá, thuế suất, tài khoản kho khi lập chứng từ mua hàng từ nhà cung cấp này
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newItem: SampleInventoryItem = {
+                      code: `VT00${supplierItems.length + 1}`,
+                      name: "Hàng hóa/dịch vụ mới",
+                      unit: "Cái",
+                      price: 150000,
+                      vat: 10,
+                      stock: "1561",
+                      stockName: "1561 - Hàng hóa",
+                      supplierCode: supplierCode,
+                      supplierName: supplierName || "Nhà cung cấp",
+                    };
+                    setSupplierItems([...supplierItems, newItem]);
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "5px 12px",
+                    borderRadius: 4,
+                    background: "#00b06b",
+                    border: "none",
+                    color: "#ffffff",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Plus size={14} /> Thêm hàng hóa, dịch vụ
+                </button>
+              </div>
+
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", maxHeight: 220, overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", position: "sticky", top: 0 }}>
+                      <th style={{ width: 35, padding: "8px", textAlign: "center", color: "#475569" }}>#</th>
+                      <th style={{ width: 110, padding: "8px", textAlign: "left", color: "#475569" }}>Mã hàng</th>
+                      <th style={{ padding: "8px", textAlign: "left", color: "#475569" }}>Tên hàng hóa, dịch vụ</th>
+                      <th style={{ width: 70, padding: "8px", textAlign: "center", color: "#475569" }}>ĐVT</th>
+                      <th style={{ width: 130, padding: "8px", textAlign: "right", color: "#475569" }}>Đơn giá ngầm định</th>
+                      <th style={{ width: 90, padding: "8px", textAlign: "center", color: "#475569" }}>Thuế VAT (%)</th>
+                      <th style={{ width: 110, padding: "8px", textAlign: "left", color: "#475569" }}>TK Kho ngầm định</th>
+                      <th style={{ width: 40, padding: "8px", textAlign: "center" }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {supplierItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#94a3b8" }}>
+                          Chưa có mặt hàng nào được gán cho nhà cung cấp này. Bấm "Thêm hàng hóa, dịch vụ" để liên kết.
+                        </td>
+                      </tr>
+                    ) : (
+                      supplierItems.map((it, idx) => (
+                        <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                          <td style={{ textAlign: "center", color: "#64748b", padding: "6px" }}>{idx + 1}</td>
+                          <td style={{ padding: "6px" }}>
+                            <input
+                              type="text"
+                              value={it.code}
+                              onChange={(e) => {
+                                const next = [...supplierItems];
+                                next[idx] = { ...next[idx], code: e.target.value };
+                                setSupplierItems(next);
+                              }}
+                              style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "#0284c7" }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px" }}>
+                            <input
+                              type="text"
+                              value={it.name}
+                              onChange={(e) => {
+                                const next = [...supplierItems];
+                                next[idx] = { ...next[idx], name: e.target.value };
+                                setSupplierItems(next);
+                              }}
+                              style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px" }}>
+                            <input
+                              type="text"
+                              value={it.unit}
+                              onChange={(e) => {
+                                const next = [...supplierItems];
+                                next[idx] = { ...next[idx], unit: e.target.value };
+                                setSupplierItems(next);
+                              }}
+                              style={{ width: "100%", height: 26, padding: "0 4px", textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px" }}>
+                            <input
+                              type="number"
+                              value={it.price}
+                              onChange={(e) => {
+                                const next = [...supplierItems];
+                                next[idx] = { ...next[idx], price: Number(e.target.value) || 0 };
+                                setSupplierItems(next);
+                              }}
+                              style={{ width: "100%", height: 26, padding: "0 6px", textAlign: "right", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px" }}>
+                            <select
+                              value={it.vat}
+                              onChange={(e) => {
+                                const next = [...supplierItems];
+                                next[idx] = { ...next[idx], vat: Number(e.target.value) };
+                                setSupplierItems(next);
+                              }}
+                              style={{ width: "100%", height: 26, padding: "0 4px", textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}
+                            >
+                              <option value={0}>0%</option>
+                              <option value={5}>5%</option>
+                              <option value={8}>8%</option>
+                              <option value={10}>10%</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: "6px" }}>
+                            <input
+                              type="text"
+                              value={it.stock}
+                              onChange={(e) => {
+                                const next = [...supplierItems];
+                                next[idx] = { ...next[idx], stock: e.target.value };
+                                setSupplierItems(next);
+                              }}
+                              style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ textAlign: "center", padding: "6px" }}>
+                            <button
+                              type="button"
+                              onClick={() => setSupplierItems(supplierItems.filter((_, i) => i !== idx))}
+                              style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 2 }}
+                              title="Xóa mặt hàng"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer (Screenshot 4) */}
-        <footer style={{ height: 48, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 20px" }}>
-          <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>Hủy</button>
-          <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Cất</button>
-          <button type="button" className="misa-invoice-btn-submit" onClick={() => handleSave(true)}>Cất và Thêm</button>
+        {/* Footer (Screenshot 3) */}
+        <footer style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 20px" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              height: 32,
+              padding: "0 16px",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: 4,
+              fontSize: 13,
+              color: "#334155",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave(false)}
+            style={{
+              height: 32,
+              padding: "0 16px",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: 4,
+              fontSize: 13,
+              color: "#334155",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            Cất
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave(true)}
+            style={{
+              height: 32,
+              padding: "0 18px",
+              background: "#00a862",
+              border: "none",
+              borderRadius: 4,
+              fontSize: 13,
+              color: "#ffffff",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Cất và Thêm
+          </button>
         </footer>
       </div>
     </div>
@@ -9877,5 +10665,11 @@ export function PurchaseMultiInvoiceModal({
   );
 }
 
-
-
+// Re-export utility modals
+export {
+  DebtOffsetModal,
+  MultiDebtOffsetModal,
+  UnOffsetModal,
+  MultiUnOffsetModal,
+  DebtClearingModal,
+} from "./MisaPurchaseUtilityModals";

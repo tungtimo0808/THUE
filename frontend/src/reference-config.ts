@@ -80,6 +80,7 @@ const previousReferenceTabs: Record<string, [string, string][]> = {
     ["invoice-processing", "Xử lý hóa đơn đầu vào"],
     ["inventory-items", "Hàng hóa, dịch vụ"],
     ["reconciliation", "Đối chiếu công nợ"],
+    ["suppliers", "Nhà cung cấp"],
     ["reports", "Báo cáo"],
   ],
   sales: [
@@ -278,6 +279,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     ]),
     node("inventory-items", "Hàng hóa, dịch vụ"),
     node("reconciliation", "Đối chiếu công nợ"),
+    node("suppliers", "Nhà cung cấp"),
     node("reports", "Báo cáo"),
   ],
   sales: [

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from "react";
+import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
+import {cashDateValue,isCashDateInRange} from "./cash-date";
+import { useState, useMemo } from "react";
 import {
   ChevronLeft,
   Printer,
-  Download,
   Settings,
   HelpCircle,
   X,
@@ -56,10 +57,11 @@ export default function MisaBankDepositLedgerReport({
   notify,
 }: MisaBankDepositLedgerReportProps) {
   // Drawer Parameters State matching Image 1
+  const [paramError,setParamError]=useState("");
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [toDate, setToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [selectedAccount, setSelectedAccount] = useState("1121");
   const [selectedBankAccount, setSelectedBankAccount] = useState("");
 
@@ -71,8 +73,8 @@ export default function MisaBankDepositLedgerReport({
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [draftAccount, setDraftAccount] = useState("1121");
   const [draftBankAccount, setDraftBankAccount] = useState("");
   const [draftMergeSame, setDraftMergeSame] = useState(true);
@@ -100,6 +102,8 @@ export default function MisaBankDepositLedgerReport({
   };
 
   const handleApplyParams = () => {
+    if(!draftAccount.trim()||!Number.isFinite(cashDateValue(draftFromDate))||!Number.isFinite(cashDateValue(draftToDate))||cashDateValue(draftFromDate)>cashDateValue(draftToDate)){setParamError('Chọn tài khoản và khoảng ngày hợp lệ theo DD/MM/YYYY.');return;}
+    setParamError('');
     setReportPeriodPreset(draftPeriodPreset);
     setFromDate(draftFromDate);
     setToDate(draftToDate);
@@ -114,9 +118,10 @@ export default function MisaBankDepositLedgerReport({
   };
 
   const handleResetParams = () => {
+    setParamError("");
     setDraftPeriodPreset("Tháng này");
-    setDraftFromDate("01/10/2026");
-    setDraftToDate("31/10/2026");
+    setDraftFromDate(cashPeriodDates("Tháng này")![0]);
+    setDraftToDate(cashPeriodDates("Tháng này")![1]);
     setDraftAccount("1121");
     setDraftBankAccount("");
     setDraftMergeSame(true);
@@ -125,44 +130,24 @@ export default function MisaBankDepositLedgerReport({
     setDraftSortReceiptFirst(false);
   };
 
-  const handlePresetChange = (preset: string) => {
-    setDraftPeriodPreset(preset);
-    if (preset === "Hôm nay") {
-      setDraftFromDate("07/10/2026");
-      setDraftToDate("07/10/2026");
-    } else if (preset === "Tháng này") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/10/2026");
-    } else if (preset === "Tháng trước") {
-      setDraftFromDate("01/09/2026");
-      setDraftToDate("30/09/2026");
-    } else if (preset === "Quý 4") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/12/2026");
-    } else if (preset === "Năm nay") {
-      setDraftFromDate("01/01/2026");
-      setDraftToDate("31/12/2026");
-    }
-  };
+  const handlePresetChange = (preset:string)=>{setDraftPeriodPreset(preset);const range=cashPeriodDates(preset);if(range){setDraftFromDate(range[0]);setDraftToDate(range[1]);}};
 
   // Subtitle period text matching Image 2
   const periodSubtitle = useMemo(() => {
-    if (fromDate.startsWith("01/10/2026") && toDate.startsWith("31/10/2026")) {
-      return `Tài khoản: ${selectedAccount}, Tháng 10 năm 2026`;
-    }
-    return `Tài khoản: ${selectedAccount}, Từ ngày ${fromDate} đến ngày ${toDate}`;
+    return `Tài khoản: ${selectedAccount}, ${cashPeriodSubtitle(fromDate,toDate)}`;
   }, [fromDate, toDate, selectedAccount]);
 
   // Filter rows
   const filteredRows = useMemo(() => {
-    if (!searchKeyword.trim()) return DEFAULT_ROWS;
+    const datedRows=DEFAULT_ROWS.filter(row=>row.isOpening||isCashDateInRange(row.postDate||"",fromDate,toDate));
+    if (!searchKeyword.trim()) return datedRows;
     const kw = searchKeyword.toLowerCase();
-    return DEFAULT_ROWS.filter(
+    return datedRows.filter(
       (r) =>
         r.description.toLowerCase().includes(kw) ||
         (r.voucherNo && r.voucherNo.toLowerCase().includes(kw))
     );
-  }, [searchKeyword]);
+  }, [searchKeyword,fromDate,toDate]);
 
   const totalReceipt = useMemo(() => {
     return filteredRows.reduce((acc, r) => acc + (r.receiptAmount || 0), 0);
@@ -174,6 +159,7 @@ export default function MisaBankDepositLedgerReport({
 
   const formatMoney = (val?: number) => {
     if (val === undefined || val === null) return "";
+    if (val === 0) return "0";
     if (val < 0) {
       return `(${Math.abs(val).toLocaleString("vi-VN")})`;
     }
@@ -1042,6 +1028,7 @@ export default function MisaBankDepositLedgerReport({
                 gap: 16,
               }}
             >
+              {paramError&&<p role="alert" style={{color:"#b91c1c"}}>{paramError}</p>}
               {/* Kỳ báo cáo */}
               <div>
                 <label
@@ -1068,12 +1055,7 @@ export default function MisaBankDepositLedgerReport({
                     outline: "none",
                   }}
                 >
-                  <option value="Hôm nay">Hôm nay</option>
-                  <option value="Tháng này">Tháng này</option>
-                  <option value="Tháng trước">Tháng trước</option>
-                  <option value="Quý 4">Quý 4</option>
-                  <option value="Năm nay">Năm nay</option>
-                  <option value="Tùy chọn">Tùy chọn</option>
+                  {CASH_PERIODS.map(period=><option key={period}>{period}</option>)}
                 </select>
               </div>
 
@@ -1100,7 +1082,7 @@ export default function MisaBankDepositLedgerReport({
                     <input
                       type="text"
                       value={draftFromDate}
-                      onChange={(e) => setDraftFromDate(e.target.value)}
+                      onChange={(e) => {setDraftFromDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,
@@ -1139,7 +1121,7 @@ export default function MisaBankDepositLedgerReport({
                     <input
                       type="text"
                       value={draftToDate}
-                      onChange={(e) => setDraftToDate(e.target.value)}
+                      onChange={(e) => {setDraftToDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,

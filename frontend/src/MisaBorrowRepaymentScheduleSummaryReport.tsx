@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   ChevronLeft,
   Printer,
@@ -10,8 +10,6 @@ import {
   RefreshCw,
   Mail,
   ChevronDown,
-  Filter,
-  Columns,
 } from "lucide-react";
 
 export interface RepaymentScheduleRow {
@@ -48,18 +46,19 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
   notify,
 }: MisaBorrowRepaymentScheduleSummaryReportProps) {
   // Parameters State matching Screenshot 3
+  const [paramError,setParamError]=useState("");
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
-  const [fromMonth, setFromMonth] = useState("Tháng 10");
-  const [fromYear, setFromYear] = useState(2026);
-  const [toMonth, setToMonth] = useState("Tháng 10");
-  const [toYear, setToYear] = useState(2026);
+  const [fromMonth, setFromMonth] = useState(()=>`Tháng ${new Date().getMonth()+1}`);
+  const [fromYear, setFromYear] = useState(()=>new Date().getFullYear());
+  const [toMonth, setToMonth] = useState(()=>`Tháng ${new Date().getMonth()+1}`);
+  const [toYear, setToYear] = useState(()=>new Date().getFullYear());
   const [selectedPartnerCode, setSelectedPartnerCode] = useState("NCC00001");
 
   // Drawer draft state
-  const [draftFromMonth, setDraftFromMonth] = useState("Tháng 10");
-  const [draftFromYear, setDraftFromYear] = useState(2026);
-  const [draftToMonth, setDraftToMonth] = useState("Tháng 10");
-  const [draftToYear, setDraftToYear] = useState(2026);
+  const [draftFromMonth, setDraftFromMonth] = useState(()=>`Tháng ${new Date().getMonth()+1}`);
+  const [draftFromYear, setDraftFromYear] = useState(()=>new Date().getFullYear());
+  const [draftToMonth, setDraftToMonth] = useState(()=>`Tháng ${new Date().getMonth()+1}`);
+  const [draftToYear, setDraftToYear] = useState(()=>new Date().getFullYear());
   const [draftPartnerCode, setDraftPartnerCode] = useState("NCC00001");
   const [partnerSearchText, setPartnerSearchText] = useState("");
 
@@ -80,6 +79,8 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
   };
 
   const handleApplyParams = () => {
+    const startMonth=Number(draftFromMonth.replace('Tháng ','')),endMonth=Number(draftToMonth.replace('Tháng ',''));
+    if(![draftFromYear,draftToYear].every(year=>Number.isInteger(year)&&year>=1&&year<=9999)||startMonth<1||startMonth>12||endMonth<1||endMonth>12||draftFromYear*12+startMonth>draftToYear*12+endMonth){setParamError('Khoảng tháng/năm không hợp lệ.');return;}setParamError('');
     setFromMonth(draftFromMonth);
     setFromYear(draftFromYear);
     setToMonth(draftToMonth);
@@ -90,10 +91,11 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
   };
 
   const handleResetParams = () => {
-    setDraftFromMonth("Tháng 10");
-    setDraftFromYear(2026);
-    setDraftToMonth("Tháng 10");
-    setDraftToYear(2026);
+    setParamError("");
+    setDraftFromMonth(`Tháng ${new Date().getMonth()+1}`);
+    setDraftFromYear(new Date().getFullYear());
+    setDraftToMonth(`Tháng ${new Date().getMonth()+1}`);
+    setDraftToYear(new Date().getFullYear());
     setDraftPartnerCode("NCC00001");
   };
 
@@ -682,6 +684,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                 gap: 18,
               }}
             >
+              {paramError&&<p role="alert" style={{color:"#b91c1c"}}>{paramError}</p>}
               {/* Top Monthly Range Selection matching Screenshot 3 */}
               <div
                 style={{

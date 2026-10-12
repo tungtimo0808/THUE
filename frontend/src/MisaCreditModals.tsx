@@ -1,9 +1,11 @@
+import VoucherDateField from "./VoucherDateField";
+import {SupplierModal} from "./MisaPurchaseModals";
+import MisaDirectoryWorkspace from "./MisaDirectoryWorkspace";
 import { useState } from "react";
 import {
   X,
   HelpCircle,
   ChevronDown,
-  Calendar,
   Sparkles,
   Plus,
   Trash2,
@@ -30,9 +32,9 @@ export function LoanContractModal({
 }: LoanContractModalProps) {
   // Master fields
   const [contractCode, setContractCode] = useState("KUCV00001");
-  const [borrower, setBorrower] = useState("");
+  const [borrower, setBorrower] = useState("Công ty TNHH Đầu tư Thương mại Sao Mai");
   const [creditContract, setCreditContract] = useState("");
-  const [purpose, setPurpose] = useState("");
+  const [purpose, setPurpose] = useState("Bổ sung vốn lưu động phục vụ SXKD");
   const [debitAccount, setDebitAccount] = useState("1283");
   const [creditInterestAccount, setCreditInterestAccount] = useState("515");
 
@@ -41,27 +43,96 @@ export function LoanContractModal({
     "disbursement" | "interest" | "recovery" | "stats" | "attachment"
   >("disbursement");
 
-  // Tab: Thông tin giải ngân
-  const [loanAmount, setLoanAmount] = useState(0);
+  // Tab 1: Thông tin giải ngân (5 ô tiền + chi tiết)
+  const [loanAmount, setLoanAmount] = useState(500000000);
+  const [disbursedAmount, setDisbursedAmount] = useState(500000000);
+  const [recoveredPrincipal, setRecoveredPrincipal] = useState(0);
+  const [recoveredInterest, setRecoveredInterest] = useState(0);
+  const currentDebt = Math.max(0, disbursedAmount - recoveredPrincipal);
+
   const [disbursementMethod, setDisbursementMethod] = useState("Chuyển khoản");
-  const [beneficiaryAccount, setBeneficiaryAccount] = useState("");
-  const [bankName, setBankName] = useState("");
-  const [loanTerm, setLoanTerm] = useState(0);
+  const [beneficiaryAccount, setBeneficiaryAccount] = useState("2151000849201");
+  const [bankName, setBankName] = useState("BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN");
+  const [loanTerm, setLoanTerm] = useState(12);
   const [termUnit, setTermUnit] = useState("Tháng");
-  const [disbursementDate, setDisbursementDate] = useState("29/09/2026");
-  const [dueDate, setDueDate] = useState("29/09/2026");
+  const [disbursementDate, setDisbursementDate] = useState("09/10/2026");
+  const [dueDate, setDueDate] = useState("09/10/2027");
 
-  // Tab: Lãi suất
-  const [interestRate, setInterestRate] = useState(8.5);
-  const [overdueRate, setOverdueRate] = useState(150);
-  const [interestCalcMethod, setInterestCalcMethod] = useState("Theo dư nợ thực tế");
+  // Tab 2: Lãi suất (Grid + Radio options)
+  const [interestBasis, setInterestBasis] = useState("Lãi suất trên dư nợ gốc");
+  const [yearDaysBasis, setYearDaysBasis] = useState("365");
+  const [hasAdjustment, setHasAdjustment] = useState(false);
+  const [interestRows, setInterestRows] = useState([
+    { id: 1, rate: 8.5, overdueRate: 150, effectiveDate: "09/10/2026", note: "Lãi suất cố định 12 tháng đầu" },
+  ]);
 
-  // Tab: Hình thức thu nợ
+  // Tab 3: Hình thức thu nợ
   const [principalPeriod, setPrincipalPeriod] = useState("Hàng tháng");
   const [interestPeriod, setInterestPeriod] = useState("Hàng tháng");
+  const [collectionMethod, setCollectionMethod] = useState("Nộp vào tài khoản");
+  const [firstPrincipalDate, setFirstPrincipalDate] = useState("09/11/2026");
+  const [firstInterestDate, setFirstInterestDate] = useState("09/11/2026");
+  const [collectionAccount, setCollectionAccount] = useState("1028475929 - VCB");
+  const [collectionBankName, setCollectionBankName] = useState("Vietcombank - CN Hà Nội");
 
-  // Tab: Đính kèm
-  const [files] = useState<string[]>([]);
+  // Tab 4: Thống kê khác
+  const [project, setProject] = useState("");
+  const [order, setOrder] = useState("");
+  const [saleContract, setSaleContract] = useState("");
+  const [expenseItem, setExpenseItem] = useState("");
+  const [cashFlowItem, setCashFlowItem] = useState("");
+  const [department, setDepartment] = useState("Phòng Kế toán - Tài chính");
+
+  // Tab 5: Đính kèm
+  const [quickParty,setQuickParty]=useState(false);
+  const [attachmentError, setAttachmentError] = useState("");
+  const [attachments, setAttachments] = useState<{ name: string; size: string; time: string }[]>([
+    { name: "KHE_UOC_CHO_VAY_KUCV00001.pdf", size: "1.4 MB", time: "09/10/2026 10:15" },
+  ]);
+
+  // Dropdown menu for Cất và Đóng
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false);
+
+  const handleAddInterestRow = () => {
+    setInterestRows((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        rate: 9.0,
+        overdueRate: 150,
+        effectiveDate: "09/10/2027",
+        note: "Điều chỉnh theo lãi suất thị trường",
+      },
+    ]);
+  };
+
+  const handleClearInterestRows = () => {
+    setInterestRows([]);
+  };
+
+  const handleRemoveInterestRow = (id: number) => {
+    setInterestRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const f = e.target.files[0];
+      e.target.value = "";
+      if (f.size > 5 * 1024 * 1024) {
+        setAttachmentError("Dung lượng tệp không được vượt quá 5 MB.");
+        return;
+      }
+      setAttachmentError("");
+      setAttachments((prev) => [
+        ...prev,
+        {
+          name: f.name,
+          size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+          time: new Date().toLocaleString("vi-VN"),
+        },
+      ]);
+    }
+  };
 
   const handleSave = (andClose = false) => {
     onSubmit({
@@ -73,6 +144,10 @@ export function LoanContractModal({
       debitAccount,
       creditInterestAccount,
       loanAmount,
+      disbursedAmount,
+      recoveredPrincipal,
+      recoveredInterest,
+      currentDebt,
       disbursementMethod,
       beneficiaryAccount,
       bankName,
@@ -80,29 +155,44 @@ export function LoanContractModal({
       termUnit,
       disbursementDate,
       dueDate,
-      interestRate,
-      overdueRate,
-      interestCalcMethod,
+      interestBasis,
+      yearDaysBasis,
+      hasAdjustment,
+      interestRows,
       principalPeriod,
       interestPeriod,
-      files,
+      collectionMethod,
+      firstPrincipalDate,
+      firstInterestDate,
+      collectionAccount,
+      collectionBankName,
+      project,
+      order,
+      saleContract,
+      expenseItem,
+      cashFlowItem,
+      department,
+      attachments,
     });
     if (andClose) onClose();
   };
 
   return (
     <div className="misa-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="misa-credit-modal-window">
-        {/* Header (Image 1) */}
-        <header className="misa-credit-modal-header">
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
-            Khế ước cho vay {contractCode}
-          </h2>
+      <div className="misa-credit-modal-window" style={{ maxWidth: 960, width: "95vw" }}>
+        {/* Header */}
+        <header className="misa-credit-modal-header" style={{ borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
+              Khế ước cho vay đầu kỳ {contractCode}
+            </h2>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
               className="misa-invoice-circle-btn"
               title="Trợ giúp"
+              onClick={() => alert("Hướng dẫn quản lý khế ước cho vay đầu kỳ")}
             >
               <HelpCircle size={18} />
             </button>
@@ -110,7 +200,7 @@ export function LoanContractModal({
               type="button"
               className="misa-invoice-circle-btn"
               onClick={onClose}
-              title="Đóng"
+              title="Đóng (ESC)"
             >
               <X size={18} />
             </button>
@@ -120,7 +210,7 @@ export function LoanContractModal({
         {/* Master Form Area */}
         <div style={{ padding: "14px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
           {/* Row 1 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16, marginBottom: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                 Số khế ước cho vay <span style={{ color: "#ef4444" }}>*</span>
@@ -136,6 +226,7 @@ export function LoanContractModal({
                   borderRadius: 4,
                   border: "1px solid #10b981",
                   fontSize: 13,
+                  fontWeight: 600,
                   outline: "none",
                   background: "#ffffff",
                 }}
@@ -159,7 +250,7 @@ export function LoanContractModal({
                     background: "#ffffff",
                   }}
                 >
-                  <option value="">&nbsp;</option>
+                  <option value="">-- Chọn đối tượng vay --</option>
                   <option value="Công ty TNHH Đầu tư Thương mại Sao Mai">Công ty TNHH Đầu tư Thương mại Sao Mai</option>
                   <option value="Công ty CP Xây dựng Đông Dương">Công ty CP Xây dựng Đông Dương</option>
                   <option value="Công ty CP Tập đoàn Hoàng Hà">Công ty CP Tập đoàn Hoàng Hà</option>
@@ -168,6 +259,7 @@ export function LoanContractModal({
                 <button
                   type="button"
                   title="Thêm đối tượng"
+                  onClick={() => setQuickParty(true)}
                   style={{
                     width: 32,
                     height: 32,
@@ -187,7 +279,7 @@ export function LoanContractModal({
           </div>
 
           {/* Row 2 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16, marginBottom: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                 Hợp đồng tín dụng
@@ -206,7 +298,7 @@ export function LoanContractModal({
                     background: "#ffffff",
                   }}
                 >
-                  <option value="">&nbsp;</option>
+                  <option value="">-- Chọn hợp đồng tín dụng --</option>
                   <option value="HĐTD00001 - Hợp đồng tài trợ dự án">HĐTD00001 - Hợp đồng tài trợ dự án</option>
                   <option value="HĐTD00002 - Hợp đồng cấp hạn mức vốn lưu động">HĐTD00002 - Hợp đồng cấp hạn mức vốn lưu động</option>
                 </select>
@@ -351,29 +443,119 @@ export function LoanContractModal({
         </div>
 
         {/* Tab Body Content */}
-        <div style={{ flex: 1, padding: "18px 20px", overflowY: "auto", background: "#ffffff" }}>
+        <div style={{ flex: 1, padding: "18px 20px", overflowY: "auto", background: "#ffffff", minHeight: 280 }}>
+          {/* TAB 1: THÔNG TIN GIẢI NGÂN (Hình ảnh 1 đầy đủ 5 ô tiền) */}
           {activeTab === "disbursement" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {/* Row 1: Giá trị khoản vay */}
-              <div style={{ width: 280 }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Giá trị khoản vay <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={loanAmount === 0 ? "0" : formatVND(loanAmount)}
-                  onChange={(e) => setLoanAmount(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
-                  style={{
-                    width: "100%",
-                    height: 32,
-                    padding: "0 10px",
-                    borderRadius: 4,
-                    border: "1px solid #d1d5db",
-                    fontSize: 13,
-                    textAlign: "right",
-                    fontWeight: 600,
-                  }}
-                />
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* 5 Card/Ô số tiền: Giá trị khoản vay | Đã giải ngân | Nợ gốc đã thu | Lãi đã thu | Dư nợ hiện tại */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Giá trị khoản vay <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={loanAmount === 0 ? "0" : formatVND(loanAmount)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value.replace(/\D/g, "") || "0", 10);
+                      setLoanAmount(val);
+                      setDisbursedAmount(val);
+                    }}
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: 600,
+                      color: "#059669",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Giá trị đã giải ngân
+                  </label>
+                  <input
+                    type="text"
+                    value={disbursedAmount === 0 ? "0" : formatVND(disbursedAmount)}
+                    onChange={(e) => setDisbursedAmount(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: 600,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Nợ gốc đã thu
+                  </label>
+                  <input
+                    type="text"
+                    value={recoveredPrincipal === 0 ? "0" : formatVND(recoveredPrincipal)}
+                    onChange={(e) => setRecoveredPrincipal(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: 600,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Lãi đã thu
+                  </label>
+                  <input
+                    type="text"
+                    value={recoveredInterest === 0 ? "0" : formatVND(recoveredInterest)}
+                    onChange={(e) => setRecoveredInterest(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: 600,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Dư nợ hiện tại
+                  </label>
+                  <input
+                    type="text"
+                    value={currentDebt === 0 ? "0" : formatVND(currentDebt)}
+                    readOnly
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #e2e8f0",
+                      background: "#f1f5f9",
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: 700,
+                      color: "#dc2626",
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Row 2: Phương thức giải ngân, TK thụ hưởng, Tên ngân hàng */}
@@ -399,15 +581,15 @@ export function LoanContractModal({
                     value={beneficiaryAccount}
                     onChange={(e) => {
                       setBeneficiaryAccount(e.target.value);
-                      if (e.target.value.includes("BIDV")) setBankName("BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN");
-                      else if (e.target.value.includes("VCB")) setBankName("Vietcombank - Ngân hàng TMCP Ngoại thương VN");
+                      if (e.target.value.includes("2151")) setBankName("BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN");
+                      else if (e.target.value.includes("1028")) setBankName("Vietcombank - Ngân hàng TMCP Ngoại thương VN");
                       else setBankName("");
                     }}
                     style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                   >
                     <option value="">&nbsp;</option>
-                    <option value="2151000849201 - BIDV">2151000849201 - BIDV</option>
-                    <option value="1028475929 - VCB">1028475929 - VCB</option>
+                    <option value="2151000849201">2151000849201 - BIDV</option>
+                    <option value="1028475929">1028475929 - VCB</option>
                   </select>
                 </div>
                 <div>
@@ -424,147 +606,392 @@ export function LoanContractModal({
                 </div>
               </div>
 
-              {/* Row 3: Thời hạn vay */}
-              <div style={{ width: 280 }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Thời hạn vay <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <input
-                    type="number"
-                    value={loanTerm}
-                    onChange={(e) => setLoanTerm(parseInt(e.target.value || "0", 10))}
-                    style={{ width: 90, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, textAlign: "right" }}
-                  />
-                  <select
-                    value={termUnit}
-                    onChange={(e) => setTermUnit(e.target.value)}
-                    style={{ flex: 1, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                  >
-                    <option value="Tháng">Tháng</option>
-                    <option value="Năm">Năm</option>
-                    <option value="Ngày">Ngày</option>
-                  </select>
+              {/* Row 3: Thời hạn vay, Ngày giải ngân, Ngày đáo hạn */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Thời hạn vay <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      type="number"
+                      value={loanTerm}
+                      onChange={(e) => setLoanTerm(parseInt(e.target.value || "0", 10))}
+                      style={{ width: 80, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, textAlign: "right" }}
+                    />
+                    <select
+                      value={termUnit}
+                      onChange={(e) => setTermUnit(e.target.value)}
+                      style={{ flex: 1, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                    >
+                      <option value="Tháng">Tháng</option>
+                      <option value="Năm">Năm</option>
+                      <option value="Ngày">Ngày</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-
-              {/* Row 4: Ngày giải ngân, Ngày đáo hạn */}
-              <div style={{ display: "flex", gap: 14 }}>
-                <div style={{ width: 160 }}>
+                <div>
                   <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                     Ngày giải ngân <span style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      value={disbursementDate}
-                      onChange={(e) => setDisbursementDate(e.target.value)}
-                      style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                    />
-                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <VoucherDateField value={disbursementDate} onChange={setDisbursementDate} label="Ngày giải ngân"/>
                   </div>
                 </div>
-                <div style={{ width: 160 }}>
+                <div>
                   <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                     Ngày đáo hạn <span style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                    />
-                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <VoucherDateField value={dueDate} onChange={setDueDate} label="Ngày đáo hạn"/>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
+          {/* TAB 2: LÃI SUẤT (Grid table + Options) */}
           {activeTab === "interest" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Lãi suất trong hạn (%/năm)
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Radio options */}
+              <div style={{ display: "flex", alignItems: "center", gap: 24, padding: "8px 12px", background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="radio"
+                    name="interestBasis"
+                    checked={interestBasis === "Lãi suất trên dư nợ gốc"}
+                    onChange={() => setInterestBasis("Lãi suất trên dư nợ gốc")}
+                  />
+                  <span>Lãi suất trên dư nợ gốc</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={interestRate}
-                  onChange={(e) => setInterestRate(parseFloat(e.target.value || "0"))}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="radio"
+                    name="interestBasis"
+                    checked={interestBasis === "Lãi suất trên dư nợ thực tế"}
+                    onChange={() => setInterestBasis("Lãi suất trên dư nợ thực tế")}
+                  />
+                  <span>Lãi suất trên dư nợ thực tế</span>
+                </label>
+                <div style={{ width: 1, height: 18, background: "#cbd5e1" }} />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="radio"
+                    name="yearDaysBasis"
+                    checked={yearDaysBasis === "365"}
+                    onChange={() => setYearDaysBasis("365")}
+                  />
+                  <span>Lãi năm / 365 ngày</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="checkbox"
+                    checked={hasAdjustment}
+                    onChange={(e) => setHasAdjustment(e.target.checked)}
+                  />
+                  <span>Có điều chỉnh lãi suất</span>
+                </label>
               </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Lãi suất quá hạn (% lãi trong hạn)
-                </label>
-                <input
-                  type="number"
-                  value={overdueRate}
-                  onChange={(e) => setOverdueRate(parseFloat(e.target.value || "0"))}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                />
+
+              {/* Grid Header Buttons */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
+                  Bảng mức lãi suất theo từng giai đoạn
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={handleAddInterestRow}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      border: "1px solid #10b981",
+                      background: "#ecfdf5",
+                      color: "#059669",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={14} />
+                    <span>Thêm dòng</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearInterestRows}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                      color: "#ef4444",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    <span>Xóa hết dòng</span>
+                  </button>
+                </div>
               </div>
-              <div style={{ gridColumn: "span 2" }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Hình thức tính lãi
-                </label>
-                <select
-                  value={interestCalcMethod}
-                  onChange={(e) => setInterestCalcMethod(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                >
-                  <option value="Theo dư nợ thực tế">Theo dư nợ thực tế</option>
-                  <option value="Theo dư nợ ban đầu (Lãi cố định)">Theo dư nợ ban đầu (Lãi cố định)</option>
-                </select>
+
+              {/* Grid Table */}
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", textAlign: "left" }}>
+                      <th style={{ width: 40, padding: "8px 10px", textAlign: "center" }}>#</th>
+                      <th style={{ width: 140, padding: "8px 10px" }}>Lãi suất %/năm</th>
+                      <th style={{ width: 160, padding: "8px 10px" }}>Lãi suất quá hạn %</th>
+                      <th style={{ width: 140, padding: "8px 10px" }}>Hiệu lực từ ngày</th>
+                      <th style={{ padding: "8px 10px" }}>Ghi chú</th>
+                      <th style={{ width: 50, padding: "8px 10px", textAlign: "center" }}>Xóa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {interestRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>
+                          Chưa có thông tin lãi suất. Bấm "Thêm dòng" để thiết lập.
+                        </td>
+                      </tr>
+                    ) : (
+                      interestRows.map((r, idx) => (
+                        <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                          <td style={{ padding: "6px 10px", textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={r.rate}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value || "0");
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, rate: val } : item)));
+                              }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right" }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="number"
+                              value={r.overdueRate}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value || "0");
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, overdueRate: val } : item)));
+                              }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right" }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="text"
+                              value={r.effectiveDate}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, effectiveDate: val } : item)));
+                              }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="text"
+                              value={r.note}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, note: val } : item)));
+                              }}
+                              placeholder="Nhập ghi chú điều chỉnh..."
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px", textAlign: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInterestRow(r.id)}
+                              style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                              title="Xóa dòng"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
+          {/* TAB 3: HÌNH THỨC THU NỢ */}
           {activeTab === "recovery" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Kỳ hạn thu nợ gốc
-                </label>
-                <select
-                  value={principalPeriod}
-                  onChange={(e) => setPrincipalPeriod(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                >
-                  <option value="Hàng tháng">Hàng tháng</option>
-                  <option value="Hàng quý">Hàng quý</option>
-                  <option value="Cuối kỳ">Cuối kỳ</option>
-                </select>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Thu gốc <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={principalPeriod}
+                    onChange={(e) => setPrincipalPeriod(e.target.value)}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="Hàng tháng">Hàng tháng</option>
+                    <option value="Hàng quý">Hàng quý</option>
+                    <option value="Hàng năm">Hàng năm</option>
+                    <option value="Cuối kỳ">Cuối kỳ</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Thu lãi <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={interestPeriod}
+                    onChange={(e) => setInterestPeriod(e.target.value)}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="Hàng tháng">Hàng tháng</option>
+                    <option value="Hàng quý">Hàng quý</option>
+                    <option value="Cùng kỳ thu gốc">Cùng kỳ thu gốc</option>
+                    <option value="Cuối kỳ">Cuối kỳ</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Kỳ hạn thu lãi
-                </label>
-                <select
-                  value={interestPeriod}
-                  onChange={(e) => setInterestPeriod(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                >
-                  <option value="Hàng tháng">Hàng tháng</option>
-                  <option value="Hàng quý">Hàng quý</option>
-                  <option value="Cùng kỳ thu gốc">Cùng kỳ thu gốc</option>
-                </select>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Phương thức thu nợ <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={collectionMethod}
+                    onChange={(e) => setCollectionMethod(e.target.value)}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="Nộp vào tài khoản">Nộp vào tài khoản</option>
+                    <option value="Tiền mặt">Tiền mặt</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Ngày thu gốc đầu tiên <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <VoucherDateField value={firstPrincipalDate} onChange={setFirstPrincipalDate} label="Ngày trả nợ gốc đầu tiên"/>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Ngày thu lãi đầu tiên <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <VoucherDateField value={firstInterestDate} onChange={setFirstInterestDate} label="Ngày trả lãi đầu tiên"/>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Chuyển vào tài khoản
+                  </label>
+                  <select
+                    value={collectionAccount}
+                    onChange={(e) => {
+                      setCollectionAccount(e.target.value);
+                      if (e.target.value.includes("VCB")) setCollectionBankName("Vietcombank - CN Hà Nội");
+                      else if (e.target.value.includes("BIDV")) setCollectionBankName("BIDV - CN Quang Trung");
+                    }}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="1028475929 - VCB">1028475929 - VCB</option>
+                    <option value="2151000849201 - BIDV">2151000849201 - BIDV</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Tên ngân hàng
+                  </label>
+                  <input
+                    type="text"
+                    value={collectionBankName}
+                    readOnly
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#475569" }}
+                  />
+                </div>
               </div>
             </div>
           )}
 
+          {/* TAB 4: THỐNG KÊ KHÁC */}
           {activeTab === "stats" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 720 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Khoản mục chi phí / Doanh thu
+                  Công trình
                 </label>
                 <input
                   type="text"
-                  placeholder="Chọn khoản mục..."
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  placeholder="Chọn hoặc nhập mã công trình..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Đơn đặt hàng
+                </label>
+                <input
+                  type="text"
+                  value={order}
+                  onChange={(e) => setOrder(e.target.value)}
+                  placeholder="Chọn đơn đặt hàng liên quan..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Hợp đồng bán
+                </label>
+                <input
+                  type="text"
+                  value={saleContract}
+                  onChange={(e) => setSaleContract(e.target.value)}
+                  placeholder="Chọn hợp đồng bán..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Khoản mục chi phí
+                </label>
+                <input
+                  type="text"
+                  value={expenseItem}
+                  onChange={(e) => setExpenseItem(e.target.value)}
+                  placeholder="Chọn khoản mục chi phí..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Mục thu/chi
+                </label>
+                <input
+                  type="text"
+                  value={cashFlowItem}
+                  onChange={(e) => setCashFlowItem(e.target.value)}
+                  placeholder="Chọn mục thu chi dòng tiền..."
                   style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                 />
               </div>
@@ -574,6 +1001,8 @@ export function LoanContractModal({
                 </label>
                 <input
                   type="text"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
                   placeholder="Phòng Kế toán - Tài chính"
                   style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                 />
@@ -581,21 +1010,80 @@ export function LoanContractModal({
             </div>
           )}
 
+          {/* TAB 5: ĐÍNH KÈM */}
+          {quickParty&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"white",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickParty(false)}>Đóng thêm đối tượng</button><MisaDirectoryWorkspace initialName="Khách hàng" initialCreate legacy={null} notify={()=>{}} onEntrySaved={values=>{setBorrower(values["Tên khách hàng"]||values["Tên"]||"");setQuickParty(false);}}/></div>}
           {activeTab === "attachment" && (
-            <div style={{ border: "1px solid #cbd5e1", borderRadius: 8, padding: 32, textAlign: "center", background: "#f8fafc" }}>
-              <Upload size={36} style={{ color: "#00b06b", margin: "0 auto 10px auto" }} />
-              <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
-                Kéo thả tài liệu khế ước cho vay hoặc <span style={{ color: "#0284c7", textDecoration: "underline", cursor: "pointer" }}>chọn tệp từ máy tính</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div
+                style={{
+                  border: "2px dashed #cbd5e1",
+                  borderRadius: 8,
+                  padding: "24px 20px",
+                  textAlign: "center",
+                  background: "#f8fafc",
+                  cursor: "pointer",
+                }}
+                onClick={() => document.getElementById("file-upload-loan")?.click()}
+              >
+                <Upload size={32} style={{ color: "#059669", margin: "0 auto 8px auto" }} />
+                <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
+                  Kéo thả tài liệu khế ước cho vay hoặc <span style={{ color: "#0284c7", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
+                </div>
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+                  Hỗ trợ định dạng PDF, Word, Excel, hình ảnh. Dung lượng tối đa 5MB.
+                </div>
+                <input
+                  id="file-upload-loan"
+                  type="file"
+                  style={{ display: "none" }}
+                  onChange={handleFileUpload}
+                />
               </div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
-                Hỗ trợ định dạng PDF, Word, Excel, hình ảnh. Dung lượng tối đa 5MB.
-              </div>
+
+              {attachmentError && <p role="alert" style={{color:"#dc2626",fontSize:13}}>{attachmentError}</p>}
+              {attachments.length > 0 && (
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+                  <div style={{ background: "#f8fafc", padding: "8px 12px", borderBottom: "1px solid #e2e8f0", fontSize: 12, fontWeight: 600, color: "#475569" }}>
+                    Tài liệu đã đính kèm ({attachments.length})
+                  </div>
+                  {attachments.map((att, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "8px 12px",
+                        borderBottom: idx < attachments.length - 1 ? "1px solid #f1f5f9" : "none",
+                        fontSize: 13,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: "#059669", fontWeight: 600 }}>📄</span>
+                        <span style={{ fontWeight: 500, color: "#1e293b" }}>{att.name}</span>
+                        <span style={{ fontSize: 11, color: "#64748b" }}>({att.size})</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{att.time}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                          style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer" }}
+                          title="Xóa đính kèm"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer (Image 1) */}
-        <footer style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 20px" }}>
+        {/* Footer */}
+        <footer style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 20px", position: "relative" }}>
           <button
             type="button"
             className="misa-invoice-btn-cancel"
@@ -610,15 +1098,64 @@ export function LoanContractModal({
           >
             Cất
           </button>
-          <button
-            type="button"
-            className="misa-invoice-btn-submit"
-            onClick={() => handleSave(true)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <span>Cất và Đóng</span>
-            <ChevronDown size={14} />
-          </button>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              type="button"
+              className="misa-invoice-btn-submit"
+              onClick={() => handleSave(true)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <span>Cất và Đóng</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSaveDropdown(!showSaveDropdown);
+                }}
+                style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderLeft: "1px solid rgba(255,255,255,0.3)" }}
+              >
+                <ChevronDown size={14} />
+              </span>
+            </button>
+            {showSaveDropdown && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "100%",
+                  right: 0,
+                  marginBottom: 4,
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 6,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  minWidth: 150,
+                  zIndex: 100,
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    color: "#374151",
+                  }}
+                  onClick={() => {
+                    setShowSaveDropdown(false);
+                    handleSave(false);
+                    // reset form for new entry
+                    setContractCode("KUCV00002");
+                  }}
+                >
+                  Cất và Thêm
+                </button>
+              </div>
+            )}
+          </div>
         </footer>
       </div>
     </div>
@@ -641,9 +1178,9 @@ export function BorrowingContractModal({
 }: BorrowingContractModalProps) {
   // Master fields
   const [contractCode, setContractCode] = useState("KUDV00001");
-  const [lender, setLender] = useState("");
-  const [creditContract, setCreditContract] = useState("");
-  const [purpose, setPurpose] = useState("");
+  const [lender, setLender] = useState("Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)");
+  const [creditContract, setCreditContract] = useState("HĐTD-BIDV-2026/01 - Cấp hạn mức tín dụng BIDV");
+  const [purpose, setPurpose] = useState("Bổ sung vốn lưu động thanh toán tiền hàng cho nhà cung cấp");
   const [debitAccount, setDebitAccount] = useState("3411");
   const [creditInterestAccount, setCreditInterestAccount] = useState("635");
 
@@ -652,24 +1189,91 @@ export function BorrowingContractModal({
     "disbursement" | "interest" | "repayment" | "stats" | "attachment"
   >("disbursement");
 
-  // Tab: Thông tin giải ngân
-  const [loanAmount, setLoanAmount] = useState(0);
-  const [loanTerm, setLoanTerm] = useState(0);
+  // Tab 1: Thông tin giải ngân
+  const [loanAmount, setLoanAmount] = useState(1200000000);
+  const [loanTerm, setLoanTerm] = useState(6);
   const [termUnit, setTermUnit] = useState("Tháng");
-  const [disbursementDate, setDisbursementDate] = useState("29/09/2026");
-  const [dueDate, setDueDate] = useState("29/09/2026");
+  const [disbursementDate, setDisbursementDate] = useState("09/10/2026");
+  const [dueDate, setDueDate] = useState("09/04/2027");
   const [disbursementMethod, setDisbursementMethod] = useState("Chuyển khoản vào tài khoản DN");
-  const [beneficiaryAccount, setBeneficiaryAccount] = useState("");
-  const [bankName, setBankName] = useState("");
+  const [beneficiaryAccount, setBeneficiaryAccount] = useState("1028475929 - VCB");
+  const [bankName, setBankName] = useState("Vietcombank - CN Hà Nội");
 
-  // Tab: Lãi suất
-  const [interestRate, setInterestRate] = useState(7.8);
-  const [overdueRate, setOverdueRate] = useState(150);
-  const [interestCalcMethod, setInterestCalcMethod] = useState("Theo dư nợ thực tế");
+  // Tab 2: Lãi suất
+  const [interestBasis, setInterestBasis] = useState("Lãi suất trên dư nợ giảm dần");
+  const [yearDaysBasis, setYearDaysBasis] = useState("365");
+  const [hasAdjustment, setHasAdjustment] = useState(true);
+  const [interestRows, setInterestRows] = useState([
+    { id: 1, rate: 7.5, overdueRate: 150, effectiveDate: "09/10/2026", note: "Lãi suất ưu đãi quý 4" },
+  ]);
 
-  // Tab: Hình thức trả nợ
+  // Tab 3: Hình thức trả nợ
   const [principalPeriod, setPrincipalPeriod] = useState("Hàng tháng");
   const [interestPeriod, setInterestPeriod] = useState("Hàng tháng");
+  const [repaymentMethod, setRepaymentMethod] = useState("Tiền gửi");
+  const [firstPrincipalDate, setFirstPrincipalDate] = useState("09/11/2026");
+  const [firstInterestDate, setFirstInterestDate] = useState("09/11/2026");
+  const [repaymentAccount, setRepaymentAccount] = useState("1028475929 - VCB");
+  const [repaymentBankName, setRepaymentBankName] = useState("Vietcombank - CN Hà Nội");
+
+  // Tab 4: Thống kê khác
+  const [project, setProject] = useState("");
+  const [purchaseOrder, setPurchaseOrder] = useState("");
+  const [purchaseContract, setPurchaseContract] = useState("");
+  const [expenseItem, setExpenseItem] = useState("");
+  const [cashFlowItem, setCashFlowItem] = useState("");
+  const [department, setDepartment] = useState("Phòng Kế toán - Tài chính");
+
+  // Tab 5: Đính kèm
+  const [quickParty,setQuickParty]=useState(false);
+  const [attachmentError, setAttachmentError] = useState("");
+  const [attachments, setAttachments] = useState<{ name: string; size: string; time: string }[]>([
+    { name: "KHE_UOC_DI_VAY_KUDV00001.pdf", size: "2.1 MB", time: "09/10/2026 11:20" },
+  ]);
+
+  // Dropdown menu for Cất và Đóng
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false);
+
+  const handleAddInterestRow = () => {
+    setInterestRows((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        rate: 8.2,
+        overdueRate: 150,
+        effectiveDate: "09/01/2027",
+        note: "Điều chỉnh theo lãi suất thị trường",
+      },
+    ]);
+  };
+
+  const handleClearInterestRows = () => {
+    setInterestRows([]);
+  };
+
+  const handleRemoveInterestRow = (id: number) => {
+    setInterestRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const f = e.target.files[0];
+      e.target.value = "";
+      if (f.size > 5 * 1024 * 1024) {
+        setAttachmentError("Dung lượng tệp không được vượt quá 5 MB.");
+        return;
+      }
+      setAttachmentError("");
+      setAttachments((prev) => [
+        ...prev,
+        {
+          name: f.name,
+          size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+          time: new Date().toLocaleString("vi-VN"),
+        },
+      ]);
+    }
+  };
 
   const handleSave = (andClose = false) => {
     onSubmit({
@@ -688,28 +1292,42 @@ export function BorrowingContractModal({
       disbursementMethod,
       beneficiaryAccount,
       bankName,
-      interestRate,
-      overdueRate,
-      interestCalcMethod,
+      interestBasis,
+      yearDaysBasis,
+      hasAdjustment,
+      interestRows,
       principalPeriod,
       interestPeriod,
+      repaymentMethod,
+      firstPrincipalDate,
+      firstInterestDate,
+      repaymentAccount,
+      repaymentBankName,
+      project,
+      purchaseOrder,
+      purchaseContract,
+      expenseItem,
+      cashFlowItem,
+      department,
+      attachments,
     });
     if (andClose) onClose();
   };
 
   return (
     <div className="misa-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="misa-credit-modal-window">
-        {/* Header (Image 2) */}
-        <header className="misa-credit-modal-header">
+      <div className="misa-credit-modal-window" style={{ maxWidth: 960, width: "95vw" }}>
+        {/* Header */}
+        <header className="misa-credit-modal-header" style={{ borderBottom: "1px solid #e2e8f0" }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
-            Khế ước đi vay
+            Khế ước đi vay {contractCode}
           </h2>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               type="button"
               className="misa-invoice-help-link"
               onClick={() => alert("Hướng dẫn lập Khế ước đi vay")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "#0284c7", fontSize: 12, cursor: "pointer" }}
             >
               <HelpCircle size={15} />
               <span>Hướng dẫn sử dụng</span>
@@ -719,7 +1337,7 @@ export function BorrowingContractModal({
               type="button"
               className="misa-invoice-circle-btn"
               onClick={onClose}
-              title="Đóng"
+              title="Đóng (ESC)"
             >
               <X size={18} />
             </button>
@@ -729,7 +1347,7 @@ export function BorrowingContractModal({
         {/* Master Form Area */}
         <div style={{ padding: "14px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
           {/* Row 1 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16, marginBottom: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                 Số khế ước đi vay <span style={{ color: "#ef4444" }}>*</span>
@@ -746,6 +1364,7 @@ export function BorrowingContractModal({
                   borderRadius: 4,
                   border: "1px solid #10b981",
                   fontSize: 13,
+                  fontWeight: 600,
                   outline: "none",
                   background: "#ffffff",
                 }}
@@ -769,15 +1388,16 @@ export function BorrowingContractModal({
                     background: "#ffffff",
                   }}
                 >
-                  <option value="">&nbsp;</option>
-                  <option value="Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)">Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)</option>
-                  <option value="Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)">Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)</option>
-                  <option value="Ngân hàng TMCP Quân đội (MBBank)">Ngân hàng TMCP Quân đội (MBBank)</option>
-                  <option value="Ngân hàng TMCP Công thương Việt Nam (VietinBank)">Ngân hàng TMCP Công thương Việt Nam (VietinBank)</option>
+                  <option value="">-- Chọn đối tượng cho vay --</option>
+                  <option value="Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)">BIDV - Chi nhánh Ba Đình</option>
+                  <option value="Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)">Vietcombank - Chi nhánh Hà Nội</option>
+                  <option value="Ngân hàng TMCP Quân đội (MBBank)">MB Bank - Chi nhánh Thăng Long</option>
+                  <option value="Ngân hàng TMCP Công thương Việt Nam (VietinBank)">VietinBank - Chi nhánh Đống Đa</option>
                 </select>
                 <button
                   type="button"
                   title="Thêm đối tượng cho vay"
+                  onClick={() => setQuickParty(true)}
                   style={{
                     width: 32,
                     height: 32,
@@ -797,7 +1417,7 @@ export function BorrowingContractModal({
           </div>
 
           {/* Row 2 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 16, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16, marginBottom: 12 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                 Hợp đồng tín dụng
@@ -816,7 +1436,7 @@ export function BorrowingContractModal({
                     background: "#ffffff",
                   }}
                 >
-                  <option value="">&nbsp;</option>
+                  <option value="">-- Chọn hợp đồng tín dụng --</option>
                   <option value="HĐTD-BIDV-2026/01 - Cấp hạn mức tín dụng BIDV">HĐTD-BIDV-2026/01 - Cấp hạn mức tín dụng BIDV</option>
                   <option value="HĐTD-VCB-2026/03 - Hợp đồng vay trung dài hạn VCB">HĐTD-VCB-2026/03 - Hợp đồng vay trung dài hạn VCB</option>
                 </select>
@@ -961,89 +1581,75 @@ export function BorrowingContractModal({
         </div>
 
         {/* Tab Body Content */}
-        <div style={{ flex: 1, padding: "18px 20px", overflowY: "auto", background: "#ffffff" }}>
+        <div style={{ flex: 1, padding: "18px 20px", overflowY: "auto", background: "#ffffff", minHeight: 280 }}>
+          {/* TAB 1: THÔNG TIN GIẢI NGÂN (Hình ảnh 2) */}
           {activeTab === "disbursement" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {/* Row 1: Giá trị khoản vay */}
-              <div style={{ width: 280 }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Giá trị khoản vay <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={loanAmount === 0 ? "0" : formatVND(loanAmount)}
-                  onChange={(e) => setLoanAmount(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
-                  style={{
-                    width: "100%",
-                    height: 32,
-                    padding: "0 10px",
-                    borderRadius: 4,
-                    border: "1px solid #d1d5db",
-                    fontSize: 13,
-                    textAlign: "right",
-                    fontWeight: 600,
-                  }}
-                />
-              </div>
-
-              {/* Row 2: Thời hạn vay */}
-              <div style={{ width: 280 }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Thời hạn vay <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Row 1: Giá trị khoản vay & Thời hạn */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Giá trị khoản vay <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
                   <input
-                    type="number"
-                    value={loanTerm}
-                    onChange={(e) => setLoanTerm(parseInt(e.target.value || "0", 10))}
-                    style={{ width: 90, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, textAlign: "right" }}
+                    type="text"
+                    value={loanAmount === 0 ? "0" : formatVND(loanAmount)}
+                    onChange={(e) => setLoanAmount(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      padding: "0 10px",
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                      textAlign: "right",
+                      fontWeight: 600,
+                      color: "#059669",
+                    }}
                   />
-                  <select
-                    value={termUnit}
-                    onChange={(e) => setTermUnit(e.target.value)}
-                    style={{ flex: 1, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                  >
-                    <option value="Tháng">Tháng</option>
-                    <option value="Năm">Năm</option>
-                    <option value="Ngày">Ngày</option>
-                  </select>
                 </div>
-              </div>
-
-              {/* Row 3: Ngày giải ngân, Ngày đáo hạn */}
-              <div style={{ display: "flex", gap: 14 }}>
-                <div style={{ width: 160 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Thời hạn vay <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      type="number"
+                      value={loanTerm}
+                      onChange={(e) => setLoanTerm(parseInt(e.target.value || "0", 10))}
+                      style={{ width: 75, height: 32, padding: "0 8px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, textAlign: "right" }}
+                    />
+                    <select
+                      value={termUnit}
+                      onChange={(e) => setTermUnit(e.target.value)}
+                      style={{ flex: 1, height: 32, padding: "0 8px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                    >
+                      <option value="Tháng">Tháng</option>
+                      <option value="Năm">Năm</option>
+                      <option value="Ngày">Ngày</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
                   <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                     Ngày giải ngân <span style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      value={disbursementDate}
-                      onChange={(e) => setDisbursementDate(e.target.value)}
-                      style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                    />
-                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <VoucherDateField value={disbursementDate} onChange={setDisbursementDate} label="Ngày giải ngân"/>
                   </div>
                 </div>
-                <div style={{ width: 160 }}>
+                <div>
                   <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                     Ngày đáo hạn <span style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                    />
-                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <VoucherDateField value={dueDate} onChange={setDueDate} label="Ngày đáo hạn"/>
                   </div>
                 </div>
               </div>
 
-              {/* Row 4: Phương thức giải ngân, TK thụ hưởng, Tên ngân hàng */}
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1.5fr", gap: 14 }}>
+              {/* Row 2: Phương thức giải ngân, TK thụ hưởng, Tên ngân hàng */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.2fr 1.4fr", gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
                     Phương thức giải ngân <span style={{ color: "#ef4444" }}>*</span>
@@ -1054,8 +1660,8 @@ export function BorrowingContractModal({
                     style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                   >
                     <option value="Chuyển khoản vào tài khoản DN">Chuyển khoản vào tài khoản DN</option>
-                    <option value="Chuyển khoản thanh toán thẳng cho nhà cung cấp">Chuyển khoản thanh toán thẳng cho nhà cung cấp</option>
-                    <option value="Rút tiền mặt">Rút tiền mặt</option>
+                    <option value="Chuyển khoản cho bên thứ ba">Chuyển khoản cho bên thứ ba</option>
+                    <option value="Tiền mặt">Tiền mặt</option>
                   </select>
                 </div>
                 <div>
@@ -1066,15 +1672,15 @@ export function BorrowingContractModal({
                     value={beneficiaryAccount}
                     onChange={(e) => {
                       setBeneficiaryAccount(e.target.value);
-                      if (e.target.value.includes("BIDV")) setBankName("BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN");
-                      else if (e.target.value.includes("VCB")) setBankName("Vietcombank - Ngân hàng TMCP Ngoại thương VN");
+                      if (e.target.value.includes("VCB")) setBankName("Vietcombank - CN Hà Nội");
+                      else if (e.target.value.includes("BIDV")) setBankName("BIDV - CN Ba Đình");
                       else setBankName("");
                     }}
                     style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                   >
-                    <option value="">&nbsp;</option>
-                    <option value="2151000849201 - BIDV">2151000849201 - BIDV</option>
+                    <option value="">-- Chọn tài khoản --</option>
                     <option value="1028475929 - VCB">1028475929 - VCB</option>
+                    <option value="2151000849201 - BIDV">2151000849201 - BIDV</option>
                   </select>
                 </div>
                 <div>
@@ -1085,7 +1691,7 @@ export function BorrowingContractModal({
                     type="text"
                     value={bankName}
                     readOnly
-                    placeholder="Tên ngân hàng thụ hưởng"
+                    placeholder="Tên ngân hàng tài khoản DN"
                     style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#475569" }}
                   />
                 </div>
@@ -1093,120 +1699,438 @@ export function BorrowingContractModal({
             </div>
           )}
 
+          {/* TAB 2: LÃI SUẤT */}
           {activeTab === "interest" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Lãi suất vay (%/năm)
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Radio options */}
+              <div style={{ display: "flex", alignItems: "center", gap: 24, padding: "8px 12px", background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="radio"
+                    name="borrowInterestBasis"
+                    checked={interestBasis === "Lãi suất trên dư nợ giảm dần"}
+                    onChange={() => setInterestBasis("Lãi suất trên dư nợ giảm dần")}
+                  />
+                  <span>Lãi suất trên dư nợ giảm dần</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={interestRate}
-                  onChange={(e) => setInterestRate(parseFloat(e.target.value || "0"))}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="radio"
+                    name="borrowInterestBasis"
+                    checked={interestBasis === "Lãi suất trên dư nợ gốc"}
+                    onChange={() => setInterestBasis("Lãi suất trên dư nợ gốc")}
+                  />
+                  <span>Lãi suất trên dư nợ gốc</span>
+                </label>
+                <div style={{ width: 1, height: 18, background: "#cbd5e1" }} />
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="radio"
+                    name="borrowYearDaysBasis"
+                    checked={yearDaysBasis === "365"}
+                    onChange={() => setYearDaysBasis("365")}
+                  />
+                  <span>Lãi năm / 365 ngày</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#374151" }}>
+                  <input
+                    type="checkbox"
+                    checked={hasAdjustment}
+                    onChange={(e) => setHasAdjustment(e.target.checked)}
+                  />
+                  <span>Có điều chỉnh lãi suất</span>
+                </label>
               </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Lãi suất quá hạn (% lãi trong hạn)
-                </label>
-                <input
-                  type="number"
-                  value={overdueRate}
-                  onChange={(e) => setOverdueRate(parseFloat(e.target.value || "0"))}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                />
+
+              {/* Grid Header Buttons */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
+                  Bảng mức lãi suất đi vay
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={handleAddInterestRow}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      border: "1px solid #10b981",
+                      background: "#ecfdf5",
+                      color: "#059669",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={14} />
+                    <span>Thêm dòng</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearInterestRows}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                      color: "#ef4444",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    <span>Xóa hết dòng</span>
+                  </button>
+                </div>
               </div>
-              <div style={{ gridColumn: "span 2" }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Hình thức tính lãi
-                </label>
-                <select
-                  value={interestCalcMethod}
-                  onChange={(e) => setInterestCalcMethod(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                >
-                  <option value="Theo dư nợ thực tế">Theo dư nợ thực tế</option>
-                  <option value="Theo dư nợ ban đầu (Lãi cố định)">Theo dư nợ ban đầu (Lãi cố định)</option>
-                </select>
+
+              {/* Grid Table */}
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", textAlign: "left" }}>
+                      <th style={{ width: 40, padding: "8px 10px", textAlign: "center" }}>#</th>
+                      <th style={{ width: 140, padding: "8px 10px" }}>Lãi suất %/năm</th>
+                      <th style={{ width: 160, padding: "8px 10px" }}>Lãi suất quá hạn %</th>
+                      <th style={{ width: 140, padding: "8px 10px" }}>Hiệu lực từ ngày</th>
+                      <th style={{ padding: "8px 10px" }}>Ghi chú</th>
+                      <th style={{ width: 50, padding: "8px 10px", textAlign: "center" }}>Xóa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {interestRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>
+                          Chưa có thông tin lãi suất. Bấm "Thêm dòng" để thiết lập.
+                        </td>
+                      </tr>
+                    ) : (
+                      interestRows.map((r, idx) => (
+                        <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                          <td style={{ padding: "6px 10px", textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={r.rate}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value || "0");
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, rate: val } : item)));
+                              }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right" }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="number"
+                              value={r.overdueRate}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value || "0");
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, overdueRate: val } : item)));
+                              }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right" }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="text"
+                              value={r.effectiveDate}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, effectiveDate: val } : item)));
+                              }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px" }}>
+                            <input
+                              type="text"
+                              value={r.note}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setInterestRows((prev) => prev.map((item) => (item.id === r.id ? { ...item, note: val } : item)));
+                              }}
+                              placeholder="Nhập ghi chú..."
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 10px", textAlign: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInterestRow(r.id)}
+                              style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                              title="Xóa dòng"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
+          {/* TAB 3: HÌNH THỨC TRẢ NỢ */}
           {activeTab === "repayment" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Kỳ hạn trả nợ gốc
-                </label>
-                <select
-                  value={principalPeriod}
-                  onChange={(e) => setPrincipalPeriod(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                >
-                  <option value="Hàng tháng">Hàng tháng</option>
-                  <option value="Hàng quý">Hàng quý</option>
-                  <option value="Cuối kỳ">Cuối kỳ</option>
-                </select>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Trả gốc <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={principalPeriod}
+                    onChange={(e) => setPrincipalPeriod(e.target.value)}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="Hàng tháng">Hàng tháng</option>
+                    <option value="Hàng quý">Hàng quý</option>
+                    <option value="Cuối kỳ">Cuối kỳ</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Trả lãi <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={interestPeriod}
+                    onChange={(e) => setInterestPeriod(e.target.value)}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="Hàng tháng">Hàng tháng</option>
+                    <option value="Hàng quý">Hàng quý</option>
+                    <option value="Cùng kỳ trả gốc">Cùng kỳ trả gốc</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Kỳ hạn trả lãi
-                </label>
-                <select
-                  value={interestPeriod}
-                  onChange={(e) => setInterestPeriod(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
-                >
-                  <option value="Hàng tháng">Hàng tháng</option>
-                  <option value="Hàng quý">Hàng quý</option>
-                  <option value="Cùng kỳ trả gốc">Cùng kỳ trả gốc</option>
-                </select>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Phương thức trả nợ <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={repaymentMethod}
+                    onChange={(e) => setRepaymentMethod(e.target.value)}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="Tiền gửi">Tiền gửi (Ủy nhiệm chi)</option>
+                    <option value="Tiền mặt">Tiền mặt</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Ngày trả gốc đầu tiên <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <VoucherDateField value={firstPrincipalDate} onChange={setFirstPrincipalDate} label="Ngày trả nợ gốc đầu tiên"/>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Ngày trả lãi đầu tiên <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <VoucherDateField value={firstInterestDate} onChange={setFirstInterestDate} label="Ngày trả lãi đầu tiên"/>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Chuyển vào tài khoản
+                  </label>
+                  <select
+                    value={repaymentAccount}
+                    onChange={(e) => {
+                      setRepaymentAccount(e.target.value);
+                      if (e.target.value.includes("VCB")) setRepaymentBankName("Vietcombank - CN Hà Nội");
+                      else if (e.target.value.includes("BIDV")) setRepaymentBankName("BIDV - CN Ba Đình");
+                    }}
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                  >
+                    <option value="1028475929 - VCB">1028475929 - VCB</option>
+                    <option value="2151000849201 - BIDV">2151000849201 - BIDV</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                    Tên ngân hàng
+                  </label>
+                  <input
+                    type="text"
+                    value={repaymentBankName}
+                    readOnly
+                    style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #e2e8f0", background: "#f8fafc", fontSize: 13, color: "#475569" }}
+                  />
+                </div>
               </div>
             </div>
           )}
 
+          {/* TAB 4: THỐNG KÊ KHÁC */}
           {activeTab === "stats" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 720 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Khoản mục chi phí lãi vay
+                  Công trình
                 </label>
                 <input
                   type="text"
-                  placeholder="Chi phí tài chính"
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  placeholder="Chọn hoặc nhập mã công trình..."
                   style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                 />
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
-                  Dự án / Công trình
+                  Đơn mua hàng
                 </label>
                 <input
                   type="text"
-                  placeholder="Chọn dự án..."
+                  value={purchaseOrder}
+                  onChange={(e) => setPurchaseOrder(e.target.value)}
+                  placeholder="Chọn đơn mua hàng liên quan..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Hợp đồng mua
+                </label>
+                <input
+                  type="text"
+                  value={purchaseContract}
+                  onChange={(e) => setPurchaseContract(e.target.value)}
+                  placeholder="Chọn hợp đồng mua..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Khoản mục chi phí
+                </label>
+                <input
+                  type="text"
+                  value={expenseItem}
+                  onChange={(e) => setExpenseItem(e.target.value)}
+                  placeholder="Chọn khoản mục chi phí..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Mục thu/chi
+                </label>
+                <input
+                  type="text"
+                  value={cashFlowItem}
+                  onChange={(e) => setCashFlowItem(e.target.value)}
+                  placeholder="Chọn mục thu chi..."
+                  style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 500, color: "#374151", display: "block", marginBottom: 4 }}>
+                  Đơn vị / Phòng ban
+                </label>
+                <input
+                  type="text"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Phòng Kế toán - Tài chính"
                   style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13 }}
                 />
               </div>
             </div>
           )}
 
+          {/* TAB 5: ĐÍNH KÈM */}
+          {quickParty&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"white",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickParty(false)}>Đóng thêm đối tượng</button><SupplierModal onClose={()=>setQuickParty(false)} onSubmit={data=>{setLender(data.name||"");setQuickParty(false);}}/></div>}
           {activeTab === "attachment" && (
-            <div style={{ border: "1px solid #cbd5e1", borderRadius: 8, padding: 32, textAlign: "center", background: "#f8fafc" }}>
-              <Upload size={36} style={{ color: "#00b06b", margin: "0 auto 10px auto" }} />
-              <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
-                Kéo thả tài liệu khế ước đi vay hoặc <span style={{ color: "#0284c7", textDecoration: "underline", cursor: "pointer" }}>chọn tệp từ máy tính</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div
+                style={{
+                  border: "2px dashed #cbd5e1",
+                  borderRadius: 8,
+                  padding: "24px 20px",
+                  textAlign: "center",
+                  background: "#f8fafc",
+                  cursor: "pointer",
+                }}
+                onClick={() => document.getElementById("file-upload-borrow")?.click()}
+              >
+                <Upload size={32} style={{ color: "#059669", margin: "0 auto 8px auto" }} />
+                <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
+                  Kéo thả tài liệu khế ước đi vay hoặc <span style={{ color: "#0284c7", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
+                </div>
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+                  Hỗ trợ định dạng PDF, Word, Excel, hình ảnh. Dung lượng tối đa 5MB.
+                </div>
+                <input
+                  id="file-upload-borrow"
+                  type="file"
+                  style={{ display: "none" }}
+                  onChange={handleFileUpload}
+                />
               </div>
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
-                Hỗ trợ định dạng PDF, Word, Excel, hình ảnh. Dung lượng tối đa 5MB.
-              </div>
+
+              {attachmentError && <p role="alert" style={{color:"#dc2626",fontSize:13}}>{attachmentError}</p>}
+              {attachments.length > 0 && (
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+                  <div style={{ background: "#f8fafc", padding: "8px 12px", borderBottom: "1px solid #e2e8f0", fontSize: 12, fontWeight: 600, color: "#475569" }}>
+                    Tài liệu đã đính kèm ({attachments.length})
+                  </div>
+                  {attachments.map((att, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "8px 12px",
+                        borderBottom: idx < attachments.length - 1 ? "1px solid #f1f5f9" : "none",
+                        fontSize: 13,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: "#059669", fontWeight: 600 }}>📄</span>
+                        <span style={{ fontWeight: 500, color: "#1e293b" }}>{att.name}</span>
+                        <span style={{ fontSize: 11, color: "#64748b" }}>({att.size})</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{att.time}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                          style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer" }}
+                          title="Xóa đính kèm"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer (Image 2) */}
-        <footer style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 20px" }}>
+        {/* Footer */}
+        <footer style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 20px", position: "relative" }}>
           <button
             type="button"
             className="misa-invoice-btn-cancel"
@@ -1221,15 +2145,63 @@ export function BorrowingContractModal({
           >
             Cất
           </button>
-          <button
-            type="button"
-            className="misa-invoice-btn-submit"
-            onClick={() => handleSave(true)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <span>Cất và Đóng</span>
-            <ChevronDown size={14} />
-          </button>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              type="button"
+              className="misa-invoice-btn-submit"
+              onClick={() => handleSave(true)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <span>Cất và Đóng</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSaveDropdown(!showSaveDropdown);
+                }}
+                style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderLeft: "1px solid rgba(255,255,255,0.3)" }}
+              >
+                <ChevronDown size={14} />
+              </span>
+            </button>
+            {showSaveDropdown && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "100%",
+                  right: 0,
+                  marginBottom: 4,
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 6,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  minWidth: 150,
+                  zIndex: 100,
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    color: "#374151",
+                  }}
+                  onClick={() => {
+                    setShowSaveDropdown(false);
+                    handleSave(false);
+                    setContractCode("KUDV00002");
+                  }}
+                >
+                  Cất và Thêm
+                </button>
+              </div>
+            )}
+          </div>
         </footer>
       </div>
     </div>
@@ -1365,13 +2337,7 @@ export function CreditContractModal({
                 Ngày ký <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  value={signDate}
-                  onChange={(e) => setSignDate(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, background: "#ffffff" }}
-                />
-                <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                <VoucherDateField value={signDate} onChange={setSignDate} label="Ngày ký"/>
               </div>
             </div>
             <div>
@@ -1445,14 +2411,7 @@ export function CreditContractModal({
                 Thời hạn từ <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  placeholder="DD/MM/YYYY"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, background: "#ffffff" }}
-                />
-                <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                <VoucherDateField value={startDate} onChange={setStartDate} label="Thời hạn từ"/>
               </div>
             </div>
             <div>
@@ -1460,14 +2419,7 @@ export function CreditContractModal({
                 Đến <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  placeholder="DD/MM/YYYY"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #d1d5db", fontSize: 13, background: "#ffffff" }}
-                />
-                <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                <VoucherDateField value={endDate} onChange={setEndDate} label="Thời hạn đến"/>
               </div>
             </div>
             <div>

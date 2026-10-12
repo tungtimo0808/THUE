@@ -4,14 +4,16 @@ import "./misa-payment-workflow.css";
 export default function MisaPaymentWorkflow({
   children,
   notify,
+  variant = "payment",
 }: {
   children: ReactNode;
+  variant?: "payment" | "settlement";
   notify: (text: string) => void;
 }) {
   const [view, setView] = useState("workflow");
   return (
     <div className="pw-workspace">
-      <nav aria-label="Đề nghị chi tiền">
+      <nav aria-label={variant === "settlement" ? "Đề nghị quyết toán tạm ứng" : "Đề nghị chi tiền"}>
         <button
           className={view === "workflow" ? "active" : ""}
           onClick={() => setView("workflow")}
@@ -31,7 +33,7 @@ export default function MisaPaymentWorkflow({
         <>
           <header>
             <div>
-              <h1>LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA ĐỀ NGHỊ CHI TIỀN</h1>
+              <h1>LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA {variant === "settlement" ? "ĐỀ NGHỊ QUYẾT TOÁN TẠM ỨNG" : "ĐỀ NGHỊ CHI TIỀN"}</h1>
               <p>
                 Hệ thống liên thông thông suốt giữa AMIS Quy trình và AMIS Kế
                 toán
@@ -49,9 +51,9 @@ export default function MisaPaymentWorkflow({
             <article>
               <span>BƯỚC 1</span>
               <small>AMIS Quy trình</small>
-              <h2>Nhân viên lập đề nghị chi tiền trên AMIS Quy trình</h2>
-              <p>Nhân viên chủ động tạo các đề nghị phát sinh như:</p>
-              <ul>
+              <h2>Nhân viên lập {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền"} trên AMIS Quy trình</h2>
+              <p>{variant === "settlement" ? "Sau khi tổng hợp toàn bộ hóa đơn, chứng từ để quyết toán tạm ứng, nhân viên chủ động tạo đề nghị quyết toán tạm ứng." : "Nhân viên chủ động tạo các đề nghị phát sinh như:"}</p>
+              <ul hidden={variant === "settlement"}>
                 {[
                   "Đề nghị trả tiền nhà cung cấp",
                   "Đề nghị tạm ứng nhân viên",
@@ -80,7 +82,7 @@ export default function MisaPaymentWorkflow({
               <small>AMIS Kế toán</small>
               <h2>Đồng bộ đề nghị về AMIS Kế toán</h2>
               <p>
-                Kế toán kế thừa thông tin từ đề nghị chi đã duyệt để lập chứng
+                Kế toán kế thừa thông tin từ {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi"} đã duyệt để lập chứng
                 từ hạch toán nhanh chóng, không cần nhập lại thủ công.
               </p>
               <footer>Kế thừa dữ liệu &amp; tự động sinh hạch toán</footer>

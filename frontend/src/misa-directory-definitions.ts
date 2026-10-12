@@ -1,5 +1,5 @@
 export interface DirectoryTabDefinition {
-  fields: { label: string; kind: string }[];
+  fields: { label: string; kind: string; options?: string[] }[];
   headers: string[][];
   checks: string[];
 }
@@ -7,7 +7,7 @@ export interface DirectoryDefinition {
   name: string;
   group: string;
   headers: string[];
-  fields: { label: string; kind: string }[];
+  fields: { label: string; kind: string; options?: string[] }[];
   tabs: string[];
   tabData: Record<string, DirectoryTabDefinition>;
   checks: string[];
@@ -300,10 +300,12 @@ export const MISA_DIRECTORY_DEFINITIONS: DirectoryDefinition[] = [
       {
         kind: "combo",
         label: "Đơn vị",
+        options: ["Trụ sở chính","Phòng Kế toán - Tài chính","Phòng Kinh doanh & Dự án","Phòng Marketing","Phòng Kỹ thuật & Công nghệ"],
       },
       {
         kind: "combo",
         label: "Chức danh",
+        options: ["Giám đốc","Giám đốc điều hành","Kế toán","Kế toán trưởng","Kỹ sư phần mềm","Nhân viên chăm sóc khách hàng","Nhân viên hành chính văn phòng","Nhân viên kiểm soát chất lượng","Nhân viên kinh doanh","Nhân viên Marketing","Nhân viên mua hàng","Quản lý dự án","Tổng giám đốc","Trưởng phòng Nhân sự","Trưởng phòng Tài chính/Kế toán"],
       },
       {
         kind: "text",
@@ -332,9 +334,14 @@ export const MISA_DIRECTORY_DEFINITIONS: DirectoryDefinition[] = [
       "Tài khoản ngân hàng",
       "Thông tin người phụ thuộcMới",
     ],
-    tabData: {},
+    tabData: {
+      "Thông tin liên hệ": {fields:["Địa chỉ","Email","Điện thoại di động","ĐT cố định","Email tài khoản","Số điện thoại tài khoản"].map(label=>({label,kind:"text"})),headers:[],checks:[]},
+      "Thông tin tiền lương": {fields:["Lương thỏa thuận","Hệ số lương","Lương đóng bảo hiểm","Mã số thuế","Loại hợp đồng","Số người phụ thuộc"].map(label=>({label,kind:"text",...(label==="Loại hợp đồng"?{options:["Cư trú và có HĐLĐ từ 3 tháng trở lên","Không cư trú","Cư trú và không ký HĐLĐ/HĐLĐ dưới 3 tháng"]}:{})})),headers:[],checks:[]},
+      "Tài khoản ngân hàng": {fields:[],headers:[["Số tài khoản","Tên ngân hàng","Chi nhánh","Tỉnh/TP của ngân hàng"]],checks:[]},
+      "Thông tin người phụ thuộcMới": {fields:[],headers:[["Họ và tên","Quan hệ","Ngày sinh","Mã số thuế","Loại giấy tờ","Số giấy tờ","Bắt đầu tính giảm trừ","Kết thúc tính giảm trừ"]],checks:[]},
+    },
     checks: ["Là khách hàng", "Là nhà cung cấp"],
-    radios: [],
+    radios: ["Nam","Nữ"],
     canAdd: true,
     formObserved: true,
   },
@@ -707,13 +714,13 @@ export const MISA_DIRECTORY_DEFINITIONS: DirectoryDefinition[] = [
       "Trạng thái",
       "Chức năng",
     ],
-    fields: [],
+    fields: ["Số tài khoản","Tên ngân hàng","Tỉnh/Thành phố","Tên chi nhánh ngân hàng","Địa chỉ chi nhánh","Chủ tài khoản","Diễn giải","Trạng thái"].map(label=>({label,kind:label==="Diễn giải"?"textarea":"text"})),
     tabs: [],
     tabData: {},
     checks: [],
     radios: [],
     canAdd: true,
-    formObserved: false,
+    formObserved: true,
   },
   {
     name: "Cơ cấu tổ chức",

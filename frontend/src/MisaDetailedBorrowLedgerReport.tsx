@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from "react";
+import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
+import {cashDateValue} from "./cash-date";
+import { useState, useMemo } from "react";
 import {
   ChevronLeft,
   Printer,
-  Download,
   Settings,
   HelpCircle,
   X,
   Search,
-  RefreshCw,
   Mail,
   MessageCircle,
   ChevronDown,
@@ -65,24 +65,26 @@ export default function MisaDetailedBorrowLedgerReport({
   notify,
 }: MisaDetailedBorrowLedgerReportProps) {
   // Drawer Parameters State matching Image 3
+  const [paramError,setParamError]=useState("");
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [toDate, setToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [viewDetailByContract, setViewDetailByContract] = useState(false);
   const [selectedAccCode, setSelectedAccCode] = useState("341");
   const [selectedPartnerName, setSelectedPartnerName] = useState("Tran Thi Huong");
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [draftViewDetail, setDraftViewDetail] = useState(false);
   const [draftAccCode, setDraftAccCode] = useState("341");
   const [draftPartnerCode, setDraftPartnerCode] = useState("NCC00001");
   const [accSearchText, setAccSearchText] = useState("");
   const [partnerSearchText, setPartnerSearchText] = useState("");
 
+  const toggleAccount=(code:string)=>setDraftAccCode(previous=>{const codes=previous?previous.split(','):[];return (codes.includes(code)?codes.filter(item=>item!==code):[...codes,code]).join(',');});
   const handleOpenDrawer = () => {
     setDraftPeriodPreset(reportPeriodPreset);
     setDraftFromDate(fromDate);
@@ -95,6 +97,7 @@ export default function MisaDetailedBorrowLedgerReport({
   };
 
   const handleApplyParams = () => {
+    if(!Number.isFinite(cashDateValue(draftFromDate))||!Number.isFinite(cashDateValue(draftToDate))||cashDateValue(draftFromDate)>cashDateValue(draftToDate)){setParamError('Chọn khoảng ngày hợp lệ theo DD/MM/YYYY.');return;}setParamError('');
     setReportPeriodPreset(draftPeriodPreset);
     setFromDate(draftFromDate);
     setToDate(draftToDate);
@@ -107,33 +110,16 @@ export default function MisaDetailedBorrowLedgerReport({
   };
 
   const handleResetParams = () => {
+    setParamError("");
     setDraftPeriodPreset("Tháng này");
-    setDraftFromDate("01/10/2026");
-    setDraftToDate("31/10/2026");
+    setDraftFromDate(cashPeriodDates("Tháng này")![0]);
+    setDraftToDate(cashPeriodDates("Tháng này")![1]);
     setDraftViewDetail(false);
     setDraftAccCode("341");
     setDraftPartnerCode("NCC00001");
   };
 
-  const handlePresetChange = (preset: string) => {
-    setDraftPeriodPreset(preset);
-    if (preset === "Hôm nay") {
-      setDraftFromDate("07/10/2026");
-      setDraftToDate("07/10/2026");
-    } else if (preset === "Tháng này") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/10/2026");
-    } else if (preset === "Tháng trước") {
-      setDraftFromDate("01/09/2026");
-      setDraftToDate("30/09/2026");
-    } else if (preset === "Quý 4") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/12/2026");
-    } else if (preset === "Năm nay") {
-      setDraftFromDate("01/01/2026");
-      setDraftToDate("31/12/2026");
-    }
-  };
+  const handlePresetChange=(preset:string)=>{setDraftPeriodPreset(preset);const range=cashPeriodDates(preset);if(range){setDraftFromDate(range[0]);setDraftToDate(range[1]);}};
 
   const filteredAccounts = useMemo(() => {
     if (!accSearchText.trim()) return DEFAULT_ACCOUNTS;
@@ -410,7 +396,7 @@ export default function MisaDetailedBorrowLedgerReport({
               (Dùng cho TK: {selectedAccCode})
             </div>
             <div style={{ fontStyle: "italic", fontSize: 13, marginTop: 4 }}>
-              Tháng 10 năm 2026
+              {cashPeriodSubtitle(fromDate,toDate)}
             </div>
           </div>
 
@@ -670,6 +656,7 @@ export default function MisaDetailedBorrowLedgerReport({
                 gap: 16,
               }}
             >
+              {paramError&&<p role="alert" style={{color:"#b91c1c"}}>{paramError}</p>}
               {/* Kỳ báo cáo - Từ ngày - Đến ngày matching Image 3 */}
               <div
                 style={{
@@ -703,12 +690,7 @@ export default function MisaDetailedBorrowLedgerReport({
                       outline: "none",
                     }}
                   >
-                    <option value="Hôm nay">Hôm nay</option>
-                    <option value="Tháng này">Tháng này</option>
-                    <option value="Tháng trước">Tháng trước</option>
-                    <option value="Quý 4">Quý 4</option>
-                    <option value="Năm nay">Năm nay</option>
-                    <option value="Tùy chọn">Tùy chọn</option>
+                    {CASH_PERIODS.map(period=><option key={period}>{period}</option>)}
                   </select>
                 </div>
 
@@ -727,7 +709,7 @@ export default function MisaDetailedBorrowLedgerReport({
                     <input
                       type="text"
                       value={draftFromDate}
-                      onChange={(e) => setDraftFromDate(e.target.value)}
+                      onChange={(e) => {setDraftFromDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,
@@ -766,7 +748,7 @@ export default function MisaDetailedBorrowLedgerReport({
                     <input
                       type="text"
                       value={draftToDate}
-                      onChange={(e) => setDraftToDate(e.target.value)}
+                      onChange={(e) => {setDraftToDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,
@@ -834,7 +816,7 @@ export default function MisaDetailedBorrowLedgerReport({
                     }}
                   >
                     <input
-                      type="checkbox"
+                      type="checkbox" aria-label="Chọn tất cả tài khoản vay" checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))} onChange={event=>setDraftAccCode(event.target.checked?filteredAccounts.map(account=>account.code).join(","):"")}
                       style={{ accentColor: "#00a862" }}
                     />
                     <span>Chọn tất cả</span>
@@ -893,8 +875,8 @@ export default function MisaDetailedBorrowLedgerReport({
                         >
                           <input
                             type="checkbox"
-                            checked={draftAccCode === "341"}
-                            onChange={() => {}}
+                            aria-label="Chọn tất cả tài khoản vay đang lọc" checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
+                            onChange={event=>setDraftAccCode(event.target.checked?filteredAccounts.map(account=>account.code).join(","):"")}
                             style={{ accentColor: "#00a862" }}
                           />
                         </th>
@@ -941,7 +923,7 @@ export default function MisaDetailedBorrowLedgerReport({
                         <tr
                           key={acc.code}
                           style={{ background: "#ffffff", cursor: "pointer" }}
-                          onClick={() => setDraftAccCode(acc.code)}
+                          onClick={() => toggleAccount(acc.code)}
                         >
                           <td
                             style={{
@@ -952,8 +934,8 @@ export default function MisaDetailedBorrowLedgerReport({
                           >
                             <input
                               type="checkbox"
-                              checked={draftAccCode === acc.code}
-                              onChange={() => setDraftAccCode(acc.code)}
+                              aria-label={`Chọn tài khoản vay ${acc.code}`} checked={draftAccCode.split(",").includes(acc.code)}
+                              onClick={event=>event.stopPropagation()} onChange={() => toggleAccount(acc.code)}
                               style={{ accentColor: "#00a862" }}
                             />
                           </td>
@@ -1316,3 +1298,4 @@ export default function MisaDetailedBorrowLedgerReport({
     </div>
   );
 }
+

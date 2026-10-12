@@ -1,4 +1,8 @@
-import React, { useState, useMemo } from "react";
+import {MISA_REPORT_ACCOUNTS} from "./misa-report-accounts";
+import "./misa-borrow-summary.css";
+import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
+import {cashDateValue} from "./cash-date";
+import { useState, useMemo } from "react";
 import {
   ChevronLeft,
   Printer,
@@ -11,10 +15,8 @@ import {
   Mail,
   ChevronDown,
   Filter,
-  Columns,
   Calendar,
   MessageCircle,
-  FileSpreadsheet,
 } from "lucide-react";
 
 export interface LendContractSummaryRow {
@@ -39,16 +41,7 @@ export interface AccountOption {
   level: number;
 }
 
-const DEFAULT_ACCOUNTS: AccountOption[] = [
-  { code: "111", name: "Tiền mặt", level: 1 },
-  { code: "112", name: "Tiền gửi không kỳ hạn", level: 1 },
-  { code: "1121", name: "TGNH BIDV", level: 2 },
-  { code: "113", name: "Tiền đang chuyển", level: 1 },
-  { code: "121", name: "Chứng khoán kinh doanh", level: 1 },
-  { code: "128", name: "Đầu tư nắm giữ đến ngày đáo hạn", level: 1 },
-  { code: "1281", name: "Tiền gửi có kỳ hạn", level: 2 },
-  { code: "1288", name: "Các khoản đầu tư nắm giữ đến ngày đáo hạn khác", level: 2 },
-];
+const DEFAULT_ACCOUNTS: AccountOption[] = MISA_REPORT_ACCOUNTS;
 
 export interface PartnerOption {
   code: string;
@@ -94,17 +87,21 @@ export default function MisaLendContractSummaryReport({
   notify,
 }: MisaLendContractSummaryReportProps) {
   // Drawer Parameters State matching Screenshot 1
+  const [accountPage,setAccountPage]=useState(1);
+  const [accountPageSize,setAccountPageSize]=useState(20);
+  const [paramError,setParamError]=useState("");
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [toDate, setToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [selectedAccCode, setSelectedAccCode] = useState("111");
+  const [selectedPartnerCodes,setSelectedPartnerCodes]=useState("KH00001");
   const [selectedPartnerName, setSelectedPartnerName] = useState("Tuan Anh");
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [draftAccCode, setDraftAccCode] = useState("111");
   const [draftPartnerCode, setDraftPartnerCode] = useState("KH00001");
   const [accSearchText, setAccSearchText] = useState("");
@@ -116,61 +113,45 @@ export default function MisaLendContractSummaryReport({
   // Data: Empty by default matching Screenshot 2
   const [contractData] = useState<LendContractSummaryRow[]>([]);
 
+  const toggleAccount=(code:string)=>setDraftAccCode(previous=>{const codes=previous?previous.split(','):[];return (codes.includes(code)?codes.filter(item=>item!==code):[...codes,code]).join(',');});
+  const togglePartner=(code:string)=>setDraftPartnerCode(previous=>{const codes=previous?previous.split(','):[];return (codes.includes(code)?codes.filter(item=>item!==code):[...codes,code]).join(',');});
   const handleOpenDrawer = () => {
     setDraftPeriodPreset(reportPeriodPreset);
     setDraftFromDate(fromDate);
     setDraftToDate(toDate);
-    setDraftAccCode(selectedAccCode);
-    const partner = DEFAULT_PARTNERS.find((p) => p.name === selectedPartnerName);
-    setDraftPartnerCode(partner ? partner.code : "KH00001");
+    setDraftAccCode(selectedAccCode);setDraftPartnerCode(selectedPartnerCodes);
     setAccSearchText("");
     setPartnerSearchText("");
     setIsParamDrawerOpen(true);
   };
 
   const handleApplyParams = () => {
+    if(!Number.isFinite(cashDateValue(draftFromDate))||!Number.isFinite(cashDateValue(draftToDate))||cashDateValue(draftFromDate)>cashDateValue(draftToDate)){setParamError('Chọn khoảng ngày hợp lệ theo DD/MM/YYYY.');return;}setParamError('');
     setReportPeriodPreset(draftPeriodPreset);
     setFromDate(draftFromDate);
     setToDate(draftToDate);
     setSelectedAccCode(draftAccCode);
-    const partner = DEFAULT_PARTNERS.find((p) => p.code === draftPartnerCode);
-    if (partner) setSelectedPartnerName(partner.name);
+    setSelectedPartnerCodes(draftPartnerCode);
+    setSelectedPartnerName(DEFAULT_PARTNERS.filter(partner=>draftPartnerCode.split(",").includes(partner.code)).map(partner=>`${partner.code} - ${partner.name}`).join("; ")||"Tất cả");
     setIsParamDrawerOpen(false);
     notify?.("Đã cập nhật Báo cáo tổng hợp tình hình khế ước cho vay.");
   };
 
   const handleResetParams = () => {
+    setParamError("");
     setDraftPeriodPreset("Tháng này");
-    setDraftFromDate("01/10/2026");
-    setDraftToDate("31/10/2026");
+    setDraftFromDate(cashPeriodDates("Tháng này")![0]);
+    setDraftToDate(cashPeriodDates("Tháng này")![1]);
     setDraftAccCode("111");
     setDraftPartnerCode("KH00001");
   };
 
-  const handlePresetChange = (preset: string) => {
-    setDraftPeriodPreset(preset);
-    if (preset === "Hôm nay") {
-      setDraftFromDate("07/10/2026");
-      setDraftToDate("07/10/2026");
-    } else if (preset === "Tháng này") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/10/2026");
-    } else if (preset === "Tháng trước") {
-      setDraftFromDate("01/09/2026");
-      setDraftToDate("30/09/2026");
-    } else if (preset === "Quý 4") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/12/2026");
-    } else if (preset === "Năm nay") {
-      setDraftFromDate("01/01/2026");
-      setDraftToDate("31/12/2026");
-    }
-  };
+  const handlePresetChange=(preset:string)=>{setDraftPeriodPreset(preset);const range=cashPeriodDates(preset);if(range){setDraftFromDate(range[0]);setDraftToDate(range[1]);}};
 
   // Subtitle period text matching Screenshot 2: "Đối tượng: Tuan Anh, Tài khoản: 111, Tháng 10 năm 2026"
   const periodSubtitle = useMemo(() => {
-    return `Đối tượng: ${selectedPartnerName}, Tài khoản: ${selectedAccCode}, Tháng 10 năm 2026`;
-  }, [selectedPartnerName, selectedAccCode]);
+    return `Đối tượng: ${selectedPartnerName}, Tài khoản: ${selectedAccCode}, ${cashPeriodSubtitle(fromDate,toDate)}`;
+  }, [selectedPartnerName, selectedAccCode,fromDate,toDate]);
 
   // Filter accounts in drawer
   const filteredAccounts = useMemo(() => {
@@ -210,7 +191,7 @@ export default function MisaLendContractSummaryReport({
   };
 
   return (
-    <div
+    <div className="misa-borrow-summary"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -1038,6 +1019,7 @@ export default function MisaLendContractSummaryReport({
                 gap: 18,
               }}
             >
+              {paramError&&<p role="alert" style={{color:"#b91c1c"}}>{paramError}</p>}
               {/* Top Form: Kỳ báo cáo, Từ ngày, Đến ngày */}
               <div
                 style={{
@@ -1076,11 +1058,7 @@ export default function MisaLendContractSummaryReport({
                         cursor: "pointer",
                       }}
                     >
-                      <option value="Hôm nay">Hôm nay</option>
-                      <option value="Tháng này">Tháng này</option>
-                      <option value="Tháng trước">Tháng trước</option>
-                      <option value="Quý 4">Quý 4</option>
-                      <option value="Năm nay">Năm nay</option>
+                      {CASH_PERIODS.map(period=><option key={period}>{period}</option>)}
                     </select>
                     <ChevronDown
                       size={15}
@@ -1111,7 +1089,7 @@ export default function MisaLendContractSummaryReport({
                     <input
                       type="text"
                       value={draftFromDate}
-                      onChange={(e) => setDraftFromDate(e.target.value)}
+                      onChange={(e) => {setDraftFromDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,
@@ -1151,7 +1129,7 @@ export default function MisaLendContractSummaryReport({
                     <input
                       type="text"
                       value={draftToDate}
-                      onChange={(e) => setDraftToDate(e.target.value)}
+                      onChange={(e) => {setDraftToDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,
@@ -1198,8 +1176,8 @@ export default function MisaLendContractSummaryReport({
                   >
                     <input
                       type="checkbox"
-                      checked={draftAccCode === "111"}
-                      onChange={(e) => setDraftAccCode(e.target.checked ? "111" : "")}
+                      checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
+                      onChange={(e) => setDraftAccCode(e.target.checked ? filteredAccounts.map(account=>account.code).join(",") : "")}
                       style={{ accentColor: "#00a862" }}
                     />
                     <span>Chọn tất cả</span>
@@ -1210,7 +1188,7 @@ export default function MisaLendContractSummaryReport({
                       type="text"
                       placeholder="Nhập từ khóa tìm kiếm"
                       value={accSearchText}
-                      onChange={(e) => setAccSearchText(e.target.value)}
+                      onChange={(e) => {setAccSearchText(e.target.value);setAccountPage(1);}}
                       style={{
                         width: 200,
                         height: 26,
@@ -1252,8 +1230,8 @@ export default function MisaLendContractSummaryReport({
                         <th style={{ width: 36, padding: "7px 10px", textAlign: "center" }}>
                           <input
                             type="checkbox"
-                            checked={draftAccCode === "111"}
-                            onChange={(e) => setDraftAccCode(e.target.checked ? "111" : "")}
+                            checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
+                            onChange={(e) => setDraftAccCode(e.target.checked ? filteredAccounts.map(account=>account.code).join(",") : "")}
                             style={{ accentColor: "#00a862" }}
                           />
                         </th>
@@ -1291,13 +1269,13 @@ export default function MisaLendContractSummaryReport({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredAccounts.map((acc) => {
-                        const isSelected = draftAccCode === acc.code;
+                      {filteredAccounts.slice((Math.min(accountPage,Math.max(1,Math.ceil(filteredAccounts.length/accountPageSize)))-1)*accountPageSize,Math.min(accountPage,Math.max(1,Math.ceil(filteredAccounts.length/accountPageSize)))*accountPageSize).map((acc) => {
+                        const isSelected = draftAccCode.split(",").includes(acc.code);
                         return (
                           <tr
                             key={acc.code}
                             onClick={() =>
-                              setDraftAccCode(isSelected ? "" : acc.code)
+                              toggleAccount(acc.code)
                             }
                             style={{
                               borderBottom: "1px solid #f1f5f9",
@@ -1308,8 +1286,8 @@ export default function MisaLendContractSummaryReport({
                             <td style={{ textAlign: "center", padding: "6px 10px" }}>
                               <input
                                 type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {}}
+                                aria-label={`Chọn tài khoản cho vay ${acc.code}`} checked={isSelected}
+                                onClick={event=>event.stopPropagation()} onChange={()=>toggleAccount(acc.code)}
                                 style={{ accentColor: "#00a862" }}
                               />
                             </td>
@@ -1349,10 +1327,10 @@ export default function MisaLendContractSummaryReport({
                       color: "#64748b",
                     }}
                   >
-                    <span>Tổng số: 208</span>
+                    <span>Tổng số: {filteredAccounts.length}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span>Số dòng/trang: 20</span>
-                      <span>&lt; 1 2 3 .. 11 &gt;</span>
+                      <label>Số dòng/trang <select aria-label="Số dòng tài khoản cho vay" value={accountPageSize} onChange={event=>{setAccountPageSize(Number(event.target.value));setAccountPage(1);}}>{[10,20,30,50,100].map(size=><option key={size}>{size}</option>)}</select></label>
+                      <button aria-label="Trang tài khoản cho vay trước" disabled={accountPage<=1} onClick={()=>setAccountPage(previous=>previous-1)}>‹</button><span>{Math.min(accountPage,Math.max(1,Math.ceil(filteredAccounts.length/accountPageSize)))}/{Math.max(1,Math.ceil(filteredAccounts.length/accountPageSize))}</span><button aria-label="Trang tài khoản cho vay sau" disabled={accountPage>=Math.max(1,Math.ceil(filteredAccounts.length/accountPageSize))} onClick={()=>setAccountPage(previous=>previous+1)}>›</button>
                     </div>
                   </div>
                 </div>
@@ -1380,9 +1358,9 @@ export default function MisaLendContractSummaryReport({
                   >
                     <input
                       type="checkbox"
-                      checked={draftPartnerCode === "KH00001"}
+                      checked={filteredPartners.length>0&&filteredPartners.every(partner=>draftPartnerCode.split(",").includes(partner.code))}
                       onChange={(e) =>
-                        setDraftPartnerCode(e.target.checked ? "KH00001" : "")
+                        setDraftPartnerCode(e.target.checked ? filteredPartners.map(partner=>partner.code).join(",") : "")
                       }
                       style={{ accentColor: "#00a862" }}
                     />
@@ -1436,9 +1414,9 @@ export default function MisaLendContractSummaryReport({
                         <th style={{ width: 36, padding: "7px 10px", textAlign: "center" }}>
                           <input
                             type="checkbox"
-                            checked={draftPartnerCode === "KH00001"}
+                            checked={filteredPartners.length>0&&filteredPartners.every(partner=>draftPartnerCode.split(",").includes(partner.code))}
                             onChange={(e) =>
-                              setDraftPartnerCode(e.target.checked ? "KH00001" : "")
+                              setDraftPartnerCode(e.target.checked ? filteredPartners.map(partner=>partner.code).join(",") : "")
                             }
                             style={{ accentColor: "#00a862" }}
                           />
@@ -1489,12 +1467,12 @@ export default function MisaLendContractSummaryReport({
                     </thead>
                     <tbody>
                       {filteredPartners.map((p) => {
-                        const isSelected = draftPartnerCode === p.code;
+                        const isSelected = draftPartnerCode.split(",").includes(p.code);
                         return (
                           <tr
                             key={p.code}
                             onClick={() =>
-                              setDraftPartnerCode(isSelected ? "" : p.code)
+                              togglePartner(p.code)
                             }
                             style={{
                               borderBottom: "1px solid #f1f5f9",
@@ -1505,8 +1483,8 @@ export default function MisaLendContractSummaryReport({
                             <td style={{ textAlign: "center", padding: "6px 10px" }}>
                               <input
                                 type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {}}
+                                aria-label={`Chọn đối tượng ${p.code}`} checked={isSelected}
+                                onClick={event=>event.stopPropagation()} onChange={()=>togglePartner(p.code)}
                                 style={{ accentColor: "#00a862" }}
                               />
                             </td>

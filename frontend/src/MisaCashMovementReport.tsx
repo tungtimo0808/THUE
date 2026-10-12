@@ -1,3 +1,5 @@
+import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
+import {cashDateRange,cashDateValue} from './cash-date';
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -93,13 +95,13 @@ export default function MisaCashMovementReport({
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
+  const [toDate, setToDate] = useState(()=>cashDateRange('Tháng này')![1]);
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashDateRange('Tháng này')![1]);
 
   // Search keyword inside report table
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -112,6 +114,7 @@ export default function MisaCashMovementReport({
   };
 
   const handleApplyParams = () => {
+    if(!Number.isFinite(cashDateValue(draftFromDate))||!Number.isFinite(cashDateValue(draftToDate))||cashDateValue(draftFromDate)>cashDateValue(draftToDate)){notify?.('Vui lòng nhập khoảng ngày hợp lệ theo DD/MM/YYYY.');return;}
     setReportPeriodPreset(draftPeriodPreset);
     setFromDate(draftFromDate);
     setToDate(draftToDate);
@@ -121,37 +124,18 @@ export default function MisaCashMovementReport({
 
   const handleResetParams = () => {
     setDraftPeriodPreset("Tháng này");
-    setDraftFromDate("01/10/2026");
-    setDraftToDate("31/10/2026");
+    setDraftFromDate(cashDateRange('Tháng này')![0]);
+    setDraftToDate(cashDateRange('Tháng này')![1]);
   };
 
   const handlePresetChange = (preset: string) => {
     setDraftPeriodPreset(preset);
-    if (preset === "Hôm nay") {
-      setDraftFromDate("07/10/2026");
-      setDraftToDate("07/10/2026");
-    } else if (preset === "Tháng này") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/10/2026");
-    } else if (preset === "Tháng trước") {
-      setDraftFromDate("01/09/2026");
-      setDraftToDate("30/09/2026");
-    } else if (preset === "Quý 4") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/12/2026");
-    } else if (preset === "Năm nay") {
-      setDraftFromDate("01/01/2026");
-      setDraftToDate("31/12/2026");
-    }
+    const range=cashPeriodDates(preset);
+    if(range){setDraftFromDate(range[0]);setDraftToDate(range[1]);}
   };
 
   // Subtitle period text matching Screenshot 2
-  const periodSubtitle = useMemo(() => {
-    if (fromDate.startsWith("01/10/2026") && toDate.startsWith("31/10/2026")) {
-      return "Tháng 10 năm 2026";
-    }
-    return `Từ ngày ${fromDate} đến ngày ${toDate}`;
-  }, [fromDate, toDate]);
+  const periodSubtitle = useMemo(()=>cashPeriodSubtitle(fromDate,toDate),[fromDate,toDate]);
 
   // Format currency with parentheses for negative numbers e.g. (20.000.000)
   const formatMoney = (val?: number) => {
@@ -825,12 +809,7 @@ export default function MisaCashMovementReport({
                       outline: "none",
                     }}
                   >
-                    <option value="Hôm nay">Hôm nay</option>
-                    <option value="Tháng này">Tháng này</option>
-                    <option value="Tháng trước">Tháng trước</option>
-                    <option value="Quý 4">Quý 4</option>
-                    <option value="Năm nay">Năm nay</option>
-                    <option value="Tùy chọn">Tùy chọn</option>
+                    {CASH_PERIODS.map(period=><option key={period} value={period}>{period}</option>)}
                   </select>
                 </div>
 

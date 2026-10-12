@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from "react";
+import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
+import {cashDateValue} from "./cash-date";
+import { useState, useMemo } from "react";
 import {
   ChevronLeft,
   Printer,
@@ -60,17 +62,18 @@ export default function MisaBorrowVoucherStatementReport({
   notify,
 }: MisaBorrowVoucherStatementReportProps) {
   // Drawer Parameters State matching Screenshot 1
+  const [paramError,setParamError]=useState("");
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [toDate, setToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [selectedPartnerCode, setSelectedPartnerCode] = useState("NCC00001");
   const [selectedContractNo, setSelectedContractNo] = useState("");
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashPeriodDates("Tháng này")![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashPeriodDates("Tháng này")![1]);
   const [draftPartnerCode, setDraftPartnerCode] = useState("NCC00001");
   const [draftContractNo, setDraftContractNo] = useState("");
   const [partnerSearchText, setPartnerSearchText] = useState("");
@@ -94,6 +97,7 @@ export default function MisaBorrowVoucherStatementReport({
   };
 
   const handleApplyParams = () => {
+    if(!Number.isFinite(cashDateValue(draftFromDate))||!Number.isFinite(cashDateValue(draftToDate))||cashDateValue(draftFromDate)>cashDateValue(draftToDate)){setParamError('Chọn khoảng ngày hợp lệ theo DD/MM/YYYY.');return;}setParamError('');
     setReportPeriodPreset(draftPeriodPreset);
     setFromDate(draftFromDate);
     setToDate(draftToDate);
@@ -104,32 +108,15 @@ export default function MisaBorrowVoucherStatementReport({
   };
 
   const handleResetParams = () => {
+    setParamError("");
     setDraftPeriodPreset("Tháng này");
-    setDraftFromDate("01/10/2026");
-    setDraftToDate("31/10/2026");
+    setDraftFromDate(cashPeriodDates("Tháng này")![0]);
+    setDraftToDate(cashPeriodDates("Tháng này")![1]);
     setDraftPartnerCode("NCC00001");
     setDraftContractNo("");
   };
 
-  const handlePresetChange = (preset: string) => {
-    setDraftPeriodPreset(preset);
-    if (preset === "Hôm nay") {
-      setDraftFromDate("07/10/2026");
-      setDraftToDate("07/10/2026");
-    } else if (preset === "Tháng này") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/10/2026");
-    } else if (preset === "Tháng trước") {
-      setDraftFromDate("01/09/2026");
-      setDraftToDate("30/09/2026");
-    } else if (preset === "Quý 4") {
-      setDraftFromDate("01/10/2026");
-      setDraftToDate("31/12/2026");
-    } else if (preset === "Năm nay") {
-      setDraftFromDate("01/01/2026");
-      setDraftToDate("31/12/2026");
-    }
-  };
+  const handlePresetChange=(preset:string)=>{setDraftPeriodPreset(preset);const range=cashPeriodDates(preset);if(range){setDraftFromDate(range[0]);setDraftToDate(range[1]);}};
 
   // Filter partners in drawer
   const filteredPartners = useMemo(() => {
@@ -469,7 +456,7 @@ export default function MisaBorrowVoucherStatementReport({
               fontStyle: "italic",
             }}
           >
-            Tháng 10 năm 2026
+            {cashPeriodSubtitle(fromDate,toDate)}
           </div>
         </div>
 
@@ -781,6 +768,7 @@ export default function MisaBorrowVoucherStatementReport({
                 gap: 18,
               }}
             >
+              {paramError&&<p role="alert" style={{color:"#b91c1c"}}>{paramError}</p>}
               {/* Top Form: Kỳ báo cáo, Từ ngày, Đến ngày */}
               <div
                 style={{
@@ -819,11 +807,7 @@ export default function MisaBorrowVoucherStatementReport({
                         cursor: "pointer",
                       }}
                     >
-                      <option value="Hôm nay">Hôm nay</option>
-                      <option value="Tháng này">Tháng này</option>
-                      <option value="Tháng trước">Tháng trước</option>
-                      <option value="Quý 4">Quý 4</option>
-                      <option value="Năm nay">Năm nay</option>
+                      {CASH_PERIODS.map(period=><option key={period}>{period}</option>)}
                     </select>
                     <ChevronDown
                       size={15}
@@ -854,7 +838,7 @@ export default function MisaBorrowVoucherStatementReport({
                     <input
                       type="text"
                       value={draftFromDate}
-                      onChange={(e) => setDraftFromDate(e.target.value)}
+                      onChange={(e) => {setDraftFromDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,
@@ -894,7 +878,7 @@ export default function MisaBorrowVoucherStatementReport({
                     <input
                       type="text"
                       value={draftToDate}
-                      onChange={(e) => setDraftToDate(e.target.value)}
+                      onChange={(e) => {setDraftToDate(e.target.value);setDraftPeriodPreset("Tùy chọn");}}
                       style={{
                         width: "100%",
                         height: 32,

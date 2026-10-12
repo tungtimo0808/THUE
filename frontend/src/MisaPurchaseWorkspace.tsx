@@ -1,3 +1,6 @@
+import MisaPaymentTermsWorkspace from "./MisaPaymentTermsWorkspace";
+import {useNavigate,useSearchParams} from "react-router-dom";
+import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
 import { useState, useRef } from "react";
 import {
   Search,
@@ -19,6 +22,16 @@ import {
   ChevronRight,
   AlertCircle,
   Clock,
+  RotateCw,
+  Settings,
+  MoreHorizontal,
+  Banknote,
+  ChevronUp,
+  MapPin,
+  Pencil,
+  Trash2,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import {
   PurchaseOrderModal,
@@ -35,7 +48,16 @@ import {
   SAMPLE_SUPPLIERS,
   formatVND,
 } from "./MisaPurchaseModals";
+import {
+  DebtOffsetModal,
+  MultiDebtOffsetModal,
+  UnOffsetModal,
+  MultiUnOffsetModal,
+  DebtClearingModal,
+} from "./MisaPurchaseUtilityModals";
 import { AIAssistantModal, SupplierPaymentModal } from "./MisaCashWorkspace";
+import { MisaItemNatureDrawer } from "./MisaItemNatureDrawer";
+import { MisaInventoryItemModal, type InventoryItemData } from "./MisaInventoryItemModal";
 import "./misa-cash.css";
 
 export default function MisaPurchaseWorkspace({
@@ -51,6 +73,10 @@ export default function MisaPurchaseWorkspace({
   href?: (path: string) => string;
   notify: (msg: string) => void;
 }) {
+  const [paymentTermsOpen,setPaymentTermsOpen]=useState(false);
+  const navigate=useNavigate();
+  const [purchaseParams]=useSearchParams();
+  const openPurchaseReport=(name:string)=>{const base=href?.("/purchases/reports")||"/purchases/reports";navigate(`${base}${base.includes("?")?"&":"?"}report=${encodeURIComponent(name)}`);};
   // Modal states
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
@@ -59,12 +85,48 @@ export default function MisaPurchaseWorkspace({
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showReconciliationModal, setShowReconciliationModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<any | null>(null);
+
+  // Purchase utilities states (5 Tiện ích mua hàng MISA)
+  const [showUtilityMenu, setShowUtilityMenu] = useState(false);
+  const [showDebtOffsetModal, setShowDebtOffsetModal] = useState(false);
+  const [showMultiDebtOffsetModal, setShowMultiDebtOffsetModal] = useState(false);
+  const [showUnOffsetModal, setShowUnOffsetModal] = useState(false);
+  const [showMultiUnOffsetModal, setShowMultiUnOffsetModal] = useState(false);
+  const [showDebtClearingModal, setShowDebtClearingModal] = useState(false);
+  const [suppliers, setSuppliers] = useState([
+    {
+      id: "ncc-01",
+      code: "NCC00001",
+      name: "Tran Thi Huong",
+      address: "",
+      debtAmount: 17000000,
+      taxCode: "030178006908",
+      invoiceRisk: "",
+      refDoc: "",
+      phone: "097775611",
+      isInternal: false,
+      isBranch: false,
+      partnerType: "org" as const,
+      isCustomer: false,
+    },
+  ]);
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
+  const [supplierSearchText, setSupplierSearchText] = useState("");
+  const [showSupplierSummaryCards, setShowSupplierSummaryCards] = useState(true);
+  const [showAddSupplierDropdown, setShowAddSupplierDropdown] = useState(false);
+  const [activeSupplierMenuId, setActiveSupplierMenuId] = useState<string | null>(null);
+  const [supplierRowsPerPage, setSupplierRowsPerPage] = useState(20);
   const [showSupplierPaymentModal, setShowSupplierPaymentModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showReceiveInvoiceModal, setShowReceiveInvoiceModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showMultiInvoiceModal, setShowMultiInvoiceModal] = useState(false);
   const [showAddPurchaseMenu, setShowAddPurchaseMenu] = useState(false);
+  const [showNatureDrawer, setShowNatureDrawer] = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [selectedNature, setSelectedNature] = useState<string>("Hàng hóa");
+  const [editingItem, setEditingItem] = useState<InventoryItemData | null>(null);
   const [receiveInvoiceViewMode, setReceiveInvoiceViewMode] = useState<"empty_guide" | "list">("empty_guide");
   const [receivedInvoices, setReceivedInvoices] = useState([
     {
@@ -239,7 +301,7 @@ export default function MisaPurchaseWorkspace({
   ]);
 
   // Sample data: Hàng hóa, dịch vụ (Screenshot 2)
-  const [inventoryItems, _setInventoryItems] = useState([
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([
     {
       id: "cpmh",
       name: "Chi phí mua hàng",
@@ -248,6 +310,7 @@ export default function MisaPurchaseWorkspace({
       nature: "Dịch vụ",
       stockQty: 0,
       stockValue: 0,
+      unit: "Lần",
     },
     {
       id: "vt01",
@@ -257,6 +320,7 @@ export default function MisaPurchaseWorkspace({
       nature: "Vật tư hàng hóa",
       stockQty: 4500,
       stockValue: 96750000,
+      unit: "Kg",
     },
     {
       id: "vt02",
@@ -266,6 +330,7 @@ export default function MisaPurchaseWorkspace({
       nature: "Vật tư hàng hóa",
       stockQty: 120,
       stockValue: 41400000,
+      unit: "Cây",
     },
     {
       id: "vt03",
@@ -275,8 +340,53 @@ export default function MisaPurchaseWorkspace({
       nature: "Vật tư hàng hóa",
       stockQty: 2500,
       stockValue: 31250000,
+      unit: "Bộ",
+    },
+    {
+      id: "tp01",
+      name: "Bàn làm việc khung thép sơn tĩnh điện",
+      code: "VT00002",
+      vatPolicy: "Chưa xác định",
+      nature: "Thành phẩm",
+      stockQty: 50,
+      stockValue: 62500000,
+      unit: "Bộ",
+      vthhGroups: ["TP"],
+      stockAccount: "155",
+      revenueAccount: "5112",
+      costAccount: "632",
     },
   ]);
+
+  const handleSelectNature = (_natureId: string, natureName: string) => {
+    setShowNatureDrawer(false);
+    setSelectedNature(natureName);
+    setEditingItem(null);
+    setShowItemModal(true);
+    notify(`Đã chọn tính chất: ${natureName}. Mở form thêm mới Hàng hóa, dịch vụ.`);
+  };
+
+  const handleSaveInventoryItem = (itemData: InventoryItemData, keepOpen?: boolean) => {
+    if (editingItem) {
+      setInventoryItems((prev) =>
+        prev.map((it) => (it.id === editingItem.id ? { ...it, ...itemData } : it))
+      );
+      notify(`Đã cập nhật hàng hóa, dịch vụ [${itemData.code}] ${itemData.name}!`);
+    } else {
+      setInventoryItems((prev) => [
+        {
+          id: `item-${Date.now()}`,
+          ...itemData,
+        },
+        ...prev,
+      ]);
+      notify(`Đã thêm mới [${itemData.code}] ${itemData.name} (${itemData.nature}) thành công!`);
+    }
+    if (!keepOpen) {
+      setShowItemModal(false);
+      setEditingItem(null);
+    }
+  };
 
   // Sample data: Đối chiếu công nợ (Screenshot 3)
   const [reconciliations, setReconciliations] = useState([
@@ -393,7 +503,50 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveSupplier = (data: any) => {
-    notify(`Đã thêm nhà cung cấp ${data.name || data.code}!`);
+    if (editingSupplier) {
+      setSuppliers((prev) =>
+        prev.map((s) =>
+          s.id === editingSupplier.id
+            ? {
+                ...s,
+                code: data.code || s.code,
+                name: data.name || s.name,
+                address: data.address || "",
+                taxCode: data.taxCode || "",
+                phone: data.phone || data.contactPhone || "",
+                isInternal: Boolean(data.isInternal),
+                isCustomer: Boolean(data.isCustomer),
+                partnerType: data.partnerType,
+                supplierGroup: data.supplierGroup,
+                employee: data.employee,
+              }
+            : s
+        )
+      );
+      notify(`Đã cập nhật thông tin nhà cung cấp ${data.name || data.code}!`);
+      setEditingSupplier(null);
+    } else {
+      const newSupplier = {
+        id: `ncc-${Date.now()}`,
+        code: data.code || `NCC0000${suppliers.length + 1}`,
+        name: data.name || "Nhà cung cấp mới",
+        address: data.address || "",
+        debtAmount: 0,
+        taxCode: data.taxCode || "",
+        invoiceRisk: "",
+        refDoc: "",
+        phone: data.phone || data.contactPhone || "",
+        isInternal: Boolean(data.isInternal),
+        isBranch: false,
+        partnerType: data.partnerType || "org",
+        isCustomer: Boolean(data.isCustomer),
+        supplierGroup: data.supplierGroup || "",
+        employee: data.employee || "",
+      };
+      setSuppliers([newSupplier, ...suppliers]);
+      notify(`Đã lưu nhà cung cấp ${data.name || data.code}!`);
+    }
+    setShowSupplierModal(false);
   };
 
   const handleSaveReceivedInvoice = (selectedVouchers: UninvoicedVoucher[]) => {
@@ -508,7 +661,11 @@ export default function MisaPurchaseWorkspace({
 
       {showSupplierModal && (
         <SupplierModal
-          onClose={() => setShowSupplierModal(false)}
+          initialData={editingSupplier}
+          onClose={() => {
+            setShowSupplierModal(false);
+            setEditingSupplier(null);
+          }}
           onSubmit={handleSaveSupplier}
         />
       )}
@@ -556,12 +713,93 @@ export default function MisaPurchaseWorkspace({
           onOpenSupplierModal={() => setShowSupplierModal(true)}
         />
       )}
+
+      {showNatureDrawer && (
+        <MisaItemNatureDrawer
+          isOpen={showNatureDrawer}
+          onClose={() => setShowNatureDrawer(false)}
+          onSelectNature={handleSelectNature}
+          notify={notify}
+        />
+      )}
+
+      {showItemModal && (
+        <MisaInventoryItemModal
+          isOpen={showItemModal}
+          onClose={() => {
+            setShowItemModal(false);
+            setEditingItem(null);
+          }}
+          initialNature={selectedNature}
+          editingItem={editingItem}
+          onSubmit={handleSaveInventoryItem}
+          onChangeNature={() => {
+            setShowItemModal(false);
+            setShowNatureDrawer(true);
+          }}
+          notify={notify}
+        />
+      )}
+
+      {paymentTermsOpen&&<MisaPaymentTermsWorkspace companyId={_company.id} onClose={()=>setPaymentTermsOpen(false)}/>}
+      {/* 5 Tiện ích mua hàng chuẩn MISA AMIS */}
+      {showDebtOffsetModal && (
+        <DebtOffsetModal
+          onClose={() => setShowDebtOffsetModal(false)}
+          onSubmit={(data) => {
+            setShowDebtOffsetModal(false);
+            notify(`Đã hoàn tất đối trừ chứng từ cho nhà cung cấp ${data?.supplierCode || ""}!`);
+          }}
+        />
+      )}
+
+      {showMultiDebtOffsetModal && (
+        <MultiDebtOffsetModal
+          onClose={() => setShowMultiDebtOffsetModal(false)}
+          onSubmit={(_data) => {
+            setShowMultiDebtOffsetModal(false);
+            notify("Đã hoàn tất đối trừ chứng từ nhiều đối tượng thành công!");
+          }}
+        />
+      )}
+
+      {showUnOffsetModal && (
+        <UnOffsetModal
+          onClose={() => setShowUnOffsetModal(false)}
+          onSubmit={(_data) => {
+            setShowUnOffsetModal(false);
+            notify("Đã thực hiện bỏ đối trừ chứng từ thành công!");
+          }}
+        />
+      )}
+
+      {showMultiUnOffsetModal && (
+        <MultiUnOffsetModal
+          onClose={() => setShowMultiUnOffsetModal(false)}
+          onSubmit={(_data) => {
+            setShowMultiUnOffsetModal(false);
+            notify("Đã bỏ đối trừ chứng từ nhiều đối tượng thành công!");
+          }}
+        />
+      )}
+
+      {showDebtClearingModal && (
+        <DebtClearingModal
+          onClose={() => setShowDebtClearingModal(false)}
+          onSubmit={(data) => {
+            setShowDebtClearingModal(false);
+            notify(`Đã hoàn tất bù trừ công nợ chứng từ ${data?.voucherNo || ""}!`);
+          }}
+        />
+      )}
     </>
   );
 
   // -------------------------------------------------------------------------
   // 0. TAB: BIỂU ĐỒ (EXACT MATCHING SCREENSHOT)
   // -------------------------------------------------------------------------
+  if(tab==="reports")return <MisaReportCenterWorkspace key={purchaseParams.get("report")||"purchases"} embedded initialCategory="purchases" initialReport={purchaseParams.get("report")} notify={notify}/>;
+
   if (tab === "chart") {
     return (
       <div
@@ -1504,8 +1742,14 @@ export default function MisaPurchaseWorkspace({
   // 1. TAB: HÀNG HÓA, DỊCH VỤ (EXACT MATCHING SCREENSHOT 2)
   // -------------------------------------------------------------------------
   if (tab === "inventory-items") {
-    const totalQty = inventoryItems.reduce((s, it) => s + it.stockQty, 0);
-    const totalVal = inventoryItems.reduce((s, it) => s + it.stockValue, 0);
+    const filteredItems = inventoryItems.filter(
+      (it) =>
+        it.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        it.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        it.nature.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const totalQty = filteredItems.reduce((s, it) => s + (it.stockQty || 0), 0);
+    const totalVal = filteredItems.reduce((s, it) => s + (it.stockValue || 0), 0);
 
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
@@ -1609,17 +1853,20 @@ export default function MisaPurchaseWorkspace({
               <Filter size={14} />
             </button>
 
-            {/* Green Thêm button with caret */}
-            <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
+            {/* Green Thêm button with caret (Opens MisaItemNatureDrawer with 6 options) */}
+            <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}>
               <button
                 type="button"
-                onClick={() => notify("Mở form thêm mới Hàng hóa, dịch vụ...")}
+                onClick={() => setShowNatureDrawer(true)}
+                title="Chọn tính chất hàng hóa dịch vụ"
                 style={{ height: 30, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
               </button>
               <button
                 type="button"
+                onClick={() => setShowNatureDrawer(true)}
+                title="Chọn tính chất hàng hóa dịch vụ"
                 style={{ height: 30, padding: "0 8px", background: "#009a5d", color: "#ffffff", border: "none", borderLeft: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
               >
                 <ChevronDown size={13} />
@@ -1650,7 +1897,7 @@ export default function MisaPurchaseWorkspace({
               </tr>
             </thead>
             <tbody>
-              {inventoryItems.map((item) => (
+              {filteredItems.map((item) => (
                 <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center", padding: "8px 4px" }}>
                     <input type="checkbox" />
@@ -1671,7 +1918,14 @@ export default function MisaPurchaseWorkspace({
                     {formatVND(item.stockValue)}
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}>
+                    <span
+                      onClick={() => {
+                        setEditingItem(item);
+                        setSelectedNature(item.nature);
+                        setShowItemModal(true);
+                      }}
+                      style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
+                    >
                       <span>Sửa</span>
                       <ChevronDown size={12} />
                     </span>
@@ -1698,7 +1952,7 @@ export default function MisaPurchaseWorkspace({
 
         {/* Bottom Pagination */}
         <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff" }}>
-          <span style={{ fontSize: 12, color: "#64748b" }}>Tổng số: <strong>{inventoryItems.length}</strong></span>
+          <span style={{ fontSize: 12, color: "#64748b" }}>Tổng số: <strong>{filteredItems.length}</strong></span>
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#64748b" }}>
             <span>Số dòng/trang</span>
             <select style={{ height: 26, padding: "0 6px", borderRadius: 3, border: "1px solid #cbd5e1" }}>
@@ -2250,6 +2504,126 @@ export default function MisaPurchaseWorkspace({
             >
               Nhập từ Excel
             </button>
+
+            {/* Button 4: Tiện ích ▾ (5 Tiện ích mua hàng chuẩn MISA) */}
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setShowUtilityMenu(!showUtilityMenu)}
+                style={{
+                  height: 32,
+                  padding: "0 12px",
+                  background: "#ffffff",
+                  color: "#1e293b",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontWeight: 500,
+                  transition: "background 0.15s, border-color 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f8fafc";
+                  e.currentTarget.style.borderColor = "#94a3b8";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.borderColor = "#cbd5e1";
+                }}
+              >
+                <span>Tiện ích</span>
+                <ChevronDown size={14} style={{ color: "#64748b" }} />
+              </button>
+
+              {showUtilityMenu && (
+                <>
+                  <div
+                    onClick={() => setShowUtilityMenu(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 45 }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 4px)",
+                      right: 0,
+                      background: "#ffffff",
+                      borderRadius: 6,
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+                      border: "1px solid #e2e8f0",
+                      width: 290,
+                      zIndex: 50,
+                      padding: "4px 0",
+                    }}
+                  >
+                    {[
+                      {
+                        label: "Đối trừ chứng từ",
+                        desc: "Đối trừ thanh toán cho 1 NCC cụ thể (TK 331)",
+                        onClick: () => {
+                          setShowUtilityMenu(false);
+                          setShowDebtOffsetModal(true);
+                        },
+                      },
+                      {
+                        label: "Đối trừ chứng từ nhiều đối tượng",
+                        desc: "Tự động đối trừ công nợ theo danh sách NCC",
+                        onClick: () => {
+                          setShowUtilityMenu(false);
+                          setShowMultiDebtOffsetModal(true);
+                        },
+                      },
+                      {
+                        label: "Bỏ đối trừ",
+                        desc: "Hủy kết quả đối trừ của 1 NCC",
+                        onClick: () => {
+                          setShowUtilityMenu(false);
+                          setShowUnOffsetModal(true);
+                        },
+                      },
+                      {
+                        label: "Bỏ đối trừ chứng từ nhiều đối tượng",
+                        desc: "Hủy hàng loạt chứng từ đã đối trừ",
+                        onClick: () => {
+                          setShowUtilityMenu(false);
+                          setShowMultiUnOffsetModal(true);
+                        },
+                      },
+                      {
+                        label: "Bù trừ công nợ",
+                        desc: "Bù trừ giữa TK 131 và TK 331 (Khách hàng kiêm NCC)",
+                        onClick: () => {
+                          setShowUtilityMenu(false);
+                          setShowDebtClearingModal(true);
+                        },
+                      },
+                    ].map((item, idx) => (
+                      <div
+                        key={idx}
+                        onClick={item.onClick}
+                        style={{
+                          padding: "8px 14px",
+                          cursor: "pointer",
+                          transition: "background 0.12s",
+                          borderBottom: idx < 4 ? "1px solid #f8fafc" : "none",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#f1f5f9";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                        }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{item.label}</div>
+                        <div style={{ fontSize: 11.5, color: "#64748b" }}>{item.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -2968,59 +3342,1015 @@ export default function MisaPurchaseWorkspace({
   // 7.2. TAB: NHÀ CUNG CẤP (SUPPLIERS)
   // -------------------------------------------------------------------------
   if (tab === "suppliers") {
+    const filteredSuppliers = suppliers.filter((s) => {
+      if (!supplierSearchText.trim()) return true;
+      const kw = supplierSearchText.toLowerCase();
+      return (
+        s.code.toLowerCase().includes(kw) ||
+        s.name.toLowerCase().includes(kw) ||
+        s.taxCode.toLowerCase().includes(kw) ||
+        s.phone.toLowerCase().includes(kw) ||
+        s.address.toLowerCase().includes(kw)
+      );
+    });
+
+    const totalDebt = suppliers.reduce((sum, s) => sum + (s.debtAmount || 0), 0);
+    const isAllSelected = filteredSuppliers.length > 0 && selectedSupplierIds.length === filteredSuppliers.length;
+
+    const toggleSelectAll = () => {
+      if (isAllSelected) {
+        setSelectedSupplierIds([]);
+      } else {
+        setSelectedSupplierIds(filteredSuppliers.map((s) => s.id));
+      }
+    };
+
+    const toggleSelectRow = (id: string) => {
+      setSelectedSupplierIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+    };
+
+    const handleDeleteSupplier = (id: string, name: string) => {
+      if (confirm(`Bạn có chắc muốn xóa nhà cung cấp "${name}"?`)) {
+        setSuppliers((prev) => prev.filter((s) => s.id !== id));
+        notify(`Đã xóa nhà cung cấp "${name}".`);
+      }
+    };
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
-        <div style={{ padding: "10px 16px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          background: "#f4f5f8",
+          padding: "10px 16px 14px 16px",
+          boxSizing: "border-box",
+          fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          position: "relative",
+        }}
+      >
+        {/* Backdrop for closing dropdowns */}
+        {(showAddSupplierDropdown || activeSupplierMenuId !== null) && (
+          <div
+            onClick={() => {
+              setShowAddSupplierDropdown(false);
+              setActiveSupplierMenuId(null);
+            }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 40,
+              background: "transparent",
+            }}
+          />
+        )}
+
+        {/* Breadcrumb matching Screenshot 1: < Tất cả danh mục */}
+        <div style={{ marginBottom: 8, display: "flex", alignItems: "center" }}>
           <button
             type="button"
-            onClick={() => setShowSupplierModal(true)}
+            onClick={() => notify("Xem tất cả danh mục")}
             style={{
-              height: 32,
-              padding: "0 14px",
-              background: "#00b06b",
-              color: "#ffffff",
+              background: "transparent",
               border: "none",
-              borderRadius: 4,
+              color: "#0284c7",
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
-              gap: 6,
+              gap: 4,
+              padding: 0,
             }}
           >
-            <Plus size={15} />
-            <span>Thêm nhà cung cấp</span>
+            <ChevronLeft size={16} />
+            <span>Tất cả danh mục</span>
           </button>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
-          <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-            <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
-                <th style={{ width: 40, textAlign: "center" }}><input type="checkbox" /></th>
-                <th style={{ width: 110, padding: "8px 10px", textAlign: "left" }}>Mã nhà cung cấp</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Tên nhà cung cấp</th>
-                <th style={{ width: 130, padding: "8px 10px", textAlign: "center" }}>Mã số thuế</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Địa chỉ</th>
-                <th style={{ width: 130, padding: "8px 10px", textAlign: "left" }}>Người liên hệ</th>
-                <th style={{ width: 120, padding: "8px 10px", textAlign: "center" }}>Điện thoại</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SAMPLE_SUPPLIERS.map((s) => (
-                <tr key={s.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ textAlign: "center" }}><input type="checkbox" /></td>
-                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{s.code}</td>
-                  <td style={{ padding: "8px 10px", fontWeight: 500 }}>{s.name}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "center" }}>{s.taxCode}</td>
-                  <td style={{ padding: "8px 10px", color: "#475569" }}>{s.address}</td>
-                  <td style={{ padding: "8px 10px" }}>{s.contact}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "center" }}>{s.phone}</td>
+        {/* Top 3 Stat Cards (Screenshot 1 & 2) */}
+        {showSupplierSummaryCards && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 8 }}>
+            {/* Card 1: Nợ quá hạn */}
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #fecaca",
+                borderRadius: 4,
+                padding: "10px 14px 8px 14px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 74,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "#fee2e2",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#ef4444",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Clock size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Nợ quá hạn</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: "#ef4444", lineHeight: 1.2, marginTop: 2 }}>0</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, fontSize: 11, color: "#94a3b8" }}>
+                <Clock size={11} />
+                <span>14:42 Hôm qua</span>
+              </div>
+            </div>
+
+            {/* Card 2: Tổng nợ phải trả */}
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #fed7aa",
+                borderRadius: 4,
+                padding: "10px 14px 8px 14px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 74,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "#ffedd5",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#f97316",
+                    flexShrink: 0,
+                  }}
+                >
+                  <CreditCard size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng nợ phải trả</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", lineHeight: 1.2, marginTop: 2 }}>
+                    {formatVND(totalDebt)}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, fontSize: 11, color: "#94a3b8" }}>
+                <Clock size={11} />
+                <span>14:42 Hôm qua</span>
+              </div>
+            </div>
+
+            {/* Card 3: Đã thanh toán (30 ngày gần đây) */}
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #bbf7d0",
+                borderRadius: 4,
+                padding: "10px 14px 8px 14px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 74,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "#dcfce7",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#16a34a",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Banknote size={16} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Đã thanh toán (30 ngày gần đây)</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: "#16a34a", lineHeight: 1.2, marginTop: 2 }}>10.000.000</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, fontSize: 11, color: "#94a3b8" }}>
+                <Clock size={11} />
+                <span>14:42 Hôm qua</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Small center collapse/expand chevron button */}
+        <div style={{ display: "flex", justifyContent: "center", margin: "-2px 0 6px" }}>
+          <button
+            type="button"
+            onClick={() => setShowSupplierSummaryCards(!showSupplierSummaryCards)}
+            title={showSupplierSummaryCards ? "Thu gọn thống kê" : "Mở rộng thống kê"}
+            style={{
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: "50%",
+              width: 18,
+              height: 18,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              color: "#64748b",
+              padding: 0,
+            }}
+          >
+            {showSupplierSummaryCards ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+        </div>
+
+        {/* Main Content Card: Toolbar + Table + Footer */}
+        <div
+          style={{
+            flex: 1,
+            background: "#ffffff",
+            borderRadius: 4,
+            border: "1px solid #cbd5e1",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "visible",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          }}
+        >
+          {/* Toolbar (Screenshot 1 & 2) */}
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "#ffffff",
+              borderBottom: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              position: "relative",
+              zIndex: 30,
+            }}
+          >
+            {/* Left: Search input */}
+            <div style={{ position: "relative", width: 260 }}>
+              <Search
+                size={14}
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#94a3b8",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Tìm kiếm"
+                value={supplierSearchText}
+                onChange={(e) => setSupplierSearchText(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 32,
+                  padding: "0 10px 0 32px",
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 12.5,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Right: Actions */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                title="Làm mới"
+                onClick={() => notify("Đã làm mới danh sách nhà cung cấp")}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#475569",
+                }}
+              >
+                <RotateCw size={15} />
+              </button>
+              <button
+                type="button"
+                title="Tùy chỉnh cột"
+                onClick={() => notify("Tùy chỉnh giao diện & cột hiển thị")}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#475569",
+                }}
+              >
+                <SlidersHorizontal size={15} />
+              </button>
+              <button
+                type="button"
+                title="Thiết lập danh mục"
+                onClick={() => notify("Thiết lập danh mục nhà cung cấp")}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#475569",
+                }}
+              >
+                <Settings size={15} />
+              </button>
+              <button
+                type="button"
+                title="Bộ lọc"
+                onClick={() => notify("Mở bộ lọc nhà cung cấp")}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#475569",
+                }}
+              >
+                <Filter size={15} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => notify("Đang đồng bộ và cập nhật địa chỉ nhà cung cấp")}
+                style={{
+                  height: 32,
+                  padding: "0 12px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  color: "#334155",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                }}
+              >
+                <MapPin size={14} style={{ color: "#0284c7" }} />
+                <span>Cập nhật địa chỉ</span>
+              </button>
+
+              {/* Primary Green button: Thêm ▾ (opens SupplierModal matching Screenshot 3) */}
+              <div style={{ display: "inline-flex", position: "relative" }}>
+                <button
+                  type="button"
+                  data-testid="btn-add-supplier"
+                  onClick={() => {
+                    setEditingSupplier(null);
+                    setShowSupplierModal(true);
+                  }}
+                  style={{
+                    height: 32,
+                    padding: "0 14px",
+                    background: "#00a862",
+                    color: "#ffffff",
+                    border: "none",
+                    borderTopLeftRadius: 4,
+                    borderBottomLeftRadius: 4,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <span>Thêm</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddSupplierDropdown(!showAddSupplierDropdown)}
+                  style={{
+                    height: 32,
+                    padding: "0 6px",
+                    background: "#009355",
+                    color: "#ffffff",
+                    border: "none",
+                    borderLeft: "1px solid rgba(255,255,255,0.25)",
+                    borderTopRightRadius: 4,
+                    borderBottomRightRadius: 4,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ChevronDown size={14} />
+                </button>
+                {showAddSupplierDropdown && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      right: 0,
+                      marginTop: 4,
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+                      zIndex: 50,
+                      minWidth: 170,
+                      padding: "4px 0",
+                    }}
+                  >
+                    <div
+                      onClick={() => {
+                        setShowAddSupplierDropdown(false);
+                        setEditingSupplier(null);
+                        setShowSupplierModal(true);
+                      }}
+                      style={{ padding: "8px 12px", fontSize: 13, cursor: "pointer", color: "#334155" }}
+                    >
+                      Thêm nhà cung cấp
+                    </div>
+                    <div
+                      onClick={() => {
+                        setShowAddSupplierDropdown(false);
+                        notify("Tính năng Nhập khẩu từ Excel");
+                      }}
+                      style={{ padding: "8px 12px", fontSize: 13, cursor: "pointer", color: "#334155" }}
+                    >
+                      Nhập khẩu từ Excel
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tiện ích ▾ (5 Tiện ích mua hàng chuẩn MISA) */}
+              <div style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowUtilityMenu(!showUtilityMenu)}
+                  style={{
+                    height: 32,
+                    padding: "0 12px",
+                    background: "#ffffff",
+                    color: "#1e293b",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontWeight: 500,
+                  }}
+                >
+                  <span>Tiện ích</span>
+                  <ChevronDown size={14} style={{ color: "#64748b" }} />
+                </button>
+
+                {showUtilityMenu && (
+                  <>
+                    <div
+                      onClick={() => setShowUtilityMenu(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 45 }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        right: 0,
+                        background: "#ffffff",
+                        borderRadius: 6,
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+                        border: "1px solid #e2e8f0",
+                        width: 290,
+                        zIndex: 50,
+                        padding: "4px 0",
+                      }}
+                    >
+                      {[
+                        {
+                          label: "Đối trừ chứng từ",
+                          desc: "Đối trừ thanh toán cho 1 NCC cụ thể (TK 331)",
+                          onClick: () => {
+                            setShowUtilityMenu(false);
+                            setShowDebtOffsetModal(true);
+                          },
+                        },
+                        {
+                          label: "Đối trừ chứng từ nhiều đối tượng",
+                          desc: "Tự động đối trừ công nợ theo danh sách NCC",
+                          onClick: () => {
+                            setShowUtilityMenu(false);
+                            setShowMultiDebtOffsetModal(true);
+                          },
+                        },
+                        {
+                          label: "Bỏ đối trừ",
+                          desc: "Hủy kết quả đối trừ của 1 NCC",
+                          onClick: () => {
+                            setShowUtilityMenu(false);
+                            setShowUnOffsetModal(true);
+                          },
+                        },
+                        {
+                          label: "Bỏ đối trừ chứng từ nhiều đối tượng",
+                          desc: "Hủy hàng loạt chứng từ đã đối trừ",
+                          onClick: () => {
+                            setShowUtilityMenu(false);
+                            setShowMultiUnOffsetModal(true);
+                          },
+                        },
+                        {
+                          label: "Bù trừ công nợ",
+                          desc: "Bù trừ giữa TK 131 và TK 331 (Khách hàng kiêm NCC)",
+                          onClick: () => {
+                            setShowUtilityMenu(false);
+                            setShowDebtClearingModal(true);
+                          },
+                        },
+                      ].map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={item.onClick}
+                          style={{
+                            padding: "8px 14px",
+                            cursor: "pointer",
+                            transition: "background 0.12s",
+                            borderBottom: idx < 4 ? "1px solid #f8fafc" : "none",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#f1f5f9";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{item.label}</div>
+                          <div style={{ fontSize: 11.5, color: "#64748b" }}>{item.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                title="Tùy chọn khác"
+                onClick={() => notify("Tùy chọn khác")}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#475569",
+                }}
+              >
+                <MoreHorizontal size={15} />
+              </button>
+            </div>
+          </div>
+
+          {/* Table Area (Screenshot 1 & 2) */}
+          <div style={{ flex: 1, overflow: "auto", position: "relative" }}>
+            <table
+              className="misa-table"
+              style={{
+                width: "100%",
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                fontSize: 12.5,
+                minWidth: 1650,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <thead>
+                <tr style={{ background: "#e6f4ea", color: "#1e293b", position: "sticky", top: 0, zIndex: 10 }}>
+                  <th style={{ width: 40, textAlign: "center", padding: "8px 4px", borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={toggleSelectAll}
+                      style={{ accentColor: "#00a862" }}
+                    />
+                  </th>
+                  <th style={{ width: 130, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Mã nhà cung cấp
+                  </th>
+                  <th style={{ width: 220, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Tên nhà cung cấp
+                  </th>
+                  <th style={{ width: 240, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Địa chỉ
+                  </th>
+                  <th style={{ width: 130, padding: "8px 10px", textAlign: "right", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Số tiền nợ
+                  </th>
+                  <th style={{ width: 170, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Mã số thuế/CCCD chủ hộ
+                  </th>
+                  <th style={{ width: 140, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Rủi ro về hóa đơn
+                  </th>
+                  <th style={{ width: 160, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Văn bản tham chiếu
+                  </th>
+                  <th style={{ width: 130, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Điện thoại
+                  </th>
+                  <th style={{ width: 150, padding: "8px 10px", textAlign: "center", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Là Đối tượng nội bộ
+                  </th>
+                  <th style={{ width: 170, padding: "8px 10px", textAlign: "center", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
+                    Là Tổng công ty/chi nhánh
+                  </th>
+                  <th
+                    style={{
+                      width: 120,
+                      padding: "8px 10px",
+                      textAlign: "center",
+                      fontWeight: 600,
+                      borderBottom: "1px solid #cbd5e1",
+                      borderLeft: "1px solid #cbd5e1",
+                      boxShadow: "-3px 0 6px rgba(0,0,0,0.04)",
+                      position: "sticky",
+                      right: 0,
+                      background: "#e6f4ea",
+                      zIndex: 11,
+                    }}
+                  >
+                    Chức năng
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredSuppliers.length === 0 ? (
+                  <tr>
+                    <td colSpan={12} style={{ textAlign: "center", padding: "40px 0", color: "#64748b" }}>
+                      Không có nhà cung cấp nào phù hợp với tìm kiếm
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSuppliers.map((s, idx) => {
+                    const isChecked = selectedSupplierIds.includes(s.id);
+                    return (
+                      <tr
+                        key={s.id}
+                        style={{
+                          background: isChecked ? "#f0fdf4" : idx % 2 === 1 ? "#fafafa" : "#ffffff",
+                          borderBottom: "1px solid #f1f5f9",
+                        }}
+                      >
+                        <td style={{ textAlign: "center", padding: "8px 4px", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSelectRow(s.id)}
+                            style={{ accentColor: "#00a862" }}
+                          />
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            fontWeight: 500,
+                            color: "#0284c7",
+                            cursor: "pointer",
+                            borderBottom: "1px solid #e2e8f0",
+                            borderRight: "1px solid #f1f5f9",
+                          }}
+                          onClick={() => {
+                            setEditingSupplier(s);
+                            setShowSupplierModal(true);
+                          }}
+                          title="Bấm để xem và sửa thông tin"
+                        >
+                          {s.code}
+                        </td>
+                        <td style={{ padding: "8px 10px", fontWeight: 500, color: "#1e293b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          {s.name}
+                        </td>
+                        <td style={{ padding: "8px 10px", color: "#475569", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          {s.address}
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            textAlign: "right",
+                            fontWeight: s.debtAmount > 0 ? 600 : 400,
+                            color: s.debtAmount > 0 ? "#0f172a" : "#64748b",
+                            borderBottom: "1px solid #e2e8f0",
+                            borderRight: "1px solid #f1f5f9",
+                          }}
+                        >
+                          {formatVND(s.debtAmount)}
+                        </td>
+                        <td style={{ padding: "8px 10px", color: "#334155", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          {s.taxCode}
+                        </td>
+                        <td style={{ padding: "8px 10px", color: "#64748b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          {s.invoiceRisk}
+                        </td>
+                        <td style={{ padding: "8px 10px", color: "#64748b", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          {s.refDoc}
+                        </td>
+                        <td style={{ padding: "8px 10px", color: "#334155", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          {s.phone}
+                        </td>
+                        <td style={{ textAlign: "center", padding: "8px 10px", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          <input type="checkbox" checked={s.isInternal} readOnly style={{ accentColor: "#00a862" }} />
+                        </td>
+                        <td style={{ textAlign: "center", padding: "8px 10px", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
+                          <input type="checkbox" checked={s.isBranch} readOnly style={{ accentColor: "#00a862" }} />
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            textAlign: "center",
+                            borderBottom: "1px solid #e2e8f0",
+                            borderLeft: "1px solid #e2e8f0",
+                            boxShadow: "-3px 0 6px rgba(0,0,0,0.04)",
+                            position: "sticky",
+                            right: 0,
+                            background: isChecked ? "#f0fdf4" : idx % 2 === 1 ? "#fafafa" : "#ffffff",
+                            zIndex: 9,
+                          }}
+                        >
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, position: "relative" }}>
+                            <button
+                              type="button"
+                              onClick={() => setShowSupplierPaymentModal(true)}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#0284c7",
+                                fontSize: 12.5,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                padding: "2px 4px",
+                              }}
+                            >
+                              Trả tiền
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveSupplierMenuId(activeSupplierMenuId === s.id ? null : s.id)
+                              }
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#0284c7",
+                                cursor: "pointer",
+                                padding: "2px 0",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <ChevronDown size={14} />
+                            </button>
+
+                            {/* Dropdown Action Menu */}
+                            {activeSupplierMenuId === s.id && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  right: 0,
+                                  background: "#ffffff",
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: 4,
+                                  boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+                                  zIndex: 50,
+                                  minWidth: 150,
+                                  textAlign: "left",
+                                  padding: "4px 0",
+                                }}
+                              >
+                                <div
+                                  onClick={() => {
+                                    setActiveSupplierMenuId(null);
+                                    setShowVoucherModal(true);
+                                  }}
+                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "#1e293b" }}
+                                >
+                                  Lập CT mua hàng
+                                </div>
+                                <div
+                                  onClick={() => {
+                                    setActiveSupplierMenuId(null);
+                                    setEditingSupplier(s);
+                                    setShowSupplierModal(true);
+                                  }}
+                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "#1e293b" }}
+                                >
+                                  Sửa
+                                </div>
+                                <div
+                                  onClick={() => {
+                                    setActiveSupplierMenuId(null);
+                                    setEditingSupplier({ ...s, activeTab: "items" });
+                                    setShowSupplierModal(true);
+                                  }}
+                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "#00a862", fontWeight: 600 }}
+                                >
+                                  Xem VTHH cung cấp
+                                </div>
+                                <div
+                                  onClick={() => {
+                                    setActiveSupplierMenuId(null);
+                                    handleDeleteSupplier(s.id, s.name);
+                                  }}
+                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "#ef4444" }}
+                                >
+                                  Xóa
+                                </div>
+                                <div
+                                  onClick={() => {
+                                    setActiveSupplierMenuId(null);
+                                    notify(`Đã cập nhật trạng thái của nhà cung cấp "${s.name}".`);
+                                  }}
+                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "#475569" }}
+                                >
+                                  Ngừng sử dụng
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bottom Pagination matching Screenshot 1 & 2 */}
+          <div
+            style={{
+              height: 44,
+              padding: "0 14px",
+              background: "#ffffff",
+              borderTop: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: 12.5,
+              color: "#334155",
+            }}
+          >
+            <div>
+              <span>Tổng số: </span>
+              <strong>{filteredSuppliers.length}</strong>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span>Số dòng/trang</span>
+                <select
+                  value={supplierRowsPerPage}
+                  onChange={(e) => setSupplierRowsPerPage(Number(e.target.value) || 20)}
+                  style={{
+                    height: 26,
+                    padding: "0 4px",
+                    borderRadius: 3,
+                    border: "1px solid #cbd5e1",
+                    fontSize: 12,
+                    background: "#ffffff",
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#64748b" }}>
+                <button
+                  type="button"
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: "2px 4px",
+                    color: "#94a3b8",
+                  }}
+                  title="Trang đầu"
+                >
+                  «
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: "2px 4px",
+                    color: "#94a3b8",
+                  }}
+                  title="Trang trước"
+                >
+                  ‹
+                </button>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 22,
+                    height: 22,
+                    lineHeight: "22px",
+                    textAlign: "center",
+                    background: "#00a862",
+                    color: "#ffffff",
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    fontSize: 12,
+                  }}
+                >
+                  1
+                </span>
+                <button
+                  type="button"
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: "2px 4px",
+                    color: "#94a3b8",
+                  }}
+                  title="Trang sau"
+                >
+                  ›
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: "2px 4px",
+                    color: "#94a3b8",
+                  }}
+                  title="Trang cuối"
+                >
+                  »
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {renderModals()}
@@ -3714,8 +5044,9 @@ export default function MisaPurchaseWorkspace({
           </h2>
 
           <ul style={{ listStyle: "none", margin: 0, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {['Chi tiết công nợ phải trả nhà cung cấp','Tổng hợp mua hàng theo mặt hàng','Tổng hợp công nợ phải trả nhà cung cấp','Biên bản đối chiếu và xác nhận công nợ phải trả'].map(name=><li key={name}><button style={{border:0,background:'transparent',padding:0,fontSize:12.5,color:'#0284c7',cursor:'pointer',textAlign:'left'}} onClick={()=>openPurchaseReport(name)}>• {name}</button></li>)}
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => notify("Mở Sổ chi tiết mua hàng...")}>
+              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Sổ chi tiết mua hàng")}>
                 • Sổ chi tiết mua hàng
               </span>
             </li>
@@ -3725,29 +5056,47 @@ export default function MisaPurchaseWorkspace({
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => notify("Mở Báo cáo công nợ nhà cung cấp...")}>
+              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tổng hợp công nợ phải trả nhà cung cấp")}>
                 • Báo cáo công nợ phải trả NCC
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => notify("Mở Báo cáo tình hình thực hiện đơn mua hàng...")}>
+              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tình hình thực hiện đơn mua hàng")}>
                 • Tình hình thực hiện đơn mua hàng
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => notify("Mở Báo cáo theo dõi hợp đồng mua...")}>
+              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tình hình thực hiện hợp đồng mua")}>
                 • Theo dõi tiến độ hợp đồng mua
               </span>
             </li>
           </ul>
 
           <div style={{ marginTop: "auto", padding: "12px 14px", borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
-            <span style={{ fontSize: 12, color: "#059669", cursor: "pointer", fontWeight: 600 }} onClick={() => notify("Mở tất cả báo cáo mua hàng...")}>
+            <span style={{ fontSize: 12, color: "#059669", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate(href?.("/purchases/reports")||"/purchases/reports")}>
               Tất cả báo cáo mua hàng →
             </span>
           </div>
         </aside>
 
+        <div className="ce-toolbar" style={{gridColumn:"1 / -1",position:"relative",zIndex:100}}>
+          <button onClick={()=>setPaymentTermsOpen(true)}>Điều khoản thanh toán</button>
+          <div style={{position:"relative"}}>
+            <button type="button" aria-expanded={showUtilityMenu} onClick={()=>setShowUtilityMenu(!showUtilityMenu)}>Tiện ích ▾</button>
+            {showUtilityMenu&&<>
+              <div onClick={()=>setShowUtilityMenu(false)} style={{position:"fixed",inset:0,zIndex:19}}/>
+              <div role="menu" aria-label="Tiện ích mua hàng" style={{position:"absolute",bottom:"calc(100% + 4px)",left:0,width:310,background:"white",border:"1px solid #e2e8f0",borderRadius:6,boxShadow:"0 8px 24px #0002",padding:4,zIndex:20}}>
+                {[
+                  {label:"Đối trừ chứng từ",open:()=>setShowDebtOffsetModal(true)},
+                  {label:"Đối trừ chứng từ nhiều đối tượng",open:()=>setShowMultiDebtOffsetModal(true)},
+                  {label:"Bỏ đối trừ",open:()=>setShowUnOffsetModal(true)},
+                  {label:"Bỏ đối trừ chứng từ nhiều đối tượng",open:()=>setShowMultiUnOffsetModal(true)},
+                  {label:"Bù trừ công nợ",open:()=>setShowDebtClearingModal(true)},
+                ].map(item=><button key={item.label} role="menuitem" style={{display:"block",width:"100%",textAlign:"left",border:0,padding:"10px 12px"}} onClick={()=>{setShowUtilityMenu(false);item.open();}}>{item.label}</button>)}
+              </div>
+            </>}
+          </div>
+        </div>
         {/* Panel 3: Quick Action Buttons (Bottom Bar spanning full width) */}
         <div
           style={{
@@ -3775,7 +5124,7 @@ export default function MisaPurchaseWorkspace({
           <button
             type="button"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
-            onClick={() => notify("Xem danh mục Hàng hóa, dịch vụ")}
+            onClick={() => navigate(href?.("/purchases/inventory-items")||"/purchases/inventory-items")}
           >
             <Package size={20} style={{ color: "#f59e0b" }} />
             <span>Hàng hóa, dịch vụ</span>
@@ -3784,7 +5133,7 @@ export default function MisaPurchaseWorkspace({
           <button
             type="button"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
-            onClick={() => setShowReconciliationModal(true)}
+            onClick={() => setShowDebtOffsetModal(true)}
           >
             <FileCheck size={20} style={{ color: "#0284c7" }} />
             <span>Đối trừ chứng từ</span>
@@ -3793,7 +5142,7 @@ export default function MisaPurchaseWorkspace({
           <button
             type="button"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
-            onClick={() => notify("Mở Bù trừ công nợ...")}
+            onClick={() => setShowDebtClearingModal(true)}
           >
             <CreditCard size={20} style={{ color: "#8b5cf6" }} />
             <span>Bù trừ công nợ</span>

@@ -1,3 +1,4 @@
+import {CASH_PERIODS,cashPeriodDates} from "./cash-report-periods.ts";
 export function matchesTransactionPeriod(
   value: string,
   period: string,
@@ -17,6 +18,10 @@ export function matchesTransactionPeriod(
     date.getDate() !== day
   )
     return false;
+  if (CASH_PERIODS.includes(period) && period !== "Tùy chọn") {
+    const range=cashPeriodDates(period,today);
+    if(range){const start=new Date(range[0].split("/").reverse().join("-"));const end=new Date(range[1].split("/").reverse().join("-"));return date>=start&&date<=end;}
+  }
   if (period === "ytd")
     return (
       year === today.getFullYear() &&

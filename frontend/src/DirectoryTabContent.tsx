@@ -30,8 +30,8 @@ export default function DirectoryTabContent({
           const key = `${tab}:${field.label}`;
           return (
             <label key={key}>
-              {field.label}
-              {field.kind === "textarea" ? (
+              {field.label}{field.label==="Loại hợp đồng"&&<em>*</em>}
+              {field.options ? <select value={values[key]||field.options[0]} onChange={e=>onChange(key,e.target.value)}>{field.options.map(option=><option key={option}>{option}</option>)}</select> : field.kind === "textarea" ? (
                 <textarea
                   value={values[key] || ""}
                   onChange={(e) => onChange(key, e.target.value)}

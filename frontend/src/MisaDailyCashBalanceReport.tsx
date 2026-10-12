@@ -1,3 +1,4 @@
+import {currentCashDate} from './cash-date';
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -81,12 +82,12 @@ export default function MisaDailyCashBalanceReport({
 }: MisaDailyCashBalanceReportProps) {
   // Drawer parameters matching Screenshot 3
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
-  const [asOfDate, setAsOfDate] = useState("07/10/2026");
+  const [asOfDate, setAsOfDate] = useState(currentCashDate);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [compareDays, setCompareDays] = useState("1");
 
   // Drawer draft state
-  const [draftAsOfDate, setDraftAsOfDate] = useState("07/10/2026");
+  const [draftAsOfDate, setDraftAsOfDate] = useState(currentCashDate);
   const [draftCompareEnabled, setDraftCompareEnabled] = useState(false);
   const [draftCompareDays, setDraftCompareDays] = useState("1");
 
@@ -133,7 +134,7 @@ export default function MisaDailyCashBalanceReport({
   };
 
   const handleResetParams = () => {
-    setDraftAsOfDate("07/10/2026");
+    setDraftAsOfDate(currentCashDate());
     setDraftCompareEnabled(false);
     setDraftCompareDays("1");
   };

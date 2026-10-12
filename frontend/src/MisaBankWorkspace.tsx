@@ -1,5 +1,20 @@
-import { useState, useMemo, useRef } from "react";
-import {useNavigate} from 'react-router-dom';
+import {CASH_PERIODS} from "./cash-report-periods";
+import CashColumnDialog from "./CashColumnDialog";
+import {defaultBankColumns,readBankColumns} from "./bank-columns";
+import {parseReportDate} from "./report-date";
+import CashExcelImport from "./CashExcelImport";
+import BankAccountingDetail from "./BankAccountingDetail";
+import type {VoucherDetailRow} from "./MisaCashWorkspace";
+import CashAdvancedPanel,{defaultCashFilter,type CashFilter} from "./CashAdvancedPanel";
+import {currentCashDate,isCashDateInRange} from "./cash-date";
+import {cashLedger,nextCashCode} from "./cash-operations";
+import MisaBankElectronicWorkspace from "./MisaBankElectronicWorkspace";
+import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
+import MisaCashForecastWorkspace from "./MisaCashForecastWorkspace";
+import CashOptionsDialog from "./CashOptionsDialog";
+import {AdvanceSettlementTab} from "./MisaCashWorkspace";
+import { useState, useMemo, useRef, useEffect, cloneElement, type ReactElement } from "react";
+import {useNavigate,useSearchParams} from 'react-router-dom';
 import {
   Filter,
   Search,
@@ -29,9 +44,11 @@ import {
   AccountingVoucherModal,
   CreateVoucherModal,
   AIAssistantModal,
+  SAMPLE_BANK_ACCOUNTS,
   MISA_BANK_RECEIPT_TYPES,
   MISA_BANK_PAYMENT_TYPES,
   formatVND,
+  convertNumberToVietnameseWords,
 } from "./MisaCashWorkspace";
 import {
   SingleCustomerInvoiceCollectionModal,
@@ -52,8 +69,10 @@ import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 import {matchesTransactionPeriod} from './transaction-period';
 
+type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; bankAccount?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
 export default function MisaBankWorkspace({
   tab = "transactions",
+  company,
   notify,
   href,
 }: {
@@ -64,6 +83,12 @@ export default function MisaBankWorkspace({
   notify: (msg: string) => void;
 }) {
   const navigate=useNavigate();
+  const [bankParams]=useSearchParams();
+  const [bankOptionsOpen,setBankOptionsOpen]=useState(false);
+  const bankColumnsKey=`soviet:bank-columns:${company.id}`;
+  const [bankColumns,setBankColumns]=useState(()=>{try{return readBankColumns(localStorage.getItem(bankColumnsKey));}catch{return defaultBankColumns();}});
+  const [bankColumnsOpen,setBankColumnsOpen]=useState(false);
+  useEffect(()=>{try{setBankColumns(readBankColumns(localStorage.getItem(bankColumnsKey)));}catch{setBankColumns(defaultBankColumns());}},[bankColumnsKey]);
   // Modal states
   const [showTaxModal, setShowTaxModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
@@ -73,6 +98,7 @@ export default function MisaBankWorkspace({
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showExcelModal, setShowExcelModal] = useState(false);
+  const [bankImportKind,setBankImportKind]=useState<"receipt"|"payment"|null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [showCreateVoucher, setShowCreateVoucher] = useState<"receipt" | "payment" | null>(null);
   const [createVoucherTypeIndex, setCreateVoucherTypeIndex] = useState(0);
@@ -106,8 +132,13 @@ export default function MisaBankWorkspace({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterPeriod,setFilterPeriod]=useState('ytd');
+  const [bankFilter,setBankFilter]=useState<CashFilter>(defaultCashFilter);
+  const [bankFilterOpen,setBankFilterOpen]=useState(false);
+  const [bankPage,setBankPage]=useState(1);
+  const [bankPageSize,setBankPageSize]=useState(20);
   const [showAvaBanner, setShowAvaBanner] = useState(true);
   const [detailExpanded, setDetailExpanded] = useState(true);
+  const [bankDetailTab,setBankDetailTab]=useState("accounting");
   const [kpiCollapsed, setKpiCollapsed] = useState(false);
 
   // Selected voucher for print preview
@@ -120,14 +151,14 @@ export default function MisaBankWorkspace({
     debitAccount: "6427",
     creditAccount: "1121",
     amount: 2317000,
-    amountInWords: "Hai triệu ba trăm mười bảy nghìn đồng chẵn",
+    amountInWords: convertNumberToVietnameseWords(2317000),
     notes: "Kèm theo Hóa đơn điện tử số 34221 ngày 02/09/2026",
     chiefAccountant: "Trương Thị B",
     director: "Nguyễn Văn A",
   });
 
   // Authentic sample transactions matching Image 1
-  const [transactions, setTransactions] = useState([
+  const [transactions, setTransactions] = useState<BankTransaction[]>([
     {
       id: "unc-028",
       dateHachToan: "02/09/2026",
@@ -219,28 +250,18 @@ export default function MisaBankWorkspace({
     },
   ]);
 
+  const [bankRowMenu,setBankRowMenu]=useState<string|null>(null);
   const [selectedRowId, setSelectedRowId] = useState("unc-028");
+  const [bankCheckedIds,setBankCheckedIds]=useState<string[]>([]);
+  const [bankDeletePending,setBankDeletePending]=useState(false);
+  const [bankDeletedRows,setBankDeletedRows]=useState<BankTransaction[]>([]);
 
-  const totalPayment = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.kind === "payment" || t.kind === "transfer")
-        .reduce((sum, t) => sum + t.amount, 0),
-    [transactions],
-  );
+  const bankLedger=useMemo(()=>cashLedger(transactions.map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),1745522870),[transactions]);
+  const totalPayment = bankLedger.payment;
 
-  const totalReceipt = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.kind === "receipt")
-        .reduce((sum, t) => sum + t.amount, 0),
-    [transactions],
-  );
+  const totalReceipt = bankLedger.receipt;
 
-  const currentBalance = useMemo(
-    () => 1740888870 + totalReceipt - (totalPayment - 4634000),
-    [totalReceipt, totalPayment],
-  );
+  const currentBalance = bankLedger.closing;
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
@@ -254,13 +275,28 @@ export default function MisaBankWorkspace({
         (filterType === "receipt" && t.kind === "receipt") ||
         (filterType === "payment" && t.kind === "payment") ||
         (filterType === "transfer" && t.kind === "transfer");
-      return matchQuery && matchType && matchesTransactionPeriod(t.dateHachToan,filterPeriod);
+      const matchDate=filterPeriod==='custom'?isCashDateInRange(t.dateHachToan,bankFilter.from,bankFilter.to):matchesTransactionPeriod(t.dateHachToan,filterPeriod);
+      const matchStatus=bankFilter.status==='all'||t.status===bankFilter.status;
+      const matchReason=bankFilter.reason==='all'||t.reasonLabel===bankFilter.reason;
+      const matchAccount=!bankFilter.bankAccount||bankFilter.bankAccount==='all'||t.bankAccount===bankFilter.bankAccount;
+      return matchQuery && matchType && matchDate && matchStatus && matchReason && matchAccount;
     });
-  }, [transactions, searchQuery, filterType,filterPeriod]);
+  }, [transactions, searchQuery, filterType,filterPeriod,bankFilter]);
+  const bankPages=Math.max(1,Math.ceil(filteredTransactions.length/bankPageSize));
+  const bankVisiblePage=Math.min(bankPage,bankPages);
+  const bankVisibleRows=filteredTransactions.slice((bankVisiblePage-1)*bankPageSize,bankVisiblePage*bankPageSize);
   const selectedTransaction = useMemo(
-    () => filteredTransactions.find((item) => item.id === selectedRowId) || filteredTransactions[0],
-    [filteredTransactions, selectedRowId],
+    () => bankVisibleRows.find((item) => item.id === selectedRowId) || bankVisibleRows[0],
+    [filteredTransactions, selectedRowId,bankVisiblePage,bankPageSize],
   );
+
+  const checkedBankRows=filteredTransactions.filter(transaction=>bankCheckedIds.includes(transaction.id));
+  const toggleBankChecked=(id:string)=>setBankCheckedIds(previous=>previous.includes(id)?previous.filter(value=>value!==id):[...previous,id]);
+  const setBankPosting=(status:BankTransaction['status'])=>{
+    const ids=new Set(checkedBankRows.map(transaction=>transaction.id));
+    setTransactions(previous=>previous.map(transaction=>ids.has(transaction.id)?{...transaction,status}:transaction));
+    notify(`Đã ${status==='posted'?'ghi sổ':'bỏ ghi sổ'} ${ids.size} chứng từ trên frontend.`);
+  };
 
   // Handlers
   const handleTaxPayment = (taxData: any) => {
@@ -492,6 +528,10 @@ export default function MisaBankWorkspace({
   // Common Modals Renderer
   const renderModals = () => (
     <>
+      {bankColumnsOpen&&<CashColumnDialog value={bankColumns} defaults={defaultBankColumns} onClose={()=>setBankColumnsOpen(false)} onSave={value=>{setBankColumns(value);try{localStorage.setItem(bankColumnsKey,JSON.stringify(value));}catch{notify('Đã áp dụng cột nhưng chưa lưu được tùy chọn trên trình duyệt.');}}}/>}
+      {bankImportKind&&<CashExcelImport category="bank" kind={bankImportKind} existingCodes={transactions.map(transaction=>transaction.code)} onClose={()=>setBankImportKind(null)} onImport={documents=>{setTransactions(previous=>[...documents.map(document=>({...document,dateHachToan:document.postDate.split('-').reverse().join('/'),dateChungTu:document.date.split('-').reverse().join('/'),items:[]})),...previous]);setSelectedRowId(documents[0]?.id||selectedRowId);notify(`Đã nhập ${documents.length} chứng từ tiền gửi vào frontend.`);}}/>}
+      {bankFilterOpen&&<CashAdvancedPanel bankAccounts={SAMPLE_BANK_ACCOUNTS} mode="filters" filter={bankFilter} hidden={[]} reasons={[...MISA_BANK_RECEIPT_TYPES,...MISA_BANK_PAYMENT_TYPES].map(type=>type.label.replace(/^\d+\.\s*/,''))} onClose={()=>setBankFilterOpen(false)} onColumns={()=>{}} onFilter={value=>{setBankFilter(value);setFilterPeriod('custom');}}/>}
+      {bankOptionsOpen&&<CashOptionsDialog companyId={company.id} onClose={()=>setBankOptionsOpen(false)}/>}
       {showCustomerModal && (
         <SingleCustomerInvoiceCollectionModal
           initialMethod="bank"
@@ -540,6 +580,7 @@ export default function MisaBankWorkspace({
 
       {showTaxModal && (
         <TaxPaymentModal
+          initialMethod="bank"
           onClose={() => setShowTaxModal(false)}
           onSubmit={handleTaxPayment}
         />
@@ -547,6 +588,7 @@ export default function MisaBankWorkspace({
 
       {showSupplierModal && (
         <SupplierPaymentModal
+          initialMethod="bank"
           onClose={() => setShowSupplierModal(false)}
           onSubmit={handleSupplierPayment}
         />
@@ -563,6 +605,8 @@ export default function MisaBankWorkspace({
         <CreateVoucherModal
           kind={showCreateVoucher}
           voucherCategory="bank"
+          existingCodes={transactions.map(row=>row.code)}
+          suggestedCode={nextCashCode(showCreateVoucher,transactions.map(row=>row.code),"bank")}
           initialTypeIndex={createVoucherTypeIndex}
           onClose={() => {
             setShowCreateVoucher(null);
@@ -572,12 +616,18 @@ export default function MisaBankWorkspace({
             setTransactions([
               {
                 id: doc.id,
-                dateHachToan: doc.date.split("-").reverse().join("/"),
+                dateHachToan: (doc.postDate||doc.date).split("-").reverse().join("/"),
                 dateChungTu: doc.date.split("-").reverse().join("/"),
                 code: doc.code,
                 description: doc.description,
                 amount: doc.amount,
                 partner: doc.partner,
+                rows: doc.rows,
+                debit: doc.debit,
+                credit: doc.credit,
+                bankAccount: doc.bankAccount,
+                reasonLabel: doc.reasonLabel,
+                documentType: doc.kind==="receipt"?"Thu tiền gửi":doc.paymentMethod||"Ủy nhiệm chi",
                 kind: doc.kind,
                 status: "posted",
                 items: [
@@ -638,6 +688,10 @@ export default function MisaBankWorkspace({
     </>
   );
 
+  if(tab==='ebanking')return <><MisaBankElectronicWorkspace accounts={SAMPLE_BANK_ACCOUNTS} companyId={company.id} onOpenVoucher={kind=>setShowCreateVoucher(kind)}/>{renderModals()}</>;
+  if(tab==='reports')return <MisaReportCenterWorkspace key={bankParams.get('report')||'bank'} initialCategory="bank" initialReport={bankParams.get('report')} embedded notify={notify}/>;
+  if(tab==='cashflow')return <MisaCashForecastWorkspace companyId={company.id} openingKind="bank" entries={transactions.map(row=>({date:row.dateHachToan,kind:row.kind,amount:row.amount,code:row.code,status:row.status}))}/>;
+  if(tab==='advance-settlement')return <><MisaPaymentWorkflow variant="settlement" notify={notify}><AdvanceSettlementTab notify={notify} onOpenCreateReceipt={()=>setShowCreateVoucher('receipt')}/></MisaPaymentWorkflow>{renderModals()}</>;
   if (tab === 'reconciliation') return <MisaBankReconciliation transactions={transactions} notify={notify}/>;
   if (tab === 'payment-requests') return <><MisaPaymentWorkflow notify={notify}><PaymentRequestsTab notify={notify} onOpenCreatePayment={()=>setShowCreateVoucher('payment')}/></MisaPaymentWorkflow>{renderModals()}</>;
 
@@ -793,7 +847,7 @@ export default function MisaBankWorkspace({
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
                 <Clock size={12} />
-                <span>15:12</span>
+                <span>{new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"})}</span>
               </div>
             </div>
 
@@ -851,7 +905,7 @@ export default function MisaBankWorkspace({
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
-                  Số dư tiền gửi đến ngày 09/09/2026
+                  Số dư tiền gửi đến ngày {currentCashDate()}
                 </div>
                 <strong style={{ fontSize: 18, color: "#00b06b" }}>{formatVND(currentBalance)}</strong>
               </div>
@@ -989,7 +1043,8 @@ export default function MisaBankWorkspace({
               <option value="month">Kỳ: Tháng này</option>
               <option value="quarter">Kỳ: Quý này</option>
               <option value="year">Kỳ: Năm nay</option>
-            </select>
+            <option value="custom">Kỳ: Tùy chọn</option>
+              {CASH_PERIODS.filter(period=>!["Đầu năm đến hiện tại","Tháng này","Quý này","Năm nay","Tùy chọn"].includes(period)).map(period=><option key={period} value={period}>Kỳ: {period}</option>)}</select>
 
             {/* Icon buttons group */}
             <button
@@ -1056,7 +1111,7 @@ export default function MisaBankWorkspace({
               type="button"
               className="misa-tax-icon-btn"
               title="Xuất khẩu / Nhập khẩu"
-              onClick={() => notify("Đã xuất khẩu danh sách ra Excel.")}
+              onClick={async()=>{const XLSX=await import("xlsx");const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,XLSX.utils.aoa_to_sheet([["Ngày hạch toán","Ngày chứng từ","Số chứng từ","Diễn giải","Số tiền","Đối tượng","Số tài khoản NH","Lý do thu/chi","Loại chứng từ"],...filteredTransactions.map(transaction=>[transaction.dateHachToan,transaction.dateChungTu,transaction.code,transaction.description,transaction.amount,transaction.partner,transaction.bankAccount||"",transaction.reasonLabel||"",transaction.documentType||""])]),"Tien-gui");XLSX.writeFileXLSX(workbook,"Thu-chi-tien-gui.xlsx");}}
               style={{
                 width: 32,
                 height: 32,
@@ -1076,7 +1131,7 @@ export default function MisaBankWorkspace({
               type="button"
               className="misa-tax-icon-btn"
               title="Tùy chọn cột và thiết lập"
-              onClick={() => notify("Mở thiết lập cột.")}
+              onClick={() => setBankColumnsOpen(true)}
               style={{
                 width: 32,
                 height: 32,
@@ -1096,7 +1151,7 @@ export default function MisaBankWorkspace({
               type="button"
               className="misa-filter-btn"
               title="Bộ lọc nâng cao"
-              onClick={() => notify("Mở bộ lọc nâng cao")}
+              onClick={() => setBankFilterOpen(true)}
               style={{
                 width: 32,
                 height: 32,
@@ -1573,23 +1628,21 @@ export default function MisaBankWorkspace({
 
         {/* Master Table (Image 4 & 5) */}
         <div style={{ flex: 1, minHeight: 220, overflow: "auto", background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
+          <details className="ce-toolbar"><summary style={{cursor:'pointer'}}>Nhập chứng từ tiền gửi từ Excel</summary><button onClick={()=>setBankImportKind('receipt')}>Nhập thu tiền gửi</button><button onClick={()=>setBankImportKind('payment')}>Nhập chi tiền gửi</button></details>
+          {checkedBankRows.length>0&&<div className="ce-toolbar" role="toolbar" aria-label="Thao tác chứng từ tiền gửi đã chọn"><strong>Đã chọn {checkedBankRows.length}</strong><button onClick={()=>setBankPosting('posted')}>Ghi sổ</button><button onClick={()=>setBankPosting('draft')}>Bỏ ghi sổ</button><button onClick={()=>setBankDeletePending(true)}>Xóa</button><button onClick={()=>setBankCheckedIds([])}>Bỏ chọn</button></div>}
+          {bankDeletedRows.length>0&&<div className="ce-toolbar" role="status">Đã xóa {bankDeletedRows.length} chứng từ trên frontend.<button onClick={()=>{setTransactions(previous=>[...bankDeletedRows.filter(row=>!previous.some(existing=>existing.id===row.id)),...previous]);setBankDeletedRows([]);}}>Hoàn tác</button></div>}
+          {bankDeletePending&&<div className="ce-overlay"><section className="ce-panel" role="alertdialog" aria-modal="true" aria-label="Xóa chứng từ tiền gửi"><header><h2>Xóa chứng từ tiền gửi</h2></header><div className="ce-panel-body">Xóa {checkedBankRows.length} chứng từ đã chọn khỏi danh sách frontend?</div><footer><button onClick={()=>setBankDeletePending(false)}>Hủy</button><button className="ce-primary" onClick={()=>{const ids=new Set(checkedBankRows.map(row=>row.id));setBankDeletedRows(checkedBankRows);setTransactions(previous=>previous.filter(row=>!ids.has(row.id)));setBankCheckedIds(previous=>previous.filter(id=>!ids.has(id)));setBankDeletePending(false);}}>Xóa chứng từ</button></footer></section></div>}
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
               <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 36, textAlign: "center", padding: "8px 4px" }}>
-                  <input type="checkbox" style={{ accentColor: "#00b06b" }} />
+                  <input type="checkbox" aria-label="Chọn tất cả chứng từ trang hiện tại" checked={bankVisibleRows.length>0&&bankVisibleRows.every(row=>bankCheckedIds.includes(row.id))} onChange={event=>{const ids=bankVisibleRows.map(row=>row.id);setBankCheckedIds(previous=>event.target.checked?[...new Set([...previous,...ids])]:previous.filter(id=>!ids.includes(id)));}} style={{ accentColor: "#00b06b" }} />
                 </th>
-                <th style={{ width: 110, textAlign: "left", padding: "8px 10px" }}>Ngày hạch toán</th>
-                <th style={{ width: 110, textAlign: "left", padding: "8px 10px" }}>Ngày chứng từ</th>
-                <th style={{ width: 100, textAlign: "left", padding: "8px 10px" }}>Số chứng từ</th>
-                <th style={{ textAlign: "left", padding: "8px 10px" }}>Diễn giải</th>
-                <th style={{ width: 110, textAlign: "right", padding: "8px 10px" }}>Số tiền</th>
-                <th style={{ width: 230, textAlign: "left", padding: "8px 10px" }}>Đối tượng</th>
-                <th style={{ width: 95, textAlign: "center", padding: "8px 10px" }}>Chức năng</th>
+                {bankColumns.filter(column=>column.visible).map(column=><th key={column.id} style={{width:column.width,minWidth:column.width,textAlign:column.id===6?'right':'left',padding:'8px 10px'}}>{column.name}</th>)}
               </tr>
             </thead>
             <tbody>
-              {filteredTransactions.map((tx) => {
+              {bankVisibleRows.map((tx) => {
                 const isSelected = tx.id === selectedRowId;
                 return (
                   <tr
@@ -1602,10 +1655,10 @@ export default function MisaBankWorkspace({
                     }}
                   >
                     <td style={{ textAlign: "center", padding: "8px 4px" }}>
-                      <input type="checkbox" checked={isSelected} onChange={() => setSelectedRowId(tx.id)} />
+                      <input type="checkbox" aria-label={`Chọn chứng từ ${tx.code}`} checked={bankCheckedIds.includes(tx.id)} onClick={event=>event.stopPropagation()} onChange={()=>toggleBankChecked(tx.id)} />
                     </td>
-                    <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.dateHachToan}</td>
-                    <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.dateChungTu}</td>
+                    {bankColumns.filter(column=>column.visible).map(column=>{const cells:ReactElement<any>[]=[<td style={{ padding: "8px 10px", color: "#374151" }}>{tx.dateHachToan}</td>,
+                    <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.dateChungTu}</td>,
                     <td style={{ padding: "8px 10px" }}>
                       <span
                         style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
@@ -1613,14 +1666,14 @@ export default function MisaBankWorkspace({
                           e.stopPropagation();
                           setSelectedVoucher({
                             code: tx.code,
-                            date: "2026-09-02",
+                            date: parseReportDate(tx.dateChungTu),
                             person: tx.partner,
                             address: "Hà Nội",
                             reason: tx.description,
-                            debitAccount: "6427",
-                            creditAccount: "1121",
+                            debitAccount: tx.debit||(tx.kind==="receipt"?"1121":"6427"),
+                            creditAccount: tx.credit||(tx.kind==="receipt"?"131":"1121"),
                             amount: tx.amount,
-                            amountInWords: "Hai triệu ba trăm mười bảy nghìn đồng chẵn",
+                            amountInWords: convertNumberToVietnameseWords(tx.amount),
                             notes: "Kèm theo Hóa đơn điện tử số 34221 ngày 02/09/2026",
                             chiefAccountant: "Trương Thị B",
                             director: "Nguyễn Văn A",
@@ -1630,12 +1683,13 @@ export default function MisaBankWorkspace({
                       >
                         {tx.code}
                       </span>
-                    </td>
-                    <td style={{ padding: "8px 10px", color: "#1f2937" }}>{tx.description}</td>
+                    </td>,
+                    <td style={{ padding: "8px 10px", color: "#1f2937" }}>{tx.description}</td>,
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>
                       {formatVND(tx.amount)}
-                    </td>
-                    <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.partner}</td>
+                    </td>,
+                    <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.partner}</td>,
+                    <td style={{padding:"8px 10px"}}>{tx.bankAccount||""}</td>,<td style={{padding:"8px 10px"}}>{tx.reasonLabel||""}</td>,<td style={{padding:"8px 10px"}}>{tx.documentType||(tx.kind==="receipt"?"Thu tiền gửi":tx.kind==="transfer"?"Chuyển tiền nội bộ":"Ủy nhiệm chi")}</td>,
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span
                         style={{ color: "#0284c7", cursor: "pointer", marginRight: 6 }}
@@ -1643,14 +1697,14 @@ export default function MisaBankWorkspace({
                           e.stopPropagation();
                           setSelectedVoucher({
                             code: tx.code,
-                            date: "2026-09-02",
+                            date: parseReportDate(tx.dateChungTu),
                             person: tx.partner,
                             address: "Hà Nội",
                             reason: tx.description,
-                            debitAccount: "6427",
-                            creditAccount: "1121",
+                            debitAccount: tx.debit||(tx.kind==="receipt"?"1121":"6427"),
+                            creditAccount: tx.credit||(tx.kind==="receipt"?"131":"1121"),
                             amount: tx.amount,
-                            amountInWords: "Hai triệu ba trăm mười bảy nghìn đồng chẵn",
+                            amountInWords: convertNumberToVietnameseWords(tx.amount),
                             notes: "Kèm theo Hóa đơn điện tử số 34221",
                             chiefAccountant: "Trương Thị B",
                             director: "Nguyễn Văn A",
@@ -1660,23 +1714,15 @@ export default function MisaBankWorkspace({
                       >
                         Xem
                       </span>
-                      <ChevronDown size={13} style={{ display: "inline", color: "#0284c7" }} />
-                    </td>
+                      <button aria-label={`Chức năng chứng từ ${tx.code}`} aria-expanded={bankRowMenu===tx.id} onClick={event=>{event.stopPropagation();setBankRowMenu(previous=>previous===tx.id?null:tx.id);}} style={{border:0,background:'transparent',color:'#0284c7',cursor:'pointer'}}><ChevronDown size={13}/></button>
+                      {bankRowMenu===tx.id&&<div role="menu" aria-label={`Chức năng ${tx.code}`}><button role="menuitem" onClick={event=>{event.stopPropagation();setTransactions(previous=>previous.map(row=>row.id===tx.id?{...row,status:row.status==='posted'?'draft':'posted'}:row));setBankRowMenu(null);}}>{tx.status==='posted'?'Bỏ ghi':'Ghi sổ'}</button><button role="menuitem" onClick={event=>{event.stopPropagation();setBankRowMenu(null);}}>Đóng</button></div>}
+                    </td>,<td>{tx.partnerCode||""}</td>,<td>{tx.beneficiaryAccount||""}</td>,<td>{tx.beneficiaryBank||""}</td>,<td>{tx.address||""}</td>,<td>{tx.employee||""}</td>,<td>{tx.bankName||""}</td>,<td>{tx.combinedInvoices||""}</td>,<td>{tx.settled||""}</td>,<td>{tx.extended1||""}</td>,<td>{tx.extended2||""}</td>,<td>{tx.extended3||""}</td>,<td>{tx.extended4||""}</td>,<td>{tx.extended5||""}</td>,<td>{tx.extended6||""}</td>,<td>{tx.extended7||""}</td>,<td>{tx.extended8||""}</td>,<td>{tx.extended9||""}</td>,<td>{tx.extended10||""}</td>,<td>{tx.createdBy||""}</td>,<td>{tx.createdAt||""}</td>,<td>{tx.updatedBy||""}</td>,<td>{tx.updatedAt||""}</td>];const cell=cells[column.id-2];return cloneElement(cell,{key:column.id,style:{...cell.props.style,width:column.width,minWidth:column.width}});})}
                   </tr>
                 );
               })}
+            {!filteredTransactions.length&&<tr><td colSpan={1+bankColumns.filter(column=>column.visible).length} style={{textAlign:'center',padding:24}}>Không có chứng từ phù hợp với điều kiện tìm kiếm</td></tr>}
             </tbody>
-            <tfoot>
-              <tr style={{ background: "#f8fafc", fontWeight: 700, borderTop: "2px solid #e2e8f0" }}>
-                <td colSpan={4} style={{ padding: "10px", textAlign: "left" }}>
-                  Tổng
-                </td>
-                <td style={{ padding: "10px", textAlign: "left" }}>Cộng</td>
-                <td style={{ padding: "10px", textAlign: "right" }}>{formatVND(totalPayment)}</td>
-                <td></td>
-                <td></td>
-              </tr>
-            </tfoot>
+            <tfoot><tr style={{background:'#f8fafc',fontWeight:700}}><td/>{bankColumns.filter(column=>column.visible).map(column=><td key={column.id} style={{padding:10,textAlign:column.id===6?'right':'left'}}>{column.id===2?'Tổng':column.id===6?formatVND(filteredTransactions.reduce((sum,transaction)=>sum+transaction.amount,0)):''}</td>)}</tr></tfoot>
           </table>
         </div>
 
@@ -1698,16 +1744,12 @@ export default function MisaBankWorkspace({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span>Số dòng/trang</span>
-            <select style={{ height: 26, borderRadius: 4, border: "1px solid #d1d5db", fontSize: 12 }}>
+            <select aria-label="Số dòng trang danh sách tiền gửi" value={bankPageSize} onChange={event=>{setBankPageSize(Number(event.target.value));setBankPage(1);}} style={{ height: 26, borderRadius: 4, border: "1px solid #d1d5db", fontSize: 12 }}>
               <option value="20">20</option>
-              <option value="50">50</option>
+              <option value="50">50</option><option value="100">100</option>
             </select>
             <div style={{ display: "flex", gap: 4 }}>
-              <button type="button" style={{ border: "none", background: "none", cursor: "pointer" }}>|&lt;</button>
-              <button type="button" style={{ border: "none", background: "none", cursor: "pointer" }}>&lt;</button>
-              <span style={{ fontWeight: 600, color: "#111827", padding: "0 6px" }}>1</span>
-              <button type="button" style={{ border: "none", background: "none", cursor: "pointer" }}>&gt;</button>
-              <button type="button" style={{ border: "none", background: "none", cursor: "pointer" }}>&gt;|</button>
+              <button aria-label="Trang đầu tiền gửi" disabled={bankVisiblePage===1} onClick={()=>setBankPage(1)}>|&lt;</button><button aria-label="Trang trước tiền gửi" disabled={bankVisiblePage===1} onClick={()=>setBankPage(bankVisiblePage-1)}>&lt;</button><span>{bankVisiblePage}/{bankPages}</span><button aria-label="Trang sau tiền gửi" disabled={bankVisiblePage===bankPages} onClick={()=>setBankPage(bankVisiblePage+1)}>&gt;</button><button aria-label="Trang cuối tiền gửi" disabled={bankVisiblePage===bankPages} onClick={()=>setBankPage(bankPages)}>&gt;|</button>
             </div>
           </div>
         </div>
@@ -1745,7 +1787,7 @@ export default function MisaBankWorkspace({
 
             {detailExpanded && (
               <div style={{ flex: 1, overflow: "auto" }}>
-                <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <nav className="ce-toolbar" aria-label="Chi tiết chứng từ ngân hàng" style={{padding:'0 10px'}}><button onClick={()=>setBankDetailTab('accounting')}>Hạch toán</button><button onClick={()=>setBankDetailTab('services')}>Chi tiết dịch vụ và thuế</button></nav>{bankDetailTab==='accounting'?<BankAccountingDetail key={selectedTransaction.id} rows={selectedTransaction.rows?.length?selectedTransaction.rows:[{id:selectedTransaction.id,description:selectedTransaction.description,debit:selectedTransaction.debit||(selectedTransaction.kind==='receipt'?'1121':'6427'),credit:selectedTransaction.credit||(selectedTransaction.kind==='receipt'?'131':'1121'),amount:selectedTransaction.amount,partnerName:selectedTransaction.partner}]}/>:<table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
                       <th style={{ width: 36, textAlign: "center", padding: "8px 4px" }}>#</th>
@@ -1779,7 +1821,7 @@ export default function MisaBankWorkspace({
                       <td colSpan={9}>Tổng số: {selectedTransaction.items.length} dòng</td>
                     </tr>
                   </tfoot>
-                </table>
+                </table>}
               </div>
             )}
           </div>
@@ -1993,7 +2035,7 @@ export default function MisaBankWorkspace({
                   flexDirection: "column",
                   alignItems: "center",
                 }}
-                onClick={() => setActiveFlowchartMenu((prev) => (prev === "receipt" ? null : "receipt"))}
+                onClick={() => setActiveFlowchartMenu("receipt")}
                 title="Lập chứng từ thu tiền gửi"
               >
                 {/* MISA Banknote Icon: THU */}
@@ -2095,7 +2137,7 @@ export default function MisaBankWorkspace({
                   flexDirection: "column",
                   alignItems: "center",
                 }}
-                onClick={() => setActiveFlowchartMenu((prev) => (prev === "payment" ? null : "payment"))}
+                onClick={() => setActiveFlowchartMenu("payment")}
                 title="Lập chứng từ chi tiền gửi (Ủy nhiệm chi)"
               >
                 {/* MISA Banknote Icon: CHI */}
@@ -2298,7 +2340,7 @@ export default function MisaBankWorkspace({
                   position: "relative",
                   cursor: "pointer",
                 }}
-                onClick={() => notify(`Mở báo cáo: ${repName}`)}
+                onClick={() => navigate(href("/bank/reports")+"&report="+encodeURIComponent(repName))}
               >
                 <span
                   style={{
@@ -2332,7 +2374,7 @@ export default function MisaBankWorkspace({
                 fontWeight: 600,
                 cursor: "pointer",
               }}
-              onClick={() => notify("Mở tất cả báo cáo tiền gửi...")}
+              onClick={() => navigate(href("/bank/reports"))}
             >
               Tất cả báo cáo
             </span>
@@ -2371,7 +2413,7 @@ export default function MisaBankWorkspace({
               fontSize: 12,
               color: "#334155",
             }}
-            onClick={() => notify("Mở danh mục Tài khoản ngân hàng")}
+            onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Tài khoản ngân hàng"))}
           >
             <CreditCard size={20} style={{ color: "#00b06b" }} />
             <span>Tài khoản ngân hàng</span>
@@ -2393,7 +2435,7 @@ export default function MisaBankWorkspace({
               fontSize: 12,
               color: "#334155",
             }}
-            onClick={() => setShowCustomerModal(true)}
+            onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Khách hàng"))}
           >
             <UserRound size={20} style={{ color: "#f59e0b" }} />
             <span>Khách hàng</span>
@@ -2415,7 +2457,7 @@ export default function MisaBankWorkspace({
               fontSize: 12,
               color: "#334155",
             }}
-            onClick={() => setShowSupplierModal(true)}
+            onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Nhà cung cấp"))}
           >
             <Building2 size={20} style={{ color: "#00b06b" }} />
             <span>Nhà cung cấp</span>
@@ -2437,7 +2479,7 @@ export default function MisaBankWorkspace({
               fontSize: 12,
               color: "#334155",
             }}
-            onClick={() => setShowSalaryModal(true)}
+            onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Nhân viên"))}
           >
             <Users size={20} style={{ color: "#10b981" }} />
             <span>Nhân viên</span>
@@ -2480,7 +2522,7 @@ export default function MisaBankWorkspace({
               fontSize: 12,
               color: "#334155",
             }}
-            onClick={() => notify("Tùy chọn thiết lập phân hệ Tiền gửi...")}
+            onClick={() => setBankOptionsOpen(true)}
           >
             <SlidersHorizontal size={20} style={{ color: "#f59e0b" }} />
             <span>Tùy chọn</span>

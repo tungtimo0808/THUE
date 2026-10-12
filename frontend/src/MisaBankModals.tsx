@@ -1,3 +1,4 @@
+import {currentCashDate} from './cash-date';
 import { useState, useMemo } from "react";
 import {
   X,
@@ -91,8 +92,9 @@ export function InsurancePaymentModal({
     items?: any[];
   }) => void;
 }) {
+
   const [payMethod, setPayMethod] = useState<"cash" | "bank">("cash");
-  const [payDate, setPayDate] = useState("30/09/2026");
+  const [payDate, setPayDate] = useState(currentCashDate);
 
   const [items, setItems] = useState<
     { id: string; name: string; due: number; pay: number; checked: boolean }[]
@@ -374,8 +376,9 @@ export function SalaryPaymentModal({
     employees?: any[];
   }) => void;
 }) {
+  const [salarySearch,setSalarySearch]=useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "bank">("cash");
-  const [payDate, setPayDate] = useState("30/09/2026");
+  const [payDate, setPayDate] = useState(currentCashDate);
 
   const [records, setRecords] = useState<
     {
@@ -600,6 +603,7 @@ export function SalaryPaymentModal({
             {/* Title Bar */}
             <div style={{ padding: "10px 14px", background: "#ffffff", borderBottom: "1px solid #cbd5e1" }}>
               <strong style={{ fontSize: 13.5, color: "#111827" }}>Thông tin trả lương</strong>
+              <input aria-label="Tìm nhân viên trả lương" placeholder="Tìm kiếm" value={salarySearch} onChange={e=>setSalarySearch(e.target.value)} style={{display:"block",marginTop:10,width:260,height:32,border:"1px solid #cbd5e1",borderRadius:4,padding:"0 10px"}}/>
             </div>
 
             {/* Table Wrapper */}
@@ -653,7 +657,7 @@ export function SalaryPaymentModal({
                 </thead>
                 {records.length > 0 && (
                   <tbody>
-                    {records.map((r) => (
+                    {records.filter(r=>`${r.code} ${r.name} ${r.department}`.toLowerCase().includes(salarySearch.toLowerCase())).map((r) => (
                       <tr key={r.id} style={{ background: r.checked ? "#f0fdf4" : "#ffffff" }}>
                         <td style={{ textAlign: "center" }}>
                           <input
@@ -759,7 +763,7 @@ export function InternalTransferModal({
   const [sourceAccount, setSourceAccount] = useState("1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
   const [targetAccount, setTargetAccount] = useState("2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
   const [amount, setAmount] = useState(50000000);
-  const [transferDate, setTransferDate] = useState("2026-09-15");
+  const [transferDate, setTransferDate] = useState(()=>currentCashDate().split("/").reverse().join("-"));
   const [reason, setReason] = useState("Chuyển tiền nội bộ thanh toán chi phí SXKD");
 
   return (

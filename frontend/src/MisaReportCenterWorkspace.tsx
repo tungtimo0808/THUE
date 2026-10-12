@@ -88,6 +88,9 @@ import { canonicalReportName } from "./audited-report-schema";
 
 export type MisaReportCenterWorkspaceProps = {
   notify?: (msg: string) => void;
+  initialCategory?: string;
+  initialReport?: string|null;
+  embedded?: boolean;
 };
 
 // All 16 Categories matching Screenshot
@@ -836,12 +839,12 @@ const REPORTS_BY_CATEGORY: Record<string, string[]> = {
   ],
 };
 
-export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWorkspaceProps) {
+export default function MisaReportCenterWorkspace({ notify,initialCategory="favorites",initialReport=null,embedded=false }: MisaReportCenterWorkspaceProps) {
   // Subtabs: "all" (Tất cả) | "saved" (Báo cáo đã lưu) | "schedule" (Lịch gửi báo cáo định kỳ)
   const [activeSubtab, setActiveSubtab] = useState<"all" | "saved" | "schedule">("all");
   
   // Left category active ID
-  const [activeCategory, setActiveCategory] = useState<string>("favorites");
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
 
   // Search keyword
   const [searchKeyword, setSearchKeyword] = useState<string>("");
@@ -853,13 +856,13 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
   const [favorites, setFavorites] = useState<Set<string>>(new Set(DEFAULT_FAVORITES));
 
   // Preview / Filter Drawer Modal State
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<string | null>(initialReport);
 
   // Print Announcement Modal
   const [isPrintBannerModalOpen, setIsPrintBannerModalOpen] = useState<boolean>(false);
 
   // Set of collapsed groups:
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(embedded?{bank_borrow:true,bank_lend:true}:{});
 
   const toggleGroup = (groupId: string) => {
     setCollapsedGroups((prev) => ({
@@ -1324,6 +1327,7 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
   ) {
     return (
       <MisaCashReceiptJournalReport
+        initialAccount={initialCategory==="bank"?"1121":"111"}
         onBack={() => setSelectedReport(null)}
         notify={notify}
       />
@@ -1354,6 +1358,7 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
   ) {
     return (
       <MisaCashDisbursementJournalReport
+        initialAccount={initialCategory==="bank"?"1121":"111"}
         onBack={() => setSelectedReport(null)}
         notify={notify}
       />
@@ -1728,7 +1733,7 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
   return (
     <div className="misa-reports-workspace">
       {/* 1. Header Bar: Subtabs + Right Announcement Banner */}
-      <div className="misa-reports-header-row">
+      {!embedded&&<div className="misa-reports-header-row">
         <div className="misa-reports-subtabs">
           <button
             type="button"
@@ -1764,7 +1769,7 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
           <span>In nhanh hơn - Ổn định hơn - In dữ liệu lớn với trình in mới của AMIS Kế toán.</span>
           <span className="misa-reports-banner-link">Xem ngay &gt;</span>
         </div>
-      </div>
+      </div>}
 
       {/* 2. Toolbar */}
       <div className="misa-reports-toolbar">
@@ -1858,7 +1863,7 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
       {activeSubtab === "all" && (
         <div className="misa-reports-body">
           {/* Left Category Menu */}
-          <aside className="misa-reports-categories">
+          {!embedded&&<aside className="misa-reports-categories">
             {REPORT_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
@@ -1877,11 +1882,11 @@ export default function MisaReportCenterWorkspace({ notify }: MisaReportCenterWo
                 )}
               </button>
             ))}
-          </aside>
+          </aside>}
 
           {/* Right Report Grid */}
           <main className="misa-reports-content">
-            <h3 className="misa-reports-content-title">
+            <h3 className="misa-reports-content-title" style={embedded&&!searchKeyword?{display:"none"}:undefined}>
               {searchKeyword
                 ? `Kết quả tìm kiếm cho "${searchKeyword}" (${displayedReports.length})`
                 : activeCategoryObj?.label || "Báo cáo"}

@@ -43,6 +43,7 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
         <div className="misa-analysis-card-header">
           <h3 className="misa-analysis-card-title">Các chỉ số tài chính cơ bản</h3>
           <select
+            aria-label="Kỳ phân tích tài chính"
             className="misa-analysis-select"
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
@@ -50,7 +51,9 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
             <option value="Tháng này">Tháng này</option>
             <option value="Tháng trước">Tháng trước</option>
             <option value="Quý này">Quý này</option>
+            <option value="Quý trước">Quý trước</option>
             <option value="Năm nay">Năm nay</option>
+            <option value="Năm trước">Năm trước</option>
           </select>
         </div>
 
@@ -74,6 +77,8 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
                   <div
                     className="misa-analysis-group-header"
                     onClick={() => toggleSection("structure")}
+                    role="button" tabIndex={0} aria-expanded={openSections.structure}
+                    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleSection("structure"); } }}
                   >
                     {openSections.structure ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                     <span>Cơ cấu tài chính và cơ cấu tài sản</span>
@@ -123,6 +128,8 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
                   <div
                     className="misa-analysis-group-header"
                     onClick={() => toggleSection("liquidity")}
+                    role="button" tabIndex={0} aria-expanded={openSections.liquidity}
+                    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleSection("liquidity"); } }}
                   >
                     {openSections.liquidity ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                     <span>Hệ số thanh toán</span>
@@ -172,6 +179,8 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
                   <div
                     className="misa-analysis-group-header"
                     onClick={() => toggleSection("operating")}
+                    role="button" tabIndex={0} aria-expanded={openSections.operating}
+                    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleSection("operating"); } }}
                   >
                     {openSections.operating ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                     <span>Khả năng hoạt động</span>
@@ -253,6 +262,8 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
                   <div
                     className="misa-analysis-group-header"
                     onClick={() => toggleSection("profitability")}
+                    role="button" tabIndex={0} aria-expanded={openSections.profitability}
+                    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleSection("profitability"); } }}
                   >
                     {openSections.profitability ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                     <span>Khả năng sinh lời</span>

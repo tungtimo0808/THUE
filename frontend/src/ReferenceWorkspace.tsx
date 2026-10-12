@@ -669,7 +669,7 @@ function ReferenceWorkspace() {
                   key={id}
                 >
                   {label}
-                  {(id === "news" || (moduleId === "purchases" && id === "invoice-processing") || (moduleId === "sales" && id === "auto-posting")) && <small style={{ marginLeft: 4 }}>Mới</small>}
+                  {(id === "news" || (moduleId === "purchases" && (id === "invoice-processing" || id === "reconciliation")) || (moduleId === "sales" && id === "auto-posting")) && <small style={{ marginLeft: 4 }}>Mới</small>}
                 </Link>
               ))
             )}
@@ -866,7 +866,7 @@ function ReferenceWorkspace() {
         ) : moduleId === "reports" ? (
           <MisaReportCenterWorkspace notify={setNotice} />
         ) : moduleId === "directory" ? (
-          <MisaDirectoryWorkspace notify={setNotice} legacy={<DirectoryWorkspace notify={setNotice}/>}/>
+          <MisaDirectoryWorkspace key={params.get("directory") || "menu"} initialName={params.get("directory")} notify={setNotice} legacy={<DirectoryWorkspace notify={setNotice}/>}/>
         ) : moduleId === "opening" ? (
           <MisaOpeningBalanceWorkspace notify={setNotice} />
         ) : moduleId === "cash" ? (

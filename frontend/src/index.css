@@ -511,3 +511,19 @@ table caption {
   box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
 }
 
+/* Opaque backgrounds for sticky table columns */
+.misa-table thead th[style*="sticky"],
+.misa-table thead th.sticky-col {
+  background: #eaf6ee !important;
+}
+
+.misa-table tbody td[style*="sticky"],
+.misa-table tbody td.sticky-col {
+  background-color: #ffffff !important;
+}
+
+.misa-table tbody tr:hover td[style*="sticky"],
+.misa-table tbody tr:hover td.sticky-col {
+  background-color: #f0fdf4 !important;
+}
+
