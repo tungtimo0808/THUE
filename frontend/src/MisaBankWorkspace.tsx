@@ -549,14 +549,14 @@ export default function MisaBankWorkspace({
       )}
 
       {showInsuranceModal && (
-        <InsurancePaymentModal
+        <InsurancePaymentModal initialMethod="bank"
           onClose={() => setShowInsuranceModal(false)}
           onSubmit={handleInsurancePayment}
         />
       )}
 
       {showSalaryModal && (
-        <SalaryPaymentModal
+        <SalaryPaymentModal initialMethod="bank"
           onClose={() => setShowSalaryModal(false)}
           onSubmit={handleSalaryPayment}
         />

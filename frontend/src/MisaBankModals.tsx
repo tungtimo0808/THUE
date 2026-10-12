@@ -83,8 +83,10 @@ export function MisaEmptyState({ text = "Không có dữ liệu" }: { text?: str
 export function InsurancePaymentModal({
   onClose,
   onSubmit,
+  initialMethod = "cash",
 }: {
   onClose: () => void;
+  initialMethod?: "cash" | "bank";
   onSubmit: (data: {
     payMethod: "cash" | "bank";
     payDate: string;
@@ -93,7 +95,7 @@ export function InsurancePaymentModal({
   }) => void;
 }) {
 
-  const [payMethod, setPayMethod] = useState<"cash" | "bank">("cash");
+  const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [payDate, setPayDate] = useState(currentCashDate);
 
   const [items, setItems] = useState<
@@ -367,8 +369,10 @@ export function InsurancePaymentModal({
 export function SalaryPaymentModal({
   onClose,
   onSubmit,
+  initialMethod = "cash",
 }: {
   onClose: () => void;
+  initialMethod?: "cash" | "bank";
   onSubmit: (data: {
     payMethod: "cash" | "bank";
     payDate: string;
@@ -377,7 +381,7 @@ export function SalaryPaymentModal({
   }) => void;
 }) {
   const [salarySearch,setSalarySearch]=useState("");
-  const [payMethod, setPayMethod] = useState<"cash" | "bank">("cash");
+  const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [payDate, setPayDate] = useState(currentCashDate);
 
   const [records, setRecords] = useState<
