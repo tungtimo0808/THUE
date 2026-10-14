@@ -1,3 +1,7 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { REPORT_TEMPLATE_DEFAULT_COLUMNS } from "./misa-report-optional-columns";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateRange,cashDateValue,isCashDateInRange} from './cash-date';
 import React, { useState, useMemo } from "react";
@@ -444,20 +448,13 @@ export default function MisaDetailedCashLedgerReport({
             <ChevronDown size={13} color="#64748b" />
           </button>
 
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Sổ kế toán chi tiết quỹ tiền mặt" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Sổ kế toán chi tiết quỹ tiền mặt")?.headers ?? [], REPORT_TEMPLATE_DEFAULT_COLUMNS["Sổ kế toán chi tiết quỹ tiền mặt"])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
               cursor: "pointer",
               padding: 4,
-            }}
-            title="Tùy chỉnh"
-            onClick={() => notify?.("Mở cài đặt...")}
-          >
-            <Settings size={15} />
-          </button>
+            }} />
         </div>
       </div>
 

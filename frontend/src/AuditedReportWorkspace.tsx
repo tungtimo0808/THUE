@@ -7,6 +7,7 @@ import {
   Printer,
   RefreshCw,
   Search,
+  Layers,
 } from "lucide-react";
 import type { AuditedReportDefinition } from "./audited-report-schema";
 import { reportColumns } from "./audited-report-schema";
@@ -18,6 +19,10 @@ import {
 } from "./audited-report-parameters";
 import { auditedFixtureRows } from "./audited-report-fixtures";
 import AuditedReportParameters from "./AuditedReportParameters";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import ReportGroupingDialog from "./ReportGroupingDialog";
+import { REPORT_OPTIONAL_COLUMNS, REPORT_TEMPLATE_DEFAULT_COLUMNS } from "./misa-report-optional-columns";
+import { templateColumnLabels } from "./report-template-columns";
 import AuditedReportTable from "./AuditedReportTable";
 import AuditedPrintedReport from "./AuditedPrintedReport";
 import MisaDebtNoticePrinted from "./MisaDebtNoticePrinted";
@@ -74,6 +79,7 @@ export default function AuditedReportWorkspace({
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<string[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const [groupingDialogOpen, setGroupingDialogOpen] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
   const [saved, setSaved] = useState(() => readPresets(definition));
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -191,6 +197,7 @@ export default function AuditedReportWorkspace({
           >
             <Columns size={16} />
           </button>
+          {definition.viewer === "dynamic"&&<button type="button" aria-label="Nhóm dữ liệu theo cột" onClick={()=>setGroupingDialogOpen(true)}><Layers size={16} /></button>}
         </div>
         <div>
           <div className="pc-search">
@@ -212,6 +219,10 @@ export default function AuditedReportWorkspace({
           <button aria-label="Xuất báo cáo" onClick={exportReport}>
             <Download size={16} />
           </button>
+          {definition.viewer === "dynamic" && <ReportCustomizationMenu
+            reportName={definition.name}
+            visibleColumns={columns.filter(column=>!hidden.includes(column.id)).map(column=>templateColumnLabels(definition.headers, REPORT_TEMPLATE_DEFAULT_COLUMNS[definition.name])[Number(column.id)] ?? column.label)}
+          />}
         </div>
       </div>
       {columnsOpen && (
@@ -334,6 +345,7 @@ export default function AuditedReportWorkspace({
           }}
         />
       )}
+      {groupingDialogOpen&&<ReportGroupingDialog columns={[...templateColumnLabels(definition.headers, REPORT_TEMPLATE_DEFAULT_COLUMNS[definition.name]),...(REPORT_OPTIONAL_COLUMNS[definition.name] || [])]} onClose={()=>setGroupingDialogOpen(false)} />}
     </div>
   );
 }

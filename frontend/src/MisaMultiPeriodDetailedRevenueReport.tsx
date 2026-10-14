@@ -1,3 +1,5 @@
+import { initialComparisonDates, reportPeriodLabels } from "./report-period-range";
+import ReportPeriodModeFields from "./ReportPeriodModeFields";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -104,6 +106,8 @@ export default function MisaMultiPeriodDetailedRevenueReport({
 
   // Draft state inside drawer
   const [draftPeriodType, setDraftPeriodType] = useState<"month" | "quarter" | "year" | "custom">("month");
+  const [comparisonDates,setComparisonDates] = useState(initialComparisonDates);
+  const [draftComparisonDates,setDraftComparisonDates] = useState(initialComparisonDates);
   const [draftFromMonth, setDraftFromMonth] = useState(10);
   const [draftFromYear, setDraftFromYear] = useState(2026);
   const [draftToMonth, setDraftToMonth] = useState(10);
@@ -135,6 +139,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
 
   const handleOpenDrawer = () => {
     setDraftPeriodType(periodType);
+    setDraftComparisonDates([...comparisonDates]);
     setDraftFromMonth(fromMonth);
     setDraftFromYear(fromYear);
     setDraftToMonth(toMonth);
@@ -151,6 +156,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
 
   const handleApplyParams = () => {
     setPeriodType(draftPeriodType);
+    setComparisonDates([...draftComparisonDates]);
     setFromMonth(draftFromMonth);
     setFromYear(draftFromYear);
     setToMonth(draftToMonth);
@@ -168,6 +174,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
 
   const handleResetParams = () => {
     setDraftPeriodType("month");
+    setDraftComparisonDates(initialComparisonDates());
     setDraftFromMonth(10);
     setDraftFromYear(2026);
     setDraftToMonth(10);
@@ -198,17 +205,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
   };
 
   // Active period column labels
-  const periodColumns = useMemo(() => {
-    const cols: string[] = [];
-    if (fromMonth === toMonth && fromYear === toYear) {
-      cols.push(`Thg ${fromMonth}/${fromYear}`);
-    } else {
-      for (let m = fromMonth; m <= toMonth; m++) {
-        cols.push(`Thg ${m}/${toYear}`);
-      }
-    }
-    return cols;
-  }, [fromMonth, toMonth, fromYear, toYear]);
+  const periodColumns = useMemo(() => reportPeriodLabels(periodType,fromMonth,fromYear,toMonth,toYear,comparisonDates),[periodType,fromMonth,fromYear,toMonth,toYear,comparisonDates]);
 
   // Filter rows
   const filteredRows = useMemo(() => {
@@ -957,6 +954,8 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                 </div>
               </div>
 
+              {draftPeriodType !== "month" && <ReportPeriodModeFields mode={draftPeriodType} dates={draftComparisonDates} setDates={setDraftComparisonDates} fromMonth={draftFromMonth} toMonth={draftToMonth} fromYear={draftFromYear} toYear={draftToYear} setFromMonth={setDraftFromMonth} setToMonth={setDraftToMonth} setFromYear={setDraftFromYear} setToYear={setDraftToYear}/>}
+              {draftPeriodType === "month" && <>
               {/* Từ tháng / Năm */}
               <div style={{ display: "flex", gap: 14 }}>
                 <div style={{ flex: 1 }}>
@@ -1111,6 +1110,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                 </div>
               </div>
 
+              </>}
               {/* So sánh với cùng kỳ năm trước */}
               <div>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#0f172a" }}>

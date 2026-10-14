@@ -29,6 +29,9 @@ export default function AuditedReportParameters({
   error: string;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const monthQuarterMode = definition.fields?.some(field => field.label === "Kỳ báo cáo" && field.kind === "radio") && definition.radios?.some(radio => radio.label === "Theo quý");
+  const budgetPeriodMode = definition.category === "Ngân sách" && definition.radios?.some(radio=>radio.label === "Xem một kỳ");
+  const budgetExpenseMode = definition.name === "Tình hình chi phí thực tế so với kế hoạch";
   useEffect(() => closeRef.current?.focus(), []);
   const updateField = (label: string, value: string) => {
     const fields = { ...draft.fields, [label]: value };
@@ -97,6 +100,10 @@ export default function AuditedReportParameters({
         <div className="pc-drawer-content">
           <div className="pc-form-grid">
             {definition.labels
+              .filter(label => !definition.fields?.some(field=>field.label === label && field.kind === "radio"))
+              .filter(label => !(monthQuarterMode && (label === "Kỳ báo cáo" || (draft.radio === "Theo năm" && label === "Tháng"))))
+              .map(label => budgetPeriodMode && label === "Xem theo" && draft.radio === "Xem một kỳ" ? "Kỳ báo cáo" : label)
+              .map(label => monthQuarterMode && label === "Tháng" && draft.radio === "Theo quý" ? "Quý" : label)
               .filter(
                 (label) =>
                   definition.printLayout !== "taxUninvoiced" ||
@@ -107,14 +114,14 @@ export default function AuditedReportParameters({
                     : !["Tháng", "Năm"].includes(label)),
               )
               .map((label) => {
-                const field = definition.fields?.find(
+                const field = budgetPeriodMode && label === "Kỳ báo cáo" ? {label,kind:"combo",required:false} : label === "Quý" && monthQuarterMode ? {label,kind:"combo",required:definition.fields?.find(item=>item.label === "Tháng")?.required} : label === "Năm" && monthQuarterMode && draft.radio === "Theo năm" ? {label,kind:"number",required:true} : definition.fields?.find(
                   (field) => field.label === label,
                 );
                 const date =
                   field?.kind === "date" ||
                   /^Ngày|ngày$|thời điểm$/.test(label);
                 const values =
-                  definition.options?.[label] ??
+                  (monthQuarterMode && (label === "Tháng" || label === "Quý") ? Array.from({length:label === "Quý" ? 4 : 12}, (_,index)=>String(index+1)) : definition.options?.[label]) ??
                   (/ngân hàng/i.test(label)
                     ? ["", "VCB — 0011000123456", "BIDV — 1201000123456"]
                     : label === "Đơn vị tính"
@@ -166,7 +173,7 @@ export default function AuditedReportParameters({
                           updateField(label, event.target.value)
                         }
                       />
-                    ) : label === "Tháng" ? (
+                    ) : label === "Tháng" && !monthQuarterMode ? (
                       <input
                         aria-label={label}
                         type="month"
@@ -202,14 +209,14 @@ export default function AuditedReportParameters({
                           </option>
                         ))}
                       </select>
-                    ) : /Nhóm|Nhân viên|Đơn vị|Chi nhánh|Bộ phận|Kho|Khách hàng|Nhà cung cấp|Công trình|Hợp đồng|Đối tượng|Mã thống kê/.test(
+                    ) : /Nhóm|Nhân viên|Đơn vị|Chi nhánh|Bộ phận|Kho|Khách hàng|Nhà cung cấp|Công trình|Hợp đồng|Đối tượng|Mã thống kê|Loại tài sản cố định|Kỳ tính giá thành/.test(
                         label,
                       ) ? (
                       <ReportReferencePicker
                         label={label}
                         value={draft.fields[label]}
                         onChange={(value) => updateField(label, value)}
-                        choices={reportReferenceChoices(label)}
+                        choices={reportReferenceChoices(label, definition.name)}
                       />
                     ) : (
                       <input
@@ -230,7 +237,8 @@ export default function AuditedReportParameters({
           </div>
           {!!definition.radios?.length && (
             <div className="ar-radio-group">
-              {definition.radios.map((radio) => (
+              {definition.fields?.filter(field=>field.kind === "radio").map(field=><span key={field.label}>{field.label}</span>)}
+              {definition.radios.filter(radio=>!budgetExpenseMode || !radio.label.startsWith("Khi ")).map((radio) => (
                 <label key={radio.label}>
                   <input
                     type="radio"
@@ -251,7 +259,11 @@ export default function AuditedReportParameters({
                               "Từ ngày": range[0],
                               "Đến ngày": range[1],
                             }
-                          : draft.fields,
+                          : budgetPeriodMode && radio.label === "Xem một kỳ"
+                            ? {...draft.fields,"Kỳ báo cáo":draft.fields["Kỳ báo cáo"] || "Tháng này"}
+                          : monthQuarterMode && radio.label === "Theo quý"
+                            ? {...draft.fields, Quý:draft.fields.Quý || "1"}
+                            : draft.fields,
                       });
                     }}
                   />
@@ -260,6 +272,13 @@ export default function AuditedReportParameters({
               ))}
             </div>
           )}
+          {budgetExpenseMode && <fieldset className="ar-radio-group">
+            <legend>Cách lấy chi phí thực hiện</legend>
+            {definition.radios?.filter(radio=>radio.label.startsWith("Khi ")).map(radio=><label key={radio.label}>
+              <input type="radio" name="budget-expense-method" checked={(draft.fields["Cách lấy chi phí thực hiện"] || "Khi ghi nhận chi phí") === radio.label} onChange={()=>setDraft({...draft,fields:{...draft.fields,"Cách lấy chi phí thực hiện":radio.label}})}/>
+              {radio.label}
+            </label>)}
+          </fieldset>}
           {definition.selectors.map((selector, index) => (
             <SelectionTable
               key={index}

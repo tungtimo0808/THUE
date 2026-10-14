@@ -1,0 +1,9 @@
+{
+  "date": "2026-10-12",
+  "definitions": 223,
+  "runtimeUnique": 223,
+  "runtimeWithSnapshot": 223,
+  "unresolvedNames": [],
+  "remainingOrUnresolved": [],
+  "caveat": "All 223 definitions have a default popup snapshot; this is not complete MISA parity. Extra catalogue entries, conditional fields, picker options and dynamic result columns still need verification."
+}

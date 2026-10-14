@@ -107,7 +107,7 @@ export function initialAuditedParameters(
               : label === "Năm"
                 ? String(today.getFullYear())
                 : label === "Tháng"
-                  ? definition.printLayout === "taxUninvoiced"
+                  ? (definition.printLayout === "taxUninvoiced" || definition.fields?.some(field=>field.label === "Kỳ báo cáo" && field.kind === "radio"))
                     ? String(today.getMonth() + 1)
                     : `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
                   : (recorded ?? "");

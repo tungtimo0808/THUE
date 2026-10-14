@@ -46,6 +46,7 @@ import {
   Star,
   CheckSquare,
   Square,
+  Filter,
 } from "lucide-react";
 import "./misa-cash.css";
 
@@ -678,7 +679,20 @@ export default function MisaCostWorkspace({
   // ============================================================================
   const [projectSubtab, setProjectSubtab] = useState<
     "period" | "transfer" | "acceptance" | "norm" | "estimate"
-  >("period");
+  >(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const sub = sp.get("subtab");
+      if (sub === "estimate" || sub === "norm" || sub === "acceptance" || sub === "transfer") {
+        return sub;
+      }
+      const act = sp.get("action");
+      if (act === "estimate" || act === "add-estimate") {
+        return "estimate";
+      }
+    }
+    return "period";
+  });
   const [showProjectPeriodList, setShowProjectPeriodList] = useState(false);
   const [showProjectTransferList, setShowProjectTransferList] = useState(false);
   const [showProjectAcceptanceList, setShowProjectAcceptanceList] = useState(false);
@@ -689,6 +703,118 @@ export default function MisaCostWorkspace({
   const [selectProjectTransferPeriodModalOpen, setSelectProjectTransferPeriodModalOpen] = useState(false);
   const [projectAcceptanceModalOpen, setProjectAcceptanceModalOpen] = useState(false);
   const [addProjectNormModalOpen, setAddProjectNormModalOpen] = useState(false);
+
+  // Dự toán công trình modal state & form state
+  const [projectEstimateModalOpen, setProjectEstimateModalOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const act = sp.get("action");
+      return act === "estimate" || act === "add-estimate";
+    }
+    return false;
+  });
+  const [estimateProjectCode, setEstimateProjectCode] = useState("");
+  const [estimateRows, setEstimateRows] = useState<Array<{
+    id: number;
+    costItemCode: string;
+    costItemName: string;
+    estimatedValue: number;
+    previousYearValue: number;
+  }>>([
+    {
+      id: 1,
+      costItemCode: "",
+      costItemName: "",
+      estimatedValue: 0,
+      previousYearValue: 0,
+    },
+  ]);
+
+  const handleAddEstimateRow = () => {
+    setEstimateRows((prev) => [
+      ...prev,
+      {
+        id: Date.now() + Math.random(),
+        costItemCode: "",
+        costItemName: "",
+        estimatedValue: 0,
+        previousYearValue: 0,
+      },
+    ]);
+  };
+
+  const handleClearEstimateRows = () => {
+    setEstimateRows([
+      {
+        id: 1,
+        costItemCode: "",
+        costItemName: "",
+        estimatedValue: 0,
+        previousYearValue: 0,
+      },
+    ]);
+  };
+
+  const handleDeleteEstimateRow = (id: number) => {
+    setEstimateRows((prev) => {
+      const filtered = prev.filter((r) => r.id !== id);
+      if (filtered.length === 0) {
+        return [
+          {
+            id: 1,
+            costItemCode: "",
+            costItemName: "",
+            estimatedValue: 0,
+            previousYearValue: 0,
+          },
+        ];
+      }
+      return filtered;
+    });
+  };
+
+  const handleCostItemChange = (id: number, code: string) => {
+    const costNames: Record<string, string> = {
+      "CP_NVL_TT": "Chi phí nguyên vật liệu trực tiếp",
+      "CP_NCTT": "Chi phí nhân công trực tiếp",
+      "CP_SXC": "Chi phí sản xuất chung",
+      "CP_MAY_TC": "Chi phí sử dụng máy thi công",
+      "CP_KHOAN_GC": "Chi phí khoán gia công ngoài",
+    };
+    setEstimateRows((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, costItemCode: code, costItemName: costNames[code] || r.costItemName }
+          : r
+      )
+    );
+  };
+
+  const handleCostItemNameChange = (id: number, name: string) => {
+    setEstimateRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, costItemName: name } : r))
+    );
+  };
+
+  const handleEstimateValueChange = (id: number, val: number) => {
+    setEstimateRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, estimatedValue: val } : r))
+    );
+  };
+
+  const handlePreviousYearValueChange = (id: number, val: number) => {
+    setEstimateRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, previousYearValue: val } : r))
+    );
+  };
+
+  const handleSaveEstimate = (andClose: boolean) => {
+    notify("Đã lưu dự toán chi phí công trình thành công!");
+    if (andClose) {
+      setProjectEstimateModalOpen(false);
+      setShowProjectEstimateList(true);
+    }
+  };
 
   const [projectPeriodType, setProjectPeriodType] = useState("Tháng này");
   const [projectFromDate, setProjectFromDate] = useState("01/10/2026");
@@ -706,14 +832,34 @@ export default function MisaCostWorkspace({
   // ============================================================================
   const [orderSubtab, setOrderSubtab] = useState<
     "period" | "transfer" | "acceptance"
-  >("period");
+  >(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const sub = sp.get("subtab");
+      if (sub === "acceptance" || sub === "transfer" || sub === "period") {
+        return sub;
+      }
+      const act = sp.get("action");
+      if (act === "order-acceptance" || act === "acceptance" || act === "pick-order") {
+        return "acceptance";
+      }
+    }
+    return "period";
+  });
   const [showOrderPeriodList, setShowOrderPeriodList] = useState(false);
   const [showOrderTransferList, setShowOrderTransferList] = useState(false);
   const [showOrderAcceptanceList, setShowOrderAcceptanceList] = useState(false);
 
   const [addOrderPeriodModalOpen, setAddOrderPeriodModalOpen] = useState(false);
   const [selectOrderTransferPeriodModalOpen, setSelectOrderTransferPeriodModalOpen] = useState(false);
-  const [orderAcceptanceModalOpen, setOrderAcceptanceModalOpen] = useState(false);
+  const [orderAcceptanceModalOpen, setOrderAcceptanceModalOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const act = sp.get("action");
+      return act === "order-acceptance" || act === "pick-order" || act === "acceptance-modal";
+    }
+    return false;
+  });
 
   const [orderPeriodType, setOrderPeriodType] = useState("Tháng này");
   const [orderFromDate, setOrderFromDate] = useState("01/10/2026");
@@ -725,6 +871,12 @@ export default function MisaCostWorkspace({
   const [orderTransferPeriodDropdownOpen, setOrderTransferPeriodDropdownOpen] = useState(false);
   const [selectedOrderAcceptancePeriod, setSelectedOrderAcceptancePeriod] = useState("");
   const [orderAcceptancePeriodDropdownOpen, setOrderAcceptancePeriodDropdownOpen] = useState(false);
+
+  // Form state for Modal "Chọn đơn hàng" (Screenshot)
+  const [acceptanceOrderPeriodCode, setAcceptanceOrderPeriodCode] = useState("");
+  const [acceptanceOrdersFetched, setAcceptanceOrdersFetched] = useState(false);
+  const [orderAcceptanceSearchText, setOrderAcceptanceSearchText] = useState("");
+  const [selectedOrderCodes, setSelectedOrderCodes] = useState<string[]>([]);
 
   // ============================================================================
   // HỢP ĐỒNG (CONTRACTS) STATE & HANDLERS
@@ -1020,6 +1172,14 @@ export default function MisaCostWorkspace({
   };
 
   const currentTab = tab || "process";
+  const openingWipMethod = ({
+    "continuous-simple": "Sản xuất liên tục - Giản đơn",
+    "continuous-coefficient": "Sản xuất liên tục - Hệ số, tỷ lệ",
+    "continuous-step": "Sản xuất liên tục - Phân bước",
+    projects: "Công trình",
+    orders: "Đơn hàng",
+    contracts: "Hợp đồng",
+  } as Record<string, string>)[currentTab] || "Sản xuất liên tục - Hệ số, tỷ lệ";
   const currentSubtabData = COST_PROCESS_DATA[subtab] || COST_PROCESS_DATA.simple;
   const records = INITIAL_COST_PERIODS[currentTab] || [];
   const filteredRecords = records.filter(
@@ -4665,7 +4825,7 @@ export default function MisaCostWorkspace({
                             }}
                           >
                             {[
-                              { label: "Chi phí dở dang đầu kỳ", action: () => { setOpeningWipModalOpen(true); setProjectUtilityDropdownOpen(false); } },
+                              { label: "Chi phí dở dang đầu kỳ", action: () => { setWipOpeningModalOpen(true); setProjectUtilityDropdownOpen(false); } },
                               { label: "Khai báo định mức giá thành", action: () => { setNormCostModalOpen(true); setProjectUtilityDropdownOpen(false); } },
                               { label: "Khai báo định mức phân bổ chi phí", action: () => { setNormAllocModalOpen(true); setProjectUtilityDropdownOpen(false); } },
                               { label: "Khai báo giá thành kế hoạch", action: () => { setPlannedCostModalOpen(true); setProjectUtilityDropdownOpen(false); } },
@@ -5376,8 +5536,9 @@ export default function MisaCostWorkspace({
 
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <button
+                        id="btn-open-estimate-modal-empty"
                         type="button"
-                        onClick={() => notify("Mở giao diện lập dự toán chi phí công trình")}
+                        onClick={() => setProjectEstimateModalOpen(true)}
                         style={{
                           background: "#00a862",
                           color: "#ffffff",
@@ -5456,8 +5617,9 @@ export default function MisaCostWorkspace({
                       </div>
 
                       <button
+                        id="btn-open-estimate-modal-list"
                         type="button"
-                        onClick={() => notify("Thêm dự toán công trình")}
+                        onClick={() => setProjectEstimateModalOpen(true)}
                         style={{
                           background: "#00a862",
                           color: "#ffffff",
@@ -5696,7 +5858,7 @@ export default function MisaCostWorkspace({
                             }}
                           >
                             {[
-                              { label: "Chi phí dở dang đầu kỳ", action: () => { setOpeningWipModalOpen(true); setOrderUtilityDropdownOpen(false); } },
+                              { label: "Chi phí dở dang đầu kỳ", action: () => { setWipOpeningModalOpen(true); setOrderUtilityDropdownOpen(false); } },
                               { label: "Khai báo định mức giá thành", action: () => { setNormCostModalOpen(true); setOrderUtilityDropdownOpen(false); } },
                               { label: "Khai báo định mức phân bổ chi phí", action: () => { setNormAllocModalOpen(true); setOrderUtilityDropdownOpen(false); } },
                               { label: "Khai báo giá thành kế hoạch", action: () => { setPlannedCostModalOpen(true); setOrderUtilityDropdownOpen(false); } },
@@ -6016,12 +6178,16 @@ export default function MisaCostWorkspace({
                       <rect x="70" y="100" width="80" height="8" rx="2" fill="#94a3b8" opacity="0.6"/>
                     </svg>
 
-                    <h4 style={{ fontSize: 15, fontWeight: 600, color: "#1e293b", margin: "16px 0 20px 0" }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", margin: "16px 0 8px 0" }}>
+                      Kết chuyển giá vốn
+                    </h3>
+                    <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 20px 0" }}>
                       Kết chuyển giá thành sản xuất đơn hàng hoàn thành sang giá vốn (TK 632) theo đơn hàng
-                    </h4>
+                    </p>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <button
+                        id="btn-open-order-acceptance-modal-empty"
                         type="button"
                         onClick={() => setOrderAcceptanceModalOpen(true)}
                         style={{
@@ -6082,6 +6248,7 @@ export default function MisaCostWorkspace({
                       </div>
 
                       <button
+                        id="btn-open-order-acceptance-modal-list"
                         type="button"
                         onClick={() => setOrderAcceptanceModalOpen(true)}
                         style={{
@@ -6312,7 +6479,7 @@ export default function MisaCostWorkspace({
                             }}
                           >
                             {[
-                              { label: "Chi phí dở dang đầu kỳ", action: () => { setOpeningWipModalOpen(true); setContractUtilityDropdownOpen(false); } },
+                              { label: "Chi phí dở dang đầu kỳ", action: () => { setWipOpeningModalOpen(true); setContractUtilityDropdownOpen(false); } },
                               { label: "Khai báo định mức giá thành", action: () => { setNormCostModalOpen(true); setContractUtilityDropdownOpen(false); } },
                               { label: "Khai báo định mức phân bổ chi phí", action: () => { setNormAllocModalOpen(true); setContractUtilityDropdownOpen(false); } },
                               { label: "Khai báo giá thành kế hoạch", action: () => { setPlannedCostModalOpen(true); setContractUtilityDropdownOpen(false); } },
@@ -8937,20 +9104,20 @@ export default function MisaCostWorkspace({
                     <ImageIcon size={36} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Pencil
+                    <span title="Tải ảnh lên" style={{ display: "inline-flex" }}><Pencil
                       size={15}
                       color="#64748b"
                       style={{ cursor: "pointer" }}
-                      title="Tải ảnh lên"
+                      
                       onClick={() => notify("Tải ảnh sản phẩm/vật tư")}
-                    />
-                    <Trash2
+                    /></span>
+                    <span title="Xóa ảnh" style={{ display: "inline-flex" }}><Trash2
                       size={15}
                       color="#ef4444"
                       style={{ cursor: "pointer" }}
-                      title="Xóa ảnh"
+                      
                       onClick={() => notify("Đã xóa ảnh")}
-                    />
+                    /></span>
                   </div>
                 </div>
               </div>
@@ -9253,11 +9420,11 @@ export default function MisaCostWorkspace({
                     >
                       Loại hàng hóa đặc trưng
                     </label>
-                    <HelpCircle
+                    <span title="Chọn loại hàng hóa đặc thù theo quy định kế toán" style={{ display: "inline-flex" }}><HelpCircle
                       size={14}
                       color="#64748b"
-                      title="Chọn loại hàng hóa đặc thù theo quy định kế toán"
-                    />
+                      
+                    /></span>
                   </div>
                   <select
                     value={specialProductType}
@@ -10327,9 +10494,9 @@ export default function MisaCostWorkspace({
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#64748b" }}>
-                <Maximize2 size={17} style={{ cursor: "pointer" }} title="Phóng to" />
-                <Settings size={17} style={{ cursor: "pointer" }} title="Tùy chỉnh giao diện" />
-                <X size={20} style={{ cursor: "pointer" }} title="Đóng" onClick={() => setOtherExpenseModalOpen(false)} />
+                <span title="Phóng to" style={{ display: "inline-flex" }}><Maximize2 size={17} style={{ cursor: "pointer" }}  /></span>
+                <span title="Tùy chỉnh giao diện" style={{ display: "inline-flex" }}><Settings size={17} style={{ cursor: "pointer" }}  /></span>
+                <span title="Đóng" style={{ display: "inline-flex" }}><X size={20} style={{ cursor: "pointer" }}  onClick={() => setOtherExpenseModalOpen(false)} /></span>
               </div>
             </div>
 
@@ -10365,12 +10532,12 @@ export default function MisaCostWorkspace({
                         boxSizing: "border-box",
                       }}
                     />
-                    <Sparkles
+                    <span title="AVA AI Gợi ý diễn giải chứng từ" style={{ display: "inline-flex" }}><Sparkles
                       size={16}
                       color="#7c3aed"
                       style={{ position: "absolute", right: 10, top: 9, cursor: "pointer" }}
-                      title="AVA AI Gợi ý diễn giải chứng từ"
-                    />
+                      
+                    /></span>
                   </div>
                 </div>
 
@@ -13621,7 +13788,7 @@ export default function MisaCostWorkspace({
               }}
             >
               <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#1e293b" }}>
-                Chi phí dở dang đầu kỳ (Sản xuất liên tục - Hệ số, tỷ lệ)
+                Chi phí dở dang đầu kỳ ({openingWipMethod})
               </h3>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
@@ -15087,6 +15254,382 @@ export default function MisaCostWorkspace({
       )}
 
       {/* ==================================================================== */}
+      {/* 5E. MODAL: DỰ TOÁN CÔNG TRÌNH (Screenshot) */}
+      {/* ==================================================================== */}
+      {projectEstimateModalOpen && (
+        <div
+          id="modal-project-estimate"
+          className="misa-modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(2px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: 8,
+          }}
+        >
+          <div
+            className="misa-modal-card"
+            style={{
+              width: "99vw",
+              maxWidth: 1560,
+              height: "98vh",
+              maxHeight: "98vh",
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: 6,
+              overflow: "hidden",
+              background: "#edf1f5",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                height: 42,
+                padding: "0 16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#ffffff",
+                borderBottom: "1px solid #e2e8f0",
+                flexShrink: 0,
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
+                Dự toán công trình
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  type="button"
+                  title="Hướng dẫn dự toán công trình"
+                  onClick={() => notify("Hướng dẫn lập và theo dõi dự toán công trình")}
+                  style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center", padding: 4 }}
+                >
+                  <HelpCircle size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectEstimateModalOpen(false)}
+                  style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b", display: "grid", placeItems: "center", padding: 4 }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Form Content */}
+            <div
+              style={{
+                padding: "14px 18px",
+                background: "#edf1f5",
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              {/* Form: Công trình */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#374151", marginBottom: 4 }}>Công trình</div>
+                <div style={{ position: "relative", width: 260 }}>
+                  <select
+                    value={estimateProjectCode}
+                    onChange={(e) => setEstimateProjectCode(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 30,
+                      padding: "0 28px 0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      fontSize: 13,
+                      background: "#ffffff",
+                      appearance: "none",
+                      cursor: "pointer",
+                      outline: "none",
+                    }}
+                  >
+                    <option value="">&nbsp;</option>
+                    <option value="CT-SKYTOWER">CT-SKYTOWER - Tòa nhà Sky Tower Discovery Complex</option>
+                    <option value="CT-VIN-OCEAN">CT-VIN-OCEAN - Khu đô thị Vinhomes Ocean Park phân khu 2</option>
+                    <option value="CT-ECO-PARK">CT-ECO-PARK - Dự án Biệt thự đảo Ecopark Grand The Island</option>
+                    <option value="CT-METRO-03">CT-METRO-03 - Tuyến đường sắt đô thị Metro Nhổn - Ga Hà Nội</option>
+                    <option value="CT001">CT001 - Khách sạn Mường Thanh Grand Hạ Long</option>
+                    <option value="CT002">CT002 - Nhà máy chế biến thực phẩm sạch CP Foods</option>
+                  </select>
+                  <ChevronDown size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b", pointerEvents: "none" }} />
+                </div>
+              </div>
+
+              {/* White card container containing Tab + Table + Row actions */}
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {/* Inner Tab: Nhập chi tiết dự toán inside card */}
+                <div style={{ padding: "8px 16px 0 16px", borderBottom: "1px solid #e2e8f0" }}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#00a862",
+                      borderBottom: "2px solid #00a862",
+                      paddingBottom: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Nhập chi tiết dự toán
+                  </span>
+                </div>
+
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#d6e4dc", height: 34, borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+                      <th style={{ width: 40, textAlign: "center", padding: "6px 8px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>#</th>
+                      <th style={{ width: 180, textAlign: "left", padding: "6px 12px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>Mã khoản mục chi phí</th>
+                      <th style={{ width: 240, textAlign: "left", padding: "6px 12px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>Tên khoản mục chi phí</th>
+                      <th style={{ width: 220, textAlign: "right", padding: "6px 16px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>Giá trị dự toán</th>
+                      <th style={{ textAlign: "right", padding: "6px 40px 6px 12px", fontWeight: 600 }}>Giá trị đã thực hiện năm trước</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {estimateRows.map((row, idx) => (
+                      <tr key={row.id} style={{ borderBottom: "1px dotted #cbd5e1", height: 32 }}>
+                        <td style={{ textAlign: "center", padding: "4px", color: "#64748b", borderRight: "1px dotted #cbd5e1" }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
+                          <select
+                            value={row.costItemCode}
+                            onChange={(e) => handleCostItemChange(row.id, e.target.value)}
+                            style={{
+                              width: "100%",
+                              height: 28,
+                              border: "none",
+                              outline: "none",
+                              fontSize: 12.5,
+                              background: "transparent",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <option value="">&nbsp;</option>
+                            <option value="CP_NVL_TT">CP_NVL_TT - Chi phí nguyên vật liệu trực tiếp</option>
+                            <option value="CP_NCTT">CP_NCTT - Chi phí nhân công trực tiếp</option>
+                            <option value="CP_SXC">CP_SXC - Chi phí sản xuất chung</option>
+                            <option value="CP_MAY_TC">CP_MAY_TC - Chi phí sử dụng máy thi công</option>
+                            <option value="CP_KHOAN_GC">CP_KHOAN_GC - Chi phí khoán gia công ngoài</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
+                          <input
+                            type="text"
+                            value={row.costItemName}
+                            onChange={(e) => handleCostItemNameChange(row.id, e.target.value)}
+                            placeholder=""
+                            style={{
+                              width: "100%",
+                              height: 28,
+                              border: "none",
+                              outline: "none",
+                              fontSize: 12.5,
+                              background: "transparent",
+                              boxSizing: "border-box",
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: "2px 12px", borderRight: "1px dotted #cbd5e1", textAlign: "right" }}>
+                          <input
+                            type="number"
+                            value={row.estimatedValue}
+                            onChange={(e) => handleEstimateValueChange(row.id, Number(e.target.value))}
+                            style={{
+                              width: "100%",
+                              height: 28,
+                              border: "none",
+                              outline: "none",
+                              fontSize: 12.5,
+                              textAlign: "right",
+                              background: "transparent",
+                              boxSizing: "border-box",
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: "2px 12px 2px 8px", textAlign: "right", position: "relative" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+                            <input
+                              type="number"
+                              value={row.previousYearValue}
+                              onChange={(e) => handlePreviousYearValueChange(row.id, Number(e.target.value))}
+                              style={{
+                                width: "100%",
+                                height: 28,
+                                border: "none",
+                                outline: "none",
+                                fontSize: 12.5,
+                                textAlign: "right",
+                                background: "transparent",
+                                boxSizing: "border-box",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEstimateRow(row.id)}
+                              title="Xóa dòng"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#ef4444",
+                                display: "grid",
+                                placeItems: "center",
+                                padding: 2,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Actions right under table inside the card */}
+                <div style={{ padding: "8px 12px", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 8, background: "#ffffff" }}>
+                  <button
+                    id="btn-add-estimate-row"
+                    type="button"
+                    onClick={handleAddEstimateRow}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      height: 26,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      background: "#ffffff",
+                      color: "#374151",
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={13} />
+                    <span>Thêm dòng</span>
+                  </button>
+                  <button
+                    id="btn-clear-estimate-rows"
+                    type="button"
+                    onClick={handleClearEstimateRows}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      height: 26,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      background: "#ffffff",
+                      color: "#374151",
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Trash2 size={13} color="#ef4444" />
+                    <span>Xóa hết dòng</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div
+              style={{
+                height: 48,
+                padding: "0 20px",
+                background: "#ffffff",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setProjectEstimateModalOpen(false)}
+                style={{
+                  height: 30,
+                  padding: "0 18px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 3,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#374151",
+                  cursor: "pointer",
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveEstimate(false)}
+                style={{
+                  height: 30,
+                  padding: "0 20px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 3,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#374151",
+                  cursor: "pointer",
+                }}
+              >
+                Cất
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveEstimate(true)}
+                style={{
+                  height: 30,
+                  padding: "0 14px",
+                  background: "#00a862",
+                  border: "none",
+                  borderRadius: 3,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#ffffff",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>Cất và Đóng</span>
+                <ChevronDown size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
       {/* 6. MODALS ĐƠN HÀNG (ORDERS) */}
       {/* ==================================================================== */}
 
@@ -15366,97 +15909,381 @@ export default function MisaCostWorkspace({
         </div>
       )}
 
-      {/* 6C. MODAL/DRAWER: CHỌN ĐƠN HÀNG NGHIỆM THU */}
+      {/* ==================================================================== */}
+      {/* 6C. MODAL/DRAWER: CHỌN ĐƠN HÀNG (Screenshot) */}
+      {/* ==================================================================== */}
       {orderAcceptanceModalOpen && (
         <div
+          id="modal-order-acceptance"
+          className="misa-modal-overlay"
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            backdropFilter: "blur(2px)",
+            zIndex: 9999,
           }}
           onClick={() => setOrderAcceptanceModalOpen(false)}
         >
           <div
+            className="misa-modal-card"
             style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: "57vw",
+              minWidth: 700,
+              maxWidth: 1100,
+              height: "100vh",
               background: "#ffffff",
-              borderRadius: 6,
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.25)",
-              width: "100%",
-              maxWidth: 780,
-              maxHeight: "90vh",
               display: "flex",
               flexDirection: "column",
+              boxShadow: "-6px 0 24px rgba(0, 0, 0, 0.15)",
               overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: "1px solid #e2e8f0" }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#1e293b" }}>Chọn đơn hàng nghiệm thu</h3>
-              <button type="button" onClick={() => setOrderAcceptanceModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}>
-                <X size={18} />
-              </button>
+            {/* Header */}
+            <div
+              style={{
+                height: 48,
+                padding: "0 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: "1px solid #e2e8f0",
+                background: "#ffffff",
+                flexShrink: 0,
+              }}
+            >
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#1e293b" }}>
+                Chọn đơn hàng
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  type="button"
+                  title="Hướng dẫn chọn đơn hàng"
+                  onClick={() => notify("Hướng dẫn chọn đơn hàng nghiệm thu sang TK 632")}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    cursor: "pointer",
+                    color: "#64748b",
+                    display: "grid",
+                    placeItems: "center",
+                    padding: 4,
+                  }}
+                >
+                  <HelpCircle size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderAcceptanceModalOpen(false)}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    cursor: "pointer",
+                    color: "#64748b",
+                    display: "grid",
+                    placeItems: "center",
+                    padding: 4,
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
-            <div style={{ padding: "16px 20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            {/* Content Body */}
+            <div
+              style={{
+                padding: "16px 20px",
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                background: "#ffffff",
+              }}
+            >
+              {/* Field: Kỳ tính giá thành * */}
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 500, color: "#374151", marginBottom: 5 }}>
+                  <span>Kỳ tính giá thành</span>
+                  <span style={{ color: "#ef4444" }}> *</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ position: "relative", width: 380, maxWidth: "100%" }}>
+                    <select
+                      value={acceptanceOrderPeriodCode}
+                      onChange={(e) => {
+                        setAcceptanceOrderPeriodCode(e.target.value);
+                        if (e.target.value) {
+                          setAcceptanceOrdersFetched(true);
+                        }
+                      }}
+                      style={{
+                        width: "100%",
+                        height: 32,
+                        padding: "0 28px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 3,
+                        fontSize: 13,
+                        background: "#ffffff",
+                        appearance: "none",
+                        cursor: "pointer",
+                        outline: "none",
+                      }}
+                    >
+                      <option value="">&nbsp;</option>
+                      <option value="KTG-10-2026">Kỳ tính giá thành Tháng 10/2026 (01/10/2026 - 31/10/2026)</option>
+                      <option value="KTG-09-2026">Kỳ tính giá thành Tháng 09/2026 (01/09/2026 - 30/09/2026)</option>
+                      <option value="KTG-Q3-2026">Kỳ tính giá thành Quý 3/2026 (01/07/2026 - 30/09/2026)</option>
+                      <option value="KTG-08-2026">Kỳ tính giá thành Tháng 08/2026 (01/08/2026 - 31/08/2026)</option>
+                    </select>
+                    <ChevronDown size={14} style={{ position: "absolute", right: 8, top: 9, color: "#64748b", pointerEvents: "none" }} />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!acceptanceOrderPeriodCode) {
+                        setAcceptanceOrderPeriodCode("KTG-10-2026");
+                      }
+                      setAcceptanceOrdersFetched(true);
+                      notify("Đã lấy danh sách đơn hàng cho kỳ tính giá!");
+                    }}
+                    style={{
+                      height: 32,
+                      padding: "0 14px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      background: "#ffffff",
+                      fontSize: 12.5,
+                      fontWeight: 500,
+                      color: "#374151",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Lấy dữ liệu
+                  </button>
+                </div>
+              </div>
+
+              {/* Toolbar: Checkbox "Chọn tất cả" & Search */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 14,
+                  marginBottom: 10,
+                }}
+              >
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13, color: "#374151" }}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      acceptanceOrdersFetched &&
+                      selectedOrderCodes.length > 0 &&
+                      selectedOrderCodes.length === 4
+                    }
+                    onChange={(e) => {
+                      if (!acceptanceOrdersFetched) {
+                        setAcceptanceOrdersFetched(true);
+                      }
+                      if (e.target.checked) {
+                        setSelectedOrderCodes(["DH2026-0089", "DH2026-0092", "DH2026-0105", "DH2026-0118"]);
+                      } else {
+                        setSelectedOrderCodes([]);
+                      }
+                    }}
+                    style={{ accentColor: "#00a862" }}
+                  />
+                  <span>Chọn tất cả</span>
+                </label>
+
+                <div style={{ position: "relative", width: 220 }}>
+                  <input
+                    type="text"
+                    value={orderAcceptanceSearchText}
+                    onChange={(e) => setOrderAcceptanceSearchText(e.target.value)}
+                    placeholder="Nhập từ khóa tìm kiếm"
+                    style={{
+                      width: "100%",
+                      height: 30,
+                      padding: "0 28px 0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      fontSize: 12.5,
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <Search size={14} style={{ position: "absolute", right: 8, top: 8, color: "#94a3b8", pointerEvents: "none" }} />
+                </div>
+              </div>
+
+              {/* Table: Danh sách đơn hàng */}
+              <div
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                  background: "#ffffff",
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 280,
+                }}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
-                    <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
-                      <th style={{ width: 40, padding: "8px 10px", textAlign: "center" }}></th>
-                      <th style={{ width: 140, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Số đơn hàng 📌</th>
-                      <th style={{ width: 120, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Ngày đơn hàng</th>
-                      <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Khách hàng</th>
-                      <th style={{ width: 140, padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>Doanh thu</th>
-                      <th style={{ width: 140, padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>Số chưa nghiệm thu</th>
+                    <tr style={{ background: "#d6e4dc", height: 34, borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+                      <th style={{ width: 40, textAlign: "center", padding: "4px 6px", borderRight: "1px dotted #94a3b8" }}>
+                        <input
+                          type="checkbox"
+                          checked={
+                            acceptanceOrdersFetched &&
+                            selectedOrderCodes.length > 0 &&
+                            selectedOrderCodes.length === 4
+                          }
+                          onChange={(e) => {
+                            if (!acceptanceOrdersFetched) setAcceptanceOrdersFetched(true);
+                            if (e.target.checked) setSelectedOrderCodes(["DH2026-0089", "DH2026-0092", "DH2026-0105", "DH2026-0118"]);
+                            else setSelectedOrderCodes([]);
+                          }}
+                          style={{ accentColor: "#00a862" }}
+                        />
+                      </th>
+                      <th style={{ width: 140, textAlign: "left", padding: "6px 10px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>
+                        <span>📌 Số đơn hàng</span>
+                      </th>
+                      <th style={{ width: 120, textAlign: "left", padding: "6px 10px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>
+                        Ngày đơn hàng
+                      </th>
+                      <th style={{ textAlign: "left", padding: "6px 10px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>
+                        Khách hàng
+                      </th>
+                      <th style={{ width: 130, textAlign: "right", padding: "6px 12px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>
+                        Doanh thu
+                      </th>
+                      <th style={{ width: 160, textAlign: "right", padding: "6px 12px", fontWeight: 600 }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                          <span>Số chưa nghiệm thu</span>
+                          <Filter size={13} style={{ color: "#64748b" }} />
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { code: "DH2026-0089", date: "05/10/2026", customer: "Công ty TNHH Á Châu", rev: 245000000, unacc: 165000000 },
-                      { code: "DH2026-0092", date: "12/10/2026", customer: "Tập đoàn Hòa Bình", rev: 350000000, unacc: 233000000 },
-                    ].map((row) => (
-                      <tr key={row.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ textAlign: "center" }}>
-                          <input
-                            type="checkbox"
-                            checked={selectedAcceptanceOrders.includes(row.code)}
-                            onChange={(e) => {
-                              if (e.target.checked) setSelectedAcceptanceOrders([...selectedAcceptanceOrders, row.code]);
-                              else setSelectedAcceptanceOrders(selectedAcceptanceOrders.filter((c) => c !== row.code));
-                            }}
-                            style={{ accentColor: "#00a862" }}
-                          />
-                        </td>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
-                        <td style={{ padding: "8px 10px" }}>{row.date}</td>
-                        <td style={{ padding: "8px 10px" }}>{row.customer}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.rev)}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
+                    {acceptanceOrdersFetched ? (
+                      [
+                        { code: "DH2026-0089", date: "05/10/2026", customer: "Công ty TNHH Á Châu", rev: 245000000, unacc: 165000000 },
+                        { code: "DH2026-0092", date: "12/10/2026", customer: "Tập đoàn Xây dựng Hòa Bình", rev: 350000000, unacc: 233000000 },
+                        { code: "DH2026-0105", date: "18/10/2026", customer: "Công ty Cổ phần May Sông Hồng", rev: 180000000, unacc: 120000000 },
+                        { code: "DH2026-0118", date: "24/10/2026", customer: "Công ty CP Cơ điện Lạnh REE", rev: 420000000, unacc: 295000000 },
+                      ]
+                        .filter(
+                          (o) =>
+                            o.code.toLowerCase().includes(orderAcceptanceSearchText.toLowerCase()) ||
+                            o.customer.toLowerCase().includes(orderAcceptanceSearchText.toLowerCase())
+                        )
+                        .map((row) => (
+                          <tr key={row.code} style={{ borderBottom: "1px dotted #cbd5e1", height: 34 }}>
+                            <td style={{ textAlign: "center", padding: "4px 6px", borderRight: "1px dotted #cbd5e1" }}>
+                              <input
+                                type="checkbox"
+                                checked={selectedOrderCodes.includes(row.code)}
+                                onChange={(e) => {
+                                  if (e.target.checked) setSelectedOrderCodes([...selectedOrderCodes, row.code]);
+                                  else setSelectedOrderCodes(selectedOrderCodes.filter((c) => c !== row.code));
+                                }}
+                                style={{ accentColor: "#00a862" }}
+                              />
+                            </td>
+                            <td style={{ padding: "6px 10px", fontWeight: 600, color: "#00a862", borderRight: "1px dotted #cbd5e1" }}>
+                              {row.code}
+                            </td>
+                            <td style={{ padding: "6px 10px", borderRight: "1px dotted #cbd5e1" }}>
+                              {row.date}
+                            </td>
+                            <td style={{ padding: "6px 10px", borderRight: "1px dotted #cbd5e1" }}>
+                              {row.customer}
+                            </td>
+                            <td style={{ padding: "6px 12px", textAlign: "right", color: "#2563eb", fontWeight: 600, borderRight: "1px dotted #cbd5e1" }}>
+                              {formatMoney(row.rev)}
+                            </td>
+                            <td style={{ padding: "6px 12px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>
+                              {formatMoney(row.unacc)}
+                            </td>
+                          </tr>
+                        ))
+                    ) : (
+                      // Empty state when not fetched yet (matches user screenshot)
+                      <tr>
+                        <td colSpan={6} style={{ height: 260, background: "#ffffff", border: "none" }}></td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-              <button type="button" onClick={() => setOrderAcceptanceModalOpen(false)} style={{ padding: "6px 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 13, cursor: "pointer" }}>Hủy</button>
+            {/* Footer Actions */}
+            <div
+              style={{
+                height: 48,
+                padding: "0 16px",
+                background: "#ffffff",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setOrderAcceptanceModalOpen(false)}
+                style={{
+                  height: 30,
+                  padding: "0 20px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 3,
+                  background: "#ffffff",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#374151",
+                  cursor: "pointer",
+                }}
+              >
+                Hủy
+              </button>
               <button
                 type="button"
                 onClick={() => {
-                  notify(`Đã nghiệm thu ${selectedAcceptanceOrders.length} đơn hàng sang TK 632!`);
+                  if (selectedOrderCodes.length === 0) {
+                    notify("Vui lòng chọn ít nhất một đơn hàng để nghiệm thu!");
+                    return;
+                  }
+                  notify(`Đã nghiệm thu ${selectedOrderCodes.length} đơn hàng hoàn thành sang TK 632!`);
                   setOrderAcceptanceModalOpen(false);
                   setShowOrderAcceptanceList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{
+                  height: 30,
+                  padding: "0 22px",
+                  border: "none",
+                  borderRadius: 3,
+                  background: "#00a862",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#ffffff",
+                  cursor: "pointer",
+                }}
               >
                 Đồng ý
               </button>

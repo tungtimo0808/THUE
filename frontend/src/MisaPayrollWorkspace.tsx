@@ -296,7 +296,15 @@ export default function MisaPayrollWorkspace({
 
   // Attendance Mode & Add Attendance Sheet Form State
   const [attendanceMode, setAttendanceMode] = useState<"empty" | "sheet_view">("empty");
-  const [showAddAttendanceModal, setShowAddAttendanceModal] = useState(false);
+  const [showAddAttendanceModal, setShowAddAttendanceModal] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const action = sp.get("action");
+      const path = window.location.pathname;
+      return action === "add-attendance" || (action === "add" && path.includes("attendance") && !path.includes("attendance-summary"));
+    }
+    return false;
+  });
   const [showAttTypeDropdown, setShowAttTypeDropdown] = useState(false);
   const [attendanceType, setAttendanceType] = useState("Chấm công theo buổi");
   const [attMonth, setAttMonth] = useState("10");
@@ -326,7 +334,15 @@ export default function MisaPayrollWorkspace({
 
   // Attendance Summary Mode & Add Summary Form State (Ảnh 1 & Ảnh 2)
   const [summaryMode, setSummaryMode] = useState<"empty" | "list_view">("empty");
-  const [showAddSummaryModal, setShowAddSummaryModal] = useState(false);
+  const [showAddSummaryModal, setShowAddSummaryModal] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const action = sp.get("action");
+      const path = window.location.pathname;
+      return action === "add-summary" || (action === "add" && path.includes("attendance-summary"));
+    }
+    return false;
+  });
   const [showSummaryTypeDropdown, setShowSummaryTypeDropdown] = useState(false);
   const [summaryType, setSummaryType] = useState("Chấm công theo buổi");
   const [summaryMonth, setSummaryMonth] = useState("10");
@@ -354,7 +370,15 @@ export default function MisaPayrollWorkspace({
 
   // Calculation (Tính lương) Mode & Add Salary Sheet Form State (Ảnh 1 & Ảnh 2)
   const [calcMode, setCalcMode] = useState<"empty" | "sheet_view">("empty");
-  const [showAddSalarySheetModal, setShowAddSalarySheetModal] = useState(false);
+  const [showAddSalarySheetModal, setShowAddSalarySheetModal] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const action = sp.get("action");
+      const path = window.location.pathname;
+      return action === "add-salary" || (action === "add" && path.includes("calculation"));
+    }
+    return false;
+  });
   const [showSalarySheetTypeDropdown, setShowSalarySheetTypeDropdown] = useState(false);
   const [salarySheetType, setSalarySheetType] = useState("Lương cố định (không dựa trên bảng chấm công)");
   const [calcMonth, setCalcMonth] = useState("10");
@@ -412,8 +436,10 @@ export default function MisaPayrollWorkspace({
 
   // Check action query param on mount or URL change (from flyout menu shortcuts)
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
+    const rawSearch = typeof window !== "undefined" ? window.location.search : location.search;
+    const searchParams = new URLSearchParams(rawSearch || location.search);
     const action = searchParams.get("action");
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
     if (action === "pay-salary") {
       setShowSalaryPaymentModal(true);
     } else if (action === "pay-insurance") {
@@ -422,8 +448,14 @@ export default function MisaPayrollWorkspace({
       setShowTaxBracketsModal(true);
     } else if (action === "regulations") {
       setShowRegulationsModal(true);
+    } else if (action === "add-attendance" || (action === "add" && (tab === "attendance" || (path.includes("attendance") && !path.includes("attendance-summary"))))) {
+      setShowAddAttendanceModal(true);
+    } else if (action === "add-summary" || (action === "add" && (tab === "attendance-summary" || path.includes("attendance-summary")))) {
+      setShowAddSummaryModal(true);
+    } else if (action === "add-salary" || (action === "add" && (tab === "calculation" || path.includes("calculation")))) {
+      setShowAddSalarySheetModal(true);
     }
-  }, [location.search]);
+  }, [location.search, tab]);
 
   // Filtered employees for Attendance tab
   const filteredEmployees = SAMPLE_EMPLOYEES.filter((emp) => {
@@ -1054,20 +1086,36 @@ export default function MisaPayrollWorkspace({
           </div>
         )}
 
-        {/* 10. Thêm bảng chấm công Modal (Ảnh 2) */}
+        {/* 10. Thêm bảng chấm công Modal (Ảnh 1) */}
         {showAddAttendanceModal && (
-          <div className="misa-modal-overlay">
+          <div
+            id="modal-add-attendance"
+            className="misa-modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15, 23, 42, 0.6)",
+              backdropFilter: "blur(2px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: 16,
+            }}
+          >
             <div
               className="misa-modal-card"
               style={{
-                width: 1080,
-                maxWidth: "96vw",
-                maxHeight: "92vh",
+                width: "98vw",
+                maxWidth: 1400,
+                height: "96vh",
+                maxHeight: "96vh",
                 display: "flex",
                 flexDirection: "column",
-                borderRadius: 4,
+                borderRadius: 6,
                 overflow: "hidden",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+                background: "#f2f5f8",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
               }}
             >
               {/* Header */}
@@ -1079,6 +1127,7 @@ export default function MisaPayrollWorkspace({
                   alignItems: "center",
                   background: "#ffffff",
                   borderBottom: "1px solid #e2e8f0",
+                  flexShrink: 0,
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
@@ -1104,11 +1153,11 @@ export default function MisaPayrollWorkspace({
               </div>
 
               {/* Form Content */}
-              <div style={{ padding: "16px 20px", background: "#f8fafc", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Row 1: Loại chấm công (Custom Dropdown matching Screenshot 3) */}
+              <div style={{ padding: "16px 20px", background: "#f2f5f8", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Row 1: Loại chấm công */}
                 <div>
                   <div style={{ fontSize: 12.5, color: "#374151", marginBottom: 5 }}>Loại chấm công</div>
-                  <div style={{ position: "relative", width: 340 }}>
+                  <div style={{ position: "relative", width: 320 }}>
                     <div
                       onClick={() => setShowAttTypeDropdown(!showAttTypeDropdown)}
                       style={{
@@ -1299,7 +1348,7 @@ export default function MisaPayrollWorkspace({
                     value={attSheetName}
                     onChange={(e) => setAttSheetName(e.target.value)}
                     style={{
-                      width: 340,
+                      width: 320,
                       height: 32,
                       padding: "0 10px",
                       border: "1px solid #cbd5e1",
@@ -1324,8 +1373,8 @@ export default function MisaPayrollWorkspace({
                   </label>
                 </div>
 
-                {/* Table of Units */}
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginTop: 6 }}>
+                {/* Table of Units matching Screenshot 1 */}
+                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginTop: 4 }}>
                   {/* Select all header line */}
                   <div style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", gap: 8 }}>
                     <input
@@ -1339,17 +1388,17 @@ export default function MisaPayrollWorkspace({
 
                   <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
                     <thead>
-                      <tr style={{ background: "#e2ede6", height: 34, borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
-                        <th style={{ width: 36, textAlign: "center", padding: "4px" }}></th>
-                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Mã đơn vị</th>
-                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Tên đơn vị</th>
+                      <tr style={{ background: "#d6e4dc", height: 34, borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+                        <th style={{ width: 36, textAlign: "center", padding: "4px", borderRight: "1px solid #c4d7cd" }}></th>
+                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600, width: 180, borderRight: "1px solid #c4d7cd" }}>Mã đơn vị</th>
+                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600, width: 280, borderRight: "1px solid #c4d7cd" }}>Tên đơn vị</th>
                         <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Cấp tổ chức</th>
                       </tr>
                     </thead>
                     <tbody>
                       {orgUnits.map((u) => (
                         <tr key={u.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
-                          <td style={{ textAlign: "center", padding: "4px" }}>
+                          <td style={{ textAlign: "center", padding: "4px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
                               type="checkbox"
                               checked={u.checked}
@@ -1357,8 +1406,8 @@ export default function MisaPayrollWorkspace({
                               style={{ accentColor: "#00a862", width: 15, height: 15, cursor: "pointer" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500 }}>{u.id}</td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b" }}>{u.name}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.id}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", borderRight: "1px dotted #cbd5e1" }}>{u.name}</td>
                           <td style={{ padding: "6px 12px", color: "#475569" }}>{u.level}</td>
                         </tr>
                       ))}
@@ -1371,17 +1420,17 @@ export default function MisaPayrollWorkspace({
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>Số dòng/trang</span>
-                        <select style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}>
+                        <select style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, background: "#ffffff" }}>
                           <option>20</option>
                           <option>50</option>
                         </select>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>|&lt;</span>
-                        <span>&lt;</span>
-                        <span style={{ fontWeight: 700, color: "#00a862" }}>1</span>
-                        <span>&gt;</span>
-                        <span>&gt;|</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang đầu">|&lt;</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang trước">&lt;</span>
+                        <span style={{ display: "inline-block", minWidth: 20, textAlign: "center", padding: "1px 5px", borderRadius: 3, background: "#00a862", color: "#ffffff", fontWeight: 700, fontSize: 12 }}>1</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang sau">&gt;</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang cuối">&gt;|</span>
                       </div>
                     </div>
                   </div>
@@ -1389,7 +1438,7 @@ export default function MisaPayrollWorkspace({
               </div>
 
               {/* Modal Actions */}
-              <div style={{ padding: "12px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <div style={{ padding: "10px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
                 <button
                   type="button"
                   onClick={() => setShowAddAttendanceModal(false)}
@@ -1433,19 +1482,36 @@ export default function MisaPayrollWorkspace({
           </div>
         )}
 
+
         {/* 11. Thêm tổng hợp chấm công Modal (Ảnh 2) */}
         {showAddSummaryModal && (
-          <div className="misa-modal-overlay">
+          <div
+            id="modal-add-summary"
+            className="misa-modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15, 23, 42, 0.6)",
+              backdropFilter: "blur(2px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: 16,
+            }}
+          >
             <div
               className="misa-modal-card"
               style={{
-                width: 1080,
-                maxWidth: "96vw",
-                maxHeight: "92vh",
+                width: "98vw",
+                maxWidth: 1400,
+                height: "96vh",
+                maxHeight: "96vh",
                 display: "flex",
                 flexDirection: "column",
                 borderRadius: 4,
                 overflow: "hidden",
+                background: "#f2f5f8",
                 boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
               }}
             >
@@ -1483,11 +1549,11 @@ export default function MisaPayrollWorkspace({
               </div>
 
               {/* Form Content */}
-              <div style={{ padding: "16px 20px", background: "#f8fafc", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Row 1: Loại chấm công (Custom Dropdown matching Screenshot 3) */}
+              <div style={{ padding: "16px 20px", background: "#f2f5f8", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Row 1: Loại chấm công (Custom Dropdown matching Screenshot 2) */}
                 <div>
                   <div style={{ fontSize: 12.5, color: "#374151", marginBottom: 5 }}>Loại chấm công</div>
-                  <div style={{ position: "relative", width: 340 }}>
+                  <div style={{ position: "relative", width: 320 }}>
                     <div
                       onClick={() => setShowSummaryTypeDropdown(!showSummaryTypeDropdown)}
                       style={{
@@ -1567,7 +1633,7 @@ export default function MisaPayrollWorkspace({
                   </div>
                 </div>
 
-                {/* Row 2: Tháng, Năm, Tên bảng tổng hợp chấm công */}
+                {/* Row 2: Tháng, Năm, Tên bảng tổng hợp chấm công (matching Screenshot 2) */}
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   {/* Tháng */}
                   <div>
@@ -1624,14 +1690,14 @@ export default function MisaPayrollWorkspace({
                   </div>
 
                   {/* Tên bảng tổng hợp chấm công */}
-                  <div style={{ flex: 1, maxWidth: 360 }}>
+                  <div>
                     <div style={{ fontSize: 12.5, color: "#374151", marginBottom: 5 }}>Tên bảng tổng hợp chấm công</div>
                     <input
                       type="text"
                       value={summarySheetName}
                       onChange={(e) => setSummarySheetName(e.target.value)}
                       style={{
-                        width: "100%",
+                        width: 380,
                         height: 32,
                         padding: "0 10px",
                         border: "1px solid #cbd5e1",
@@ -1657,8 +1723,8 @@ export default function MisaPayrollWorkspace({
                   </label>
                 </div>
 
-                {/* Table of Units */}
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginTop: 6 }}>
+                {/* Table of Units matching Screenshot 2 */}
+                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginTop: 4 }}>
                   {/* Select all header line */}
                   <div style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", gap: 8 }}>
                     <input
@@ -1672,17 +1738,17 @@ export default function MisaPayrollWorkspace({
 
                   <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
                     <thead>
-                      <tr style={{ background: "#e2ede6", height: 34, borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
-                        <th style={{ width: 36, textAlign: "center", padding: "4px" }}></th>
-                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Mã đơn vị</th>
-                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Tên đơn vị</th>
+                      <tr style={{ background: "#d6e4dc", height: 34, borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+                        <th style={{ width: 36, textAlign: "center", padding: "4px", borderRight: "1px solid #c4d7cd" }}></th>
+                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600, width: 180, borderRight: "1px solid #c4d7cd" }}>Mã đơn vị</th>
+                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600, width: 280, borderRight: "1px solid #c4d7cd" }}>Tên đơn vị</th>
                         <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Cấp tổ chức</th>
                       </tr>
                     </thead>
                     <tbody>
                       {summaryOrgUnits.map((u) => (
                         <tr key={u.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
-                          <td style={{ textAlign: "center", padding: "4px" }}>
+                          <td style={{ textAlign: "center", padding: "4px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
                               type="checkbox"
                               checked={u.checked}
@@ -1690,8 +1756,8 @@ export default function MisaPayrollWorkspace({
                               style={{ accentColor: "#00a862", width: 15, height: 15, cursor: "pointer" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500 }}>{u.id}</td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b" }}>{u.name}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.id}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", borderRight: "1px dotted #cbd5e1" }}>{u.name}</td>
                           <td style={{ padding: "6px 12px", color: "#475569" }}>{u.level}</td>
                         </tr>
                       ))}
@@ -1704,17 +1770,17 @@ export default function MisaPayrollWorkspace({
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>Số dòng/trang</span>
-                        <select style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}>
+                        <select style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, background: "#ffffff" }}>
                           <option>20</option>
                           <option>50</option>
                         </select>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>|&lt;</span>
-                        <span>&lt;</span>
-                        <span style={{ fontWeight: 700, color: "#00a862" }}>1</span>
-                        <span>&gt;</span>
-                        <span>&gt;|</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang đầu">|&lt;</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang trước">&lt;</span>
+                        <span style={{ display: "inline-block", minWidth: 20, textAlign: "center", padding: "1px 5px", borderRadius: 3, background: "#00a862", color: "#ffffff", fontWeight: 700, fontSize: 12 }}>1</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang sau">&gt;</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang cuối">&gt;|</span>
                       </div>
                     </div>
                   </div>
@@ -1722,7 +1788,7 @@ export default function MisaPayrollWorkspace({
               </div>
 
               {/* Modal Actions */}
-              <div style={{ padding: "12px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <div style={{ padding: "10px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
                 <button
                   type="button"
                   onClick={() => setShowAddSummaryModal(false)}
@@ -1757,7 +1823,6 @@ export default function MisaPayrollWorkspace({
                     fontWeight: 600,
                     color: "#ffffff",
                     cursor: "pointer",
-                    boxShadow: "0 2px 4px rgba(0, 168, 98, 0.25)",
                   }}
                 >
                   Đồng ý
@@ -1767,19 +1832,35 @@ export default function MisaPayrollWorkspace({
           </div>
         )}
 
-        {/* 12. Thêm bảng lương Modal (Ảnh 2) */}
+        {/* 12. Thêm bảng lương Modal (Ảnh 3) */}
         {showAddSalarySheetModal && (
-          <div className="misa-modal-overlay">
+          <div
+            id="modal-add-salary"
+            className="misa-modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15, 23, 42, 0.6)",
+              backdropFilter: "blur(2px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: 16,
+            }}
+          >
             <div
               className="misa-modal-card"
               style={{
-                width: 1080,
-                maxWidth: "96vw",
-                maxHeight: "92vh",
+                width: "98vw",
+                maxWidth: 1400,
+                height: "96vh",
+                maxHeight: "96vh",
                 display: "flex",
                 flexDirection: "column",
                 borderRadius: 4,
                 overflow: "hidden",
+                background: "#f2f5f8",
                 boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
               }}
             >
@@ -1817,13 +1898,13 @@ export default function MisaPayrollWorkspace({
               </div>
 
               {/* Form Content */}
-              <div style={{ padding: "16px 20px", background: "#f8fafc", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Row 1: Loại bảng lương * (Custom Dropdown matching Screenshot 1) */}
+              <div style={{ padding: "16px 20px", background: "#f2f5f8", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Row 1: Loại bảng lương * (Custom Dropdown matching Screenshot 3) */}
                 <div>
                   <div style={{ fontSize: 12.5, color: "#374151", marginBottom: 5 }}>
                     Loại bảng lương <span style={{ color: "#ef4444" }}>*</span>
                   </div>
-                  <div style={{ position: "relative", width: "100%" }}>
+                  <div style={{ position: "relative", width: 440 }}>
                     <div
                       onClick={() => setShowSalarySheetTypeDropdown(!showSalarySheetTypeDropdown)}
                       style={{
@@ -2040,7 +2121,7 @@ export default function MisaPayrollWorkspace({
                     value={calcSheetName}
                     onChange={(e) => setCalcSheetName(e.target.value)}
                     style={{
-                      width: "100%",
+                      width: 440,
                       height: 32,
                       padding: "0 10px",
                       border: "1px solid #cbd5e1",
@@ -2065,8 +2146,8 @@ export default function MisaPayrollWorkspace({
                   </label>
                 </div>
 
-                {/* Table of Units */}
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginTop: 6 }}>
+                {/* Table of Units matching Screenshot 3 */}
+                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginTop: 4 }}>
                   {/* Select all header line */}
                   <div style={{ padding: "8px 12px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", gap: 8 }}>
                     <input
@@ -2080,17 +2161,17 @@ export default function MisaPayrollWorkspace({
 
                   <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
                     <thead>
-                      <tr style={{ background: "#e2ede6", height: 34, borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
-                        <th style={{ width: 36, textAlign: "center", padding: "4px" }}></th>
-                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Mã đơn vị</th>
-                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Tên đơn vị</th>
+                      <tr style={{ background: "#d6e4dc", height: 34, borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+                        <th style={{ width: 36, textAlign: "center", padding: "4px", borderRight: "1px solid #c4d7cd" }}></th>
+                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600, width: 180, borderRight: "1px solid #c4d7cd" }}>Mã đơn vị</th>
+                        <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600, width: 280, borderRight: "1px solid #c4d7cd" }}>Tên đơn vị</th>
                         <th style={{ textAlign: "left", padding: "6px 12px", fontWeight: 600 }}>Cấp tổ chức</th>
                       </tr>
                     </thead>
                     <tbody>
                       {calcOrgUnits.map((u) => (
                         <tr key={u.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
-                          <td style={{ textAlign: "center", padding: "4px" }}>
+                          <td style={{ textAlign: "center", padding: "4px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
                               type="checkbox"
                               checked={u.checked}
@@ -2098,8 +2179,8 @@ export default function MisaPayrollWorkspace({
                               style={{ accentColor: "#00a862", width: 15, height: 15, cursor: "pointer" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500 }}>{u.id}</td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b" }}>{u.name}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.id}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", borderRight: "1px dotted #cbd5e1" }}>{u.name}</td>
                           <td style={{ padding: "6px 12px", color: "#475569" }}>{u.level}</td>
                         </tr>
                       ))}
@@ -2112,17 +2193,17 @@ export default function MisaPayrollWorkspace({
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>Số dòng/trang</span>
-                        <select style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}>
+                        <select style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, background: "#ffffff" }}>
                           <option>20</option>
                           <option>50</option>
                         </select>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>|&lt;</span>
-                        <span>&lt;</span>
-                        <span style={{ fontWeight: 700, color: "#00a862" }}>1</span>
-                        <span>&gt;</span>
-                        <span>&gt;|</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang đầu">|&lt;</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang trước">&lt;</span>
+                        <span style={{ display: "inline-block", minWidth: 20, textAlign: "center", padding: "1px 5px", borderRadius: 3, background: "#00a862", color: "#ffffff", fontWeight: 700, fontSize: 12 }}>1</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang sau">&gt;</span>
+                        <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang cuối">&gt;|</span>
                       </div>
                     </div>
                   </div>
@@ -2130,7 +2211,7 @@ export default function MisaPayrollWorkspace({
               </div>
 
               {/* Modal Actions */}
-              <div style={{ padding: "12px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <div style={{ padding: "10px 20px", background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
                 <button
                   type="button"
                   onClick={() => setShowAddSalarySheetModal(false)}
@@ -3490,6 +3571,7 @@ export default function MisaPayrollWorkspace({
 
             {/* Button Thêm */}
             <button
+              id="btn-add-attendance"
               type="button"
               onClick={() => setShowAddAttendanceModal(true)}
               style={{
@@ -3802,6 +3884,7 @@ export default function MisaPayrollWorkspace({
 
             {/* Button Thêm */}
             <button
+              id="btn-add-summary"
               type="button"
               onClick={() => setShowAddSummaryModal(true)}
               style={{
@@ -4128,6 +4211,7 @@ export default function MisaPayrollWorkspace({
 
             {/* Button Thêm */}
             <button
+              id="btn-add-salary"
               type="button"
               onClick={() => setShowAddSalarySheetModal(true)}
               style={{

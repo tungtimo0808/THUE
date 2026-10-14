@@ -39,6 +39,8 @@ import {
   Keyboard,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
+import { MisaInventoryItemModal, type InventoryItemData } from "./MisaInventoryItemModal";
+import { MisaItemNatureDrawer } from "./MisaItemNatureDrawer";
 
 export type MisaInventoryWorkspaceProps = {
   company?: { id: string; name: string };
@@ -277,7 +279,40 @@ export default function MisaInventoryWorkspace({
     { id: "tp-1", itemCode: "", itemName: "", unit: "" },
     { id: "tp-2", itemCode: "", itemName: "", unit: "" },
   ]);
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showNatureDrawer, setShowNatureDrawer] = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [selectedNature, setSelectedNature] = useState<string>("Hàng hóa");
+  const [editingItem, setEditingItem] = useState<InventoryItemData | null>(null);
+
+  const handleSelectNature = (_natureId: string, natureName: string) => {
+    setShowNatureDrawer(false);
+    setSelectedNature(natureName);
+    setEditingItem(null);
+    setShowItemModal(true);
+    notify(`Đã chọn tính chất: ${natureName}. Mở form thêm mới Hàng hóa, dịch vụ.`);
+  };
+
+  const handleSaveInventoryItem = (itemData: InventoryItemData, keepOpen?: boolean) => {
+    if (editingItem) {
+      setCatalogItems((prev) =>
+        prev.map((it) => (it.id === editingItem.id ? { ...it, ...itemData } : it))
+      );
+      notify(`Đã cập nhật hàng hóa, dịch vụ [${itemData.code}] ${itemData.name}!`);
+    } else {
+      setCatalogItems((prev) => [
+        {
+          id: `item-${Date.now()}`,
+          ...itemData,
+        },
+        ...prev,
+      ]);
+      notify(`Đã thêm mới [${itemData.code}] ${itemData.name} (${itemData.nature}) thành công!`);
+    }
+    if (!keepOpen) {
+      setShowItemModal(false);
+      setEditingItem(null);
+    }
+  };
   const [previewReportTitle, setPreviewReportTitle] = useState<string | null>(null);
 
   // Tab: Reports state
@@ -351,16 +386,37 @@ export default function MisaInventoryWorkspace({
     },
   ]);
 
-  // Catalog items data (exact match to screenshot 5)
-  const [catalogItems, setCatalogItems] = useState([
+  // Catalog items data (exact match to screenshot)
+  const [catalogItems, setCatalogItems] = useState<InventoryItemData[]>([
     {
       id: "cpmh",
       name: "Chi phí mua hàng",
       code: "CPMH",
       vatPolicy: "Chưa xác định",
-      type: "Dịch vụ",
+      nature: "Dịch vụ",
       stockQty: 0.0,
       stockValue: 0,
+      unit: "Lần",
+    },
+    {
+      id: "hh0002",
+      name: "Hàng hóa mới",
+      code: "HH0002",
+      vatPolicy: "Chưa xác định",
+      nature: "Hàng hóa",
+      stockQty: 0.0,
+      stockValue: 0,
+      unit: "Cái",
+    },
+    {
+      id: "hh0003",
+      name: "Hàng hóa mới",
+      code: "HH0003",
+      vatPolicy: "Chưa xác định",
+      nature: "Hàng hóa",
+      stockQty: 0.0,
+      stockValue: 0,
+      unit: "Cái",
     },
   ]);
 
@@ -2819,7 +2875,7 @@ export default function MisaInventoryWorkspace({
             name: s.name,
             code: s.code,
             vatPolicy: "10%",
-            type: s.group === "Tủ điện" ? "Thành phẩm" : "Nguyên vật liệu",
+            nature: s.group === "Tủ điện" ? "Thành phẩm" : "Nguyên vật liệu",
             stockQty: s.stock,
             stockValue: s.stock * s.price,
           })),
@@ -3035,7 +3091,8 @@ export default function MisaInventoryWorkspace({
             <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden", boxShadow: "0 1px 3px rgba(0, 168, 98, 0.25)" }}>
               <button
                 type="button"
-                onClick={() => setShowAddItemModal(true)}
+                onClick={() => setShowNatureDrawer(true)}
+                title="Chọn tính chất hàng hóa dịch vụ"
                 style={{
                   height: 32,
                   padding: "0 14px",
@@ -3051,7 +3108,8 @@ export default function MisaInventoryWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => setShowAddItemModal(true)}
+                onClick={() => setShowNatureDrawer(true)}
+                title="Chọn tính chất hàng hóa dịch vụ"
                 style={{
                   height: 32,
                   padding: "0 8px",
@@ -3092,7 +3150,7 @@ export default function MisaInventoryWorkspace({
                     onChange={(e) => {
                       if (e.target.checked) {
                         const all: Record<string, boolean> = {};
-                        filteredItems.forEach((it) => { all[it.id] = true; });
+                        filteredItems.forEach((it) => { all[it.id || it.code] = true; });
                         setSelectedItems(all);
                       } else {
                         setSelectedItems({});
@@ -3115,13 +3173,13 @@ export default function MisaInventoryWorkspace({
             </thead>
             <tbody>
               {filteredItems.map((item) => (
-                <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <tr key={item.id || item.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center", padding: "8px 6px" }}>
                     <input
                       type="checkbox"
-                      checked={!!selectedItems[item.id]}
+                      checked={!!selectedItems[item.id || item.code]}
                       onChange={(e) => {
-                        setSelectedItems({ ...selectedItems, [item.id]: e.target.checked });
+                        setSelectedItems({ ...selectedItems, [item.id || item.code]: e.target.checked });
                       }}
                     />
                   </td>
@@ -3133,7 +3191,7 @@ export default function MisaInventoryWorkspace({
                       <FileText size={14} style={{ color: "#00a862" }} />
                     </div>
                   </td>
-                  <td style={{ padding: "8px 10px", color: "#475569" }}>{item.type}</td>
+                  <td style={{ padding: "8px 10px", color: "#475569" }}>{item.nature || (item as any).type || "Hàng hóa"}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", color: "#1e293b" }}>
                     {item.stockQty.toFixed(2).replace(".", ",")}
                   </td>
@@ -3143,7 +3201,11 @@ export default function MisaInventoryWorkspace({
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <button
                       type="button"
-                      onClick={() => setShowAddItemModal(true)}
+                      onClick={() => {
+                        setEditingItem(item);
+                        setSelectedNature(item.nature || (item as any).type || "Hàng hóa");
+                        setShowItemModal(true);
+                      }}
                       style={{ border: "none", background: "transparent", color: "#0284c7", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
                     >
                       <span>Sửa</span>
@@ -8672,85 +8734,32 @@ export default function MisaInventoryWorkspace({
           </div>
         )}
 
-        {/* MODAL: Thêm Hàng hóa, dịch vụ */}
-        {showAddItemModal && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ background: "#ffffff", borderRadius: 8, width: 760, maxWidth: "95vw", maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}>
-              <div style={{ padding: "14px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Package size={18} style={{ color: "#00a862" }} />
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Thêm Hàng hóa, dịch vụ</h3>
-                </div>
-                <button type="button" onClick={() => setShowAddItemModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><X size={18} /></button>
-              </div>
-              <div style={{ padding: 20, overflow: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 14 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Mã hàng hóa, dịch vụ (*)</label>
-                    <input type="text" defaultValue="VTHH001" id="new-item-code" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Tính chất (*)</label>
-                    <select id="new-item-type" defaultValue="Vật tư hàng hóa" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, background: "#ffffff" }}>
-                      <option value="Vật tư hàng hóa">Vật tư hàng hóa</option>
-                      <option value="Dịch vụ">Dịch vụ</option>
-                      <option value="Thành phẩm">Thành phẩm</option>
-                      <option value="Nguyên vật liệu">Nguyên vật liệu</option>
-                      <option value="Công cụ dụng cụ">Công cụ dụng cụ</option>
-                    </select>
-                  </div>
-                  <div style={{ gridColumn: "span 2" }}>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Tên hàng hóa, dịch vụ (*)</label>
-                    <input type="text" defaultValue="Biến dòng đo lường hạ thế MCT 400/5A Emic" id="new-item-name" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Đơn vị tính chính</label>
-                    <input type="text" defaultValue="Quả" id="new-item-unit" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Giảm thuế theo quy định</label>
-                    <select id="new-item-vat" defaultValue="Chưa xác định" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, background: "#ffffff" }}>
-                      <option value="Chưa xác định">Chưa xác định</option>
-                      <option value="Không giảm thuế">Không giảm thuế</option>
-                      <option value="Giảm thuế theo NQ43">Giảm thuế theo NQ43</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Số lượng tồn ban đầu</label>
-                    <input type="number" defaultValue={20} id="new-item-qty" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>Giá trị tồn ban đầu (VND)</label>
-                    <input type="number" defaultValue={5600000} id="new-item-val" style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13 }} />
-                  </div>
-                </div>
-              </div>
-              <div style={{ padding: "12px 20px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button type="button" onClick={() => setShowAddItemModal(false)} style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", cursor: "pointer" }}>Hủy</button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const code = (document.getElementById("new-item-code") as HTMLInputElement)?.value || "VTHH001";
-                    const name = (document.getElementById("new-item-name") as HTMLInputElement)?.value || "Biến dòng đo lường";
-                    const type = (document.getElementById("new-item-type") as HTMLSelectElement)?.value || "Vật tư hàng hóa";
-                    const vatPolicy = (document.getElementById("new-item-vat") as HTMLSelectElement)?.value || "Chưa xác định";
-                    const stockQty = Number((document.getElementById("new-item-qty") as HTMLInputElement)?.value || 0);
-                    const stockValue = Number((document.getElementById("new-item-val") as HTMLInputElement)?.value || 0);
+        {/* DRAWER & MODAL: Hàng hóa, dịch vụ chuẩn MISA */}
+        {showNatureDrawer && (
+          <MisaItemNatureDrawer
+            isOpen={showNatureDrawer}
+            onClose={() => setShowNatureDrawer(false)}
+            onSelectNature={handleSelectNature}
+            notify={notify}
+          />
+        )}
 
-                    setCatalogItems((prev) => [
-                      { id: `item-${Date.now()}`, name, code, vatPolicy, type, stockQty, stockValue },
-                      ...prev,
-                    ]);
-                    setShowAddItemModal(false);
-                    notify(`Đã thêm thành công hàng hóa [${code}] ${name}`);
-                  }}
-                  style={{ height: 32, padding: "0 18px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}
-                >
-                  Lưu hàng hóa
-                </button>
-              </div>
-            </div>
-          </div>
+        {showItemModal && (
+          <MisaInventoryItemModal
+            isOpen={showItemModal}
+            onClose={() => {
+              setShowItemModal(false);
+              setEditingItem(null);
+            }}
+            initialNature={selectedNature}
+            editingItem={editingItem}
+            onSubmit={handleSaveInventoryItem}
+            onChangeNature={() => {
+              setShowItemModal(false);
+              setShowNatureDrawer(true);
+            }}
+            notify={notify}
+          />
         )}
 
         {/* MODAL: Xem báo cáo */}

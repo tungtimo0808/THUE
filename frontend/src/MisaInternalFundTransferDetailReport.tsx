@@ -1,3 +1,6 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateValue,isCashDateInRange} from "./cash-date";
 import { useState, useMemo } from "react";
@@ -392,20 +395,13 @@ export default function MisaInternalFundTransferDetailReport({
             <ChevronDown size={13} color="#64748b" />
           </button>
 
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Sổ chi tiết chuyển tiền nội bộ" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Sổ chi tiết chuyển tiền nội bộ")?.headers ?? [])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
               cursor: "pointer",
               padding: 4,
-            }}
-            title="Tùy chỉnh"
-            onClick={() => notify?.("Mở cài đặt...")}
-          >
-            <Settings size={15} />
-          </button>
+            }} />
         </div>
       </div>
 

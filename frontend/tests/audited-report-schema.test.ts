@@ -145,3 +145,16 @@ test("legacy catalogue aliases resolve without deleting old names", () => {
     canonicalReportName("Chi tiết công nợ phải thu theo mặt hàng (tĩnh)"),
   );
 });
+
+test("month/quarter report defaults use a month number instead of a month input value", () => {
+  const definition = {
+    name: "Đối chiếu thuế", category: "Thuế", viewer: "dynamic" as const,
+    labels: ["Kỳ báo cáo", "Tháng", "Năm"], headers: [], selectors: [], checkboxes: [],
+    fields: [{label:"Kỳ báo cáo",kind:"radio"}],
+    radios: [{label:"Theo tháng",checked:true},{label:"Theo quý",checked:false}],
+  };
+  const params = initialAuditedParameters(definition);
+  assert.equal(params.fields.Tháng, String(new Date().getMonth()+1));
+  assert.equal(params.radio, "Theo tháng");
+  assert.equal(validateAuditedParameters(params, definition), "");
+});

@@ -677,11 +677,12 @@ export function SaleVoucherModal({
                       border: "none",
                       outline: "none",
                       fontSize: 12.5,
-                      width: 155,
+                      flex: 1,
+                      minWidth: 0,
                       color: "#1e293b",
                     }}
                   />
-                  <Search size={13} style={{ color: "#94a3b8" }} />
+                  <Search size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
                   <button
                     type="button"
                     onClick={() => setShowOrderDropdown(!showOrderDropdown)}
@@ -693,6 +694,7 @@ export function SaleVoucherModal({
                       cursor: "pointer",
                       display: "grid",
                       placeItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <ChevronDown size={13} />
@@ -1099,7 +1101,7 @@ export function SaleVoucherModal({
                   {/* Row 1 */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
                     {/* Mã khách hàng */}
-                    <div style={{ width: 220, flexShrink: 0, position: "relative" }}>
+                    <div style={{ width: 240, flexShrink: 0, position: "relative" }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         Mã khách hàng
                       </label>
@@ -1114,6 +1116,8 @@ export function SaleVoucherModal({
                             padding: "0 4px 0 6px",
                             background: "#ffffff",
                             flex: 1,
+                            minWidth: 0,
+                            boxSizing: "border-box",
                           }}
                         >
                           <input
@@ -1121,7 +1125,7 @@ export function SaleVoucherModal({
                             value={customerCode}
                             onChange={(e) => setCustomerCode(e.target.value)}
                             onFocus={() => setShowCustomerDropdown(true)}
-                            style={{ border: "none", outline: "none", width: "100%", height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
                           />
                           <button
                             type="button"
@@ -1129,14 +1133,14 @@ export function SaleVoucherModal({
                               if (onOpenCustomerModal) onOpenCustomerModal();
                               else notify("Thêm nhanh khách hàng mới");
                             }}
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <ChevronDown size={13} />
                           </button>
@@ -1159,6 +1163,7 @@ export function SaleVoucherModal({
                             color: "#475569",
                             cursor: "pointer",
                             flexShrink: 0,
+                            boxSizing: "border-box",
                           }}
                         >
                           $
@@ -1275,7 +1280,7 @@ export function SaleVoucherModal({
                   {/* Row 2 */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
                     {/* Người liên hệ (Chưa thu) hoặc Người nộp (Thu ngay) */}
-                    <div style={{ width: 220, flexShrink: 0 }}>
+                    <div style={{ width: 240, flexShrink: 0 }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         {collectionType === "collected_now" ? "Người nộp" : "Người liên hệ"}
                       </label>
@@ -1320,7 +1325,7 @@ export function SaleVoucherModal({
                   {/* Row 3 */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
                     {/* Nhân viên bán hàng */}
-                    <div style={{ width: 220, flexShrink: 0 }}>
+                    <div style={{ width: 240, flexShrink: 0 }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         Nhân viên bán hàng
                       </label>
@@ -1333,16 +1338,28 @@ export function SaleVoucherModal({
                           height: 28,
                           padding: "0 4px 0 6px",
                           background: "#ffffff",
+                          boxSizing: "border-box",
                         }}
                       >
                         <input
                           type="text"
                           value={salesPerson}
                           onChange={(e) => setSalesPerson(e.target.value)}
-                          style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                          style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
                         />
-                        <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                        <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                        <button
+                          type="button"
+                          onClick={() => notify("Thêm nhân viên bán hàng")}
+                          style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                        >
+                          <Plus size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                        >
+                          <ChevronDown size={13} />
+                        </button>
                       </div>
                     </div>
 
@@ -1406,12 +1423,10 @@ export function SaleVoucherModal({
                         <span style={{ fontSize: 12.5, color: "#334155", paddingBottom: 5 }}>Chứng từ gốc</span>
                       </div>
                     )}
-                  </div>
 
-                  {/* Row 4: Type 3 (Đại lý) & Type 4 (Ủy thác) */}
-                  {(saleType === 3 || saleType === 4) ? (
-                    <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
-                      <div style={{ width: 260, flexShrink: 0 }}>
+                    {/* Row 4 or 5: saleType === 3 or 4 */}
+                    {(saleType === 3 || saleType === 4) && (
+                      <div style={{ width: 240, flexShrink: 0 }}>
                         <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                           {saleType === 4 ? "Đơn vị ủy thác" : "Đơn vị giao đại lý"}
                         </label>
@@ -1424,6 +1439,7 @@ export function SaleVoucherModal({
                             height: 28,
                             padding: "0 4px 0 6px",
                             background: "#ffffff",
+                            boxSizing: "border-box",
                           }}
                         >
                           <input
@@ -1432,25 +1448,25 @@ export function SaleVoucherModal({
                             onChange={(e) =>
                               saleType === 4 ? setTrusteeUnit(e.target.value) : setAgencyUnit(e.target.value)
                             }
-                            style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
                           />
-                          <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                          <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <Plus size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <ChevronDown size={13} />
+                          </button>
                         </div>
                       </div>
+                    )}
 
-                      <div style={{ paddingBottom: 4 }}>
-                        <button
-                          type="button"
-                          onClick={() => notify("Chọn chứng từ tham chiếu")}
-                          style={{ background: "none", border: "none", color: "#00b06b", fontSize: 12.5, cursor: "pointer", padding: 0 }}
-                        >
-                          Tham chiếu ...
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
+                    <div style={{ paddingBottom: 4 }}>
                       <button
                         type="button"
                         onClick={() => notify("Chọn chứng từ tham chiếu")}
@@ -1459,13 +1475,13 @@ export function SaleVoucherModal({
                         Tham chiếu ...
                       </button>
                     </div>
-                  )}
+                  </div>
 
                   {/* Row 6: Điều khoản thanh toán (Chỉ có khi Chưa thu tiền) */}
                   {collectionType === "uncollected" && (
                     <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
                       {/* ▾ Điều khoản thanh toán */}
-                      <div style={{ width: 220, flexShrink: 0 }}>
+                      <div style={{ width: 240, flexShrink: 0 }}>
                         <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                           ▾ Điều khoản thanh toán
                         </label>
@@ -1478,6 +1494,7 @@ export function SaleVoucherModal({
                             height: 28,
                             padding: "0 4px 0 6px",
                             background: "#ffffff",
+                            boxSizing: "border-box",
                           }}
                         >
                           <select
@@ -1488,15 +1505,25 @@ export function SaleVoucherModal({
                               else if (e.target.value === "NET45") setDebtDays(45);
                               else setDebtDays(0);
                             }}
-                            style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent" }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                           >
                             <option value=""></option>
                             <option value="TTN">Thanh toán ngay</option>
                             <option value="NET30">Gối nợ 30 ngày</option>
                             <option value="NET45">Gối nợ 45 ngày</option>
                           </select>
-                          <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                          <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <Plus size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <ChevronDown size={13} />
+                          </button>
                         </div>
                       </div>
 
@@ -1557,7 +1584,7 @@ export function SaleVoucherModal({
                 <>
                   {/* Row 1: Mã KH & Tên KH */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
-                    <div style={{ width: 220, flexShrink: 0, position: "relative" }}>
+                    <div style={{ width: 240, flexShrink: 0, position: "relative" }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         Mã khách hàng
                       </label>
@@ -1572,6 +1599,8 @@ export function SaleVoucherModal({
                             padding: "0 4px 0 6px",
                             background: "#ffffff",
                             flex: 1,
+                            minWidth: 0,
+                            boxSizing: "border-box",
                           }}
                         >
                           <input
@@ -1579,7 +1608,7 @@ export function SaleVoucherModal({
                             value={customerCode}
                             onChange={(e) => setCustomerCode(e.target.value)}
                             onFocus={() => setShowCustomerDropdown(true)}
-                            style={{ border: "none", outline: "none", width: "100%", height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
                           />
                           <button
                             type="button"
@@ -1587,14 +1616,14 @@ export function SaleVoucherModal({
                               if (onOpenCustomerModal) onOpenCustomerModal();
                               else notify("Thêm nhanh khách hàng mới");
                             }}
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <ChevronDown size={13} />
                           </button>
@@ -1616,6 +1645,7 @@ export function SaleVoucherModal({
                             color: "#475569",
                             cursor: "pointer",
                             flexShrink: 0,
+                            boxSizing: "border-box",
                           }}
                         >
                           $
@@ -1680,7 +1710,7 @@ export function SaleVoucherModal({
 
                   {/* Row 2: Người nhận & Địa chỉ */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
-                    <div style={{ width: 220, flexShrink: 0 }}>
+                    <div style={{ width: 240, flexShrink: 0 }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         Người nhận
                       </label>
@@ -1722,7 +1752,7 @@ export function SaleVoucherModal({
 
                   {/* Row 3: Nhân viên bán hàng & Lý do xuất */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
-                    <div style={{ width: 220, flexShrink: 0 }}>
+                    <div style={{ width: 240, flexShrink: 0 }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         Nhân viên bán hàng
                       </label>
@@ -1735,16 +1765,28 @@ export function SaleVoucherModal({
                           height: 28,
                           padding: "0 4px 0 6px",
                           background: "#ffffff",
+                          boxSizing: "border-box",
                         }}
                       >
                         <input
                           type="text"
                           value={salesPerson}
                           onChange={(e) => setSalesPerson(e.target.value)}
-                          style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                          style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
                         />
-                        <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                        <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                        <button
+                          type="button"
+                          onClick={() => notify("Thêm nhân viên bán hàng")}
+                          style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                        >
+                          <Plus size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                        >
+                          <ChevronDown size={13} />
+                        </button>
                       </div>
                     </div>
 
@@ -1838,15 +1880,25 @@ export function SaleVoucherModal({
                               else if (e.target.value === "NET45") setDebtDays(45);
                               else setDebtDays(0);
                             }}
-                            style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent" }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                           >
                             <option value=""></option>
                             <option value="TTN">Thanh toán ngay</option>
                             <option value="NET30">Gối nợ 30 ngày</option>
                             <option value="NET45">Gối nợ 45 ngày</option>
                           </select>
-                          <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                          <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <Plus size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <ChevronDown size={13} />
+                          </button>
                         </div>
                       </div>
 
@@ -1905,7 +1957,7 @@ export function SaleVoucherModal({
                 <>
                   {/* Row 1: Mã KH & Tên KH */}
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-end" }}>
-                    <div style={{ width: 220, flexShrink: 0, position: "relative" }}>
+                    <div style={{ width: 240, flexShrink: 0, position: "relative" }}>
                       <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                         Mã khách hàng
                       </label>
@@ -1920,6 +1972,8 @@ export function SaleVoucherModal({
                             padding: "0 4px 0 6px",
                             background: "#ffffff",
                             flex: 1,
+                            minWidth: 0,
+                            boxSizing: "border-box",
                           }}
                         >
                           <input
@@ -1927,7 +1981,7 @@ export function SaleVoucherModal({
                             value={customerCode}
                             onChange={(e) => setCustomerCode(e.target.value)}
                             onFocus={() => setShowCustomerDropdown(true)}
-                            style={{ border: "none", outline: "none", width: "100%", height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, background: "transparent", fontSize: 12.5 }}
                           />
                           <button
                             type="button"
@@ -1935,14 +1989,14 @@ export function SaleVoucherModal({
                               if (onOpenCustomerModal) onOpenCustomerModal();
                               else notify("Thêm nhanh khách hàng mới");
                             }}
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <ChevronDown size={13} />
                           </button>
@@ -1964,6 +2018,7 @@ export function SaleVoucherModal({
                             color: "#475569",
                             cursor: "pointer",
                             flexShrink: 0,
+                            boxSizing: "border-box",
                           }}
                         >
                           $
@@ -2404,15 +2459,25 @@ export function SaleVoucherModal({
                               else if (e.target.value === "NET45") setDebtDays(45);
                               else setDebtDays(0);
                             }}
-                            style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent" }}
+                            style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                           >
                             <option value=""></option>
                             <option value="TTN">Thanh toán ngay</option>
                             <option value="NET30">Gối nợ 30 ngày</option>
                             <option value="NET45">Gối nợ 45 ngày</option>
                           </select>
-                          <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                          <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <Plus size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          >
+                            <ChevronDown size={13} />
+                          </button>
                         </div>
                       </div>
 

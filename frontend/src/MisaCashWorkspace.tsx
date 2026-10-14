@@ -2619,6 +2619,7 @@ export function CreateVoucherModal({
 
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
+  const [partnerSearch,setPartnerSearch]=useState(false);
   const [showBankAccountDropdown, setShowBankAccountDropdown] = useState(false);
   const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
@@ -3478,6 +3479,7 @@ export function CreateVoucherModal({
                         <input
                           type="text"
                           className="misa-voucher-input"
+                          onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
                           value={partnerCode}
                           onChange={(e) => setPartnerCode(e.target.value)}
                         />
@@ -3511,7 +3513,7 @@ export function CreateVoucherModal({
                           </button>
                         )}
 
-                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
+                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                       </div>
                     </div>
 
@@ -3786,6 +3788,7 @@ export function CreateVoucherModal({
                         <input
                           type="text"
                           className="misa-voucher-input"
+                          onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
                           value={partnerCode}
                           onChange={(e) => setPartnerCode(e.target.value)}
                         />
@@ -3819,7 +3822,7 @@ export function CreateVoucherModal({
                           </button>
                         )}
 
-                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
+                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                       </div>
                     </div>
 
@@ -4117,6 +4120,7 @@ export function CreateVoucherModal({
                         <input
                           type="text"
                           className="misa-voucher-input"
+                          onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
                           value={partnerCode}
                           onChange={(e) => setPartnerCode(e.target.value)}
                         />
@@ -4150,7 +4154,7 @@ export function CreateVoucherModal({
                           </button>
                         )}
 
-                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
+                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                       </div>
                     </div>
 
@@ -5145,7 +5149,7 @@ export function CreateVoucherModal({
         {/* Modal Tham chiếu chứng từ */}
         {referenceCodes.length>0&&<p>Tham chiếu: {referenceCodes.join(", ")}</p>}
         <datalist id="voucher-ledger-account-options">{MISA_REPORT_ACCOUNTS.map(account=><option key={account.code} value={account.code}>{account.name}</option>)}</datalist>
-        {quickDirectory&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"#fff",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickDirectory(null)}>Đóng thêm nhanh</button>{quickDirectory==="Nhà cung cấp"?<SupplierModal onClose={()=>setQuickDirectory(null)} onSubmit={data=>{setPartnerCode(data.code||"");setPartnerName(data.name||"");setQuickDirectory(null);}}/>:<MisaDirectoryWorkspace key={quickDirectory} initialName={quickDirectory} initialCreate legacy={null} notify={()=>{}} onEntrySaved={values=>{const code=Object.entries(values).find(([key])=>/^Mã|^Số tài khoản/.test(key))?.[1]||"";if(quickDirectory==="Nhân viên")setEmployee(code);else if(quickDirectory==="Tài khoản ngân hàng")setBankAccount(code);else setPartnerCode(code);setQuickDirectory(null);}}/>}</div>}
+        {quickDirectory&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickDirectory(null)}>Đóng thêm nhanh</button>{quickDirectory==="Nhà cung cấp"?<SupplierModal onClose={()=>setQuickDirectory(null)} onSubmit={data=>{setPartnerCode(data.code||"");setPartnerName(data.name||"");setQuickDirectory(null);}}/>:<MisaDirectoryWorkspace key={quickDirectory} initialName={quickDirectory} initialCreate legacy={null} notify={()=>{}} onEditorClose={()=>setQuickDirectory(null)} onEntrySaved={values=>{const code=Object.entries(values).find(([key])=>/^Mã|^Số tài khoản/.test(key))?.[1]||"";if(quickDirectory==="Nhân viên")setEmployee(code);else if(quickDirectory==="Tài khoản ngân hàng")setBankAccount(code);else setPartnerCode(code);setQuickDirectory(null);}}/>}</div>}
         {showRefModal&&<CashReferencePicker onClose={()=>setShowRefModal(false)} onSelect={codes=>{setReferenceCodes(codes);setShowRefModal(false);}}/>}
       </div>
     </div>

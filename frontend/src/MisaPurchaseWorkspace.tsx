@@ -746,9 +746,9 @@ export default function MisaPurchaseWorkspace({
       {showDebtOffsetModal && (
         <DebtOffsetModal
           onClose={() => setShowDebtOffsetModal(false)}
-          onSubmit={(data) => {
+          onSuccess={(message) => {
             setShowDebtOffsetModal(false);
-            notify(`Đã hoàn tất đối trừ chứng từ cho nhà cung cấp ${data?.supplierCode || ""}!`);
+            notify(message);
           }}
         />
       )}
@@ -756,7 +756,7 @@ export default function MisaPurchaseWorkspace({
       {showMultiDebtOffsetModal && (
         <MultiDebtOffsetModal
           onClose={() => setShowMultiDebtOffsetModal(false)}
-          onSubmit={(_data) => {
+          onSuccess={(_message) => {
             setShowMultiDebtOffsetModal(false);
             notify("Đã hoàn tất đối trừ chứng từ nhiều đối tượng thành công!");
           }}
@@ -766,7 +766,7 @@ export default function MisaPurchaseWorkspace({
       {showUnOffsetModal && (
         <UnOffsetModal
           onClose={() => setShowUnOffsetModal(false)}
-          onSubmit={(_data) => {
+          onSuccess={(_message) => {
             setShowUnOffsetModal(false);
             notify("Đã thực hiện bỏ đối trừ chứng từ thành công!");
           }}
@@ -776,7 +776,7 @@ export default function MisaPurchaseWorkspace({
       {showMultiUnOffsetModal && (
         <MultiUnOffsetModal
           onClose={() => setShowMultiUnOffsetModal(false)}
-          onSubmit={(_data) => {
+          onSuccess={(_message) => {
             setShowMultiUnOffsetModal(false);
             notify("Đã bỏ đối trừ chứng từ nhiều đối tượng thành công!");
           }}
@@ -786,9 +786,9 @@ export default function MisaPurchaseWorkspace({
       {showDebtClearingModal && (
         <DebtClearingModal
           onClose={() => setShowDebtClearingModal(false)}
-          onSubmit={(data) => {
+          onSuccess={(message) => {
             setShowDebtClearingModal(false);
-            notify(`Đã hoàn tất bù trừ công nợ chứng từ ${data?.voucherNo || ""}!`);
+            notify(message);
           }}
         />
       )}

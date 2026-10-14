@@ -4,6 +4,7 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Calendar,
   Sparkles,
   Plus,
@@ -1037,54 +1038,101 @@ export function PurchaseContractModal({
   onOpenSupplierModal,
 }: PurchaseContractModalProps) {
   // Master fields
-  const [contractCode, setContractCode] = useState("HĐM00001");
-  const [signDate, setSignDate] = useState("29/09/2026");
-  const [supplierCode, setSupplierCode] = useState("NCC001");
-  const [supplierName, setSupplierName] = useState("Công ty TNHH Thiết bị Công nghiệp Tân Phát");
-  const [address, setAddress] = useState("Số 18 Hoàng Cầu, Đống Đa, Hà Nội");
-  const [contractValue, setContractValue] = useState(38750000);
+  const [contractCode, setContractCode] = useState("HĐM00002");
+  const [signDate, setSignDate] = useState("12/10/2026");
+  const [supplierCode, setSupplierCode] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [address, setAddress] = useState("");
+  const [contractValue, setContractValue] = useState(0);
   const [contractStatus, setContractStatus] = useState("Chưa thực hiện");
   const [deliveryStatus, setDeliveryStatus] = useState("Chưa giao");
-  const [taxCode, setTaxCode] = useState("0102345678");
-  const [contactPerson, setContactPerson] = useState("Nguyễn Văn Hùng");
-  const [deliveryDeadline, setDeliveryDeadline] = useState("15/10/2026");
-  const [paymentDeadline, setPaymentDeadline] = useState("30/10/2026");
+  const [taxCode, setTaxCode] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [deliveryDeadline, setDeliveryDeadline] = useState("");
+  const [paymentDeadline, setPaymentDeadline] = useState("");
 
-  // Expanded sections
-  const [showExtendedInfo, setShowExtendedInfo] = useState(false);
-  const [showPaymentTerms, setShowPaymentTerms] = useState(false);
+  // Collapsible section visibility (matching user screenshot)
+  const [showExtendedInfo, setShowExtendedInfo] = useState(true);
+  const [showPaymentTerms, setShowPaymentTerms] = useState(true);
+
+  // Extended info fields
+  const [summary, setSummary] = useState("");
+  const [purchasingEmployee, setPurchasingEmployee] = useState("");
+  const [isPreExisting, setIsPreExisting] = useState(false);
+  const [liquidationAmount, setLiquidationAmount] = useState(0);
+  const [liquidationDate, setLiquidationDate] = useState("");
+  const [liquidationReason, setLiquidationReason] = useState("");
+  const [otherTerms, setOtherTerms] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  // Payment terms installments
+  const [paymentInstallments, setPaymentInstallments] = useState([
+    {
+      id: "term-1",
+      installment: "",
+      rate: 0,
+      amount: 0,
+      dueDate: "",
+      payDate: "",
+      paidAmount: 0,
+      priorYearPaid: 0,
+      remainingAmount: 0,
+      note: "",
+      voucher: "",
+    },
+  ]);
+
+  const handleInstallmentChange = (index: number, field: string, value: any) => {
+    const updated = [...paymentInstallments];
+    updated[index] = { ...updated[index], [field]: value };
+    setPaymentInstallments(updated);
+  };
+
+  const handleAddInstallment = () => {
+    setPaymentInstallments([
+      ...paymentInstallments,
+      {
+        id: `term-${Date.now()}`,
+        installment: `Đợt ${paymentInstallments.length + 1}`,
+        rate: 0,
+        amount: 0,
+        dueDate: "",
+        payDate: "",
+        paidAmount: 0,
+        priorYearPaid: 0,
+        remainingAmount: 0,
+        note: "",
+        voucher: "",
+      },
+    ]);
+  };
+
+  const handleDeleteInstallment = (index: number) => {
+    setPaymentInstallments(paymentInstallments.filter((_, i) => i !== index));
+  };
+
+  const totalInstallmentRate = paymentInstallments.reduce((s, it) => s + (Number(it.rate) || 0), 0);
+  const totalInstallmentAmount = paymentInstallments.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+  const totalPaidAmount = paymentInstallments.reduce((s, it) => s + (Number(it.paidAmount) || 0), 0);
+  const totalPriorYearPaid = paymentInstallments.reduce((s, it) => s + (Number(it.priorYearPaid) || 0), 0);
+  const totalRemainingAmount = paymentInstallments.reduce((s, it) => s + (Number(it.remainingAmount) || 0), 0);
 
   // Table items
   const [items, setItems] = useState([
     {
       id: "hdm-1",
-      code: "VT001",
-      name: "Thép cuộn mạ kẽm Ø6",
-      unit: "Kg",
-      reqQty: 1000,
+      code: "",
+      name: "",
+      unit: "",
+      reqQty: 0,
       deliveredQty: 0,
-      unitPrice: 21500,
-      amount: 21500000,
+      unitPrice: 0,
+      amount: 0,
       discountRate: 0,
       discountAmount: 0,
       vatRate: 10,
-      vatAmount: 2150000,
-      stock: 4500,
-    },
-    {
-      id: "hdm-2",
-      code: "VT002",
-      name: "Ống thép đúc phi 90 dày 3.5mm",
-      unit: "Cây",
-      reqQty: 50,
-      deliveredQty: 0,
-      unitPrice: 345000,
-      amount: 17250000,
-      discountRate: 0,
-      discountAmount: 0,
-      vatRate: 10,
-      vatAmount: 1725000,
-      stock: 120,
+      vatAmount: 0,
+      stock: 0,
     },
   ]);
 
@@ -1146,6 +1194,15 @@ export function PurchaseContractModal({
       contactPerson,
       deliveryDeadline,
       paymentDeadline,
+      summary,
+      purchasingEmployee,
+      isPreExisting,
+      liquidationAmount,
+      liquidationDate,
+      liquidationReason,
+      otherTerms,
+      deliveryAddress,
+      paymentInstallments,
       items,
       grandTotal,
     });
@@ -1154,25 +1211,49 @@ export function PurchaseContractModal({
 
   return (
     <div className="misa-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="misa-purchase-modal-window">
-        {/* Header (Image 3) */}
-        <header className="misa-purchase-modal-header">
+      <div
+        className="misa-purchase-modal-window"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          maxHeight: "95vh",
+          width: "96vw",
+          maxWidth: 1400,
+          background: "#ffffff",
+          borderRadius: 6,
+          overflow: "hidden",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        }}
+      >
+        {/* Header */}
+        <header className="misa-purchase-modal-header" style={{ flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <FileCheck size={18} style={{ color: "#64748b" }} />
+              <RotateCcw size={17} style={{ color: "#64748b" }} />
               <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
                 Hợp đồng mua {contractCode}
               </h2>
             </div>
 
-            <div className="misa-purchase-header-search">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                border: "1px solid #cbd5e1",
+                borderRadius: 4,
+                height: 28,
+                padding: "0 6px",
+                background: "#ffffff",
+                gap: 6,
+              }}
+            >
               <input
                 type="text"
                 placeholder="Nhập số đơn mua hàng"
-                style={{ border: "none", outline: "none", fontSize: 12.5, width: 170, background: "transparent" }}
+                style={{ border: "none", outline: "none", fontSize: 12, width: 170, background: "transparent" }}
               />
-              <Search size={14} style={{ color: "#64748b" }} />
-              <ChevronDown size={14} style={{ color: "#64748b" }} />
+              <Search size={13} style={{ color: "#64748b", flexShrink: 0 }} />
+              <ChevronDown size={13} style={{ color: "#64748b", flexShrink: 0 }} />
             </div>
           </div>
 
@@ -1182,285 +1263,1209 @@ export function PurchaseContractModal({
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
-            <button type="button" className="misa-invoice-circle-btn"><Keyboard size={16} /></button>
-            <button type="button" className="misa-invoice-circle-btn"><Settings size={16} /></button>
-            <button type="button" className="misa-invoice-circle-btn"><Minus size={16} /></button>
-            <button type="button" className="misa-invoice-circle-btn" onClick={onClose}><X size={18} /></button>
+            <button type="button" className="misa-invoice-circle-btn" title="Phím tắt"><Keyboard size={15} /></button>
+            <button type="button" className="misa-invoice-circle-btn" title="Cài đặt"><Settings size={15} /></button>
+            <button type="button" className="misa-invoice-circle-btn" title="Thu nhỏ"><Minus size={15} /></button>
+            <button type="button" className="misa-invoice-circle-btn" onClick={onClose} title="Đóng"><X size={17} /></button>
           </div>
         </header>
 
-        {/* Master Form Area (Image 3) */}
-        <div style={{ padding: "12px 18px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 20 }}>
-            {/* Left 2 columns */}
-            <div>
-              {/* Row 1: Số hợp đồng, Ngày ký, Mã NCC, Tên NCC */}
-              <div style={{ display: "grid", gridTemplateColumns: "140px 130px 180px 1fr", gap: 10, marginBottom: 8 }}>
-                <div>
+        {/* Scrollable Body Container */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            padding: "12px 18px",
+            background: "#ffffff",
+          }}
+        >
+          {/* ================================================================= */}
+          {/* MASTER FORM AREA (Matching screenshot)                            */}
+          {/* ================================================================= */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "310px 1fr 180px",
+              gap: "10px 20px",
+              alignItems: "start",
+            }}
+          >
+            {/* LEFT COLUMN: Số hợp đồng, Ngày ký, Giá trị HĐ, Tình trạng, Tham chiếu */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {/* Row 1: Số hợp đồng + Ngày ký */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ width: 145, flexShrink: 0 }}>
                   <label className="misa-purchase-label">Số hợp đồng</label>
                   <input
                     type="text"
                     value={contractCode}
                     onChange={(e) => setContractCode(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #00b06b", fontSize: 12.5, fontWeight: 600 }}
+                    style={{
+                      width: "100%",
+                      height: 28,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      boxSizing: "border-box",
+                    }}
                   />
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <label className="misa-purchase-label">Ngày ký</label>
-                  <div style={{ position: "relative" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      height: 28,
+                      padding: "0 6px",
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  >
                     <input
                       type="text"
                       value={signDate}
                       onChange={(e) => setSignDate(e.target.value)}
-                      style={{ width: "100%", height: 28, padding: "0 26px 0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Calendar size={13} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
                   </div>
-                </div>
-                <div>
-                  <label className="misa-purchase-label">Mã nhà cung cấp</label>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                    <input
-                      type="text"
-                      value={supplierCode}
-                      onChange={(e) => setSupplierCode(e.target.value)}
-                      style={{ flex: 1, height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
-                    />
-                    <button type="button" onClick={onOpenSupplierModal} style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}>
-                      <Plus size={14} />
-                    </button>
-                    <button type="button" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#64748b", boxSizing: "border-box" }}>
-                      <ChevronDown size={13} />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="misa-purchase-label">Tên nhà cung cấp</label>
-                  <input
-                    type="text"
-                    value={supplierName}
-                    onChange={(e) => setSupplierName(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                  />
                 </div>
               </div>
 
-              {/* Row 2: Giá trị hợp đồng & Địa chỉ */}
-              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 10, marginBottom: 8 }}>
-                <div>
-                  <label className="misa-purchase-label">Giá trị hợp đồng</label>
-                  <input
-                    type="number"
-                    value={contractValue}
-                    onChange={(e) => setContractValue(Number(e.target.value) || 0)}
-                    style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5, textAlign: "right" }}
-                  />
-                </div>
-                <div>
-                  <label className="misa-purchase-label">Địa chỉ</label>
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
-                  />
-                </div>
+              {/* Row 2: Giá trị hợp đồng */}
+              <div>
+                <label className="misa-purchase-label">Giá trị hợp đồng</label>
+                <input
+                  type="text"
+                  value={contractValue === 0 ? "0" : formatVND(contractValue)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, "");
+                    setContractValue(Number(raw) || 0);
+                  }}
+                  style={{
+                    width: "100%",
+                    height: 28,
+                    padding: "0 8px",
+                    borderRadius: 4,
+                    border: "1px solid #cbd5e1",
+                    fontSize: 12.5,
+                    textAlign: "right",
+                    boxSizing: "border-box",
+                  }}
+                />
               </div>
 
-              {/* Row 3: Tình trạng HĐ, Tình trạng GH, MST, Người liên hệ */}
-              <div style={{ display: "grid", gridTemplateColumns: "160px 160px 160px 1fr", gap: 10, marginBottom: 8 }}>
-                <div>
+              {/* Row 3: Tình trạng HĐ + Tình trạng giao hàng */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ flex: 1 }}>
                   <label className="misa-purchase-label">Tình trạng hợp đồng</label>
                   <select
                     value={contractStatus}
                     onChange={(e) => setContractStatus(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 6px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
+                    style={{
+                      width: "100%",
+                      height: 28,
+                      padding: "0 6px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12,
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
                   >
                     <option value="Chưa thực hiện">Chưa thực hiện</option>
                     <option value="Đang thực hiện">Đang thực hiện</option>
                     <option value="Đã hoàn thành">Đã hoàn thành</option>
                   </select>
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <label className="misa-purchase-label">Tình trạng giao hàng</label>
                   <select
                     value={deliveryStatus}
                     onChange={(e) => setDeliveryStatus(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 6px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
+                    style={{
+                      width: "100%",
+                      height: 28,
+                      padding: "0 6px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12,
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
                   >
                     <option value="Chưa giao">Chưa giao</option>
                     <option value="Đang giao">Đang giao</option>
                     <option value="Đã giao đủ">Đã giao đủ</option>
                   </select>
                 </div>
-                <div>
+              </div>
+
+              {/* Row 4: Tham chiếu */}
+              <div style={{ paddingTop: 2 }}>
+                <span
+                  style={{ color: "#0284c7", fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}
+                  onClick={() => alert("Chọn chứng từ tham chiếu")}
+                >
+                  Tham chiếu ...
+                </span>
+              </div>
+            </div>
+
+            {/* MIDDLE COLUMN: Nhà cung cấp, Địa chỉ, MST, Người liên hệ, Hạn GH, Hạn TT */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {/* Row 1: Mã NCC + Tên NCC */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ width: 220, flexShrink: 0 }}>
+                  <label className="misa-purchase-label">Mã nhà cung cấp</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      height: 28,
+                      padding: "0 4px 0 6px",
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={supplierCode}
+                      onChange={(e) => setSupplierCode(e.target.value)}
+                      placeholder=""
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12.5 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={onOpenSupplierModal}
+                      title="Thêm nhà cung cấp mới"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#00b06b",
+                        cursor: "pointer",
+                        padding: "2px",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Plus size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const s = SAMPLE_SUPPLIERS[0];
+                        setSupplierCode(s.code);
+                        setSupplierName(s.name);
+                        setTaxCode(s.taxCode);
+                        setAddress(s.address);
+                        setContactPerson(s.contact);
+                      }}
+                      title="Chọn nhà cung cấp mẫu"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#64748b",
+                        cursor: "pointer",
+                        padding: "2px",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ChevronDown size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <label className="misa-purchase-label">Tên nhà cung cấp</label>
+                  <input
+                    type="text"
+                    value={supplierName}
+                    onChange={(e) => setSupplierName(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 28,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12.5,
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Địa chỉ */}
+              <div>
+                <label className="misa-purchase-label">Địa chỉ</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  style={{
+                    width: "100%",
+                    height: 28,
+                    padding: "0 8px",
+                    borderRadius: 4,
+                    border: "1px solid #cbd5e1",
+                    fontSize: 12.5,
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              {/* Row 3: Mã số thuế + Người liên hệ */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ width: 140 }}>
                   <label className="misa-purchase-label">Mã số thuế</label>
                   <input
                     type="text"
                     value={taxCode}
                     onChange={(e) => setTaxCode(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
+                    style={{
+                      width: "100%",
+                      height: 28,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12.5,
+                      boxSizing: "border-box",
+                    }}
                   />
                 </div>
-                <div>
+
+                <div style={{ flex: 1 }}>
                   <label className="misa-purchase-label">Người liên hệ</label>
                   <input
                     type="text"
                     value={contactPerson}
                     onChange={(e) => setContactPerson(e.target.value)}
-                    style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12.5 }}
+                    style={{
+                      width: "100%",
+                      height: 28,
+                      padding: "0 8px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12.5,
+                      boxSizing: "border-box",
+                    }}
                   />
                 </div>
               </div>
 
-              {/* Row 4: Tham chiếu, Hạn giao hàng, Hạn thanh toán */}
-              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}>
-                  Tham chiếu ...
-                </span>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <label className="misa-purchase-label" style={{ marginBottom: 0 }}>Hạn giao hàng</label>
-                  <div style={{ position: "relative", width: 130 }}>
+              {/* Row 4: Hạn giao hàng + Hạn thanh toán */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ width: 140 }}>
+                  <label className="misa-purchase-label">Hạn giao hàng</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      height: 28,
+                      padding: "0 6px",
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  >
                     <input
                       type="text"
+                      placeholder="DD/MM/YYYY"
                       value={deliveryDeadline}
                       onChange={(e) => setDeliveryDeadline(e.target.value)}
-                      style={{ width: "100%", height: 26, padding: "0 24px 0 6px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Calendar size={12} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <label className="misa-purchase-label" style={{ marginBottom: 0 }}>Hạn thanh toán</label>
-                  <div style={{ position: "relative", width: 130 }}>
+                <div style={{ width: 140 }}>
+                  <label className="misa-purchase-label">Hạn thanh toán</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      height: 28,
+                      padding: "0 6px",
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  >
                     <input
                       type="text"
+                      placeholder="DD/MM/YYYY"
                       value={paymentDeadline}
                       onChange={(e) => setPaymentDeadline(e.target.value)}
-                      style={{ width: "100%", height: 26, padding: "0 24px 0 6px", borderRadius: 3, border: "1px solid #d1d5db", fontSize: 12 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Calendar size={12} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Collapsibles: Thông tin mở rộng & Điều khoản thanh toán */}
-              <div style={{ marginTop: 8, display: "flex", gap: 16 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowExtendedInfo(!showExtendedInfo)}
-                  style={{ background: "transparent", border: "none", color: "#475569", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                >
-                  <ChevronDown size={14} style={{ transform: showExtendedInfo ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }} />
-                  <span>Thông tin mở rộng</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentTerms(!showPaymentTerms)}
-                  style={{ background: "transparent", border: "none", color: "#475569", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                >
-                  <ChevronDown size={14} style={{ transform: showPaymentTerms ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }} />
-                  <span>Điều khoản thanh toán</span>
-                </button>
+            {/* RIGHT COLUMN: Giá trị hợp đồng to */}
+            <div style={{ textAlign: "right", paddingRight: 4, paddingTop: 4 }}>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 2 }}>Giá trị hợp đồng</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
+                {contractValue === 0 && grandTotal === 0 ? "0" : formatVND(contractValue || grandTotal)}
               </div>
             </div>
-
-            {/* Right block: Giá trị hợp đồng lớn */}
-            <div style={{ borderLeft: "1px solid #e2e8f0", paddingLeft: 18, textAlign: "right" }}>
-              <span style={{ fontSize: 12, color: "#64748b", display: "block" }}>Giá trị hợp đồng</span>
-              <strong style={{ fontSize: 24, color: "#111827", fontWeight: 800 }}>
-                {formatVND(contractValue || grandTotal)}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Table Area (Image 3) */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#ffffff" }}>
-          <div style={{ padding: "8px 18px", borderBottom: "1px solid #e2e8f0" }}>
-            <strong style={{ fontSize: 13, color: "#1e293b" }}>Danh sách hàng hóa dịch vụ</strong>
           </div>
 
-          <div style={{ flex: 1, overflow: "auto" }}>
-            <table className="misa-purchase-table">
-              <thead>
-                <tr>
-                  <th style={{ width: 34, textAlign: "center" }}>#</th>
-                  <th style={{ width: 105 }}><div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Pin size={11} /><span>Mã hàng</span></div></th>
-                  <th>Tên hàng</th>
-                  <th style={{ width: 75 }}>ĐVT</th>
-                  <th style={{ width: 90, textAlign: "right" }}>Số lượng yêu cầu</th>
-                  <th style={{ width: 95, textAlign: "right" }}>Số lượng đã giao</th>
-                  <th style={{ width: 105, textAlign: "right" }}>Đơn giá</th>
-                  <th style={{ width: 110, textAlign: "right" }}>Thành tiền</th>
-                  <th style={{ width: 85, textAlign: "right" }}>Tỷ lệ CK (%)</th>
-                  <th style={{ width: 100, textAlign: "right" }}>Tiền chiết khấu</th>
-                  <th style={{ width: 85, textAlign: "right" }}>% Thuế GTGT</th>
-                  <th style={{ width: 105, textAlign: "right" }}>Tiền thuế GTGT</th>
-                  <th style={{ width: 75, textAlign: "right" }}>Tồn</th>
-                  <th style={{ width: 36, textAlign: "center" }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((row, idx) => (
-                  <tr key={row.id}>
-                    <td style={{ textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
-                    <td><input type="text" value={row.code} onChange={(e) => handleItemChange(idx, "code", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
-                    <td><input type="text" value={row.name} onChange={(e) => handleItemChange(idx, "name", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
-                    <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
-                    <td><input type="number" value={row.reqQty} onChange={(e) => handleItemChange(idx, "reqQty", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td><input type="number" value={row.deliveredQty} onChange={(e) => handleItemChange(idx, "deliveredQty", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td><input type="number" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
-                    <td><input type="number" value={row.discountRate} onChange={(e) => handleItemChange(idx, "discountRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td style={{ textAlign: "right" }}>{formatVND(row.discountAmount)}</td>
-                    <td><input type="number" value={row.vatRate} onChange={(e) => handleItemChange(idx, "vatRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td style={{ textAlign: "right" }}>{formatVND(row.vatAmount)}</td>
-                    <td style={{ textAlign: "right", color: "#64748b" }}>{row.stock}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <button type="button" onClick={() => setItems(items.filter((_, i) => i !== idx))} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#ef4444" }}>
-                        <Trash2 size={13} />
+          {/* ================================================================= */}
+          {/* COLLAPSIBLE 1: THÔNG TIN MỞ RỘNG (Matching screenshot)            */}
+          {/* ================================================================= */}
+          <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => setShowExtendedInfo(!showExtendedInfo)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#00a862",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 0",
+                marginBottom: showExtendedInfo ? 8 : 0,
+              }}
+            >
+              {showExtendedInfo ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+              <span>Thông tin mở rộng</span>
+            </button>
+
+            {showExtendedInfo && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "360px 300px 1fr",
+                  gap: "10px 24px",
+                  background: "#ffffff",
+                  padding: "4px 0",
+                }}
+              >
+                {/* Col 1: Trích yếu + Nhân viên mua hàng + Checkbox */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <label className="misa-purchase-label">Trích yếu</label>
+                    <div style={{ position: "relative" }}>
+                      <textarea
+                        rows={2}
+                        value={summary}
+                        onChange={(e) => setSummary(e.target.value)}
+                        style={{
+                          width: "100%",
+                          height: 54,
+                          padding: "4px 28px 4px 8px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          resize: "none",
+                          boxSizing: "border-box",
+                          background: "#ffffff",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSummary("Hợp đồng mua thiết bị máy móc phục vụ sản xuất")}
+                        title="AVA AI gợi ý trích yếu"
+                        style={{
+                          position: "absolute",
+                          right: 6,
+                          bottom: 8,
+                          background: "none",
+                          border: "none",
+                          color: "#8b5cf6",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        <Sparkles size={14} />
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="misa-purchase-label">Nhân viên mua hàng</label>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        height: 28,
+                        padding: "0 4px 0 6px",
+                        background: "#ffffff",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={purchasingEmployee}
+                        onChange={(e) => setPurchasingEmployee(e.target.value)}
+                        style={{
+                          border: "none",
+                          outline: "none",
+                          flex: 1,
+                          minWidth: 0,
+                          height: "100%",
+                          fontSize: 12.5,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#00b06b",
+                          cursor: "pointer",
+                          padding: "2px",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#64748b",
+                          cursor: "pointer",
+                          padding: "2px",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <ChevronDown size={13} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                    <input
+                      type="checkbox"
+                      id="purchasePreExisting"
+                      checked={isPreExisting}
+                      onChange={(e) => setIsPreExisting(e.target.checked)}
+                      style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#00b06b" }}
+                    />
+                    <label
+                      htmlFor="purchasePreExisting"
+                      style={{ fontSize: 12.5, color: "#334155", cursor: "pointer" }}
+                    >
+                      Là hợp đồng phát sinh trước khi sử dụng phần mềm
+                    </label>
+                  </div>
+                </div>
+
+                {/* Col 2: Giá trị thanh lý + Ngày thanh lý + Lý do thanh lý */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <label className="misa-purchase-label">Giá trị thanh lý</label>
+                    <input
+                      type="number"
+                      value={liquidationAmount}
+                      onChange={(e) => setLiquidationAmount(Number(e.target.value) || 0)}
+                      style={{
+                        width: "100%",
+                        height: 28,
+                        padding: "0 8px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        textAlign: "right",
+                        background: "#ffffff",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="misa-purchase-label">Ngày thanh lý/hủy bỏ</label>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        height: 28,
+                        padding: "0 6px",
+                        background: "#ffffff",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        value={liquidationDate}
+                        onChange={(e) => setLiquidationDate(e.target.value)}
+                        style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
+                      />
+                      <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="misa-purchase-label">Lý do thanh lý/hủy bỏ</label>
+                    <input
+                      type="text"
+                      value={liquidationReason}
+                      onChange={(e) => setLiquidationReason(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 28,
+                        padding: "0 8px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Col 3: Điều khoản khác + Địa chỉ giao hàng */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <label className="misa-purchase-label">Điều khoản khác</label>
+                    <textarea
+                      rows={2}
+                      value={otherTerms}
+                      onChange={(e) => setOtherTerms(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 54,
+                        padding: "4px 8px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12,
+                        resize: "none",
+                        background: "#ffffff",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="misa-purchase-label">Địa chỉ giao hàng</label>
+                    <textarea
+                      rows={2}
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 54,
+                        padding: "4px 8px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12,
+                        resize: "none",
+                        background: "#ffffff",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Grid toolbar */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 18px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button type="button" onClick={handleAddRow} style={{ height: 26, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                <Plus size={13} /> Thêm dòng
-              </button>
-              <button type="button" onClick={() => setItems([])} style={{ height: 26, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer", color: "#ef4444" }}>
-                <Trash2 size={13} /> Xóa hết dòng
-              </button>
-              <button type="button" onClick={handleAddRow} style={{ height: 26, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                <FileText size={13} /> Thêm ghi chú
-              </button>
+          {/* ================================================================= */}
+          {/* COLLAPSIBLE 2: ĐIỀU KHOẢN THANH TOÁN (Matching screenshot)         */}
+          {/* ================================================================= */}
+          <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => setShowPaymentTerms(!showPaymentTerms)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#1e293b",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 0",
+                marginBottom: showPaymentTerms ? 8 : 0,
+              }}
+            >
+              {showPaymentTerms ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+              <span>Điều khoản thanh toán</span>
+            </button>
+
+            {showPaymentTerms && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div
+                  style={{
+                    overflowX: "auto",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    background: "#ffffff",
+                  }}
+                >
+                  <table
+                    className="misa-purchase-table"
+                    style={{ width: "100%", borderCollapse: "collapse", minWidth: 1280 }}
+                  >
+                    <thead>
+                      <tr>
+                        <th style={{ width: 34, textAlign: "center" }}>#</th>
+                        <th style={{ width: 130 }}>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <Pin size={11} />
+                            <span>Đợt thanh toán</span>
+                          </div>
+                        </th>
+                        <th style={{ width: 120, textAlign: "right" }}>Tỷ lệ thanh toán (%)</th>
+                        <th style={{ width: 130, textAlign: "right" }}>Giá trị thanh toán</th>
+                        <th style={{ width: 110 }}>Hạn thanh toán</th>
+                        <th style={{ width: 110 }}>Ngày thanh toán</th>
+                        <th style={{ width: 110, textAlign: "right" }}>Số đã trả</th>
+                        <th style={{ width: 130, textAlign: "right" }}>Số đã trả năm trước</th>
+                        <th style={{ width: 120, textAlign: "right" }}>Số còn phải trả</th>
+                        <th style={{ width: 130 }}>Ghi chú</th>
+                        <th style={{ width: 130 }}>Chứng từ trả tiền</th>
+                        <th style={{ width: 36, textAlign: "center" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paymentInstallments.map((row, idx) => (
+                        <tr key={row.id}>
+                          <td style={{ textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.installment}
+                              onChange={(e) => handleInstallmentChange(idx, "installment", e.target.value)}
+                              placeholder=""
+                              style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.rate === 0 ? "0,00" : row.rate.toString().replace(".", ",")}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value.replace(",", ".")) || 0;
+                                handleInstallmentChange(idx, "rate", val);
+                              }}
+                              style={{
+                                width: "100%",
+                                height: 26,
+                                border: "none",
+                                outline: "none",
+                                fontSize: 12,
+                                textAlign: "right",
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.amount === 0 ? "0" : formatVND(row.amount)}
+                              onChange={(e) => {
+                                const val = Number(e.target.value.replace(/\D/g, "")) || 0;
+                                handleInstallmentChange(idx, "amount", val);
+                              }}
+                              style={{
+                                width: "100%",
+                                height: 26,
+                                border: "none",
+                                outline: "none",
+                                fontSize: 12,
+                                textAlign: "right",
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.dueDate}
+                              onChange={(e) => handleInstallmentChange(idx, "dueDate", e.target.value)}
+                              style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.payDate}
+                              onChange={(e) => handleInstallmentChange(idx, "payDate", e.target.value)}
+                              style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.paidAmount === 0 ? "0" : formatVND(row.paidAmount)}
+                              onChange={(e) => {
+                                const val = Number(e.target.value.replace(/\D/g, "")) || 0;
+                                handleInstallmentChange(idx, "paidAmount", val);
+                              }}
+                              style={{
+                                width: "100%",
+                                height: 26,
+                                border: "none",
+                                outline: "none",
+                                fontSize: 12,
+                                textAlign: "right",
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.priorYearPaid === 0 ? "0" : formatVND(row.priorYearPaid)}
+                              onChange={(e) => {
+                                const val = Number(e.target.value.replace(/\D/g, "")) || 0;
+                                handleInstallmentChange(idx, "priorYearPaid", val);
+                              }}
+                              style={{
+                                width: "100%",
+                                height: 26,
+                                border: "none",
+                                outline: "none",
+                                fontSize: 12,
+                                textAlign: "right",
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.remainingAmount === 0 ? "0" : formatVND(row.remainingAmount)}
+                              onChange={(e) => {
+                                const val = Number(e.target.value.replace(/\D/g, "")) || 0;
+                                handleInstallmentChange(idx, "remainingAmount", val);
+                              }}
+                              style={{
+                                width: "100%",
+                                height: 26,
+                                border: "none",
+                                outline: "none",
+                                fontSize: 12,
+                                textAlign: "right",
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.note}
+                              onChange={(e) => handleInstallmentChange(idx, "note", e.target.value)}
+                              style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              value={row.voucher}
+                              onChange={(e) => handleInstallmentChange(idx, "voucher", e.target.value)}
+                              style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteInstallment(idx)}
+                              style={{ border: "none", background: "transparent", cursor: "pointer", color: "#ef4444" }}
+                              title="Xóa dòng"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr
+                        style={{
+                          background: "#ffffff",
+                          fontWeight: 700,
+                          borderTop: "2px solid #cbd5e1",
+                          fontSize: 12,
+                        }}
+                      >
+                        <td style={{ textAlign: "center" }}>Tổng</td>
+                        <td></td>
+                        <td style={{ textAlign: "right" }}>{totalInstallmentRate === 0 ? "0,00" : totalInstallmentRate.toFixed(2).replace(".", ",")}</td>
+                        <td style={{ textAlign: "right" }}>{totalInstallmentAmount === 0 ? "0" : formatVND(totalInstallmentAmount)}</td>
+                        <td></td>
+                        <td></td>
+                        <td style={{ textAlign: "right" }}>{totalPaidAmount === 0 ? "0" : formatVND(totalPaidAmount)}</td>
+                        <td style={{ textAlign: "right" }}>{totalPriorYearPaid === 0 ? "0" : formatVND(totalPriorYearPaid)}</td>
+                        <td style={{ textAlign: "right" }}>{totalRemainingAmount === 0 ? "0" : formatVND(totalRemainingAmount)}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 2 }}>
+                  <button
+                    type="button"
+                    onClick={handleAddInstallment}
+                    style={{
+                      height: 26,
+                      padding: "0 10px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      fontSize: 12,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={13} /> Thêm dòng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentInstallments([])}
+                    style={{
+                      height: 26,
+                      padding: "0 10px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 3,
+                      fontSize: 12,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      cursor: "pointer",
+                      color: "#ef4444",
+                    }}
+                  >
+                    <Trash2 size={13} /> Xóa hết dòng
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ================================================================= */}
+          {/* SECTION 3: DANH SÁCH HÀNG HÓA DỊCH VỤ                             */}
+          {/* ================================================================= */}
+          <div style={{ marginTop: 2 }}>
+            <div
+              style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: 4,
+                padding: "8px 14px",
+                background: "#ffffff",
+                fontWeight: 600,
+                fontSize: 13,
+                color: "#1e293b",
+                marginBottom: 8,
+              }}
+            >
+              Danh sách hàng hóa dịch vụ
             </div>
 
-            <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-              <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: "4px 10px", background: "#ffffff", display: "flex", alignItems: "center", gap: 8 }}>
-                <Upload size={14} style={{ color: "#00b06b" }} />
-                <span style={{ fontSize: 11.5, color: "#475569" }}><span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> đính kèm</span>
+            <div
+              style={{
+                overflowX: "auto",
+                border: "1px solid #cbd5e1",
+                borderRadius: 4,
+                background: "#ffffff",
+              }}
+            >
+              <table
+                className="misa-purchase-table"
+                style={{ width: "100%", borderCollapse: "collapse", minWidth: 1200 }}
+              >
+                <thead>
+                  <tr>
+                    <th style={{ width: 34, textAlign: "center" }}>#</th>
+                    <th style={{ width: 105 }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Pin size={11} />
+                        <span>Mã hàng</span>
+                      </div>
+                    </th>
+                    <th>Tên hàng</th>
+                    <th style={{ width: 75 }}>ĐVT</th>
+                    <th style={{ width: 90, textAlign: "right" }}>Số lượng yêu cầu</th>
+                    <th style={{ width: 95, textAlign: "right" }}>Số lượng đã giao</th>
+                    <th style={{ width: 105, textAlign: "right" }}>Đơn giá</th>
+                    <th style={{ width: 110, textAlign: "right" }}>Thành tiền</th>
+                    <th style={{ width: 85, textAlign: "right" }}>Tỷ lệ CK (%)</th>
+                    <th style={{ width: 100, textAlign: "right" }}>Tiền chiết khấu</th>
+                    <th style={{ width: 85, textAlign: "right" }}>% Thuế GTGT</th>
+                    <th style={{ width: 105, textAlign: "right" }}>Tiền thuế GTGT</th>
+                    <th style={{ width: 75, textAlign: "right" }}>Tồn</th>
+                    <th style={{ width: 36, textAlign: "center" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row, idx) => (
+                    <tr key={row.id}>
+                      <td style={{ textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.code}
+                          onChange={(e) => handleItemChange(idx, "code", e.target.value)}
+                          style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.name}
+                          onChange={(e) => handleItemChange(idx, "name", e.target.value)}
+                          style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.unit}
+                          onChange={(e) => handleItemChange(idx, "unit", e.target.value)}
+                          style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.reqQty}
+                          onChange={(e) => handleItemChange(idx, "reqQty", Number(e.target.value) || 0)}
+                          style={{
+                            width: "100%",
+                            height: 26,
+                            border: "none",
+                            outline: "none",
+                            fontSize: 12.5,
+                            textAlign: "right",
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.deliveredQty}
+                          onChange={(e) => handleItemChange(idx, "deliveredQty", Number(e.target.value) || 0)}
+                          style={{
+                            width: "100%",
+                            height: 26,
+                            border: "none",
+                            outline: "none",
+                            fontSize: 12.5,
+                            textAlign: "right",
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.unitPrice}
+                          onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
+                          style={{
+                            width: "100%",
+                            height: 26,
+                            border: "none",
+                            outline: "none",
+                            fontSize: 12.5,
+                            textAlign: "right",
+                          }}
+                        />
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.discountRate}
+                          onChange={(e) => handleItemChange(idx, "discountRate", Number(e.target.value) || 0)}
+                          style={{
+                            width: "100%",
+                            height: 26,
+                            border: "none",
+                            outline: "none",
+                            fontSize: 12.5,
+                            textAlign: "right",
+                          }}
+                        />
+                      </td>
+                      <td style={{ textAlign: "right" }}>{formatVND(row.discountAmount)}</td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.vatRate}
+                          onChange={(e) => handleItemChange(idx, "vatRate", Number(e.target.value) || 0)}
+                          style={{
+                            width: "100%",
+                            height: 26,
+                            border: "none",
+                            outline: "none",
+                            fontSize: 12.5,
+                            textAlign: "right",
+                          }}
+                        />
+                      </td>
+                      <td style={{ textAlign: "right" }}>{formatVND(row.vatAmount)}</td>
+                      <td style={{ textAlign: "right", color: "#64748b" }}>{row.stock}</td>
+                      <td style={{ textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                          style={{ border: "none", background: "transparent", cursor: "pointer", color: "#ef4444" }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Grid toolbar */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 0",
+              }}
+            >
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  style={{
+                    height: 26,
+                    padding: "0 10px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 3,
+                    fontSize: 12,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Plus size={13} /> Thêm dòng
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItems([])}
+                  style={{
+                    height: 26,
+                    padding: "0 10px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 3,
+                    fontSize: 12,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    cursor: "pointer",
+                    color: "#ef4444",
+                  }}
+                >
+                  <Trash2 size={13} /> Xóa hết dòng
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  style={{
+                    height: 26,
+                    padding: "0 10px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 3,
+                    fontSize: 12,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  <FileText size={13} /> Thêm ghi chú
+                </button>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>
-                Tổng thanh toán: {formatVND(grandTotal)}
+
+              <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+                <div
+                  style={{
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    padding: "4px 10px",
+                    background: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Upload size={14} style={{ color: "#00b06b" }} />
+                  <span style={{ fontSize: 11.5, color: "#475569" }}>
+                    <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> đính kèm
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>
+                  Tổng thanh toán: {formatVND(grandTotal)}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer (Image 3) */}
-        <footer style={{ height: 46, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 18px", gap: 8 }}>
-          <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>Hủy</button>
-          <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Cất</button>
-          <button type="button" className="misa-invoice-btn-submit" onClick={() => handleSave(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+        {/* Footer */}
+        <footer
+          style={{
+            height: 46,
+            background: "#ffffff",
+            borderTop: "1px solid #e2e8f0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            padding: "0 18px",
+            gap: 8,
+            flexShrink: 0,
+          }}
+        >
+          <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>
+            Hủy
+          </button>
+          <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>
+            Cất
+          </button>
+          <button
+            type="button"
+            className="misa-invoice-btn-submit"
+            onClick={() => handleSave(true)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
             <span>Cất và Đóng</span>
             <ChevronDown size={14} />
           </button>

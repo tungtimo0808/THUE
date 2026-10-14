@@ -936,22 +936,22 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
 
               {/* Icons below image: edit and delete */}
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6, color: "#64748b" }}>
-                <Edit2
+                <span title="Sửa ảnh" style={{ display: "inline-flex" }}><Edit2
                   size={14}
                   style={{ cursor: "pointer" }}
-                  title="Sửa ảnh"
+                  
                   onClick={() => {
                     const url = prompt("Cập nhật đường dẫn ảnh:");
                     if (url) setImageUrl(url);
                   }}
-                />
+                /></span>
                 <span style={{ color: "#cbd5e1" }}>|</span>
-                <Trash2
+                <span title="Xóa ảnh" style={{ display: "inline-flex" }}><Trash2
                   size={14}
                   style={{ cursor: "pointer", color: imageUrl ? "#ef4444" : "#94a3b8" }}
-                  title="Xóa ảnh"
+                  
                   onClick={() => setImageUrl(null)}
-                />
+                /></span>
               </div>
             </div>
           </div>

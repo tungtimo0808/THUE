@@ -1011,7 +1011,7 @@ export function LoanContractModal({
           )}
 
           {/* TAB 5: ĐÍNH KÈM */}
-          {quickParty&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"white",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickParty(false)}>Đóng thêm đối tượng</button><MisaDirectoryWorkspace initialName="Khách hàng" initialCreate legacy={null} notify={()=>{}} onEntrySaved={values=>{setBorrower(values["Tên khách hàng"]||values["Tên"]||"");setQuickParty(false);}}/></div>}
+          {quickParty&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickParty(false)}>Đóng thêm đối tượng</button><MisaDirectoryWorkspace initialName="Khách hàng" initialCreate legacy={null} notify={()=>{}} onEditorClose={()=>setQuickParty(false)} onEntrySaved={values=>{setBorrower(values["Tên khách hàng"]||values["Tên"]||"");setQuickParty(false);}}/></div>}
           {activeTab === "attachment" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div
@@ -2058,7 +2058,7 @@ export function BorrowingContractModal({
           )}
 
           {/* TAB 5: ĐÍNH KÈM */}
-          {quickParty&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"white",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickParty(false)}>Đóng thêm đối tượng</button><SupplierModal onClose={()=>setQuickParty(false)} onSubmit={data=>{setLender(data.name||"");setQuickParty(false);}}/></div>}
+          {quickParty&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickParty(false)}>Đóng thêm đối tượng</button><SupplierModal onClose={()=>setQuickParty(false)} onSubmit={data=>{setLender(data.name||"");setQuickParty(false);}}/></div>}
           {activeTab === "attachment" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div

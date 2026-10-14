@@ -1,3 +1,13 @@
+import CatalogueReportParameters from "./CatalogueReportParameters";
+import S21AssetRegisterPreview from "./S21AssetRegisterPreview";
+import FixedAssetCardPreview from "./FixedAssetCardPreview";
+import ProductionCostLedgerPreview from "./ProductionCostLedgerPreview";
+import CostElementCardPreview from "./CostElementCardPreview";
+import SalesOrderExecutionPreview from "./SalesOrderExecutionPreview";
+import ReportScheduleDialog from "./ReportScheduleDialog";
+import ReportTemplateDialog from "./ReportTemplateDialog";
+import { CATALOGUE_PARAMETER_DEFINITIONS } from "./catalogue-report-parameters";
+import SalesOrderDetailParameters from "./SalesOrderDetailParameters";
 import React, { useState, useMemo } from "react";
 import {
   Search,
@@ -856,6 +866,11 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const [favorites, setFavorites] = useState<Set<string>>(new Set(DEFAULT_FAVORITES));
 
   // Preview / Filter Drawer Modal State
+  const [orderDetailParametersOpen,setOrderDetailParametersOpen] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [reportVisibilityMode, setReportVisibilityMode] = useState(false);
+  const [reportVisibilityDraft, setReportVisibilityDraft] = useState<Record<string, boolean>>({});
   const [selectedReport, setSelectedReport] = useState<string | null>(initialReport);
 
   // Print Announcement Modal
@@ -901,6 +916,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const displayedReports = useMemo(() => {
     if (searchKeyword.trim()) {
       const kw = searchKeyword.toLowerCase();
+      const canonicalKeyword = canonicalReportName(searchKeyword).toLocaleLowerCase("vi");
       const allUnique = Array.from(
         new Set([
           ...DEFAULT_FAVORITES,
@@ -908,7 +924,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           ...Object.values(REPORTS_BY_CATEGORY).flat(),
         ])
       );
-      return allUnique.filter((r) => r.toLowerCase().includes(kw));
+      return allUnique.filter((r) => r.toLowerCase().includes(kw) || canonicalReportName(r).toLocaleLowerCase("vi").includes(canonicalKeyword));
     }
 
     if (activeCategory === "favorites") {
@@ -929,6 +945,12 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const activeCategoryObj = REPORT_CATEGORIES.find((c) => c.id === activeCategory);
   const currentStructure = !searchKeyword ? CATEGORY_STRUCTURES[activeCategory] : null;
 
+  const renderVisibilitySwitch = (reportName: string) => reportVisibilityMode && <button
+    type="button" role="switch" aria-label={`Hiển thị ${reportName}`}
+    aria-checked={reportVisibilityDraft[reportName] !== false}
+    onClick={()=>setReportVisibilityDraft(current=>({...current,[reportName]:current[reportName] === false}))}
+    style={{ width: 30, height: 18, marginRight: 8, flexShrink: 0, border: 0, borderRadius: 12, padding: 2, background: reportVisibilityDraft[reportName] !== false ? "#009b71" : "#aeb6bd", display: "flex", justifyContent: reportVisibilityDraft[reportName] !== false ? "flex-end" : "flex-start", alignItems: "center", cursor: "pointer" }}
+  ><span style={{ width: 14, height: 14, borderRadius: "50%", background: "white" }}/></button>;
   const renderReportCell = (reportName: string | null) => {
     if (!reportName) {
       return <div className="misa-reports-cell empty" />;
@@ -936,6 +958,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     const isFav = favorites.has(reportName);
     return (
       <div className="misa-reports-cell">
+        {renderVisibilitySwitch(reportName)}
         <a
           href={`#${reportName}`}
           className="misa-reports-item-link"
@@ -1725,6 +1748,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     );
   }
 
+  const catalogueParameterDefinition = CATALOGUE_PARAMETER_DEFINITIONS.find(definition=>selectedReport && canonicalReportName(definition.name) === canonicalReportName(selectedReport));
   const auditedDefinition = selectedReport ? MISA_REPORT_DEFINITIONS.find(definition => canonicalReportName(definition.name) === canonicalReportName(selectedReport)) : undefined;
   if (auditedDefinition) {
     return <AuditedReportWorkspace key={auditedDefinition.name} definition={auditedDefinition} onBack={() => setSelectedReport(null)} notify={notify} />;
@@ -1832,7 +1856,8 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
               gap: 6,
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Tùy chọn ẩn/hiện danh mục báo cáo hệ thống.")}
+            aria-pressed={reportVisibilityMode}
+            onClick={() => setReportVisibilityMode(current=>!current)}
           >
             <Eye size={14} />
             <span>Ẩn/hiện báo cáo</span>
@@ -1980,7 +2005,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                 {/* Column 1 */}
                 <div className="misa-reports-grid-col">
                   {column1.map((report) => (
-                    <div key={report} className="misa-reports-item-row">
+                    <div key={report} className="misa-reports-item-row">{renderVisibilitySwitch(report)}
                       <a
                         href={`#${report}`}
                         className="misa-reports-item-link"
@@ -2020,7 +2045,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                 {/* Column 2 */}
                 <div className="misa-reports-grid-col">
                   {column2.map((report) => (
-                    <div key={report} className="misa-reports-item-row">
+                    <div key={report} className="misa-reports-item-row">{renderVisibilitySwitch(report)}
                       <a
                         href={`#${report}`}
                         className="misa-reports-item-link"
@@ -2080,7 +2105,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                 fontWeight: 600,
                 cursor: "pointer",
               }}
-              onClick={() => notify?.("Tạo mẫu báo cáo tùy chỉnh mới...")}
+              onClick={() => setTemplateDialogOpen(true)}
             >
               + Tạo mẫu báo cáo mới
             </button>
@@ -2154,7 +2179,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                 fontWeight: 600,
                 cursor: "pointer",
               }}
-              onClick={() => notify?.("Thiết lập lịch gửi báo cáo mới...")}
+              onClick={() => setScheduleDialogOpen(true)}
             >
               + Thêm lịch gửi mới
             </button>
@@ -2231,6 +2256,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
                 {selectedReport}
               </h3>
+              {(selectedReport === "Báo cáo chi tiết tình hình thực hiện đơn đặt hàng" || catalogueParameterDefinition) && <button type="button" onClick={()=>setOrderDetailParametersOpen(true)}>Chọn tham số</button>}
               <button
                 type="button"
                 style={{
@@ -2271,6 +2297,14 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
             {/* Report Table Preview */}
             <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+              {canonicalReportName(selectedReport) === canonicalReportName("S21-DN: Sổ tài sản cố định") && <S21AssetRegisterPreview />}
+              {canonicalReportName(selectedReport) === canonicalReportName("Thẻ tài sản cố định") && <FixedAssetCardPreview />}
+              {canonicalReportName(selectedReport) === canonicalReportName("Báo cáo chi tiết tình hình thực hiện đơn đặt hàng") && <SalesOrderExecutionPreview />}
+              {canonicalReportName(selectedReport) === canonicalReportName("S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo yếu tố chi phí") && <CostElementCardPreview />}
+              {canonicalReportName(selectedReport) === canonicalReportName("S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo khoản mục chi phí") && <CostElementCardPreview mode="items" />}
+              {canonicalReportName(selectedReport) === canonicalReportName("S37-DN: Thẻ tính giá thành công trình - theo khoản mục chi phí") && <CostElementCardPreview mode="project" />}
+              {canonicalReportName(selectedReport) === canonicalReportName("S36-DN: Sổ chi phí sản xuất, kinh doanh") && <ProductionCostLedgerPreview />}
+              {canonicalReportName(selectedReport) === canonicalReportName("S36-DN: Sổ chi phí sản xuất, kinh doanh theo công trình") && <ProductionCostLedgerPreview project />}
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -2465,6 +2499,12 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           </div>
         </div>
       )}
+      {selectedReport === "Báo cáo chi tiết tình hình thực hiện đơn đặt hàng" && orderDetailParametersOpen && <SalesOrderDetailParameters onClose={()=>setOrderDetailParametersOpen(false)}/>}
+      {catalogueParameterDefinition && orderDetailParametersOpen && <CatalogueReportParameters key={catalogueParameterDefinition.name} definition={catalogueParameterDefinition} onClose={()=>setOrderDetailParametersOpen(false)}/>}
+      {scheduleDialogOpen && <ReportScheduleDialog onClose={()=>setScheduleDialogOpen(false)} />}
+      {templateDialogOpen && <ReportTemplateDialog onClose={()=>setTemplateDialogOpen(false)} />}
     </div>
   );
 }
+
+

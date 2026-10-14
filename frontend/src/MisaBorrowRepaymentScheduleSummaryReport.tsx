@@ -1,3 +1,6 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -286,19 +289,13 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
             <Mail size={15} />
           </button>
 
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Tổng hợp lịch trả nợ khế ước vay" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Tổng hợp lịch trả nợ khế ước vay")?.headers ?? [])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
               cursor: "pointer",
               padding: 4,
-            }}
-            title="Tùy chọn khác"
-          >
-            <Settings size={15} />
-          </button>
+            }} />
 
           <button
             type="button"

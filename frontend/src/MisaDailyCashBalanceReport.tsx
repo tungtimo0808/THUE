@@ -1,3 +1,6 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {currentCashDate} from './cash-date';
 import React, { useState, useMemo } from "react";
 import {
@@ -391,20 +394,13 @@ export default function MisaDailyCashBalanceReport({
             <ChevronDown size={13} color="#64748b" />
           </button>
 
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Bảng kê số dư tiền theo ngày" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Bảng kê số dư tiền theo ngày")?.headers ?? [])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
               cursor: "pointer",
               padding: 4,
-            }}
-            title="Tùy chỉnh"
-            onClick={() => notify?.("Mở cài đặt...")}
-          >
-            <Settings size={15} />
-          </button>
+            }} />
         </div>
       </div>
 

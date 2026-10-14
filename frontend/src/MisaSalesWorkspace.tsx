@@ -40,6 +40,7 @@ import {
 import { SaleVoucherModal } from "./MisaSalesVoucherModal";
 import { MisaCustomerModal } from "./MisaCustomerModal";
 import { MisaItemNatureDrawer } from "./MisaItemNatureDrawer";
+import { MisaInventoryItemModal, type InventoryItemData } from "./MisaInventoryItemModal";
 import "./misa-cash.css";
 
 type MisaSalesWorkspaceProps = {
@@ -101,20 +102,74 @@ export default function MisaSalesWorkspace({
 
   // Inventory Items (Hàng hóa, dịch vụ) states
   const [showNatureDrawer, setShowNatureDrawer] = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [selectedNature, setSelectedNature] = useState<string>("Hàng hóa");
+  const [editingItem, setEditingItem] = useState<InventoryItemData | null>(null);
   const [statCardsCollapsed, setStatCardsCollapsed] = useState(false);
   const [inventorySearchQuery, setInventorySearchQuery] = useState("");
   const [selectedInventoryItems, setSelectedInventoryItems] = useState<string[]>([]);
-  const [inventoryItemsList, setInventoryItemsList] = useState([
+  const [inventoryItemsList, setInventoryItemsList] = useState<InventoryItemData[]>([
     {
       id: "cpmh",
       name: "Chi phí mua hàng",
       code: "CPMH",
-      taxReduction: "Chưa xác định",
+      vatPolicy: "Chưa xác định",
       nature: "Dịch vụ",
-      stockQuantity: 0.0,
+      stockQty: 0.0,
       stockValue: 0,
+      unit: "Lần",
+    },
+    {
+      id: "hh0002",
+      name: "Hàng hóa mới",
+      code: "HH0002",
+      vatPolicy: "Chưa xác định",
+      nature: "Hàng hóa",
+      stockQty: 0.0,
+      stockValue: 0,
+      unit: "Cái",
+    },
+    {
+      id: "hh0003",
+      name: "Hàng hóa mới",
+      code: "HH0003",
+      vatPolicy: "Chưa xác định",
+      nature: "Hàng hóa",
+      stockQty: 0.0,
+      stockValue: 0,
+      unit: "Cái",
     },
   ]);
+
+  const handleSelectNature = (_natureId: string, natureName: string) => {
+    setShowNatureDrawer(false);
+    setSelectedNature(natureName);
+    setEditingItem(null);
+    setShowItemModal(true);
+    notify(`Đã chọn tính chất: ${natureName}. Mở form thêm mới Hàng hóa, dịch vụ.`);
+  };
+
+  const handleSaveInventoryItem = (itemData: InventoryItemData, keepOpen?: boolean) => {
+    if (editingItem) {
+      setInventoryItemsList((prev) =>
+        prev.map((it) => (it.id === editingItem.id ? { ...it, ...itemData } : it))
+      );
+      notify(`Đã cập nhật hàng hóa, dịch vụ [${itemData.code}] ${itemData.name}!`);
+    } else {
+      setInventoryItemsList((prev) => [
+        {
+          id: `item-${Date.now()}`,
+          ...itemData,
+        },
+        ...prev,
+      ]);
+      notify(`Đã thêm mới [${itemData.code}] ${itemData.name} (${itemData.nature}) thành công!`);
+    }
+    if (!keepOpen) {
+      setShowItemModal(false);
+      setEditingItem(null);
+    }
+  };
 
   // Sample data: Báo giá
   const [quotes, setQuotes] = useState([
@@ -641,7 +696,14 @@ export default function MisaSalesWorkspace({
         onClose={() => setShowCustomerModal(false)}
         defaultCode={`KH${String(customers.length + 1).padStart(5, "0")}`}
         onSave={(newCust, andAddNew) => {
-          setCustomers(prev => [...prev, newCust]);
+          setCustomers(prev => [...prev, {
+            ...newCust,
+            id: newCust.id || newCust.code,
+            taxCode: newCust.taxCode ?? "",
+            address: newCust.address ?? "",
+            phone: newCust.phone ?? "",
+            debt: newCust.debt ?? 0,
+          }]);
           if (!andAddNew) {
             setShowCustomerModal(false);
           }
@@ -847,6 +909,30 @@ export default function MisaSalesWorkspace({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal: Thêm/Sửa Hàng hóa, dịch vụ chuẩn MISA AMIS */}
+      {showNatureDrawer && (
+        <MisaItemNatureDrawer
+          isOpen={showNatureDrawer}
+          onClose={() => setShowNatureDrawer(false)}
+          onSelectNature={handleSelectNature}
+          notify={notify}
+        />
+      )}
+
+      {showItemModal && (
+        <MisaInventoryItemModal
+          isOpen={showItemModal}
+          onClose={() => {
+            setShowItemModal(false);
+            setEditingItem(null);
+          }}
+          onSubmit={handleSaveInventoryItem}
+          initialNature={selectedNature}
+          editingItem={editingItem}
+          notify={notify}
+        />
       )}
     </>
   );
@@ -5183,20 +5269,65 @@ export default function MisaSalesWorkspace({
   if (tab === "inventory-items") {
     const filteredItems = inventoryItemsList.filter((it) =>
       it.name.toLowerCase().includes(inventorySearchQuery.toLowerCase()) ||
-      it.code.toLowerCase().includes(inventorySearchQuery.toLowerCase())
+      it.code.toLowerCase().includes(inventorySearchQuery.toLowerCase()) ||
+      (it.nature && it.nature.toLowerCase().includes(inventorySearchQuery.toLowerCase()))
     );
 
-    const totalStockQty = filteredItems.reduce((acc, curr) => acc + curr.stockQuantity, 0);
-    const totalStockVal = filteredItems.reduce((acc, curr) => acc + curr.stockValue, 0);
+    const totalStockQty = filteredItems.reduce((acc, curr) => acc + (curr.stockQty || 0), 0);
+    const totalStockVal = filteredItems.reduce((acc, curr) => acc + (curr.stockValue || 0), 0);
 
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+        {/* Secondary Sub-nav: Hàng hóa, dịch vụ | Khách hàng (Matching Screenshot) */}
+        <div
+          style={{
+            padding: "0 16px",
+            background: "#ffffff",
+            borderBottom: "1px solid #e2e8f0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", gap: 24 }}>
+            <span
+              style={{
+                padding: "8px 0",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#00a862",
+                borderBottom: "2px solid #00a862",
+                cursor: "pointer",
+              }}
+            >
+              Hàng hóa, dịch vụ
+            </span>
+            <span
+              style={{
+                padding: "8px 0",
+                fontSize: 13,
+                fontWeight: 500,
+                color: "#475569",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                if (href) {
+                  window.location.href = href("/sales/customers");
+                }
+              }}
+            >
+              Khách hàng
+            </span>
+          </div>
+          <span title="Tùy biến" style={{ display: "inline-flex" }}><SlidersHorizontal size={15} style={{ color: "#64748b", cursor: "pointer" }}  /></span>
+        </div>
+
         {/* Top breadcrumb */}
         <div
-          style={{ padding: "10px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#0284c7", cursor: "pointer" }}
+          style={{ padding: "8px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "#0284c7", cursor: "pointer" }}
           onClick={() => notify("Đang lấy lại danh mục...")}
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
           <span style={{ fontWeight: 500 }}>Lấy lại danh mục</span>
         </div>
 
@@ -5390,7 +5521,7 @@ export default function MisaSalesWorkspace({
                     checked={selectedInventoryItems.length === filteredItems.length && filteredItems.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedInventoryItems(filteredItems.map((it) => it.id));
+                        setSelectedInventoryItems(filteredItems.map((it) => it.id || ""));
                       } else {
                         setSelectedInventoryItems([]);
                       }
@@ -5409,16 +5540,17 @@ export default function MisaSalesWorkspace({
             </thead>
             <tbody>
               {filteredItems.map((it) => (
-                <tr key={it.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <tr key={it.id || it.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <input
                       type="checkbox"
-                      checked={selectedInventoryItems.includes(it.id)}
+                      checked={selectedInventoryItems.includes(it.id || "")}
                       onChange={(e) => {
+                        const targetId = it.id || "";
                         if (e.target.checked) {
-                          setSelectedInventoryItems([...selectedInventoryItems, it.id]);
+                          setSelectedInventoryItems([...selectedInventoryItems, targetId]);
                         } else {
-                          setSelectedInventoryItems(selectedInventoryItems.filter((id) => id !== it.id));
+                          setSelectedInventoryItems(selectedInventoryItems.filter((id) => id !== targetId));
                         }
                       }}
                       style={{ accentColor: "#00a862", cursor: "pointer" }}
@@ -5428,21 +5560,36 @@ export default function MisaSalesWorkspace({
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{it.code}</td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                      <span>{it.taxReduction}</span>
+                      <span>{it.vatPolicy || "Chưa xác định"}</span>
                       <FileSpreadsheet size={15} style={{ color: "#16a34a" }} />
                     </div>
                   </td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{it.nature}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                    {it.stockQuantity.toFixed(2).replace(".", ",")}
+                    {(it.stockQty || 0).toFixed(2).replace(".", ",")}
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                    {it.stockValue.toLocaleString("vi-VN")}
+                    {(it.stockValue || 0).toLocaleString("vi-VN")}
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}>
-                      <span onClick={() => notify(`Xem và sửa thông tin ${it.name}`)}>Sửa</span>
-                      <ChevronDown size={13} onClick={() => notify(`Tùy chọn: Xóa / Ngừng theo dõi ${it.name}`)} />
+                      <span
+                        onClick={() => {
+                          setEditingItem(it);
+                          setSelectedNature(it.nature);
+                          setShowItemModal(true);
+                        }}
+                      >
+                        Sửa
+                      </span>
+                      <ChevronDown
+                        size={13}
+                        onClick={() => {
+                          setEditingItem(it);
+                          setSelectedNature(it.nature);
+                          setShowItemModal(true);
+                        }}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -5490,30 +5637,6 @@ export default function MisaSalesWorkspace({
             </div>
           </div>
         </div>
-
-        {/* Nature Drawer for Adding New Item */}
-        <MisaItemNatureDrawer
-          isOpen={showNatureDrawer}
-          onClose={() => setShowNatureDrawer(false)}
-          onSelectNature={(natureId, natureName) => {
-            notify(`Đã chọn tính chất: ${natureName}`);
-            setShowNatureDrawer(false);
-            const newCode = `HH${String(inventoryItemsList.length + 1).padStart(4, "0")}`;
-            setInventoryItemsList((prev) => [
-              ...prev,
-              {
-                id: `item-${Date.now()}`,
-                name: `${natureName} mới`,
-                code: newCode,
-                taxReduction: "Chưa xác định",
-                nature: natureName,
-                stockQuantity: 0.0,
-                stockValue: 0,
-              },
-            ]);
-          }}
-          notify={notify}
-        />
 
         {renderModals()}
       </div>

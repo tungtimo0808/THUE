@@ -68,12 +68,15 @@ export function SelectionTable({
 }: SelectionProps) {
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState("20");
+  const [page, setPage] = useState(1);
   const visible = rows.filter((row) =>
     row.cells
       .join(" ")
       .toLocaleLowerCase("vi")
       .includes(query.toLocaleLowerCase("vi")),
   );
+  const pages = Math.max(1, Math.ceil(visible.length / Number(pageSize)));
+  const currentPage = Math.min(page, pages);
   const all =
     visible.length > 0 && visible.every((row) => selected.includes(row.id));
   const toggleAll = () =>
@@ -98,7 +101,10 @@ export function SelectionTable({
             placeholder={`Tìm ${title.toLowerCase()}`}
             value={query}
             onInput={(event) => setQuery(event.currentTarget.value)}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
           />
         </div>
       </div>
@@ -120,7 +126,7 @@ export function SelectionTable({
             </tr>
           </thead>
           <tbody>
-            {visible.slice(0, Number(pageSize)).map((row) => (
+            {visible.slice((currentPage - 1) * Number(pageSize), currentPage * Number(pageSize)).map((row) => (
               <tr key={row.id}>
                 <td>
                   <input
@@ -158,13 +164,20 @@ export function SelectionTable({
           <select
             aria-label={`Số dòng/trang ${title}`}
             value={pageSize}
-            onChange={(event) => setPageSize(event.target.value)}
+            onChange={(event) => {
+              setPageSize(event.target.value);
+              setPage(1);
+            }}
           >
             <option>20</option>
             <option>50</option>
             <option>100</option>
           </select>{" "}
-          1
+          <button type="button" aria-label={`Trang đầu ${title}`} disabled={currentPage === 1} onClick={() => setPage(1)}>«</button>
+          <button type="button" aria-label={`Trang trước ${title}`} disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>‹</button>
+          <span aria-label={`Trang hiện tại ${title}`}>{currentPage}/{pages}</span>
+          <button type="button" aria-label={`Trang sau ${title}`} disabled={currentPage === pages} onClick={() => setPage(currentPage + 1)}>›</button>
+          <button type="button" aria-label={`Trang cuối ${title}`} disabled={currentPage === pages} onClick={() => setPage(pages)}>»</button>
         </span>
       </footer>
     </section>

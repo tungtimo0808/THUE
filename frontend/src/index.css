@@ -198,6 +198,27 @@ select:has(~ svg),
   box-sizing: border-box !important;
 }
 
+/* Prevent buttons and icons inside input/combo wrappers from overflowing / overlapping */
+div[style*="display: flex"]:has(> button) > input:not([type="checkbox"]):not([type="radio"]),
+div[style*="display: flex"]:has(> svg) > input:not([type="checkbox"]):not([type="radio"]),
+div[style*="display:flex"]:has(> button) > input:not([type="checkbox"]):not([type="radio"]),
+div[style*="display:flex"]:has(> svg) > input:not([type="checkbox"]):not([type="radio"]),
+div[style*="display: flex"]:has(> button) > select,
+div[style*="display: flex"]:has(> svg) > select,
+div[style*="display:flex"]:has(> button) > select,
+div[style*="display:flex"]:has(> svg) > select {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+div[style*="display: flex"] > button,
+div[style*="display:flex"] > button,
+div[style*="display: flex"] > svg,
+div[style*="display:flex"] > svg {
+  flex-shrink: 0 !important;
+}
+
 
 table {
   width: 100%;
@@ -525,5 +546,27 @@ table caption {
 .misa-table tbody tr:hover td[style*="sticky"],
 .misa-table tbody tr:hover td.sticky-col {
   background-color: #f0fdf4 !important;
+}
+
+/* MISA Modal Styles */
+.misa-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(2px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  padding: 16px !important;
+}
+
+.misa-modal-card {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+  background: #ffffff;
+  border-radius: 4px;
+  overflow: hidden;
+  max-width: 98vw;
+  max-height: 96vh;
 }
 

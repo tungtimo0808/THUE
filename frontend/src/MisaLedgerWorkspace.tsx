@@ -110,7 +110,14 @@ export default function MisaLedgerWorkspace({
   const [statementModalOpen, setStatementModalOpen] = useState(false);
   const [statementModalType, setStatementModalType] = useState<string>("Báo cáo tài chính");
 
-  const [addVoucherModalOpen, setAddVoucherModalOpen] = useState(false);
+  const [addVoucherModalOpen, setAddVoucherModalOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const act = sp.get("action");
+      return act === "add-voucher" || act === "nvk" || act === "profit-loss" || act === "nvk00001";
+    }
+    return false;
+  });
   const [addAdvanceSettlementModalOpen, setAddAdvanceSettlementModalOpen] = useState(false);
   const [addAdvanceRequestModalOpen, setAddAdvanceRequestModalOpen] = useState(false);
   const [closingEntryModalOpen, setClosingEntryModalOpen] = useState(false);
@@ -135,9 +142,17 @@ export default function MisaLedgerWorkspace({
   const [aiPrompt, setAiPrompt] = useState("");
 
   // 6 Types of General Voucher (Screenshots 1 - 5)
-  const [selectedVoucherType, setSelectedVoucherType] = useState<GeneralVoucherType>(
-    "1. Hạch toán thuế TNDN phải nộp"
-  );
+  const [selectedVoucherType, setSelectedVoucherType] = useState<GeneralVoucherType>(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const vtype = sp.get("voucherType") || sp.get("type");
+      if (vtype === "5" || vtype === "profit-loss" || vtype === "ket-chuyen-lai-lo" || vtype === "nvk00001") {
+        return "5. Kết chuyển lãi lỗ đầu năm";
+      }
+    }
+    return "1. Hạch toán thuế TNDN phải nộp";
+  });
+  const [closingYear, setClosingYear] = useState(2026);
   const [showVoucherTypeDropdown, setShowVoucherTypeDropdown] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState<"hach_toan" | "ke_khai_thue">("hach_toan");
   const [isGroupInvoices, setIsGroupInvoices] = useState(false);
@@ -145,21 +160,65 @@ export default function MisaLedgerWorkspace({
 
   // Voucher Master Form Fields
   const [voucherNo, setVoucherNo] = useState("NVK00001");
-  const [voucherPostingDate, setVoucherPostingDate] = useState("01/10/2026");
-  const [voucherDocDate, setVoucherDocDate] = useState("01/10/2026");
+  const [voucherPostingDate, setVoucherPostingDate] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const vtype = sp.get("voucherType") || sp.get("type");
+      if (vtype === "5" || vtype === "profit-loss" || vtype === "ket-chuyen-lai-lo" || vtype === "nvk00001") {
+        return "01/01/2026";
+      }
+    }
+    return "01/10/2026";
+  });
+  const [voucherDocDate, setVoucherDocDate] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const vtype = sp.get("voucherType") || sp.get("type");
+      if (vtype === "5" || vtype === "profit-loss" || vtype === "ket-chuyen-lai-lo" || vtype === "nvk00001") {
+        return "01/01/2026";
+      }
+    }
+    return "01/10/2026";
+  });
   const [voucherDueDate, setVoucherDueDate] = useState("DD/MM/YYYY");
-  const [voucherDescription, setVoucherDescription] = useState("Hạch toán thuế TNDN phải nộp");
+  const [voucherDescription, setVoucherDescription] = useState(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const vtype = sp.get("voucherType") || sp.get("type");
+      if (vtype === "5" || vtype === "profit-loss" || vtype === "ket-chuyen-lai-lo" || vtype === "nvk00001") {
+        return "Kết chuyển lãi lỗ đầu năm 2026";
+      }
+    }
+    return "Hạch toán thuế TNDN phải nộp";
+  });
 
   // Voucher Detail Lines
-  const [voucherRows, setVoucherRows] = useState<any[]>([
-    {
-      id: "1",
-      desc: "Hạch toán thuế TNDN phải nộp",
-      debitAcc: "8211",
-      creditAcc: "3334",
-      amount: 0,
-    },
-  ]);
+  const [voucherRows, setVoucherRows] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const vtype = sp.get("voucherType") || sp.get("type");
+      if (vtype === "5" || vtype === "profit-loss" || vtype === "ket-chuyen-lai-lo" || vtype === "nvk00001") {
+        return [
+          {
+            id: "1",
+            desc: "Kết chuyển lãi lỗ đầu năm 2026",
+            debitAcc: "",
+            creditAcc: "",
+            amount: 0,
+          },
+        ];
+      }
+    }
+    return [
+      {
+        id: "1",
+        desc: "Hạch toán thuế TNDN phải nộp",
+        debitAcc: "8211",
+        creditAcc: "3334",
+        amount: 0,
+      },
+    ];
+  });
 
   const switchVoucherType = (type: GeneralVoucherType) => {
     setSelectedVoucherType(type);
@@ -231,15 +290,15 @@ export default function MisaLedgerWorkspace({
         ]);
         break;
       case "5. Kết chuyển lãi lỗ đầu năm":
-        setVoucherDescription("Kết chuyển lãi lỗ đầu năm");
-        setVoucherPostingDate("01/01/2026");
-        setVoucherDocDate("01/01/2026");
+        setVoucherDescription(`Kết chuyển lãi lỗ đầu năm ${closingYear || 2026}`);
+        setVoucherPostingDate(`01/01/${closingYear || 2026}`);
+        setVoucherDocDate(`01/01/${closingYear || 2026}`);
         setVoucherRows([
           {
             id: "1",
-            desc: "Kết chuyển lợi nhuận sau thuế chưa phân phối năm nay sang năm trước",
-            debitAcc: "4212",
-            creditAcc: "4211",
+            desc: `Kết chuyển lãi lỗ đầu năm ${closingYear || 2026}`,
+            debitAcc: "",
+            creditAcc: "",
             amount: 0,
           },
         ]);
@@ -6446,6 +6505,77 @@ export default function MisaLedgerWorkspace({
             >
               {/* Left Form */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Field: Kết chuyển đầu năm * (Type 5: 5. Kết chuyển lãi lỗ đầu năm) */}
+                {selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" && (
+                  <div>
+                    <label style={{ fontSize: 12.5, fontWeight: 500, color: "#475569", display: "block", marginBottom: 3 }}>
+                      <span>Kết chuyển đầu năm</span>
+                      <span style={{ color: "#ef4444" }}> *</span>
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ position: "relative", width: 75 }}>
+                        <input
+                          type="number"
+                          value={closingYear}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 2026;
+                            setClosingYear(val);
+                            setVoucherDescription(`Kết chuyển lãi lỗ đầu năm ${val}`);
+                            setVoucherPostingDate(`01/01/${val}`);
+                            setVoucherDocDate(`01/01/${val}`);
+                            setVoucherRows((prev) =>
+                              prev.map((r) => ({
+                                ...r,
+                                desc: `Kết chuyển lãi lỗ đầu năm ${val}`,
+                              }))
+                            );
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 30,
+                            padding: "0 6px",
+                            borderRadius: 3,
+                            border: "1px solid #cbd5e1",
+                            fontSize: 13,
+                            color: "#0f172a",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          notify(`Đã lấy dữ liệu kết chuyển lãi lỗ đầu năm ${closingYear}!`);
+                          setVoucherRows([
+                            {
+                              id: "1",
+                              desc: `Kết chuyển lãi lỗ đầu năm ${closingYear}`,
+                              debitAcc: "4212",
+                              creditAcc: "4211",
+                              amount: 0,
+                            },
+                          ]);
+                        }}
+                        style={{
+                          height: 30,
+                          padding: "0 14px",
+                          borderRadius: 3,
+                          border: "1px solid #cbd5e1",
+                          background: "#ffffff",
+                          fontSize: 12.5,
+                          fontWeight: 500,
+                          color: "#374151",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Lấy dữ liệu
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 500, color: "#475569", display: "block", marginBottom: 3 }}>
                     Diễn giải
@@ -6465,12 +6595,12 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <Sparkles
+                    <span title="AVA AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
-                      title="AVA AI gợi ý diễn giải"
-                    />
+                      
+                    /></span>
                   </div>
                 </div>
 
@@ -6691,24 +6821,24 @@ export default function MisaLedgerWorkspace({
                   <thead>
                     <tr
                       style={{
-                        background: "#e6f0eb",
+                        background: selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? "#d6e4dc" : "#e6f0eb",
                         borderBottom: "1px solid #cbd5e1",
                         textAlign: "left",
                         color: "#1e293b",
                         fontSize: 12.5,
                         fontWeight: 600,
-                        height: 36,
+                        height: 34,
                       }}
                     >
-                      <th style={{ padding: "6px 8px", width: 40, textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                      <th style={{ padding: "6px 10px", minWidth: 220, borderRight: "1px solid #cbd5e1" }}>
+                      <th style={{ padding: "6px 8px", width: 40, textAlign: "center", borderRight: selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? "1px dotted #94a3b8" : "1px solid #cbd5e1" }}>#</th>
+                      <th style={{ padding: "6px 10px", minWidth: 260, borderRight: selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? "1px dotted #94a3b8" : "1px solid #cbd5e1" }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                           <Pin size={12} color="#64748b" /> Diễn giải
                         </span>
                       </th>
-                      <th style={{ padding: "6px 10px", width: 100, borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
-                      <th style={{ padding: "6px 10px", width: 100, borderRight: "1px solid #cbd5e1" }}>TK Có</th>
-                      <th style={{ padding: "6px 10px", width: 140, textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                      <th style={{ padding: "6px 10px", width: 140, borderRight: selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? "1px dotted #94a3b8" : "1px solid #cbd5e1" }}>TK Nợ</th>
+                      <th style={{ padding: "6px 10px", width: 140, borderRight: selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? "1px dotted #94a3b8" : "1px solid #cbd5e1" }}>TK Có</th>
+                      <th style={{ padding: "6px 10px", width: 160, textAlign: "right", borderRight: selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? "1px dotted #94a3b8" : "1px solid #cbd5e1" }}>Số tiền</th>
 
                       {/* Type 2 columns */}
                       {selectedVoucherType === "2. Vay ngân hàng chuyển trả cho nhà cung cấp" && (
@@ -6990,15 +7120,28 @@ export default function MisaLedgerWorkspace({
                     ))}
 
                     {/* Summary row */}
-                    <tr style={{ background: "#f8fafc", fontWeight: 700, borderTop: "1px solid #cbd5e1" }}>
-                      <td colSpan={4} style={{ padding: "8px 10px", textAlign: "right" }}>
-                        Tổng cộng:
-                      </td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>
-                        {voucherRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0).toLocaleString("vi-VN")}
-                      </td>
-                      <td colSpan={6}></td>
-                    </tr>
+                    {selectedVoucherType === "5. Kết chuyển lãi lỗ đầu năm" ? (
+                      <tr style={{ background: "#ffffff", fontWeight: 700, borderTop: "1px solid #cbd5e1", height: 34 }}>
+                        <td style={{ borderRight: "1px dotted #cbd5e1" }}></td>
+                        <td style={{ borderRight: "1px dotted #cbd5e1" }}></td>
+                        <td style={{ borderRight: "1px dotted #cbd5e1" }}></td>
+                        <td style={{ borderRight: "1px dotted #cbd5e1" }}></td>
+                        <td style={{ padding: "6px 10px", textAlign: "right", color: "#0f172a", borderRight: "1px dotted #cbd5e1" }}>
+                          {voucherRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0).toLocaleString("vi-VN")}
+                        </td>
+                        <td></td>
+                      </tr>
+                    ) : (
+                      <tr style={{ background: "#f8fafc", fontWeight: 700, borderTop: "1px solid #cbd5e1" }}>
+                        <td colSpan={4} style={{ padding: "8px 10px", textAlign: "right" }}>
+                          Tổng cộng:
+                        </td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>
+                          {voucherRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0).toLocaleString("vi-VN")}
+                        </td>
+                        <td colSpan={6}></td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               ) : (
@@ -7551,12 +7694,12 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <Sparkles
+                    <span title="AVA AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
-                      title="AVA AI gợi ý diễn giải"
-                    />
+                      
+                    /></span>
                   </div>
                 </div>
 

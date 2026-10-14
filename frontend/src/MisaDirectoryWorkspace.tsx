@@ -1,3 +1,4 @@
+import {useNavigate} from "react-router-dom";
 import DirectoryChoiceField from "./DirectoryChoiceField";
 import VoucherDateField from "./VoucherDateField";
 import { useEffect, useRef, useState } from "react";
@@ -45,14 +46,17 @@ export default function MisaDirectoryWorkspace({
   initialName,
   initialCreate = false,
   onEntrySaved,
+  onEditorClose,
   notify,
 }: {
   legacy: ReactNode;
   initialName?: string|null;
   initialCreate?: boolean;
   onEntrySaved?: (values: Record<string,string>)=>void;
+  onEditorClose?: ()=>void;
   notify: (text: string) => void;
 }) {
+  const directoryNavigate=useNavigate();
   const [definition, setDefinition] = useState<DirectoryDefinition | null>(
     MISA_DIRECTORY_DEFINITIONS.find(item=>item.name===initialName) || null,
   );
@@ -69,6 +73,7 @@ export default function MisaDirectoryWorkspace({
   const [page, setPage] = useState(1);
   const [tab, setTab] = useState(initialCreate?definition?.tabs[0]||"":"");
   const editorRef = useRef<HTMLDivElement>(null);
+  const closeEditor = () => { setEditor(null); onEditorClose?.(); };
   const updateEditor = (key: string, value: string) =>
     setEditor((previous) =>
       previous
@@ -80,7 +85,7 @@ export default function MisaDirectoryWorkspace({
     const previous = document.activeElement as HTMLElement | null;
     editorRef.current?.querySelector<HTMLInputElement>("input")?.focus();
     const listener = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setEditor(null);
+      if (event.key === "Escape") closeEditor();
       if (event.key === "Tab") {
         const items = [
           ...editorRef.current!.querySelectorAll<HTMLElement>(
@@ -202,7 +207,7 @@ export default function MisaDirectoryWorkspace({
           : {},
       });
       setError("");
-    } else setEditor(null);
+    } else closeEditor();
   };
   if (legacyView)
     return (
@@ -260,7 +265,7 @@ export default function MisaDirectoryWorkspace({
     );
   }
   return (
-    <div className="md-list">
+    <div className={`md-list${initialCreate ? " md-editor-only" : ""}`}>
       <header>
         <button aria-label="Về danh mục" onClick={() => setDefinition(null)}>
           <ArrowLeft size={18} />
@@ -421,7 +426,7 @@ export default function MisaDirectoryWorkspace({
         <div
           className="md-overlay"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setEditor(null);
+            if (e.target === e.currentTarget) closeEditor();
           }}
         >
           <div
@@ -435,7 +440,7 @@ export default function MisaDirectoryWorkspace({
               <h2>Thông tin {definition.name.toLocaleLowerCase("vi")}</h2>
               <button
                 aria-label="Đóng thông tin danh mục"
-                onClick={() => setEditor(null)}
+                onClick={() => closeEditor()}
               >
                 <X size={20} />
               </button>
@@ -464,8 +469,8 @@ export default function MisaDirectoryWorkspace({
                 {editFields.map((field) => (
                   <label key={field.label}>
                     {field.label}
-                    {(requiredDirectoryField(field.label)||(definition.name==="Nhân viên"&&["Đơn vị","Chức danh"].includes(field.label))||(definition.name==="Tài khoản ngân hàng"&&field.label==="Số tài khoản")) && <em>*</em>}
-                    {field.kind==="combo"?<DirectoryChoiceField label={field.label} value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} options={"options" in field?field.options as string[]:[]}/> : ["Ngày sinh","Ngày cấp"].includes(field.label)?<VoucherDateField value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} label={field.label}/> : field.kind === "textarea" ? (
+                    {(definition.name==="Tài khoản ngân hàng"?["Số tài khoản","Tên ngân hàng"].includes(field.label):requiredDirectoryField(field.label)||(definition.name==="Nhân viên"&&["Đơn vị","Chức danh"].includes(field.label))) && <em>*</em>}
+                    {field.kind==="combo"?<DirectoryChoiceField onManage={()=>{const query=new URLSearchParams(window.location.search);query.set("directory","Cơ cấu tổ chức");directoryNavigate("/directory?"+query.toString());}} label={field.label} value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} options={"options" in field?field.options as string[]:[]}/> : ["Ngày sinh","Ngày cấp"].includes(field.label)?<VoucherDateField value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} label={field.label}/> : field.kind === "textarea" ? (
                       <textarea
                         value={editor.values[field.label] || ""}
                         onChange={(e) =>
@@ -533,13 +538,14 @@ export default function MisaDirectoryWorkspace({
                 </>
               )}
             </div>
+            {definition.name==="Tài khoản ngân hàng"&&<div style={{padding:"12px 18px",display:"flex",gap:12,alignItems:"center"}}><span>Tự động thêm nhiều tài khoản ngân hàng cùng lúc chỉ trong 15 giây với Ngân hàng điện tử</span><button type="button" onClick={()=>directoryNavigate("/bank/ebanking"+window.location.search)}>Kết nối ngay</button></div>}
             {error && (
               <p role="alert" className="md-error">
                 {error}
               </p>
             )}
             <footer>
-              <button onClick={() => setEditor(null)}>Hủy</button>
+              <button onClick={() => closeEditor()}>Hủy</button>
               <button onClick={() => save()}>Cất</button>
               <button className="md-primary" onClick={() => save(true)}>
                 Cất và Thêm

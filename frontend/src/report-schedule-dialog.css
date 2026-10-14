@@ -1,0 +1,96 @@
+.misa-report-schedule-dialog {
+  color: #222;
+  font-size: 13px;
+}
+.misa-report-schedule-dialog h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+.misa-report-schedule-dialog h3 {
+  font-size: 14px;
+  margin: 16px 0 10px;
+}
+.misa-report-schedule-dialog label {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.misa-report-schedule-dialog label:has(input[type="radio"]),
+.misa-report-schedule-dialog label:has(input[type="checkbox"]) {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 12px;
+}
+.misa-report-schedule-dialog input:not([type="radio"]):not([type="checkbox"]),
+.misa-report-schedule-dialog select:not([multiple]) {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid #cdd3da;
+  border-radius: 3px;
+  background: white;
+  font: inherit;
+}
+.misa-report-schedule-dialog select[multiple],
+.misa-report-schedule-dialog textarea {
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #cdd3da;
+  border-radius: 3px;
+  font: inherit;
+}
+.misa-report-schedule-dialog button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #cdd3da;
+  border-radius: 3px;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+  font: inherit;
+}
+.misa-report-schedule-dialog button[role="tab"][aria-selected="true"] {
+  background: #009b71;
+  color: white;
+  border-color: #009b71;
+}
+.misa-report-schedule-dialog .pc-date-input {
+  position: relative;
+}
+.misa-report-schedule-dialog .pc-date-input > svg {
+  position: absolute;
+  right: 9px;
+  top: 8px;
+  pointer-events: none;
+}
+.misa-report-schedule-dialog .pc-date-input .pc-native-date {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  opacity: 0;
+  cursor: pointer;
+}
+.misa-email-config-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+@media (max-width: 640px) {
+  .misa-email-config-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.misa-report-column-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .misa-report-column-fields {
+    grid-template-columns: 1fr;
+  }
+}

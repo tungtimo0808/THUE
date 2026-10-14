@@ -13,7 +13,7 @@ export default function DirectoryTabContent({
   if (!data) return null;
   const readGrid = (key: string): Record<string, string>[] => {
     try {
-      const value = JSON.parse(values[key] || "[]");
+      const value = JSON.parse(values[key] ?? (tab === "Tài khoản ngân hàng" ? "[{}]" : "[]"));
       return Array.isArray(value)
         ? value.filter(
             (row) => row && typeof row === "object" && !Array.isArray(row),
@@ -39,6 +39,8 @@ export default function DirectoryTabContent({
               ) : (
                 <input
                   type={field.kind === "number" ? "number" : "text"}
+                  step={field.kind === "number" ? (field.label === "Số người phụ thuộc" ? "1" : "any") : undefined}
+                  min={field.kind === "number" ? "0" : undefined}
                   value={values[key] || ""}
                   onInput={(e) => onChange(key, e.currentTarget.value)}
                   onChange={(e) => onChange(key, e.target.value)}
@@ -62,6 +64,7 @@ export default function DirectoryTabContent({
                 </tr>
               </thead>
               <tbody>
+                {!rows.length && tab.startsWith("Thông tin người phụ thuộc") && <tr><td colSpan={headers.length}>Không có người phụ thuộc</td></tr>}
                 {rows.map((row, rowIndex) => (
                   <tr key={rowIndex}>
                     {headers.map((header) => (
@@ -106,13 +109,13 @@ export default function DirectoryTabContent({
               <button
                 onClick={() => onChange(key, JSON.stringify([...rows, {}]))}
               >
-                Thêm dòng
+                {tab.startsWith("Thông tin người phụ thuộc") ? "Thêm người phụ thuộc" : "Thêm dòng"}
               </button>
               <button
                 disabled={!rows.length}
                 onClick={() => onChange(key, "[]")}
               >
-                Xóa hết dòng
+                {tab === "Tài khoản ngân hàng" || tab.startsWith("Thông tin người phụ thuộc") ? "Xóa tất cả" : "Xóa hết dòng"}
               </button>
             </div>
           </div>

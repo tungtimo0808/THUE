@@ -1,3 +1,6 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {MISA_REPORT_ACCOUNTS} from "./misa-report-accounts";
 import "./misa-borrow-summary.css";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
@@ -479,9 +482,7 @@ export default function MisaLendContractSummaryReport({
           </div>
 
           {/* 6. Thiết lập */}
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Báo cáo tổng hợp tình hình khế ước cho vay" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Báo cáo tổng hợp tình hình khế ước cho vay")?.headers ?? [])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
@@ -489,11 +490,7 @@ export default function MisaLendContractSummaryReport({
               padding: 4,
               display: "flex",
               alignItems: "center",
-            }}
-            title="Tùy chọn khác"
-          >
-            <Settings size={15} />
-          </button>
+            }} />
         </div>
       </div>
 

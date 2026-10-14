@@ -645,6 +645,10 @@ export default function MisaToolsWorkspace({
       setShowSingleAddModal(true);
     }
 
+    if (tab === "allocation" && action === "add") {
+      setShowAllocationVoucherModal(true);
+    }
+
     if (tab === "prepaid") {
       if (action === "opening") {
         setPrepaidModalMode("opening");
@@ -652,6 +656,8 @@ export default function MisaToolsWorkspace({
       } else if (action === "new") {
         setPrepaidModalMode("new");
         setShowPrepaidItemModal(true);
+      } else if (action === "allocate" || (sub === "allocation" && action === "add")) {
+        setShowPrepaidAllocVoucherModal(true);
       }
       if (sub === "allocation" || sub === "decrease" || sub === "list") {
         setPrepaidSubtab(sub as any);
@@ -692,15 +698,15 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   const [allocationViewMode, setAllocationViewMode] = useState<"landing" | "list">("landing");
   const [showSelectPeriodModal, setShowSelectPeriodModal] = useState(false);
-  const [allocationMonth, setAllocationMonth] = useState<number>(9);
+  const [allocationMonth, setAllocationMonth] = useState<number>(10);
   const [allocationYear, setAllocationYear] = useState<number>(2026);
   const [showAllocationVoucherModal, setShowAllocationVoucherModal] = useState(false);
   const [allocationVouchers, setAllocationVouchers] = useState(SAMPLE_ALLOCATION_VOUCHERS);
   const [allocationVoucherNo, setAllocationVoucherNo] = useState("PBCC00001");
-  const [allocationPostingDate, setAllocationPostingDate] = useState("30/09/2026");
-  const [allocationVoucherDate, setAllocationVoucherDate] = useState("30/09/2026");
-  const [allocationReason, setAllocationReason] = useState("Phân bổ chi phí CCDC tháng 9 năm 2026");
-  const [allocationVoucherTab, setAllocationVoucherTab] = useState<"allocation" | "accounting">("allocation");
+  const [allocationPostingDate, setAllocationPostingDate] = useState("31/10/2026");
+  const [allocationVoucherDate, setAllocationVoucherDate] = useState("31/10/2026");
+  const [allocationReason, setAllocationReason] = useState("Phân bổ chi phí CCDC tháng 10 năm 2026");
+  const [allocationVoucherTab, setAllocationVoucherTab] = useState<"identify" | "allocation" | "accounting">("identify");
   const [allocationFilterPeriod, setAllocationFilterPeriod] = useState("Năm 2026");
   const [allocationSearch, setAllocationSearch] = useState("");
 
@@ -980,13 +986,14 @@ export default function MisaToolsWorkspace({
   // Subtab 2: Phân bổ chi phí trả trước
   const [prepaidAllocViewMode, setPrepaidAllocViewMode] = useState<"landing" | "list">("landing");
   const [showPrepaidDateModal, setShowPrepaidDateModal] = useState(false);
-  const [prepaidAllocMonth, setPrepaidAllocMonth] = useState(3);
+  const [prepaidAllocMonth, setPrepaidAllocMonth] = useState(10);
   const [prepaidAllocYear, setPrepaidAllocYear] = useState(2026);
   const [showPrepaidAllocVoucherModal, setShowPrepaidAllocVoucherModal] = useState(false);
-  const [prepaidAllocVoucherNo, setPrepaidAllocVoucherNo] = useState("PBCP00003");
-  const [prepaidAllocVoucherDate, setPrepaidAllocVoucherDate] = useState("31/03/2026");
-  const [prepaidAllocReason, setPrepaidAllocReason] = useState("Phân bổ chi phí trả trước Tháng 03/2026");
-  const [prepaidAllocTab, setPrepaidAllocTab] = useState<"allocTable" | "accounting">("allocTable");
+  const [prepaidAllocVoucherNo, setPrepaidAllocVoucherNo] = useState("PBPTT00001");
+  const [prepaidAllocPostingDate, setPrepaidAllocPostingDate] = useState("31/10/2026");
+  const [prepaidAllocVoucherDate, setPrepaidAllocVoucherDate] = useState("31/10/2026");
+  const [prepaidAllocReason, setPrepaidAllocReason] = useState("Phân bổ chi phí trả trước tháng 10 năm 2026");
+  const [prepaidAllocTab, setPrepaidAllocTab] = useState<"identify" | "allocation" | "accounting">("identify");
   const [prepaidAllocFilterPeriod, setPrepaidAllocFilterPeriod] = useState("Năm 2026");
   const [prepaidAllocSearch, setPrepaidAllocSearch] = useState("");
   const [prepaidAllocVouchers, setPrepaidAllocVouchers] = useState([
@@ -2670,11 +2677,13 @@ export default function MisaToolsWorkspace({
                   const nextIndex = allocationVouchers.length + 1;
                   const newNo = `PBCC${String(nextIndex).padStart(5, "0")}`;
                   const monthStr = String(allocationMonth).padStart(2, "0");
-                  const dateStr = `30/${monthStr}/${allocationYear}`;
+                  const daysInMonth = new Date(allocationYear, allocationMonth, 0).getDate();
+                  const dateStr = `${daysInMonth}/${monthStr}/${allocationYear}`;
                   setAllocationVoucherNo(newNo);
                   setAllocationPostingDate(dateStr);
                   setAllocationVoucherDate(dateStr);
                   setAllocationReason(`Phân bổ chi phí CCDC tháng ${allocationMonth} năm ${allocationYear}`);
+                  setAllocationVoucherTab("identify");
                   setShowAllocationVoucherModal(true);
                 }}
                 style={{
@@ -2696,24 +2705,23 @@ export default function MisaToolsWorkspace({
         </div>
       )}
 
-      {/* 7. MODAL CHỨNG TỪ PHÂN BỔ CHI PHÍ CCDC (Chi tiết & Hạch toán) */}
+      {/* 7. MODAL CHỨNG TỪ PHÂN BỔ CHI PHÍ CCDC (CHÍNH XÁC THEO ẢNH 1 CỦA USER) */}
       {showAllocationVoucherModal && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.55)",
-            backdropFilter: "blur(2px)",
+            background: "rgba(15, 23, 42, 0.45)",
             display: "grid",
             placeItems: "center",
-            zIndex: 1000,
-            padding: 12,
+            zIndex: 1050,
+            padding: "16px 20px",
           }}
         >
           <div
             style={{
-              width: "98vw",
-              maxWidth: 1250,
+              width: "100%",
+              maxWidth: 1320,
               height: "92vh",
               background: "#ffffff",
               borderRadius: 6,
@@ -2726,178 +2734,261 @@ export default function MisaToolsWorkspace({
             {/* Header */}
             <div
               style={{
-                height: 48,
-                background: "#00a862",
-                color: "#ffffff",
+                height: 44,
+                padding: "0 18px",
+                borderBottom: "1px solid #e2e8f0",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "0 18px",
+                background: "#ffffff",
                 flexShrink: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 16, fontWeight: 700 }}>
-                  Chứng từ phân bổ chi phí CCDC: {allocationVoucherNo} - Tháng {allocationMonth}/{allocationYear}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    background: "rgba(255,255,255,0.2)",
-                    padding: "2px 8px",
-                    borderRadius: 10,
-                  }}
-                >
-                  Kỳ tính: {allocationMonth}/{allocationYear}
-                </span>
-              </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
                   type="button"
-                  title="Hướng dẫn"
-                  style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}
+                  title="Lịch sử chứng từ"
+                  onClick={() => notify("Lịch sử chứng từ phân bổ CCDC")}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 0, color: "#64748b" }}
                 >
-                  <HelpCircle size={18} />
+                  <RotateCcw size={16} />
+                </button>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
+                  Phân bổ chi phí CCDC {allocationVoucherNo}
+                </h2>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <button
+                  type="button"
+                  title="Thiết lập"
+                  onClick={() => notify("Tùy chọn thiết lập mẫu chứng từ")}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
+                >
+                  <Settings size={17} />
+                </button>
+                <button
+                  type="button"
+                  title="Hướng dẫn"
+                  onClick={() => notify("Hướng dẫn lập chứng từ phân bổ CCDC")}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
+                >
+                  <HelpCircle size={17} />
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAllocationVoucherModal(false)}
-                  style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
 
-            {/* General Info Card */}
+            {/* Thông tin chung */}
             <div
               style={{
-                padding: "14px 20px",
-                background: "#f8fafc",
-                borderBottom: "1px solid #e2e8f0",
+                padding: "14px 20px 10px 20px",
+                background: "#f4f5f8",
                 display: "grid",
-                gridTemplateColumns: "140px 140px 140px 1fr 220px",
-                gap: 16,
-                alignItems: "center",
+                gridTemplateColumns: "1fr 340px 180px",
+                gap: 24,
+                alignItems: "start",
                 flexShrink: 0,
+                borderBottom: "1px solid #e2e8f0",
               }}
             >
+              {/* Cột 1: Diễn giải, Tháng, Năm, Tham chiếu */}
               <div>
-                <label style={{ display: "block", fontSize: 11.5, color: "#64748b", marginBottom: 4, fontWeight: 500 }}>
-                  Ngày hạch toán
-                </label>
-                <input
-                  type="text"
-                  value={allocationPostingDate}
-                  onChange={(e) => setAllocationPostingDate(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: 30,
-                    padding: "0 8px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    fontSize: 12.5,
-                    background: "#ffffff",
-                    boxSizing: "border-box",
-                  }}
-                />
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Diễn giải
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={allocationReason}
+                      onChange={(e) => setAllocationReason(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 28px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => notify("AVA Kế toán: Đã tối ưu hóa diễn giải chứng từ phân bổ CCDC")}
+                      title="Trợ lý AVA"
+                      style={{
+                        position: "absolute",
+                        right: 6,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: 2,
+                      }}
+                    >
+                      <Sparkles size={14} style={{ color: "#8b5cf6" }} />
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Tháng
+                    </label>
+                    <input
+                      type="number"
+                      value={allocationMonth}
+                      onChange={(e) => setAllocationMonth(Number(e.target.value))}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Năm
+                    </label>
+                    <input
+                      type="number"
+                      value={allocationYear}
+                      onChange={(e) => setAllocationYear(Number(e.target.value))}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
+                  <span>Tham chiếu</span>
+                  <span
+                    onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
+                    style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
+                  >
+                    ...
+                  </span>
+                </div>
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: 11.5, color: "#64748b", marginBottom: 4, fontWeight: 500 }}>
-                  Ngày chứng từ
-                </label>
-                <input
-                  type="text"
-                  value={allocationVoucherDate}
-                  onChange={(e) => setAllocationVoucherDate(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: 30,
-                    padding: "0 8px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    fontSize: 12.5,
-                    background: "#ffffff",
-                    boxSizing: "border-box",
-                  }}
-                />
+              {/* Cột 2: Ngày hạch toán, Ngày chứng từ, Số chứng từ */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Ngày hạch toán
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={allocationPostingDate}
+                      onChange={(e) => setAllocationPostingDate(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 30px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Ngày chứng từ
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={allocationVoucherDate}
+                      onChange={(e) => setAllocationVoucherDate(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 30px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Số chứng từ
+                  </label>
+                  <input
+                    type="text"
+                    value={allocationVoucherNo}
+                    onChange={(e) => setAllocationVoucherNo(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 30,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      background: "#ffffff",
+                      fontWeight: 600,
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: 11.5, color: "#64748b", marginBottom: 4, fontWeight: 500 }}>
-                  Số chứng từ
-                </label>
-                <input
-                  type="text"
-                  value={allocationVoucherNo}
-                  onChange={(e) => setAllocationVoucherNo(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: 30,
-                    padding: "0 8px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    fontSize: 12.5,
-                    background: "#ffffff",
-                    fontWeight: 600,
-                    color: "#00a862",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 11.5, color: "#64748b", marginBottom: 4, fontWeight: 500 }}>
-                  Diễn giải
-                </label>
-                <input
-                  type="text"
-                  value={allocationReason}
-                  onChange={(e) => setAllocationReason(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: 30,
-                    padding: "0 10px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    fontSize: 12.5,
-                    background: "#ffffff",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  background: "#e6f4ea",
-                  border: "1px solid #a7f3d0",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  textAlign: "right",
-                }}
-              >
-                <div style={{ fontSize: 11, color: "#047857", fontWeight: 500 }}>Tổng tiền phân bổ kỳ này</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: "#00a862" }}>
-                  {formatVND(15650000)}
+              {/* Cột 3: Số tiền phân bổ */}
+              <div style={{ textAlign: "right", paddingTop: 4 }}>
+                <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Số tiền phân bổ</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>
+                  0
                 </div>
               </div>
             </div>
 
-            {/* Voucher Tabs (Phân bổ / Hạch toán) */}
-            <div
-              style={{
-                display: "flex",
-                gap: 24,
-                padding: "0 20px",
-                borderBottom: "1px solid #e2e8f0",
-                background: "#ffffff",
-                flexShrink: 0,
-              }}
-            >
+            {/* 3 Tabs: Xác định chi phí | Phân bổ | Hạch toán */}
+            <div style={{ display: "flex", gap: 24, padding: "0 20px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", flexShrink: 0 }}>
               {[
-                { id: "allocation", label: "1. Bảng phân bổ CCDC kỳ này (13 mục)" },
-                { id: "accounting", label: "2. Định khoản hạch toán chi phí (TK 6422, 6277 / TK 242)" },
+                { id: "identify", label: "Xác định chi phí" },
+                { id: "allocation", label: "Phân bổ" },
+                { id: "accounting", label: "Hạch toán" },
               ].map((t) => {
                 const isActive = allocationVoucherTab === t.id;
                 return (
@@ -2907,9 +2998,9 @@ export default function MisaToolsWorkspace({
                     style={{
                       padding: "10px 4px",
                       fontSize: 13,
-                      fontWeight: isActive ? 600 : 400,
+                      fontWeight: isActive ? 600 : 500,
                       color: isActive ? "#00a862" : "#64748b",
-                      borderBottom: isActive ? "2px solid #00a862" : "2px solid transparent",
+                      borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -2919,10 +3010,88 @@ export default function MisaToolsWorkspace({
               })}
             </div>
 
-            {/* Content Table */}
-            <div style={{ flex: 1, overflow: "auto", padding: "12px 18px", background: "#f8fafc" }}>
-              {allocationVoucherTab === "allocation" ? (
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+            {/* Tab Content */}
+            <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", background: "#ffffff" }}>
+              {allocationVoucherTab === "identify" && (
+                <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ width: 140, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã CCDC</th>
+                          <th style={{ minWidth: 220, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên CCDC</th>
+                          <th style={{ width: 160, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Loại CCDC</th>
+                          <th style={{ width: 180, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tổng số tiền phân bổ</th>
+                          <th style={{ width: 200, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền PB CCDC đang dùng</th>
+                          <th style={{ width: 220, padding: "8px 10px", textAlign: "right" }}>Giá trị còn lại của CCDC giảm</th>
+                        </tr>
+                        {/* Summary row matching Screenshot 1 */}
+                        <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>
+                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right" }}></td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td colSpan={7} style={{ padding: "40px 20px", textAlign: "center" }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                              {/* Smiley Document Icon matching Screenshot 1 */}
+                              <svg width="68" height="68" viewBox="0 0 64 64" fill="none">
+                                <path d="M32 6 V10 M20 10 L23 13 M44 10 L41 13" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
+                                <path d="M22 14 H38 L48 24 V54 C48 56 46 58 44 58 H22 C20 58 18 56 18 54 V18 C18 16 20 14 22 14 Z" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                <path d="M38 14 V24 H48" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                <circle cx="28" cy="36" r="1.5" fill="#94a3b8" />
+                                <circle cx="38" cy="36" r="1.5" fill="#94a3b8" />
+                                <path d="M30 42 C31.5 44 34.5 44 36 42" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                              </svg>
+                              <span style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>Không có dữ liệu</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 1 */}
+                  <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <Paperclip size={14} style={{ color: "#64748b" }} />
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>Đính kèm</span>
+                      <span style={{ fontSize: 12, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                    </div>
+                    <div
+                      onClick={() => notify("Chọn tệp đính kèm cho chứng từ phân bổ CCDC...")}
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        background: "#ffffff",
+                        padding: "16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        gap: 6,
+                        width: 320,
+                      }}
+                    >
+                      <Upload size={18} style={{ color: "#0284c7" }} />
+                      <div style={{ fontSize: 12.5, color: "#64748b" }}>
+                        <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {allocationVoucherTab === "allocation" && (
+                <div style={{ flex: 1, overflow: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -2958,23 +3127,12 @@ export default function MisaToolsWorkspace({
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot>
-                      <tr style={{ background: "#f1f5f9", fontWeight: 700, borderTop: "2px solid #cbd5e1" }}>
-                        <td colSpan={4} style={{ padding: "8px 12px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>
-                          Cộng tổng cộng:
-                        </td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>{formatVND(486600000)}</td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>{formatVND(162000000)}</td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>{formatVND(324600000)}</td>
-                        <td colSpan={2} style={{ borderRight: "1px solid #cbd5e1" }}></td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "#00a862", fontSize: 13 }}>{formatVND(15650000)}</td>
-                        <td colSpan={2}></td>
-                      </tr>
-                    </tfoot>
                   </table>
                 </div>
-              ) : (
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+              )}
+
+              {allocationVoucherTab === "accounting" && (
+                <div style={{ flex: 1, overflow: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -3011,104 +3169,75 @@ export default function MisaToolsWorkspace({
                         <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Sản xuất & Cơ điện</td>
                       </tr>
                     </tbody>
-                    <tfoot>
-                      <tr style={{ background: "#f1f5f9", fontWeight: 700, borderTop: "2px solid #cbd5e1" }}>
-                        <td colSpan={4} style={{ padding: "10px 12px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>
-                          Tổng cộng hạch toán:
-                        </td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "#00a862", fontSize: 13 }}>
-                          {formatVND(15650000)}
-                        </td>
-                        <td colSpan={2}></td>
-                      </tr>
-                    </tfoot>
                   </table>
                 </div>
               )}
             </div>
 
-            {/* Footer Buttons */}
+            {/* Footer Buttons matching Screenshot 1 */}
             <div
               style={{
                 height: 50,
-                background: "#f8fafc",
+                background: "#ffffff",
                 borderTop: "1px solid #e2e8f0",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "flex-end",
                 padding: "0 20px",
+                gap: 10,
                 flexShrink: 0,
               }}
             >
               <button
                 type="button"
+                onClick={() => setShowAllocationVoucherModal(false)}
                 style={{
                   height: 32,
-                  padding: "0 14px",
+                  padding: "0 18px",
                   border: "1px solid #cbd5e1",
                   borderRadius: 4,
                   background: "#ffffff",
-                  fontSize: 12.5,
+                  fontSize: 13,
                   cursor: "pointer",
-                  color: "#475569",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
+                  color: "#334155",
+                  fontWeight: 500,
                 }}
               >
-                <HelpCircle size={15} />
-                <span>Trợ giúp</span>
+                Hủy
               </button>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowAllocationVoucherModal(false)}
-                  style={{
-                    height: 32,
-                    padding: "0 18px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    background: "#ffffff",
-                    fontSize: 12.5,
-                    cursor: "pointer",
-                    color: "#334155",
-                    fontWeight: 500,
-                  }}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newVoucher = {
-                      voucherNo: allocationVoucherNo,
-                      postingDate: allocationPostingDate,
-                      voucherDate: allocationVoucherDate,
-                      reason: allocationReason,
-                      totalAmount: 15650000,
-                      creator: "Nguyễn Thị Mai",
-                      status: "Đã ghi sổ",
-                    };
-                    setAllocationVouchers([newVoucher, ...allocationVouchers.filter((v) => v.voucherNo !== allocationVoucherNo)]);
-                    setShowAllocationVoucherModal(false);
-                    setAllocationViewMode("list");
-                    notify(`Đã cất chứng từ phân bổ CCDC số ${allocationVoucherNo} thành công`);
-                  }}
-                  style={{
-                    height: 32,
-                    padding: "0 22px",
-                    background: "#00a862",
-                    border: "none",
-                    borderRadius: 4,
-                    color: "#ffffff",
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cất
-                </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const newVoucher = {
+                    voucherNo: allocationVoucherNo,
+                    postingDate: allocationPostingDate,
+                    voucherDate: allocationVoucherDate,
+                    reason: allocationReason,
+                    totalAmount: 15650000,
+                    creator: "Nguyễn Thị Mai",
+                    status: "Đã ghi sổ",
+                  };
+                  setAllocationVouchers([newVoucher, ...allocationVouchers.filter((v) => v.voucherNo !== allocationVoucherNo)]);
+                  setShowAllocationVoucherModal(false);
+                  setAllocationViewMode("list");
+                  notify(`Đã cất chứng từ phân bổ CCDC số ${allocationVoucherNo} thành công`);
+                }}
+                style={{
+                  height: 32,
+                  padding: "0 20px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  background: "#ffffff",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  color: "#334155",
+                  fontWeight: 500,
+                }}
+              >
+                Cất
+              </button>
+              {/* Split button: Cất và In ▾ */}
+              <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden", boxShadow: "0 1px 3px rgba(0, 168, 98, 0.25)" }}>
                 <button
                   type="button"
                   onClick={() => {
@@ -3128,21 +3257,33 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{
                     height: 32,
-                    padding: "0 20px",
-                    background: "#ffffff",
-                    border: "1px solid #00a862",
-                    borderRadius: 4,
-                    color: "#00a862",
-                    fontSize: 12.5,
+                    padding: "0 16px",
+                    background: "#00a862",
+                    border: "none",
+                    color: "#ffffff",
+                    fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
                   }}
                 >
-                  <Printer size={14} />
-                  <span>Cất và In</span>
+                  Cất và In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => notify("Tùy chọn mẫu in chứng từ phân bổ CCDC")}
+                  style={{
+                    height: 32,
+                    padding: "0 8px",
+                    background: "#009657",
+                    border: "none",
+                    borderLeft: "1px solid rgba(255,255,255,0.25)",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <ChevronDown size={14} />
                 </button>
               </div>
             </div>
@@ -9635,9 +9776,11 @@ export default function MisaToolsWorkspace({
                     setShowPrepaidDateModal(false);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const daysInMonth = new Date(prepaidAllocYear, prepaidAllocMonth, 0).getDate();
-                    setPrepaidAllocVoucherNo(`PBCP${prepaidAllocYear}${mStr}`);
+                    setPrepaidAllocVoucherNo(`PBPTT${String(prepaidAllocVouchers.length + 1).padStart(5, "0")}`);
+                    setPrepaidAllocPostingDate(`${daysInMonth}/${mStr}/${prepaidAllocYear}`);
                     setPrepaidAllocVoucherDate(`${daysInMonth}/${mStr}/${prepaidAllocYear}`);
-                    setPrepaidAllocReason(`Phân bổ chi phí trả trước Tháng ${mStr}/${prepaidAllocYear}`);
+                    setPrepaidAllocReason(`Phân bổ chi phí trả trước tháng ${prepaidAllocMonth} năm ${prepaidAllocYear}`);
+                    setPrepaidAllocTab("identify");
                     setShowPrepaidAllocVoucherModal(true);
                   }}
                   style={{
@@ -10920,26 +11063,26 @@ export default function MisaToolsWorkspace({
         )}
 
         {/* =================================================================== */}
-        {/* MODAL 2: CHỨNG TỪ PHÂN BỔ CHI PHÍ TRẢ TRƯỚC                         */}
+        {/* =================================================================== */}
+        {/* MODAL 2: CHỨNG TỪ PHÂN BỔ CHI PHÍ TRẢ TRƯỚC (CHÍNH XÁC THEO ẢNH 2)  */}
         {/* =================================================================== */}
         {showPrepaidAllocVoucherModal && (
           <div
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(15, 23, 42, 0.55)",
-              backdropFilter: "blur(2px)",
+              background: "rgba(15, 23, 42, 0.45)",
               display: "grid",
               placeItems: "center",
               zIndex: 1050,
-              padding: 14,
+              padding: "16px 20px",
             }}
           >
             <div
               style={{
-                width: "95vw",
-                maxWidth: 1200,
-                height: "90vh",
+                width: "100%",
+                maxWidth: 1320,
+                height: "92vh",
                 background: "#ffffff",
                 borderRadius: 6,
                 boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
@@ -10949,193 +11092,555 @@ export default function MisaToolsWorkspace({
               }}
             >
               {/* Header */}
-              <div style={{ height: 46, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
+              <div
+                style={{
+                  height: 44,
+                  padding: "0 18px",
+                  borderBottom: "1px solid #e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  background: "#ffffff",
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    title="Lịch sử chứng từ"
+                    onClick={() => notify("Lịch sử chứng từ phân bổ chi phí trả trước")}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 0, color: "#64748b" }}
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
+                    Phân bổ chi phí trả trước {prepaidAllocVoucherNo}
+                  </h2>
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
-                    Chứng từ phân bổ chi phí trả trước - Tháng {String(prepaidAllocMonth).padStart(2, "0")}/{prepaidAllocYear}
-                  </span>
-                  <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontWeight: 600 }}>
-                    TK 242
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPrepaidAllocVoucherModal(false)}
-                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer" }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Thông tin chung */}
-              <div style={{ padding: "14px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "grid", gridTemplateColumns: "160px 140px 1fr", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
-                    Số chứng từ
-                  </label>
-                  <input
-                    type="text"
-                    value={prepaidAllocVoucherNo}
-                    onChange={(e) => setPrepaidAllocVoucherNo(e.target.value)}
-                    style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#00a862", outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
-                    Ngày chứng từ
-                  </label>
-                  <input
-                    type="text"
-                    value={prepaidAllocVoucherDate}
-                    onChange={(e) => setPrepaidAllocVoucherDate(e.target.value)}
-                    style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box", textAlign: "center" }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
-                    Lý do / Diễn giải
-                  </label>
-                  <input
-                    type="text"
-                    value={prepaidAllocReason}
-                    onChange={(e) => setPrepaidAllocReason(e.target.value)}
-                    style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div style={{ background: "#f8fafc", padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", gap: 24 }}>
-                {[
-                  { id: "allocTable", label: "1. Bảng phân bổ chi phí" },
-                  { id: "accounting", label: "2. Hạch toán" },
-                ].map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => setPrepaidAllocTab(t.id as any)}
+                  <button
+                    type="button"
+                    onClick={() => notify("Hướng dẫn sử dụng: Lập chứng từ phân bổ chi phí trả trước")}
                     style={{
-                      padding: "10px 4px",
-                      fontSize: 12.5,
-                      fontWeight: prepaidAllocTab === t.id ? 700 : 500,
-                      color: prepaidAllocTab === t.id ? "#00a862" : "#64748b",
-                      borderBottom: prepaidAllocTab === t.id ? "2px solid #00a862" : "2px solid transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      height: 28,
+                      padding: "0 10px",
+                      borderRadius: 14,
+                      border: "1px solid #cbd5e1",
+                      background: "#ffffff",
+                      color: "#00a862",
+                      fontSize: 12,
+                      fontWeight: 500,
                       cursor: "pointer",
                     }}
                   >
-                    {t.label}
-                  </div>
-                ))}
-              </div>
-
-              {/* Nội dung Tab */}
-              <div style={{ flex: 1, overflow: "auto" }}>
-                {prepaidAllocTab === "allocTable" ? (
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                        <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                        <th style={{ width: 100, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã chi phí</th>
-                        <th style={{ minWidth: 240, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên khoản chi phí</th>
-                        <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tổng nguyên giá</th>
-                        <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Đã PB các kỳ trước</th>
-                        <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền còn lại</th>
-                        <th style={{ width: 80, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Số kỳ PB</th>
-                        <th style={{ width: 130, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tiền phân bổ kỳ này</th>
-                        <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
-                        <th style={{ width: 150, padding: "8px", textAlign: "left" }}>Đơn vị chịu CP</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {prepaidExpensesList.map((cp, idx) => {
-                        const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
-                        return (
-                          <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                            <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{cp.code}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{cp.name}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(cp.totalAmount)}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(cp.allocatedAmount)}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(cp.remainingAmount)}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{cp.allocationMonths}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{cp.costAccount}</td>
-                            <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                        <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                        <th style={{ minWidth: 300, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải hạch toán</th>
-                        <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
-                        <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Có</th>
-                        <th style={{ width: 150, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
-                        <th style={{ width: 180, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục chi phí</th>
-                        <th style={{ width: 160, padding: "8px", textAlign: "left" }}>Đơn vị chịu chi phí</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {prepaidExpensesList.map((cp, idx) => {
-                        const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
-                        return (
-                          <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                            <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>Phân bổ {cp.name} - T{String(prepaidAllocMonth).padStart(2, "0")}/{prepaidAllocYear}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{cp.costAccount}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
-                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>Chi phí mua ngoài / Phân bổ</td>
-                            <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>
-                  Tổng tiền phân bổ kỳ này: <span style={{ color: "#00a862" }}>{formatVND(prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0))}</span>
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <HelpCircle size={14} style={{ color: "#00a862" }} />
+                    <span>Hướng dẫn sử dụng</span>
+                    <ChevronDown size={13} style={{ color: "#64748b" }} />
+                  </button>
+                  <button
+                    type="button"
+                    title="Thiết lập"
+                    onClick={() => notify("Tùy chọn thiết lập mẫu chứng từ")}
+                    style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
+                  >
+                    <Settings size={17} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowPrepaidAllocVoucherModal(false)}
-                    style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer" }}
+                    style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
                   >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
-                      const mStr = String(prepaidAllocMonth).padStart(2, "0");
-                      const newV = {
-                        voucherNo: prepaidAllocVoucherNo,
-                        voucherDate: prepaidAllocVoucherDate,
-                        period: `Tháng ${mStr}/${prepaidAllocYear}`,
-                        reason: prepaidAllocReason,
-                        totalAmount: totalAlloc,
-                        status: "Đã ghi sổ",
-                      };
-                      setPrepaidAllocVouchers([newV, ...prepaidAllocVouchers.filter((x) => x.voucherNo !== prepaidAllocVoucherNo)]);
-                      setShowPrepaidAllocVoucherModal(false);
-                      setPrepaidAllocViewMode("list");
-                      notify(`Đã lưu chứng từ phân bổ chi phí trả trước ${prepaidAllocVoucherNo} thành công`);
-                    }}
-                    style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
-                  >
-                    Cất
+                    <X size={18} />
                   </button>
                 </div>
+              </div>
+
+              {/* Thông tin chung */}
+              <div
+                style={{
+                  padding: "14px 20px 10px 20px",
+                  background: "#f4f5f8",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 340px 180px",
+                  gap: 24,
+                  alignItems: "start",
+                  flexShrink: 0,
+                  borderBottom: "1px solid #e2e8f0",
+                }}
+              >
+                {/* Cột 1: Diễn giải, Tháng, Năm, Tham chiếu */}
+                <div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Diễn giải
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="text"
+                        value={prepaidAllocReason}
+                        onChange={(e) => setPrepaidAllocReason(e.target.value)}
+                        style={{
+                          width: "100%",
+                          height: 30,
+                          padding: "0 28px 0 10px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          fontSize: 12.5,
+                          background: "#ffffff",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => notify("AVA Kế toán: Đã tối ưu hóa diễn giải chứng từ phân bổ chi phí trả trước")}
+                        title="Trợ lý AVA"
+                        style={{
+                          position: "absolute",
+                          right: 6,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          border: "none",
+                          background: "transparent",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 2,
+                        }}
+                      >
+                        <Sparkles size={14} style={{ color: "#8b5cf6" }} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                        Tháng
+                      </label>
+                      <input
+                        type="number"
+                        value={prepaidAllocMonth}
+                        onChange={(e) => setPrepaidAllocMonth(Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          height: 30,
+                          padding: "0 10px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          fontSize: 12.5,
+                          background: "#ffffff",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                        Năm
+                      </label>
+                      <input
+                        type="number"
+                        value={prepaidAllocYear}
+                        onChange={(e) => setPrepaidAllocYear(Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          height: 30,
+                          padding: "0 10px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          fontSize: 12.5,
+                          background: "#ffffff",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
+                    <span>Tham chiếu</span>
+                    <span
+                      onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
+                      style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
+                    >
+                      ...
+                    </span>
+                  </div>
+                </div>
+
+                {/* Cột 2: Ngày hạch toán, Ngày chứng từ, Số chứng từ */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Ngày hạch toán
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="text"
+                        value={prepaidAllocPostingDate}
+                        onChange={(e) => setPrepaidAllocPostingDate(e.target.value)}
+                        style={{
+                          width: "100%",
+                          height: 30,
+                          padding: "0 30px 0 10px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          fontSize: 12.5,
+                          background: "#ffffff",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                      <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Ngày chứng từ
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="text"
+                        value={prepaidAllocVoucherDate}
+                        onChange={(e) => setPrepaidAllocVoucherDate(e.target.value)}
+                        style={{
+                          width: "100%",
+                          height: 30,
+                          padding: "0 30px 0 10px",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          fontSize: 12.5,
+                          background: "#ffffff",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                      <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Số chứng từ
+                    </label>
+                    <input
+                      type="text"
+                      value={prepaidAllocVoucherNo}
+                      onChange={(e) => setPrepaidAllocVoucherNo(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        fontWeight: 600,
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Cột 3: Số tiền phân bổ */}
+                <div style={{ textAlign: "right", paddingTop: 4 }}>
+                  <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Số tiền phân bổ</div>
+                  <div style={{ fontSize: 32, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>
+                    0
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Tabs: Xác định chi phí | Phân bổ | Hạch toán */}
+              <div style={{ display: "flex", gap: 24, padding: "0 20px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", flexShrink: 0 }}>
+                {[
+                  { id: "identify", label: "Xác định chi phí" },
+                  { id: "allocation", label: "Phân bổ" },
+                  { id: "accounting", label: "Hạch toán" },
+                ].map((t) => {
+                  const isActive = prepaidAllocTab === t.id;
+                  return (
+                    <div
+                      key={t.id}
+                      onClick={() => setPrepaidAllocTab(t.id as any)}
+                      style={{
+                        padding: "10px 4px",
+                        fontSize: 13,
+                        fontWeight: isActive ? 600 : 500,
+                        color: isActive ? "#00a862" : "#64748b",
+                        borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {t.label}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Tab Content */}
+              <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", background: "#ffffff" }}>
+                {prepaidAllocTab === "identify" && (
+                  <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                    <div style={{ flex: 1, overflow: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                        <thead>
+                          <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                            <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                            <th style={{ width: 160, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã CPTT</th>
+                            <th style={{ minWidth: 260, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên CPTT</th>
+                            <th style={{ width: 180, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                            <th style={{ width: 200, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền chưa phân bổ</th>
+                            <th style={{ width: 220, padding: "8px 10px", textAlign: "right" }}>Số tiền phân bổ trong kỳ</th>
+                          </tr>
+                          {/* Summary row matching Screenshot 2 */}
+                          <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}></td>
+                            <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                            <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b" }}>0</td>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {/* Empty state rows matching Screenshot 2 */}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 2 */}
+                    <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                        <Paperclip size={14} style={{ color: "#64748b" }} />
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>Đính kèm</span>
+                        <span style={{ fontSize: 12, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                      </div>
+                      <div
+                        onClick={() => notify("Chọn tệp đính kèm cho chứng từ phân bổ chi phí trả trước...")}
+                        style={{
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          background: "#ffffff",
+                          padding: "16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          gap: 6,
+                          width: 320,
+                        }}
+                      >
+                        <Upload size={18} style={{ color: "#0284c7" }} />
+                        <div style={{ fontSize: 12.5, color: "#64748b" }}>
+                          <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {prepaidAllocTab === "allocation" && (
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ width: 100, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã chi phí</th>
+                          <th style={{ minWidth: 240, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên khoản chi phí</th>
+                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tổng nguyên giá</th>
+                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Đã PB các kỳ trước</th>
+                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền còn lại</th>
+                          <th style={{ width: 80, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Số kỳ PB</th>
+                          <th style={{ width: 130, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tiền phân bổ kỳ này</th>
+                          <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
+                          <th style={{ width: 150, padding: "8px", textAlign: "left" }}>Đơn vị chịu CP</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prepaidExpensesList.map((cp, idx) => {
+                          const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                          return (
+                            <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                              <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{cp.code}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{cp.name}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(cp.totalAmount)}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(cp.allocatedAmount)}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(cp.remainingAmount)}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{cp.allocationMonths}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{cp.costAccount}</td>
+                              <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {prepaidAllocTab === "accounting" && (
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ minWidth: 300, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải hạch toán</th>
+                          <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
+                          <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Có</th>
+                          <th style={{ width: 150, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                          <th style={{ width: 180, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục chi phí</th>
+                          <th style={{ width: 160, padding: "8px", textAlign: "left" }}>Đơn vị chịu chi phí</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prepaidExpensesList.map((cp, idx) => {
+                          const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                          return (
+                            <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                              <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>Phân bổ {cp.name} - T{String(prepaidAllocMonth).padStart(2, "0")}/{prepaidAllocYear}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{cp.costAccount}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>Chi phí mua ngoài / Phân bổ</td>
+                              <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Buttons matching Screenshot 2 exactly: [Cất và In ▾] [Cất] [Xuất khẩu bảng phân bổ ra Excel] [Hủy] */}
+              <div
+                style={{
+                  height: 50,
+                  background: "#ffffff",
+                  borderTop: "1px solid #e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  padding: "0 20px",
+                  gap: 10,
+                  flexShrink: 0,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
+                    const mStr = String(prepaidAllocMonth).padStart(2, "0");
+                    const newV = {
+                      voucherNo: prepaidAllocVoucherNo,
+                      voucherDate: prepaidAllocVoucherDate,
+                      period: `Tháng ${mStr}/${prepaidAllocYear}`,
+                      reason: prepaidAllocReason,
+                      totalAmount: totalAlloc,
+                      status: "Đã ghi sổ",
+                    };
+                    setPrepaidAllocVouchers([newV, ...prepaidAllocVouchers.filter((x) => x.voucherNo !== prepaidAllocVoucherNo)]);
+                    setShowPrepaidAllocVoucherModal(false);
+                    setPrepaidAllocViewMode("list");
+                    notify(`Đã lưu và đang chuẩn bị in chứng từ ${prepaidAllocVoucherNo}...`);
+                  }}
+                  style={{
+                    height: 32,
+                    padding: "0 16px",
+                    background: "#00a862",
+                    border: "none",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span>Cất và In</span>
+                  <ChevronDown size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
+                    const mStr = String(prepaidAllocMonth).padStart(2, "0");
+                    const newV = {
+                      voucherNo: prepaidAllocVoucherNo,
+                      voucherDate: prepaidAllocVoucherDate,
+                      period: `Tháng ${mStr}/${prepaidAllocYear}`,
+                      reason: prepaidAllocReason,
+                      totalAmount: totalAlloc,
+                      status: "Đã ghi sổ",
+                    };
+                    setPrepaidAllocVouchers([newV, ...prepaidAllocVouchers.filter((x) => x.voucherNo !== prepaidAllocVoucherNo)]);
+                    setShowPrepaidAllocVoucherModal(false);
+                    setPrepaidAllocViewMode("list");
+                    notify(`Đã lưu chứng từ phân bổ chi phí trả trước ${prepaidAllocVoucherNo} thành công`);
+                  }}
+                  style={{
+                    height: 32,
+                    padding: "0 20px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#334155",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cất
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => notify("Đang xuất khẩu bảng phân bổ chi phí trả trước ra Excel (Bang_Phan_Bo_CPTT.xlsx)...")}
+                  style={{
+                    height: 32,
+                    padding: "0 16px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#334155",
+                    cursor: "pointer",
+                  }}
+                >
+                  Xuất khẩu bảng phân bổ ra Excel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPrepaidAllocVoucherModal(false)}
+                  style={{
+                    height: 32,
+                    padding: "0 20px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    background: "#ffffff",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#334155",
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
               </div>
             </div>
           </div>

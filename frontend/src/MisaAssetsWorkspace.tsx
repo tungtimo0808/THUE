@@ -19,6 +19,7 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   FileText,
   Settings,
   Trash2,
@@ -37,6 +38,18 @@ export type MisaAssetsWorkspaceProps = {
   href?: (path: string) => string;
   notify: (msg: string) => void;
 };
+
+// Danh sách 8 Lý do ghi giảm tài sản cố định chuẩn xác theo MISA AMIS
+export const DECREASE_REASONS = [
+  "Nhượng bán, thanh lý",
+  "Phát hiện thiếu khi kiểm kê",
+  "Góp vốn vào công ty con",
+  "Góp vốn công ty liên doanh",
+  "Góp vốn vào công ty liên kết",
+  "Đầu tư dài hạn khác",
+  "Trả lại TSCĐ thuê tài chính",
+  "Chuyển TSCĐ thành CCDC",
+];
 
 // ============================================================================
 // SAMPLE DATA TÀI SẢN CỐ ĐỊNH
@@ -207,13 +220,26 @@ export default function MisaAssetsWorkspace({
   const [showAiModal, setShowAiModal] = useState(false);
   const [previewReportName, setPreviewReportName] = useState<string | null>(null);
 
-  // Revaluation state (Ảnh 2 mới: ĐGL00001)
+  // Tính khấu hao Voucher Modal state (Chính xác theo Ảnh 1: KH00001)
+  const [showDeprVoucherModal, setShowDeprVoucherModal] = useState(false);
+  const [deprVoucherNo, setDeprVoucherNo] = useState("KH00001");
+  const [deprPostingDate, setDeprPostingDate] = useState("31/10/2026");
+  const [deprVoucherDate, setDeprVoucherDate] = useState("31/10/2026");
+  const [deprReason, setDeprReason] = useState("Khấu hao TSCĐ tháng 10 năm 2026");
+  const [deprVoucherMonth, setDeprVoucherMonth] = useState(10);
+  const [deprVoucherYear, setDeprVoucherYear] = useState(2026);
+  const [deprActiveTab, setDeprActiveTab] = useState<"depreciation" | "allocation" | "accounting">("depreciation");
+
+  // Revaluation state (Ảnh 1 & 2: Đánh giá lại TSCĐ ĐGL00001)
   const [revalVoucherNo, setRevalVoucherNo] = useState("ĐGL00001");
-  const [revalDate, setRevalDate] = useState("30/09/2026");
+  const [revalDate, setRevalDate] = useState("12/10/2026");
+  const [revalPostingDate, setRevalPostingDate] = useState("12/10/2026");
+  const [revalVoucherDate, setRevalVoucherDate] = useState("12/10/2026");
   const [revalReason, setRevalReason] = useState("Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản");
   const [revalReportNo, setRevalReportNo] = useState("");
   const [revalTab, setRevalTab] = useState<"adjust" | "accounting">("adjust");
-  const [revalMembersOpen, setRevalMembersOpen] = useState(false);
+  const [revalMembersOpen, setRevalMembersOpen] = useState(true);
+  const [revalMembers, setRevalMembers] = useState<Array<{ id: number; name: string; title: string; rep: string }>>([]);
   const [revalConclusion, setRevalConclusion] = useState("");
   const [revalRows, setRevalRows] = useState([
     {
@@ -221,22 +247,50 @@ export default function MisaAssetsWorkspace({
       assetCode: "",
       assetName: "",
       dept: "",
-      valBefore: 0,
-      valAfter: 0,
-      valDiff: 0,
+      // Nguyên giá
+      origBefore: 0,
+      origAfter: 0,
+      origDiff: 0,
+      // Thời gian sử dụng còn lại (tháng)
       monthsBefore: 0,
       monthsAfter: 0,
       monthsDiff: 0,
+      // Hao mòn lũy kế
+      deprBefore: 0,
+      deprAfter: 0,
+      deprDiff: 0,
+      costAccount: "",
+      // Giá trị tính khấu hao
+      valBefore: 0,
+      valAfter: 0,
+      valDiff: 0,
+      revalAccount: "",
+      // GTKH tháng sau điều chỉnh
+      monthlyDeprAfter: 0,
+      monthlyDeprLawAfter: 0,
+    }
+  ]);
+  const [revalAccountingRows, setRevalAccountingRows] = useState([
+    {
+      id: 1,
+      desc: "Đánh giá lại tài sản cố định ĐGL00001",
+      debitAccount: "2111",
+      creditAccount: "412",
+      amount: 0,
+      objectCode: "",
+      objectName: "",
+      costItem: "",
+      dept: "",
     }
   ]);
   const [revalVouchers, setRevalVouchers] = useState([
     {
       voucherNo: "ĐGL00001",
-      date: "30/09/2026",
+      date: "12/10/2026",
       assetCode: "TSCD001",
       assetName: "Xe ô tô Toyota Camry 2.5Q - BKS 29A-888.88",
       reason: "Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản",
-      diffAmount: 78000000,
+      diffAmount: 0,
       status: "Đã ghi sổ",
     }
   ]);
@@ -274,11 +328,13 @@ export default function MisaAssetsWorkspace({
     }
   ]);
 
-  // Decrease state (Ảnh 1 mới: GGTS00001)
+  // Decrease state (Ảnh 1 & 2 mới: GGTS00001)
   const [decVoucherNo, setDecVoucherNo] = useState("GGTS00001");
-  const [decDate, setDecDate] = useState("30/09/2026");
-  const [decPostingDate, setDecPostingDate] = useState("30/09/2026");
+  const [decDate, setDecDate] = useState("12/10/2026");
+  const [decPostingDate, setDecPostingDate] = useState("12/10/2026");
   const [decReason, setDecReason] = useState("Nhượng bán, thanh lý");
+  const [showDecReasonDropdown, setShowDecReasonDropdown] = useState(false);
+  const [decHoveredReason, setDecHoveredReason] = useState<string | null>(null);
   const [decTab, setDecTab] = useState<"asset" | "accounting">("asset");
   const [decRows, setDecRows] = useState([
     {
@@ -308,11 +364,23 @@ export default function MisaAssetsWorkspace({
     }
   ]);
 
-  // Stocktake state (Ảnh 3, 4 mới: BBKK-2026/09)
+  // Stocktake state (Ảnh 1, 2, 3 mới của người dùng: KKTS00001)
   const [stocktakeVouchers, setStocktakeVouchers] = useState([
     {
+      voucherNo: "KKTS00001",
+      date: "12/10/2026 11:23:21",
+      auditDate: "12/10/2026",
+      purpose: "Kiểm kê tài sản cố định định kỳ",
+      totalAssets: 1,
+      matchedAssets: 1,
+      diffAssets: 0,
+      conclusion: "",
+      status: "Đã ghi sổ",
+    },
+    {
       voucherNo: "BBKK-2026/09",
-      date: "30/09/2026",
+      date: "30/09/2026 09:15:00",
+      auditDate: "30/09/2026",
       purpose: "Kiểm kê TSCĐ định kỳ Quý 3/2026",
       totalAssets: 5,
       matchedAssets: 5,
@@ -321,6 +389,90 @@ export default function MisaAssetsWorkspace({
       status: "Đã ghi sổ",
     }
   ]);
+
+  // Bảng kiểm kê tài sản cố định KKTS00001 (Ảnh 1, 2 của người dùng)
+  const [stocktakeVoucherNo, setStocktakeVoucherNo] = useState("KKTS00001");
+  const [stocktakeDate, setStocktakeDate] = useState("12/10/2026 11:23:21");
+  const [stocktakeAuditDate, setStocktakeAuditDate] = useState("12/10/2026");
+  const [stocktakePurpose, setStocktakePurpose] = useState("Kiểm kê tài sản cố định định kỳ");
+  const [stocktakeMembersOpen, setStocktakeMembersOpen] = useState(false);
+  const [stocktakeConclusion, setStocktakeConclusion] = useState("");
+  const [stocktakeProcessed, setStocktakeProcessed] = useState(false);
+  const [stocktakeRowsPerPage, setStocktakeRowsPerPage] = useState("50");
+  const [stocktakeRows, setStocktakeRows] = useState([
+    {
+      id: "1",
+      assetCode: "",
+      assetName: "",
+      dept: "",
+      cost: 0,
+      deprCost: 0,
+      accumDepr: 0,
+      remainCost: 0,
+      exists: true,
+      currentQuality: "",
+      recommendation: "",
+      note: "",
+    }
+  ]);
+  const [stocktakeMembers, setStocktakeMembers] = useState([
+    { id: "1", name: "Nguyễn Văn Tuấn", position: "Trưởng ban", represent: "Ban Giám đốc", role: "Trưởng ban" },
+    { id: "2", name: "Trần Thị Mai", position: "Kế toán trưởng", represent: "Phòng Kế toán", role: "Ủy viên" },
+    { id: "3", name: "Lê Văn Hùng", position: "Thủ kho", represent: "Bộ phận QLTS", role: "Thư ký" },
+  ]);
+
+  const handleOpenNewStocktake = () => {
+    setStocktakeVoucherNo("KKTS00001");
+    setStocktakeDate("12/10/2026 11:23:21");
+    setStocktakeAuditDate("12/10/2026");
+    setStocktakePurpose("Kiểm kê tài sản cố định định kỳ");
+    setStocktakeConclusion("");
+    setStocktakeProcessed(false);
+    setStocktakeMembersOpen(false);
+    setStocktakeRows([
+      {
+        id: "1",
+        assetCode: "",
+        assetName: "",
+        dept: "",
+        cost: 0,
+        deprCost: 0,
+        accumDepr: 0,
+        remainCost: 0,
+        exists: true,
+        currentQuality: "",
+        recommendation: "",
+        note: "",
+      }
+    ]);
+    setShowStocktakeModal(true);
+  };
+
+  const handleSaveStocktake = (isPrint: boolean = false) => {
+    const newV = {
+      voucherNo: stocktakeVoucherNo || "KKTS00001",
+      date: stocktakeDate || "12/10/2026 11:23:21",
+      auditDate: stocktakeAuditDate || "12/10/2026",
+      purpose: stocktakePurpose || "Kiểm kê tài sản cố định định kỳ",
+      totalAssets: stocktakeRows.length,
+      matchedAssets: stocktakeRows.filter(r => r.exists).length,
+      diffAssets: stocktakeRows.filter(r => !r.exists).length,
+      conclusion: stocktakeConclusion,
+      status: "Đã ghi sổ",
+    };
+    setStocktakeVouchers((prev) => {
+      const exists = prev.some(x => x.voucherNo === newV.voucherNo);
+      if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
+      return [newV, ...prev];
+    });
+    setShowStocktakeModal(false);
+    setStocktakeView("table");
+    if (isPrint) {
+      notify(`Đã cất và chuẩn bị in bảng kiểm kê tài sản cố định ${newV.voucherNo}!`);
+    } else {
+      notify(`Đã cất bảng kiểm kê tài sản cố định ${newV.voucherNo} thành công!`);
+    }
+  };
 
   // Report state (Ảnh 5 mới)
   const [reportSearch, setReportSearch] = useState("");
@@ -471,11 +623,11 @@ export default function MisaAssetsWorkspace({
   };
 
   // Tính khấu hao state
-  const [deprMonth, setDeprMonth] = useState(9);
+  const [deprMonth, setDeprMonth] = useState(10);
   const [deprYear, setDeprYear] = useState(2026);
   const [deprVouchers, setDeprVouchers] = useState([
     {
-      voucherNo: "KHTS00008",
+      voucherNo: "KH00008",
       date: "31/08/2026",
       period: "Tháng 08/2026",
       amount: 88560000,
@@ -483,7 +635,7 @@ export default function MisaAssetsWorkspace({
       status: "Đã ghi sổ",
     },
     {
-      voucherNo: "KHTS00007",
+      voucherNo: "KH00007",
       date: "31/07/2026",
       period: "Tháng 07/2026",
       amount: 88560000,
@@ -492,8 +644,6 @@ export default function MisaAssetsWorkspace({
     },
   ]);
 
-  // Kiểm kê state
-  const [stocktakeDate, setStocktakeDate] = useState("30/09/2026");
 
   // Check URL params for action
   useEffect(() => {
@@ -504,7 +654,9 @@ export default function MisaAssetsWorkspace({
       setShowOpeningModal(true);
     } else if (action === "new") {
       setShowAddAssetModal(true);
-    } else if (action === "depreciation") {
+    } else if (action === "depreciation" || (tab === "depreciation" && action === "add")) {
+      setShowDeprVoucherModal(true);
+    } else if (action === "select-period") {
       setShowDeprModal(true);
     } else if (action === "reval") {
       setShowRevalModal(true);
@@ -2429,20 +2581,19 @@ export default function MisaAssetsWorkspace({
                 type="button"
                 onClick={() => {
                   const mStr = String(deprMonth).padStart(2, "0");
-                  const newVoucher = {
-                    voucherNo: `KHTS000${mStr}`,
-                    date: `30/${mStr}/${deprYear}`,
-                    period: `Tháng ${mStr}/${deprYear}`,
-                    amount: 88560000,
-                    reason: `Trích khấu hao tài sản cố định Tháng ${mStr}/${deprYear}`,
-                    status: "Đã ghi sổ",
-                  };
-                  if (!deprVouchers.some(v => v.voucherNo === newVoucher.voucherNo)) {
-                    setDeprVouchers([newVoucher, ...deprVouchers]);
-                  }
+                  const daysInMonth = new Date(deprYear, deprMonth, 0).getDate();
+                  const dateStr = `${daysInMonth}/${mStr}/${deprYear}`;
+                  const nextIndex = deprVouchers.length + 1;
+                  const nextNo = `KH${String(nextIndex).padStart(5, "0")}`;
+                  setDeprVoucherNo(nextNo);
+                  setDeprPostingDate(dateStr);
+                  setDeprVoucherDate(dateStr);
+                  setDeprReason(`Khấu hao TSCĐ tháng ${deprMonth} năm ${deprYear}`);
+                  setDeprVoucherMonth(deprMonth);
+                  setDeprVoucherYear(deprYear);
+                  setDeprActiveTab("depreciation");
                   setShowDeprModal(false);
-                  setDeprView("table");
-                  notify(`Đã lập chứng từ trích khấu hao ${newVoucher.voucherNo} kỳ Tháng ${mStr}/${deprYear} thành công!`);
+                  setShowDeprVoucherModal(true);
                 }}
                 style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
               >
@@ -2453,18 +2604,602 @@ export default function MisaAssetsWorkspace({
         </div>
       )}
 
-      {/* 5. MODAL ĐÁNH GIÁ LẠI TÀI SẢN CỐ ĐỊNH (ẢNH 2 MỚI CỦA NGƯỜI DÙNG: ĐGL00001) */}
-      {showRevalModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 10 }}>
-          <div style={{ width: "98vw", maxWidth: 1120, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* =================================================================== */}
+      {/* 4B. MODAL CHỨNG TỪ TÍNH KHẤU HAO (CHÍNH XÁC THEO ẢNH 1: KH00001)    */}
+      {/* =================================================================== */}
+      {showDeprVoucherModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 1100,
+            padding: "16px 20px",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 1320,
+              height: "92vh",
+              background: "#ffffff",
+              borderRadius: 6,
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
             {/* Header */}
-            <div style={{ height: 44, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
+            <div
+              style={{
+                height: 44,
+                padding: "0 18px",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "#ffffff",
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  title="Lịch sử chứng từ"
+                  onClick={() => notify("Lịch sử chứng từ tính khấu hao TSCĐ")}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 0, color: "#64748b" }}
+                >
+                  <RotateCcw size={16} />
+                </button>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
+                  Tính khấu hao {deprVoucherNo}
+                </h2>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <button
+                  type="button"
+                  title="Thiết lập"
+                  onClick={() => notify("Tùy chọn thiết lập mẫu chứng từ")}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
+                >
+                  <Settings size={17} />
+                </button>
+                <button
+                  type="button"
+                  title="Hướng dẫn"
+                  onClick={() => notify("Hướng dẫn lập chứng từ tính khấu hao TSCĐ")}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
+                >
+                  <HelpCircle size={17} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeprVoucherModal(false)}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", padding: 2, display: "flex" }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Thông tin chung */}
+            <div
+              style={{
+                padding: "14px 20px 10px 20px",
+                background: "#f4f5f8",
+                display: "grid",
+                gridTemplateColumns: "1fr 340px 180px",
+                gap: 24,
+                alignItems: "start",
+                flexShrink: 0,
+                borderBottom: "1px solid #e2e8f0",
+              }}
+            >
+              {/* Cột 1: Diễn giải, Tháng, Năm, Tham chiếu */}
+              <div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Diễn giải
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={deprReason}
+                      onChange={(e) => setDeprReason(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 28px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => notify("AVA Kế toán: Đã tối ưu hóa diễn giải chứng từ tính khấu hao")}
+                      title="Trợ lý AVA"
+                      style={{
+                        position: "absolute",
+                        right: 6,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: 2,
+                      }}
+                    >
+                      <Sparkles size={14} style={{ color: "#8b5cf6" }} />
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Tháng
+                    </label>
+                    <input
+                      type="number"
+                      value={deprVoucherMonth}
+                      onChange={(e) => setDeprVoucherMonth(Number(e.target.value))}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                      Năm
+                    </label>
+                    <input
+                      type="number"
+                      value={deprVoucherYear}
+                      onChange={(e) => setDeprVoucherYear(Number(e.target.value))}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
+                  <span>Tham chiếu</span>
+                  <span
+                    onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
+                    style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
+                  >
+                    ...
+                  </span>
+                </div>
+              </div>
+
+              {/* Cột 2: Ngày hạch toán, Ngày chứng từ, Số chứng từ */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Ngày hạch toán
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={deprPostingDate}
+                      onChange={(e) => setDeprPostingDate(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 30px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Ngày chứng từ
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={deprVoucherDate}
+                      onChange={(e) => setDeprVoucherDate(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 30,
+                        padding: "0 30px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 12.5,
+                        background: "#ffffff",
+                        outline: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                    Số chứng từ
+                  </label>
+                  <input
+                    type="text"
+                    value={deprVoucherNo}
+                    onChange={(e) => setDeprVoucherNo(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 30,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      background: "#ffffff",
+                      fontWeight: 600,
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Cột 3: Tổng khấu hao tháng */}
+              <div style={{ textAlign: "right", paddingTop: 4 }}>
+                <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Tổng khấu hao tháng</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>
+                  0
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Tabs: Tính khấu hao | Phân bổ | Hạch toán */}
+            <div style={{ display: "flex", gap: 24, padding: "0 20px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", flexShrink: 0 }}>
+              {[
+                { id: "depreciation", label: "Tính khấu hao" },
+                { id: "allocation", label: "Phân bổ" },
+                { id: "accounting", label: "Hạch toán" },
+              ].map((t) => {
+                const isActive = deprActiveTab === t.id;
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => setDeprActiveTab(t.id as any)}
+                    style={{
+                      padding: "10px 4px",
+                      fontSize: 13,
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive ? "#00a862" : "#64748b",
+                      borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t.label}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Tab Content */}
+            <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", background: "#ffffff" }}>
+              {deprActiveTab === "depreciation" && (
+                <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                      <thead>
+                        <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ width: 140, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
+                          <th style={{ minWidth: 220, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
+                          <th style={{ width: 160, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Loại tài sản</th>
+                          <th style={{ width: 180, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
+                          <th style={{ width: 180, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị KH tháng</th>
+                          <th style={{ width: 200, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị tính vào CP hợp lý</th>
+                          <th style={{ width: 220, padding: "8px 10px", textAlign: "right" }}>Giá trị tính vào CP không hợp lý</th>
+                        </tr>
+                        {/* Summary row matching Screenshot 1 */}
+                        <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>
+                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b" }}>0</td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td colSpan={8} style={{ padding: "40px 20px", textAlign: "center" }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                              {/* Smiley Document Icon matching Screenshot 1 */}
+                              <svg width="68" height="68" viewBox="0 0 64 64" fill="none">
+                                <path d="M32 6 V10 M20 10 L23 13 M44 10 L41 13" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
+                                <path d="M22 14 H38 L48 24 V54 C48 56 46 58 44 58 H22 C20 58 18 56 18 54 V18 C18 16 20 14 22 14 Z" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                <path d="M38 14 V24 H48" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                <circle cx="28" cy="36" r="1.5" fill="#94a3b8" />
+                                <circle cx="38" cy="36" r="1.5" fill="#94a3b8" />
+                                <path d="M30 42 C31.5 44 34.5 44 36 42" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                              </svg>
+                              <span style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>Không có dữ liệu</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 1 */}
+                  <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <Paperclip size={14} style={{ color: "#64748b" }} />
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>Đính kèm</span>
+                      <span style={{ fontSize: 12, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                    </div>
+                    <div
+                      onClick={() => notify("Chọn tệp đính kèm cho chứng từ tính khấu hao...")}
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        background: "#ffffff",
+                        padding: "16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        gap: 6,
+                        width: 320,
+                      }}
+                    >
+                      <Upload size={18} style={{ color: "#0284c7" }} />
+                      <div style={{ fontSize: 12.5, color: "#64748b" }}>
+                        <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {deprActiveTab === "allocation" && (
+                <div style={{ flex: 1, overflow: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                        <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
+                        <th style={{ width: 120, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
+                        <th style={{ minWidth: 240, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
+                        <th style={{ width: 180, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
+                        <th style={{ width: 120, padding: "8px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Tỷ lệ PB (%)</th>
+                        <th style={{ width: 150, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị KH phân bổ</th>
+                        <th style={{ width: 110, padding: "8px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
+                        <th style={{ width: 160, padding: "8px 10px", textAlign: "left" }}>Khoản mục CP</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>1</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>TSCD001</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0" }}>Xe ô tô Toyota Camry 2.5Q</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0" }}>Ban Giám đốc</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>100%</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600 }}>{formatVND(16500000)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600 }}>6424</td>
+                        <td style={{ padding: "8px 10px" }}>Chi phí khấu hao TSCĐ</td>
+                      </tr>
+                      <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>2</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>TSCD002</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0" }}>Hệ thống máy chủ IBM Power System</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0" }}>Phòng CNTT</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>100%</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600 }}>{formatVND(12500000)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600 }}>6424</td>
+                        <td style={{ padding: "8px 10px" }}>Chi phí khấu hao TSCĐ</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {deprActiveTab === "accounting" && (
+                <div style={{ flex: 1, overflow: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                        <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
+                        <th style={{ minWidth: 280, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải định khoản</th>
+                        <th style={{ width: 90, padding: "8px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
+                        <th style={{ width: 90, padding: "8px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Có</th>
+                        <th style={{ width: 150, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                        <th style={{ width: 180, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng THCP / Bộ phận</th>
+                        <th style={{ width: 160, padding: "8px 10px", textAlign: "left" }}>Khoản mục chi phí</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>1</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0" }}>Trích khấu hao TSCĐ bộ phận quản lý tháng {deprVoucherMonth}/{deprVoucherYear}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#0284c7" }}>6424</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#16a34a" }}>2141</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 700, color: "#00a862" }}>{formatVND(29000000)}</td>
+                        <td style={{ padding: "8px 10px", borderRight: "1px solid #e2e8f0" }}>Khối Văn phòng & Quản lý</td>
+                        <td style={{ padding: "8px 10px" }}>Chi phí khấu hao TSCĐ</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons matching Screenshot 1 exactly: [Hủy] [Xuất khẩu bảng phân bổ ra Excel] [Cất] [Cất và In ▾] */}
+            <div
+              style={{
+                height: 50,
+                background: "#ffffff",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                padding: "0 20px",
+                gap: 10,
+                flexShrink: 0,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowDeprVoucherModal(false)}
+                style={{
+                  height: 32,
+                  padding: "0 20px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  background: "#ffffff",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#334155",
+                  cursor: "pointer",
+                }}
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                onClick={() => notify("Đang xuất khẩu bảng phân bổ khấu hao tài sản cố định ra Excel (Bang_Phan_Bo_Khau_Hao_TSCD.xlsx)...")}
+                style={{
+                  height: 32,
+                  padding: "0 16px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#334155",
+                  cursor: "pointer",
+                }}
+              >
+                Xuất khẩu bảng phân bổ ra Excel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const mStr = String(deprVoucherMonth).padStart(2, "0");
+                  const newVoucher = {
+                    voucherNo: deprVoucherNo,
+                    date: deprVoucherDate,
+                    period: `Tháng ${mStr}/${deprVoucherYear}`,
+                    amount: 0,
+                    reason: deprReason,
+                    status: "Đã ghi sổ",
+                  };
+                  setDeprVouchers([newVoucher, ...deprVouchers.filter((x) => x.voucherNo !== deprVoucherNo)]);
+                  setShowDeprVoucherModal(false);
+                  setDeprView("table");
+                  notify(`Đã lưu chứng từ tính khấu hao ${deprVoucherNo} thành công!`);
+                }}
+                style={{
+                  height: 32,
+                  padding: "0 20px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#334155",
+                  cursor: "pointer",
+                }}
+              >
+                Cất
+              </button>
+
+              <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const mStr = String(deprVoucherMonth).padStart(2, "0");
+                    const newVoucher = {
+                      voucherNo: deprVoucherNo,
+                      date: deprVoucherDate,
+                      period: `Tháng ${mStr}/${deprVoucherYear}`,
+                      amount: 0,
+                      reason: deprReason,
+                      status: "Đã ghi sổ",
+                    };
+                    setDeprVouchers([newVoucher, ...deprVouchers.filter((x) => x.voucherNo !== deprVoucherNo)]);
+                    setShowDeprVoucherModal(false);
+                    setDeprView("table");
+                    notify(`Đã lưu và đang chuẩn bị in chứng từ tính khấu hao ${deprVoucherNo}...`);
+                  }}
+                  style={{
+                    height: 32,
+                    padding: "0 16px",
+                    background: "#00a862",
+                    border: "none",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span>Cất và In</span>
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL ĐÁNH GIÁ LẠI TÀI SẢN CỐ ĐỊNH (ẢNH 1 & 2: ĐGL00001) */}
+      {showRevalModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 8 }}>
+          <div style={{ width: "98vw", maxWidth: 1400, height: "96vh", maxHeight: "96vh", background: "#f2f5f8", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            {/* Header */}
+            <div style={{ height: 44, padding: "0 18px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <RotateCw size={17} style={{ color: "#475569" }} />
+                <RotateCcw size={16} style={{ color: "#475569" }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Đánh giá lại tài sản cố định {revalVoucherNo}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button type="button" onClick={() => notify("Tùy chọn mẫu chứng từ đánh giá lại")} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Tùy chỉnh">
+                <button type="button" onClick={() => notify("Tùy biến mẫu chứng từ đánh giá lại")} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Tùy biến">
                   <Settings size={17} />
                 </button>
                 <button type="button" onClick={() => notify("Hướng dẫn: Đánh giá lại tài sản cố định")} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Trợ giúp">
@@ -2477,42 +3212,42 @@ export default function MisaAssetsWorkspace({
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: "16px 22px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ padding: "12px 18px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 10, background: "#f2f5f8" }}>
               {/* Form Top Section */}
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 140px", gap: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 140px", gap: 24, padding: "2px 4px" }}>
                 {/* Left Fields */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 14 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 10 }}>
                     <div>
-                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Biên bản số</label>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Biên bản số</label>
                       <input
                         type="text"
                         value={revalReportNo}
                         onChange={(e) => setRevalReportNo(e.target.value)}
                         placeholder=""
-                        style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                        style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                       />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày</label>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Ngày</label>
                       <div style={{ position: "relative" }}>
                         <input
                           type="text"
                           value={revalDate}
                           onChange={(e) => setRevalDate(e.target.value)}
-                          style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", height: 28, padding: "0 26px 0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                         />
-                        <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
+                        <Calendar size={13} style={{ position: "absolute", right: 8, top: 7.5, color: "#64748b" }} />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Lý do</label>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Lý do</label>
                     <select
                       value={revalReason}
                       onChange={(e) => setRevalReason(e.target.value)}
-                      style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", background: "#ffffff" }}
+                      style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", color: "#1e293b" }}
                     >
                       <option value="Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản">Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản</option>
                       <option value="Đánh giá lại theo quyết định của cơ quan nhà nước">Đánh giá lại theo quyết định của cơ quan nhà nước</option>
@@ -2523,77 +3258,162 @@ export default function MisaAssetsWorkspace({
                   </div>
 
                   <div>
-                    <span onClick={() => notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", textDecoration: "underline" }}>
-                      Tham chiếu ...
+                    <span onClick={() => notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500 }}>
+                      Tham chiếu <span style={{ color: "#00a862", textDecoration: "none" }}>...</span>
                     </span>
                   </div>
                 </div>
 
-                {/* Right Fields */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center", gap: 8 }}>
+                {/* Middle Fields */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", alignItems: "center", gap: 8 }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Ngày hạch toán</label>
                     <div style={{ position: "relative" }}>
                       <input
                         type="text"
-                        defaultValue="30/09/2026"
-                        style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                        value={revalPostingDate}
+                        onChange={(e) => setRevalPostingDate(e.target.value)}
+                        style={{ width: "100%", height: 28, padding: "0 26px 0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                       />
-                      <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
+                      <Calendar size={13} style={{ position: "absolute", right: 8, top: 7.5, color: "#64748b" }} />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", alignItems: "center", gap: 8 }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Ngày chứng từ</label>
                     <div style={{ position: "relative" }}>
                       <input
                         type="text"
-                        defaultValue="30/09/2026"
-                        style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                        value={revalVoucherDate}
+                        onChange={(e) => setRevalVoucherDate(e.target.value)}
+                        style={{ width: "100%", height: 28, padding: "0 26px 0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                       />
-                      <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
+                      <Calendar size={13} style={{ position: "absolute", right: 8, top: 7.5, color: "#64748b" }} />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", alignItems: "center", gap: 8 }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: "#334155" }}>Số chứng từ</label>
                     <input
                       type="text"
                       value={revalVoucherNo}
                       onChange={(e) => setRevalVoucherNo(e.target.value)}
-                      style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
 
-                {/* Big Total Box */}
-                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: 4 }}>
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Tổng tiền</span>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>0</span>
+                {/* Right Total Box */}
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: 2 }}>
+                  <span style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>Tổng tiền</span>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>
+                    {revalRows.reduce((s, r) => s + (r.valDiff || 0), 0).toLocaleString("vi-VN")}
+                  </span>
                 </div>
               </div>
 
-              {/* Accordion: Thành viên tham gia */}
-              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 8 }}>
+              {/* Section: Thành viên tham gia */}
+              <div style={{ background: "#ffffff", borderRadius: 4, border: "1px solid #e2e8f0", padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
                 <div
                   onClick={() => setRevalMembersOpen(!revalMembersOpen)}
-                  style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer", userSelect: "none" }}
+                  style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#1e293b", cursor: "pointer", userSelect: "none" }}
                 >
-                  {revalMembersOpen ? <ChevronDown size={15} /> : <span style={{ fontSize: 14 }}>›</span>}
+                  <ChevronDown size={14} style={{ transform: revalMembersOpen ? "none" : "rotate(-90deg)", transition: "transform 0.15s ease" }} />
                   <span>Thành viên tham gia</span>
                 </div>
                 {revalMembersOpen && (
-                  <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafc", borderRadius: 4, border: "1px solid #e2e8f0", fontSize: 12 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                      <input type="text" placeholder="Ông/Bà: Đại diện Ban Giám đốc" style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12 }} />
-                      <input type="text" placeholder="Chức vụ: Giám đốc kỹ thuật" style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12 }} />
-                      <input type="text" placeholder="Đại diện: Chủ tịch hội đồng ĐGL" style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12 }} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflow: "hidden" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                            <th style={{ width: 38, padding: "5px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                            <th style={{ width: "32%", padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Họ và tên</th>
+                            <th style={{ width: "32%", padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Chức danh</th>
+                            <th style={{ padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đại diện</th>
+                            <th style={{ width: 36, padding: "5px 4px", textAlign: "center" }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {revalMembers.map((m, idx) => (
+                            <tr key={m.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                              <td style={{ textAlign: "center", padding: "4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                              <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                                <input
+                                  type="text"
+                                  value={m.name}
+                                  onChange={(e) => {
+                                    const updated = [...revalMembers];
+                                    updated[idx].name = e.target.value;
+                                    setRevalMembers(updated);
+                                  }}
+                                  placeholder="Họ và tên..."
+                                  style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                                />
+                              </td>
+                              <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                                <input
+                                  type="text"
+                                  value={m.title}
+                                  onChange={(e) => {
+                                    const updated = [...revalMembers];
+                                    updated[idx].title = e.target.value;
+                                    setRevalMembers(updated);
+                                  }}
+                                  placeholder="Chức danh..."
+                                  style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                                />
+                              </td>
+                              <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                                <input
+                                  type="text"
+                                  value={m.rep}
+                                  onChange={(e) => {
+                                    const updated = [...revalMembers];
+                                    updated[idx].rep = e.target.value;
+                                    setRevalMembers(updated);
+                                  }}
+                                  placeholder="Đại diện..."
+                                  style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                                />
+                              </td>
+                              <td style={{ textAlign: "center", padding: "4px" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setRevalMembers(revalMembers.filter((_, i) => i !== idx))}
+                                  style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", display: "grid", placeItems: "center" }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setRevalMembers([...revalMembers, { id: Date.now(), name: "", title: "", rep: "" }])}
+                        style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 500, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                      >
+                        <Plus size={13} />
+                        <span>Thêm dòng</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRevalMembers([])}
+                        style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 500, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                      >
+                        <Trash2 size={13} />
+                        <span>Xóa hết dòng</span>
+                      </button>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Section: Kết quả đánh giá */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>Kết quả đánh giá</span>
+              <div style={{ background: "#ffffff", borderRadius: 4, border: "1px solid #e2e8f0", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b" }}>Kết quả đánh giá</span>
 
                 {/* Sub-Tabs */}
                 <div style={{ display: "flex", gap: 20, borderBottom: "1px solid #cbd5e1" }}>
@@ -2631,181 +3451,566 @@ export default function MisaAssetsWorkspace({
                   </button>
                 </div>
 
-                {/* Table: Chi tiết điều chỉnh */}
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                    <thead>
-                      <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                        <th rowSpan={2} style={{ width: 36, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                        <th rowSpan={2} style={{ width: 110, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
-                        <th rowSpan={2} style={{ width: 220, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
-                        <th rowSpan={2} style={{ width: 160, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
-                        <th colSpan={3} style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Giá trị còn lại</th>
-                        <th colSpan={3} style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Thời gian sử dụng còn lại (tháng)</th>
-                        <th rowSpan={2} style={{ width: 120, padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
-                        <th rowSpan={2} style={{ width: 36, padding: "6px 4px", textAlign: "center" }}></th>
-                      </tr>
-                      <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#475569", fontSize: 11.5 }}>
-                        <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
-                        <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Sau điều chỉnh</th>
-                        <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Chênh lệch</th>
-                        <th style={{ padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
-                        <th style={{ padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Sau điều chỉnh</th>
-                        <th style={{ padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Chênh lệch</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {revalRows.map((row, idx) => (
-                        <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                          <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                            <select
-                              value={row.assetCode}
-                              onChange={(e) => {
-                                const selected = assetsList.find(a => a.code === e.target.value);
-                                const updated = [...revalRows];
-                                updated[idx].assetCode = e.target.value;
-                                if (selected) {
-                                  updated[idx].assetName = selected.name;
-                                  updated[idx].dept = selected.dept;
-                                  updated[idx].valBefore = selected.remainingAmount;
-                                  updated[idx].valAfter = selected.remainingAmount;
-                                  updated[idx].valDiff = 0;
-                                  updated[idx].monthsBefore = selected.years * 12;
-                                  updated[idx].monthsAfter = selected.years * 12;
-                                  updated[idx].monthsDiff = 0;
-                                }
-                                setRevalRows(updated);
-                              }}
-                              style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff" }}
-                            >
-                              <option value=""></option>
-                              {assetsList.map(a => (
-                                <option key={a.code} value={a.code}>{a.code} - {a.name.slice(0, 20)}...</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{row.assetName}</td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.dept}</td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{row.valBefore ? row.valBefore.toLocaleString("vi-VN") : "0"}</td>
-                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                            <input
-                              type="number"
-                              value={row.valAfter || ""}
-                              onChange={(e) => {
-                                const val = Number(e.target.value);
-                                const updated = [...revalRows];
-                                updated[idx].valAfter = val;
-                                updated[idx].valDiff = val - updated[idx].valBefore;
-                                setRevalRows(updated);
-                              }}
-                              placeholder="0"
-                              style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
-                            />
-                          </td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: row.valDiff > 0 ? "#16a34a" : row.valDiff < 0 ? "#ef4444" : "#1e293b" }}>
-                            {row.valDiff ? (row.valDiff > 0 ? `+${row.valDiff.toLocaleString("vi-VN")}` : row.valDiff.toLocaleString("vi-VN")) : "0"}
-                          </td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.monthsBefore || "0"}</td>
-                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                            <input
-                              type="number"
-                              value={row.monthsAfter || ""}
-                              onChange={(e) => {
-                                const m = Number(e.target.value);
-                                const updated = [...revalRows];
-                                updated[idx].monthsAfter = m;
-                                updated[idx].monthsDiff = m - updated[idx].monthsBefore;
-                                setRevalRows(updated);
-                              }}
-                              placeholder="0"
-                              style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box" }}
-                            />
-                          </td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.monthsDiff || "0"}</td>
-                          <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>0</td>
-                          <td style={{ textAlign: "center", padding: "4px" }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (revalRows.length > 1) {
-                                  setRevalRows(revalRows.filter((_, i) => i !== idx));
-                                } else {
-                                  setRevalRows([{ id: 1, assetCode: "", assetName: "", dept: "", valBefore: 0, valAfter: 0, valDiff: 0, monthsBefore: 0, monthsAfter: 0, monthsDiff: 0 }]);
-                                }
-                              }}
-                              style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", display: "grid", placeItems: "center" }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
+                {/* Tab 1: Chi tiết điều chỉnh */}
+                {revalTab === "adjust" && (
+                  <>
+                    <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflowX: "auto", maxWidth: "100%" }}>
+                      <table style={{ width: "100%", minWidth: 1850, borderCollapse: "collapse", fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                            <th rowSpan={2} style={{ width: 38, padding: "5px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1", position: "sticky", left: 0, zIndex: 4, background: "#e2eae5" }}>#</th>
+                            <th rowSpan={2} style={{ width: 120, padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
+                            <th rowSpan={2} style={{ width: 220, padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
+                            <th rowSpan={2} style={{ width: 150, padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
+                            <th colSpan={3} style={{ padding: "5px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Nguyên giá</th>
+                            <th colSpan={3} style={{ padding: "5px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Thời gian sử dụng còn lại (tháng)</th>
+                            <th colSpan={4} style={{ padding: "5px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Hao mòn lũy kế</th>
+                            <th colSpan={4} style={{ padding: "5px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Giá trị tính khấu hao</th>
+                            <th rowSpan={2} style={{ width: 180, padding: "5px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>GTKH tháng sau điều chỉnh</th>
+                            <th rowSpan={2} style={{ width: 220, padding: "5px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>GTKH tháng theo luật sau điều chỉnh</th>
+                            <th rowSpan={2} style={{ width: 36, padding: "5px 4px", textAlign: "center" }}></th>
+                          </tr>
+                          <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontSize: 11.5, fontWeight: 600 }}>
+                            {/* Nguyên giá */}
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Sau điều chỉnh</th>
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Chênh lệch</th>
+                            {/* Thời gian sử dụng còn lại */}
+                            <th style={{ width: 100, padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
+                            <th style={{ width: 100, padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Sau điều chỉnh</th>
+                            <th style={{ width: 100, padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Chênh lệch</th>
+                            {/* Hao mòn lũy kế */}
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Sau điều chỉnh</th>
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Chênh lệch</th>
+                            <th style={{ width: 80, padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
+                            {/* Giá trị tính khấu hao */}
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Trước điều chỉnh</th>
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Sau điều chỉnh</th>
+                            <th style={{ width: 110, padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Chênh lệch</th>
+                            <th style={{ width: 95, padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK đánh giá lại</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {revalRows.map((row, idx) => (
+                            <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                              <td style={{ textAlign: "center", padding: "4px", borderRight: "1px solid #e2e8f0", color: "#64748b", position: "sticky", left: 0, zIndex: 2, background: "#ffffff" }}>{idx + 1}</td>
+                              <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                                <select
+                                  value={row.assetCode}
+                                  onChange={(e) => {
+                                    const selected = assetsList.find(a => a.code === e.target.value);
+                                    const updated = [...revalRows];
+                                    updated[idx].assetCode = e.target.value;
+                                    if (selected) {
+                                      updated[idx].assetName = selected.name;
+                                      updated[idx].dept = selected.dept;
+                                      updated[idx].origBefore = selected.originalCost;
+                                      updated[idx].origAfter = selected.originalCost;
+                                      updated[idx].origDiff = 0;
+                                      updated[idx].monthsBefore = selected.years * 12;
+                                      updated[idx].monthsAfter = selected.years * 12;
+                                      updated[idx].monthsDiff = 0;
+                                      updated[idx].deprBefore = selected.depreciatedAmount;
+                                      updated[idx].deprAfter = selected.depreciatedAmount;
+                                      updated[idx].deprDiff = 0;
+                                      updated[idx].costAccount = selected.expenseAccount || "6423";
+                                      updated[idx].valBefore = selected.remainingAmount;
+                                      updated[idx].valAfter = selected.remainingAmount;
+                                      updated[idx].valDiff = 0;
+                                      updated[idx].revalAccount = "412";
+                                      const monthly = Math.round(selected.originalCost / (selected.years * 12));
+                                      updated[idx].monthlyDeprAfter = monthly;
+                                      updated[idx].monthlyDeprLawAfter = monthly;
+                                    }
+                                    setRevalRows(updated);
+                                  }}
+                                  style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", background: "transparent" }}
+                                >
+                                  <option value=""></option>
+                                  {assetsList.map(a => (
+                                    <option key={a.code} value={a.code}>{a.code} - {a.name.slice(0, 22)}...</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.assetName}</td>
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", color: "#475569" }}>{row.dept}</td>
+
+                              {/* Nguyên giá */}
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "right", color: "#1e293b" }}>
+                                {row.origBefore ? row.origBefore.toLocaleString("vi-VN") : ""}
+                              </td>
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
+                                <input
+                                  type="number"
+                                  value={row.origAfter || ""}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    const updated = [...revalRows];
+                                    updated[idx].origAfter = val;
+                                    updated[idx].origDiff = val - (updated[idx].origBefore || 0);
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "right", fontWeight: 600, color: row.origDiff > 0 ? "#16a34a" : row.origDiff < 0 ? "#ef4444" : "#1e293b" }}>
+                                {row.origDiff ? (row.origDiff > 0 ? `+${row.origDiff.toLocaleString("vi-VN")}` : row.origDiff.toLocaleString("vi-VN")) : ""}
+                              </td>
+
+                              {/* Thời gian sử dụng còn lại */}
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "center", color: "#1e293b" }}>
+                                {row.monthsBefore ? row.monthsBefore : ""}
+                              </td>
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
+                                <input
+                                  type="number"
+                                  value={row.monthsAfter || ""}
+                                  onChange={(e) => {
+                                    const m = Number(e.target.value);
+                                    const updated = [...revalRows];
+                                    updated[idx].monthsAfter = m;
+                                    updated[idx].monthsDiff = m - (updated[idx].monthsBefore || 0);
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "center", fontWeight: 600 }}>
+                                {row.monthsDiff ? row.monthsDiff : ""}
+                              </td>
+
+                              {/* Hao mòn lũy kế */}
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "right", color: "#1e293b" }}>
+                                {row.deprBefore ? row.deprBefore.toLocaleString("vi-VN") : ""}
+                              </td>
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
+                                <input
+                                  type="number"
+                                  value={row.deprAfter || ""}
+                                  onChange={(e) => {
+                                    const d = Number(e.target.value);
+                                    const updated = [...revalRows];
+                                    updated[idx].deprAfter = d;
+                                    updated[idx].deprDiff = d - (updated[idx].deprBefore || 0);
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "right", fontWeight: 600 }}>
+                                {row.deprDiff ? row.deprDiff.toLocaleString("vi-VN") : ""}
+                              </td>
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1", textAlign: "center" }}>
+                                <input
+                                  type="text"
+                                  value={row.costAccount}
+                                  onChange={(e) => {
+                                    const updated = [...revalRows];
+                                    updated[idx].costAccount = e.target.value;
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+
+                              {/* Giá trị tính khấu hao */}
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "right", color: "#1e293b" }}>
+                                {row.valBefore ? row.valBefore.toLocaleString("vi-VN") : ""}
+                              </td>
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
+                                <input
+                                  type="number"
+                                  value={row.valAfter || ""}
+                                  onChange={(e) => {
+                                    const v = Number(e.target.value);
+                                    const updated = [...revalRows];
+                                    updated[idx].valAfter = v;
+                                    updated[idx].valDiff = v - (updated[idx].valBefore || 0);
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+                              <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", textAlign: "right", fontWeight: 600, color: row.valDiff > 0 ? "#16a34a" : row.valDiff < 0 ? "#ef4444" : "#1e293b" }}>
+                                {row.valDiff ? (row.valDiff > 0 ? `+${row.valDiff.toLocaleString("vi-VN")}` : row.valDiff.toLocaleString("vi-VN")) : ""}
+                              </td>
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1", textAlign: "center" }}>
+                                <input
+                                  type="text"
+                                  value={row.revalAccount}
+                                  onChange={(e) => {
+                                    const updated = [...revalRows];
+                                    updated[idx].revalAccount = e.target.value;
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+
+                              {/* GTKH tháng sau điều chỉnh */}
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
+                                <input
+                                  type="number"
+                                  value={row.monthlyDeprAfter || ""}
+                                  onChange={(e) => {
+                                    const updated = [...revalRows];
+                                    updated[idx].monthlyDeprAfter = Number(e.target.value);
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+                              {/* GTKH tháng theo luật sau điều chỉnh */}
+                              <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
+                                <input
+                                  type="number"
+                                  value={row.monthlyDeprLawAfter || ""}
+                                  onChange={(e) => {
+                                    const updated = [...revalRows];
+                                    updated[idx].monthlyDeprLawAfter = Number(e.target.value);
+                                    setRevalRows(updated);
+                                  }}
+                                  placeholder=""
+                                  style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box", background: "transparent" }}
+                                />
+                              </td>
+
+                              <td style={{ textAlign: "center", padding: "4px" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (revalRows.length > 1) {
+                                      setRevalRows(revalRows.filter((_, i) => i !== idx));
+                                    } else {
+                                      setRevalRows([{
+                                        id: 1,
+                                        assetCode: "",
+                                        assetName: "",
+                                        dept: "",
+                                        origBefore: 0,
+                                        origAfter: 0,
+                                        origDiff: 0,
+                                        monthsBefore: 0,
+                                        monthsAfter: 0,
+                                        monthsDiff: 0,
+                                        deprBefore: 0,
+                                        deprAfter: 0,
+                                        deprDiff: 0,
+                                        costAccount: "",
+                                        valBefore: 0,
+                                        valAfter: 0,
+                                        valDiff: 0,
+                                        revalAccount: "",
+                                        monthlyDeprAfter: 0,
+                                        monthlyDeprLawAfter: 0,
+                                      }]);
+                                    }
+                                  }}
+                                  style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", display: "grid", placeItems: "center" }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+
+                          {/* Summary Row (Chính xác theo Ảnh 1 & 2) */}
+                          <tr style={{ background: "#edf2f7", fontWeight: 700, borderTop: "1px solid #cbd5e1", height: 28 }}>
+                            <td style={{ padding: "4px", textAlign: "center", borderRight: "1px solid #cbd5e1", position: "sticky", left: 0, zIndex: 2, background: "#edf2f7" }}></td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            {/* Nguyên giá */}
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.origDiff || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            {/* Thời gian sử dụng còn lại */}
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            {/* Hao mòn lũy kế */}
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.deprAfter || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.deprDiff || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            {/* Giá trị tính khấu hao */}
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.valBefore || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.valAfter || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.valDiff || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                            {/* GTKH */}
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.monthlyDeprAfter || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                              {revalRows.reduce((s, r) => s + (r.monthlyDeprLawAfter || 0), 0).toLocaleString("vi-VN")}
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+
+                {/* Tab 2: Hạch toán */}
+                {revalTab === "accounting" && (
+                  <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflowX: "auto", maxWidth: "100%" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 38, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ width: 260, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải</th>
+                          <th style={{ width: 90, padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
+                          <th style={{ width: 90, padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Có</th>
+                          <th style={{ width: 140, padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                          <th style={{ width: 120, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã đối tượng</th>
+                          <th style={{ width: 200, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên đối tượng</th>
+                          <th style={{ width: 130, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
+                          <th style={{ width: 150, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
+                          <th style={{ width: 36, padding: "6px 4px", textAlign: "center" }}></th>
                         </tr>
-                      ))}
-                      {/* Summary row */}
-                      <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
-                        <td colSpan={4} style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
-                        <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{revalRows.reduce((s, r) => s + r.valBefore, 0).toLocaleString("vi-VN")}</td>
-                        <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{revalRows.reduce((s, r) => s + r.valAfter, 0).toLocaleString("vi-VN")}</td>
-                        <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{revalRows.reduce((s, r) => s + r.valDiff, 0).toLocaleString("vi-VN")}</td>
-                        <td colSpan={4} style={{ borderRight: "1px solid #e2e8f0" }}></td>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {revalAccountingRows.map((acc, idx) => (
+                          <tr key={acc.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ textAlign: "center", padding: "4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={acc.desc}
+                                onChange={(e) => {
+                                  const updated = [...revalAccountingRows];
+                                  updated[idx].desc = e.target.value;
+                                  setRevalAccountingRows(updated);
+                                }}
+                                style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                              />
+                            </td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={acc.debitAccount}
+                                onChange={(e) => {
+                                  const updated = [...revalAccountingRows];
+                                  updated[idx].debitAccount = e.target.value;
+                                  setRevalAccountingRows(updated);
+                                }}
+                                style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box" }}
+                              />
+                            </td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={acc.creditAccount}
+                                onChange={(e) => {
+                                  const updated = [...revalAccountingRows];
+                                  updated[idx].creditAccount = e.target.value;
+                                  setRevalAccountingRows(updated);
+                                }}
+                                style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "center", boxSizing: "border-box" }}
+                              />
+                            </td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="number"
+                                value={acc.amount || ""}
+                                onChange={(e) => {
+                                  const updated = [...revalAccountingRows];
+                                  updated[idx].amount = Number(e.target.value);
+                                  setRevalAccountingRows(updated);
+                                }}
+                                style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
+                              />
+                            </td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={acc.objectCode}
+                                onChange={(e) => {
+                                  const updated = [...revalAccountingRows];
+                                  updated[idx].objectCode = e.target.value;
+                                  setRevalAccountingRows(updated);
+                                }}
+                                style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{acc.objectName}</td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={acc.costItem}
+                                onChange={(e) => {
+                                  const updated = [...revalAccountingRows];
+                                  updated[idx].costItem = e.target.value;
+                                  setRevalAccountingRows(updated);
+                                }}
+                                style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{acc.dept}</td>
+                            <td style={{ textAlign: "center", padding: "4px" }}>
+                              <button
+                                type="button"
+                                onClick={() => setRevalAccountingRows(revalAccountingRows.filter((_, i) => i !== idx))}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", display: "grid", placeItems: "center" }}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {/* Accounting Summary Row */}
+                        <tr style={{ background: "#edf2f7", fontWeight: 700, borderTop: "1px solid #cbd5e1", height: 28 }}>
+                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                          <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
+                          <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
+                            {revalAccountingRows.reduce((s, r) => s + (r.amount || 0), 0).toLocaleString("vi-VN")}
+                          </td>
+                          <td colSpan={5}></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
                 {/* Table Actions */}
-                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                   <button
                     type="button"
                     onClick={() => {
-                      setRevalRows([...revalRows, { id: Date.now(), assetCode: "", assetName: "", dept: "", valBefore: 0, valAfter: 0, valDiff: 0, monthsBefore: 0, monthsAfter: 0, monthsDiff: 0 }]);
+                      if (revalTab === "adjust") {
+                        setRevalRows([...revalRows, {
+                          id: Date.now(),
+                          assetCode: "",
+                          assetName: "",
+                          dept: "",
+                          origBefore: 0,
+                          origAfter: 0,
+                          origDiff: 0,
+                          monthsBefore: 0,
+                          monthsAfter: 0,
+                          monthsDiff: 0,
+                          deprBefore: 0,
+                          deprAfter: 0,
+                          deprDiff: 0,
+                          costAccount: "",
+                          valBefore: 0,
+                          valAfter: 0,
+                          valDiff: 0,
+                          revalAccount: "",
+                          monthlyDeprAfter: 0,
+                          monthlyDeprLawAfter: 0,
+                        }]);
+                      } else {
+                        setRevalAccountingRows([...revalAccountingRows, {
+                          id: Date.now(),
+                          desc: "Đánh giá lại tài sản cố định ĐGL00001",
+                          debitAccount: "2111",
+                          creditAccount: "412",
+                          amount: 0,
+                          objectCode: "",
+                          objectName: "",
+                          costItem: "",
+                          dept: "",
+                        }]);
+                      }
                     }}
-                    style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 500, color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                    style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 500, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                   >
-                    <span>+ Thêm dòng</span>
+                    <Plus size={13} />
+                    <span>Thêm dòng</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRevalRows([{ id: Date.now(), assetCode: "", assetName: "", dept: "", valBefore: 0, valAfter: 0, valDiff: 0, monthsBefore: 0, monthsAfter: 0, monthsDiff: 0 }])}
-                    style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 500, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                    onClick={() => {
+                      if (revalTab === "adjust") {
+                        setRevalRows([{
+                          id: Date.now(),
+                          assetCode: "",
+                          assetName: "",
+                          dept: "",
+                          origBefore: 0,
+                          origAfter: 0,
+                          origDiff: 0,
+                          monthsBefore: 0,
+                          monthsAfter: 0,
+                          monthsDiff: 0,
+                          deprBefore: 0,
+                          deprAfter: 0,
+                          deprDiff: 0,
+                          costAccount: "",
+                          valBefore: 0,
+                          valAfter: 0,
+                          valDiff: 0,
+                          revalAccount: "",
+                          monthlyDeprAfter: 0,
+                          monthlyDeprLawAfter: 0,
+                        }]);
+                      } else {
+                        setRevalAccountingRows([]);
+                      }
+                    }}
+                    style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 500, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                   >
                     <Trash2 size={13} />
                     <span>Xóa hết dòng</span>
                   </button>
                 </div>
-              </div>
 
-              {/* Textarea: Kết luận */}
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Kết luận</label>
-                <textarea
-                  value={revalConclusion}
-                  onChange={(e) => setRevalConclusion(e.target.value)}
-                  placeholder=""
-                  rows={2}
-                  style={{ width: "100%", padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", resize: "none", boxSizing: "border-box" }}
-                />
-              </div>
-
-              {/* Attachment File Box */}
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                  <Paperclip size={14} style={{ color: "#64748b" }} />
-                  <span>Đính kèm</span>
-                  <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400 }}>Dung lượng tối đa 5MB</span>
+                {/* Textarea: Kết luận */}
+                <div style={{ marginTop: 2 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Kết luận</label>
+                  <textarea
+                    value={revalConclusion}
+                    onChange={(e) => setRevalConclusion(e.target.value)}
+                    placeholder=""
+                    rows={2}
+                    style={{ width: "100%", padding: "5px 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", resize: "none", boxSizing: "border-box", background: "#ffffff" }}
+                  />
                 </div>
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: "14px 16px", textAlign: "center", background: "#f8fafc", cursor: "pointer" }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0284c7" }}>
-                    <Upload size={14} />
-                    <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
+
+                {/* Attachment File Box */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 5 }}>
+                    <Paperclip size={13} style={{ color: "#64748b" }} />
+                    <span>Đính kèm</span>
+                    <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400 }}>Dung lượng tối đa 5MB</span>
+                  </div>
+                  <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: "14px 16px", textAlign: "center", background: "#ffffff", cursor: "pointer" }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0284c7" }}>
+                      <Upload size={14} />
+                      <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 20px", gap: 10 }}>
+            <div style={{ height: 46, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 18px", gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setShowRevalModal(false)}
@@ -2816,15 +4021,15 @@ export default function MisaAssetsWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                  const diffTot = revalRows.reduce((s, r) => s + r.valDiff, 0);
+                  const diffTot = revalRows.reduce((s, r) => s + (r.valDiff || 0), 0);
                   const firstAsset = revalRows[0];
                   const newV = {
                     voucherNo: revalVoucherNo || "ĐGL00001",
-                    date: revalDate || "30/09/2026",
+                    date: revalDate || "12/10/2026",
                     assetCode: firstAsset?.assetCode || "TSCD001",
                     assetName: firstAsset?.assetName || "Xe ô tô Toyota Camry 2.5Q - BKS 29A-888.88",
                     reason: revalReason,
-                    diffAmount: diffTot || 78000000,
+                    diffAmount: diffTot || 0,
                     status: "Đã ghi sổ",
                   };
                   setRevalVouchers((prev) => {
@@ -2843,15 +4048,15 @@ export default function MisaAssetsWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                  const diffTot = revalRows.reduce((s, r) => s + r.valDiff, 0);
+                  const diffTot = revalRows.reduce((s, r) => s + (r.valDiff || 0), 0);
                   const firstAsset = revalRows[0];
                   const newV = {
                     voucherNo: revalVoucherNo || "ĐGL00001",
-                    date: revalDate || "30/09/2026",
+                    date: revalDate || "12/10/2026",
                     assetCode: firstAsset?.assetCode || "TSCD001",
                     assetName: firstAsset?.assetName || "Xe ô tô Toyota Camry 2.5Q - BKS 29A-888.88",
                     reason: revalReason,
-                    diffAmount: diffTot || 78000000,
+                    diffAmount: diffTot || 0,
                     status: "Đã ghi sổ",
                   };
                   setRevalVouchers((prev) => {
@@ -2863,7 +4068,7 @@ export default function MisaAssetsWorkspace({
                   setRevalView("table");
                   notify(`Đã cất và chuẩn bị in biên bản đánh giá lại ${revalVoucherNo}!`);
                 }}
-                style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <span>Cất và In</span>
                 <ChevronDown size={14} />
@@ -3212,22 +4417,85 @@ export default function MisaAssetsWorkspace({
               <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 140px", gap: 20 }}>
                 {/* Left Fields */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Lý do ghi giảm</label>
-                    <select
-                      value={decReason}
-                      onChange={(e) => setDecReason(e.target.value)}
-                      style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", background: "#ffffff" }}
+                  <div style={{ position: "relative" }}>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Lý do ghi giảm</label>
+                    <div
+                      onClick={() => setShowDecReasonDropdown(!showDecReasonDropdown)}
+                      style={{
+                        width: "100%",
+                        height: 28,
+                        padding: "0 8px",
+                        border: showDecReasonDropdown ? "1px solid #00a862" : "1px solid #cbd5e1",
+                        borderRadius: 3,
+                        fontSize: 12,
+                        background: "#ffffff",
+                        color: "#1e293b",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
+                        boxSizing: "border-box",
+                        userSelect: "none",
+                      }}
                     >
-                      <option value="Nhượng bán, thanh lý">Nhượng bán, thanh lý</option>
-                      <option value="Chuyển thành CCDC">Chuyển thành CCDC</option>
-                      <option value="Báo mất, hư hỏng không thể phục hồi">Báo mất, hư hỏng không thể phục hồi</option>
-                      <option value="Lý do khác">Lý do khác</option>
-                    </select>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{decReason}</span>
+                      {showDecReasonDropdown ? <ChevronUp size={14} style={{ color: "#64748b" }} /> : <ChevronDown size={14} style={{ color: "#64748b" }} />}
+                    </div>
+
+                    {showDecReasonDropdown && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          marginTop: 2,
+                          background: "#ffffff",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 3,
+                          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
+                          zIndex: 1300,
+                          maxHeight: 220,
+                          overflowY: "auto",
+                        }}
+                      >
+                        {DECREASE_REASONS.map((reason) => {
+                          const isSelected = decReason === reason;
+                          const isHovered = decHoveredReason === reason;
+                          return (
+                            <div
+                              key={reason}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDecReason(reason);
+                                setShowDecReasonDropdown(false);
+                              }}
+                              onMouseEnter={() => setDecHoveredReason(reason)}
+                              onMouseLeave={() => setDecHoveredReason(null)}
+                              style={{
+                                padding: "6px 12px",
+                                fontSize: 12.5,
+                                cursor: "pointer",
+                                background: isSelected
+                                  ? "#00a862"
+                                  : isHovered
+                                  ? "#d1fae5"
+                                  : "#ffffff",
+                                color: isSelected ? "#ffffff" : isHovered ? "#065f46" : "#1e293b",
+                                fontWeight: isSelected ? 600 : 400,
+                                transition: "background-color 0.1s ease",
+                              }}
+                            >
+                              {reason}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <span onClick={() => notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", textDecoration: "underline" }}>
-                      Tham chiếu ...
+                    <span onClick={() => notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500 }}>
+                      Tham chiếu <span style={{ color: "#00a862" }}>...</span>
                     </span>
                   </div>
                 </div>
@@ -3547,66 +4815,534 @@ export default function MisaAssetsWorkspace({
         </div>
       )}
 
-      {/* 7. MODAL KIỂM KÊ TÀI SẢN CỐ ĐỊNH (ẢNH 4 MỚI CỦA NGƯỜI DÙNG) */}
+      {/* 7. MODAL BẢNG KIỂM KÊ TÀI SẢN CỐ ĐỊNH KKTS00001 (ẢNH 1 & 2 CỦA NGƯỜI DÙNG) */}
       {showStocktakeModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 10 }}>
-          <div style={{ width: "90vw", maxWidth: 440, background: "#ffffff", borderRadius: 8, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden" }}>
-            <div style={{ height: 44, padding: "0 18px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
-              <span style={{ fontSize: 14.5, fontWeight: 700, color: "#1e293b" }}>Kiểm kê tài sản cố định</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button type="button" onClick={() => notify("Hướng dẫn: Kiểm kê tài sản cố định")} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                  <HelpCircle size={16} />
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 8 }}>
+          <div style={{ width: "98vw", maxWidth: 1400, height: "96vh", maxHeight: "96vh", background: "#f2f5f8", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            {/* Modal Header */}
+            <div style={{ height: 44, padding: "0 18px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <RotateCcw size={16} style={{ color: "#475569" }} />
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Bảng kiểm kê tài sản cố định {stocktakeVoucherNo}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => notify("Hướng dẫn: Bảng kiểm kê tài sản cố định")}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}
+                  title="Trợ giúp"
+                >
+                  <HelpCircle size={18} />
                 </button>
-                <button type="button" onClick={() => setShowStocktakeModal(false)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                  <X size={17} />
+                <button
+                  type="button"
+                  onClick={() => setShowStocktakeModal(false)}
+                  style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}
+                  title="Đóng"
+                >
+                  <X size={18} />
                 </button>
               </div>
             </div>
-            <div style={{ padding: "20px 22px" }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Kiểm kê đến ngày</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  value={stocktakeDate}
-                  onChange={(e) => setStocktakeDate(e.target.value)}
-                  style={{ width: "100%", height: 32, padding: "0 30px 0 10px", border: "1px solid #00a862", borderRadius: 4, fontSize: 13, outline: "none", boxSizing: "border-box" }}
-                />
-                <Calendar size={15} style={{ position: "absolute", right: 9, top: 8, color: "#64748b" }} />
+
+            {/* Modal Scrollable Body */}
+            <div style={{ padding: "14px 18px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 12, background: "#f2f5f8" }}>
+              {/* Master Info (Top Form) */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 24, alignItems: "flex-start" }}>
+                {/* Left Column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Mục đích</label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="text"
+                        value={stocktakePurpose}
+                        onChange={(e) => setStocktakePurpose(e.target.value)}
+                        placeholder="Mục đích kiểm kê"
+                        style={{ width: "100%", height: 30, padding: "0 34px 0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, background: "#ffffff", outline: "none", boxSizing: "border-box" }}
+                      />
+                      <Sparkles size={14} style={{ position: "absolute", right: 10, top: 8, color: "#6366f1" }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Kiểm kê đến ngày</label>
+                    <div style={{ position: "relative", width: 150 }}>
+                      <input
+                        type="text"
+                        value={stocktakeAuditDate}
+                        onChange={(e) => setStocktakeAuditDate(e.target.value)}
+                        style={{ width: "100%", height: 30, padding: "0 30px 0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, background: "#ffffff", outline: "none", boxSizing: "border-box" }}
+                      />
+                      <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 12.5, color: "#475569" }}>Tham chiếu</span>
+                    <span
+                      onClick={() => notify("Chọn chứng từ tham chiếu")}
+                      style={{ fontSize: 12.5, color: "#00a862", cursor: "pointer", fontWeight: 600, userSelect: "none" }}
+                    >
+                      ...
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Số chứng từ</label>
+                    <input
+                      type="text"
+                      value={stocktakeVoucherNo}
+                      onChange={(e) => setStocktakeVoucherNo(e.target.value)}
+                      style={{ width: 180, height: 30, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, background: "#ffffff", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Ngày</label>
+                    <div style={{ position: "relative", width: 200 }}>
+                      <input
+                        type="text"
+                        value={stocktakeDate}
+                        onChange={(e) => setStocktakeDate(e.target.value)}
+                        style={{ width: "100%", height: 30, padding: "0 30px 0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, background: "#ffffff", outline: "none", boxSizing: "border-box" }}
+                      />
+                      <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collapsible Section: > Thành viên tham gia */}
+              <div style={{ background: "#ffffff", borderRadius: 4, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                <div
+                  onClick={() => setStocktakeMembersOpen(!stocktakeMembersOpen)}
+                  style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none" }}
+                >
+                  {stocktakeMembersOpen ? (
+                    <ChevronDown size={15} style={{ color: "#475569" }} />
+                  ) : (
+                    <ChevronRight size={15} style={{ color: "#475569" }} />
+                  )}
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Thành viên tham gia</span>
+                </div>
+
+                {stocktakeMembersOpen && (
+                  <div style={{ padding: "10px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, background: "#ffffff" }}>
+                      <thead>
+                        <tr style={{ background: "#e2eae5", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 40, padding: "6px 4px", textAlign: "center", border: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ padding: "6px 8px", textAlign: "left", border: "1px solid #cbd5e1" }}>Họ và tên</th>
+                          <th style={{ width: 160, padding: "6px 8px", textAlign: "left", border: "1px solid #cbd5e1" }}>Chức vụ</th>
+                          <th style={{ width: 180, padding: "6px 8px", textAlign: "left", border: "1px solid #cbd5e1" }}>Đại diện</th>
+                          <th style={{ width: 180, padding: "6px 8px", textAlign: "left", border: "1px solid #cbd5e1" }}>Vai trò trong ban kiểm kê</th>
+                          <th style={{ width: 60, padding: "6px 4px", textAlign: "center", border: "1px solid #cbd5e1" }}>Xóa</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stocktakeMembers.map((m, idx) => (
+                          <tr key={m.id}>
+                            <td style={{ textAlign: "center", padding: "6px 4px", border: "1px solid #cbd5e1" }}>{idx + 1}</td>
+                            <td style={{ padding: "4px 8px", border: "1px solid #cbd5e1" }}>
+                              <input
+                                type="text"
+                                value={m.name}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setStocktakeMembers(prev => prev.map(x => x.id === m.id ? { ...x, name: val } : x));
+                                }}
+                                style={{ width: "100%", border: "none", outline: "none", fontSize: 12.5 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 8px", border: "1px solid #cbd5e1" }}>
+                              <input
+                                type="text"
+                                value={m.position}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setStocktakeMembers(prev => prev.map(x => x.id === m.id ? { ...x, position: val } : x));
+                                }}
+                                style={{ width: "100%", border: "none", outline: "none", fontSize: 12.5 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 8px", border: "1px solid #cbd5e1" }}>
+                              <input
+                                type="text"
+                                value={m.represent}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setStocktakeMembers(prev => prev.map(x => x.id === m.id ? { ...x, represent: val } : x));
+                                }}
+                                style={{ width: "100%", border: "none", outline: "none", fontSize: 12.5 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 8px", border: "1px solid #cbd5e1" }}>
+                              <input
+                                type="text"
+                                value={m.role}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setStocktakeMembers(prev => prev.map(x => x.id === m.id ? { ...x, role: val } : x));
+                                }}
+                                style={{ width: "100%", border: "none", outline: "none", fontSize: 12.5 }}
+                              />
+                            </td>
+                            <td style={{ textAlign: "center", padding: "4px", border: "1px solid #cbd5e1" }}>
+                              <button
+                                type="button"
+                                onClick={() => setStocktakeMembers(prev => prev.filter(x => x.id !== m.id))}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer" }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStocktakeMembers(prev => [
+                            ...prev,
+                            { id: String(Date.now()), name: "", position: "", represent: "", role: "Thành viên" }
+                          ]);
+                        }}
+                        style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#00a862", fontWeight: 600, cursor: "pointer" }}
+                      >
+                        + Thêm thành viên
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Main Table Card: Tài sản cố định cần điều chỉnh */}
+              <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#1e293b" }}>Tài sản cố định cần điều chỉnh</h4>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newId = String(stocktakeRows.length + 1);
+                        setStocktakeRows(prev => [
+                          ...prev,
+                          {
+                            id: newId,
+                            assetCode: "",
+                            assetName: "",
+                            dept: "",
+                            cost: 0,
+                            deprCost: 0,
+                            accumDepr: 0,
+                            remainCost: 0,
+                            exists: true,
+                            currentQuality: "",
+                            recommendation: "",
+                            note: "",
+                          }
+                        ]);
+                      }}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                    >
+                      + Thêm dòng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Nạp toàn bộ danh mục tài sản đang theo dõi vào bảng kiểm kê
+                        const mapped = assetsList.map((a, i) => ({
+                          id: String(i + 1),
+                          assetCode: a.code,
+                          assetName: a.name,
+                          dept: a.dept,
+                          cost: a.originalCost,
+                          deprCost: a.originalCost,
+                          accumDepr: a.depreciatedAmount,
+                          remainCost: a.remainingAmount,
+                          exists: true,
+                          currentQuality: "Bình thường",
+                          recommendation: "Tiếp tục sử dụng",
+                          note: "",
+                        }));
+                        setStocktakeRows(mapped);
+                        notify(`Đã nạp ${mapped.length} tài sản cố định vào bảng kiểm kê`);
+                      }}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", color: "#475569", fontSize: 12, fontWeight: 500, cursor: "pointer" }}
+                    >
+                      Lấy từ danh mục TSCĐ
+                    </button>
+                  </div>
+                </div>
+
+                {/* Table with Two-Tier Headers matching Screenshots 1 & 2 */}
+                <div style={{ overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: 2 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
+                    <thead>
+                      <tr style={{ background: "#e2eae5", color: "#1e293b", fontWeight: 600 }}>
+                        <th rowSpan={2} style={{ width: 38, textAlign: "center", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1", padding: "6px 4px" }}>#</th>
+                        <th rowSpan={2} style={{ width: 120, textAlign: "left", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Mã tài sản</th>
+                        <th rowSpan={2} style={{ minWidth: 200, textAlign: "left", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Tên tài sản</th>
+                        <th rowSpan={2} style={{ width: 150, textAlign: "left", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
+                        <th colSpan={4} style={{ textAlign: "center", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Theo sổ kế toán</th>
+                        <th colSpan={3} style={{ textAlign: "center", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Theo kiểm kê</th>
+                        <th colSpan={1} style={{ textAlign: "center", padding: "6px 8px", borderBottom: "1px solid #cbd5e1" }}>Xử lý</th>
+                      </tr>
+                      <tr style={{ background: "#e2eae5", color: "#1e293b", fontWeight: 600 }}>
+                        {/* Theo sổ kế toán */}
+                        <th style={{ width: 120, textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Nguyên giá</th>
+                        <th style={{ width: 130, textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Giá trị tính khấu hao</th>
+                        <th style={{ width: 120, textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Hao mòn lũy kế</th>
+                        <th style={{ width: 120, textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Giá trị còn lại</th>
+                        {/* Theo kiểm kê */}
+                        <th style={{ width: 60, textAlign: "center", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Tồn tại</th>
+                        <th style={{ width: 140, textAlign: "left", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Chất lượng hiện thời</th>
+                        <th style={{ width: 140, textAlign: "left", padding: "6px 8px", borderRight: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1" }}>Kiến nghị xử lý</th>
+                        {/* Xử lý */}
+                        <th style={{ minWidth: 120, textAlign: "left", padding: "6px 8px", borderBottom: "1px solid #cbd5e1" }}>Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stocktakeRows.map((r, idx) => (
+                        <tr key={r.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                          <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <select
+                              value={r.assetCode}
+                              onChange={(e) => {
+                                const selectedCode = e.target.value;
+                                const found = assetsList.find(a => a.code === selectedCode);
+                                setStocktakeRows(prev => prev.map(x => x.id === r.id ? {
+                                  ...x,
+                                  assetCode: selectedCode,
+                                  assetName: found ? found.name : "",
+                                  dept: found ? found.dept : "",
+                                  cost: found ? found.originalCost : 0,
+                                  deprCost: found ? found.originalCost : 0,
+                                  accumDepr: found ? found.depreciatedAmount : 0,
+                                  remainCost: found ? found.remainingAmount : 0,
+                                } : x));
+                              }}
+                              style={{ width: "100%", height: 26, border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff" }}
+                            >
+                              <option value="">-- Chọn tài sản --</option>
+                              {assetsList.map(a => (
+                                <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#1e293b", fontWeight: 500 }}>
+                            {r.assetName || ""}
+                          </td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>
+                            {r.dept || ""}
+                          </td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#1e293b" }}>
+                            {r.cost > 0 ? formatVND(r.cost) : "0"}
+                          </td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
+                            {r.deprCost > 0 ? formatVND(r.deprCost) : "0"}
+                          </td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>
+                            {r.accumDepr > 0 ? formatVND(r.accumDepr) : "0"}
+                          </td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>
+                            {r.remainCost > 0 ? formatVND(r.remainCost) : "0"}
+                          </td>
+                          <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="checkbox"
+                              checked={r.exists}
+                              onChange={(e) => {
+                                const val = e.target.checked;
+                                setStocktakeRows(prev => prev.map(x => x.id === r.id ? { ...x, exists: val } : x));
+                              }}
+                              style={{ cursor: "pointer" }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={r.currentQuality}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setStocktakeRows(prev => prev.map(x => x.id === r.id ? { ...x, currentQuality: val } : x));
+                              }}
+                              placeholder=""
+                              style={{ width: "100%", height: 24, border: "1px solid #e2e8f0", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none" }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={r.recommendation}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setStocktakeRows(prev => prev.map(x => x.id === r.id ? { ...x, recommendation: val } : x));
+                              }}
+                              placeholder=""
+                              style={{ width: "100%", height: 24, border: "1px solid #e2e8f0", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none" }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px" }}>
+                            <input
+                              type="text"
+                              value={r.note}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setStocktakeRows(prev => prev.map(x => x.id === r.id ? { ...x, note: val } : x));
+                              }}
+                              placeholder=""
+                              style={{ width: "100%", height: 24, border: "1px solid #e2e8f0", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none" }}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      {/* Summary Row matching Screenshots 1 & 2 */}
+                      <tr style={{ background: "#f8fafc", borderTop: "1px solid #cbd5e1", fontWeight: 700, color: "#1e293b" }}>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 4px" }}></td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 8px" }}></td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 8px" }}></td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 8px" }}></td>
+                        <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1" }}>
+                          {formatVND(stocktakeRows.reduce((s, r) => s + (r.cost || 0), 0))}
+                        </td>
+                        <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1" }}>
+                          {formatVND(stocktakeRows.reduce((s, r) => s + (r.deprCost || 0), 0))}
+                        </td>
+                        <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1" }}>
+                          {formatVND(stocktakeRows.reduce((s, r) => s + (r.accumDepr || 0), 0))}
+                        </td>
+                        <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1" }}>
+                          {formatVND(stocktakeRows.reduce((s, r) => s + (r.remainCost || 0), 0))}
+                        </td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 4px" }}></td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 8px" }}></td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 8px" }}></td>
+                        <td style={{ padding: "6px 8px" }}></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Table Bottom Bar: Tổng số & Số dòng/trang matching Screenshots 1 & 2 */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#334155", paddingTop: 4 }}>
+                  <div>
+                    <span>Tổng số: </span>
+                    <strong>{stocktakeRows.length}</strong>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span>Số dòng/trang</span>
+                      <select
+                        value={stocktakeRowsPerPage}
+                        onChange={(e) => setStocktakeRowsPerPage(e.target.value)}
+                        style={{ height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, outline: "none", cursor: "pointer" }}
+                      >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </select>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, userSelect: "none", color: "#64748b" }}>
+                      <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang đầu">|&lt;</span>
+                      <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang trước">&lt;</span>
+                      <span style={{ display: "inline-block", minWidth: 20, textAlign: "center", padding: "2px 6px", borderRadius: 3, background: "#00a862", color: "#ffffff", fontWeight: 700, fontSize: 12 }}>1</span>
+                      <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang sau">&gt;</span>
+                      <span style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang cuối">&gt;|</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form below Table: Kết luận, Checkbox, Đính kèm matching Screenshots 1 & 2 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Kết luận</label>
+                  <textarea
+                    value={stocktakeConclusion}
+                    onChange={(e) => setStocktakeConclusion(e.target.value)}
+                    rows={2}
+                    placeholder=""
+                    style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 4, padding: "8px 10px", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", background: "#ffffff" }}
+                  />
+                </div>
+
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#1e293b", cursor: "pointer", userSelect: "none" }}>
+                  <input
+                    type="checkbox"
+                    checked={stocktakeProcessed}
+                    onChange={(e) => setStocktakeProcessed(e.target.checked)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  <span>Đã xử lý kiến nghị</span>
+                </label>
+
+                {/* Attachments Section */}
+                <div style={{ marginTop: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, marginBottom: 6 }}>
+                    <Paperclip size={14} style={{ color: "#64748b" }} />
+                    <span style={{ fontWeight: 600, color: "#1e293b" }}>Đính kèm</span>
+                    <span style={{ color: "#64748b", fontSize: 12 }}>Dung lượng tối đa 5MB</span>
+                  </div>
+
+                  <div
+                    onClick={() => notify("Chọn tệp tài liệu đính kèm biên bản kiểm kê...")}
+                    style={{
+                      border: "1px dashed #cbd5e1",
+                      borderRadius: 6,
+                      padding: "18px 20px",
+                      textAlign: "center",
+                      background: "#ffffff",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Upload size={18} style={{ color: "#64748b" }} />
+                    <div style={{ fontSize: 12.5, color: "#64748b" }}>
+                      <span style={{ color: "#2563eb", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 18px", gap: 10 }}>
+
+            {/* Modal Footer matching Screenshots 1 & 2 */}
+            <div style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 18px", gap: 10, flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => setShowStocktakeModal(false)}
-                style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer" }}
+                style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#334155", cursor: "pointer" }}
               >
                 Hủy
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const newV = {
-                    voucherNo: `BBKK-${stocktakeDate.slice(3).replace("/", "")}`,
-                    date: stocktakeDate,
-                    purpose: "Kiểm kê TSCĐ định kỳ Quý 3/2026",
-                    totalAssets: assetsList.length,
-                    matchedAssets: assetsList.length,
-                    diffAssets: 0,
-                    conclusion: "Khớp sổ sách 100%, tình trạng tài sản hoạt động tốt",
-                    status: "Đã ghi sổ",
-                  };
-                  setStocktakeVouchers((prev) => {
-                    const exists = prev.some(x => x.voucherNo === newV.voucherNo);
-                    if (exists) return prev;
-                    return [newV, ...prev];
-                  });
-                  setShowStocktakeModal(false);
-                  setStocktakeView("table");
-                  notify(`Đã lập biên bản kiểm kê tài sản cố định đến ngày ${stocktakeDate} thành công!`);
-                }}
-                style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
+                onClick={() => handleSaveStocktake(false)}
+                style={{ height: 32, padding: "0 22px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#334155", cursor: "pointer" }}
               >
-                Đồng ý
+                Cất
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveStocktake(true)}
+                style={{ height: 32, padding: "0 18px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <span>Cất và In</span>
+                <ChevronDown size={14} />
               </button>
             </div>
           </div>
@@ -4438,7 +6174,17 @@ export default function MisaAssetsWorkspace({
             </thead>
             <tbody>
               {deprVouchers.map((v, i) => (
-                <tr key={v.voucherNo} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <tr
+                  key={v.voucherNo}
+                  onClick={() => {
+                    setDeprVoucherNo(v.voucherNo);
+                    setDeprVoucherDate(v.date);
+                    setDeprPostingDate(v.date);
+                    setDeprReason(v.reason);
+                    setShowDeprVoucherModal(true);
+                  }}
+                  style={{ borderBottom: "1px solid #e2e8f0", cursor: "pointer" }}
+                >
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{v.date}</td>
@@ -4914,7 +6660,7 @@ export default function MisaAssetsWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => setShowStocktakeModal(true)}
+                onClick={handleOpenNewStocktake}
                 style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
@@ -4941,7 +6687,7 @@ export default function MisaAssetsWorkspace({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
-              onClick={() => setShowStocktakeModal(true)}
+              onClick={handleOpenNewStocktake}
               style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
@@ -4998,7 +6744,11 @@ export default function MisaAssetsWorkspace({
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
                   <td
                     onClick={() => {
+                      setStocktakeVoucherNo(v.voucherNo);
                       setStocktakeDate(v.date);
+                      if ((v as any).auditDate) setStocktakeAuditDate((v as any).auditDate);
+                      if (v.purpose) setStocktakePurpose(v.purpose);
+                      if (v.conclusion) setStocktakeConclusion(v.conclusion);
                       setShowStocktakeModal(true);
                     }}
                     style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}

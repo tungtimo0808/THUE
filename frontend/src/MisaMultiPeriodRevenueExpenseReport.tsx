@@ -1,3 +1,5 @@
+import { initialComparisonDates, reportPeriodLabels } from "./report-period-range";
+import ReportPeriodModeFields from "./ReportPeriodModeFields";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -178,6 +180,8 @@ export default function MisaMultiPeriodRevenueExpenseReport({
 
   // Temporary drawer draft state
   const [draftPeriodType, setDraftPeriodType] = useState<"month" | "quarter" | "year" | "custom">("month");
+  const [comparisonDates,setComparisonDates] = useState(initialComparisonDates);
+  const [draftComparisonDates,setDraftComparisonDates] = useState(initialComparisonDates);
   const [draftFromMonth, setDraftFromMonth] = useState(10);
   const [draftFromYear, setDraftFromYear] = useState(2026);
   const [draftToMonth, setDraftToMonth] = useState(10);
@@ -191,6 +195,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
 
   const handleOpenDrawer = () => {
     setDraftPeriodType(periodType);
+    setDraftComparisonDates([...comparisonDates]);
     setDraftFromMonth(fromMonth);
     setDraftFromYear(fromYear);
     setDraftToMonth(toMonth);
@@ -203,6 +208,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
 
   const handleApplyParams = () => {
     setPeriodType(draftPeriodType);
+    setComparisonDates([...draftComparisonDates]);
     setFromMonth(draftFromMonth);
     setFromYear(draftFromYear);
     setToMonth(draftToMonth);
@@ -216,6 +222,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
 
   const handleResetParams = () => {
     setDraftPeriodType("month");
+    setDraftComparisonDates(initialComparisonDates());
     setDraftFromMonth(10);
     setDraftFromYear(2026);
     setDraftToMonth(10);
@@ -226,26 +233,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
   };
 
   // Generate list of periods
-  const periods = useMemo(() => {
-    const list: string[] = [];
-    if (periodType === "month") {
-      if (fromYear === toYear) {
-        for (let m = fromMonth; m <= toMonth; m++) {
-          list.push(`Thg ${m}/${fromYear}`);
-        }
-      } else {
-        list.push(`Thg ${fromMonth}/${fromYear}`);
-        list.push(`Thg ${toMonth}/${toYear}`);
-      }
-    } else if (periodType === "quarter") {
-      list.push(`Quý 4/${fromYear}`);
-    } else if (periodType === "year") {
-      list.push(`Năm ${fromYear}`);
-    } else {
-      list.push(`Thg ${fromMonth}/${fromYear}`);
-    }
-    return list;
-  }, [periodType, fromMonth, fromYear, toMonth, toYear]);
+  const periods = useMemo(() => reportPeriodLabels(periodType,fromMonth,fromYear,toMonth,toYear,comparisonDates),[periodType,fromMonth,fromYear,toMonth,toYear,comparisonDates]);
 
   // Filter rows
   const filteredRows = useMemo(() => {
@@ -783,6 +771,8 @@ export default function MisaMultiPeriodRevenueExpenseReport({
                 </div>
               </div>
 
+              {draftPeriodType !== "month" && <ReportPeriodModeFields mode={draftPeriodType} dates={draftComparisonDates} setDates={setDraftComparisonDates} fromMonth={draftFromMonth} toMonth={draftToMonth} fromYear={draftFromYear} toYear={draftToYear} setFromMonth={setDraftFromMonth} setToMonth={setDraftToMonth} setFromYear={setDraftFromYear} setToYear={setDraftToYear}/>}
+              {draftPeriodType === "month" && <>
               {/* Từ tháng / Đến tháng & Năm matching Screenshot 1 */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div>
@@ -872,6 +862,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
                 </div>
               </div>
 
+              </>}
               {/* Checkboxes matching Screenshot 1 */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#334155", cursor: "pointer" }}>

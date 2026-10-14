@@ -1,4 +1,6 @@
+import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import {
   ChevronLeft,
   Printer,
@@ -457,52 +459,17 @@ export default function MisaPurchaseSummaryBySupplierReport({
           </button>
 
           {/* Print button with dropdown */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              cursor: "pointer",
-              color: "#64748b",
-              padding: "2px 4px",
-            }}
-            title="In báo cáo"
-            onClick={() => window.print()}
-          >
-            <Printer size={15} />
-            <ChevronDown size={12} />
-          </div>
+          <ReportOutputMenu kind="print" onPrimary={() => window.print()} primaryIcon={<Printer size={15} />} />
 
           {/* Export Excel button with dropdown */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              cursor: "pointer",
-              color: "#64748b",
-              padding: "2px 4px",
-            }}
-            title="Xuất khẩu ra Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
-          >
-            <Download size={15} />
-            <ChevronDown size={12} />
-          </div>
+          <ReportOutputMenu kind="export" onPrimary={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")} primaryIcon={<Download size={15} />} />
 
-          <button
-            type="button"
-            style={{
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              padding: 4,
-            }}
-            title="Tùy chọn khác"
-          >
-            <Settings size={15} />
-          </button>
+          <ReportCustomizationMenu
+            reportName="Tổng hợp mua hàng theo nhà cung cấp"
+            visibleColumns={["Mã nhà cung cấp", "Tên nhà cung cấp", "Giá trị mua", "Chiết khấu", "Giá trị trả lại", "Giá trị giảm giá", "Tổng giá trị mua"]}
+            triggerStyle={{background:"none",border:"none",color:"#64748b",cursor:"pointer",padding:4}}
+            triggerIcon={<Settings size={15} />}
+          />
         </div>
       </div>
 

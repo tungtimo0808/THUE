@@ -9306,12 +9306,13 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       ]
     ],
     "labels": [
+      "Năm",
       "Kỳ tính thuế"
     ],
     "selectors": [],
     "checkboxes": [],
-    "fields": [],
-    "radios": [],
+    "fields": [{"label":"Năm","kind":"number"},{"label":"Kỳ tính thuế","kind":"radio"}],
+    "radios": [{"label":"Tháng","checked":true},{"label":"Quý","checked":false}],
     "options": {
       "Kỳ báo cáo": [
         "Hôm nay",
@@ -16391,7 +16392,7 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       {
         "label": "Xem theo",
         "kind": "combo",
-        "required": true
+        "required": true, "default": "Tháng"
       },
       {
         "label": "Năm",
@@ -16411,46 +16412,8 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       }
     ],
     "options": {
-      "Kỳ báo cáo": [
-        "Hôm nay",
-        "Tuần này",
-        "Đầu tuần tới hiện tại",
-        "Tháng này",
-        "Đầu tháng đến hiện tại",
-        "Quý này",
-        "Đầu quý đến hiện tại",
-        "Năm nay",
-        "Đầu năm đến hiện tại",
-        "Sáu tháng đầu năm",
-        "Sáu tháng cuối năm",
-        "Tháng 1",
-        "Tháng 2",
-        "Tháng 3",
-        "Tháng 4",
-        "Tháng 5",
-        "Tháng 6",
-        "Tháng 7",
-        "Tháng 8",
-        "Tháng 9",
-        "Tháng 10",
-        "Tháng 11",
-        "Tháng 12",
-        "Quý 1",
-        "Quý 2",
-        "Quý 3",
-        "Quý 4",
-        "Hôm qua",
-        "Tuần trước",
-        "Tháng trước",
-        "Quý trước",
-        "Năm trước",
-        "Ngày mai",
-        "Tuần sau",
-        "Tháng sau",
-        "Quý sau",
-        "Năm sau",
-        "Tùy chọn"
-      ]
+      "Xem theo": ["Tháng", "Quý"],
+      "Kỳ báo cáo": ["Quý này", "Tháng này", "Năm nay", "Sáu tháng đầu năm", "Sáu tháng cuối năm", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Quý 1", "Quý 2", "Quý 3", "Quý 4"]
     }
   },
   {
@@ -16482,7 +16445,7 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       {
         "label": "Xem theo",
         "kind": "combo",
-        "required": false
+        "required": false, "default": "Tháng"
       },
       {
         "label": "Năm",
@@ -16502,46 +16465,8 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       }
     ],
     "options": {
-      "Kỳ báo cáo": [
-        "Hôm nay",
-        "Tuần này",
-        "Đầu tuần tới hiện tại",
-        "Tháng này",
-        "Đầu tháng đến hiện tại",
-        "Quý này",
-        "Đầu quý đến hiện tại",
-        "Năm nay",
-        "Đầu năm đến hiện tại",
-        "Sáu tháng đầu năm",
-        "Sáu tháng cuối năm",
-        "Tháng 1",
-        "Tháng 2",
-        "Tháng 3",
-        "Tháng 4",
-        "Tháng 5",
-        "Tháng 6",
-        "Tháng 7",
-        "Tháng 8",
-        "Tháng 9",
-        "Tháng 10",
-        "Tháng 11",
-        "Tháng 12",
-        "Quý 1",
-        "Quý 2",
-        "Quý 3",
-        "Quý 4",
-        "Hôm qua",
-        "Tuần trước",
-        "Tháng trước",
-        "Quý trước",
-        "Năm trước",
-        "Ngày mai",
-        "Tuần sau",
-        "Tháng sau",
-        "Quý sau",
-        "Năm sau",
-        "Tùy chọn"
-      ]
+      "Xem theo": ["Tháng", "Quý"],
+      "Kỳ báo cáo": ["Quý này", "Tháng này", "Năm nay", "Sáu tháng đầu năm", "Sáu tháng cuối năm", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Quý 1", "Quý 2", "Quý 3", "Quý 4"]
     }
   },
   {
@@ -16573,7 +16498,7 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       {
         "label": "Xem theo",
         "kind": "combo",
-        "required": false
+        "required": false, "default": "Tháng"
       },
       {
         "label": "Năm",
@@ -16593,46 +16518,8 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       }
     ],
     "options": {
-      "Kỳ báo cáo": [
-        "Hôm nay",
-        "Tuần này",
-        "Đầu tuần tới hiện tại",
-        "Tháng này",
-        "Đầu tháng đến hiện tại",
-        "Quý này",
-        "Đầu quý đến hiện tại",
-        "Năm nay",
-        "Đầu năm đến hiện tại",
-        "Sáu tháng đầu năm",
-        "Sáu tháng cuối năm",
-        "Tháng 1",
-        "Tháng 2",
-        "Tháng 3",
-        "Tháng 4",
-        "Tháng 5",
-        "Tháng 6",
-        "Tháng 7",
-        "Tháng 8",
-        "Tháng 9",
-        "Tháng 10",
-        "Tháng 11",
-        "Tháng 12",
-        "Quý 1",
-        "Quý 2",
-        "Quý 3",
-        "Quý 4",
-        "Hôm qua",
-        "Tuần trước",
-        "Tháng trước",
-        "Quý trước",
-        "Năm trước",
-        "Ngày mai",
-        "Tuần sau",
-        "Tháng sau",
-        "Quý sau",
-        "Năm sau",
-        "Tùy chọn"
-      ]
+      "Xem theo": ["Tháng", "Quý"],
+      "Kỳ báo cáo": ["Quý này", "Tháng này", "Năm nay", "Sáu tháng đầu năm", "Sáu tháng cuối năm", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Quý 1", "Quý 2", "Quý 3", "Quý 4"]
     }
   },
   {
@@ -16991,7 +16878,7 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       {
         "label": "Xem theo",
         "kind": "combo",
-        "required": false
+        "required": false, "default": "Tháng"
       },
       {
         "label": "Năm",
@@ -17019,46 +16906,8 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       }
     ],
     "options": {
-      "Kỳ báo cáo": [
-        "Hôm nay",
-        "Tuần này",
-        "Đầu tuần tới hiện tại",
-        "Tháng này",
-        "Đầu tháng đến hiện tại",
-        "Quý này",
-        "Đầu quý đến hiện tại",
-        "Năm nay",
-        "Đầu năm đến hiện tại",
-        "Sáu tháng đầu năm",
-        "Sáu tháng cuối năm",
-        "Tháng 1",
-        "Tháng 2",
-        "Tháng 3",
-        "Tháng 4",
-        "Tháng 5",
-        "Tháng 6",
-        "Tháng 7",
-        "Tháng 8",
-        "Tháng 9",
-        "Tháng 10",
-        "Tháng 11",
-        "Tháng 12",
-        "Quý 1",
-        "Quý 2",
-        "Quý 3",
-        "Quý 4",
-        "Hôm qua",
-        "Tuần trước",
-        "Tháng trước",
-        "Quý trước",
-        "Năm trước",
-        "Ngày mai",
-        "Tuần sau",
-        "Tháng sau",
-        "Quý sau",
-        "Năm sau",
-        "Tùy chọn"
-      ]
+      "Xem theo": ["Tháng", "Quý"],
+      "Kỳ báo cáo": ["Quý này", "Tháng này", "Năm nay", "Sáu tháng đầu năm", "Sáu tháng cuối năm", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Quý 1", "Quý 2", "Quý 3", "Quý 4"]
     }
   },
   {
@@ -23394,7 +23243,7 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
         "label": "Tài khoản",
         "kind": "combo",
         "required": false,
-        "default": ""
+        "default": "133"
       }
     ],
     "radios": [
@@ -23412,6 +23261,7 @@ export const MISA_REPORT_DEFINITIONS: AuditedReportDefinition[] = [
       }
     ],
     "options": {
+      "Tài khoản": ["133", "33311", "511", "711"],
       "Kỳ báo cáo": [
         "Hôm nay",
         "Tuần này",

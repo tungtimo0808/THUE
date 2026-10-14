@@ -1,4 +1,6 @@
+import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import {
   ChevronLeft,
   Printer,
@@ -49,7 +51,10 @@ const DEFAULT_SUPPLIERS: SupplierOption[] = [
 
 const ACCOUNT_OPTIONS = [
   { code: "331", name: "Phải trả cho người bán" },
-  { code: "3363", name: "Phải trả nội bộ về chi phí đi vay đủ điều kiện được vốn..." },
+  { code: "336", name: "Phải trả nội bộ" },
+  { code: "3361", name: "Phải trả nội bộ về vốn kinh doanh" },
+  { code: "3362", name: "Phải trả nội bộ về chênh lệch tỷ giá" },
+  { code: "3363", name: "Phải trả nội bộ về chi phí đi vay đủ điều kiện được vốn hóa" },
   { code: "3368", name: "Phải trả nội bộ khác" },
   { code: "341", name: "Vay và nợ thuê tài chính" },
   { code: "3411", name: "Các khoản đi vay" },
@@ -527,52 +532,17 @@ export default function MisaSupplierPayablesSummaryReport({
           </button>
 
           {/* Print button with dropdown */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              cursor: "pointer",
-              color: "#64748b",
-              padding: "2px 4px",
-            }}
-            title="In báo cáo"
-            onClick={() => window.print()}
-          >
-            <Printer size={15} />
-            <ChevronDown size={12} />
-          </div>
+          <ReportOutputMenu kind="print" onPrimary={() => window.print()} primaryIcon={<Printer size={15} />} />
 
           {/* Export Excel button with dropdown */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              cursor: "pointer",
-              color: "#64748b",
-              padding: "2px 4px",
-            }}
-            title="Xuất khẩu ra Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
-          >
-            <Download size={15} />
-            <ChevronDown size={12} />
-          </div>
+          <ReportOutputMenu kind="export" onPrimary={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")} primaryIcon={<Download size={15} />} />
 
-          <button
-            type="button"
-            style={{
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              padding: 4,
-            }}
-            title="Tùy chọn khác"
-          >
-            <Settings size={15} />
-          </button>
+          <ReportCustomizationMenu
+            reportName="Tổng hợp công nợ phải trả nhà cung cấp"
+            visibleColumns={["Mã nhà cung cấp", "Tên nhà cung cấp", "TK Công nợ", "Dư Nợ đầu kỳ", "Dư Có đầu kỳ", "Phát sinh Nợ", "Phát sinh Có", "Dư Nợ cuối kỳ", "Dư Có cuối kỳ"]}
+            triggerStyle={{background:"none",border:"none",color:"#64748b",cursor:"pointer",padding:4}}
+            triggerIcon={<Settings size={15} />}
+          />
         </div>
       </div>
 
@@ -1304,6 +1274,21 @@ export default function MisaSupplierPayablesSummaryReport({
                   </label>
                   <div
                     onClick={() => setIsAccountDropdownOpen(!isAccountDropdownOpen)}
+                    role="combobox"
+                    aria-label="Tài khoản công nợ nhà cung cấp"
+                    aria-expanded={isAccountDropdownOpen}
+                    aria-controls="supplier-payables-account-options"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+                        event.preventDefault();
+                        setIsAccountDropdownOpen(true);
+                      }
+                      if (event.key === "Escape" && isAccountDropdownOpen) {
+                        event.stopPropagation();
+                        setIsAccountDropdownOpen(false);
+                      }
+                    }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1327,6 +1312,9 @@ export default function MisaSupplierPayablesSummaryReport({
 
                   {isAccountDropdownOpen && (
                     <div
+                      id="supplier-payables-account-options"
+                      role="listbox"
+                      aria-label="Danh sách tài khoản công nợ"
                       style={{
                         position: "absolute",
                         top: 58,
@@ -1358,6 +1346,17 @@ export default function MisaSupplierPayablesSummaryReport({
                         {ACCOUNT_OPTIONS.map((acc) => (
                           <div
                             key={acc.code}
+                            role="option"
+                            aria-selected={draftAccount === acc.code}
+                            tabIndex={0}
+                            title={acc.name}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                setDraftAccount(acc.code);
+                                setIsAccountDropdownOpen(false);
+                              }
+                            }}
                             onClick={() => {
                               setDraftAccount(acc.code);
                               setIsAccountDropdownOpen(false);

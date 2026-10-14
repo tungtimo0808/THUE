@@ -392,6 +392,7 @@ export function SaleQuoteModal({
                 <div
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     display: "flex",
                     alignItems: "center",
                     border: "1px solid #00b06b",
@@ -399,6 +400,7 @@ export function SaleQuoteModal({
                     height: 28,
                     background: "#ffffff",
                     padding: "0 4px 0 6px",
+                    boxSizing: "border-box",
                   }}
                 >
                   <input
@@ -408,7 +410,10 @@ export function SaleQuoteModal({
                     style={{
                       border: "none",
                       outline: "none",
-                      width: "100%",
+                      flex: 1,
+                      minWidth: 0,
+                      height: "100%",
+                      padding: 0,
                       fontSize: 12.5,
                       color: "#1e293b",
                     }}
@@ -428,6 +433,7 @@ export function SaleQuoteModal({
                       padding: "2px",
                       display: "grid",
                       placeItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <Plus size={14} strokeWidth={2.5} />
@@ -447,6 +453,7 @@ export function SaleQuoteModal({
                       padding: "2px",
                       display: "grid",
                       placeItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <ChevronDown size={13} />
@@ -703,6 +710,8 @@ export function SaleQuoteModal({
                   height: 28,
                   padding: "0 4px 0 8px",
                   background: "#ffffff",
+                  minWidth: 0,
+                  boxSizing: "border-box",
                 }}
               >
                 <input
@@ -712,7 +721,9 @@ export function SaleQuoteModal({
                   style={{
                     border: "none",
                     outline: "none",
-                    width: "100%",
+                    flex: 1,
+                    minWidth: 0,
+                    height: "100%",
                     fontSize: 12.5,
                   }}
                 />
@@ -727,6 +738,7 @@ export function SaleQuoteModal({
                     padding: "2px",
                     display: "grid",
                     placeItems: "center",
+                    flexShrink: 0,
                   }}
                 >
                   <Plus size={14} strokeWidth={2.5} />
@@ -741,6 +753,7 @@ export function SaleQuoteModal({
                     padding: "2px",
                     display: "grid",
                     placeItems: "center",
+                    flexShrink: 0,
                   }}
                 >
                   <ChevronDown size={13} />
@@ -1921,6 +1934,7 @@ export function SaleOrderModal({
                 <div
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     display: "flex",
                     alignItems: "center",
                     border: "1px solid #00b06b",
@@ -1928,6 +1942,7 @@ export function SaleOrderModal({
                     height: 28,
                     background: "#ffffff",
                     padding: "0 4px 0 6px",
+                    boxSizing: "border-box",
                   }}
                 >
                   <input
@@ -1937,7 +1952,10 @@ export function SaleOrderModal({
                     style={{
                       border: "none",
                       outline: "none",
-                      width: "100%",
+                      flex: 1,
+                      minWidth: 0,
+                      height: "100%",
+                      padding: 0,
                       fontSize: 12.5,
                       color: "#1e293b",
                     }}
@@ -1957,6 +1975,7 @@ export function SaleOrderModal({
                       padding: "2px",
                       display: "grid",
                       placeItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <Plus size={14} strokeWidth={2.5} />
@@ -1976,6 +1995,7 @@ export function SaleOrderModal({
                       padding: "2px",
                       display: "grid",
                       placeItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <ChevronDown size={13} />
@@ -2254,24 +2274,26 @@ export function SaleOrderModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
                       type="text"
                       value={salesEmployee}
                       onChange={(e) => setSalesEmployee(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12.5 }}
                     />
                     <button
                       type="button"
                       onClick={() => notify("Thêm nhân viên bán hàng")}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px" }}
+                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={14} />
                     </button>
                     <button
                       type="button"
-                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px" }}
+                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <ChevronDown size={13} />
                     </button>
@@ -2290,6 +2312,8 @@ export function SaleOrderModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
@@ -2297,18 +2321,18 @@ export function SaleOrderModal({
                       value={paymentTerms}
                       onChange={(e) => setPaymentTerms(e.target.value)}
                       placeholder=""
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12.5 }}
                     />
                     <button
                       type="button"
                       onClick={() => notify("Thêm điều khoản thanh toán")}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px" }}
+                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={14} />
                     </button>
                     <button
                       type="button"
-                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px" }}
+                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <ChevronDown size={13} />
                     </button>
@@ -4051,14 +4075,14 @@ export function SaleContractModal({
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {/* Row 1: Mã KH + Tên KH */}
               <div style={{ display: "flex", gap: 10 }}>
-                <div style={{ width: 140 }}>
+                <div style={{ width: 220, flexShrink: 0 }}>
                   <label className="misa-purchase-label">Mã khách hàng</label>
-                  <div style={{ display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 4, height: 28, padding: "0 4px 0 6px", background: "#ffffff" }}>
+                  <div style={{ display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 4, height: 28, padding: "0 4px 0 6px", background: "#ffffff", minWidth: 0, boxSizing: "border-box" }}>
                     <input
                       type="text"
                       value={customerCode}
                       onChange={(e) => setCustomerCode(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12.5 }}
                     />
                     <button
                       type="button"
@@ -4066,7 +4090,7 @@ export function SaleContractModal({
                         if (onOpenCustomerModal) onOpenCustomerModal();
                         else notify("Thêm nhanh khách hàng mới");
                       }}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px" }}
+                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={14} />
                     </button>
@@ -4076,7 +4100,7 @@ export function SaleContractModal({
                         const next = SAMPLE_SALE_CUSTOMERS[0];
                         handleSelectCustomer(next.code);
                       }}
-                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px" }}
+                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <ChevronDown size={13} />
                     </button>

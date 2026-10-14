@@ -1,3 +1,10 @@
+import AuditedReportParameters from "./AuditedReportParameters";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { reportColumns } from "./audited-report-schema";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
+import { initialAuditedParameters, validateAuditedParameters } from "./audited-report-parameters";
+import type { AuditedParameters } from "./audited-report-parameters";
+import "./audited-reports.css";
 import React, { useState } from "react";
 import {
   ChevronLeft,
@@ -43,6 +50,9 @@ export default function MisaPurchaseOrderReports({
     }
   };
 
+  const parameterDefinition = MISA_REPORT_DEFINITIONS.find(item=>item.name === getTitle());
+  const [parameterDraft,setParameterDraft] = useState<AuditedParameters>(()=>parameterDefinition ? initialAuditedParameters(parameterDefinition) : {fields:{},selected:{},checks:{},radio:""});
+  const [parameterError,setParameterError] = useState("");
   const getSubtitle = () => {
     switch (reportType) {
       case "execution_status":
@@ -79,6 +89,7 @@ export default function MisaPurchaseOrderReports({
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             type="button"
+            aria-label="Danh sách báo cáo"
             onClick={onBack}
             style={{ background: "none", border: "none", color: "#334155", cursor: "pointer", padding: 4 }}
           >
@@ -156,9 +167,7 @@ export default function MisaPurchaseOrderReports({
           <button type="button" style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
             <Download size={15} />
           </button>
-          <button type="button" style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
-            <Settings size={15} />
-          </button>
+          <ReportCustomizationMenu reportName={getTitle()} visibleColumns={parameterDefinition ? reportColumns(parameterDefinition.headers).map(column=>column.label) : []} triggerIcon={<Settings size={15} />} triggerStyle={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }} />
         </div>
       </div>
 
@@ -296,7 +305,13 @@ export default function MisaPurchaseOrderReports({
       </div>
 
       {/* Drawer */}
-      {isParamDrawerOpen && (
+      {isParamDrawerOpen && parameterDefinition && <AuditedReportParameters
+        definition={parameterDefinition} draft={parameterDraft} setDraft={setParameterDraft}
+        error={parameterError} onCancel={()=>{setParameterError("");setIsParamDrawerOpen(false);}}
+        onReset={()=>{setParameterDraft(initialAuditedParameters(parameterDefinition));setParameterError("");}}
+        onApply={()=>{const message=validateAuditedParameters(parameterDraft,parameterDefinition);setParameterError(message);if(!message)setIsParamDrawerOpen(false);}}
+      />}
+      {isParamDrawerOpen && !parameterDefinition && (
         <div
           style={{
             position: "fixed",

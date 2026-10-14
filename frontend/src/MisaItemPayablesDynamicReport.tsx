@@ -1,4 +1,7 @@
+import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { ITEM_PAYABLE_DEFAULT_COLUMNS } from "./item-payables-optional-columns";
 import {
   ChevronLeft,
   Printer,
@@ -451,61 +454,20 @@ export default function MisaItemPayablesDynamicReport({
 
           {/* Print dropdown */}
           <div style={{ display: "flex", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#64748b",
-                cursor: "pointer",
-                padding: "4px 2px 4px 4px",
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-              title="In"
-            >
-              <Printer size={15} />
-              <ChevronDown size={11} />
-            </button>
+            <ReportOutputMenu kind="print" onPrimary={() => window.print()} primaryIcon={<Printer size={15} />} />
           </div>
 
           {/* Export dropdown */}
           <div style={{ display: "flex", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => notify?.("Đang xuất khẩu báo cáo...")}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#64748b",
-                cursor: "pointer",
-                padding: "4px 2px 4px 4px",
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-              title="Xuất khẩu"
-            >
-              <Download size={15} />
-              <ChevronDown size={11} />
-            </button>
+            <ReportOutputMenu kind="export" onPrimary={() => notify?.("Đang xuất khẩu báo cáo...")} primaryIcon={<Download size={15} />} />
           </div>
 
-          <button
-            type="button"
-            style={{
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              padding: 4,
-            }}
-            title="Thiết lập"
-          >
-            <Settings size={15} />
-          </button>
+          <ReportCustomizationMenu
+            reportName="Chi tiết công nợ phải trả theo mặt hàng"
+            visibleColumns={ITEM_PAYABLE_DEFAULT_COLUMNS}
+            triggerStyle={{background:"none",border:"none",color:"#64748b",cursor:"pointer",padding:4}}
+            triggerIcon={<Settings size={15} />}
+          />
         </div>
       </div>
 

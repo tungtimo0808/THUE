@@ -4,6 +4,7 @@ import type {
   ReportSelector,
 } from "./audited-report-schema";
 import { reportColumns } from "./audited-report-schema";
+import { reportAccountSelectorRows } from "./report-account-selector-rows";
 export const numericReportHeader = (header: string) =>
   !/^(Mã|Tên|Ngày|TK|Tài khoản|Số chứng từ|Số hóa đơn|Số hợp đồng|Tình trạng|Trạng thái)/.test(
     header,
@@ -12,6 +13,39 @@ export const numericReportHeader = (header: string) =>
     header,
   );
 export function selectorSampleRows(selector: ReportSelector) {
+  if (selector.title === "Tài khoản") {
+    return reportAccountSelectorRows(selector.headers);
+  }
+  const contextualCell = (header: string, index: number): string | undefined => {
+    if (selector.title === "Công trình") {
+      if (header === "Mã công trình") return index === 1 ? "CT-TECHPARK" : "CT-NHAXUONG";
+      if (header === "Tên công trình") return index === 1 ? "Tòa nhà Văn phòng TechPark" : "Nhà xưởng sản xuất";
+      if (header === "Loại công trình") return "Công trình";
+    }
+    if (selector.title === "Thành phẩm") {
+      if (header === "Mã thành phẩm") return index === 1 ? "TP-INOX" : "TP-POLO";
+      if (header === "Tên thành phẩm") return index === 1 ? "Bàn ghế inox cao cấp" : "Áo Polo nam";
+      if (header === "Mã đối tượng THCP") return index === 1 ? "THCP-CO KHI" : "THCP-MAY";
+      if (header === "Quy trình sản xuất") return "Giản đơn";
+    }
+    if (selector.title === "Đối tượng tập hợp chi phí") {
+      if (/^Mã/.test(header)) return index === 1 ? "THCP-CO KHI" : "THCP-MAY";
+      if (/^Tên/.test(header)) return index === 1 ? "Xưởng Cơ khí chế tạo" : "Xưởng May xuất khẩu";
+      if (/^Loại/.test(header)) return "Phân xưởng";
+    }
+    if (selector.title === "Tài sản cố định") {
+      if (/^Mã/.test(header)) return index === 1 ? "TS-MAY01" : "TS-XE01";
+      if (/^Tên/.test(header)) return index === 1 ? "Máy gia công CNC" : "Ô tô vận tải";
+      if (/Loại/.test(header)) return index === 1 ? "Máy móc, thiết bị" : "Phương tiện vận tải, truyền dẫn";
+    }
+    if (selector.title === "Đơn đặt hàng") {
+      if (header === "Số đơn hàng") return `DDH-2026-00${index}`;
+      if (header === "Ngày đơn hàng") return `0${index + 5}/10/2026`;
+      if (header === "Khách hàng") return index === 1 ? "Công ty TNHH Hoàng Minh" : "Công ty CP An Phát";
+      if (header === "Diễn giải") return `Đơn đặt hàng bán số 00${index}`;
+    }
+    return undefined;
+  };
   return [1, 2].map((index) => ({
     id: String(index),
     cells: selector.headers.map((header) =>
@@ -25,11 +59,42 @@ export function selectorSampleRows(selector: ReportSelector) {
             : "Phải thu nội bộ"
           : header === "Bậc"
             ? "1"
-            : sampleCell(header, index),
+            : (contextualCell(header, index) ?? sampleCell(header, index)),
     ),
   }));
 }
-export function reportReferenceChoices(label: string) {
+export function reportReferenceChoices(label: string, reportName = "") {
+  if (/Kỳ tính giá thành/.test(label) && /công trình/i.test(reportName))
+    return [{ value: "CT-2026-01", label: "Tính giá thành Công trình Tòa nhà Văn phòng TechPark", detail: "Theo công trình" }];
+  if (/Kỳ tính giá thành/.test(label) && /đơn hàng/i.test(reportName))
+    return [{ value: "DH-2026-01", label: "Tính giá thành Đơn hàng DH-2026-0089 (Công ty Samy Electronics)", detail: "Theo đơn hàng" }];
+  if (/Kỳ tính giá thành/.test(label) && /hợp đồng/i.test(reportName))
+    return [{ value: "HD-2026-01", label: "Tính giá thành Hợp đồng HĐ-KT-2026/012 (Tập đoàn Hòa An)", detail: "Theo hợp đồng" }];
+  if (/Kỳ tính giá thành/.test(label))
+    return [
+      { value: "GT-2026-01", label: "Tính giá thành T01/2026 - Xưởng Cơ khí chế tạo", detail: "Sản xuất liên tục - Giản đơn" },
+      { value: "GT-2026-02", label: "Tính giá thành T02/2026 - Xưởng May xuất khẩu", detail: "Sản xuất liên tục - Giản đơn" },
+      { value: "GT-2026-03", label: "Tính giá thành T03/2026 - Xưởng Nhựa công nghiệp", detail: "Sản xuất liên tục - Giản đơn" },
+    ];
+  if (/Loại tài sản cố định/.test(label))
+    return [
+      { value: "10", label: "Tài sản cố định hữu hình" },
+      { value: "11", label: "Nhà cửa, vật kiến trúc" },
+      { value: "12", label: "Máy móc, thiết bị" },
+      { value: "13", label: "Phương tiện vận tải, truyền dẫn" },
+      { value: "14", label: "Thiết bị, dụng cụ quản lý" },
+      { value: "15", label: "Vườn cây lâu năm, súc vật làm việc và cho sản phẩm" },
+      { value: "16", label: "Các TSCĐ là kết cấu hạ tầng, có giá trị lớn do Nhà nước ĐTXD từ NSNN giao cho các tổ chức kinh tế quản lý, khai thác, sử dụng" },
+      { value: "17", label: "Tài sản cố định khác" },
+      { value: "20", label: "Tài sản cố định vô hình" },
+      { value: "21", label: "Quyền sử dụng đất" },
+      { value: "22", label: "Quyền phát hành" },
+      { value: "23", label: "Bản quyền, bằng sáng chế" },
+      { value: "24", label: "Nhãn hiệu hàng hóa" },
+      { value: "25", label: "Phần mềm máy vi tính" },
+      { value: "26", label: "Giấy phép và giấy phép nhượng quyền" },
+      { value: "27", label: "Tài sản cố định vô hình khác" },
+    ];
   if (/Nhân viên/.test(label))
     return [
       { value: "NV001", label: "Nguyễn Minh" },

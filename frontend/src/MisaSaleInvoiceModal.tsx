@@ -523,11 +523,11 @@ export function SaleInvoiceModal({
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {/* Row 1: Mã khách hàng | Tên khách hàng */}
               <div style={{ display: "flex", gap: 10 }}>
-                <div style={{ width: 170, flexShrink: 0 }}>
+                <div style={{ width: 220, flexShrink: 0 }}>
                   <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                     Mã khách hàng
                   </label>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     <div
                       style={{
                         display: "flex",
@@ -535,9 +535,10 @@ export function SaleInvoiceModal({
                         border: "1px solid #cbd5e1",
                         borderRadius: 4,
                         height: 28,
-                        padding: "0 2px 0 6px",
+                        padding: "0 4px 0 6px",
                         background: "#ffffff",
                         flex: 1,
+                        minWidth: 0,
                         boxSizing: "border-box",
                       }}
                     >
@@ -545,7 +546,7 @@ export function SaleInvoiceModal({
                         type="text"
                         value={customerCode}
                         onChange={(e) => setCustomerCode(e.target.value)}
-                        style={{ border: "none", outline: "none", width: "100%", height: "100%", padding: 0, fontSize: 12.5 }}
+                        style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, fontSize: 12.5 }}
                       />
                       <button
                         type="button"
@@ -553,7 +554,7 @@ export function SaleInvoiceModal({
                           if (onOpenCustomerModal) onOpenCustomerModal();
                           else notify("Thêm nhanh khách hàng mới");
                         }}
-                        style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                        style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                       >
                         <Plus size={13} />
                       </button>
@@ -563,7 +564,7 @@ export function SaleInvoiceModal({
                           const next = SAMPLE_SALE_CUSTOMERS[0];
                           handleSelectCustomer(next.code);
                         }}
-                        style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                        style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                       >
                         <ChevronDown size={13} />
                       </button>
@@ -629,15 +630,16 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 6px",
                       background: "#ffffff",
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
                       type="text"
                       value={taxCode}
                       onChange={(e) => setTaxCode(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12.5 }}
                     />
-                    <Globe size={13} style={{ color: "#94a3b8", cursor: "pointer" }} />
+                    <Globe size={13} style={{ color: "#94a3b8", cursor: "pointer", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -674,15 +676,16 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 6px",
                       background: "#ffffff",
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
                       type="text"
                       value={idCardNumber}
                       onChange={(e) => setIdCardNumber(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12.5 }}
                     />
-                    <Search size={13} style={{ color: "#94a3b8", cursor: "pointer" }} />
+                    <Search size={13} style={{ color: "#94a3b8", cursor: "pointer", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -806,6 +809,8 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
@@ -813,9 +818,9 @@ export function SaleInvoiceModal({
                       placeholder="DD/MM/YYYY"
                       value={birthDate}
                       onChange={(e) => setBirthDate(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 11.5 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 11.5 }}
                     />
-                    <Calendar size={12} style={{ color: "#94a3b8" }} />
+                    <Calendar size={12} style={{ color: "#94a3b8", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -832,18 +837,20 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                     >
                       <option value="TM/CK">TM/CK</option>
                       <option value="Tiền mặt">Tiền mặt</option>
                       <option value="Chuyển khoản">Chuyển khoản</option>
                     </select>
-                    <ChevronDown size={13} style={{ color: "#64748b", pointerEvents: "none" }} />
+                    <ChevronDown size={13} style={{ color: "#64748b", pointerEvents: "none", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -860,24 +867,26 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <select
                       value={bankAccount}
                       onChange={(e) => setBankAccount(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                     >
                       <option value=""></option>
                       <option value="19034567890123">19034567890123 - Techcombank</option>
                       <option value="0011004567890">0011004567890 - Vietcombank</option>
                     </select>
-                    <ChevronDown size={13} style={{ color: "#64748b", pointerEvents: "none" }} />
+                    <ChevronDown size={13} style={{ color: "#64748b", pointerEvents: "none", flexShrink: 0 }} />
                   </div>
                 </div>
               </div>
 
               {/* Row 5: Nhân viên bán hàng | Tỉnh/Thành phố | Xã/Phường */}
-              <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                     Nhân viên bán hàng
@@ -891,16 +900,29 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
                       type="text"
                       value={salesEmployee}
                       onChange={(e) => setSalesEmployee(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                    <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                    <button
+                      type="button"
+                      onClick={() => notify("Thêm nhân viên bán hàng")}
+                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                    >
+                      <Plus size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                    >
+                      <ChevronDown size={13} />
+                    </button>
                   </div>
                 </div>
 
@@ -917,12 +939,14 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <select
                       value={province}
                       onChange={(e) => setProvince(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                     >
                       <option value=""></option>
                       <option value="Hà Nội">Hà Nội</option>
@@ -930,7 +954,7 @@ export function SaleInvoiceModal({
                       <option value="Đà Nẵng">Đà Nẵng</option>
                       <option value="Hải Phòng">Hải Phòng</option>
                     </select>
-                    <ChevronDown size={13} style={{ color: "#64748b", pointerEvents: "none" }} />
+                    <ChevronDown size={13} style={{ color: "#64748b", pointerEvents: "none", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -947,12 +971,14 @@ export function SaleInvoiceModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <select
                       value={ward}
                       onChange={(e) => setWard(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12, background: "transparent", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", cursor: "pointer" }}
                     >
                       <option value=""></option>
                       <option value="Láng Hạ">Phường Láng Hạ</option>

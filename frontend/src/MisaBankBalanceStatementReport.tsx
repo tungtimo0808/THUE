@@ -1,3 +1,6 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateValue} from "./cash-date";
 import { useState, useMemo } from "react";
@@ -406,20 +409,13 @@ export default function MisaBankBalanceStatementReport({
             <ChevronDown size={13} color="#64748b" />
           </button>
 
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Bảng kê số dư ngân hàng" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Bảng kê số dư ngân hàng")?.headers ?? [])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
               cursor: "pointer",
               padding: 4,
-            }}
-            title="Tùy chỉnh"
-            onClick={() => notify?.("Mở cài đặt...")}
-          >
-            <Settings size={15} />
-          </button>
+            }} />
         </div>
       </div>
 

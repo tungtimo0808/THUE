@@ -730,7 +730,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                       />
                       <span>Là Đối tượng nội bộ</span>
                     </label>
-                    <Info size={14} style={{ color: "#0284c7", cursor: "pointer" }} title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" />
+                    <span title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" style={{ display: "inline-flex" }}><Info size={14} style={{ color: "#0284c7", cursor: "pointer" }}  /></span>
                   </div>
                 </div>
               </div>
@@ -1092,7 +1092,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                     />
                     <span>Là Đối tượng nội bộ</span>
                   </label>
-                  <Info size={14} style={{ color: "#0284c7", cursor: "pointer" }} title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" />
+                  <span title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" style={{ display: "inline-flex" }}><Info size={14} style={{ color: "#0284c7", cursor: "pointer" }}  /></span>
                 </div>
               </div>
 

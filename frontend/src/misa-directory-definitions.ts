@@ -336,7 +336,7 @@ export const MISA_DIRECTORY_DEFINITIONS: DirectoryDefinition[] = [
     ],
     tabData: {
       "Thông tin liên hệ": {fields:["Địa chỉ","Email","Điện thoại di động","ĐT cố định","Email tài khoản","Số điện thoại tài khoản"].map(label=>({label,kind:"text"})),headers:[],checks:[]},
-      "Thông tin tiền lương": {fields:["Lương thỏa thuận","Hệ số lương","Lương đóng bảo hiểm","Mã số thuế","Loại hợp đồng","Số người phụ thuộc"].map(label=>({label,kind:"text",...(label==="Loại hợp đồng"?{options:["Cư trú và có HĐLĐ từ 3 tháng trở lên","Không cư trú","Cư trú và không ký HĐLĐ/HĐLĐ dưới 3 tháng"]}:{})})),headers:[],checks:[]},
+      "Thông tin tiền lương": {fields:["Lương thỏa thuận","Hệ số lương","Lương đóng bảo hiểm","Mã số thuế","Loại hợp đồng","Số người phụ thuộc"].map(label=>({label,kind:["Lương thỏa thuận","Hệ số lương","Lương đóng bảo hiểm","Số người phụ thuộc"].includes(label)?"number":"text",...(label==="Loại hợp đồng"?{options:["Cư trú và có HĐLĐ từ 3 tháng trở lên","Không cư trú","Cư trú và không ký HĐLĐ/HĐLĐ dưới 3 tháng"]}:{})})),headers:[],checks:[]},
       "Tài khoản ngân hàng": {fields:[],headers:[["Số tài khoản","Tên ngân hàng","Chi nhánh","Tỉnh/TP của ngân hàng"]],checks:[]},
       "Thông tin người phụ thuộcMới": {fields:[],headers:[["Họ và tên","Quan hệ","Ngày sinh","Mã số thuế","Loại giấy tờ","Số giấy tờ","Bắt đầu tính giảm trừ","Kết thúc tính giảm trừ"]],checks:[]},
     },

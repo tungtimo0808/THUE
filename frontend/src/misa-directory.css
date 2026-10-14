@@ -349,3 +349,7 @@
 .md-radio-types input {
   accent-color: #009b60;
 }
+
+/* Embedded quick creation keeps the originating voucher visible. */
+.md-list.md-editor-only { background: transparent; min-height: 0; padding: 0; }
+.md-editor-only > :not(.md-overlay) { display: none; }

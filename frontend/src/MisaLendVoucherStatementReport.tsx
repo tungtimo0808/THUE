@@ -1,3 +1,6 @@
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import { templateColumnLabels } from "./report-template-columns";
+import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateValue} from "./cash-date";
 import { useState, useMemo } from "react";
@@ -430,19 +433,13 @@ export default function MisaLendVoucherStatementReport({
             <Mail size={15} />
           </button>
 
-          <button
-            type="button"
-            style={{
+          <ReportCustomizationMenu reportName="Bảng kê chứng từ theo khế ước cho vay" visibleColumns={templateColumnLabels(MISA_REPORT_DEFINITIONS.find(report => report.name === "Bảng kê chứng từ theo khế ước cho vay")?.headers ?? [])} triggerIcon={<Settings size={15} />} triggerStyle={{
               background: "none",
               border: "none",
               color: "#64748b",
               cursor: "pointer",
               padding: 4,
-            }}
-            title="Tùy chọn khác"
-          >
-            <Settings size={15} />
-          </button>
+            }} />
         </div>
       </div>
 

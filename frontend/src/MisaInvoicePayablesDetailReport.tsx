@@ -1,4 +1,9 @@
+import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
+import ReportReferencePicker from "./ReportReferencePicker";
+import { PAYABLE_REPORT_ACCOUNT_CHOICES } from "./payables-report-account-choices";
+import { INVOICE_PAYABLE_DEFAULT_COLUMNS } from "./invoice-payables-optional-columns";
 import {
   ChevronLeft,
   Printer,
@@ -516,61 +521,20 @@ export default function MisaInvoicePayablesDetailReport({
 
           {/* Print dropdown */}
           <div style={{ display: "flex", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#64748b",
-                cursor: "pointer",
-                padding: "4px 2px 4px 4px",
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-              title="In"
-            >
-              <Printer size={15} />
-              <ChevronDown size={11} />
-            </button>
+            <ReportOutputMenu kind="print" onPrimary={() => window.print()} primaryIcon={<Printer size={15} />} />
           </div>
 
           {/* Export dropdown */}
           <div style={{ display: "flex", alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={() => notify?.("Đang xuất khẩu báo cáo...")}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#64748b",
-                cursor: "pointer",
-                padding: "4px 2px 4px 4px",
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-              title="Xuất khẩu"
-            >
-              <Download size={15} />
-              <ChevronDown size={11} />
-            </button>
+            <ReportOutputMenu kind="export" onPrimary={() => notify?.("Đang xuất khẩu báo cáo...")} primaryIcon={<Download size={15} />} />
           </div>
 
-          <button
-            type="button"
-            style={{
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              padding: 4,
-            }}
-            title="Thiết lập"
-          >
-            <Settings size={15} />
-          </button>
+          <ReportCustomizationMenu
+            reportName="Chi tiết công nợ phải trả theo hóa đơn"
+            visibleColumns={INVOICE_PAYABLE_DEFAULT_COLUMNS}
+            triggerStyle={{background:"none",border:"none",color:"#64748b",cursor:"pointer",padding:4}}
+            triggerIcon={<Settings size={15} />}
+          />
         </div>
       </div>
 
@@ -950,6 +914,15 @@ export default function MisaInvoicePayablesDetailReport({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Chọn tham số"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.stopPropagation();
+                setIsParamDrawerOpen(false);
+              }
+            }}
             style={{
               width: 860,
               maxWidth: "92vw",
@@ -1141,23 +1114,14 @@ export default function MisaInvoicePayablesDetailReport({
                   >
                     Tài khoản
                   </label>
-                  <select
+                  <ReportReferencePicker
+                    label="Tài khoản"
                     value={draftAccount}
-                    onChange={(e) => setDraftAccount(e.target.value)}
-                    style={{
-                      width: "100%",
-                      height: 32,
-                      padding: "0 10px",
-                      borderRadius: 4,
-                      border: "1px solid #cbd5e1",
-                      fontSize: 12.5,
-                      background: "#ffffff",
-                    }}
-                  >
-                    <option value="331">331</option>
-                    <option value="336">336</option>
-                    <option value="341">341</option>
-                  </select>
+                    onChange={setDraftAccount}
+                    displayCode
+                    columnHeaders={["Mã TK", "Tên TK"]}
+                    choices={[...PAYABLE_REPORT_ACCOUNT_CHOICES, {value:"341",label:"Vay và nợ thuê tài chính"}]}
+                  />
                 </div>
 
                 <div>

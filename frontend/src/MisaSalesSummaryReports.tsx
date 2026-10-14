@@ -18,6 +18,7 @@ import {
 import type { SalesFilters, SalesSummaryType } from "./sales-summary-data";
 import "./misa-purchase-contract-reports.css";
 import ReportDateInput from "./ReportDateInput";
+import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { readReportPresets, writeReportPresets } from "./report-presets";
 import type { ReportPreset } from "./report-presets";
 
@@ -281,6 +282,7 @@ export default function MisaSalesSummaryReports({
           <button aria-label="Xuất báo cáo" onClick={exportCsv}>
             <Download size={16} />
           </button>
+          <ReportCustomizationMenu reportName={title} visibleColumns={columns.filter(column=>!hidden.includes(column))} variants={byCustomer?[]:title === "Tổng hợp bán hàng theo mặt hàng" ? ["Bảng chi tiết chênh lệch giá bán và giá vốn", "Mẫu nhiều đơn vị tính"] : ["Mẫu nhiều đơn vị tính"]} />
         </div>
       </div>
       {columnsOpen && (

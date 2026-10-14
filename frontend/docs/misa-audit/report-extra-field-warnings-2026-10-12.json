@@ -1,0 +1,57 @@
+[
+  {
+    "name": "S21-DN: Sổ tài sản cố định",
+    "missing": [
+      "Từ ngày",
+      "Đến ngày",
+      "Đơn vị sử dụng",
+      "Loại tài sản cố định"
+    ]
+  },
+  {
+    "name": "Thẻ tài sản cố định",
+    "missing": [
+      "Đến ngày"
+    ]
+  },
+  {
+    "name": "S36-DN: Sổ chi phí sản xuất, kinh doanh",
+    "missing": [
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Hiển thị số hóa đơn",
+      "Hiển thị số lượng và ĐVT chính của vật tư",
+      "Hiển thị theo dạng mở rộng"
+    ]
+  },
+  {
+    "name": "S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo yếu tố chi phí",
+    "missing": [
+      "Kỳ tính giá thành"
+    ]
+  },
+  {
+    "name": "S37-DN: Thẻ tính giá thành đối tượng tập hợp chi phí - theo khoản mục chi phí",
+    "missing": [
+      "Kỳ tính giá thành"
+    ]
+  },
+  {
+    "name": "S36-DN: Sổ chi phí sản xuất, kinh doanh theo công trình",
+    "missing": [
+      "Từ ngày",
+      "Đến ngày",
+      "Tài khoản",
+      "Hiển thị số hóa đơn",
+      "Hiển thị số lượng và ĐVT chính của vật tư",
+      "Hiển thị theo dạng mở rộng"
+    ]
+  },
+  {
+    "name": "S37-DN: Thẻ tính giá thành công trình - theo khoản mục chi phí",
+    "missing": [
+      "Kỳ tính giá thành"
+    ]
+  }
+]

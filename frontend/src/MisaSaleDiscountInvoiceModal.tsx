@@ -401,7 +401,7 @@ export function SaleInvoiceDiscountModal({
             {/* Left Column (6 Rows) */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {/* Row 1: Đối tượng | Địa chỉ | Điện thoại */}
-              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 140px", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 140px", gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                     Đối tượng
@@ -417,6 +417,7 @@ export function SaleInvoiceDiscountModal({
                         padding: "0 2px 0 6px",
                         background: "#ffffff",
                         flex: 1,
+                        minWidth: 0,
                         boxSizing: "border-box",
                       }}
                     >
@@ -424,7 +425,7 @@ export function SaleInvoiceDiscountModal({
                         type="text"
                         value={customerCode}
                         onChange={(e) => setCustomerCode(e.target.value)}
-                        style={{ border: "none", outline: "none", width: "100%", height: "100%", padding: 0, fontSize: 12.5 }}
+                        style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, fontSize: 12.5 }}
                       />
                       <button
                         type="button"
@@ -432,7 +433,7 @@ export function SaleInvoiceDiscountModal({
                           if (onOpenCustomerModal) onOpenCustomerModal();
                           else notify("Thêm nhanh đối tượng mới");
                         }}
-                        style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                        style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                       >
                         <Plus size={13} />
                       </button>
@@ -442,7 +443,7 @@ export function SaleInvoiceDiscountModal({
                           const next = SAMPLE_SALE_CUSTOMERS[0];
                           handleSelectCustomer(next.code);
                         }}
-                        style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center" }}
+                        style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                       >
                         <ChevronDown size={13} />
                       </button>
@@ -687,7 +688,7 @@ export function SaleInvoiceDiscountModal({
               </div>
 
               {/* Row 4: Nhân viên bán hàng | Số bảng kê | Ngày bảng kê */}
-              <div style={{ display: "grid", gridTemplateColumns: "180px 180px 180px", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "220px 180px 180px", gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, color: "#334155", display: "block", marginBottom: 3, fontWeight: 500 }}>
                     Nhân viên bán hàng
@@ -701,16 +702,29 @@ export function SaleInvoiceDiscountModal({
                       height: 28,
                       padding: "0 4px 0 6px",
                       background: "#ffffff",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                     }}
                   >
                     <input
                       type="text"
                       value={salesEmployee}
                       onChange={(e) => setSalesEmployee(e.target.value)}
-                      style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
+                      style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", fontSize: 12 }}
                     />
-                    <Plus size={13} style={{ color: "#00b06b", cursor: "pointer", marginRight: 2 }} />
-                    <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
+                    <button
+                      type="button"
+                      onClick={() => notify("Thêm nhân viên bán hàng")}
+                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                    >
+                      <Plus size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                    >
+                      <ChevronDown size={13} />
+                    </button>
                   </div>
                 </div>
 
