@@ -1,0 +1,39 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
+import "./live-account.css";
+
+type Audit = { id: string; occurred_at: string; actor_name_snapshot: string; module_code: string; action_code: string; entity_type: string; entity_id: string | null; description: string; result: string; severity: string; correlation_id: string; integrity_hash: string; changes: unknown[] };
+type Paged<T> = T[] | { results: T[]; next?: string | null; count?: number };
+const path = "/api/v1/audit/logs";
+
+export default function LiveAuditLogs() {
+  const { token, companies, companyId, selectCompany } = useApiSession();
+  const [logs, setLogs] = useState<Audit[]>([]); const [selected, setSelected] = useState<Audit | null>(null);
+  const [module, setModule] = useState(""); const [query, setQuery] = useState(""); const [fromDate, setFromDate] = useState(""); const [toDate, setToDate] = useState(""); const [severity, setSeverity] = useState("");
+  const [search, setSearch] = useState(""); const [pageUrl, setPageUrl] = useState(""); const [next, setNext] = useState<string | null>(null); const [count, setCount] = useState(0);
+  const [extra, setExtra] = useState(""); const [format, setFormat] = useState<"csv" | "json">("csv"); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const buildQuery = () => { const params = new URLSearchParams({ company_id: companyId }); if (module) params.set("module_code", module); if (query) params.set("q", query); if (fromDate) params.set("from_date", fromDate); if (toDate) params.set("to_date", toDate); if (severity) params.set("severity", severity); return params; };
+  useEffect(() => { if (!token || !companyId) return; let active = true; setError(""); const url = pageUrl || `${path}/?${search || new URLSearchParams({ company_id: companyId })}`;
+    request<Paged<Audit>>(url, token).then(value => { if (!active) return; if (Array.isArray(value)) { setLogs(value); setNext(null); setCount(value.length); } else { setLogs(value.results); setNext(value.next || null); setCount(value.count || value.results.length); } }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Không tải được Audit Log."); });
+    return () => { active = false; };
+  }, [token, companyId, search, pageUrl]);
+  function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setSelected(null); setPageUrl(""); setSearch(buildQuery().toString()); }
+  async function inspect(row: Audit) { setError(""); try { const value = await request<Audit>(`${path}/${row.id}/?company_id=${companyId}`, token); setSelected(value); setExtra(""); } catch (cause) { setError(cause instanceof Error ? cause.message : "Không tải được bản ghi."); } }
+  async function action(url: string) { setBusy(true); setError(""); try { const value = await request<unknown>(url, token); setExtra(JSON.stringify(value, null, 2)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Không truy vấn được nhật ký."); } finally { setBusy(false); } }
+  async function exportLogs() { setBusy(true); setError(""); try { const params = buildQuery(); params.set("format", format); const response = await fetch(`${path}/export/?${params}`, { headers: { Authorization: `Bearer ${token}` } }); if (!response.ok) { const body = await response.text(); throw new Error(`${response.status}: ${body.slice(0, 300)}`); } const blob = await response.blob(); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `audit_logs.${format}`; anchor.click(); URL.revokeObjectURL(url); } catch (cause) { setError(cause instanceof Error ? cause.message : "Không xuất được nhật ký."); } finally { setBusy(false); } }
+
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">SYS-16</p><h1>Audit Log</h1>
+    {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
+      <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setSelected(null); setSearch(""); setPageUrl(""); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
+      {error && <p className="account-error" role="alert">{error}</p>}
+      <form className="account-change-email" onSubmit={submit}><h2>Lọc nhật ký</h2><label>Phân hệ<input value={module} onChange={event => setModule(event.target.value)} placeholder="SYS, PUR..." /></label><label>Tìm kiếm<input value={query} onChange={event => setQuery(event.target.value)} /></label><label>Từ ngày<input type="date" value={fromDate} onChange={event => setFromDate(event.target.value)} /></label><label>Đến ngày<input type="date" value={toDate} onChange={event => setToDate(event.target.value)} /></label><label>Mức độ<select value={severity} onChange={event => setSeverity(event.target.value)}><option value="">Tất cả</option><option value="INFO">INFO</option><option value="WARNING">WARNING</option><option value="ERROR">ERROR</option><option value="CRITICAL">CRITICAL</option></select></label><button type="submit">Lọc</button></form>
+      <div className="account-actions"><label>Định dạng<select value={format} onChange={event => setFormat(event.target.value as "csv" | "json")}><option value="csv">CSV</option><option value="json">JSON</option></select></label><button type="button" disabled={busy} onClick={exportLogs}>Xuất nhật ký</button><button type="button" disabled={busy} onClick={() => action(`${path}/ai-summary/?${buildQuery()}`)}>Tóm tắt hoạt động</button><button type="button" disabled={busy} onClick={() => runBatch()}>Kiểm tra toàn vẹn</button></div>
+      <p>{count} bản ghi</p><ul className="account-request-list">{logs.map(row => <li key={row.id}><div><strong>{row.action_code} · {row.module_code}</strong><span>{new Date(row.occurred_at).toLocaleString("vi-VN")} · {row.actor_name_snapshot || "Hệ thống"} · {row.result} · {row.entity_type}</span></div><button type="button" onClick={() => inspect(row)}>Chi tiết</button></li>)}</ul>{next && <button type="button" onClick={() => { const url = new URL(next, window.location.origin); setPageUrl(`${url.pathname}${url.search}`); }}>Trang tiếp</button>}
+      {selected && <section className="account-change-email"><h2>{selected.action_code}</h2><p>{selected.description}</p><pre>{JSON.stringify(selected, null, 2)}</pre><div className="account-actions"><button type="button" disabled={busy} onClick={() => action(`${path}/${selected.id}/verify-integrity/?company_id=${companyId}`)}>Kiểm tra bản ghi</button>{selected.correlation_id && <button type="button" disabled={busy} onClick={() => action(`${path}/correlation/?company_id=${companyId}&correlation_id=${encodeURIComponent(selected.correlation_id)}`)}>Chuỗi sự kiện</button>}{selected.entity_id && <button type="button" disabled={busy} onClick={() => action(`${path}/record-history/?company_id=${companyId}&entity_type=${encodeURIComponent(selected.entity_type)}&entity_id=${selected.entity_id}`)}>Lịch sử đối tượng</button>}</div></section>}{extra && <section className="account-change-email"><h2>Kết quả truy vấn</h2><pre>{extra}</pre></section>}
+    </>}
+  </section></main>;
+
+  async function runBatch() { setBusy(true); setError(""); try { const value = await request<unknown>(`${path}/verify-batch/?company_id=${companyId}`, token, { method: "POST", body: JSON.stringify(Object.fromEntries(buildQuery())) }); setExtra(JSON.stringify(value, null, 2)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Không kiểm tra được nhật ký."); } finally { setBusy(false); } }
+}

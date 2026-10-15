@@ -1,0 +1,32 @@
+.account-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f3f6fb; color: #192b42; font-family: "Be Vietnam Pro", sans-serif; }
+.account-card { width: min(100%, 480px); padding: 32px; background: white; border: 1px solid #dce5f0; border-radius: 14px; box-shadow: 0 12px 42px #19345412; }
+.account-card h1 { margin: 7px 0 22px; font-size: 28px; }
+.account-eyebrow { margin: 28px 0 0; color: #1763ab; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.account-card form { display: grid; gap: 14px; }
+.account-card label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+.account-card input:not([type=checkbox]) { width: 100%; padding: 11px 12px; border: 1px solid #bfcddd; border-radius: 7px; font: inherit; }
+.account-card select { width: 100%; padding: 11px 12px; border: 1px solid #bfcddd; border-radius: 7px; font: inherit; }
+.account-card .account-check { display: flex; align-items: flex-start; gap: 9px; line-height: 1.5; }
+.account-card .account-check input { margin-top: 4px; }
+.account-card button, .account-primary-link { padding: 11px 15px; border: 0; border-radius: 7px; background: #1763ab; color: white; font: inherit; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; }
+.account-card button:disabled { opacity: .6; cursor: wait; }
+.account-card .account-text-button { background: transparent; color: #1763ab; padding-left: 0; margin-top: 12px; }
+.account-card .account-change-email { margin-top: 18px; padding-top: 18px; border-top: 1px solid #e5ebf2; }
+.account-error { padding: 12px; background: #fff0ef; color: #a5231b; border-radius: 7px; }
+.account-message, .account-dev-code { padding: 12px; background: #eaf5ff; color: #154c76; border-radius: 7px; }
+.account-primary-link { display: inline-block; }
+.account-wide { width: min(100%, 720px); }
+.account-card textarea { width: 100%; padding: 11px 12px; border: 1px solid #bfcddd; border-radius: 7px; font: inherit; }
+.account-results { display: grid; gap: 8px; margin: 18px 0; }
+.account-card .account-results button { display: grid; gap: 4px; background: #fff; color: #192b42; text-align: left; border: 1px solid #dce5f0; }
+.account-card .account-results button.selected { border-color: #1763ab; background: #edf6ff; }
+.account-results span, .account-request-list span { display: block; color: #61748b; font-size: 13px; font-weight: 400; }
+.account-join-form { margin: 20px 0 30px; padding-top: 20px; border-top: 1px solid #e5ebf2; }
+.account-request-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.account-request-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px; border: 1px solid #e5ebf2; border-radius: 7px; }
+.account-card .account-request-list button { background: #fff; color: #a5231b; border: 1px solid #e2b6b2; }
+.account-tabs, .account-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.account-tabs { margin-bottom: 22px; }
+.account-card .account-tabs button, .account-card .account-actions button { background: #fff; color: #1763ab; border: 1px solid #bfcddd; }
+.account-card .account-tabs button[aria-current=page] { background: #1763ab; color: #fff; }
+.account-group { padding-top: 14px; border-top: 1px solid #e5ebf2; }
