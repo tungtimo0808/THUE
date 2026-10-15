@@ -1,0 +1,15 @@
+# UC-MD-15 catalogue imports (backend)
+
+The staged API is `/api/v1/master-data/catalog-imports/`. Every request supplies `company_id` in the query string. The uploaded file cannot choose a company or set system fields. The signed-in user needs `<catalogue>.IMPORT`; `duplicate_mode=UPDATE` additionally needs `<catalogue>.EDIT`. Each row is checked against the user's effective company, branch, warehouse or bank-account scope. Batch history is visible only to its owner. The `targets` endpoint lists available catalogues and accepted columns for the current user.
+
+1. `GET targets/` discovers supported targets and fields. `GET template/?target=...` downloads a version 1 CSV header; add `format=xlsx` for an Excel template.
+2. `POST upload/` takes multipart `file`, `target`, optional `duplicate_mode` (`ERROR`, `SKIP`, `UPDATE`, `CREATE_ONLY`) and optional `error_mode` (`ATOMIC`, `PARTIAL`). CSV must be UTF-8; XLSX is supported. The response includes a batch ID, source headers and suggested exact-name mapping.
+3. `POST {id}/preview/` takes `{"mapping":{"source heading":"catalogue_field"}}`. It checks every row with the target catalogue's serializer and model rules. Parent codes in the same file are created before children during validation. Preview does not persist catalogue changes. Response contains source row numbers, planned actions and field errors.
+4. `POST {id}/confirm/` rechecks permissions and current catalogue values. If records changed after preview, it refuses the import and requires a new preview. An atomic batch with errors cannot be confirmed. Partial mode persists valid rows and records errors individually. Confirmation cannot run twice.
+5. `GET {id}/` returns batch and row status. `GET {id}/results.csv/` downloads row outcomes and errors. `POST {id}/cancel/` works before confirmation.
+
+Supported targets: customers, suppliers, employees, item categories, units of measure, items, warehouses, company bank accounts, accounts, cost centers, expense items, statistical codes, company tax types, tax rates, payment terms and payment methods. Foreign keys are supplied by business code, not UUID. Customer and supplier imports create the corresponding party role. The target serializer enforces its normal creation and update rules.
+
+Limits are configured through `CATALOG_IMPORT_MAX_BYTES` (default 5 MiB) and `CATALOG_IMPORT_MAX_ROWS` (default 5000). Batches with at least `CATALOG_IMPORT_BACKGROUND_ROWS` rows (default 1000) enter `QUEUED` on confirmation. Run `python manage.py process_catalog_imports` in a scheduled worker to process them. Source file bytes are held in the database alongside row outcomes, timestamps and audit records; deployers should set a database retention policy for completed batches.
+
+AI mapping suggestions and completion notifications are not connected to a provider. Exact column-name suggestions, manual mapping and polling work without them. Connection credentials, user credentials, IAM data, vouchers, journal entries and balances are outside this importer.

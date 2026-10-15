@@ -1,0 +1,21 @@
+from django.contrib import admin
+from . import models
+
+@admin.register(models.ReceivableDocument)
+class DocumentAdmin(admin.ModelAdmin):list_display=("number","company","customer","document_type","document_date","due_date","amount","status");list_filter=("status","document_type","company");search_fields=("number","customer__name","source_reference")
+@admin.register(models.Receivable)
+class ReceivableAdmin(admin.ModelAdmin):list_display=("document","customer","due_date","original_amount","balance","status");list_filter=("status","company");search_fields=("document__number","customer__name")
+@admin.register(models.CreditPolicy)
+class CreditPolicyAdmin(admin.ModelAdmin):list_display=("customer","company","credit_limit","credit_days","control_mode","effective_from","status");list_filter=("status","control_mode","company");search_fields=("customer__name",)
+@admin.register(models.CollectionPlan)
+class CollectionPlanAdmin(admin.ModelAdmin):list_display=("receivable","expected_date","expected_amount","responsible","status");list_filter=("status","company")
+@admin.register(models.Receipt)
+class ReceiptAdmin(admin.ModelAdmin):list_display=("customer","receipt_date","amount","allocated_amount","external_type","external_reference","status");list_filter=("status","external_type","company")
+@admin.register(models.Netting)
+class NettingAdmin(admin.ModelAdmin):list_display=("number","receivable","payable","netting_date","amount","status");list_filter=("status","company")
+@admin.register(models.BalanceConfirmation)
+class ConfirmationAdmin(admin.ModelAdmin):list_display=("number","customer","period_from","period_to","closing_balance","status");list_filter=("status","company")
+@admin.register(models.ReceivableAdjustment)
+class AdjustmentAdmin(admin.ModelAdmin):list_display=("receivable","adjustment_date","amount","status");list_filter=("status","company")
+admin.site.register(models.ReceiptAllocation)
+admin.site.register(models.ApprovalDecision)
