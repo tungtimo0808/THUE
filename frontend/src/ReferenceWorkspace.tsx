@@ -47,7 +47,6 @@ import {
   type Transaction,
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
-import { TaxPage } from "./TaxPage";
 import {
   referenceNav,
   referenceTabHierarchy,
@@ -88,6 +87,54 @@ import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
 import MisaFinancialAnalysisWorkspace from "./MisaFinancialAnalysisWorkspace";
 import MisaOpeningBalanceWorkspace from "./MisaOpeningBalanceWorkspace";
 import ErrorBoundary from "./ErrorBoundary";
+import { ApiSessionProvider, useApiSession } from "./ApiSession";
+import LiveAccount from "./LiveAccount";
+import LiveJoin from "./LiveJoin";
+import LiveLogin from "./LiveLogin";
+import LivePasswordReset from "./LivePasswordReset";
+import LiveProfile from "./LiveProfile";
+import LiveScope from "./LiveScope";
+import LiveCommonHub from "./LiveCommonHub";
+import LiveCompanyBootstrap from "./LiveCompanyBootstrap";
+import LiveCompanyProfile from "./LiveCompanyProfile";
+import LiveOrgStructure from "./LiveOrgStructure";
+import LiveJoinAdmin from "./LiveJoinAdmin";
+import LiveCompanyUsers from "./LiveCompanyUsers";
+import LiveRoles from "./LiveRoles";
+import LivePermissions from "./LivePermissions";
+import LiveDataScopes from "./LiveDataScopes";
+import LiveOrgAssignments from "./LiveOrgAssignments";
+import LiveWorkflows from "./LiveWorkflows";
+import LiveApprovalTasks from "./LiveApprovalTasks";
+import LiveModules from "./LiveModules";
+import LiveNumberingRules from "./LiveNumberingRules";
+import LiveFiscalPeriods from "./LiveFiscalPeriods";
+import LiveAccountingPolicies from "./LiveAccountingPolicies";
+import LiveAuditLogs from "./LiveAuditLogs";
+import LiveUserAccess from "./LiveUserAccess";
+import LiveCustomerDetails from "./LiveCustomerDetails";
+import LiveVendors from "./LiveVendors";
+import LiveEmployees from "./LiveEmployees";
+import LiveItems from "./LiveItems";
+import LiveVendorDetails from "./LiveVendorDetails";
+import LiveItemCategories from "./LiveItemCategories";
+import LiveUoms from "./LiveUoms";
+import LiveWarehouses from "./LiveWarehouses";
+import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
+import LiveAccounts from "./LiveAccounts";
+import LiveCatalogExtensions from "./LiveCatalogExtensions";
+import LiveSystemAdmin from "./LiveSystemAdmin";
+import LiveMasterData from "./LiveMasterData";
+import LivePurchases from "./LivePurchases";
+import LiveAccountsPayable from "./LiveAccountsPayable";
+import LiveSales from "./LiveSales";
+import LiveAccountsReceivable from "./LiveAccountsReceivable";
+import LiveCash from "./LiveCash";
+import LiveBank from "./LiveBank";
+import LiveInventory from "./LiveInventory";
+import LiveFixedAssets from "./LiveFixedAssets";
+import LiveTax from "./LiveTax";
+import LiveGeneralLedger from "./LiveGeneralLedger";
 import "./App.css";
 import "./reference.css";
 import "./detailed-workspaces.css";
@@ -148,9 +195,24 @@ const quickCreateGroups: {
   ];
 
 function ReferenceWorkspace() {
+  const {
+    token: apiToken,
+    signOut: apiSignOut,
+    companies: apiCompanies,
+    companyId: apiCompanyId,
+    selectCompany: apiSelectCompany,
+  } = useApiSession();
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
+
+  // Enforce flow: If not logged in, navigate to /login
+  useEffect(() => {
+    if (!apiToken) {
+      navigate("/login");
+    }
+  }, [apiToken, navigate]);
+
   const pathParts = location.pathname.split("/");
   const moduleId = pathParts[1] || "overview",
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
@@ -163,8 +225,11 @@ function ReferenceWorkspace() {
   const activeTabNode = referenceTabHierarchy[moduleId]?.find(
     (item) => item.id === tab,
   );
+  const matchedApiCompany = apiCompanies.find((c) => c.id === apiCompanyId) || (apiCompanies.length > 0 ? apiCompanies[0] : null);
   const company =
-    companies.find((c) => c.id === params.get("company")) || companies[0];
+    companies.find((c) => c.id === params.get("company")) ||
+    (matchedApiCompany ? { id: matchedApiCompany.id, name: matchedApiCompany.name, code: matchedApiCompany.code } : null) ||
+    companies[0];
   const period = ["2026-09", "2026-08", "2026"].includes(
     params.get("period") || "",
   )
@@ -345,6 +410,22 @@ function ReferenceWorkspace() {
   };
   const infoAction = (name: string) => {
     setPanel(null);
+    if (name === "Thông tin công ty") {
+      navigate("/system?tab=company");
+      return;
+    }
+    if (name === "Quản lý người dùng và phân quyền") {
+      navigate("/system?tab=users");
+      return;
+    }
+    if (name === "Nhật ký truy cập") {
+      navigate("/system?tab=audit");
+      return;
+    }
+    if (name === "Tùy chọn" || name === "Quản lý dữ liệu") {
+      navigate("/system?tab=config");
+      return;
+    }
     setInfo(name);
   };
   return (
@@ -388,13 +469,24 @@ function ReferenceWorkspace() {
           <select
             aria-label="Doanh nghiệp"
             value={company.id}
-            onChange={(e) => context("company", e.target.value)}
+            onChange={(e) => {
+              if (apiCompanies.some((c) => c.id === e.target.value)) {
+                apiSelectCompany(e.target.value);
+              }
+              context("company", e.target.value);
+            }}
           >
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            {apiCompanies.length > 0
+              ? apiCompanies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              : companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
           </select>
         </label>
         <label className="ref-dataset">
@@ -429,7 +521,7 @@ function ReferenceWorkspace() {
               className="ref-global-search"
               onSubmit={(e) => {
                 e.preventDefault();
-                navigate(href("/ledger/transactions", { q: query }));
+                navigate(apiToken ? `/common?tab=search&q=${encodeURIComponent(query)}` : href("/ledger/transactions", { q: query }));
                 setQuery("");
               }}
             >
@@ -443,13 +535,13 @@ function ReferenceWorkspace() {
               />
               <span>AI</span>
             </form>
-            <SmartSearchResults
+            {!apiToken && <SmartSearchResults
               query={query}
               onSelect={(label) => {
                 setQuery("");
                 setNotice(`Đã mở ${label}.`);
               }}
-            />
+            />}
           </div>
           <button
             className="ref-work-mode"
@@ -495,11 +587,14 @@ function ReferenceWorkspace() {
           <button
             className="ref-icon ref-bell"
             aria-label="Thông báo"
-            onClick={() => setPanel("notifications")}
+            onClick={() => navigate("/common")}
           >
             <Bell size={18} />
-            {unreadCount > 0 && <span>{unreadCount}</span>}
           </button>
+          <button className="ref-icon" aria-label="Tài khoản BE" title={apiToken ? apiCompanies.find(item => item.id === apiCompanyId)?.name || "Tài khoản BE" : "Đăng nhập BE"} onClick={() => navigate("/login")}>
+            <UserRoundPlus size={18} />
+          </button>
+          {apiToken && <button className="ref-icon" aria-label="Đăng xuất BE" onClick={apiSignOut} title="Đăng xuất BE"><X size={18} /></button>}
           <button
             className="ref-icon secondary-tool"
             aria-label="Trợ giúp"
@@ -854,7 +949,7 @@ function ReferenceWorkspace() {
           <MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice}/>
         ) : moduleId === "purchases" && tab === "invoice-processing" ? (
           <IncomingInvoiceWorkspace notify={setNotice} />
-        ) : moduleId === "purchases" ? (
+        ) : moduleId === "purchases" && tab === "legacy" ? (
           <MisaPurchaseWorkspace
             key={`purchases-${company.id}-${period}-${tab}`}
             company={company}
@@ -863,13 +958,17 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
+        ) : moduleId === "purchases" ? (
+          <LivePurchases />
+        ) : moduleId === "payables" || moduleId === "accounts-payable" ? (
+          <LiveAccountsPayable />
         ) : moduleId === "reports" ? (
           <MisaReportCenterWorkspace notify={setNotice} />
         ) : moduleId === "directory" ? (
           <MisaDirectoryWorkspace key={params.get("directory") || "menu"} initialName={params.get("directory")} notify={setNotice} legacy={<DirectoryWorkspace notify={setNotice}/>}/>
         ) : moduleId === "opening" ? (
           <MisaOpeningBalanceWorkspace notify={setNotice} />
-        ) : moduleId === "cash" ? (
+        ) : moduleId === "cash" && tab === "legacy" ? (
           <MisaCashWorkspace
             key={`cash-${company.id}-${period}-${tab}`}
             company={company}
@@ -878,16 +977,11 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
+        ) : moduleId === "cash" ? (
+          <LiveCash />
         ) : moduleId === "bank" ? (
-          <MisaBankWorkspace
-            key={`bank-${company.id}-${period}-${tab}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "sales" ? (
+          <LiveBank />
+        ) : moduleId === "sales" && tab === "legacy" ? (
           <MisaSalesWorkspace
             key={`sales-${company.id}-${period}-${tab}`}
             company={company}
@@ -896,15 +990,12 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
+        ) : moduleId === "sales" ? (
+          <LiveSales />
+        ) : moduleId === "receivables" || moduleId === "accounts-receivable" ? (
+          <LiveAccountsReceivable />
         ) : moduleId === "inventory" ? (
-          <MisaInventoryWorkspace
-            key={`inventory-${company.id}-${period}-${tab}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
+          <LiveInventory />
         ) : moduleId === "tools" ? (
           <MisaToolsWorkspace
             key={`tools-${company.id}-${period}-${tab}`}
@@ -914,15 +1005,8 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
-        ) : moduleId === "assets" ? (
-          <MisaAssetsWorkspace
-            key={`assets-${company.id}-${period}-${tab}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
+        ) : moduleId === "assets" || moduleId === "fixed-assets" ? (
+          <LiveFixedAssets />
         ) : moduleId === "payroll" ? (
           <MisaPayrollWorkspace
             key={`payroll-${company.id}-${period}-${tab}`}
@@ -942,14 +1026,7 @@ function ReferenceWorkspace() {
             notify={setNotice}
           />
         ) : moduleId === "ledger" ? (
-          <MisaLedgerWorkspace
-            key={`ledger-${company.id}-${period}-${tab}`}
-            company={company}
-            period={period}
-            tab={tab || "process"}
-            href={href}
-            notify={setNotice}
-          />
+          <LiveGeneralLedger />
         ) : moduleId === "budget" ? (
           <MisaBudgetWorkspace
             key={`budget-${company.id}-${period}-${tab}`}
@@ -979,14 +1056,7 @@ function ReferenceWorkspace() {
             onInfo={infoAction}
           />
         ) : moduleId === "tax" ? (
-          <MisaTaxWorkspace
-            key={`tax-${company.id}-${period}-${tab}`}
-            company={company}
-            period={period}
-            tab={tab || "declarations"}
-            href={href}
-            notify={setNotice}
-          />
+          <LiveTax />
         ) : moduleId === "analysis" ? (
           <MisaFinancialAnalysisWorkspace notify={setNotice} />
         ) : (
@@ -1386,12 +1456,70 @@ function ReferenceWorkspace() {
     </div>
   );
 }
+function AppRoute() {
+  const location = useLocation();
+  if (location.pathname === "/account") return <LiveAccount />;
+  if (location.pathname === "/join") return <LiveJoin />;
+  if (location.pathname === "/login" || location.pathname === "/login/" || location.pathname === "/select-company") return <LiveLogin />;
+  if (location.pathname === "/reset-password") return <LivePasswordReset />;
+  if (location.pathname === "/profile") return <LiveProfile />;
+  if (location.pathname === "/scope") return <LiveScope />;
+  if (location.pathname === "/common") return <LiveCommonHub />;
+  if (location.pathname === "/company-setup") return <LiveCompanyBootstrap />;
+  if (location.pathname === "/company-profile") return <LiveCompanyProfile />;
+  if (location.pathname === "/organization-structure") return <LiveOrgStructure />;
+  if (location.pathname === "/join-requests-admin") return <LiveJoinAdmin />;
+  if (location.pathname === "/company-users") return <LiveCompanyUsers />;
+  if (location.pathname === "/roles") return <LiveRoles />;
+  if (location.pathname === "/permissions") return <LivePermissions />;
+  if (location.pathname === "/data-scopes") return <LiveDataScopes />;
+  if (location.pathname === "/organization-assignments") return <LiveOrgAssignments />;
+  if (location.pathname === "/workflows") return <LiveWorkflows />;
+  if (location.pathname === "/approval-tasks") return <LiveApprovalTasks />;
+  if (location.pathname === "/modules") return <LiveModules />;
+  if (location.pathname === "/numbering-rules") return <LiveNumberingRules />;
+  if (location.pathname === "/fiscal-periods") return <LiveFiscalPeriods />;
+  if (location.pathname === "/accounting-policies") return <LiveAccountingPolicies />;
+  if (location.pathname === "/audit-logs") return <LiveAuditLogs />;
+  if (location.pathname === "/user-access") return <LiveUserAccess />;
+  if (location.pathname.startsWith("/customers/")) return <LiveCustomerDetails id={location.pathname.split("/")[2]} />;
+  if (location.pathname === "/vendors") return <LiveVendors />;
+  if (location.pathname.startsWith("/vendors/")) return <LiveVendorDetails id={location.pathname.split("/")[2]} />;
+  if (location.pathname === "/employees") return <LiveEmployees />;
+  if (location.pathname === "/items") return <LiveItems />;
+  if (location.pathname === "/item-categories") return <LiveItemCategories />;
+  if (location.pathname === "/uoms") return <LiveUoms />;
+  if (location.pathname === "/warehouses") return <LiveWarehouses />;
+  if (location.pathname === "/company-bank-accounts") return <LiveCompanyBankAccounts />;
+  if (location.pathname === "/accounts") return <LiveAccounts />;
+  if (location.pathname === "/expense-items") return <LiveCatalogExtensions kind="expense" />;
+  if (location.pathname === "/statistical-codes") return <LiveCatalogExtensions kind="stat" />;
+  if (location.pathname === "/tax-types") return <LiveCatalogExtensions kind="tax" />;
+  if (location.pathname === "/payment-terms") return <LiveCatalogExtensions kind="term" />;
+  if (location.pathname === "/payment-methods") return <LiveCatalogExtensions kind="method" />;
+  if (location.pathname === "/system" || location.pathname === "/company-profile" || location.pathname === "/settings") return <LiveSystemAdmin />;
+  if (location.pathname === "/master-data" || location.pathname === "/catalogs") return <LiveMasterData />;
+  if (location.pathname === "/purchases" || location.pathname === "/live-purchases") return <LivePurchases />;
+  if (location.pathname === "/accounts-payable" || location.pathname === "/payables" || location.pathname === "/live-accounts-payable") return <LiveAccountsPayable />;
+  if (location.pathname === "/sales" || location.pathname === "/live-sales") return <LiveSales />;
+  if (location.pathname === "/accounts-receivable" || location.pathname === "/receivables" || location.pathname === "/live-accounts-receivable") return <LiveAccountsReceivable />;
+  if (location.pathname === "/cash" || location.pathname === "/live-cash") return <LiveCash />;
+  if (location.pathname === "/bank" || location.pathname === "/live-bank") return <LiveBank />;
+  if (location.pathname === "/inventory" || location.pathname === "/live-inventory") return <LiveInventory />;
+  if (location.pathname === "/assets" || location.pathname === "/fixed-assets" || location.pathname === "/live-fixed-assets") return <LiveFixedAssets />;
+  if (location.pathname === "/tax" || location.pathname === "/live-tax") return <LiveTax />;
+  if (location.pathname === "/gl" || location.pathname === "/ledger" || location.pathname === "/live-gl" || location.pathname === "/general-ledger") return <LiveGeneralLedger />;
+  return <ReferenceWorkspace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <ErrorBoundary>
-        <ReferenceWorkspace />
-      </ErrorBoundary>
+      <ApiSessionProvider>
+        <ErrorBoundary>
+          <AppRoute />
+        </ErrorBoundary>
+      </ApiSessionProvider>
     </BrowserRouter>
   );
 }

@@ -1,0 +1,446 @@
+/* Live Accounts Receivable (Công nợ phải thu) Stylesheet */
+.live-ar-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #0b0f19;
+  color: #cbd5e1;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+
+/* Header */
+.live-ar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: linear-gradient(180deg, #131b2e 0%, #0f172a 100%);
+  border-bottom: 1px solid #1e293b;
+}
+
+.live-ar-title-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.live-ar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.live-ar-badge {
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+.live-ar-company-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.live-ar-company-tag {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Navigation Tabs */
+.live-ar-nav {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px;
+  background-color: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  overflow-x: auto;
+}
+
+.live-ar-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.live-ar-nav-btn:hover {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.live-ar-nav-btn.active {
+  background-color: #1e293b;
+  color: #38bdf8;
+  box-shadow: inset 0 -2px 0 #38bdf8;
+}
+
+.live-ar-nav-tag {
+  background: #334155;
+  color: #f1f5f9;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.live-ar-nav-btn.active .live-ar-nav-tag {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Notice Bar */
+.live-ar-notice {
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.live-ar-notice.success {
+  background-color: rgba(16, 185, 129, 0.15);
+  border-bottom: 1px solid #10b981;
+  color: #34d399;
+}
+
+.live-ar-notice.error {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-bottom: 1px solid #ef4444;
+  color: #f87171;
+}
+
+.live-ar-notice.info {
+  background-color: rgba(14, 165, 233, 0.15);
+  border-bottom: 1px solid #0ea5e9;
+  color: #38bdf8;
+}
+
+/* Main Container */
+.live-ar-content {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+/* Section Controls */
+.live-ar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.live-ar-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 12px;
+  min-width: 260px;
+}
+
+.live-ar-search-input {
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+}
+
+.live-ar-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-ar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+
+.live-ar-btn-primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #fff;
+  border-color: #0284c7;
+}
+
+.live-ar-btn-primary:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+}
+
+.live-ar-btn-secondary {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+.live-ar-btn-secondary:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.live-ar-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.live-ar-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* Stat Cards */
+.live-ar-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.live-ar-stat-card {
+  background: #131b2e;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 14px 18px;
+}
+
+.live-ar-stat-label {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.live-ar-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.live-ar-stat-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Data Table */
+.live-ar-table-box {
+  background: #131b2e;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.live-ar-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.live-ar-table th {
+  background: #0f172a;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #1e293b;
+  white-space: nowrap;
+}
+
+.live-ar-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #1e293b;
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+
+.live-ar-table tr:last-child td {
+  border-bottom: none;
+}
+
+.live-ar-table tr:hover td {
+  background: #1a2235;
+}
+
+/* Badges */
+.live-ar-status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.live-ar-status-badge.draft {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.live-ar-status-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.live-ar-status-badge.approved,
+.live-ar-status-badge.posted,
+.live-ar-status-badge.paid {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.live-ar-status-badge.overdue,
+.live-ar-status-badge.rejected,
+.live-ar-status-badge.cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Modal */
+.live-ar-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.live-ar-modal {
+  background: #131b2e;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.live-ar-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.live-ar-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.live-ar-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.live-ar-modal-close:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.live-ar-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.live-ar-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Form inputs */
+.live-ar-form-group {
+  margin-bottom: 14px;
+}
+
+.live-ar-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.live-ar-form-input,
+.live-ar-form-select,
+.live-ar-form-textarea {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #f8fafc;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.live-ar-form-input:focus,
+.live-ar-form-select:focus,
+.live-ar-form-textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px #38bdf8;
+}
+
+.live-ar-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

@@ -42,7 +42,14 @@ try {
         Write-Host "LAN test database: PostgreSQL theo cấu hình .env"
     }
 
-    & $Python manage.py migrate --noinput
+    $BackendDir = Join-Path $ProjectRoot "backend"
+    Push-Location $BackendDir
+    try {
+        & $Python manage.py migrate --noinput
+    }
+    finally {
+        Pop-Location
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "Migration thất bại. Kiểm tra PostgreSQL và .env."
     }
@@ -50,7 +57,7 @@ try {
     $backend = Start-Process `
         -FilePath $Python `
         -ArgumentList @("manage.py", "runserver", "0.0.0.0:8080", "--noreload") `
-        -WorkingDirectory $ProjectRoot `
+        -WorkingDirectory $BackendDir `
         -WindowStyle Hidden `
         -RedirectStandardOutput (Join-Path $RuntimeDir "backend.out.log") `
         -RedirectStandardError (Join-Path $RuntimeDir "backend.err.log") `

@@ -1531,22 +1531,30 @@ select:has(~ svg),
 .ref-overview {
   padding: 0 0 15px;
 }
-.ref-branch {
+.ref-overview .ref-branch {
   display: flex;
   align-items: center;
-  gap: 13px;
-  font-size: 11px;
-  padding: 16px 0;
+  gap: 10px;
+  font-size: 13px;
+  padding: 14px 0 16px;
+  max-width: none;
+  border-left: none;
 }
-.ref-branch button {
-  display: flex;
+.ref-overview .ref-branch span {
+  color: #64748b;
+  font-weight: 500;
+}
+.ref-overview .ref-branch button {
+  display: inline-flex;
   align-items: center;
-  gap: 35px;
-  color: #34809a;
-  font-size: 11px;
+  gap: 6px;
+  color: #0284c7;
+  font-size: 13px;
+  font-weight: 600;
   border: 0;
   background: transparent;
   padding: 0;
+  cursor: pointer;
 }
 .ref-dashboard-grid {
   display: grid;
