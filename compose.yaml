@@ -1,6 +1,8 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: thue_erp_postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-thue_erp}
       POSTGRES_USER: ${DB_USER:-thue_erp}
@@ -14,6 +16,63 @@ services:
       retries: 10
     volumes:
       - thue_erp_postgres:/var/lib/postgresql/data
+    networks:
+      - thue_erp_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: thue_erp_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-thue-erp-super-secret-key-2026}
+      ALLOWED_HOSTS: "*"
+      CORS_ALLOW_ALL_ORIGINS: "True"
+      DB_ENGINE: "postgres"
+      DB_NAME: ${DB_NAME:-thue_erp}
+      DB_USER: ${DB_USER:-thue_erp}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_CONN_MAX_AGE: "60"
+      COMMON_REQUIRE_VERIFICATION: "True"
+    volumes:
+      - ./backend:/app
+      - /app/venv
+    ports:
+      - "8080:8080"
+    command: >
+      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8080"
+    networks:
+      - thue_erp_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: thue_erp_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_PROXY_TARGET: "http://backend:8080"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - thue_erp_net
 
 volumes:
   thue_erp_postgres:
+
+networks:
+  thue_erp_net:
+    driver: bridge

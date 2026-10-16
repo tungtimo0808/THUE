@@ -195,10 +195,24 @@ const quickCreateGroups: {
   ];
 
 function ReferenceWorkspace() {
-  const { token: apiToken, signOut: apiSignOut, companies: apiCompanies, companyId: apiCompanyId } = useApiSession();
+  const {
+    token: apiToken,
+    signOut: apiSignOut,
+    companies: apiCompanies,
+    companyId: apiCompanyId,
+    selectCompany: apiSelectCompany,
+  } = useApiSession();
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
+
+  // Enforce flow: If not logged in, navigate to /login
+  useEffect(() => {
+    if (!apiToken) {
+      navigate("/login");
+    }
+  }, [apiToken, navigate]);
+
   const pathParts = location.pathname.split("/");
   const moduleId = pathParts[1] || "overview",
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
@@ -211,8 +225,11 @@ function ReferenceWorkspace() {
   const activeTabNode = referenceTabHierarchy[moduleId]?.find(
     (item) => item.id === tab,
   );
+  const matchedApiCompany = apiCompanies.find((c) => c.id === apiCompanyId) || (apiCompanies.length > 0 ? apiCompanies[0] : null);
   const company =
-    companies.find((c) => c.id === params.get("company")) || companies[0];
+    companies.find((c) => c.id === params.get("company")) ||
+    (matchedApiCompany ? { id: matchedApiCompany.id, name: matchedApiCompany.name, code: matchedApiCompany.code } : null) ||
+    companies[0];
   const period = ["2026-09", "2026-08", "2026"].includes(
     params.get("period") || "",
   )
@@ -452,13 +469,24 @@ function ReferenceWorkspace() {
           <select
             aria-label="Doanh nghiệp"
             value={company.id}
-            onChange={(e) => context("company", e.target.value)}
+            onChange={(e) => {
+              if (apiCompanies.some((c) => c.id === e.target.value)) {
+                apiSelectCompany(e.target.value);
+              }
+              context("company", e.target.value);
+            }}
           >
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            {apiCompanies.length > 0
+              ? apiCompanies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              : companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
           </select>
         </label>
         <label className="ref-dataset">
@@ -1432,7 +1460,7 @@ function AppRoute() {
   const location = useLocation();
   if (location.pathname === "/account") return <LiveAccount />;
   if (location.pathname === "/join") return <LiveJoin />;
-  if (location.pathname === "/login") return <LiveLogin />;
+  if (location.pathname === "/login" || location.pathname === "/login/" || location.pathname === "/select-company") return <LiveLogin />;
   if (location.pathname === "/reset-password") return <LivePasswordReset />;
   if (location.pathname === "/profile") return <LiveProfile />;
   if (location.pathname === "/scope") return <LiveScope />;
