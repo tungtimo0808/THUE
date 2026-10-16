@@ -15,6 +15,8 @@ import CashOptionsDialog from "./CashOptionsDialog";
 import {AdvanceSettlementTab} from "./MisaCashWorkspace";
 import { useState, useMemo, useRef, useEffect, cloneElement, type ReactElement } from "react";
 import {useNavigate,useSearchParams} from 'react-router-dom';
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import {
   Filter,
   Search,
@@ -44,7 +46,6 @@ import {
   AccountingVoucherModal,
   CreateVoucherModal,
   AIAssistantModal,
-  SAMPLE_BANK_ACCOUNTS,
   MISA_BANK_RECEIPT_TYPES,
   MISA_BANK_PAYMENT_TYPES,
   formatVND,
@@ -70,6 +71,39 @@ import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 import {matchesTransactionPeriod} from './transaction-period';
 
 type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; bankAccount?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
+type ApiBankProfile = { account_number: string; account_name: string; bank_name: string; currency_code: string; balance: string | number };
+
+type ApiBankTransaction = {
+  id: string;
+  number: string;
+  transaction_date: string;
+  value_date?: string | null;
+  description: string;
+  amount: string | number;
+  counterparty_name: string;
+  transaction_type: string;
+  status: string;
+  bank_reference?: string;
+  counterparty_account?: string;
+};
+
+function mapBankTransaction(row: ApiBankTransaction): BankTransaction {
+  const date = (value?: string | null) => value ? value.slice(0, 10).split("-").reverse().join("/") : "";
+  return {
+    id: row.id,
+    dateHachToan: date(row.transaction_date),
+    dateChungTu: date(row.value_date || row.transaction_date),
+    code: row.number,
+    description: row.description || "",
+    amount: Number(row.amount),
+    partner: row.counterparty_name || "",
+    kind: ["RECEIPT", "INTEREST", "OTHER_IN"].includes(row.transaction_type) ? "receipt" : "payment",
+    status: row.status.toLowerCase(),
+    bankAccount: row.counterparty_account || "",
+    items: [],
+  };
+}
+
 export default function MisaBankWorkspace({
   tab = "transactions",
   company,
@@ -83,6 +117,7 @@ export default function MisaBankWorkspace({
   notify: (msg: string) => void;
 }) {
   const navigate=useNavigate();
+  const { token } = useApiSession();
   const [bankParams]=useSearchParams();
   const [bankOptionsOpen,setBankOptionsOpen]=useState(false);
   const bankColumnsKey=`soviet:bank-columns:${company.id}`;
@@ -157,98 +192,46 @@ export default function MisaBankWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  // Authentic sample transactions matching Image 1
-  const [transactions, setTransactions] = useState<BankTransaction[]>([
-    {
-      id: "unc-028",
-      dateHachToan: "02/09/2026",
-      dateChungTu: "02/09/2026",
-      code: "UNC00028",
-      description: "Chi tiền mua dịch vụ của TRUNG TÂM KIỂM DỊCH THỰC VẬT SAU ...",
-      amount: 234000,
-      partner: "TRUNG TÂM KIỂM DỊCH THỰC VẬT SAU NHẬP KHẨU I",
-      kind: "payment",
-      status: "posted",
-      items: [
-        {
-          code: "PHH56",
-          name: "Dịch vụ giám định mẫu vật thể - Côn trùng",
-          taxDesc: "Thuế GTGT - Dịch vụ giám định mẫu vật thể - Côn trùng",
-          taxRate: 0,
-          taxAmount: 0,
-          taxAccount: "1331",
-          invoiceCode: "34221",
-          invoiceDate: "02/09/2026",
-        },
-        {
-          code: "PHH57",
-          name: "Dịch vụ giám định mẫu vật thể - Nấm",
-          taxDesc: "Thuế GTGT - Dịch vụ giám định mẫu vật thể - Nấm",
-          taxRate: 0,
-          taxAmount: 0,
-          taxAccount: "1331",
-          invoiceCode: "34221",
-          invoiceDate: "02/09/2026",
-        },
-        {
-          code: "PHH58",
-          name: "Dịch vụ giám định mẫu vật thể - Vi khuẩn",
-          taxDesc: "Thuế GTGT - Dịch vụ giám định mẫu vật thể - Vi khuẩn",
-          taxRate: 0,
-          taxAmount: 0,
-          taxAccount: "1331",
-          invoiceCode: "34221",
-          invoiceDate: "02/09/2026",
-        },
-      ],
-    },
-    {
-      id: "unc-027",
-      dateHachToan: "10/08/2026",
-      dateChungTu: "10/08/2026",
-      code: "UNC00027",
-      description: "Chi tiền mua dịch vụ của Công ty Cổ phần Vận chuyển Huy Hoàng",
-      amount: 220000,
-      partner: "Công ty Cổ phần Vận chuyển Huy Hoàng",
-      kind: "payment",
-      status: "posted",
-      items: [
-        {
-          code: "VH01",
-          name: "Cước vận chuyển container tuyến Hải Phòng - Hà Nội",
-          taxDesc: "Thuế GTGT dịch vụ vận tải hàng hóa",
-          taxRate: 8,
-          taxAmount: 185360,
-          taxAccount: "1331",
-          invoiceCode: "18942",
-          invoiceDate: "10/08/2026",
-        },
-      ],
-    },
-    {
-      id: "unc-026",
-      dateHachToan: "15/07/2026",
-      dateChungTu: "15/07/2026",
-      code: "UNC00026",
-      description: "Chi tiền phí dịch vụ duy trì tài khoản ngân hàng điện tử",
-      amount: 4180000,
-      partner: "Ngân hàng TMCP Ngoại thương Việt Nam",
-      kind: "payment",
-      status: "posted",
-      items: [
-        {
-          code: "EB01",
-          name: "Phí dịch vụ eBanking 6 tháng cuối năm",
-          taxDesc: "Thuế GTGT phí ngân hàng",
-          taxRate: 10,
-          taxAmount: 380000,
-          taxAccount: "1331",
-          invoiceCode: "002819",
-          invoiceDate: "15/07/2026",
-        },
-      ],
-    },
-  ]);
+  const [transactions, setTransactions] = useState<BankTransaction[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>([]);
+  const [bankBalance, setBankBalance] = useState(0);
+
+  useEffect(() => {
+    if (!token || !company.id) {
+      setTransactions([]);
+      setBankAccounts([]);
+      setBankBalance(0);
+      return;
+    }
+    let active = true;
+    setTransactions([]);
+    setBankAccounts([]);
+    setBankBalance(0);
+    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}`;
+    request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
+      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}`, token,
+    ).then((response) => {
+      if (!active) return;
+      const records = Array.isArray(response) ? response : response.results;
+      setBankBalance(records.reduce((total, row) => total + Number(row.balance), 0));
+      setBankAccounts(records.map((row) => ({
+        account: row.account_number,
+        name: `${row.bank_name} - ${row.account_name} (${row.currency_code})`,
+      })));
+    }).catch((error) => {
+      if (active) notify(error instanceof Error ? error.message : "Không tải được tài khoản ngân hàng.");
+    });
+    request<ApiBankTransaction[] | { results: ApiBankTransaction[] }>(path, token)
+      .then((response) => {
+        if (!active) return;
+        const records = Array.isArray(response) ? response : response.results;
+        setTransactions(records.map(mapBankTransaction));
+      })
+      .catch((error) => {
+        if (active) notify(error instanceof Error ? error.message : "Không tải được giao dịch ngân hàng.");
+      });
+    return () => { active = false; };
+  }, [token, company.id, notify]);
 
   const [bankRowMenu,setBankRowMenu]=useState<string|null>(null);
   const [selectedRowId, setSelectedRowId] = useState("unc-028");
@@ -256,12 +239,12 @@ export default function MisaBankWorkspace({
   const [bankDeletePending,setBankDeletePending]=useState(false);
   const [bankDeletedRows,setBankDeletedRows]=useState<BankTransaction[]>([]);
 
-  const bankLedger=useMemo(()=>cashLedger(transactions.map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),1745522870),[transactions]);
+  const bankLedger=useMemo(()=>cashLedger(transactions.map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),0),[transactions]);
   const totalPayment = bankLedger.payment;
 
   const totalReceipt = bankLedger.receipt;
 
-  const currentBalance = bankLedger.closing;
+  const currentBalance = bankBalance;
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
@@ -292,10 +275,33 @@ export default function MisaBankWorkspace({
 
   const checkedBankRows=filteredTransactions.filter(transaction=>bankCheckedIds.includes(transaction.id));
   const toggleBankChecked=(id:string)=>setBankCheckedIds(previous=>previous.includes(id)?previous.filter(value=>value!==id):[...previous,id]);
-  const setBankPosting=(status:BankTransaction['status'])=>{
-    const ids=new Set(checkedBankRows.map(transaction=>transaction.id));
-    setTransactions(previous=>previous.map(transaction=>ids.has(transaction.id)?{...transaction,status}:transaction));
-    notify(`Đã ${status==='posted'?'ghi sổ':'bỏ ghi sổ'} ${ids.size} chứng từ trên frontend.`);
+  const setBankPosting = async (status: BankTransaction["status"], selected = checkedBankRows) => {
+    if (!token || !company.id || selected.length === 0) return;
+    const action = status === "posted" ? "post" : "reverse";
+    try {
+      const updated = await Promise.all(selected.map((transaction) =>
+        request<ApiBankTransaction>(
+          `/api/v1/bank/transactions/${transaction.id}/${action}/?company_id=${encodeURIComponent(company.id)}`,
+          token,
+          { method: "POST" },
+        ),
+      ));
+      const byId = new Map(updated.map((row) => [row.id, mapBankTransaction(row)]));
+      setTransactions((previous) => previous.map((row) => byId.get(row.id) || row));
+      setBankCheckedIds([]);
+      notify(`Đã ${action === "post" ? "ghi sổ" : "đảo giao dịch"} ${updated.length} chứng từ.`);
+      try {
+        const profiles = await request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
+          `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}`, token,
+        );
+        const accounts = Array.isArray(profiles) ? profiles : profiles.results;
+        setBankBalance(accounts.reduce((total, profile) => total + Number(profile.balance), 0));
+      } catch {
+        notify("Giao dịch đã cập nhật, nhưng chưa tải lại được số dư ngân hàng.");
+      }
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thực hiện được thao tác ngân hàng.");
+    }
   };
 
   // Handlers
@@ -530,7 +536,7 @@ export default function MisaBankWorkspace({
     <>
       {bankColumnsOpen&&<CashColumnDialog value={bankColumns} defaults={defaultBankColumns} onClose={()=>setBankColumnsOpen(false)} onSave={value=>{setBankColumns(value);try{localStorage.setItem(bankColumnsKey,JSON.stringify(value));}catch{notify('Đã áp dụng cột nhưng chưa lưu được tùy chọn trên trình duyệt.');}}}/>}
       {bankImportKind&&<CashExcelImport category="bank" kind={bankImportKind} existingCodes={transactions.map(transaction=>transaction.code)} onClose={()=>setBankImportKind(null)} onImport={documents=>{setTransactions(previous=>[...documents.map(document=>({...document,dateHachToan:document.postDate.split('-').reverse().join('/'),dateChungTu:document.date.split('-').reverse().join('/'),items:[]})),...previous]);setSelectedRowId(documents[0]?.id||selectedRowId);notify(`Đã nhập ${documents.length} chứng từ tiền gửi vào frontend.`);}}/>}
-      {bankFilterOpen&&<CashAdvancedPanel bankAccounts={SAMPLE_BANK_ACCOUNTS} mode="filters" filter={bankFilter} hidden={[]} reasons={[...MISA_BANK_RECEIPT_TYPES,...MISA_BANK_PAYMENT_TYPES].map(type=>type.label.replace(/^\d+\.\s*/,''))} onClose={()=>setBankFilterOpen(false)} onColumns={()=>{}} onFilter={value=>{setBankFilter(value);setFilterPeriod('custom');}}/>}
+      {bankFilterOpen&&<CashAdvancedPanel bankAccounts={bankAccounts} mode="filters" filter={bankFilter} hidden={[]} reasons={[...MISA_BANK_RECEIPT_TYPES,...MISA_BANK_PAYMENT_TYPES].map(type=>type.label.replace(/^\d+\.\s*/,''))} onClose={()=>setBankFilterOpen(false)} onColumns={()=>{}} onFilter={value=>{setBankFilter(value);setFilterPeriod('custom');}}/>}
       {bankOptionsOpen&&<CashOptionsDialog companyId={company.id} onClose={()=>setBankOptionsOpen(false)}/>}
       {showCustomerModal && (
         <SingleCustomerInvoiceCollectionModal
@@ -688,7 +694,7 @@ export default function MisaBankWorkspace({
     </>
   );
 
-  if(tab==='ebanking')return <><MisaBankElectronicWorkspace accounts={SAMPLE_BANK_ACCOUNTS} companyId={company.id} onOpenVoucher={kind=>setShowCreateVoucher(kind)}/>{renderModals()}</>;
+  if(tab==='ebanking')return <><MisaBankElectronicWorkspace accounts={bankAccounts} companyId={company.id} onOpenVoucher={kind=>setShowCreateVoucher(kind)}/>{renderModals()}</>;
   if(tab==='reports')return <MisaReportCenterWorkspace key={bankParams.get('report')||'bank'} initialCategory="bank" initialReport={bankParams.get('report')} embedded notify={notify}/>;
   if(tab==='cashflow')return <MisaCashForecastWorkspace companyId={company.id} openingKind="bank" entries={transactions.map(row=>({date:row.dateHachToan,kind:row.kind,amount:row.amount,code:row.code,status:row.status}))}/>;
   if(tab==='advance-settlement')return <><MisaPaymentWorkflow variant="settlement" notify={notify}><AdvanceSettlementTab notify={notify} onOpenCreateReceipt={()=>setShowCreateVoucher('receipt')}/></MisaPaymentWorkflow>{renderModals()}</>;
@@ -1629,7 +1635,7 @@ export default function MisaBankWorkspace({
         {/* Master Table (Image 4 & 5) */}
         <div style={{ flex: 1, minHeight: 220, overflow: "auto", background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
           <details className="ce-toolbar"><summary style={{cursor:'pointer'}}>Nhập chứng từ tiền gửi từ Excel</summary><button onClick={()=>setBankImportKind('receipt')}>Nhập thu tiền gửi</button><button onClick={()=>setBankImportKind('payment')}>Nhập chi tiền gửi</button></details>
-          {checkedBankRows.length>0&&<div className="ce-toolbar" role="toolbar" aria-label="Thao tác chứng từ tiền gửi đã chọn"><strong>Đã chọn {checkedBankRows.length}</strong><button onClick={()=>setBankPosting('posted')}>Ghi sổ</button><button onClick={()=>setBankPosting('draft')}>Bỏ ghi sổ</button><button onClick={()=>setBankDeletePending(true)}>Xóa</button><button onClick={()=>setBankCheckedIds([])}>Bỏ chọn</button></div>}
+          {checkedBankRows.length>0&&<div className="ce-toolbar" role="toolbar" aria-label="Thao tác chứng từ tiền gửi đã chọn"><strong>Đã chọn {checkedBankRows.length}</strong><button onClick={()=>setBankPosting('posted')}>Ghi sổ</button><button onClick={()=>setBankPosting('draft')}>Bỏ ghi sổ</button><button disabled title="Not supported by backend">Xóa</button><button onClick={()=>setBankCheckedIds([])}>Bỏ chọn</button></div>}
           {bankDeletedRows.length>0&&<div className="ce-toolbar" role="status">Đã xóa {bankDeletedRows.length} chứng từ trên frontend.<button onClick={()=>{setTransactions(previous=>[...bankDeletedRows.filter(row=>!previous.some(existing=>existing.id===row.id)),...previous]);setBankDeletedRows([]);}}>Hoàn tác</button></div>}
           {bankDeletePending&&<div className="ce-overlay"><section className="ce-panel" role="alertdialog" aria-modal="true" aria-label="Xóa chứng từ tiền gửi"><header><h2>Xóa chứng từ tiền gửi</h2></header><div className="ce-panel-body">Xóa {checkedBankRows.length} chứng từ đã chọn khỏi danh sách frontend?</div><footer><button onClick={()=>setBankDeletePending(false)}>Hủy</button><button className="ce-primary" onClick={()=>{const ids=new Set(checkedBankRows.map(row=>row.id));setBankDeletedRows(checkedBankRows);setTransactions(previous=>previous.filter(row=>!ids.has(row.id)));setBankCheckedIds(previous=>previous.filter(id=>!ids.has(id)));setBankDeletePending(false);}}>Xóa chứng từ</button></footer></section></div>}
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -1715,7 +1721,7 @@ export default function MisaBankWorkspace({
                         Xem
                       </span>
                       <button aria-label={`Chức năng chứng từ ${tx.code}`} aria-expanded={bankRowMenu===tx.id} onClick={event=>{event.stopPropagation();setBankRowMenu(previous=>previous===tx.id?null:tx.id);}} style={{border:0,background:'transparent',color:'#0284c7',cursor:'pointer'}}><ChevronDown size={13}/></button>
-                      {bankRowMenu===tx.id&&<div role="menu" aria-label={`Chức năng ${tx.code}`}><button role="menuitem" onClick={event=>{event.stopPropagation();setTransactions(previous=>previous.map(row=>row.id===tx.id?{...row,status:row.status==='posted'?'draft':'posted'}:row));setBankRowMenu(null);}}>{tx.status==='posted'?'Bỏ ghi':'Ghi sổ'}</button><button role="menuitem" onClick={event=>{event.stopPropagation();setBankRowMenu(null);}}>Đóng</button></div>}
+                      {bankRowMenu===tx.id&&<div role="menu" aria-label={`Chức năng ${tx.code}`}><button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting(tx.status==='posted'?'draft':'posted',[tx]);setBankRowMenu(null);}}>{tx.status==='posted'?'Đảo giao dịch':'Ghi sổ'}</button><button role="menuitem" onClick={event=>{event.stopPropagation();setBankRowMenu(null);}}>Đóng</button></div>}
                     </td>,<td>{tx.partnerCode||""}</td>,<td>{tx.beneficiaryAccount||""}</td>,<td>{tx.beneficiaryBank||""}</td>,<td>{tx.address||""}</td>,<td>{tx.employee||""}</td>,<td>{tx.bankName||""}</td>,<td>{tx.combinedInvoices||""}</td>,<td>{tx.settled||""}</td>,<td>{tx.extended1||""}</td>,<td>{tx.extended2||""}</td>,<td>{tx.extended3||""}</td>,<td>{tx.extended4||""}</td>,<td>{tx.extended5||""}</td>,<td>{tx.extended6||""}</td>,<td>{tx.extended7||""}</td>,<td>{tx.extended8||""}</td>,<td>{tx.extended9||""}</td>,<td>{tx.extended10||""}</td>,<td>{tx.createdBy||""}</td>,<td>{tx.createdAt||""}</td>,<td>{tx.updatedBy||""}</td>,<td>{tx.updatedAt||""}</td>];const cell=cells[column.id-2];return cloneElement(cell,{key:column.id,style:{...cell.props.style,width:column.width,minWidth:column.width}});})}
                   </tr>
                 );

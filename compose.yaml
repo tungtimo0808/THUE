@@ -48,6 +48,12 @@ services:
       - "8080:8080"
     command: >
       sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/docs/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10m
     networks:
       - thue_erp_net
 
@@ -58,7 +64,8 @@ services:
     container_name: thue_erp_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       VITE_API_PROXY_TARGET: "http://backend:8080"
     volumes:

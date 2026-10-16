@@ -21,6 +21,7 @@ export interface ApiSessionData {
 }
 
 export interface ApiSessionContextType {
+  restoring: boolean;
   token: string;
   companyId: string;
   companies: Company[];
@@ -34,6 +35,7 @@ export interface ApiSessionContextType {
 const ApiSessionContext = createContext<ApiSessionContextType | null>(null);
 
 export function ApiSessionProvider({ children }: { children: ReactNode }) {
+  const [restoring, setRestoring] = useState(true);
   const [token, setToken] = useState<string>("");
   const [refreshToken, setRefreshToken] = useState<string>("");
   const [companyId, setCompanyId] = useState<string>("");
@@ -79,6 +81,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error("Failed to parse erp_api_session:", e);
     }
+    setRestoring(false);
   }, []);
 
   const selectCompany = useCallback((id: string) => {
@@ -201,6 +204,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ApiSessionContextType>(
     () => ({
+      restoring,
       token,
       companyId,
       companies,
@@ -211,6 +215,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       refreshCompanies,
     }),
     [
+      restoring,
       token,
       companyId,
       companies,
@@ -247,6 +252,7 @@ export function useApiSession(): ApiSessionContextType {
     } catch {}
 
     return {
+      restoring: false,
       token: fallbackToken,
       companyId: fallbackCompanyId,
       companies: fallbackCompanies,

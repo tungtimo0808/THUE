@@ -39,8 +39,8 @@ export default function LiveLogin() {
   const [step, setStep] = useState<1 | 2>(token ? 2 : 1);
 
   // Form State
-  const [identifier, setIdentifier] = useState("admin@example.com");
-  const [password, setPassword] = useState("Admin@123456");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -259,35 +259,6 @@ export default function LiveLogin() {
                 <span>{error}</span>
               </div>
             )}
-
-            {/* Quick Fill Credentials for Dev / Pair-Programming */}
-            <div className="quick-fill-bar">
-              <span className="quick-fill-label">
-                <Sparkles size={13} color="#0284c7" /> Tài khoản kiểm thử nhanh:
-              </span>
-              <div className="quick-fill-chips">
-                <button
-                  type="button"
-                  className="quick-chip"
-                  onClick={() => {
-                    setIdentifier("admin@example.com");
-                    setPassword("Admin@123456");
-                  }}
-                >
-                  👑 Admin (admin@example.com)
-                </button>
-                <button
-                  type="button"
-                  className="quick-chip"
-                  onClick={() => {
-                    setIdentifier("tungtimo0808@gmail.com");
-                    setPassword("Admin@123456");
-                  }}
-                >
-                  👤 tungtimo0808@gmail.com
-                </button>
-              </div>
-            </div>
 
             <form onSubmit={handleLogin} className="auth-form">
               <div className="auth-field">

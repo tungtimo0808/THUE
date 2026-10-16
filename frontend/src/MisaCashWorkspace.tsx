@@ -13,6 +13,8 @@ import CashColumnDialog from "./CashColumnDialog";
 import {readCashColumns,type CashColumn} from "./cash-columns";
 import CashImportTaxFields from "./CashImportTaxFields";
 import {useNavigate,useSearchParams} from "react-router-dom";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import {currentCashDate,isCashDateInRange,cashDateValue} from './cash-date';
 import {nextCashCode,cashLedger,type CashEntry} from './cash-operations';
@@ -7215,6 +7217,35 @@ export function AdvanceSettlementTab({
 // ----------------------------------------------------------------------
 // 5. MAIN MISA TIỀN MẶT WORKSPACE COMPONENT
 // ----------------------------------------------------------------------
+type ApiCashTransaction = {
+  id: string;
+  number: string;
+  transaction_date: string;
+  transaction_type: string;
+  payer_payee: string;
+  description: string;
+  amount: string | number;
+  status: string;
+};
+
+type ApiCashFund = { balance: string | number };
+
+function mapCashTransaction(row: ApiCashTransaction) {
+  return {
+    id: row.id,
+    code: row.number,
+    date: row.transaction_date,
+    partner: row.payer_payee || "",
+    person: row.payer_payee || "",
+    description: row.description || "",
+    amount: Number(row.amount),
+    kind: ["RECEIPT", "ADVANCE_RETURN", "ADJUSTMENT_IN"].includes(row.transaction_type) ? "receipt" : "payment",
+    debit: "",
+    credit: "",
+    status: row.status.toLowerCase(),
+  };
+}
+
 export default function MisaCashWorkspace({
   tab = "transactions",
   company,
@@ -7228,6 +7259,7 @@ export default function MisaCashWorkspace({
   notify: (msg: string) => void;
 }) {
   const navigate = useNavigate();
+  const { token } = useApiSession();
   const [cashParams] = useSearchParams();
   const cashReportsUrl = (report?: string) => { const url = href?.("/cash/reports") || "/cash/reports"; return report ? `${url}${url.includes("?") ? "&" : "?"}report=${encodeURIComponent(report)}` : url; };
   const [cashOptionsOpen,setCashOptionsOpen]=useState(false);
@@ -7303,113 +7335,40 @@ export default function MisaCashWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  // Pre-filled authentic MISA cash transactions
-  const [transactions, setTransactions] = useState<any[]>([
-    {
-      id: "pt-05",
-      code: "PT00005",
-      date: "2026-09-03",
-      partner: "Hoàng Thiên Bảo",
-      person: "Hoàng Thiên Bảo",
-      description: "Thu hoàn ứng sau khi quyết toán tạm ứng cho Hoàng Thiên Bảo",
-      amount: 5000000,
-      kind: "receipt",
-      debit: "111",
-      credit: "141",
-      status: "posted",
-    },
-    {
-      id: "pc-03",
-      code: "PC00003",
-      date: "2026-09-07",
-      partner: "Chi cục Thuế Cầu Giấy",
-      person: "Nguyễn Văn Hải",
-      description: "Nộp thuế GTGT đầu ra tháng 8/2026 vào NSNN",
-      amount: 64107650,
-      kind: "payment",
-      debit: "33311",
-      credit: "1111",
-      status: "posted",
-    },
-    {
-      id: "pt-01",
-      code: "PT00001",
-      date: "2026-09-01",
-      partner: "Công ty CP Minh Khang",
-      person: "Phạm Hải Đăng",
-      description: "Thu tiền bán hàng trực tiếp theo hóa đơn GTGT",
-      amount: 15400000,
-      kind: "receipt",
-      debit: "1111",
-      credit: "131",
-      status: "posted",
-    },
-    {
-      id: "pt-02",
-      code: "PT00002",
-      date: "2026-09-02",
-      partner: "Ngân hàng Ngoại thương (VCB)",
-      person: "Vũ Thị Mai (Thủ quỹ)",
-      description: "Rút tiền gửi ngân hàng về nhập quỹ tiền mặt",
-      amount: 50000000,
-      kind: "receipt",
-      debit: "1111",
-      credit: "1121",
-      status: "posted",
-    },
-    {
-      id: "pc-01",
-      code: "PC00001",
-      date: "2026-09-02",
-      partner: "VNPT Hà Nội",
-      person: "Lê Minh Tuấn",
-      description: "Chi tiền thanh toán cước viễn thông, internet tháng 8",
-      amount: 2850000,
-      kind: "payment",
-      debit: "6427",
-      credit: "1111",
-      status: "posted",
-    },
-    {
-      id: "pc-02",
-      code: "PC00002",
-      date: "2026-09-03",
-      partner: "Lê Thị Mai (Phòng KD)",
-      person: "Lê Thị Mai",
-      description: "Chi tạm ứng công tác phí thị trường miền Trung",
-      amount: 8000000,
-      kind: "payment",
-      debit: "141",
-      credit: "1111",
-      status: "posted",
-    },
-    {
-      id: "pc-04",
-      code: "PC00004",
-      date: "2026-09-08",
-      partner: "Công ty TNHH Hồng Hà",
-      person: "Nguyễn Văn Nam",
-      description: "Chi mua văn phòng phẩm dùng ngay cho khối văn phòng",
-      amount: 1450000,
-      kind: "payment",
-      debit: "6422",
-      credit: "1111",
-      status: "posted",
-    },
-    {
-      id: "pt-03",
-      code: "PT00003",
-      date: "2026-09-10",
-      partner: "Công ty Đạt Phát",
-      person: "Trần Quốc Toản",
-      description: "Thu hồi nợ bán hàng tồn đọng quý 2",
-      amount: 24500000,
-      kind: "receipt",
-      debit: "1111",
-      credit: "131",
-      status: "posted",
-    },
-  ]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [cashBalance, setCashBalance] = useState(0);
+
+  useEffect(() => {
+    if (!token || !company?.id) {
+      setTransactions([]);
+      setCashBalance(0);
+      return;
+    }
+    let active = true;
+    setTransactions([]);
+    setCashBalance(0);
+    request<ApiCashFund[] | { results: ApiCashFund[] }>(
+      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}`,
+      token,
+    ).then((response) => {
+      if (!active) return;
+      const funds = Array.isArray(response) ? response : response.results;
+      setCashBalance(funds.reduce((total, fund) => total + Number(fund.balance), 0));
+    }).catch((error) => {
+      if (active) notify(error instanceof Error ? error.message : "Không tải được số dư quỹ tiền mặt.");
+    });
+    request<ApiCashTransaction[] | { results: ApiCashTransaction[] }>(
+      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}`,
+      token,
+    ).then((response) => {
+      if (!active) return;
+      const records = Array.isArray(response) ? response : response.results;
+      setTransactions(records.map(mapCashTransaction));
+    }).catch((error) => {
+      if (active) notify(error instanceof Error ? error.message : "Không tải được giao dịch tiền mặt.");
+    });
+    return () => { active = false; };
+  }, [token, company?.id, notify]);
 
   // Selected row for inline detail
   const [selectedRowId, setSelectedRowId] = useState<string>("pt-05");
@@ -7445,16 +7404,39 @@ export default function MisaCashWorkspace({
   const cashDetailVisiblePage=Math.min(cashDetailPage,cashDetailPages);
   const cashCurrentLedger=useMemo(()=>cashLedger(transactions.map(row=>({...row,date:parseReportDate(row.date)})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate())),[transactions]);
   useEffect(()=>{setCheckedCashRows(ids=>ids.filter(id=>filteredList.some(row=>row.id===id)));},[filteredList]);
-  const cashRowAction=(action:'post'|'unpost'|'delete'|'clone',ids=checkedCashRows)=>{
-    if(!ids.length){notify('Vui lòng chọn chứng từ.');return;}
-    if(action==='delete'){
-      setCashPendingDeletion(ids);return;
-    }else if(action==='clone'){
-      const row=transactions.find(item=>item.id===ids[0]);if(!row)return;
-      const copy={...structuredClone(row),id:crypto.randomUUID(),code:nextCashCode(row.kind==='receipt'?'receipt':'payment',transactions.map(item=>item.code)),status:'draft'};
-      setTransactions(rows=>[copy,...rows]);setSelectedRowId(copy.id);
-    }else setTransactions(rows=>rows.map(row=>ids.includes(row.id)?{...row,status:action==='post'?'posted':'draft'}:row));
-    setCheckedCashRows([]);notify(action==='clone'?'Đã nhân bản chứng từ, trạng thái chưa ghi sổ.':action==='post'?'Đã cập nhật trạng thái ghi sổ.':'Đã cập nhật trạng thái chưa ghi sổ.');
+  const cashRowAction = async (action: "post" | "unpost" | "delete" | "clone", ids = checkedCashRows) => {
+    if (!ids.length) {
+      notify("Vui lòng chọn chứng từ.");
+      return;
+    }
+    if (action === "delete" || action === "clone") {
+      notify("Thao tác này chưa được hỗ trợ trên backend.");
+      return;
+    }
+    if (!token || !company?.id) return;
+    try {
+      const endpoint = action === "post" ? "post" : "reverse";
+      const updated = await Promise.all(ids.map((id) => request<ApiCashTransaction>(
+        `/api/v1/cash/transactions/${id}/${endpoint}/?company_id=${encodeURIComponent(company.id)}`,
+        token,
+        { method: "POST" },
+      )));
+      const byId = new Map(updated.map((row) => [row.id, mapCashTransaction(row)]));
+      setTransactions((rows) => rows.map((row) => byId.get(row.id) || row));
+      setCheckedCashRows([]);
+      notify(`Đã ${action === "post" ? "ghi sổ" : "đảo giao dịch"} ${updated.length} chứng từ.`);
+      try {
+        const response = await request<ApiCashFund[] | { results: ApiCashFund[] }>(
+          `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}`, token,
+        );
+        const funds = Array.isArray(response) ? response : response.results;
+        setCashBalance(funds.reduce((total, fund) => total + Number(fund.balance), 0));
+      } catch {
+        notify("Giao dịch đã cập nhật, nhưng chưa tải lại được số dư tiền mặt.");
+      }
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thực hiện được thao tác tiền mặt.");
+    }
   };
 
   // Total summary
@@ -7769,7 +7751,7 @@ export default function MisaCashWorkspace({
                   Tồn quỹ đến ngày {currentCashDate()}
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#dc2626" }}>
-                  {cashCurrentLedger.closing<0?`(${formatVND(Math.abs(cashCurrentLedger.closing))})`:formatVND(cashCurrentLedger.closing)}
+                  {cashBalance<0?`(${formatVND(Math.abs(cashBalance))})`:formatVND(cashBalance)}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
@@ -8768,7 +8750,7 @@ export default function MisaCashWorkspace({
   // --------------------------------------------------------------------
   // RENDER TAB: "Kiểm kê" (INVENTORY AUDIT)
   // --------------------------------------------------------------------
-  if(tab==='inventory'&&cashInventoryMode==='misa')return <MisaCashInventoryWorkspace key={company?.id} companyId={company?.id} bookBalance={cashCurrentLedger.closing} onLegacy={()=>setCashInventoryMode('legacy')}/>;
+  if(tab==='inventory'&&cashInventoryMode==='misa')return <MisaCashInventoryWorkspace key={company?.id} companyId={company?.id} bookBalance={cashBalance} onLegacy={()=>setCashInventoryMode('legacy')}/>;
   if (tab === "inventory") {
     return (
       <div style={{ padding: 16, background: "#f8fafc", overflowY: "auto", height: "100%" }}>

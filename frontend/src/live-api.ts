@@ -41,10 +41,13 @@ export async function request<T>(path: string, token?: string, options?: Request
       },
     });
   } catch {
-    throw new ApiError("Không kết nối được BE. Hãy kiểm tra server ở cổng 8000.", 0);
+    throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
   }
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
+    if ([502, 503, 504].includes(response.status)) {
+      throw new ApiError("Backend chưa sẵn sàng. Hãy đợi migrations hoàn tất rồi thử lại.", response.status);
+    }
     const detail = body && typeof body === "object"
       ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : String(value)}`).join("; ")
       : `Yêu cầu thất bại (HTTP ${response.status}).`;
