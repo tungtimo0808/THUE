@@ -16,7 +16,14 @@ export function formatVND(amount: number): string {
 // ============================================================================
 // 1. THU TIỀN THEO HÓA ĐƠN (ĐƠN KHÁCH HÀNG - SCREENSHOT 1)
 // ============================================================================
+/** Backend data for the collection forms; the sample rows are used when absent. */
+export interface CollectionDebtSource {
+  customers: { code: string; name: string }[];
+  load: (customerCode?: string) => Promise<any[]>;
+}
+
 export interface SingleCustomerInvoiceCollectionModalProps {
+  debtSource?: CollectionDebtSource;
   initialMethod?: "cash" | "bank";
   onClose: () => void;
   onSubmit: (data: {
@@ -27,13 +34,14 @@ export interface SingleCustomerInvoiceCollectionModalProps {
     totalAmount: number;
     totalDiscount?: number;
     invoices: any[];
-  }) => void;
+  }) => boolean | void | Promise<boolean | void>;
 }
 
 export function SingleCustomerInvoiceCollectionModal({
   initialMethod = "cash",
   onClose,
   onSubmit,
+  debtSource,
 }: SingleCustomerInvoiceCollectionModalProps) {
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [customer, setCustomer] = useState("");
@@ -414,11 +422,16 @@ export function SingleCustomerInvoiceCollectionModal({
                   }}
                 >
                   <option value="">&nbsp;</option>
+                  {debtSource?.customers.map((row) => (
+                    <option key={row.code} value={row.code}>{row.code} - {row.name}</option>
+                  ))}
+                  {!debtSource && <>
                   <option value="Bệnh viện Bãi Cháy">Bệnh viện Bãi Cháy</option>
                   <option value="Công ty CP Dược phẩm Sao Thái Dương">Công ty CP Dược phẩm Sao Thái Dương</option>
                   <option value="Bệnh viện Đa khoa Quốc tế Vinmec">Bệnh viện Đa khoa Quốc tế Vinmec</option>
                   <option value="Công ty TNHH Y tế Phương Đông">Công ty TNHH Y tế Phương Đông</option>
                   <option value="Công ty Dịch vụ Vận tải An Bình">Công ty Dịch vụ Vận tải An Bình</option>
+                  </>}
                 </select>
                 <ChevronDown
                   size={14}
@@ -509,6 +522,13 @@ export function SingleCustomerInvoiceCollectionModal({
                 type="button"
                 className="misa-invoice-fetch-btn"
                 onClick={() => {
+                  if (debtSource) {
+                    if (!customer) { alert("Vui lòng chọn khách hàng."); return; }
+                    debtSource.load(customer)
+                      .then((rows) => { setRecords(rows); setHasFetched(true); })
+                      .catch((error) => alert(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
+                    return;
+                  }
                   if (!customer) {
                     setCustomer("Bệnh viện Bãi Cháy");
                   }
@@ -797,6 +817,7 @@ export function SingleCustomerInvoiceCollectionModal({
 // 2. THU TIỀN THEO HÓA ĐƠN NHIỀU KHÁCH HÀNG (SCREENSHOT 2)
 // ============================================================================
 export interface MultiCustomerInvoiceCollectionModalProps {
+  debtSource?: CollectionDebtSource;
   initialMethod?: "cash" | "bank";
   onClose: () => void;
   onSubmit: (data: {
@@ -809,13 +830,14 @@ export interface MultiCustomerInvoiceCollectionModalProps {
     collectDate: string;
     totalAmount: number;
     invoices: any[];
-  }) => void;
+  }) => boolean | void | Promise<boolean | void>;
 }
 
 export function MultiCustomerInvoiceCollectionModal({
   initialMethod = "bank",
   onClose,
   onSubmit,
+  debtSource,
 }: MultiCustomerInvoiceCollectionModalProps) {
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [timeRange, setTimeRange] = useState("Hôm nay");
@@ -1425,7 +1447,12 @@ export function MultiCustomerInvoiceCollectionModal({
               <button
                 type="button"
                 className="misa-invoice-fetch-btn"
-                onClick={() => setHasFetched(true)}
+                onClick={() => {
+                  if (!debtSource) { setHasFetched(true); return; }
+                  debtSource.load()
+                    .then((rows) => { setRecords(rows); setHasFetched(true); })
+                    .catch((error) => alert(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
+                }}
               >
                 Lấy dữ liệu
               </button>

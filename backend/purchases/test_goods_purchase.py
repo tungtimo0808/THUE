@@ -33,6 +33,7 @@ class GoodsPurchaseTests(TestCase):
         chart = ChartOfAccounts.objects.create(company=self.company, code="CH", name="Chart", effective_from=self.day)
         self.debit = Account.objects.create(company=self.company, chart_of_accounts=chart, code="156", name="Inventory", account_type="ASSET")
         self.credit = Account.objects.create(company=self.company, chart_of_accounts=chart, code="331", name="Payable", account_type="LIABILITY")
+        self.vat_input = Account.objects.create(company=self.company, chart_of_accounts=chart, code="1331", name="Deductible input VAT", account_type="ASSET")
         AccountingPeriod.objects.create(company=self.company, code="2026-10", fiscal_year=2026, period_number=10,
             start_date=date(2026, 10, 1), end_date=date(2026, 10, 31), status="OPEN")
         year = FiscalYear.objects.create(company=self.company, code="FY2026", name="2026", start_date=date(2026, 1, 1),
@@ -81,6 +82,20 @@ class GoodsPurchaseTests(TestCase):
         reposted = self.client.post(detail.replace("/?", "/post/?"), {"version": 4}, format="json")
         self.assertEqual(reposted.status_code, 200, reposted.data)
         self.assertEqual(StockBalance.objects.get(item=self.item, warehouse=self.warehouse).quantity, Decimal("2"))
+
+    def test_deductible_input_vat_is_posted_to_1331(self):
+        from master_data.models import TaxRate
+        rate = TaxRate.objects.create(company=self.company, code="VAT10", tax_type="VAT", rate_percent=Decimal("10"),
+            effective_from=self.day, status="ACTIVE")
+        payload = self.payload()
+        payload["lines"][0]["tax_rate"] = str(rate.pk)
+        detail, draft = self.create_and_approve(payload)
+        posted = self.client.post(detail.replace("/?", "/post/?"), {"version": 2}, format="json")
+        self.assertEqual(posted.status_code, 200, posted.data)
+        journal = JournalEntry.objects.get(pk=GoodsPurchase.objects.get(pk=draft["id"]).journal_entry_id)
+        debits = {line.account.code: line.debit for line in journal.lines.filter(debit__gt=0)}
+        self.assertEqual(debits, {"156": Decimal("180"), "1331": Decimal("18")})
+        self.assertEqual(journal.lines.get(credit__gt=0).credit, Decimal("198"))
 
     def test_direct_purchase_does_not_change_stock(self):
         detail, draft = self.create_and_approve(self.payload(kind="DIRECT"))

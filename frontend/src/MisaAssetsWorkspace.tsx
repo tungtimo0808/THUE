@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import { saveAssetMovement, saveDepreciation, saveFixedAsset } from "./misa-api-writes";
+import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import {
   Car,
   Calendar,
@@ -187,6 +190,12 @@ export default function MisaAssetsWorkspace({
   href,
   notify,
 }: MisaAssetsWorkspaceProps) {
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
+    assets: "/api/v1/fixed-assets/assets/",
+    transactions: "/api/v1/fixed-assets/transactions/",
+    calculations: "/api/v1/fixed-assets/calculations/",
+  }, notify);
+  const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   // Navigation helper
   const navigateTo = (targetTab: string) => {
     if (href) {
@@ -197,6 +206,52 @@ export default function MisaAssetsWorkspace({
   // State data
   const [assetsList, setAssetsList] = useState(SAMPLE_ASSETS_DATA);
   const [increaseVouchers, setIncreaseVouchers] = useState(SAMPLE_INCREASE_VOUCHERS);
+  useEffect(() => {
+    if (!apiConnected) return;
+    if (apiRows.assets) setAssetsList(apiRows.assets.map((row) => ({
+      code: row.code || "", name: row.name || "", category: row.category_name || "",
+      dept: row.department_name || "", startDate: apiDate(row.in_service_date),
+      years: apiNumber(row.useful_life_periods) / 12,
+      rateYear: apiNumber(row.useful_life_periods) ? 1200 / apiNumber(row.useful_life_periods) : 0,
+      originalCost: apiNumber(row.original_cost),
+      depreciatedAmount: apiNumber(row.accumulated_depreciation),
+      remainingAmount: apiNumber(row.remaining_value),
+      costAccount: "", deprAccount: "", expenseAccount: "",
+    })));
+    if (apiRows.transactions) setIncreaseVouchers(apiRows.transactions
+      .filter((row) => row.transaction_type === "ACQUISITION")
+      .map((row) => ({
+        id: row.id, voucherNo: row.number || "", date: apiDate(row.transaction_date),
+        assetCode: row.asset_code || "", assetName: row.asset_name || "",
+        originalCost: apiNumber(row.amount), dept: row.target_department_name || "",
+        status: row.status || "",
+      })));
+    const movement = (types: string[]) => (apiRows.transactions || []).filter((row) => types.includes(row.transaction_type));
+    const assetOf = (row: any) => apiRows.assets?.find((asset) => asset.id === row.asset);
+    if (apiRows.transactions) {
+      setRevalVouchers(movement(["VALUE_INCREASE", "VALUE_DECREASE"]).map((row) => ({
+        id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
+        assetName: row.asset_name || "", reason: row.reason || "",
+        diffAmount: (row.transaction_type === "VALUE_DECREASE" ? -1 : 1) * apiNumber(row.amount), status: row.status,
+      })));
+      setTransferVouchers(movement(["TRANSFER"]).map((row) => ({
+        id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
+        assetName: row.asset_name || "", fromDept: row.before_snapshot?.department_name || "",
+        toDept: row.target_department_name || "", reason: row.reason || "", status: row.status,
+      })));
+      setDecVouchers(movement(["DISPOSAL"]).map((row) => ({
+        id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
+        assetName: row.asset_name || "", reason: row.reason || "",
+        originalCost: apiNumber(assetOf(row)?.original_cost), remainingValue: apiNumber(row.amount), status: row.status,
+      })));
+    }
+    if (apiRows.calculations) setDeprVouchers(apiRows.calculations.map((row) => ({
+      id: row.id, voucherNo: row.number, date: apiDate(row.period_end),
+      period: `Tháng ${String(row.period_code || "").slice(5, 7)}/${String(row.period_code || "").slice(0, 4)}`,
+      amount: apiNumber(row.total_amount ?? row.amount), reason: `Trích khấu hao TSCĐ kỳ ${row.period_code}`,
+      status: row.status === "POSTED" ? "Đã ghi sổ" : row.status,
+    })));
+  }, [apiRows, apiConnected]);
   const [searchRegister, setSearchRegister] = useState("");
   const [filterDept, setFilterDept] = useState("all");
 
@@ -1700,6 +1755,11 @@ export default function MisaAssetsWorkspace({
                     deprAccount: incDeprAcc,
                     expenseAccount: "6422",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveFixedAsset(writer, { ...newItem, voucherNo: incVoucherNo }, true))
+                      .then((saved) => { if (saved) { setShowAddAssetModal(false); setIncreaseView("table"); } });
+                    return;
+                  }
                   const newVoucher = {
                     voucherNo: incVoucherNo,
                     date: incVoucherDate,
@@ -1751,6 +1811,11 @@ export default function MisaAssetsWorkspace({
                     deprAccount: incDeprAcc,
                     expenseAccount: "6422",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveFixedAsset(writer, { ...newItem, voucherNo: incVoucherNo }, true))
+                      .then((saved) => { if (saved) { setIncVoucherNo(""); setIncCode(""); setIncName(""); setIncOriginalCost(0); setIncAccumulatedDepr(0); setIncRemainingValue(0); } });
+                    return;
+                  }
                   const newVoucher = {
                     voucherNo: incVoucherNo,
                     date: incVoucherDate,
@@ -2375,6 +2440,11 @@ export default function MisaAssetsWorkspace({
                     deprAccount: openingDeprAcc,
                     expenseAccount: "6422",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveFixedAsset(writer, newItem, false))
+                      .then((saved) => { if (saved) { setShowOpeningModal(false); setRegisterView("table"); } });
+                    return;
+                  }
                   setAssetsList([newItem, ...assetsList]);
                   setShowOpeningModal(false);
                   setRegisterView("table");
@@ -2416,6 +2486,11 @@ export default function MisaAssetsWorkspace({
                     deprAccount: openingDeprAcc,
                     expenseAccount: "6422",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveFixedAsset(writer, newItem, false))
+                      .then((saved) => { if (saved) { setOpeningCode(""); setOpeningName(""); setOpeningOriginalCost(0); setOpeningAccumulatedDepr(0); } });
+                    return;
+                  }
                   setAssetsList([newItem, ...assetsList]);
                   notify(`Đã lưu ${newItem.code}. Mời tiếp tục khai báo TSCĐ đầu kỳ tiếp theo!`);
                   setOpeningCode(`TSCD00${assetsList.length + 2}`);
@@ -3126,6 +3201,11 @@ export default function MisaAssetsWorkspace({
                     reason: deprReason,
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveDepreciation(writer, { voucherNo: deprVoucherNo, month: deprVoucherMonth, year: deprVoucherYear }))
+                      .then((saved) => { if (saved) { setShowDeprVoucherModal(false); setDeprView("table"); } });
+                    return;
+                  }
                   setDeprVouchers([newVoucher, ...deprVouchers.filter((x) => x.voucherNo !== deprVoucherNo)]);
                   setShowDeprVoucherModal(false);
                   setDeprView("table");
@@ -3159,6 +3239,11 @@ export default function MisaAssetsWorkspace({
                       reason: deprReason,
                       status: "Đã ghi sổ",
                     };
+                    if (apiConnected) {
+                      void apiSave((writer) => saveDepreciation(writer, { voucherNo: deprVoucherNo, month: deprVoucherMonth, year: deprVoucherYear }))
+                        .then((saved) => { if (saved) { setShowDeprVoucherModal(false); setDeprView("table"); } });
+                      return;
+                    }
                     setDeprVouchers([newVoucher, ...deprVouchers.filter((x) => x.voucherNo !== deprVoucherNo)]);
                     setShowDeprVoucherModal(false);
                     setDeprView("table");
@@ -4032,6 +4117,11 @@ export default function MisaAssetsWorkspace({
                     diffAmount: diffTot || 0,
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetMovement(writer, "revaluation", { voucherNo: revalVoucherNo, date: revalDate, reason: revalReason, rows: revalRows }))
+                      .then((saved) => { if (saved) { setShowRevalModal(false); setRevalView("table"); } });
+                    return;
+                  }
                   setRevalVouchers((prev) => {
                     const exists = prev.some(x => x.voucherNo === newV.voucherNo);
                     if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
@@ -4059,6 +4149,11 @@ export default function MisaAssetsWorkspace({
                     diffAmount: diffTot || 0,
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetMovement(writer, "revaluation", { voucherNo: revalVoucherNo, date: revalDate, reason: revalReason, rows: revalRows }))
+                      .then((saved) => { if (saved) { setShowRevalModal(false); setRevalView("table"); } });
+                    return;
+                  }
                   setRevalVouchers((prev) => {
                     const exists = prev.some(x => x.voucherNo === newV.voucherNo);
                     if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
@@ -4342,6 +4437,11 @@ export default function MisaAssetsWorkspace({
                     reason: transferReason || "Điều chuyển tài sản cố định sang bộ phận mới",
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetMovement(writer, "transfer", { voucherNo: transferVoucherNo, date: transferDate, reason: transferReason, rows: transferRows }))
+                      .then((saved) => { if (saved) { setShowTransferModal(false); setTransferView("table"); } });
+                    return;
+                  }
                   setTransferVouchers((prev) => {
                     const exists = prev.some(x => x.voucherNo === newV.voucherNo);
                     if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
@@ -4369,6 +4469,11 @@ export default function MisaAssetsWorkspace({
                     reason: transferReason || "Điều chuyển tài sản cố định sang bộ phận mới",
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetMovement(writer, "transfer", { voucherNo: transferVoucherNo, date: transferDate, reason: transferReason, rows: transferRows }))
+                      .then((saved) => { if (saved) { setShowTransferModal(false); setTransferView("table"); } });
+                    return;
+                  }
                   setTransferVouchers((prev) => {
                     const exists = prev.some(x => x.voucherNo === newV.voucherNo);
                     if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
@@ -4769,6 +4874,11 @@ export default function MisaAssetsWorkspace({
                     remainingValue: decRows.reduce((s, r) => s + r.remainingValue, 0) || 638888889,
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetMovement(writer, "disposal", { voucherNo: decVoucherNo, date: decDate, reason: decReason, rows: decRows }))
+                      .then((saved) => { if (saved) { setShowDecreaseModal(false); setDecreaseView("table"); } });
+                    return;
+                  }
                   setDecVouchers((prev) => {
                     const exists = prev.some(x => x.voucherNo === newV.voucherNo);
                     if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
@@ -4796,6 +4906,11 @@ export default function MisaAssetsWorkspace({
                     remainingValue: decRows.reduce((s, r) => s + r.remainingValue, 0) || 638888889,
                     status: "Đã ghi sổ",
                   };
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetMovement(writer, "disposal", { voucherNo: decVoucherNo, date: decDate, reason: decReason, rows: decRows }))
+                      .then((saved) => { if (saved) { setShowDecreaseModal(false); setDecreaseView("table"); } });
+                    return;
+                  }
                   setDecVouchers((prev) => {
                     const exists = prev.some(x => x.voucherNo === newV.voucherNo);
                     if (exists) return prev.map(x => x.voucherNo === newV.voucherNo ? newV : x);
@@ -6018,7 +6133,11 @@ export default function MisaAssetsWorkspace({
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{a.dept}</td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
-                      {a.status}
+                      {(() => {
+                        const record = apiConnected ? apiRows.transactions?.find((row) => row.id === (a as any).id) : undefined;
+                        return record ? <MisaApiDocumentStatus path="/api/v1/fixed-assets/transactions/" record={record}
+                          companyId={_company.id} notify={notify} onChanged={reloadApi} /> : a.status;
+                      })()}
                     </span>
                   </td>
                 </tr>
@@ -6334,7 +6453,11 @@ export default function MisaAssetsWorkspace({
                   </td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
-                      {v.status}
+                      {(() => {
+                        const record = apiConnected ? apiRows.transactions?.find((row) => row.id === (v as any).id) : undefined;
+                        return record ? <MisaApiDocumentStatus path="/api/v1/fixed-assets/transactions/" record={record}
+                          companyId={_company.id} notify={notify} onChanged={reloadApi} /> : v.status;
+                      })()}
                     </span>
                   </td>
                 </tr>
@@ -6476,7 +6599,11 @@ export default function MisaAssetsWorkspace({
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.reason}</td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
-                      {v.status}
+                      {(() => {
+                        const record = apiConnected ? apiRows.transactions?.find((row) => row.id === (v as any).id) : undefined;
+                        return record ? <MisaApiDocumentStatus path="/api/v1/fixed-assets/transactions/" record={record}
+                          companyId={_company.id} notify={notify} onChanged={reloadApi} /> : v.status;
+                      })()}
                     </span>
                   </td>
                 </tr>
@@ -6617,7 +6744,11 @@ export default function MisaAssetsWorkspace({
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#ef4444" }}>{formatVND(v.remainingValue)}</td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
-                      {v.status}
+                      {(() => {
+                        const record = apiConnected ? apiRows.transactions?.find((row) => row.id === (v as any).id) : undefined;
+                        return record ? <MisaApiDocumentStatus path="/api/v1/fixed-assets/transactions/" record={record}
+                          companyId={_company.id} notify={notify} onChanged={reloadApi} /> : v.status;
+                      })()}
                     </span>
                   </td>
                 </tr>

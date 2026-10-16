@@ -46,7 +46,7 @@ from .policy_views import (
 )
 from .views import (
     AIConversationViewSet, AIInteractionViewSet, ChangePasswordView, CompanyBootstrapView, CompanyDiscoveryView, CompanyJoinRequestAdminViewSet,
-    CompanySettingView, ConfirmEmailView, DashboardView, GlobalSearchView, LoginView, LogoutView,
+    CompanySettingView, CompanySetupCompleteView, ConfirmEmailView, DashboardView, GlobalSearchView, LoginView, LogoutView,
     MyCompaniesView, MyJoinRequestViewSet, NotificationViewSet, PasswordResetConfirmView, PasswordResetVerifyOTPView,
     GlobalSearchOpenView, PasswordResetRequestView, ProfileView, RegisterView, RegistrationEmailChangeView,
     ResendVerificationView, ScopeOptionsView, SwitchCompanyView, VerifyRegistrationView, WorkItemViewSet,
@@ -81,6 +81,7 @@ urlpatterns = [
     path("profile/confirm-email/", ConfirmEmailView.as_view(), name="common-confirm-email"),
     path("companies/create/", CompanyBootstrapView.as_view(), name="common-company-create"),
     path("companies/mine/", MyCompaniesView.as_view(), name="common-company-list"),
+    path("companies/complete-setup/", CompanySetupCompleteView.as_view(), name="common-company-complete-setup"),
     path("companies/search/", CompanyDiscoveryView.as_view(), name="common-company-search"),
     path("companies/switch/", SwitchCompanyView.as_view(), name="common-company-switch"),
     path("scopes/switch/", SwitchCompanyView.as_view(), name="common-scope-switch"),

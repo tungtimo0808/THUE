@@ -1,4 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
+import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import {
+  saveCommercialInvoice, saveItem, saveSalesAllowance, saveSalesContract, saveSalesInvoice, saveSalesOrder,
+  saveSalesReturn, saveSalesVoucher, saveCustomerReceipts, openReceivables, createApiWriter,
+  toApiDate,
+} from "./misa-api-writes";
+import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
+import { useApiSession } from "./ApiSession";
+import { createCustomer, request } from "./live-api";
 import {
   Search,
   RefreshCw,
@@ -58,7 +68,41 @@ export default function MisaSalesWorkspace({
   href,
   notify,
 }: MisaSalesWorkspaceProps) {
-  // Modal states
+  const { token } = useApiSession();
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
+    customers: "/api/v1/master-data/customers/",
+    items: "/api/v1/master-data/items/",
+    units: "/api/v1/master-data/units-of-measure/",
+    taxRates: "/api/v1/master-data/tax-rates/",
+    quotes: "/api/v1/sales/quotations/",
+    orders: "/api/v1/sales/orders/",
+    contracts: "/api/v1/sales/contracts/",
+    vouchers: "/api/v1/sales/goods-sales/",
+    serviceVouchers: "/api/v1/sales/service-sales/",
+    invoices: "/api/v1/sales/sales-invoices/",
+    returns: "/api/v1/sales/sales-returns/",
+    discounts: "/api/v1/sales/sales-allowances/",
+    discountInvoices: "/api/v1/sales/discount-invoices/",
+    receivables: "/api/v1/accounts-receivable/receivables/",
+    reconciliations: "/api/v1/accounts-receivable/customer-debt-reconciliations/",
+  }, notify);
+  const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
+  const debtSource: CollectionDebtSource | undefined = apiConnected && token ? {
+    customers: (apiRows.customers || []).map((row) => ({ code: row.code, name: row.name })),
+    load: (customerCode?: string) => openReceivables(createApiWriter(_company.id, (path, init) => request(path, token, init)), customerCode),
+  } : undefined;
+  /** Status cell of a row loaded from the backend: label plus its next workflow action. */
+  const apiStatus = (path: string, key: string, id: string, fallback: string, canPost = true) => {
+    const record = apiConnected ? apiRows[key]?.find((row) => row.id === id) : undefined;
+    return record ? <MisaApiDocumentStatus path={path} record={record} companyId={_company.id}
+      notify={notify} onChanged={reloadApi} canPost={canPost} /> : fallback;
+  };
+  /** Documents already stored on the backend are changed through their own workflow, not re-created. */
+  const apiEditBlocked = (record: any) => {
+    if (!apiConnected || !record) return false;
+    notify("Chứng từ đã lưu trên hệ thống; hãy dùng các nút Duyệt/Ghi sổ/Bỏ ghi trên danh sách thay vì sửa lại.");
+    return true;
+  };
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
@@ -149,7 +193,12 @@ export default function MisaSalesWorkspace({
     notify(`Đã chọn tính chất: ${natureName}. Mở form thêm mới Hàng hóa, dịch vụ.`);
   };
 
-  const handleSaveInventoryItem = (itemData: InventoryItemData, keepOpen?: boolean) => {
+  const handleSaveInventoryItem = async (itemData: InventoryItemData, keepOpen?: boolean) => {
+    if (apiConnected && !editingItem) {
+      const saved = await apiSave((writer) => saveItem(writer, itemData));
+      if (saved && !keepOpen) setShowItemModal(false);
+      return saved;
+    }
     if (editingItem) {
       setInventoryItemsList((prev) =>
         prev.map((it) => (it.id === editingItem.id ? { ...it, ...itemData } : it))
@@ -448,7 +497,90 @@ export default function MisaSalesWorkspace({
     },
   ]);
 
-  const handleSaveInvoice = (data: any) => {
+  useEffect(() => {
+    if (!apiConnected) return;
+    const customerName = (row: any) => row.customer_name || row.buyer_name ||
+      apiRows.customers?.find((customer) => customer.id === row.customer)?.name || "";
+    if (apiRows.customers) setCustomers(apiRows.customers.map((row) => ({
+      id: row.id, code: row.code || "", name: row.name || "",
+      taxCode: row.tax_code || "",
+      address: (row.addresses?.find((entry: any) => entry.is_default) || row.addresses?.[0])?.address_line || "",
+      phone: (row.contacts?.find((entry: any) => entry.is_default) || row.contacts?.[0])?.phone || "",
+      debt: apiRows.receivables?.filter((debt) => debt.customer === row.id)
+        .reduce((total, debt) => total + apiNumber(debt.balance), 0) || 0,
+    })));
+    if (apiRows.items) setInventoryItemsList(apiRows.items.map((row) => ({
+      id: row.id, code: row.code || "", name: row.name || "",
+      vatPolicy: "", nature: row.item_type || "Hàng hóa", stockQty: 0,
+      stockValue: 0, unit: apiUnitName(apiRows.units, row.base_uom),
+    })));
+    if (apiRows.quotes) setQuotes(apiRows.quotes.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      expiryDate: apiDate(row.valid_until), customer: customerName(row),
+      customerCode: apiRows.customers?.find((customer) => customer.id === row.customer)?.code || "",
+      items: (row.lines || []).map((line: any) => {
+        const item = apiRows.items?.find((entry) => entry.id === line.item);
+        return { id: line.id, code: item?.code || "", name: item?.name || "",
+          unit: line.uom_name || "", quantity: apiNumber(line.quantity),
+          unitPrice: apiNumber(line.unit_price), amount: apiNumber(line.gross_amount),
+          vatRate: apiRows.taxRates?.find((rate) => rate.id === line.tax_rate)?.rate_percent || 0,
+          vatAmount: apiNumber(line.tax_amount) };
+      }),
+      amount: apiNumber(row.total_amount), status: row.status || "", description: row.notes || "",
+    })));
+    if (apiRows.orders) setOrders(apiRows.orders.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      deliveryDate: apiDate(row.requested_delivery_date), customer: customerName(row),
+      amount: apiNumber(row.total_amount), status: row.status || "", description: row.notes || "",
+    })));
+    if (apiRows.contracts) setContracts(apiRows.contracts.map((row) => ({
+      id: row.id, code: row.contract_number || row.number || "", date: apiDate(row.document_date),
+      customer: customerName(row), customerCode: row.customer_code || "",
+      address: "", contact: "", amount: apiNumber(row.total_amount),
+      status: row.status_display || row.status || "", deliveryStatus: "",
+      deliveryDate: apiDate(row.end_date), paymentDueDate: "", project: "", summary: row.title || "",
+    })));
+    if (apiRows.vouchers) setSalesVouchers(([
+      ...apiRows.vouchers.map((row) => ({ ...row, apiKey: "vouchers", apiPath: "/api/v1/sales/goods-sales/" })),
+      ...(apiRows.serviceVouchers || []).map((row) => ({ ...row, apiKey: "serviceVouchers", apiPath: "/api/v1/sales/service-sales/" })),
+    ] as Record<string, any>[]).sort((a, b) => String(b.document_date).localeCompare(String(a.document_date))).map((row) => ({
+      apiKey: row.apiKey, apiPath: row.apiPath,
+      id: row.id, code: row.number || "", saleType: 1, date: apiDate(row.document_date),
+      customer: customerName(row), customerCode: row.customer_code || "",
+      taxCode: row.customer_tax_code || "", address: row.customer_address || "", contact: "",
+      amount: apiNumber(row.subtotal), totalPayment: apiNumber(row.total_amount),
+      status: row.status || "", hasInvoice: Boolean(row.tax_invoice),
+      hasDeliveryNote: Boolean(row.delivery), description: row.description || "", items: [],
+    })));
+    if (apiRows.invoices) setInvoices([...apiRows.invoices.map((row) => ({
+      id: row.id, code: row.invoice_number || row.number || "", series: row.invoice_series || "",
+      template: row.template_code || "", date: apiDate(row.invoice_date),
+      customer: customerName(row), taxCode: row.buyer_tax_code || "",
+      amount: apiNumber(row.subtotal), vat: apiNumber(row.tax_amount),
+      total: apiNumber(row.total_amount), status: row.status || "", type: row.invoice_category || "",
+    })), ...(apiRows.discountInvoices || []).map((row) => ({
+      id: row.id, code: row.invoice_number || row.code || "", series: row.invoice_series || "",
+      template: row.template_code || "", date: apiDate(row.invoice_date),
+      customer: customerName(row), taxCode: row.buyer_tax_code || "",
+      amount: apiNumber(row.total_discount_before_tax), vat: apiNumber(row.total_tax_amount),
+      total: apiNumber(row.total_adjusted_amount), status: row.status || "", type: "Hóa đơn chiết khấu",
+    }))]);
+    if (apiRows.returns) setReturns(apiRows.returns.map((row) => ({
+      id: row.id, code: row.number || "", stockCode: "", date: apiDate(row.document_date),
+      customer: customerName(row), amount: apiNumber(row.subtotal),
+      vat: apiNumber(row.tax_amount), total: apiNumber(row.total_amount),
+      type: row.inventory_handling || "", reason: row.return_reason || "", status: row.status || "",
+    })));
+    if (apiRows.discounts) setDiscounts(apiRows.discounts.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      customer: customerName(row), amount: apiNumber(row.subtotal),
+      vat: apiNumber(row.tax_amount), total: apiNumber(row.total_amount),
+      type: "", reason: row.allowance_reason || "", status: row.status || "",
+    })));
+  }, [apiRows, apiConnected]);
+
+  const handleSaveInvoice = async (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveSalesInvoice(writer, data));
     setInvoices([
       {
         id: `inv-${Date.now()}`,
@@ -469,7 +601,22 @@ export default function MisaSalesWorkspace({
     notify(`Đã lưu Hóa đơn bán hàng ${data.invoiceNo}!`);
   };
 
-  const handleSaveDiscountInvoice = (data: any) => {
+  const handleSaveDiscountInvoice = async (data: any) => {
+    if (apiConnected) return apiSave(async (writer) => {
+      if (!data.invoiceSeries?.trim()) throw new Error("Nhập ký hiệu hóa đơn chiết khấu.");
+      if (!data.discountBasis?.trim()) throw new Error("Nhập căn cứ chiết khấu.");
+      if (!data.originalInvoiceLineIds?.length) throw new Error("Chọn ít nhất một dòng hóa đơn gốc đã phát hành.");
+      if (!(Number(data.amount) > 0)) throw new Error("Số tiền chiết khấu phải lớn hơn 0.");
+      const customer = await writer.customer(data.customerCode);
+      const record = await writer.post("/api/v1/sales/discount-invoices/", {
+        customer: customer.id, invoice_series: data.invoiceSeries,
+        invoice_date: toApiDate(data.invoiceDate), period_start: data.periodStart,
+        period_end: data.periodEnd, discount_basis: data.discountBasis,
+        calculation_method: "AMOUNT", total_discount_before_tax: String(data.amount),
+        lines: data.originalInvoiceLineIds.map((id: string) => ({ original_invoice_line: id })),
+      });
+      return { record, message: `Đã lưu hóa đơn chiết khấu ${record.code} dưới dạng dự thảo.` };
+    });
     setInvoices([
       {
         id: `inv-${Date.now()}`,
@@ -490,7 +637,8 @@ export default function MisaSalesWorkspace({
     notify(`Đã lưu Hóa đơn chiết khấu ${data.invoiceNo || ""}!`);
   };
 
-  const handleSaveCommercialInvoice = (data: any) => {
+  const handleSaveCommercialInvoice = async (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveCommercialInvoice(writer, data));
     setInvoices([
       {
         id: `inv-${Date.now()}`,
@@ -532,7 +680,8 @@ export default function MisaSalesWorkspace({
     notify(`Đã lưu Hóa đơn điều chỉnh ${data.invoiceNo || ""}!`);
   };
 
-  const handleSaveReturn = (data: any) => {
+  const handleSaveReturn = async (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveSalesReturn(writer, data));
     setReturns([
       {
         id: `ret-${Date.now()}`,
@@ -552,7 +701,8 @@ export default function MisaSalesWorkspace({
     notify(`Đã lập Chứng từ bán hàng bị trả lại ${data.voucherCode}!`);
   };
 
-  const handleSaveDiscount = (data: any) => {
+  const handleSaveDiscount = async (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveSalesAllowance(writer, data));
     setDiscounts([
       {
         id: `disc-${Date.now()}`,
@@ -602,7 +752,13 @@ export default function MisaSalesWorkspace({
       {showCollectionModal && (
         <SingleCustomerInvoiceCollectionModal
           onClose={() => setShowCollectionModal(false)}
-          onSubmit={(_payload) => {
+          debtSource={debtSource}
+          onSubmit={async (payload) => {
+            if (apiConnected) {
+              const saved = await apiSave((writer) => saveCustomerReceipts(writer, payload));
+              if (saved) setShowCollectionModal(false);
+              return saved;
+            }
             setShowCollectionModal(false);
             notify("Đã lập chứng từ thu tiền khách hàng theo hóa đơn thành công!");
           }}
@@ -612,7 +768,13 @@ export default function MisaSalesWorkspace({
       {showMultiCollectionModal && (
         <MultiCustomerInvoiceCollectionModal
           onClose={() => setShowMultiCollectionModal(false)}
-          onSubmit={(_payload) => {
+          debtSource={debtSource}
+          onSubmit={async (payload) => {
+            if (apiConnected) {
+              const saved = await apiSave((writer) => saveCustomerReceipts(writer, payload));
+              if (saved) setShowMultiCollectionModal(false);
+              return saved;
+            }
             setShowMultiCollectionModal(false);
             notify("Đã lập chứng từ thu tiền theo hóa đơn nhiều khách hàng thành công!");
           }}
@@ -637,9 +799,10 @@ export default function MisaSalesWorkspace({
             setShowInvoiceModal(false);
             setIsReplacementInvoiceMode(false);
           }}
-          onSubmit={(data) => {
-            handleSaveInvoice(data);
-            setIsReplacementInvoiceMode(false);
+          onSubmit={async (data) => {
+            const saved = await handleSaveInvoice(data);
+            if (saved !== false) setIsReplacementInvoiceMode(false);
+            return saved;
           }}
           onOpenCustomerModal={() => setShowCustomerModal(true)}
         />
@@ -648,6 +811,12 @@ export default function MisaSalesWorkspace({
       {/* Modal: Hóa đơn chiết khấu (Screenshot 1) */}
       {showInvoiceDiscountModal && (
         <SaleInvoiceDiscountModal
+          customers={apiConnected ? (apiRows.customers || []).map((row) => ({ code: row.code, name: row.name, tax_code: row.tax_code })) : undefined}
+          loadEligible={apiConnected && token ? async (customerCode, start, end) => {
+            const customer = (apiRows.customers || []).find((row) => row.code === customerCode);
+            if (!customer) throw new Error("Chọn khách hàng có trong danh mục.");
+            return request<{ lines: any[] }>(`/api/v1/sales/discount-invoices/eligible-invoices/?company_id=${encodeURIComponent(_company.id)}&customer=${encodeURIComponent(customer.id)}&period_start=${encodeURIComponent(start)}&period_end=${encodeURIComponent(end)}`, token);
+          } : undefined}
           onClose={() => setShowInvoiceDiscountModal(false)}
           onSubmit={handleSaveDiscountInvoice}
           onOpenCustomerModal={() => setShowCustomerModal(true)}
@@ -695,7 +864,24 @@ export default function MisaSalesWorkspace({
         isOpen={showCustomerModal}
         onClose={() => setShowCustomerModal(false)}
         defaultCode={`KH${String(customers.length + 1).padStart(5, "0")}`}
-        onSave={(newCust, andAddNew) => {
+        onSave={async (newCust, andAddNew) => {
+          if (apiConnected && token) {
+            try {
+              await createCustomer(token, _company.id, {
+                code: newCust.code,
+                name: newCust.name,
+                party_type: newCust.customerType === "individual" ? "INDIVIDUAL" : "ORGANIZATION",
+                legal_name: newCust.name,
+                tax_code: newCust.taxCode || "",
+              });
+              reloadApi();
+              if (!andAddNew) setShowCustomerModal(false);
+              return true;
+            } catch (error) {
+              notify(`Không lưu được khách hàng: ${error instanceof Error ? error.message : String(error)}`);
+              return false;
+            }
+          }
           setCustomers(prev => [...prev, {
             ...newCust,
             id: newCust.id || newCust.code,
@@ -707,6 +893,7 @@ export default function MisaSalesWorkspace({
           if (!andAddNew) {
             setShowCustomerModal(false);
           }
+          return true;
         }}
         notify={notify}
       />
@@ -716,11 +903,67 @@ export default function MisaSalesWorkspace({
         <SaleQuoteModal
           initialCode={selectedQuote?.code || `BG0000${quotes.length + 1}`}
           initialData={selectedQuote}
+          customerCatalog={apiConnected ? (apiRows.customers || []).map((row) => ({ code: row.code, name: row.name, taxCode: row.tax_code || "" })) : undefined}
+          itemCatalog={apiConnected ? (apiRows.items || []).map((row) => ({ code: row.code, name: row.name, unit: apiUnitName(apiRows.units, row.sales_uom || row.base_uom), price: Number(row.sales_price || 0) })) : undefined}
           onClose={() => {
             setShowQuoteModal(false);
             setSelectedQuote(null);
           }}
-          onSubmit={(newQuote) => {
+          onSubmit={async (newQuote) => {
+            if (apiConnected && token) {
+              const customer = apiRows.customers?.find((row) => row.code === newQuote.customerCode);
+              if (!customer) { notify("Chọn mã khách hàng có trong danh mục trước khi lưu báo giá."); return false; }
+              const toDate = (value: string) => {
+                const match = String(value || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+              };
+              const lines = (newQuote.items || []).filter((line: any) => line.code && Number(line.quantity) > 0);
+              if (!lines.length || lines.some((line: any) => !apiRows.items?.some((item) => item.code === line.code))) {
+                notify("Báo giá cần hàng hóa và mã hàng phải có trong danh mục.");
+                return false;
+              }
+              const taxRateFor = (line: any) => apiRows.taxRates?.find((rate) =>
+                rate.status === "ACTIVE" && rate.application_form === "PERCENT" &&
+                ["OUTPUT", "BOTH"].includes(rate.business_scope) &&
+                Number(rate.rate_percent) === Number(line.vatRate || 0));
+              if (lines.some((line: any) => Number(line.vatRate) > 0 && !taxRateFor(line))) {
+                notify("Thuế suất đầu ra trên báo giá chưa có trong danh mục thuế.");
+                return false;
+              }
+              try {
+                const response = await request<any[] | { results: any[] }>("/api/v1/master-data/currencies/", token);
+                const currencies = Array.isArray(response) ? response : response.results;
+                const currency = currencies.find((item) => item.code === "VND" && item.is_active);
+                if (!currency) { notify("Cần có loại tiền VND đang hoạt động để lưu báo giá."); return false; }
+                const existing = selectedQuote && apiRows.quotes?.find((row) => row.id === selectedQuote.id);
+                await request(
+                  existing
+                    ? `/api/v1/sales/quotations/${existing.id}/?company_id=${encodeURIComponent(_company.id)}`
+                    : `/api/v1/sales/quotations/?company_id=${encodeURIComponent(_company.id)}`,
+                  token,
+                  { method: existing ? "PATCH" : "POST", body: JSON.stringify({
+                    company: _company.id,
+                    customer: customer.id,
+                    currency: currency.id,
+                    number: newQuote.code,
+                    document_date: toDate(newQuote.date),
+                    valid_until: toDate(newQuote.expiryDate),
+                    notes: newQuote.note || newQuote.description || "",
+                    lines: lines.map((line: any, index: number) => {
+                      const item = apiRows.items.find((entry) => entry.code === line.code)!;
+                      return { line_no: index + 1, item: item.id, uom: item.sales_uom || item.base_uom,
+                        quantity: line.quantity, unit_price: line.unitPrice || 0, description: line.name || item.name,
+                        tax_rate: taxRateFor(line)?.id || null };
+                    }),
+                  }) },
+                );
+                reloadApi();
+                return true;
+              } catch (error) {
+                notify(`Không lưu được báo giá: ${error instanceof Error ? error.message : String(error)}`);
+                return false;
+              }
+            }
             const existingIdx = quotes.findIndex((q) => q.code === newQuote.code);
             if (existingIdx >= 0) {
               const updated = [...quotes];
@@ -741,6 +984,7 @@ export default function MisaSalesWorkspace({
                 ...quotes,
               ]);
             }
+            return true;
           }}
           onOpenCustomerModal={() => setShowCustomerModal(true)}
           notify={notify}
@@ -757,7 +1001,9 @@ export default function MisaSalesWorkspace({
             setShowOrderModal(false);
             setSelectedOrder(null);
           }}
-          onSubmit={(newOrder) => {
+          onSubmit={async (newOrder) => {
+            if (apiEditBlocked(selectedOrder)) return false;
+            if (apiConnected) return apiSave((writer) => saveSalesOrder(writer, newOrder));
             const existingIdx = orders.findIndex((o) => o.code === newOrder.code);
             if (existingIdx >= 0) {
               const updated = [...orders];
@@ -794,7 +1040,9 @@ export default function MisaSalesWorkspace({
             setShowContractModal(false);
             setSelectedContract(null);
           }}
-          onSubmit={(newContract) => {
+          onSubmit={async (newContract) => {
+            if (apiEditBlocked(selectedContract)) return false;
+            if (apiConnected) return apiSave((writer) => saveSalesContract(writer, newContract));
             const existingIdx = contracts.findIndex((c) => c.code === newContract.code);
             if (existingIdx >= 0) {
               const updated = [...contracts];
@@ -836,7 +1084,9 @@ export default function MisaSalesWorkspace({
             setSelectedVoucher(null);
             setIsServiceSale(false);
           }}
-          onSubmit={(newVoucher) => {
+          onSubmit={async (newVoucher) => {
+            if (apiEditBlocked(selectedVoucher)) return false;
+            if (apiConnected) return apiSave((writer) => saveSalesVoucher(writer, { ...newVoucher, isService: isServiceSale || newVoucher.isService }));
             const existingIdx = salesVouchers.findIndex((v) => v.code === newVoucher.code);
             if (existingIdx >= 0) {
               const updated = [...salesVouchers];
@@ -2912,7 +3162,7 @@ export default function MisaSalesWorkspace({
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{o.customer}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(o.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11.5, fontWeight: 600 }}>{o.status}</span>
+                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11.5, fontWeight: 600 }}>{apiStatus("/api/v1/sales/orders/", "orders", o.id, o.status, false)}</span>
                     </td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span style={{ background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: 10, fontSize: 11.5, fontWeight: 600 }}>Chưa giao</span>
@@ -3416,7 +3666,7 @@ export default function MisaSalesWorkspace({
                           fontWeight: 600,
                         }}
                       >
-                        {c.status}
+                        {apiStatus("/api/v1/sales/contracts/", "contracts", c.id, c.status, false)}
                       </span>
                     </td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -4235,7 +4485,7 @@ export default function MisaSalesWorkspace({
                           fontWeight: 600,
                         }}
                       >
-                        {v.status}
+                        {apiStatus((v as any).apiPath || "/api/v1/sales/goods-sales/", (v as any).apiKey || "vouchers", v.id, v.status)}
                       </span>
                     </td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -4801,7 +5051,7 @@ export default function MisaSalesWorkspace({
                           fontWeight: 600,
                         }}
                       >
-                        {inv.status}
+                        {apiStatus("/api/v1/sales/sales-invoices/", "invoices", inv.id, inv.status, false)}
                       </span>
                     </td>
                   </tr>
@@ -4932,7 +5182,7 @@ export default function MisaSalesWorkspace({
                     <td style={{ padding: "8px 10px", textAlign: "right", color: "#475569" }}>{formatVND(ret.vat)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{formatVND(ret.total)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#ffedd5", color: "#c2410c", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{ret.status}</span>
+                      <span style={{ background: "#ffedd5", color: "#c2410c", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/sales/sales-returns/", "returns", ret.id, ret.status)}</span>
                     </td>
                   </tr>
                 ))}
@@ -5062,7 +5312,7 @@ export default function MisaSalesWorkspace({
                     <td style={{ padding: "8px 10px", textAlign: "right", color: "#475569" }}>{formatVND(disc.vat)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#ea580c" }}>{formatVND(disc.total)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#ffedd5", color: "#c2410c", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{disc.status}</span>
+                      <span style={{ background: "#ffedd5", color: "#c2410c", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/sales/sales-allowances/", "discounts", disc.id, disc.status)}</span>
                     </td>
                   </tr>
                 ))}
@@ -5196,7 +5446,7 @@ export default function MisaSalesWorkspace({
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{c.name}</td>
                   <td style={{ padding: "8px 10px", color: "#64748b" }}>{c.taxCode}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>0 đ</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", color: "#059669" }}>{formatVND(c.debt || 64000000)} đ</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right", color: "#059669" }}>{formatVND(c.debt || 0)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", color: "#0284c7" }}>0 đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: (c.debt || 0) > 0 ? "#ea580c" : "#059669" }}>
                     {formatVND(c.debt || 0)} đ
@@ -5244,17 +5494,18 @@ export default function MisaSalesWorkspace({
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <td style={{ padding: "8px 10px", fontWeight: 600 }}>Tháng 09/2026</td>
-                <td style={{ padding: "8px 10px", fontWeight: 500 }}>Công ty Cổ phần Xây lắp Dầu khí Đông Đô</td>
-                <td style={{ padding: "8px 10px", textAlign: "center" }}>131</td>
-                <td style={{ padding: "8px 10px", textAlign: "right" }}>64.000.000 đ</td>
-                <td style={{ padding: "8px 10px", textAlign: "right" }}>64.000.000 đ</td>
-                <td style={{ padding: "8px 10px", textAlign: "right", color: "#059669" }}>0 đ</td>
-                <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                  <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>Khớp đúng 100%</span>
-                </td>
-              </tr>
+              {(apiRows.reconciliations || []).map((row) => (
+                <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "8px 10px", fontWeight: 600 }}>{apiDate(row.from_date)} - {apiDate(row.to_date)}</td>
+                  <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.customer_name || ""}</td>
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.receivable_account_code || "131"}</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(apiNumber(row.closing_balance))} đ</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(apiNumber(row.customer_confirmed_balance))} đ</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(apiNumber(row.balance_difference))} đ</td>
+                  <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.status || ""}</td>
+                </tr>
+              ))}
+              {!apiRows.reconciliations?.length && <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: "#64748b" }}>Chưa có biên bản đối chiếu</td></tr>}
             </tbody>
           </table>
         </div>

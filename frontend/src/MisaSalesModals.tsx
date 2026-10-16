@@ -76,9 +76,11 @@ export interface SaleQuoteModalProps {
   initialCode?: string;
   initialData?: any;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
+  customerCatalog?: Array<{ code: string; name: string; taxCode?: string }>;
+  itemCatalog?: Array<{ code: string; name: string; unit?: string; price?: number }>;
 }
 
 export function SaleQuoteModal({
@@ -88,6 +90,8 @@ export function SaleQuoteModal({
   onSubmit,
   onOpenCustomerModal,
   notify = () => {},
+  customerCatalog,
+  itemCatalog,
 }: SaleQuoteModalProps) {
   // Master fields
   const [customerCode, setCustomerCode] = useState(initialData?.customerCode || "");
@@ -129,12 +133,12 @@ export function SaleQuoteModal({
   // Handle select customer
   const handleSelectCustomer = (code: string) => {
     setCustomerCode(code);
-    const found = SAMPLE_SALE_CUSTOMERS.find((c) => c.code === code);
+    const found = customerCatalog?.find((c) => c.code === code) || SAMPLE_SALE_CUSTOMERS.find((c) => c.code === code);
     if (found) {
       setCustomerName(found.name);
-      setTaxCode(found.taxCode);
-      setAddress(found.address);
-      setContactPerson(found.contact);
+      setTaxCode(found.taxCode || "");
+      if ("address" in found) setAddress(found.address);
+      if ("contact" in found) setContactPerson(found.contact);
     }
   };
 
@@ -201,14 +205,14 @@ export function SaleQuoteModal({
     const item = { ...updated[index], [field]: value };
 
     if (field === "code") {
-      const catalogItem = SAMPLE_SALE_ITEMS.find((s) => s.code === value);
+      const catalogItem = itemCatalog?.find((s) => s.code === value) || SAMPLE_SALE_ITEMS.find((s) => s.code === value);
       if (catalogItem) {
         item.name = catalogItem.name;
-        item.unit = catalogItem.unit;
-        item.unitPrice = catalogItem.price;
-        item.vatRate = catalogItem.vat;
-        item.amount = item.quantity * catalogItem.price;
-        item.vatAmount = Math.round((item.amount * catalogItem.vat) / 100);
+        item.unit = catalogItem.unit || "";
+        item.unitPrice = catalogItem.price || 0;
+        item.vatRate = "vat" in catalogItem ? Number(catalogItem.vat) || 0 : 0;
+        item.amount = item.quantity * item.unitPrice;
+        item.vatAmount = Math.round((item.amount * Number(item.vatRate || 0)) / 100);
       }
     }
 
@@ -243,7 +247,7 @@ export function SaleQuoteModal({
     notify("AVA Kế toán đã tạo tự động ghi chú điều khoản báo giá!");
   };
 
-  const handleSave = (andNew = false) => {
+  const handleSave = async (andNew = false) => {
     const payload = {
       code: quoteCode,
       date: quoteDate,
@@ -263,7 +267,8 @@ export function SaleQuoteModal({
       description: note || `Báo giá cho ${customerName || "khách hàng"}`,
     };
 
-    onSubmit(payload);
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
     notify(`Đã lưu Báo giá ${quoteCode} thành công!`);
 
     if (andNew) {
@@ -406,7 +411,8 @@ export function SaleQuoteModal({
                   <input
                     type="text"
                     value={customerCode}
-                    onChange={(e) => setCustomerCode(e.target.value)}
+                    onChange={(e) => handleSelectCustomer(e.target.value)}
+                    list={customerCatalog ? "quote-customers" : undefined}
                     style={{
                       border: "none",
                       outline: "none",
@@ -441,8 +447,8 @@ export function SaleQuoteModal({
                   <button
                     type="button"
                     onClick={() => {
-                      const next = SAMPLE_SALE_CUSTOMERS[0];
-                      handleSelectCustomer(next.code);
+                      const next = (customerCatalog || SAMPLE_SALE_CUSTOMERS)[0];
+                      if (next) handleSelectCustomer(next.code);
                     }}
                     title="Chọn từ danh sách"
                     style={{
@@ -459,6 +465,7 @@ export function SaleQuoteModal({
                     <ChevronDown size={13} />
                   </button>
                 </div>
+                {customerCatalog && <datalist id="quote-customers">{customerCatalog.map((customer) => <option key={customer.code} value={customer.code}>{customer.name}</option>)}</datalist>}
 
                 {/* 28px Square $ button */}
                 <button
@@ -912,7 +919,7 @@ export function SaleQuoteModal({
                         }}
                       />
                       <datalist id={`quote-catalog-${idx}`}>
-                        {SAMPLE_SALE_ITEMS.map((si) => (
+                        {(itemCatalog || SAMPLE_SALE_ITEMS).map((si) => (
                           <option key={si.code} value={si.code}>
                             {si.name}
                           </option>
@@ -1444,7 +1451,7 @@ export interface SaleOrderModalProps {
   initialData?: any;
   quotesList?: any[];
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -1674,7 +1681,7 @@ export function SaleOrderModal({
     notify("AVA Kế toán đã tạo tự động diễn giải đơn đặt hàng!");
   };
 
-  const handleSave = (andNew = false) => {
+  const handleSave = async (andNew = false) => {
     const payload = {
       code: orderCode,
       date: orderDate,
@@ -1704,8 +1711,9 @@ export function SaleOrderModal({
       totalVatAmount,
     };
 
-    onSubmit(payload);
-    notify(`Đã lưu Đơn đặt hàng ${orderCode} thành công!`);
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(`Đã lưu Đơn đặt hàng ${orderCode} thành công!`);
 
     if (andNew) {
       const nextNum = parseInt(orderCode.replace(/\D/g, "") || "1", 10) + 1;
@@ -3395,7 +3403,7 @@ export interface SaleContractModalProps {
   initialData?: any;
   ordersList?: any[];
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -3647,7 +3655,7 @@ export function SaleContractModal({
     notify("AVA Kế toán đã tạo tự động trích yếu hợp đồng bán!");
   };
 
-  const handleSave = (andNew = false) => {
+  const handleSave = async (andNew = false) => {
     const payload = {
       code: contractCode,
       date: signDate,
@@ -3676,8 +3684,9 @@ export function SaleContractModal({
       items,
     };
 
-    onSubmit(payload);
-    notify(`Đã lưu Hợp đồng bán ${contractCode} thành công!`);
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(`Đã lưu Hợp đồng bán ${contractCode} thành công!`);
 
     if (andNew) {
       const nextNum = parseInt(contractCode.replace(/\D/g, "") || "1", 10) + 1;

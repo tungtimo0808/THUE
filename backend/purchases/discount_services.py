@@ -19,6 +19,7 @@ from .models import (ApprovalDecision, GoodsPurchase, GoodsPurchaseLine, Purchas
                      PurchaseDiscountCredit, PurchaseDiscountLine, PurchaseOrder,
                      PurchaseOrderLine, PurchaseReturnLine)
 from .services import audit
+from .goods_services import input_vat_split
 
 MONEY = Decimal("0.0001")
 
@@ -223,10 +224,16 @@ def post(document, request):
         n += 1
         JournalLine.objects.create(entry=journal, line_no=n, account=line.debit_account,
             debit=line.total_amount, currency=document.company.accounting_currency, party=document.supplier)
+        goods_value, vat, vat_account = input_vat_split(document.company, line)
         n += 1
         JournalLine.objects.create(entry=journal, line_no=n, account=line.credit_account,
-            credit=line.total_amount, currency=document.company.accounting_currency, party=document.supplier,
+            credit=goods_value, currency=document.company.accounting_currency, party=document.supplier,
             warehouse=document.original_purchase.receiving_warehouse)
+        if vat:
+            n += 1
+            JournalLine.objects.create(entry=journal, line_no=n, account=vat_account, credit=vat,
+                currency=document.company.accounting_currency, party=document.supplier,
+                description="Giảm thuế GTGT đầu vào do giảm giá hàng mua")
     post_journal(journal, request)
     document.journal_entry = journal
     payable = Payable.objects.select_for_update().filter(goods_purchase=document.original_purchase).first()

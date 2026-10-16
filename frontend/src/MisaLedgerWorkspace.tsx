@@ -1,4 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import { closingRowsFromLedger, createApiWriter, errorText, saveAdvanceSettlement, saveJournalVoucher, toApiDate } from "./misa-api-writes";
+import { useApiSession } from "./ApiSession";
+import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
+import { request } from "./live-api";
 import { Link } from "react-router-dom";
 import {
   HelpCircle,
@@ -95,6 +100,12 @@ export default function MisaLedgerWorkspace({
   href,
   notify = () => {},
 }: MisaLedgerWorkspaceProps) {
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(company.id, {
+    journals: "/api/v1/general-ledger/journals/",
+    closings: "/api/v1/general-ledger/closing-runs/",
+  }, notify);
+  const apiSave = useMisaApiSave(company.id, notify, reloadApi);
+  const { token: apiToken } = useApiSession();
   const currentTab = tab || "process";
 
   // --- Interactive Popovers on Workflow Nodes (Image 1 & 2) ---
@@ -134,6 +145,25 @@ export default function MisaLedgerWorkspace({
 
   // Report Preview Modal
   const [previewReportName, setPreviewReportName] = useState<string | null>(null);
+  const [previewReportRun, setPreviewReportRun] = useState<any | null>(null);
+  const handleExportReport = async (format: "XLSX" | "PRINT") => {
+    if (!previewReportRun || !apiToken || previewReportRun.report_name !== previewReportName) { notify("Chưa có báo cáo API để xuất."); return; }
+    try {
+      const response = await fetch(`/api/v1/reports/runs/${previewReportRun.id}/export/?company_id=${encodeURIComponent(company.id)}`, {
+        method: "POST", headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ format }),
+      });
+      if (!response.ok) throw new Error(`Xuất báo cáo thất bại (HTTP ${response.status}).`);
+      const url = URL.createObjectURL(await response.blob());
+      if (format === "PRINT") window.open(url, "_blank", "noopener,noreferrer");
+      else {
+        const link = document.createElement("a");
+        link.href = url; link.download = `${previewReportRun.report_code || "bao-cao"}.xlsx`;
+        link.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) { notify(errorText(error)); }
+  };
 
   // Transactions tab landing / table & dropdown state
   const [showVoucherTable, setShowVoucherTable] = useState(false);
@@ -332,6 +362,26 @@ export default function MisaLedgerWorkspace({
     setShowAddVoucherMenu(false);
   };
 
+  const handleSaveGeneralVoucher = async (andPrint = false) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveJournalVoucher(writer, {
+        number: voucherNo,
+        postingDate: voucherPostingDate,
+        docDate: voucherDocDate,
+        description: voucherDescription,
+        entryType: "MANUAL",
+        rows: voucherRows,
+      }));
+      if (!saved) return;
+      setAddVoucherModalOpen(false);
+      if (andPrint) window.print();
+      return;
+    }
+    setAddVoucherModalOpen(false);
+    notify(`Đã lưu chứng từ nghiệp vụ khác ${voucherNo} trên giao diện.`);
+    if (andPrint) window.print();
+  };
+
   // Tax invoice rows for Type 4 Tab 2
   const [taxInvoiceRows, setTaxInvoiceRows] = useState<any[]>([
     {
@@ -456,6 +506,19 @@ export default function MisaLedgerWorkspace({
       partnerName: "",
     },
   ]);
+  const handleSaveAdvanceSettlement = async (andNew = false) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveAdvanceSettlement(writer, {
+        employee: advanceEmployee, number: advanceVoucherNo, docDate: advanceDocDate,
+        description: advanceDescription, rows: advanceRows,
+      }));
+      if (!saved) return;
+    } else notify(`Đã lưu quyết toán tạm ứng ${advanceVoucherNo} trên giao diện.`);
+    if (andNew) {
+      setAdvanceVoucherNo(`QTTU${String(Date.now()).slice(-5)}`);
+      setAdvanceRows([{ id: "1", desc: advanceDescription, debitAcc: "", creditAcc: "141", amount: 0 }]);
+    } else setAddAdvanceSettlementModalOpen(false);
+  };
 
   const handleAddAdvanceRow = () => {
     setAdvanceRows([
@@ -520,6 +583,15 @@ export default function MisaLedgerWorkspace({
   const [closingRows, setClosingRows] = useState<any[]>([]);
 
   const handleFetchClosingData = () => {
+    if (apiConnected) {
+      closingRowsFromLedger(createApiWriter(company.id, (path, init) => request(path, apiToken, init)), closingToDate)
+        .then((rows) => {
+          setClosingRows(rows);
+          notify(rows.length ? `Đã lấy ${rows.length} dòng kết chuyển từ sổ cái.` : "Kỳ này chưa có số dư doanh thu, chi phí để kết chuyển.");
+        })
+        .catch((error) => notify(`Không lấy được dữ liệu kết chuyển: ${errorText(error)}`));
+      return;
+    }
     setClosingRows([
       {
         id: "1",
@@ -595,7 +667,15 @@ export default function MisaLedgerWorkspace({
     setClosingRows([]);
   };
 
-  const handleSaveClosingVoucher = () => {
+  const handleSaveClosingVoucher = async () => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveJournalVoucher(writer, {
+        number: closingVoucherNo, postingDate: closingPostingDate, docDate: closingDocDate,
+        description: closingDescription, entryType: "CLOSING", rows: closingRows,
+      }));
+      if (saved) setClosingEntryModalOpen(false);
+      return saved;
+    }
     setClosingEntryModalOpen(false);
     notify(`Đã cất chứng từ kết chuyển lãi lỗ ${closingVoucherNo} thành công!`);
   };
@@ -709,14 +789,47 @@ export default function MisaLedgerWorkspace({
     }
   };
 
-  const handleApplyStatementParams = () => {
-    setStatementModalOpen(false);
+  const handleApplyStatementParams = async () => {
     let title = "Báo cáo tài chính";
     if (statementCategory === "thuyet_minh_bctc") title = "Thuyết minh báo cáo tài chính";
     else if (statementCategory === "bctc_giua_nien_do") title = "Báo cáo tài chính giữa niên độ";
     else if (statementCategory === "thuyet_minh_bctc_giua_nien_do") title = "Thuyết minh báo cáo tài chính giữa niên độ";
 
-    notify(`Đã lập thành công ${title} kỳ ${statementPeriod} năm ${statementYear}!`);
+    if (apiConnected && apiToken) {
+      if (statementCategory.includes("giua_nien_do")) {
+        notify("Backend chưa có mã báo cáo tài chính giữa niên độ.");
+        return;
+      }
+      const selected = statementCategory === "bctc"
+        ? Object.entries(selectedBctcReports).filter(([, checked]) => checked).map(([code]) => code)
+        : ["B09-DN"];
+      if (!selected.length) { notify("Chọn ít nhất một báo cáo."); return; }
+      if (selected.some((code) => !["B01-DN", "B02-DN", "B03-DN", "B09-DN"].includes(code))) {
+        notify("Một báo cáo đã chọn chưa có mã tương ứng trên backend.");
+        return;
+      }
+      try {
+        const runs = [];
+        for (const code of selected) {
+          runs.push(await request<any>(`/api/v1/reports/engine/execute/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
+            method: "POST", body: JSON.stringify({
+              company: company.id, report_code: code,
+              date_from: toApiDate(statementFromDate), date_to: toApiDate(statementToDate),
+            }),
+          }));
+        }
+        const first = runs[0];
+        setPreviewReportRun(first);
+        setPreviewReportName(first.report_name);
+        setStatementModalOpen(false);
+        notify(`Đã lập ${runs.length} báo cáo và lưu lần chạy trên backend.`);
+      } catch (error) {
+        notify(`Không lập được báo cáo: ${errorText(error)}`);
+      }
+      return;
+    }
+    setStatementModalOpen(false);
+    notify(`Đã lập ${title} kỳ ${statementPeriod} năm ${statementYear} trên giao diện.`);
     setPreviewReportName(title);
   };
 
@@ -727,6 +840,17 @@ export default function MisaLedgerWorkspace({
   const [lockDate, setLockDate] = useState("31/10/2026");
   const [unlockDate, setUnlockDate] = useState("30/09/2026");
   const [lockPassword, setLockPassword] = useState("");
+  const handleCloseAccountingPeriod = async () => {
+    if (!apiConnected) { notify("Chưa đăng nhập để khóa kỳ kế toán."); return; }
+    const saved = await apiSave(async (writer) => {
+      const date = toApiDate(lockDate);
+      const period = (await writer.list("glPeriods")).find((row) => row.end_date === date && row.status === "OPEN");
+      if (!period) throw new Error("Chỉ có thể khóa kỳ đang mở khi ngày chọn đúng ngày cuối kỳ.");
+      await writer.action("/api/v1/general-ledger/periods/", period.id, "close");
+      return { message: `Đã khóa kỳ kế toán ${period.code || date}.` };
+    });
+    if (saved) setLockPeriodModalOpen(false);
+  };
 
   // Lock By Voucher Types list
   const [voucherTypes, setVoucherTypes] = useState([
@@ -761,6 +885,35 @@ export default function MisaLedgerWorkspace({
     { id: "KC004", period: "Tháng 10/2026", date: "31/10/2026", desc: "Kết chuyển chi phí quản lý doanh nghiệp sang 911", debitAcc: "911", creditAcc: "642", amount: 48600000 },
     { id: "KC005", period: "Tháng 10/2026", date: "31/10/2026", desc: "Kết chuyển lãi hoạt động sản xuất kinh doanh tháng 10/2026", debitAcc: "911", creditAcc: "4212", amount: 159600000 },
   ]);
+
+  useEffect(() => {
+    if (!apiConnected) return;
+    if (apiRows.journals) setGeneralVouchers(apiRows.journals.map((row) => ({
+      id: row.number || row.id, date: apiDate(row.posting_date),
+      voucherDate: apiDate(row.document_date), desc: row.description || "",
+      debitAcc: row.lines?.find((line: any) => Number(line.debit) > 0)?.account_code || "",
+      creditAcc: row.lines?.find((line: any) => Number(line.credit) > 0)?.account_code || "",
+      amount: apiNumber(row.total_debit), posted: row.status === "POSTED", apiId: row.id,
+    })));
+    if (apiRows.journals) setClosingEntries(apiRows.journals.filter((row) => row.entry_type === "CLOSING").map((row) => ({
+      id: row.number || row.id, period: row.period_code || "", date: apiDate(row.posting_date),
+      desc: row.description || "Kết chuyển",
+      debitAcc: row.lines?.find((line: any) => Number(line.debit) > 0)?.account_code || "",
+      creditAcc: row.lines?.find((line: any) => Number(line.credit) > 0)?.account_code || "",
+      amount: apiNumber(row.total_debit),
+    })));
+    else if (apiRows.closings) setClosingEntries(apiRows.closings.map((row) => {
+      // A closing run only references its journal entry; the voucher details live there.
+      const entry = apiRows.journals?.find((journal) => journal.id === row.entry);
+      return {
+        id: entry?.number || row.id, period: entry?.period_code || "",
+        date: apiDate(entry?.posting_date || row.created_at), desc: entry?.description || "Kết chuyển",
+        debitAcc: entry?.lines?.find((line: any) => Number(line.debit) > 0)?.account_code || "",
+        creditAcc: entry?.lines?.find((line: any) => Number(line.credit) > 0)?.account_code || "",
+        amount: apiNumber(entry?.total_debit),
+      };
+    }));
+  }, [apiRows, apiConnected]);
 
   // Favorite reports toggles matching user screenshot (4 favorited in "Yêu thích")
   const [favoriteReports, setFavoriteReports] = useState<Record<string, boolean>>({
@@ -3318,7 +3471,11 @@ export default function MisaLedgerWorkspace({
                                 color: "#16a34a",
                               }}
                             >
-                              Đã ghi sổ
+                              {(() => {
+                                const record = apiConnected ? apiRows.journals?.find((row) => row.id === (item as any).apiId) : undefined;
+                                return record ? <MisaApiDocumentStatus path="/api/v1/general-ledger/journals/" record={record}
+                                  companyId={company.id} notify={notify} onChanged={reloadApi} /> : "Đã ghi sổ";
+                              })()}
                             </span>
                           </td>
                           <td style={{ padding: "10px 14px", textAlign: "center" }}>
@@ -5358,10 +5515,7 @@ export default function MisaLedgerWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setLockPeriodModalOpen(false);
-                  notify(`Đã khóa sổ kỳ kế toán thành công đến ngày ${lockDate}`);
-                }}
+                onClick={() => { void handleCloseAccountingPeriod(); }}
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
@@ -5658,10 +5812,7 @@ export default function MisaLedgerWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setLockByTypeModalOpen(false);
-                  notify("Đã lưu thiết lập khóa sổ theo loại chứng từ!");
-                }}
+                onClick={() => notify("Backend chưa hỗ trợ khóa sổ riêng theo loại chứng từ.")}
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
@@ -5788,10 +5939,7 @@ export default function MisaLedgerWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setAutoLockModalOpen(false);
-                  notify("Đã lưu cấu hình tự động khóa sổ!");
-                }}
+                onClick={() => notify("Backend chưa có cấu hình hoặc lịch chạy tự động khóa sổ.")}
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
@@ -7457,10 +7605,7 @@ export default function MisaLedgerWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setAddVoucherModalOpen(false);
-                  notify(`Đã lưu chứng từ nghiệp vụ khác ${voucherNo} thành công!`);
-                }}
+                onClick={() => { void handleSaveGeneralVoucher(); }}
                 style={{
                   padding: "7px 22px",
                   borderRadius: 6,
@@ -7477,10 +7622,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "flex", borderRadius: 6, overflow: "hidden" }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setAddVoucherModalOpen(false);
-                    notify(`Đã lưu và chuẩn bị in chứng từ ${voucherNo}!`);
-                  }}
+                  onClick={() => { void handleSaveGeneralVoucher(true); }}
                   style={{
                     padding: "7px 18px",
                     background: "#00a862",
@@ -8324,10 +8466,7 @@ export default function MisaLedgerWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setAddAdvanceSettlementModalOpen(false);
-                    notify(`Đã lưu chứng từ quyết toán tạm ứng ${advanceVoucherNo} thành công!`);
-                  }}
+                  onClick={() => { void handleSaveAdvanceSettlement(); }}
                   style={{
                     padding: "7px 22px",
                     borderRadius: 6,
@@ -8344,10 +8483,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ display: "flex", borderRadius: 6, overflow: "hidden" }}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setAddAdvanceSettlementModalOpen(false);
-                      notify(`Đã lưu và chuẩn bị thêm mới chứng từ quyết toán tạm ứng!`);
-                    }}
+                    onClick={() => { void handleSaveAdvanceSettlement(true); }}
                     style={{
                       padding: "7px 18px",
                       background: "#00a862",
@@ -8976,8 +9112,8 @@ export default function MisaLedgerWorkspace({
                   <button
                     type="button"
                     onClick={() => {
-                      handleSaveClosingVoucher();
-                      notify(`Đã chuẩn bị in chứng từ kết chuyển lãi lỗ ${closingVoucherNo}!`);
+                      void handleSaveClosingVoucher();
+                      if (!apiConnected) notify(`Đã chuẩn bị in chứng từ kết chuyển lãi lỗ ${closingVoucherNo}!`);
                     }}
                     style={{
                       padding: "7px 18px",
@@ -9191,7 +9327,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button
                   type="button"
-                  onClick={() => notify(`Đang in báo cáo ${previewReportName}...`)}
+                  onClick={() => { void handleExportReport("PRINT"); }}
                   style={{
                     background: "none",
                     border: "none",
@@ -9208,7 +9344,7 @@ export default function MisaLedgerWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => notify(`Xuất Excel báo cáo ${previewReportName}`)}
+                  onClick={() => { void handleExportReport("XLSX"); }}
                   style={{
                     background: "none",
                     border: "none",
@@ -9242,15 +9378,25 @@ export default function MisaLedgerWorkspace({
                   {previewReportName}
                 </div>
                 <div style={{ fontSize: 12.5, color: "#475569", fontStyle: "italic", marginTop: 4 }}>
-                  Kỳ báo cáo: Tháng 10 năm 2026 (Từ 01/10/2026 đến 31/10/2026)
+                  {previewReportRun?.report_name === previewReportName
+                    ? `Kỳ báo cáo: ${previewReportRun.result?.date_from || ""} đến ${previewReportRun.result?.date_to || ""}`
+                    : "Kỳ báo cáo: Tháng 10 năm 2026 (Từ 01/10/2026 đến 31/10/2026)"}
                 </div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                   Đơn vị tính: Việt Nam Đồng (VND)
                 </div>
               </div>
 
-              {/* Sample Report Data Table */}
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+              {previewReportRun?.report_name === previewReportName && (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <thead><tr style={{ background: "#f1f5f9" }}><th style={{ textAlign: "left", padding: 8 }}>Chỉ tiêu</th><th>Mã số</th><th style={{ textAlign: "right", padding: 8 }}>Số tiền</th></tr></thead>
+                  <tbody>{(previewReportRun.result?.rows || []).map((row: any, index: number) => (
+                    <tr key={`${row.code || index}`}><td style={{ padding: 8, borderBottom: "1px solid #e2e8f0" }}>{row.name || row.code}</td><td>{row.code || ""}</td><td style={{ textAlign: "right" }}>{apiNumber(row.amount).toLocaleString("vi-VN")}</td></tr>
+                  ))}</tbody>
+                </table>
+              )}
+              {/* Legacy preview is kept only for the unauthenticated sample mode. */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, display: apiConnected ? "none" : undefined }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", border: "1px solid #cbd5e1" }}>
                     <th style={{ border: "1px solid #cbd5e1", padding: "8px 10px" }}>Chỉ tiêu</th>
@@ -9723,6 +9869,11 @@ export default function MisaLedgerWorkspace({
                 type="button"
                 onClick={() => {
                   setAiVoucherModalOpen(false);
+                  if (apiConnected) {
+                    // The sample generator invents accounts and amounts; it must not write into real books.
+                    notify("Sinh chứng từ bằng AI chưa có API backend; chứng từ không được ghi vào sổ.");
+                    return;
+                  }
                   const newVoucher = {
                     id: `PKT0000${generalVouchers.length + 1}`,
                     date: "31/10/2026",

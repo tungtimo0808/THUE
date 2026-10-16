@@ -45,7 +45,7 @@ export interface SaleVoucherModalProps {
   ordersList?: any[];
   isService?: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -458,7 +458,7 @@ export function SaleVoucherModal({
     notify("AVA Kế toán: Đã kiểm tra hồ sơ, áp dụng chính sách giảm thuế và định khoản chuẩn theo Thông tư 200/133!");
   };
 
-  const handleSave = (andPrint = false) => {
+  const handleSave = async (andPrint = false) => {
     const payload = {
       code: voucherCode,
       saleType,
@@ -518,8 +518,9 @@ export function SaleVoucherModal({
       isService,
     };
 
-    onSubmit(payload);
-    notify(
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(
       andPrint
         ? `Đã lưu và chuẩn bị in ${isService ? "Chứng từ bán dịch vụ" : "Chứng từ bán hàng"} ${voucherCode}!`
         : `Đã lưu ${isService ? "Chứng từ bán dịch vụ" : "Chứng từ bán hàng"} ${voucherCode} thành công!`

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   X,
   HelpCircle,
@@ -202,18 +202,22 @@ export interface PurchaseOrderItem {
 
 export interface PurchaseOrderModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
+  supplierCatalog?: Array<{ code: string; name: string; tax_code?: string }>;
+  itemCatalog?: Array<{ code: string; name: string; unit?: string; price?: number }>;
 }
 
 export function PurchaseOrderModal({
   onClose,
   onSubmit,
   onOpenSupplierModal,
+  supplierCatalog,
+  itemCatalog,
 }: PurchaseOrderModalProps) {
   // Master fields
-  const [supplierCode, setSupplierCode] = useState("NCC001");
-  const [supplierName, setSupplierName] = useState("Công ty TNHH Thiết bị Công nghiệp Tân Phát");
+  const [supplierCode, setSupplierCode] = useState(supplierCatalog ? "" : "NCC001");
+  const [supplierName, setSupplierName] = useState(supplierCatalog ? "" : "Công ty TNHH Thiết bị Công nghiệp Tân Phát");
   const [taxCode, setTaxCode] = useState("0102345678");
   const [address, setAddress] = useState("Số 18 Hoàng Cầu, Đống Đa, Hà Nội");
   const [contactPerson, setContactPerson] = useState("Nguyễn Văn Hùng");
@@ -230,7 +234,7 @@ export function PurchaseOrderModal({
 
   // Grid & items
   const [discountPolicy, setDiscountPolicy] = useState("Không chiết khấu");
-  const [items, setItems] = useState<PurchaseOrderItem[]>([
+  const [items, setItems] = useState<PurchaseOrderItem[]>(itemCatalog ? [{ id: "row-1", code: "", name: "", unit: "", quantity: 1, receivedQty: 0, unitPrice: 0, amount: 0, vatRate: 0, vatAmount: 0 }] : [
     {
       id: "row-1",
       code: "VT001",
@@ -268,13 +272,13 @@ export function PurchaseOrderModal({
   // Suppliers selection helper
   const handleSelectSupplier = (code: string) => {
     setSupplierCode(code);
-    const found = SAMPLE_SUPPLIERS.find((s) => s.code === code);
+    const found = supplierCatalog?.find((s) => s.code === code) || SAMPLE_SUPPLIERS.find((s) => s.code === code);
     if (found) {
       setSupplierName(found.name);
-      setTaxCode(found.taxCode);
-      setAddress(found.address);
-      setContactPerson(found.contact);
-      setDebtDays(found.debtDays);
+      setTaxCode("tax_code" in found ? String(found.tax_code || "") : String((found as { taxCode?: string }).taxCode || ""));
+      if ("address" in found) setAddress(found.address);
+      if ("contact" in found) setContactPerson(found.contact);
+      if ("debtDays" in found) setDebtDays(found.debtDays);
     }
   };
 
@@ -284,12 +288,12 @@ export function PurchaseOrderModal({
     const item = { ...updated[index], [field]: value };
 
     if (field === "code") {
-      const found = SAMPLE_ITEMS.find((it) => it.code === value);
+      const found = itemCatalog?.find((it) => it.code === value) || SAMPLE_ITEMS.find((it) => it.code === value);
       if (found) {
         item.name = found.name;
-        item.unit = found.unit;
-        item.unitPrice = found.price;
-        item.vatRate = found.vat;
+        item.unit = found.unit || "";
+        item.unitPrice = found.price || 0;
+        if ("vat" in found) item.vatRate = Number(found.vat) || 0;
       }
     }
 
@@ -363,8 +367,8 @@ export function PurchaseOrderModal({
   const totalQuantity = items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
   const totalReceivedQty = items.reduce((sum, it) => sum + (Number(it.receivedQty) || 0), 0);
 
-  const handleSave = (andPrint = false) => {
-    onSubmit({
+  const handleSave = async (andPrint = false) => {
+    const saved = await onSubmit({
       kind: "purchase_order",
       orderCode,
       orderDate,
@@ -388,7 +392,7 @@ export function PurchaseOrderModal({
       totalGrand,
       andPrint,
     });
-    onClose();
+    if (saved !== false) onClose();
   };
 
   return (
@@ -457,14 +461,17 @@ export function PurchaseOrderModal({
                       type="text"
                       value={supplierCode}
                       onChange={(e) => handleSelectSupplier(e.target.value)}
+                      list={supplierCatalog ? "misa-po-suppliers" : undefined}
                       className="misa-po-input"
                       style={{ paddingRight: 26 }}
                     />
                     <button
                       type="button"
                       onClick={() => {
-                        const idx = SAMPLE_SUPPLIERS.findIndex((s) => s.code === supplierCode);
-                        const next = SAMPLE_SUPPLIERS[(idx + 1) % SAMPLE_SUPPLIERS.length];
+                        const choices = supplierCatalog || SAMPLE_SUPPLIERS;
+                        if (!choices.length) return;
+                        const idx = choices.findIndex((s) => s.code === supplierCode);
+                        const next = choices[(idx + 1) % choices.length];
                         handleSelectSupplier(next.code);
                       }}
                       style={{
@@ -484,6 +491,7 @@ export function PurchaseOrderModal({
                       <ChevronDown size={14} />
                     </button>
                   </div>
+                  {supplierCatalog && <datalist id="misa-po-suppliers">{supplierCatalog.map((supplier) => <option key={supplier.code} value={supplier.code}>{supplier.name}</option>)}</datalist>}
                   <button
                     type="button"
                     onClick={onOpenSupplierModal}
@@ -786,10 +794,12 @@ export function PurchaseOrderModal({
                           type="text"
                           value={row.code}
                           onChange={(e) => handleItemChange(idx, "code", e.target.value)}
+                          list={itemCatalog ? "misa-po-items" : undefined}
                           placeholder="Mã hàng..."
                           style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }}
                         />
                       </div>
+                      {itemCatalog && <datalist id="misa-po-items">{itemCatalog.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</datalist>}
                     </td>
                     <td>
                       <input
@@ -1028,7 +1038,7 @@ export function PurchaseOrderModal({
 // ============================================================================
 export interface PurchaseContractModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
 }
 
@@ -1180,8 +1190,8 @@ export function PurchaseContractModal({
   const totalVAT = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const grandTotal = totalAmount - totalDiscount + totalVAT;
 
-  const handleSave = (andClose = true) => {
-    onSubmit({
+  const handleSave = async (andClose = true) => {
+    const saved = await onSubmit({
       kind: "purchase_contract",
       contractCode,
       signDate,
@@ -1206,7 +1216,7 @@ export function PurchaseContractModal({
       items,
       grandTotal,
     });
-    if (andClose) onClose();
+    if (saved !== false && andClose) onClose();
   };
 
   return (
@@ -2480,7 +2490,7 @@ export function PurchaseContractModal({
 // ============================================================================
 export interface PurchaseVoucherModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
 }
 
@@ -2751,8 +2761,8 @@ export function PurchaseVoucherModal({
   const grandTotal = subtotal + vatTotal + (isImport ? importTaxTotal + exciseTaxTotal : 0);
   const inventoryValue = subtotal + purchaseCost;
 
-  const handleSave = (andClose = true) => {
-    onSubmit({
+  const handleSave = async (andClose = true) => {
+    const saved = await onSubmit({
       kind: "purchase_voucher",
       voucherCode,
       purchaseType,
@@ -2776,7 +2786,7 @@ export function PurchaseVoucherModal({
       einvoiceLookupCode,
       einvoiceLookupUrl,
     });
-    if (andClose) onClose();
+    if (saved !== false && andClose) onClose();
   };
 
   return (
@@ -4732,7 +4742,7 @@ export function PurchaseVoucherModal({
 // ============================================================================
 export interface PurchaseReturnModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
 }
 
@@ -4819,8 +4829,8 @@ export function PurchaseReturnModal({
   const vatTotal = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const grandTotal = subtotal + vatTotal;
 
-  const handleSave = (andPrint = true) => {
-    onSubmit({
+  const handleSave = async (andPrint = true) => {
+    const saved = await onSubmit({
       kind: "purchase_return",
       voucherCode,
       returnOption,
@@ -4839,7 +4849,7 @@ export function PurchaseReturnModal({
       grandTotal,
       andPrint,
     });
-    onClose();
+    if (saved !== false) onClose();
   };
 
   return (
@@ -5237,7 +5247,7 @@ export function PurchaseReturnModal({
 // ============================================================================
 export interface PurchaseDiscountModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
 }
 
@@ -5378,8 +5388,8 @@ export function PurchaseDiscountModal({
   const vatTotal = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const grandTotal = subtotal + vatTotal;
 
-  const handleSave = (andPrint = true) => {
-    onSubmit({
+  const handleSave = async (andPrint = true) => {
+    const saved = await onSubmit({
       kind: "purchase_discount",
       voucherCode,
       discountOption,
@@ -5406,7 +5416,7 @@ export function PurchaseDiscountModal({
       grandTotal,
       andPrint,
     });
-    onClose();
+    if (saved !== false) onClose();
   };
 
   return (
@@ -6759,26 +6769,31 @@ export function PurchaseDiscountModal({
 // ============================================================================
 export interface ReconciliationPeriodModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
+  /** Suppliers from the backend; the sample list is used when absent. */
+  supplierOptions?: { code: string; name: string }[];
 }
 
 export function ReconciliationPeriodModal({
   onClose,
   onSubmit,
+  supplierOptions,
 }: ReconciliationPeriodModalProps) {
   const [debtAccount, setDebtAccount] = useState("331 - Phải trả cho người bán");
-  const [supplier, setSupplier] = useState("NCC001 - Công ty TNHH Thiết bị Công nghiệp Tân Phát");
+  const [supplier, setSupplier] = useState(supplierOptions
+    ? (supplierOptions[0] ? `${supplierOptions[0].code} - ${supplierOptions[0].name}` : "")
+    : "NCC001 - Công ty TNHH Thiết bị Công nghiệp Tân Phát");
   const [templateReport, setTemplateReport] = useState("Mẫu đối chiếu công nợ chi tiết");
   const [fileName, setFileName] = useState("");
 
-  const handleAgree = () => {
-    onSubmit({
+  const handleAgree = async () => {
+    const saved = await onSubmit({
       debtAccount,
       supplier,
       templateReport,
       fileName: fileName || "Bao_cao_cong_no_NCC.xlsx",
     });
-    onClose();
+    if (saved !== false) onClose();
   };
 
   return (
@@ -6854,9 +6869,13 @@ export function ReconciliationPeriodModal({
                 onChange={(e) => setSupplier(e.target.value)}
                 style={{ width: "100%", height: 32, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5 }}
               >
+                {supplierOptions ? supplierOptions.map((row) => (
+                  <option key={row.code} value={`${row.code} - ${row.name}`}>{row.code} - {row.name}</option>
+                )) : <>
                 <option value="NCC001 - Công ty TNHH Thiết bị Công nghiệp Tân Phát">NCC001 - Công ty TNHH Thiết bị Công nghiệp Tân Phát</option>
                 <option value="NCC002 - Công ty Cổ phần Thép Hòa Phát Hưng Yên">NCC002 - Công ty Cổ phần Thép Hòa Phát Hưng Yên</option>
                 <option value="NCC003 - Công ty TNHH Nhập khẩu & Thương mại Sao Nam">NCC003 - Công ty TNHH Nhập khẩu & Thương mại Sao Nam</option>
+                </>}
               </select>
             </div>
           </div>
@@ -6917,7 +6936,7 @@ export function ReconciliationPeriodModal({
 // ============================================================================
 export interface SupplierModalProps {
   onClose: () => void;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: any, andNew?: boolean) => boolean | void | Promise<boolean | void>;
   initialData?: any;
 }
 
@@ -7021,8 +7040,8 @@ export function SupplierModal({
     }
   };
 
-  const handleSave = (andNew = false) => {
-    onSubmit?.({
+  const handleSave = async (andNew = false) => {
+    const saved = await onSubmit?.({
       partnerType,
       isCustomer,
       isInternal,
@@ -7061,7 +7080,8 @@ export function SupplierModal({
       district,
       ward,
       items: supplierItems,
-    });
+    }, andNew);
+    if (saved === false) return;
     if (andNew) {
       setSupplierCode(`NCC0000${Math.floor(Math.random() * 90 + 10)}`);
       setSupplierName("");
@@ -7989,16 +8009,29 @@ export interface UninvoicedVoucher {
   amount: number;
 }
 
+export interface ReceivedInvoiceInfo {
+  invoiceTemplate: string;
+  invoiceSeries: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+}
+
 export interface ReceiveInvoiceSelectModalProps {
   onClose: () => void;
-  onSubmit: (selectedVouchers: UninvoicedVoucher[]) => void;
+  onSubmit: (selectedVouchers: UninvoicedVoucher[], invoice?: ReceivedInvoiceInfo) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
+  /** Loads posted purchases still waiting for an invoice; when set, the seller's invoice fields are asked for. */
+  loadVouchers?: () => Promise<UninvoicedVoucher[]>;
 }
 
 export function ReceiveInvoiceSelectModal({
   onClose,
   onSubmit,
+  loadVouchers,
 }: ReceiveInvoiceSelectModalProps) {
+  const [invoice, setInvoice] = useState<ReceivedInvoiceInfo>({
+    invoiceTemplate: "1", invoiceSeries: "", invoiceNumber: "", invoiceDate: new Date().toLocaleDateString("en-GB"),
+  });
   // Master Filters
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [reportPeriod, setReportPeriod] = useState<string>("Tháng này");
@@ -8008,7 +8041,7 @@ export function ReceiveInvoiceSelectModal({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Sample vouchers available for receiving invoice
-  const [vouchers] = useState<UninvoicedVoucher[]>([
+  const [vouchers, setVouchers] = useState<UninvoicedVoucher[]>(loadVouchers ? [] : [
     {
       id: "nk-01",
       postDate: "29/09/2026",
@@ -8054,6 +8087,12 @@ export function ReceiveInvoiceSelectModal({
   // Selected voucher IDs
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (!loadVouchers) return;
+    loadVouchers().then(setVouchers).catch((error) => setValidationError(
+      `Không tải được chứng từ chưa nhận hóa đơn: ${error instanceof Error ? error.message : String(error)}`));
+  }, [loadVouchers]);
+
   // Filter vouchers according to supplier & keyword
   const filteredVouchers = vouchers.filter((v) => {
     if (selectedSupplier && selectedSupplier !== "ALL" && v.supplierCode !== selectedSupplier) {
@@ -8097,13 +8136,17 @@ export function ReceiveInvoiceSelectModal({
     setValidationError(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const chosen = vouchers.filter((v) => selectedIds.includes(v.id));
     if (chosen.length === 0) {
       setValidationError("Vui lòng chọn ít nhất một chứng từ mua hàng cần nhận hóa đơn.");
       return;
     }
-    onSubmit(chosen);
+    if (loadVouchers && (!invoice.invoiceSeries.trim() || !invoice.invoiceNumber.trim() || !invoice.invoiceDate.trim())) {
+      setValidationError("Vui lòng nhập Ký hiệu, Số và Ngày hóa đơn của người bán.");
+      return;
+    }
+    await onSubmit(chosen, loadVouchers ? invoice : undefined);
   };
 
   const selectedCount = selectedIds.length;
@@ -8451,6 +8494,27 @@ export function ReceiveInvoiceSelectModal({
           </div>
         </div>
 
+        {loadVouchers && (
+          <div style={{ display: "flex", gap: 12, padding: "8px 18px", alignItems: "center", fontSize: 12.5, borderTop: "1px solid #e2e8f0" }}>
+            {([
+              ["invoiceTemplate", "Mẫu số", 70],
+              ["invoiceSeries", "Ký hiệu HĐ *", 110],
+              ["invoiceNumber", "Số hóa đơn *", 120],
+              ["invoiceDate", "Ngày hóa đơn *", 110],
+            ] as const).map(([field, label, width]) => (
+              <label key={field} style={{ display: "flex", alignItems: "center", gap: 6, color: "#334155" }}>
+                {label}
+                <input
+                  value={invoice[field]}
+                  onChange={(e) => { setInvoice((prev) => ({ ...prev, [field]: e.target.value })); setValidationError(null); }}
+                  placeholder={field === "invoiceDate" ? "dd/mm/yyyy" : ""}
+                  style={{ width, height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
+                />
+              </label>
+            ))}
+          </div>
+        )}
+
         {/* Validation warning if any */}
         {validationError && (
           <div
@@ -8755,7 +8819,7 @@ export interface PurchaseServiceItem {
 
 export interface PurchaseServiceModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
 }
 
@@ -8958,8 +9022,8 @@ export function PurchaseServiceModal({
 
   const currentHeaderCode = paymentStatus === "unpaid" ? voucherCode : paymentVoucherCode;
 
-  const handleSave = (andClose = true) => {
-    onSubmit({
+  const handleSave = async (andClose = true) => {
+    const saved = await onSubmit({
       kind: "service_purchase",
       voucherCode: currentHeaderCode,
       postDate: paymentStatus === "unpaid" ? postDate : paymentPostDate,
@@ -8978,7 +9042,7 @@ export function PurchaseServiceModal({
       grandTotal: totalGrand,
       items,
     });
-    if (andClose) {
+    if (saved !== false && andClose) {
       onClose();
     }
   };
@@ -10095,7 +10159,7 @@ export interface PurchaseMultiInvoiceItem {
 
 export interface PurchaseMultiInvoiceModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
 }
 
@@ -10337,8 +10401,8 @@ export function PurchaseMultiInvoiceModal({
     ? "UNC00001"
     : "PC00001";
 
-  const handleSave = (andClose = true) => {
-    onSubmit({
+  const handleSave = async (andClose = true) => {
+    const saved = await onSubmit({
       kind: "multi_invoice_purchase",
       voucherCode: currentHeaderCode,
       postDate,
@@ -10357,7 +10421,7 @@ export function PurchaseMultiInvoiceModal({
       stockValue,
       items,
     });
-    if (andClose) {
+    if (saved !== false && andClose) {
       onClose();
     }
   };

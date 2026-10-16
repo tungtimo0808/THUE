@@ -40,7 +40,7 @@ export interface SaleInvoiceModalProps {
   initialIsReplacement?: boolean;
   initialData?: any;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -221,7 +221,7 @@ export function SaleInvoiceModal({
     setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSave = (andPrint = false) => {
+  const handleSave = async (andPrint = false) => {
     const payload = {
       invoiceFormType: invoiceType,
       invoiceTemplate,
@@ -262,8 +262,9 @@ export function SaleInvoiceModal({
       andPrint,
     };
 
-    onSubmit(payload);
-    notify(
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(
       andPrint
         ? `Đã lưu và chuẩn bị phát hành Hóa đơn ${invoiceNo || "mới"}!`
         : `Đã lưu Hóa đơn ${invoiceNo || "mới"} thành công!`

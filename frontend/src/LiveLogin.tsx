@@ -54,6 +54,7 @@ export default function LiveLogin() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newTaxCode, setNewTaxCode] = useState("");
+  const [newRepresentative, setNewRepresentative] = useState("");
   const [creatingCompany, setCreatingCompany] = useState(false);
 
   // Sync step if token changes
@@ -140,7 +141,7 @@ export default function LiveLogin() {
   // Handle custom company creation
   async function handleCreateCustomCompany(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!newCompanyName.trim() || !newTaxCode.trim()) return;
+    if (!newCompanyName.trim() || !newTaxCode.trim() || !newRepresentative.trim()) return;
 
     setCreatingCompany(true);
     setError("");
@@ -156,6 +157,7 @@ export default function LiveLogin() {
           business_type: "LLC_ONE_MEMBER",
           address: "Trụ sở chính doanh nghiệp",
           province: "Hà Nội",
+          legal_representative: newRepresentative.trim(),
           confirmed_authority: true,
           fiscal_year_start_month: 1,
         }),
@@ -165,6 +167,7 @@ export default function LiveLogin() {
       setShowCreateForm(false);
       setNewCompanyName("");
       setNewTaxCode("");
+      setNewRepresentative("");
 
       if (res?.id) {
         handleSelectAndEnter(res.id);
@@ -578,6 +581,18 @@ export default function LiveLogin() {
                       placeholder="VD: 0109887766"
                       value={newTaxCode}
                       onChange={(e) => setNewTaxCode(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="auth-field">
+                    <label className="auth-label">Người đại diện pháp luật</label>
+                    <input
+                      className="auth-input"
+                      style={{ paddingLeft: 14, height: 42 }}
+                      placeholder="VD: Nguyễn Văn A"
+                      value={newRepresentative}
+                      onChange={(e) => setNewRepresentative(e.target.value)}
                       required
                     />
                   </div>

@@ -968,6 +968,21 @@ class DashboardView(APIView):
         return Response(services.dashboard(company, services.iam_user(request), serializer.validated_data.get("date_from"), serializer.validated_data.get("date_to")))
 
 
+class CompanySetupCompleteView(APIView):
+    """Create the accounting foundations of a PENDING_SETUP company and activate it."""
+    permission_classes = (CommonCompanyPermission,)
+    iam_permissions = {"POST": "COM.SETTING.CONFIGURE"}
+
+    def post(self, request):
+        from organization.models import Company
+        from .setup_services import complete_company_setup
+
+        company = Company.objects.filter(pk=request.query_params.get("company_id") or request.data.get("company")).first()
+        if not company:
+            raise drf_serializers.ValidationError({"company": "Không tìm thấy doanh nghiệp."})
+        return Response(complete_company_setup(company, services.iam_user(request), request))
+
+
 class CompanySettingView(APIView):
     permission_classes = (CommonCompanyPermission,)
     serializer_class = CompanySettingSerializer

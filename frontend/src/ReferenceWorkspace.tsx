@@ -89,6 +89,7 @@ import MisaFinancialAnalysisWorkspace from "./MisaFinancialAnalysisWorkspace";
 import MisaOpeningBalanceWorkspace from "./MisaOpeningBalanceWorkspace";
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
+import { request as apiRequest } from "./live-api";
 import LiveAccount from "./LiveAccount";
 import LiveJoin from "./LiveJoin";
 import LiveLogin from "./LiveLogin";
@@ -191,7 +192,10 @@ function ReferenceWorkspace() {
     companies: apiCompanies,
     companyId: apiCompanyId,
     selectCompany: apiSelectCompany,
+    refreshCompanies: apiRefreshCompanies,
   } = useApiSession();
+  const [completingSetup, setCompletingSetup] = useState(false);
+  const pendingSetup = apiCompanies.find((item) => item.id === apiCompanyId)?.status === "PENDING_SETUP";
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
@@ -598,8 +602,32 @@ function ReferenceWorkspace() {
           >
             <MoreHorizontal size={18} />
           </button>
+          {apiToken && pendingSetup && (
+            <button
+              className="ref-demo"
+              disabled={completingSetup}
+              title="Tạo năm tài chính, kỳ kế toán, hệ thống tài khoản, thuế suất và kích hoạt doanh nghiệp"
+              onClick={async () => {
+                setCompletingSetup(true);
+                try {
+                  await apiRequest(`/api/v1/common/companies/complete-setup/?company_id=${encodeURIComponent(apiCompanyId)}`, apiToken, {
+                    method: "POST", body: JSON.stringify({ company: apiCompanyId }),
+                  });
+                  await apiRefreshCompanies();
+                  setNotice("Đã hoàn tất thiết lập ban đầu. Doanh nghiệp đã được kích hoạt.");
+                } catch (error) {
+                  setNotice(`Không hoàn tất được thiết lập: ${error instanceof Error ? error.message : String(error)}`);
+                } finally {
+                  setCompletingSetup(false);
+                }
+              }}
+            >
+              {completingSetup ? "Đang thiết lập…" : "Hoàn tất thiết lập"}
+            </button>
+          )}
           <span className="ref-demo">
-            {apiToken && ["bank", "cash"].includes(moduleId) ? "Dữ liệu API" : "Dữ liệu mẫu"}
+            {apiToken && ["bank", "cash", "purchases", "sales", "inventory", "assets", "ledger", "tax"].includes(moduleId)
+              ? "Một phần dữ liệu API" : "Dữ liệu mẫu"}
           </span>
         </div>
       </header>

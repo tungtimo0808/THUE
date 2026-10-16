@@ -754,8 +754,10 @@ export function SalaryPaymentModal({
 export function InternalTransferModal({
   onClose,
   onSubmit,
+  accounts,
 }: {
   onClose: () => void;
+  accounts?: { value: string; label: string }[];
   onSubmit: (data: {
     sourceAccount: string;
     targetAccount: string;
@@ -764,8 +766,8 @@ export function InternalTransferModal({
     reason: string;
   }) => void;
 }) {
-  const [sourceAccount, setSourceAccount] = useState("1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
-  const [targetAccount, setTargetAccount] = useState("2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
+  const [sourceAccount, setSourceAccount] = useState(accounts ? accounts[0]?.value || "" : "1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
+  const [targetAccount, setTargetAccount] = useState(accounts ? accounts[1]?.value || "" : "2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
   const [amount, setAmount] = useState(50000000);
   const [transferDate, setTransferDate] = useState(()=>currentCashDate().split("/").reverse().join("-"));
   const [reason, setReason] = useState("Chuyển tiền nội bộ thanh toán chi phí SXKD");
@@ -800,9 +802,11 @@ export function InternalTransferModal({
                 onChange={(e) => setSourceAccount(e.target.value)}
                 style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }}
               >
-                <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
-                <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
-                <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt</option>
+                {accounts ? accounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>) : <>
+                  <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
+                  <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
+                  <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt</option>
+                </>}
               </select>
             </div>
 
@@ -819,9 +823,11 @@ export function InternalTransferModal({
                 onChange={(e) => setTargetAccount(e.target.value)}
                 style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }}
               >
-                <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
-                <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
-                <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt (Rút tiền về quỹ)</option>
+                {accounts ? accounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>) : <>
+                  <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
+                  <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
+                  <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt (Rút tiền về quỹ)</option>
+                </>}
               </select>
             </div>
 

@@ -59,15 +59,8 @@ class PurchaseCostTests(TestCase):
             account_type="EXPENSE",
             status="ACTIVE",
         )
-        # Input VAT account 1331
-        self.vat_acc = Account.objects.create(
-            company=self.company,
-            chart_of_accounts=chart,
-            code="1331",
-            name="Thuế GTGT đầu vào",
-            account_type="ASSET",
-            status="ACTIVE",
-        )
+        # Input VAT account 1331 (created by the shared goods purchase fixture)
+        self.vat_acc = self.vat_input
         # Cash account 1111
         self.cash_acc = Account.objects.create(
             company=self.company,

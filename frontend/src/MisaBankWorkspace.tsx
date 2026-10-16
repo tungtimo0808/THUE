@@ -17,6 +17,9 @@ import { useState, useMemo, useRef, useEffect, cloneElement, type ReactElement }
 import {useNavigate,useSearchParams} from 'react-router-dom';
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { createApiWriter, openPayables, saveSupplierPayment, nextVoucherNumber, toApiDate } from "./misa-api-writes";
+import { useMisaApiLists } from "./misa-api-lists";
+import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
 import {
   Filter,
   Search,
@@ -71,7 +74,7 @@ import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 import {matchesTransactionPeriod} from './transaction-period';
 
 type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; bankAccount?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
-type ApiBankProfile = { account_number: string; account_name: string; bank_name: string; currency_code: string; balance: string | number };
+type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; currency_code: string; balance: string | number };
 
 type ApiBankTransaction = {
   id: string;
@@ -118,6 +121,11 @@ export default function MisaBankWorkspace({
 }) {
   const navigate=useNavigate();
   const { token } = useApiSession();
+  const { rows: supplierCatalog } = useMisaApiLists(company.id, { suppliers: "/api/v1/master-data/parties/" }, notify);
+  const supplierDebtSource: CollectionDebtSource | undefined = token ? {
+    customers: (supplierCatalog.suppliers || []).map((row) => ({ code: row.code, name: row.name })),
+    load: (supplierCode?: string) => openPayables(createApiWriter(company.id, (path, init) => request(path, token, init)), supplierCode),
+  } : undefined;
   const [bankParams]=useSearchParams();
   const [bankOptionsOpen,setBankOptionsOpen]=useState(false);
   const bankColumnsKey=`soviet:bank-columns:${company.id}`;
@@ -194,18 +202,21 @@ export default function MisaBankWorkspace({
 
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>([]);
+  const [bankProfiles, setBankProfiles] = useState<ApiBankProfile[]>([]);
   const [bankBalance, setBankBalance] = useState(0);
 
   useEffect(() => {
     if (!token || !company.id) {
       setTransactions([]);
       setBankAccounts([]);
+      setBankProfiles([]);
       setBankBalance(0);
       return;
     }
     let active = true;
     setTransactions([]);
     setBankAccounts([]);
+    setBankProfiles([]);
     setBankBalance(0);
     const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}`;
     request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
@@ -213,6 +224,7 @@ export default function MisaBankWorkspace({
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
+      setBankProfiles(records);
       setBankBalance(records.reduce((total, row) => total + Number(row.balance), 0));
       setBankAccounts(records.map((row) => ({
         account: row.account_number,
@@ -305,7 +317,36 @@ export default function MisaBankWorkspace({
   };
 
   // Handlers
-  const handleTaxPayment = (taxData: any) => {
+  const saveSpecialBankPayment = async (date: string, name: string, description: string, amount: number) => {
+    if (!token) return false;
+    const profile = bankProfiles[0];
+    if (!profile) { notify("Chưa có tài khoản ngân hàng đang hoạt động để lập chứng từ."); return false; }
+    if (!(amount > 0)) { notify("Số tiền phải lớn hơn 0."); return false; }
+    try {
+      const writer = createApiWriter(company.id, (path, init) => request(path, token, init));
+      const saved = await writer.post("/api/v1/bank/transactions/", {
+        account: profile.id, currency: profile.currency_id,
+        number: await nextVoucherNumber(writer, "/api/v1/bank/transactions/", "UNC"),
+        transaction_type: "PAYMENT", business_type: "GENERAL",
+        transaction_date: toApiDate(date), counterparty_name: name,
+        description, amount: String(amount),
+      }) as ApiBankTransaction;
+      setTransactions((previous) => [mapBankTransaction(saved), ...previous]);
+      setSelectedRowId(saved.id);
+      notify(`Đã lưu chứng từ ${saved.number} dưới dạng dự thảo.`);
+      return true;
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không lưu được chứng từ ngân hàng.");
+      return false;
+    }
+  };
+
+  const handleTaxPayment = async (taxData: any) => {
+    if (token) {
+      const saved = await saveSpecialBankPayment(taxData.taxDate, "Kho bạc Nhà nước", `Nộp ${taxData.taxType}`, Number(taxData.totalAmount));
+      if (saved) setShowTaxModal(false);
+      return;
+    }
     const newDoc = {
       id: crypto.randomUUID(),
       dateHachToan: taxData.taxDate.split("-").reverse().join("/"),
@@ -335,7 +376,18 @@ export default function MisaBankWorkspace({
     notify(`Đã lập thành công chứng từ ${newDoc.code} - Nộp thuế ${formatVND(taxData.totalAmount)}đ!`);
   };
 
-  const handleSupplierPayment = (data: any) => {
+  const handleSupplierPayment = async (data: any) => {
+    if (token) {
+      try {
+        const writer = createApiWriter(company.id, (path, init) => request(path, token, init));
+        const result = await saveSupplierPayment(writer, data);
+        notify(result.message);
+        setShowSupplierModal(false);
+      } catch (error) {
+        notify(error instanceof Error ? error.message : "Không lưu được phiếu trả nhà cung cấp.");
+      }
+      return;
+    }
     const newDoc = {
       id: crypto.randomUUID(),
       dateHachToan: data.payDate.split("-").reverse().join("/"),
@@ -423,7 +475,12 @@ export default function MisaBankWorkspace({
     notify(`Đã thu thành công ${formatVND(data.totalAmount)}đ từ nhiều khách hàng (${gbcCode})!`);
   };
 
-  const handleInsurancePayment = (data: any) => {
+  const handleInsurancePayment = async (data: any) => {
+    if (token) {
+      const saved = await saveSpecialBankPayment(data.payDate, data.insuranceUnit || "Cơ quan bảo hiểm xã hội", "Nộp bảo hiểm", Number(data.totalAmount));
+      if (saved) setShowInsuranceModal(false);
+      return;
+    }
     const uncCode = `UNC${String(transactions.length + 29).padStart(5, "0")}`;
     const newDoc = {
       id: crypto.randomUUID(),
@@ -454,7 +511,12 @@ export default function MisaBankWorkspace({
     notify(`Đã lập thành công chứng từ ${uncCode} - Nộp bảo hiểm ${formatVND(data.totalAmount)}đ!`);
   };
 
-  const handleSalaryPayment = (data: any) => {
+  const handleSalaryPayment = async (data: any) => {
+    if (token) {
+      const saved = await saveSpecialBankPayment(data.payDate || new Date().toISOString().slice(0, 10), "Nhân viên", `Chi lương ${data.payrollPeriod || ""}`.trim(), Number(data.totalAmount));
+      if (saved) setShowSalaryModal(false);
+      return;
+    }
     const uncCode = `UNC${String(transactions.length + 29).padStart(5, "0")}`;
     const newDoc = {
       id: crypto.randomUUID(),
@@ -485,7 +547,31 @@ export default function MisaBankWorkspace({
     notify(`Đã lập thành công chứng từ ${uncCode} - Chi lương ${formatVND(data.totalAmount)}đ!`);
   };
 
-  const handleInternalTransfer = (data: any) => {
+  const handleInternalTransfer = async (data: any) => {
+    if (token) {
+      try {
+        const source = String(data.sourceAccount || "").replace(/^BANK:/, "");
+        const destination = String(data.targetAccount || "").replace(/^BANK:/, "");
+        const sourceProfile = bankProfiles.find((profile) => profile.id === source);
+        const targetProfile = bankProfiles.find((profile) => profile.id === destination);
+        if (!sourceProfile || !targetProfile || source === destination) throw new Error("Chọn hai tài khoản ngân hàng khác nhau trong danh mục.");
+        if (sourceProfile.currency_id !== targetProfile.currency_id) throw new Error("Hai tài khoản phải cùng loại tiền.");
+        if (!(Number(data.amount) > 0)) throw new Error("Số tiền chuyển phải lớn hơn 0.");
+        const writer = createApiWriter(company.id, (path, init) => request(path, token, init));
+        const record = await writer.post("/api/v1/bank/transfers/", {
+          number: await nextVoucherNumber(writer, "/api/v1/bank/transfers/", "CK"),
+          source_account: source, destination_account: destination,
+          transfer_date: toApiDate(data.transferDate), source_amount: String(data.amount),
+          destination_amount: String(data.amount), exchange_rate: "1",
+          description: data.reason || "Chuyển tiền nội bộ",
+        });
+        setShowTransferModal(false);
+        notify(`Đã lưu lệnh chuyển ${record.number} dưới dạng dự thảo.`);
+      } catch (error) {
+        notify(error instanceof Error ? error.message : "Không lưu được lệnh chuyển tiền nội bộ.");
+      }
+      return;
+    }
     const uncCode = `UNC${String(transactions.length + 29).padStart(5, "0")}`;
     const newDoc = {
       id: crypto.randomUUID(),
@@ -570,6 +656,7 @@ export default function MisaBankWorkspace({
 
       {showTransferModal && (
         <InternalTransferModal
+          accounts={token ? bankProfiles.map((profile) => ({ value: `BANK:${profile.id}`, label: `${profile.account_number} - ${profile.bank_name}` })) : undefined}
           onClose={() => setShowTransferModal(false)}
           onSubmit={handleInternalTransfer}
         />
@@ -595,6 +682,7 @@ export default function MisaBankWorkspace({
       {showSupplierModal && (
         <SupplierPaymentModal
           initialMethod="bank"
+          debtSource={supplierDebtSource}
           onClose={() => setShowSupplierModal(false)}
           onSubmit={handleSupplierPayment}
         />
@@ -618,42 +706,35 @@ export default function MisaBankWorkspace({
             setShowCreateVoucher(null);
             setCreateVoucherTypeIndex(0);
           }}
-          onSave={(doc) => {
-            setTransactions([
-              {
-                id: doc.id,
-                dateHachToan: (doc.postDate||doc.date).split("-").reverse().join("/"),
-                dateChungTu: doc.date.split("-").reverse().join("/"),
-                code: doc.code,
-                description: doc.description,
-                amount: doc.amount,
-                partner: doc.partner,
-                rows: doc.rows,
-                debit: doc.debit,
-                credit: doc.credit,
-                bankAccount: doc.bankAccount,
-                reasonLabel: doc.reasonLabel,
-                documentType: doc.kind==="receipt"?"Thu tiền gửi":doc.paymentMethod||"Ủy nhiệm chi",
-                kind: doc.kind,
-                status: "posted",
-                items: [
-                  {
-                    code: "DV01",
-                    name: doc.description,
-                    taxDesc: "Thuế GTGT dịch vụ",
-                    taxRate: 8,
-                    taxAmount: 0,
-                    taxAccount: "1331",
-                    invoiceCode: "HD-0912",
-                    invoiceDate: doc.date.split("-").reverse().join("/"),
-                  },
-                ],
-              },
-              ...transactions,
-            ]);
-            setShowCreateVoucher(null);
-            setCreateVoucherTypeIndex(0);
-            notify(`Đã lập thành công chứng từ tiền gửi ${doc.code}!`);
+          onSave={async (doc) => {
+            if (!token) return false;
+            const profile = doc.bankAccount
+              ? bankProfiles.find((item) => item.account_number === doc.bankAccount)
+              : bankProfiles[0];
+            if (!profile) { notify("Chưa có tài khoản ngân hàng để lưu chứng từ."); return false; }
+            const date = String(doc.postDate || doc.date || "");
+            const transactionDate = /^\d{2}\/\d{2}\/\d{4}$/.test(date)
+              ? date.split("/").reverse().join("-") : date.slice(0, 10);
+            try {
+              const saved = await request<ApiBankTransaction>(
+                `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}`,
+                token,
+                { method: "POST", body: JSON.stringify({
+                  company: company.id, account: profile.id, currency: profile.currency_id,
+                  number: doc.code, transaction_type: doc.kind === "receipt" ? "RECEIPT" : "PAYMENT",
+                  business_type: "GENERAL", transaction_date: transactionDate,
+                  counterparty_name: doc.partner || "", amount: doc.amount,
+                  description: doc.description || doc.code,
+                }) },
+              );
+              setTransactions((previous) => [mapBankTransaction(saved), ...previous]);
+              setSelectedRowId(saved.id);
+              notify(`Đã lưu chứng từ ${saved.number} dưới dạng dự thảo.`);
+              return true;
+            } catch (error) {
+              notify(error instanceof Error ? error.message : "Không lưu được chứng từ tiền gửi.");
+              return false;
+            }
           }}
         />
       )}
@@ -698,7 +779,7 @@ export default function MisaBankWorkspace({
   if(tab==='reports')return <MisaReportCenterWorkspace key={bankParams.get('report')||'bank'} initialCategory="bank" initialReport={bankParams.get('report')} embedded notify={notify}/>;
   if(tab==='cashflow')return <MisaCashForecastWorkspace companyId={company.id} openingKind="bank" entries={transactions.map(row=>({date:row.dateHachToan,kind:row.kind,amount:row.amount,code:row.code,status:row.status}))}/>;
   if(tab==='advance-settlement')return <><MisaPaymentWorkflow variant="settlement" notify={notify}><AdvanceSettlementTab notify={notify} onOpenCreateReceipt={()=>setShowCreateVoucher('receipt')}/></MisaPaymentWorkflow>{renderModals()}</>;
-  if (tab === 'reconciliation') return <MisaBankReconciliation transactions={transactions} notify={notify}/>;
+  if (tab === 'reconciliation') return <MisaBankReconciliation companyId={company.id} transactions={transactions} notify={notify}/>;
   if (tab === 'payment-requests') return <><MisaPaymentWorkflow notify={notify}><PaymentRequestsTab notify={notify} onOpenCreatePayment={()=>setShowCreateVoucher('payment')}/></MisaPaymentWorkflow>{renderModals()}</>;
 
   // --------------------------------------------------------------------
