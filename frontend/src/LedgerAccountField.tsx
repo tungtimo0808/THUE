@@ -143,7 +143,9 @@ export default function LedgerAccountField({
         tabIndex={-1}
         style={{
           textAlign: 'center',
-          paddingRight: 20,
+          height: 24,
+          fontSize: 12,
+          paddingRight: 18,
           cursor: 'pointer',
           fontWeight: value ? 600 : 400,
           color: value ? '#0f172a' : '#94a3b8',
@@ -166,7 +168,7 @@ export default function LedgerAccountField({
           pointerEvents: 'none',
         }}
       >
-        <ChevronDown size={12} />
+        <ChevronDown size={11} />
       </div>
 
       {position &&
@@ -184,9 +186,9 @@ export default function LedgerAccountField({
               zIndex: 13000,
               background: '#ffffff',
               border: '1px solid #e2e8f0',
-              borderRadius: 10,
+              borderRadius: 8,
               boxShadow: '0 12px 28px -6px rgba(15, 23, 42, 0.16), 0 4px 10px -2px rgba(15, 23, 42, 0.06)',
-              padding: 6,
+              padding: 5,
               boxSizing: 'border-box',
             }}
           >
@@ -194,21 +196,21 @@ export default function LedgerAccountField({
             <div
               className="ref-cluster-popover-header"
               style={{
-                padding: '6px 10px 8px',
-                fontSize: 11,
+                padding: '4px 8px 6px',
+                fontSize: 10.5,
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 color: '#94a3b8',
                 borderBottom: '1px solid #f1f5f9',
-                marginBottom: 6,
+                marginBottom: 5,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
               }}
             >
               <span>{label}</span>
-              <span style={{ fontSize: 10, fontWeight: 500, color: '#cbd5e1', textTransform: 'none' }}>
+              <span style={{ fontSize: 9.5, fontWeight: 500, color: '#cbd5e1', textTransform: 'none' }}>
                 Hệ thống tài khoản
               </span>
             </div>
@@ -217,16 +219,16 @@ export default function LedgerAccountField({
             <div
               style={{
                 position: 'relative',
-                margin: '0 4px 6px',
+                margin: '0 3px 5px',
                 display: 'flex',
                 alignItems: 'center',
               }}
             >
               <Search
-                size={13}
+                size={12}
                 style={{
                   position: 'absolute',
-                  left: 9,
+                  left: 8,
                   color: '#94a3b8',
                   pointerEvents: 'none',
                 }}
@@ -244,11 +246,11 @@ export default function LedgerAccountField({
                 onKeyDown={handleSearchKeyDown}
                 style={{
                   width: '100%',
-                  height: 30,
-                  padding: '0 26px 0 28px',
+                  height: 26,
+                  padding: '0 24px 0 26px',
                   border: '1px solid #e2e8f0',
-                  borderRadius: 6,
-                  fontSize: 12,
+                  borderRadius: 5,
+                  fontSize: 11.5,
                   outline: 'none',
                   background: '#f8fafc',
                   boxSizing: 'border-box',
@@ -286,7 +288,7 @@ export default function LedgerAccountField({
                     padding: 2,
                   }}
                 >
-                  <X size={12} />
+                  <X size={11} />
                 </button>
               )}
             </div>
@@ -296,12 +298,12 @@ export default function LedgerAccountField({
               ref={listRef}
               className="ref-cluster-popover-list"
               style={{
-                maxHeight: 240,
+                maxHeight: 220,
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 2,
-                padding: '0 2px',
+                gap: 1.5,
+                padding: '0 1px',
               }}
             >
               {options.map((account, idx) => {
@@ -322,27 +324,27 @@ export default function LedgerAccountField({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: 10,
-                      padding: '6px 10px',
-                      borderRadius: 6,
+                      gap: 8,
+                      padding: '4px 8px',
+                      borderRadius: 5,
                       border: 'none',
                       background: isSelected ? '#f0f9ff' : isHighlighted ? '#f1f5f9' : 'transparent',
                       color: isSelected ? '#0284c7' : isHighlighted ? '#0284c7' : '#334155',
                       fontFamily: 'inherit',
-                      fontSize: 12.5,
+                      fontSize: 12,
                       fontWeight: isSelected ? 600 : 500,
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'all 0.12s ease',
                       boxSizing: 'border-box',
-                      minHeight: 30,
+                      minHeight: 26,
                     }}
                   >
                     <div
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 10,
+                        gap: 8,
                         flex: 1,
                         minWidth: 0,
                       }}
@@ -350,8 +352,8 @@ export default function LedgerAccountField({
                       <span
                         style={{
                           fontWeight: 700,
-                          fontSize: 12,
-                          minWidth: 44,
+                          fontSize: 11.5,
+                          minWidth: 40,
                           color: isSelected || isHighlighted ? '#0284c7' : '#0f172a',
                           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                         }}
@@ -364,7 +366,7 @@ export default function LedgerAccountField({
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           flex: 1,
-                          fontSize: 12.5,
+                          fontSize: 12,
                           color: isSelected ? '#0284c7' : isHighlighted ? '#0284c7' : '#334155',
                         }}
                         title={account.name}
@@ -375,7 +377,7 @@ export default function LedgerAccountField({
 
                     {isSelected && (
                       <Check
-                        size={14}
+                        size={13}
                         className="ref-cluster-check"
                         style={{
                           color: '#0284c7',
@@ -390,10 +392,10 @@ export default function LedgerAccountField({
               {!options.length && (
                 <div
                   style={{
-                    padding: '16px 8px',
+                    padding: '12px 6px',
                     textAlign: 'center',
                     color: '#94a3b8',
-                    fontSize: 12,
+                    fontSize: 11.5,
                   }}
                 >
                   Không tìm thấy tài khoản phù hợp
@@ -407,15 +409,15 @@ export default function LedgerAccountField({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '6px 10px 2px',
+                padding: '4px 8px 2px',
                 borderTop: '1px solid #f1f5f9',
-                marginTop: 4,
-                fontSize: 11,
+                marginTop: 3,
+                fontSize: 10.5,
                 color: '#94a3b8',
               }}
             >
               <span>{options.length} tài khoản</span>
-              <span style={{ fontSize: 10, color: '#cbd5e1' }}>↑ ↓ Enter để chọn</span>
+              <span style={{ fontSize: 9.5, color: '#cbd5e1' }}>↑ ↓ Enter để chọn</span>
             </div>
           </div>,
           document.body

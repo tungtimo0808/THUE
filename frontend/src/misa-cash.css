@@ -2401,15 +2401,15 @@
 .misa-voucher-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .misa-voucher-table th {
   background: #e8f0ec;
   color: #1e293b;
   font-weight: 600;
-  font-size: 12px;
-  padding: 8px 10px;
+  font-size: 11.5px;
+  padding: 5px 8px;
   border-bottom: 1px solid #cbd5e1;
   border-right: 1px solid #e2e8f0;
   text-align: left;
@@ -2420,7 +2420,7 @@
 }
 
 .misa-voucher-table td {
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
   vertical-align: middle;
@@ -2436,11 +2436,11 @@
 
 .misa-voucher-cell-input {
   width: 100%;
-  height: 28px;
+  height: 24px;
   border: 1px solid transparent;
   border-radius: 3px;
   padding: 0 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   outline: none;
   background: transparent;
   box-sizing: border-box;
@@ -2461,7 +2461,8 @@
   background: #ffffff;
   border-top: 1px solid #cbd5e1;
   border-bottom: 1px solid #cbd5e1;
-  padding: 6px 10px;
+  padding: 4px 8px;
+  font-size: 12.5px;
 }
 
 /* Toolbar under table */
@@ -2469,34 +2470,34 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
-  padding: 4px 0;
+  margin-top: 6px;
+  padding: 2px 0;
 }
 
 .misa-voucher-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .misa-voucher-count-badge {
-  font-size: 11.5px;
+  font-size: 11px;
   color: #475569;
   font-weight: 500;
-  margin-right: 8px;
+  margin-right: 6px;
   user-select: none;
 }
 
 .misa-voucher-tool-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 10px;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
   background: #ffffff;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 11.5px;
+  border-radius: 3px;
+  font-size: 11px;
   font-weight: 500;
   color: #374151;
   cursor: pointer;
@@ -2521,10 +2522,22 @@
 .misa-voucher-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
+  gap: 6px;
+  font-size: 11px;
   color: #64748b;
   user-select: none;
+}
+
+.misa-voucher-toolbar-right select {
+  height: 21px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 11px;
+  padding: 0 4px;
+  background: #ffffff;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
 }
 
 /* Account Popover Card animation & base styles */
