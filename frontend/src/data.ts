@@ -69,8 +69,6 @@ export const modules = [
 ];
 export const companies = [
   { id: "abc", name: "Công ty TNHH Thương mại và Dịch vụ ABC", short: "ABC" },
-  { id: "minh-an", name: "Công ty TNHH Minh An", short: "MA" },
-  { id: "an-phat", name: "Công ty CP An Phát", short: "AP" },
 ];
 export const kinds = {
   receipt: "Phiếu thu",
@@ -99,66 +97,244 @@ export type Transaction = {
   lines?: { description: string; amount: number }[];
 };
 export const partners = [
-  "Công ty TNHH Phúc Long",
-  "Công ty CP Công nghệ Sao Việt",
-  "Công ty TNHH An Khang",
-  "Công ty CP Thương mại Hòa Bình",
-  "Nguyễn Minh Anh",
-  "Công ty TNHH Hoàng Gia",
+  "Công ty TNHH Kinh doanh Minh Hạnh",
+  "Công ty TNHH Thanh Hà",
+  "Công ty TNHH Phát Mai Group",
+  "Công ty TNHH Giải pháp Hiệp Phát",
+  "Công ty TNHH Đầu tư Bảo Kim",
+  "Công ty TNHH Thiết bị Thanh Trúc",
+  "Công ty TNHH Phát triển Công nghệ KTS",
+  "Công ty TNHH Phan Minh",
+  "CTCP Vận tải và Thương mại Vạn Phát",
+  "Phạm Đình Tài",
+  "Lê Văn Hiếu",
+  "Hoàng Bá Cung",
 ];
-const descriptions: Record<Kind, string[]> = {
-  receipt: [
-    "Thu tiền bán hàng tháng 9",
-    "Khách hàng thanh toán công nợ",
-    "Thu tiền dịch vụ tư vấn",
-  ],
-  payment: [
-    "Thanh toán chi phí văn phòng",
-    "Chi phí vận chuyển hàng hóa",
-    "Thanh toán tiền thuê mặt bằng",
-  ],
-  bank: [
-    "Khách hàng chuyển khoản thanh toán",
-    "Thu tiền hợp đồng dịch vụ",
-    "Thu công nợ qua ngân hàng",
-  ],
-  purchase: [
-    "Mua thiết bị văn phòng",
-    "Nhập hàng theo đơn mua",
-    "Mua hàng hóa từ nhà cung cấp",
-  ],
-  sale: [
-    "Bán hàng theo hợp đồng",
-    "Cung cấp dịch vụ phần mềm",
-    "Xuất bán thiết bị văn phòng",
-  ],
-};
-const prefixes: Record<Kind, string> = {
-  receipt: "PT",
-  payment: "PC",
-  bank: "BC",
-  purchase: "MH",
-  sale: "BH",
-};
-export const seedTransactions: Transaction[] = companies.flatMap(
-  (company, ci) =>
-    Array.from({ length: 54 }, (_, i) => {
-      const kind = (Object.keys(kinds) as Kind[])[i % 5];
-      const month = 9 - Math.floor(i / 9);
-      return {
-        id: `${company.id}-${i}`,
-        company: company.id,
-        code: `${prefixes[kind]}${String(126 + i).padStart(5, "0")}`,
-        kind,
-        date: `2026-${String(month).padStart(2, "0")}-${String(24 - (i % 9) * 2).padStart(2, "0")}`,
-        partner: partners[(i + ci) % partners.length],
-        description: descriptions[kind][i % 3],
-        amount: (12 + ((i * 17 + ci * 11) % 83)) * 1250000,
-        status: i < 3 ? "pending" : i % 7 === 0 ? "draft" : "posted",
-      };
-    }),
-);
-const storageKey = "soviet-demo-documents-v1";
+
+export const seedTransactions: Transaction[] = [
+  {
+    id: "abc-tx-01",
+    company: "abc",
+    code: "PT00001",
+    kind: "receipt",
+    date: "2025-01-06",
+    partner: "Lê Văn Hiếu",
+    description: "Rút tiền gửi ngân hàng Techcombank về nhập quỹ tiền mặt",
+    amount: 50000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-02",
+    company: "abc",
+    code: "PC00001",
+    kind: "payment",
+    date: "2025-01-07",
+    partner: "Hoàng Bá Cung",
+    description: "Mua văn phòng phẩm phục vụ hoạt động quản lý bộ phận HC-NS",
+    amount: 3500000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-03",
+    company: "abc",
+    code: "BC00001",
+    kind: "bank",
+    date: "2025-01-08",
+    partner: "Công ty TNHH Thanh Hà",
+    description: "Công ty Thanh Hà ứng trước tiền mua hàng bằng TGNH Techcombank theo HĐ 2025001",
+    amount: 50000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-04",
+    company: "abc",
+    code: "MH00001",
+    kind: "purchase",
+    date: "2025-01-09",
+    partner: "Công ty TNHH Phát Mai Group",
+    description: "Mua hàng hóa nhập kho Công ty Phát Mai, thời hạn thanh toán 20 ngày",
+    amount: 185000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-05",
+    company: "abc",
+    code: "BH00001",
+    kind: "sale",
+    date: "2025-01-03",
+    partner: "Công ty TNHH Kinh doanh Minh Hạnh",
+    description: "Xuất bán điện thoại iPhone 15 & Samsung S24 kiêm xuất kho chưa thu tiền",
+    amount: 148500000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-06",
+    company: "abc",
+    code: "BC00002",
+    kind: "bank",
+    date: "2025-01-08",
+    partner: "Công ty TNHH Kinh doanh Minh Hạnh",
+    description: "Minh Hạnh chuyển khoản thanh toán tiền mua hàng ngày 03/01/2025",
+    amount: 148500000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-07",
+    company: "abc",
+    code: "MH00002",
+    kind: "purchase",
+    date: "2025-01-12",
+    partner: "Công ty Cổ phần Minh Quân Logistics",
+    description: "Mua hàng hóa nhập kho thanh toán ngay bằng TGNH Techcombank hưởng CKTM 5%",
+    amount: 95000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-08",
+    company: "abc",
+    code: "BH00002",
+    kind: "sale",
+    date: "2025-01-13",
+    partner: "Công ty TNHH Giải pháp Hiệp Phát",
+    description: "Cung cấp dịch vụ bảo dưỡng máy tính định kỳ, thanh toán bằng chuyển khoản",
+    amount: 12000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-09",
+    company: "abc",
+    code: "BH00003",
+    kind: "sale",
+    date: "2025-01-14",
+    partner: "Công ty TNHH Thanh Hà",
+    description: "Xuất bán hàng cho Công ty Thanh Hà, chiết khấu 5%, thanh toán qua TGNH",
+    amount: 78000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-10",
+    company: "abc",
+    code: "MH00003",
+    kind: "purchase",
+    date: "2025-01-15",
+    partner: "Công ty TNHH Phát triển Công nghệ KTS",
+    description: "Mua hàng hóa nhập kho phát sinh chi phí vận chuyển phân bổ theo giá trị",
+    amount: 234000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-11",
+    company: "abc",
+    code: "BC00003",
+    kind: "bank",
+    date: "2025-01-16",
+    partner: "Công ty TNHH Đầu tư Bảo Kim",
+    description: "Công ty Bảo Kim thanh toán nợ cũ qua ngân hàng được hưởng chiết khấu 2%",
+    amount: 39200000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-12",
+    company: "abc",
+    code: "BC00004",
+    kind: "bank",
+    date: "2025-01-20",
+    partner: "Ngân hàng Techcombank",
+    description: "Bán 50.000 USD từ tài khoản USD nhập vào tài khoản VND tỷ giá 25.445",
+    amount: 1272250000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-13",
+    company: "abc",
+    code: "BC00005",
+    kind: "bank",
+    date: "2025-01-22",
+    partner: "Công ty TNHH Thiết bị Thanh Trúc",
+    description: "Chuyển khoản thanh toán tiền nợ kỳ trước cho Thanh Trúc hưởng chiết khấu 5%",
+    amount: 71250000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-14",
+    company: "abc",
+    code: "PC00002",
+    kind: "payment",
+    date: "2025-01-23",
+    partner: "Phạm Đình Tài",
+    description: "Chi tạm ứng cho nhân viên kỹ thuật Phạm Đình Tài đi công tác theo đề nghị",
+    amount: 5000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-15",
+    company: "abc",
+    code: "BC00006",
+    kind: "bank",
+    date: "2025-01-24",
+    partner: "Kho bạc Nhà nước Hoàn Kiếm",
+    description: "Nộp thuế môn bài năm 2025 bằng tiền gửi ngân hàng Techcombank",
+    amount: 3000000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-16",
+    company: "abc",
+    code: "PT00002",
+    kind: "receipt",
+    date: "2025-01-28",
+    partner: "Phạm Đình Tài",
+    description: "Thu hoàn ứng thừa tiền mặt từ nhân viên Phạm Đình Tài sau khi quyết toán",
+    amount: 1200000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-17",
+    company: "abc",
+    code: "PC00183",
+    kind: "payment",
+    date: "2025-12-22",
+    partner: "Hoàng Bá Cung",
+    description: "Chi tiền mặt bảo dưỡng hệ thống máy lạnh Daikin VRV A Series (Hóa đơn 128)",
+    amount: 1320000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-18",
+    company: "abc",
+    code: "BH00157",
+    kind: "sale",
+    date: "2025-12-22",
+    partner: "Công ty TNHH Phan Minh",
+    description: "Xuất bán thiết bị công nghệ (Macbook Air M3, HP 15s, Màn hình LG) chưa thu tiền",
+    amount: 526460000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-19",
+    company: "abc",
+    code: "BC00128",
+    kind: "bank",
+    date: "2025-12-22",
+    partner: "CTCP Vận tải và Thương mại Vạn Phát",
+    description: "Thanh toán chi phí vận chuyển hàng hóa cho Vạn Phát qua ngân hàng",
+    amount: 4400000,
+    status: "posted",
+  },
+  {
+    id: "abc-tx-20",
+    company: "abc",
+    code: "PT00003",
+    kind: "receipt",
+    date: "2025-01-30",
+    partner: "Khách hàng cá nhân",
+    description: "Thu tiền bán lẻ điện thoại iPhone 15 kèm sạc dự phòng Anker",
+    amount: 21500000,
+    status: "posted",
+  },
+];
+
+const storageKey = "soviet-documents-abc-tt99-v1";
 export function readTransactions(): Transaction[] {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(storageKey) || "null");
@@ -169,7 +345,6 @@ export function readTransactions(): Transaction[] {
           x &&
           typeof x.id === "string" &&
           typeof x.code === "string" &&
-          companies.some((c) => c.id === x.company) &&
           x.kind in kinds &&
           x.status in statuses &&
           typeof x.partner === "string" &&
@@ -181,7 +356,7 @@ export function readTransactions(): Transaction[] {
     )
       return raw;
   } catch {
-    /* Corrupt or unavailable browser storage: use the bundled demo. */
+    /* Fallback */
   }
   return seedTransactions;
 }
