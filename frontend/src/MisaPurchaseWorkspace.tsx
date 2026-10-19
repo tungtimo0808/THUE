@@ -32,6 +32,12 @@ import {
   Trash2,
   HelpCircle,
   X,
+  ShoppingCart,
+  Coins,
+  RotateCcw,
+  Percent,
+  ShieldCheck,
+  Lightbulb,
 } from "lucide-react";
 import {
   PurchaseOrderModal,
@@ -4480,38 +4486,25 @@ export default function MisaPurchaseWorkspace({
               onClick={() => setShowOrderModal(true)}
               title="Lập Đơn mua hàng"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="7" y="5" width="22" height="27" rx="3.5" fill="#059669" />
-                  <path d="M 23 5 L 29 11 L 23 11 Z" fill="#047857" />
-                  <path d="M 11 11 L 20 11 M 11 15 L 25 15 M 11 19 L 19 19" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round" />
-                  <rect x="18" y="18" width="14" height="13" rx="2.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                  <rect x="23" y="18" width="4" height="13" fill="#ffffff" opacity="0.85" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon order" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐMH</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <ShoppingCart size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Đơn mua hàng
               </span>
             </div>
@@ -4533,38 +4526,25 @@ export default function MisaPurchaseWorkspace({
               onClick={() => setShowContractModal(true)}
               title="Quản lý Hợp đồng mua hàng"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="7" y="5" width="22" height="27" rx="3.5" fill="#059669" />
-                  <path d="M 23 5 L 29 11 L 23 11 Z" fill="#047857" />
-                  <path d="M 11 11 L 20 11 M 11 15 L 25 15 M 11 19 L 25 19" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round" />
-                  <circle cx="23" cy="22" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                  <path d="M 20 25 L 18 31 L 21 29 L 23 31 L 23 25" fill="#f59e0b" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon contract" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>HĐ</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <FileCheck size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Hợp đồng<br />mua hàng
               </span>
             </div>
@@ -4597,45 +4577,31 @@ export default function MisaPurchaseWorkspace({
                 }
                 title="Nhận hàng hóa, dịch vụ"
               >
-                <div
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                    <rect x="5" y="7" width="27" height="23" rx="4" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <rect x="16" y="7" width="6" height="23" fill="#b45309" />
-                    <path d="M 5 13 L 32 13" stroke="#d97706" strokeWidth="0.8" />
-                    {/* Green doc badge with checkmark on bottom-right */}
-                    <rect x="18" y="15" width="15" height="17" rx="2.5" fill="#059669" stroke="#ffffff" strokeWidth="1" />
-                    <path d="M 29 15 L 33 19 L 29 19 Z" fill="#047857" />
-                    <path d="M 21 23 L 24 26 L 30 20" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  </svg>
-                </div>
+                <span className="ref-business-icon receive" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>NH</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Package size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
                 <span
                   style={{
-                    fontSize: 12.5,
-                    color: "#00b06b",
-                    fontWeight: 600,
+                    fontSize: 11.5,
+                    color: "#334155",
+                    fontWeight: 500,
                     lineHeight: 1.3,
+                    textAlign: "center",
                   }}
                 >
                   Nhận hàng<br />hóa, dịch vụ
@@ -4767,38 +4733,25 @@ export default function MisaPurchaseWorkspace({
               }}
               title="Nhận hóa đơn mua hàng"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="7" y="5" width="22" height="27" rx="3.5" fill="#059669" />
-                  <path d="M 23 5 L 29 11 L 23 11 Z" fill="#047857" />
-                  <path d="M 11 11 L 20 11 M 11 15 L 25 15 M 11 19 L 25 19 M 11 23 L 20 23" stroke="#ffffff" strokeWidth="1.3" strokeLinecap="round" />
-                  <circle cx="23" cy="23" r="4.5" fill="#3b82f6" stroke="#ffffff" strokeWidth="0.8" />
-                  <path d="M 21 23 L 25 23 M 23 21 L 23 25" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon invoice" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>HĐ</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <FileText size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Nhận hóa đơn
               </span>
             </div>
@@ -4820,37 +4773,25 @@ export default function MisaPurchaseWorkspace({
               onClick={() => notify("Đang mở chức năng Xử lý hóa đơn đầu vào Sổ Việt e-Invoice...")}
               title="Xử lý hóa đơn đầu vào"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <circle cx="19" cy="19" r="14" fill="#2563eb" />
-                  <path d="M 12 15 C 15 12, 19 12, 26 15" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-                  <path d="M 12 19 C 15 16, 19 16, 26 19" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-                  <path d="M 12 23 C 15 20, 19 20, 26 23" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon process" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>XL</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <Sparkles size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Xử lý hóa<br />đơn đầu vào
               </span>
             </div>
@@ -4872,39 +4813,25 @@ export default function MisaPurchaseWorkspace({
               onClick={() => setShowReturnModal(true)}
               title="Lập chứng từ trả lại hàng mua"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="7" y="5" width="22" height="27" rx="3.5" fill="#059669" />
-                  <path d="M 23 5 L 29 11 L 23 11 Z" fill="#047857" />
-                  <path d="M 19 12 A 4.5 4.5 0 1 1 14.5 16.5" stroke="#ffffff" strokeWidth="1.8" fill="none" />
-                  <path d="M 19 9.5 L 19 13.5 L 22.5 13.5" fill="#ffffff" />
-                  <rect x="18" y="18" width="13" height="13" rx="2.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                  <rect x="22.5" y="18" width="4" height="13" fill="#ffffff" opacity="0.85" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon return" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>TL</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <RotateCcw size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Trả lại<br />hàng mua
               </span>
             </div>
@@ -4926,37 +4853,25 @@ export default function MisaPurchaseWorkspace({
               onClick={() => setShowSupplierPaymentModal(true)}
               title="Trả tiền nhà cung cấp theo hóa đơn"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="6" y="9" width="22" height="18" rx="3" fill="#059669" stroke="#047857" strokeWidth="0.8" />
-                  <rect x="9" y="13" width="7" height="5" rx="1" fill="#f59e0b" />
-                  <path d="M 9 22 L 18 22" stroke="#a7f3d0" strokeWidth="1.2" strokeLinecap="round" />
-                  <path d="M 23 18 L 32 18 M 28 14 L 32 18 L 28 22" stroke="#059669" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon pay" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>CHI</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#ea580c", borderColor: "#f97316" }}
+                >
+                  <Coins size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Trả tiền theo<br />hóa đơn
               </span>
             </div>
@@ -4978,40 +4893,25 @@ export default function MisaPurchaseWorkspace({
               onClick={() => setShowDiscountModal(true)}
               title="Lập chứng từ Giảm giá hàng mua"
             >
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  background: "#e8f7f0",
-                  border: "1px solid #a7f3d0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="7" y="5" width="22" height="27" rx="3.5" fill="#059669" />
-                  <path d="M 23 5 L 29 11 L 23 11 Z" fill="#047857" />
-                  <circle cx="15.5" cy="13.5" r="1.5" fill="#ffffff" />
-                  <circle cx="20.5" cy="18.5" r="1.5" fill="#ffffff" />
-                  <path d="M 21 12 L 15 20" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-                  <rect x="18" y="18" width="13" height="13" rx="2.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                  <rect x="22.5" y="18" width="4" height="13" fill="#ffffff" opacity="0.85" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon discount" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <Percent size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                 Giảm giá<br />hàng mua
               </span>
             </div>
@@ -5079,24 +4979,6 @@ export default function MisaPurchaseWorkspace({
           </div>
         </aside>
 
-        <div className="ce-toolbar" style={{gridColumn:"1 / -1",position:"relative",zIndex:100}}>
-          <button onClick={()=>setPaymentTermsOpen(true)}>Điều khoản thanh toán</button>
-          <div style={{position:"relative"}}>
-            <button type="button" aria-expanded={showUtilityMenu} onClick={()=>setShowUtilityMenu(!showUtilityMenu)}>Tiện ích ▾</button>
-            {showUtilityMenu&&<>
-              <div onClick={()=>setShowUtilityMenu(false)} style={{position:"fixed",inset:0,zIndex:19}}/>
-              <div role="menu" aria-label="Tiện ích mua hàng" style={{position:"absolute",bottom:"calc(100% + 4px)",left:0,width:310,background:"white",border:"1px solid #e2e8f0",borderRadius:6,boxShadow:"0 8px 24px #0002",padding:4,zIndex:20}}>
-                {[
-                  {label:"Đối trừ chứng từ",open:()=>setShowDebtOffsetModal(true)},
-                  {label:"Đối trừ chứng từ nhiều đối tượng",open:()=>setShowMultiDebtOffsetModal(true)},
-                  {label:"Bỏ đối trừ",open:()=>setShowUnOffsetModal(true)},
-                  {label:"Bỏ đối trừ chứng từ nhiều đối tượng",open:()=>setShowMultiUnOffsetModal(true)},
-                  {label:"Bù trừ công nợ",open:()=>setShowDebtClearingModal(true)},
-                ].map(item=><button key={item.label} role="menuitem" style={{display:"block",width:"100%",textAlign:"left",border:0,padding:"10px 12px"}} onClick={()=>{setShowUtilityMenu(false);item.open();}}>{item.label}</button>)}
-              </div>
-            </>}
-          </div>
-        </div>
         {/* Panel 3: Quick Action Buttons (Bottom Bar spanning full width) */}
         <div
           style={{
@@ -5107,9 +4989,9 @@ export default function MisaPurchaseWorkspace({
             boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
             display: "grid",
             gridTemplateColumns: "repeat(5, 1fr)",
-            overflow: "hidden",
+            overflow: "visible",
             position: "relative",
-            zIndex: 1,
+            zIndex: 10,
           }}
         >
           <button
@@ -5133,20 +5015,41 @@ export default function MisaPurchaseWorkspace({
           <button
             type="button"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
-            onClick={() => setShowDebtOffsetModal(true)}
+            onClick={() => setPaymentTermsOpen(true)}
           >
-            <FileCheck size={20} style={{ color: "#0284c7" }} />
-            <span>Đối trừ chứng từ</span>
+            <ShieldCheck size={20} style={{ color: "#0284c7" }} />
+            <span>Điều khoản thanh toán</span>
           </button>
 
-          <button
-            type="button"
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
-            onClick={() => setShowDebtClearingModal(true)}
-          >
-            <CreditCard size={20} style={{ color: "#8b5cf6" }} />
-            <span>Bù trừ công nợ</span>
-          </button>
+          <div style={{ position: "relative", borderRight: "1px solid #f1f5f9" }}>
+            <button
+              type="button"
+              style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", cursor: "pointer", fontSize: 12, color: "#334155" }}
+              aria-expanded={showUtilityMenu}
+              onClick={() => setShowUtilityMenu(!showUtilityMenu)}
+            >
+              <Lightbulb size={20} style={{ color: "#10b981" }} />
+              <span>Tiện ích ▾</span>
+            </button>
+            {showUtilityMenu && (
+              <>
+                <div onClick={() => setShowUtilityMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 19 }} />
+                <div role="menu" aria-label="Tiện ích mua hàng" style={{ position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", width: 280, background: "white", border: "1px solid #e2e8f0", borderRadius: 6, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", padding: 4, zIndex: 25 }}>
+                  {[
+                    { label: "Đối trừ chứng từ", open: () => setShowDebtOffsetModal(true) },
+                    { label: "Đối trừ chứng từ nhiều đối tượng", open: () => setShowMultiDebtOffsetModal(true) },
+                    { label: "Bỏ đối trừ", open: () => setShowUnOffsetModal(true) },
+                    { label: "Bỏ đối trừ chứng từ nhiều đối tượng", open: () => setShowMultiUnOffsetModal(true) },
+                    { label: "Bù trừ công nợ", open: () => setShowDebtClearingModal(true) },
+                  ].map((item) => (
+                    <button key={item.label} role="menuitem" style={{ display: "block", width: "100%", textAlign: "left", border: 0, padding: "10px 14px", background: "transparent", cursor: "pointer", fontSize: 12.5, color: "#1e293b", borderRadius: 4 }} onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")} onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")} onClick={() => { setShowUtilityMenu(false); item.open(); }}>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             type="button"

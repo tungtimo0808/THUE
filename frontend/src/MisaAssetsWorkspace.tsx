@@ -5419,8 +5419,20 @@ export default function MisaAssetsWorkspace({
               padding: "24px 28px",
             }}
           >
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b", letterSpacing: 0.3 }}>
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <h2
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  textAlign: "center",
+                  margin: 0,
+                  padding: "4px 10px 14px 10px",
+                  borderBottom: "1px solid #f1f5f9",
+                  color: "#1e293b",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                }}
+              >
                 NGHIỆP VỤ TÀI SẢN CỐ ĐỊNH
               </h2>
             </div>
@@ -5456,27 +5468,25 @@ export default function MisaAssetsWorkspace({
                   cursor: "pointer",
                 }}
               >
-                <div
-                  style={{
-                    width: 58,
-                    height: 58,
-                    borderRadius: 10,
-                    background: "#00a862",
-                    boxShadow: "0 4px 10px rgba(0, 168, 98, 0.3)",
-                    display: "grid",
-                    placeItems: "center",
-                    position: "relative",
-                    transition: "transform 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.06)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                >
-                  <Car size={26} style={{ color: "#ffffff" }} />
-                  <div style={{ position: "absolute", right: 6, bottom: 6, width: 14, height: 14, borderRadius: "50%", background: "#ffffff", display: "grid", placeItems: "center" }}>
-                    <Plus size={10} style={{ color: "#00a862", strokeWidth: 3 }} />
-                  </div>
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", marginTop: 8 }}>Ghi tăng</span>
+                <span className="ref-business-icon increase" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>GT</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Plus size={14} strokeWidth={2.5} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Ghi tăng</span>
               </div>
 
               {/* HÀNG TRÊN: Điều chuyển | Tính khấu hao | Chuyển TS thuê TC */}
@@ -5484,36 +5494,78 @@ export default function MisaAssetsWorkspace({
                 onClick={() => navigateTo("transfer")}
                 style={{ position: "absolute", left: "28%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: "#00a862", boxShadow: "0 4px 10px rgba(0, 168, 98, 0.25)", display: "grid", placeItems: "center", position: "relative" }}>
-                  <ArrowRightLeft size={24} style={{ color: "#ffffff" }} />
-                  <Car size={13} style={{ position: "absolute", bottom: 5, right: 6, color: "#ffffff" }} />
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginTop: 6 }}>Điều chuyển</span>
-                <div style={{ position: "absolute", top: 52, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <span className="ref-business-icon transfer" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐC</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <ArrowRightLeft size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Điều chuyển</span>
+                <div style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
               </div>
 
               <div
                 onClick={() => setShowDeprModal(true)}
                 style={{ position: "absolute", left: "52%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: "#00a862", boxShadow: "0 4px 10px rgba(0, 168, 98, 0.25)", display: "grid", placeItems: "center", position: "relative" }}>
-                  <Calculator size={24} style={{ color: "#ffffff" }} />
-                  <Car size={13} style={{ position: "absolute", bottom: 5, right: 6, color: "#ffffff" }} />
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginTop: 6 }}>Tính khấu hao</span>
-                <div style={{ position: "absolute", top: 52, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <span className="ref-business-icon calc" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>KH</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Calculator size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Tính khấu hao</span>
+                <div style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
               </div>
 
               <div
                 onClick={() => notify("Nghiệp vụ: Chuyển tài sản thuê tài chính thành tài sản sở hữu")}
                 style={{ position: "absolute", left: "76%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", maxWidth: 140, textAlign: "center" }}
               >
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: "#00a862", boxShadow: "0 4px 10px rgba(0, 168, 98, 0.25)", display: "grid", placeItems: "center", position: "relative" }}>
-                  <Car size={24} style={{ color: "#ffffff" }} />
-                  <RotateCw size={13} style={{ position: "absolute", bottom: 5, right: 6, color: "#ffffff" }} />
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b", marginTop: 6, lineHeight: 1.3 }}>Chuyển TS thuê tài chính thành TS sở hữu</span>
-                <div style={{ position: "absolute", top: 52, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <span className="ref-business-icon lease" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>TC</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <RotateCw size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", lineHeight: 1.3, textAlign: "center" }}>Chuyển TS thuê tài chính thành TS sở hữu</span>
+                <div style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
               </div>
 
               {/* HÀNG DƯỚI: Đánh giá lại | Ghi giảm | Kiểm kê tài sản */}
@@ -5522,13 +5574,25 @@ export default function MisaAssetsWorkspace({
                 style={{ position: "absolute", left: "40%", bottom: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", textAlign: "center" }}
               >
                 <div style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: "#00a862", boxShadow: "0 4px 10px rgba(0, 168, 98, 0.25)", display: "grid", placeItems: "center", position: "relative" }}>
-                  <Car size={24} style={{ color: "#ffffff" }} />
-                  <div style={{ position: "absolute", bottom: 5, right: 6, width: 13, height: 13, borderRadius: "50%", background: "#ffffff", display: "grid", placeItems: "center" }}>
-                    <span style={{ fontSize: 9, fontWeight: "bold", color: "#00a862" }}>★</span>
-                  </div>
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginTop: 6 }}>Đánh giá<br />lại tài sản</span>
+                <span className="ref-business-icon reval" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐG</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Sparkles size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Đánh giá<br />lại tài sản</span>
               </div>
 
               <div
@@ -5536,11 +5600,25 @@ export default function MisaAssetsWorkspace({
                 style={{ position: "absolute", left: "58%", bottom: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
                 <div style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: "#00a862", boxShadow: "0 4px 10px rgba(0, 168, 98, 0.25)", display: "grid", placeItems: "center", position: "relative" }}>
-                  <Car size={24} style={{ color: "#ffffff" }} />
-                  <MinusCircle size={13} style={{ position: "absolute", bottom: 5, right: 6, color: "#ffffff" }} />
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginTop: 6 }}>Ghi giảm</span>
+                <span className="ref-business-icon decrease" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#ea580c", borderColor: "#f97316" }}
+                  >
+                    <MinusCircle size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Ghi giảm</span>
               </div>
 
               <div
@@ -5548,11 +5626,25 @@ export default function MisaAssetsWorkspace({
                 style={{ position: "absolute", left: "82%", bottom: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
                 <div style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
-                <div style={{ width: 52, height: 52, borderRadius: 10, background: "#00a862", boxShadow: "0 4px 10px rgba(0, 168, 98, 0.25)", display: "grid", placeItems: "center", position: "relative" }}>
-                  <ClipboardList size={24} style={{ color: "#ffffff" }} />
-                  <Car size={13} style={{ position: "absolute", bottom: 5, right: 6, color: "#ffffff" }} />
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "#1e293b", marginTop: 6 }}>Kiểm kê tài sản</span>
+                <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>KK</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <ClipboardList size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Kiểm kê tài sản</span>
               </div>
             </div>
 

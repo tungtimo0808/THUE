@@ -24,6 +24,7 @@ import {
   CircleHelp,
   ArrowLeft,
   ChevronUp,
+  Coins,
 } from "lucide-react";
 import { SalaryPaymentModal, InsurancePaymentModal } from "./MisaBankModals";
 import "./misa-cash.css";
@@ -2667,52 +2668,64 @@ export default function MisaPayrollWorkspace({
               background: "#ffffff",
               borderRadius: 8,
               border: "1px solid #e2e8f0",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
               display: "flex",
               flexDirection: "column",
-              padding: "20px 24px 30px 24px",
+              padding: 0,
               boxSizing: "border-box",
             }}
           >
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  color: "#1e293b",
-                  letterSpacing: 0.6,
-                  textTransform: "uppercase",
-                }}
-              >
-                NGHIỆP VỤ TIỀN LƯƠNG
-              </h3>
-            </div>
+            <h2
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                textAlign: "center",
+                padding: "14px 10px",
+                margin: 0,
+                borderBottom: "1px solid #f1f5f9",
+                color: "#1e293b",
+                letterSpacing: "0.5px",
+              }}
+            >
+              NGHIỆP VỤ TIỀN LƯƠNG
+            </h2>
 
             {/* Diagram Container */}
-            <div style={{ position: "relative", minHeight: 280, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ position: "relative", minHeight: 320, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               
-              {/* SVG Connecting Flow Lines matching Image 1 */}
+              {/* SVG Connecting Flow Lines */}
               <svg
                 style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }}
               >
-                {/* Horizontal main axis */}
-                <line x1="8%" y1="50%" x2="90%" y2="50%" stroke="#cbd5e1" strokeWidth="2" />
-                
-                {/* Arrow at end of horizontal line */}
-                <polygon points="90%,46% 94%,50% 90%,54%" fill="#cbd5e1" />
+                <defs>
+                  <marker
+                    id="arrow-payroll"
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="6"
+                    refY="3.5"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 7 3.5, 0 7" fill="#94a3b8" />
+                  </marker>
+                </defs>
+                {/* 1 -> Branch 1 */}
+                <line x1="12%" y1="50%" x2="22%" y2="50%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="22%" y1="26%" x2="22%" y2="74%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="22%" y1="26%" x2="27%" y2="26%" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow-payroll)" />
+                <line x1="22%" y1="74%" x2="27%" y2="74%" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow-payroll)" />
 
-                {/* Vertical branch after Chấm công: Up to Tổng hợp chấm công (30%) & Down to Tính lương (70%) */}
-                <line x1="28%" y1="26%" x2="28%" y2="74%" stroke="#cbd5e1" strokeWidth="2" />
+                {/* Branch 1 -> 4 */}
+                <line x1="37%" y1="26%" x2="43%" y2="26%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="37%" y1="74%" x2="43%" y2="74%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="43%" y1="26%" x2="43%" y2="74%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="43%" y1="50%" x2="47%" y2="50%" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow-payroll)" />
 
-                {/* Connectors into Hạch toán chi phí lương */}
-                <line x1="28%" y1="26%" x2="31%" y2="26%" stroke="#cbd5e1" strokeWidth="2" />
-                <line x1="28%" y1="74%" x2="35%" y2="74%" stroke="#cbd5e1" strokeWidth="2" />
-
-                {/* Vertical branch after Hạch toán chi phí: Up to Nộp bảo hiểm (26%) & Down to Trả lương (74%) */}
-                <line x1="68%" y1="26%" x2="68%" y2="74%" stroke="#cbd5e1" strokeWidth="2" />
-                <line x1="68%" y1="26%" x2="71%" y2="26%" stroke="#cbd5e1" strokeWidth="2" />
-                <line x1="68%" y1="74%" x2="68%" y2="74%" stroke="#cbd5e1" strokeWidth="2" />
+                {/* 4 -> Branch 2 */}
+                <line x1="59%" y1="50%" x2="66%" y2="50%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="66%" y1="26%" x2="66%" y2="74%" stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="66%" y1="26%" x2="70%" y2="26%" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow-payroll)" />
+                <line x1="66%" y1="74%" x2="70%" y2="74%" stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow-payroll)" />
               </svg>
 
               {/* Interactive Flow Nodes */}
@@ -2723,7 +2736,7 @@ export default function MisaPayrollWorkspace({
                   onClick={() => navigateTo("attendance")}
                   style={{
                     position: "absolute",
-                    left: "8%",
+                    left: "10%",
                     top: "50%",
                     transform: "translate(-50%, -50%)",
                     display: "flex",
@@ -2732,47 +2745,31 @@ export default function MisaPayrollWorkspace({
                     cursor: "pointer",
                     width: 90,
                     textAlign: "center",
-                    transition: "transform 0.15s ease",
+                    zIndex: 2,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translate(-50%, -53%)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+                  title="Chấm công"
                 >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: "#fef3c7",
-                      border: "1px solid #fde68a",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 3px 8px rgba(217, 119, 6, 0.15)",
-                      position: "relative",
-                    }}
-                  >
-                    <Calendar size={26} color="#d97706" />
-                    {/* Badge coin */}
-                    <div
+                  <span className="ref-business-icon attendance" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
                       style={{
-                        position: "absolute",
-                        bottom: -2,
-                        right: -2,
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        background: "#f59e0b",
-                        border: "2px solid #ffffff",
-                        display: "grid",
-                        placeItems: "center",
-                        color: "#ffffff",
-                        fontSize: 10,
-                        fontWeight: 700,
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
                       }}
                     >
-                      $
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8 }}>Chấm công</span>
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>CC</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Calendar size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
+                    Chấm công
+                  </span>
                 </div>
 
                 {/* 2. Tổng hợp chấm công (Top branch) */}
@@ -2789,45 +2786,29 @@ export default function MisaPayrollWorkspace({
                     cursor: "pointer",
                     width: 100,
                     textAlign: "center",
-                    transition: "transform 0.15s ease",
+                    zIndex: 2,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translate(-50%, -53%)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+                  title="Tổng hợp chấm công"
                 >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      border: "1px solid #bbf7d0",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)",
-                      position: "relative",
-                    }}
-                  >
-                    <FileText size={26} color="#00a862" />
-                    {/* Badge */}
-                    <div
+                  <span className="ref-business-icon summary" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
                       style={{
-                        position: "absolute",
-                        bottom: -2,
-                        right: -2,
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        background: "#10b981",
-                        border: "2px solid #ffffff",
-                        display: "grid",
-                        placeItems: "center",
-                        color: "#ffffff",
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
                       }}
                     >
-                      <Check size={11} strokeWidth={3} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155", marginTop: 8, lineHeight: 1.25 }}>
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>THC</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <FileText size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                     Tổng hợp<br />chấm công
                   </span>
                 </div>
@@ -2837,7 +2818,7 @@ export default function MisaPayrollWorkspace({
                   onClick={() => navigateTo("calculation")}
                   style={{
                     position: "absolute",
-                    left: "37%",
+                    left: "32%",
                     top: "74%",
                     transform: "translate(-50%, -50%)",
                     display: "flex",
@@ -2846,45 +2827,31 @@ export default function MisaPayrollWorkspace({
                     cursor: "pointer",
                     width: 90,
                     textAlign: "center",
-                    transition: "transform 0.15s ease",
+                    zIndex: 2,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translate(-50%, -53%)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+                  title="Tính lương"
                 >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      border: "1px solid #bbf7d0",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)",
-                      position: "relative",
-                    }}
-                  >
-                    <FileText size={26} color="#00a862" />
-                    {/* Calculator badge */}
-                    <div
+                  <span className="ref-business-icon calc" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
                       style={{
-                        position: "absolute",
-                        bottom: -3,
-                        right: -3,
-                        width: 20,
-                        height: 20,
-                        borderRadius: 5,
-                        background: "#f97316",
-                        border: "2px solid #ffffff",
-                        display: "grid",
-                        placeItems: "center",
-                        color: "#ffffff",
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
                       }}
                     >
-                      <Calculator size={12} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8 }}>Tính lương</span>
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>TL</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Calculator size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
+                    Tính lương
+                  </span>
                 </div>
 
                 {/* 4. Hạch toán chi phí lương (Center Axis) */}
@@ -2892,7 +2859,7 @@ export default function MisaPayrollWorkspace({
                   onClick={() => navigateTo("posting")}
                   style={{
                     position: "absolute",
-                    left: "52%",
+                    left: "53%",
                     top: "50%",
                     transform: "translate(-50%, -50%)",
                     display: "flex",
@@ -2901,47 +2868,29 @@ export default function MisaPayrollWorkspace({
                     cursor: "pointer",
                     width: 100,
                     textAlign: "center",
-                    transition: "transform 0.15s ease",
+                    zIndex: 2,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translate(-50%, -53%)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+                  title="Hạch toán chi phí lương"
                 >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      border: "1px solid #bbf7d0",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)",
-                      position: "relative",
-                    }}
-                  >
-                    <FileText size={26} color="#00a862" />
-                    {/* Dollar badge */}
-                    <div
+                  <span className="ref-business-icon post" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
                       style={{
-                        position: "absolute",
-                        bottom: -3,
-                        right: -3,
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        background: "#00a862",
-                        border: "2px solid #ffffff",
-                        display: "grid",
-                        placeItems: "center",
-                        color: "#ffffff",
-                        fontSize: 11,
-                        fontWeight: 700,
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
                       }}
                     >
-                      $
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155", marginTop: 8, lineHeight: 1.25 }}>
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>HT</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Coins size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                     Hạch toán chi<br />phí lương
                   </span>
                 </div>
@@ -2951,7 +2900,7 @@ export default function MisaPayrollWorkspace({
                   onClick={() => setShowInsurancePaymentModal(true)}
                   style={{
                     position: "absolute",
-                    left: "73%",
+                    left: "76%",
                     top: "26%",
                     transform: "translate(-50%, -50%)",
                     display: "flex",
@@ -2960,45 +2909,31 @@ export default function MisaPayrollWorkspace({
                     cursor: "pointer",
                     width: 95,
                     textAlign: "center",
-                    transition: "transform 0.15s ease",
+                    zIndex: 2,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translate(-50%, -53%)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+                  title="Nộp bảo hiểm"
                 >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      border: "1px solid #bbf7d0",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)",
-                      position: "relative",
-                    }}
-                  >
-                    <FileText size={26} color="#00a862" />
-                    {/* Shield badge */}
-                    <div
+                  <span className="ref-business-icon insurance" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
                       style={{
-                        position: "absolute",
-                        bottom: -3,
-                        right: -3,
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        background: "#0284c7",
-                        border: "2px solid #ffffff",
-                        display: "grid",
-                        placeItems: "center",
-                        color: "#ffffff",
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
                       }}
                     >
-                      <ShieldCheck size={12} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8 }}>Nộp bảo hiểm</span>
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>BH</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <ShieldCheck size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
+                    Nộp bảo hiểm
+                  </span>
                 </div>
 
                 {/* 6. Trả lương (Bottom Right branch) */}
@@ -3006,7 +2941,7 @@ export default function MisaPayrollWorkspace({
                   onClick={() => setShowSalaryPaymentModal(true)}
                   style={{
                     position: "absolute",
-                    left: "68%",
+                    left: "76%",
                     top: "74%",
                     transform: "translate(-50%, -50%)",
                     display: "flex",
@@ -3015,45 +2950,31 @@ export default function MisaPayrollWorkspace({
                     cursor: "pointer",
                     width: 90,
                     textAlign: "center",
-                    transition: "transform 0.15s ease",
+                    zIndex: 2,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translate(-50%, -53%)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translate(-50%, -50%)")}
+                  title="Trả lương"
                 >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      border: "1px solid #bbf7d0",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)",
-                      position: "relative",
-                    }}
-                  >
-                    <FileText size={26} color="#00a862" />
-                    {/* Wallet/money badge */}
-                    <div
+                  <span className="ref-business-icon pay" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
                       style={{
-                        position: "absolute",
-                        bottom: -3,
-                        right: -3,
-                        width: 20,
-                        height: 20,
-                        borderRadius: 4,
-                        background: "#16a34a",
-                        border: "2px solid #ffffff",
-                        display: "grid",
-                        placeItems: "center",
-                        color: "#ffffff",
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
                       }}
                     >
-                      <DollarSign size={12} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8 }}>Trả lương</span>
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>TRL</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#ea580c", borderColor: "#fdba74" }}
+                    >
+                      <Coins size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
+                    Trả lương
+                  </span>
                 </div>
 
               </div>

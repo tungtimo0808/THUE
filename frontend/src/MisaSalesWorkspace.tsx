@@ -21,6 +21,13 @@ import {
   MoreHorizontal,
   FileSpreadsheet,
   Ban,
+  Coins,
+  FileText,
+  FileCheck,
+  RotateCcw,
+  Percent,
+  ArrowRight,
+  Check,
 } from "lucide-react";
 import {
   SingleCustomerInvoiceCollectionModal,
@@ -1079,38 +1086,25 @@ export default function MisaSalesWorkspace({
                 onClick={() => setShowQuoteModal(true)}
                 title="Lập Báo giá cho khách hàng"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="7" y="6" width="22" height="25" rx="3" fill="#059669" />
-                    <rect x="11" y="10" width="14" height="2.5" rx="1" fill="#a7f3d0" />
-                    <rect x="11" y="15" width="10" height="2" rx="1" fill="#a7f3d0" />
-                    <circle cx="23" cy="22" r="6" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <text x="23" y="25" fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">$</text>
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon quote" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>BG</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <FileText size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Báo giá
                 </span>
               </div>
@@ -1135,39 +1129,25 @@ export default function MisaSalesWorkspace({
                 }}
                 title="Lập Đơn đặt hàng"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="7" y="7" width="22" height="24" rx="3" fill="#059669" />
-                    <rect x="13" y="5" width="10" height="3" rx="1.5" fill="#f59e0b" />
-                    <path d="M 12 14 L 15 17 L 23 11" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <rect x="11" y="21" width="14" height="2" rx="1" fill="#a7f3d0" />
-                    <circle cx="23" cy="23" r="5" fill="#f59e0b" />
-                    <path d="M 21 23 L 22.5 24.5 L 25 21.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon order" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐH</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Check size={14} strokeWidth={2.5} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Đơn đặt hàng
                 </span>
               </div>
@@ -1192,39 +1172,25 @@ export default function MisaSalesWorkspace({
                 }}
                 title="Lập Hợp đồng bán hàng"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="6" y="8" width="24" height="22" rx="3" fill="#059669" />
-                    <path d="M 6 12 L 30 12" stroke="#047857" strokeWidth="1.2" />
-                    <rect x="10" y="16" width="12" height="2" rx="1" fill="#a7f3d0" />
-                    <rect x="10" y="21" width="8" height="2" rx="1" fill="#a7f3d0" />
-                    <rect x="21" y="16" width="8" height="11" rx="2" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <path d="M 23 20 L 27 20 M 23 23 L 27 23" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon contract" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>HĐ</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <FileCheck size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Hợp đồng<br />bán hàng
                 </span>
               </div>
@@ -1250,39 +1216,25 @@ export default function MisaSalesWorkspace({
                 }}
                 title="Lập Chứng từ bán hàng / Ghi nhận doanh thu"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="7" y="6" width="22" height="25" rx="3" fill="#059669" />
-                    {/* Line chart trending up */}
-                    <path d="M 11 24 L 16 19 L 20 21 L 25 14" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="25" cy="14" r="2" fill="#f59e0b" />
-                    <circle cx="24" cy="24" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <text x="24" y="27" fill="#ffffff" fontSize="7" fontWeight="bold" textAnchor="middle">$</text>
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon sales" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>BH</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Coins size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Ghi nhận<br />doanh thu
                 </span>
               </div>
@@ -1307,39 +1259,25 @@ export default function MisaSalesWorkspace({
                 }}
                 title="Xuất hóa đơn bán hàng"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="7" y="6" width="22" height="25" rx="3" fill="#059669" />
-                    <rect x="11" y="10" width="14" height="2" rx="1" fill="#a7f3d0" />
-                    <rect x="11" y="14" width="8" height="2" rx="1" fill="#a7f3d0" />
-                    <rect x="11" y="18" width="12" height="2" rx="1" fill="#a7f3d0" />
-                    <circle cx="23" cy="22" r="6" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <text x="23" y="25" fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">$</text>
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon invoice" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>HĐ</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <FileText size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Xuất hóa đơn<br />doanh thu
                 </span>
               </div>
@@ -1364,41 +1302,25 @@ export default function MisaSalesWorkspace({
                 }}
                 title="Lập chứng từ Trả lại hàng bán"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="7" y="6" width="22" height="25" rx="3" fill="#059669" />
-                    {/* Return circular arrow */}
-                    <path d="M 14 17 A 5 5 0 1 1 22 17" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <path d="M 12 15 L 14 17 L 16 15" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    {/* Yellow parcel box */}
-                    <rect x="18" y="16" width="11" height="11" rx="2" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <path d="M 18 20 L 29 20" stroke="#ffffff" strokeWidth="1" />
-                    <path d="M 23.5 16 L 23.5 27" stroke="#ffffff" strokeWidth="1" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon return" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>TL</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <RotateCcw size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Trả lại<br />hàng bán
                 </span>
               </div>
@@ -1423,41 +1345,25 @@ export default function MisaSalesWorkspace({
                 }}
                 title="Lập chứng từ Giảm giá hàng bán"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="7" y="6" width="22" height="25" rx="3" fill="#059669" />
-                    <circle cx="14" cy="14" r="1.5" fill="#ffffff" />
-                    <circle cx="19" cy="19" r="1.5" fill="#ffffff" />
-                    <path d="M 20 13 L 13 20" stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" />
-                    {/* Yellow box */}
-                    <rect x="18" y="16" width="11" height="11" rx="2" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <path d="M 18 20 L 29 20" stroke="#ffffff" strokeWidth="1" />
-                    <path d="M 23.5 16 L 23.5 27" stroke="#ffffff" strokeWidth="1" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon discount" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Percent size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Giảm giá<br />hàng bán
                 </span>
               </div>
@@ -1479,37 +1385,25 @@ export default function MisaSalesWorkspace({
                 onClick={() => setShowCollectionModal(true)}
                 title="Thu tiền khách hàng theo hóa đơn"
               >
-                <div
-                  style={{
-                    width: 54,
-                    height: 54,
-                    borderRadius: 16,
-                    background: "#e8f7f0",
-                    border: "1px solid #a7f3d0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.22)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                    <rect x="9" y="7" width="18" height="22" rx="3" fill="#059669" stroke="#047857" strokeWidth="0.8" />
-                    <rect x="12" y="11" width="12" height="7" rx="1" fill="#f59e0b" />
-                    <path d="M 12 22 L 20 22" stroke="#a7f3d0" strokeWidth="1.2" strokeLinecap="round" />
-                    <path d="M 5 18 L 10 18 M 8 15 L 11 18 L 8 21" stroke="#059669" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12.5, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+                <span className="ref-business-icon collect" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>THU</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                  >
+                    <Coins size={14} strokeWidth={2.2} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                   Thu tiền theo<br />hóa đơn
                 </span>
               </div>
@@ -1724,90 +1618,6 @@ export default function MisaSalesWorkspace({
             <SlidersHorizontal size={20} style={{ color: "#64748b" }} />
             <span>Tùy chọn</span>
           </button>
-        </div>
-
-        {/* Panel 4: Sổ Việt CRM Integration Banner */}
-        <div
-          style={{
-            background: "linear-gradient(90deg, #dbeafe 0%, #eff6ff 100%)",
-            borderRadius: 8,
-            border: "1px solid #bfdbfe",
-            padding: "12px 18px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Sổ Việt CRM Logo */}
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                background: "#2563eb",
-                display: "grid",
-                placeItems: "center",
-                color: "#ffffff",
-                boxShadow: "0 2px 4px rgba(37,99,235,0.25)",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <strong style={{ color: "#1e293b", fontWeight: 700 }}>Sổ Việt CRM</strong>
-              <span style={{ color: "#334155" }}>
-                <strong>Kết nối dữ liệu</strong> giữa bộ phận bán hàng và kế toán
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <button
-              type="button"
-              onClick={() => notify("Xem chi tiết tính năng đồng bộ Sổ Việt CRM...")}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#0284c7",
-                fontSize: 12.5,
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <Lightbulb size={15} style={{ color: "#f59e0b" }} />
-              <span>Xem tính năng</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => notify("Đang kết nối hệ thống Sổ Việt CRM...")}
-              style={{
-                background: "#00b06b",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: 4,
-                padding: "6px 14px",
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
-              }}
-            >
-              <span>Kết nối ngay</span>
-              <span>→</span>
-            </button>
-          </div>
         </div>
 
         {renderModals()}

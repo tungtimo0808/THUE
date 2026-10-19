@@ -6060,13 +6060,13 @@ export default function MisaToolsWorkspace({
         <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 340px", gap: 24, alignItems: "start" }}>
           
           <div style={{ background: "#ffffff", borderRadius: 10, border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)", overflow: "hidden" }}>
-            <div style={{ padding: "20px 24px 10px 24px", textAlign: "center" }}>
-              <h3 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5, textTransform: "uppercase" }}>
+            <div style={{ padding: "16px 24px 12px 24px", textAlign: "center", borderBottom: "1px solid #f1f5f9" }}>
+              <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5, textTransform: "uppercase" }}>
                 NGHIỆP VỤ CÔNG CỤ DỤNG CỤ, CHI PHÍ TRẢ TRƯỚC
-              </h3>
+              </h2>
             </div>
 
-            <div style={{ padding: "40px 30px 50px 30px", position: "relative" }}>
+            <div style={{ padding: "35px 30px 45px 30px", position: "relative" }}>
               <div style={{ position: "absolute", left: 95, right: 40, top: 145, height: 2, background: "#cbd5e1", zIndex: 1 }}>
                 <div style={{ position: "absolute", right: -2, top: -4, width: 0, height: 0, borderTop: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: "8px solid #cbd5e1" }} />
               </div>
@@ -6080,12 +6080,25 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ position: "absolute", left: 20, top: 110, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#e6f4ea", display: "grid", placeItems: "center", border: "1px solid #bbf7d0", boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#00a862", display: "grid", placeItems: "center", color: "#ffffff" }}>
-                      <Plus size={18} strokeWidth={2.5} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>Ghi tăng</span>
+                  <span className="ref-business-icon increase" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>GT</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Plus size={14} strokeWidth={2.5} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Ghi tăng</span>
                 </div>
 
                 {/* Điều chuyển */}
@@ -6096,13 +6109,26 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ position: "absolute", left: 170, top: 25, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#e6f4ea", display: "grid", placeItems: "center", border: "1px solid #bbf7d0", boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#00a862", display: "grid", placeItems: "center", color: "#ffffff" }}>
-                      <ArrowRightLeft size={16} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>Điều chuyển</span>
-                  <div style={{ position: "absolute", top: 52, width: 2, height: 42, background: "#cbd5e1", zIndex: -1 }} />
+                  <span className="ref-business-icon transfer" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐC</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <ArrowRightLeft size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Điều chuyển</span>
+                  <div style={{ position: "absolute", top: 48, width: 2, height: 46, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* Phân bổ */}
@@ -6113,13 +6139,26 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ position: "absolute", left: 310, top: 25, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#e6f4ea", display: "grid", placeItems: "center", border: "1px solid #bbf7d0", boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#00a862", display: "grid", placeItems: "center", color: "#ffffff" }}>
-                      <Divide size={18} strokeWidth={2.5} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>Phân bổ</span>
-                  <div style={{ position: "absolute", top: 52, width: 2, height: 42, background: "#cbd5e1", zIndex: -1 }} />
+                  <span className="ref-business-icon allocate" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>PB</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Divide size={14} strokeWidth={2.5} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Phân bổ</span>
+                  <div style={{ position: "absolute", top: 48, width: 2, height: 46, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* Điều chỉnh */}
@@ -6131,12 +6170,25 @@ export default function MisaToolsWorkspace({
                   style={{ position: "absolute", left: 240, top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#e6f4ea", display: "grid", placeItems: "center", border: "1px solid #bbf7d0", boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#00a862", display: "grid", placeItems: "center", color: "#ffffff" }}>
-                      <Sliders size={16} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>Điều chỉnh</span>
+                  <span className="ref-business-icon adjust" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐCH</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Sliders size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Điều chỉnh</span>
                 </div>
 
                 {/* Ghi giảm */}
@@ -6148,12 +6200,25 @@ export default function MisaToolsWorkspace({
                   style={{ position: "absolute", left: 380, top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#e6f4ea", display: "grid", placeItems: "center", border: "1px solid #bbf7d0", boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#00a862", display: "grid", placeItems: "center", color: "#ffffff" }}>
-                      <MinusCircle size={18} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>Ghi giảm</span>
+                  <span className="ref-business-icon decrease" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#ea580c", borderColor: "#f97316" }}
+                    >
+                      <MinusCircle size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Ghi giảm</span>
                 </div>
 
                 {/* Kiểm kê */}
@@ -6165,12 +6230,25 @@ export default function MisaToolsWorkspace({
                   style={{ position: "absolute", left: 460, top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
-                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "#e6f4ea", display: "grid", placeItems: "center", border: "1px solid #bbf7d0", boxShadow: "0 3px 8px rgba(0, 168, 98, 0.15)" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#00a862", display: "grid", placeItems: "center", color: "#ffffff" }}>
-                      <ClipboardList size={17} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>Kiểm kê</span>
+                  <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>KK</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <ClipboardList size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Kiểm kê</span>
                 </div>
               </div>
             </div>

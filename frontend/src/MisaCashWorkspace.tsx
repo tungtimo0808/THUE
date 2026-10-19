@@ -65,6 +65,7 @@ import {
   BookOpen,
   BarChart3,
   ArrowLeft,
+  ArrowRight,
   TrendingUp,
   TrendingDown,
   ShieldCheck,
@@ -8999,7 +9000,7 @@ export default function MisaCashWorkspace({
           margin: "0 auto",
         }}
       >
-        {/* Panel 1: NGHIỆP VỤ TIỀN MẶT (Screenshot) */}
+        {/* Panel 1: NGHIỆP VỤ TIỀN MẶT (Standard Flowchart format) */}
         <section
           className="ref-process-panel"
           style={{
@@ -9018,7 +9019,8 @@ export default function MisaCashWorkspace({
               fontWeight: 700,
               textAlign: "center",
               margin: 0,
-              padding: "16px 10px 10px 10px",
+              padding: "14px 10px",
+              borderBottom: "1px solid #f1f5f9",
               color: "#1e293b",
               letterSpacing: "0.5px",
             }}
@@ -9030,7 +9032,7 @@ export default function MisaCashWorkspace({
             className="ref-process-canvas"
             style={{
               position: "relative",
-              height: 380,
+              height: 310,
               margin: "0 10px",
               overflow: "visible",
             }}
@@ -9038,7 +9040,7 @@ export default function MisaCashWorkspace({
             {/* SVG Connecting Flow Lines with Arrows */}
             <svg
               className="ref-flow-lines"
-              viewBox="0 0 700 340"
+              viewBox="0 0 600 300"
               preserveAspectRatio="none"
               aria-hidden="true"
               style={{
@@ -9053,50 +9055,53 @@ export default function MisaCashWorkspace({
               <defs>
                 <marker
                   id="ref-arrow-cash"
-                  markerWidth="8"
-                  markerHeight="8"
-                  refX="6.5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  refX="6"
                   refY="3.5"
                   orient="auto"
                 >
-                  <polygon points="0 0, 7 3.5, 0 7" fill="#86efac" />
+                  <polygon points="0 0, 7 3.5, 0 7" fill="#94a3b8" />
                 </marker>
               </defs>
 
-              {/* Arrow from Đề nghị chi tiền to Chi tiền */}
-              <circle cx="165" cy="225" r="3.5" fill="#86efac" />
+              {/* 1. Horizontal arrow from Đề nghị chi tiền to Chi tiền */}
               <path
-                d="M 165 225 L 268 225"
-                stroke="#a7f3d0"
-                strokeWidth="1.8"
+                d="M 125 188 L 195 188"
+                stroke="#cbd5e1"
+                strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-cash)"
               />
 
-              {/* Vertical line between Thu tiền and Chi tiền */}
-              <circle cx="320" cy="118" r="3.5" fill="#86efac" />
-              <circle cx="320" cy="182" r="3.5" fill="#86efac" />
+              {/* 2. Vertical T-junction line between Thu tiền and Chi tiền */}
               <path
-                d="M 320 118 L 320 182"
-                stroke="#a7f3d0"
-                strokeWidth="1.8"
+                d="M 245 92 L 245 188"
+                stroke="#cbd5e1"
+                strokeWidth="1.5"
+                fill="none"
+              />
+              <path
+                d="M 240 92 L 250 92 M 240 188 L 250 188"
+                stroke="#cbd5e1"
+                strokeWidth="1.5"
                 fill="none"
               />
 
-              {/* Horizontal branch from midpoint of Thu/Chi (320, 150) to Kiểm kê quỹ */}
+              {/* 3. Horizontal branch from midpoint between Thu and Chi to Kiểm kê quỹ */}
               <path
-                d="M 320 150 L 488 150"
-                stroke="#a7f3d0"
-                strokeWidth="1.8"
+                d="M 245 140 L 350 140"
+                stroke="#cbd5e1"
+                strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-cash)"
               />
 
-              {/* Horizontal arrow going right from Kiểm kê quỹ */}
+              {/* 4. Horizontal arrow going right from Kiểm kê quỹ */}
               <path
-                d="M 590 150 L 685 150"
-                stroke="#a7f3d0"
-                strokeWidth="1.8"
+                d="M 450 140 L 525 140"
+                stroke="#cbd5e1"
+                strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-cash)"
               />
@@ -9110,12 +9115,57 @@ export default function MisaCashWorkspace({
               />
             )}
 
-            {/* Node 1: Thu tiền (Top Center) */}
+            {/* Node 1: Đề nghị chi tiền (Left, aligned with Chi tiền) */}
             <div
               style={{
                 position: "absolute",
-                left: 270,
-                top: 38,
+                left: 30,
+                top: 145,
+                width: 100,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                cursor: "pointer",
+                textAlign: "center",
+                zIndex: 2,
+              }}
+              onClick={() => {
+                if (href) {
+                  window.location.hash = href("/reference/cash/payment-requests");
+                }
+                notify("Đã mở phân hệ Đề nghị chi tiền.");
+              }}
+              title="Lập giấy đề nghị chi tiền"
+            >
+              <span className="ref-business-icon request" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐN</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <ArrowRight size={14} strokeWidth={2.5} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3 }}>
+                Đề nghị chi tiền
+              </span>
+            </div>
+
+            {/* Node 2: Thu tiền (Top Center) */}
+            <div
+              style={{
+                position: "absolute",
+                left: 195,
+                top: 25,
                 width: 100,
                 display: "flex",
                 flexDirection: "column",
@@ -9132,59 +9182,35 @@ export default function MisaCashWorkspace({
                   flexDirection: "column",
                   alignItems: "center",
                 }}
-                onClick={() =>
-                  setActiveFlowchartMenu("receipt")
-                }
+                onClick={() => setActiveFlowchartMenu("receipt")}
                 title="Lập phiếu thu tiền mặt"
               >
-                <div
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 14,
-                    background: "#dcfce7",
-                    border: "1px solid #86efac",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 10px rgba(16, 185, 129, 0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                    <rect x="4" y="6" width="30" height="26" rx="4" fill="#059669" />
-                    <path d="M 4 10 C 4 7.79 5.79 6 8 6 L 30 6 C 32.21 6 34 7.79 34 10 L 34 14 L 4 14 Z" fill="#047857" />
-                    <circle cx="7" cy="10" r="0.9" fill="#a7f3d0" />
-                    <circle cx="31" cy="10" r="0.9" fill="#a7f3d0" />
-                    <text x="19" y="11.8" fill="#ffffff" fontSize="6.5" fontWeight="900" textAnchor="middle" fontFamily="system-ui, sans-serif">THU</text>
-                    <rect x="9" y="17" width="20" height="12" rx="2.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <circle cx="19" cy="23" r="2.8" fill="#fef3c7" stroke="#d97706" strokeWidth="0.6" />
-                    <circle cx="12" cy="23" r="1.1" fill="#d97706" />
-                    <circle cx="26" cy="23" r="1.1" fill="#d97706" />
-                  </svg>
-                </div>
-                <span
-                  style={{
-                    fontSize: 13,
-                    color: activeFlowchartMenu === "receipt" ? "#00b06b" : "#1e293b",
-                    fontWeight: activeFlowchartMenu === "receipt" ? 600 : 500,
-                  }}
-                >
+                <span className="ref-business-icon receive" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>THU</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#ea580c", borderColor: "#f97316" }}
+                  >
+                    <Coins size={16} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500 }}>
                   Thu tiền
                 </span>
               </div>
 
               {activeFlowchartMenu === "receipt" && (
                 <div
+                  className="ref-action-options"
                   style={{
                     position: "absolute",
                     top: "calc(100% + 4px)",
@@ -9213,11 +9239,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setVoucherCategoryChoice("cash");
@@ -9238,11 +9261,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowCustomerCollection(true);
@@ -9262,11 +9282,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowMultiCustomerCollection(true);
@@ -9286,11 +9303,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowInternalTransfer(true);
@@ -9302,78 +9316,12 @@ export default function MisaCashWorkspace({
               )}
             </div>
 
-            {/* Node 2: Đề nghị chi tiền (Left Center) */}
+            {/* Node 3: Chi tiền (Bottom Center) */}
             <div
               style={{
                 position: "absolute",
-                left: 65,
-                top: 185,
-                width: 100,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                zIndex: 10,
-              }}
-            >
-              <div
-                style={{
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-                onClick={() => {
-                  if (href) {
-                    window.location.hash = href("/reference/cash/payment-requests");
-                  }
-                  notify("Đã mở phân hệ Đề nghị chi tiền.");
-                }}
-                title="Lập giấy đề nghị chi tiền"
-              >
-                <div
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 14,
-                    background: "#dcfce7",
-                    border: "1px solid #86efac",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 10px rgba(16, 185, 129, 0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                    <rect x="7" y="5" width="20" height="26" rx="3" fill="#059669" />
-                    <path d="M 11 9 L 20 9 M 11 13 L 23 13 M 11 17 L 23 17 M 11 21 L 18 21" stroke="#a7f3d0" strokeWidth="1.2" strokeLinecap="round" />
-                    <circle cx="15" cy="22" r="4.5" fill="#fbbf24" stroke="#d97706" strokeWidth="0.7" />
-                    <text x="15" y="24.8" fill="#78350f" fontSize="6.5" fontWeight="900" textAnchor="middle" fontFamily="system-ui, sans-serif">$</text>
-                    <circle cx="26.5" cy="26.5" r="6" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.2" />
-                    <path d="M 23.5 26.5 L 29.5 24 L 27 29.5 L 25.8 27.3 Z" fill="#ffffff" />
-                  </svg>
-                </div>
-                <span style={{ fontSize: 13, color: "#1e293b", fontWeight: 500, textAlign: "center", lineHeight: 1.25 }}>
-                  Đề nghị chi<br />tiền
-                </span>
-              </div>
-            </div>
-
-            {/* Node 3: Chi tiền (Center Bottom) */}
-            <div
-              style={{
-                position: "absolute",
-                left: 270,
-                top: 185,
+                left: 195,
+                top: 145,
                 width: 100,
                 display: "flex",
                 flexDirection: "column",
@@ -9390,59 +9338,35 @@ export default function MisaCashWorkspace({
                   flexDirection: "column",
                   alignItems: "center",
                 }}
-                onClick={() =>
-                  setActiveFlowchartMenu("payment")
-                }
+                onClick={() => setActiveFlowchartMenu("payment")}
                 title="Lập phiếu chi tiền mặt"
               >
-                <div
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 14,
-                    background: "#dcfce7",
-                    border: "1px solid #86efac",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 6,
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                    transition: "transform 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 10px rgba(16, 185, 129, 0.2)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                  }}
-                >
-                  <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                    <rect x="4" y="6" width="30" height="26" rx="4" fill="#059669" />
-                    <path d="M 4 10 C 4 7.79 5.79 6 8 6 L 30 6 C 32.21 6 34 7.79 34 10 L 34 14 L 4 14 Z" fill="#047857" />
-                    <circle cx="7" cy="10" r="0.9" fill="#a7f3d0" />
-                    <circle cx="31" cy="10" r="0.9" fill="#a7f3d0" />
-                    <text x="19" y="11.8" fill="#ffffff" fontSize="6.5" fontWeight="900" textAnchor="middle" fontFamily="system-ui, sans-serif">CHI</text>
-                    <rect x="9" y="17" width="20" height="12" rx="2.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                    <circle cx="19" cy="23" r="2.8" fill="#fef3c7" stroke="#d97706" strokeWidth="0.6" />
-                    <circle cx="12" cy="23" r="1.1" fill="#d97706" />
-                    <circle cx="26" cy="23" r="1.1" fill="#d97706" />
-                  </svg>
-                </div>
-                <span
-                  style={{
-                    fontSize: 13,
-                    color: activeFlowchartMenu === "payment" ? "#00b06b" : "#1e293b",
-                    fontWeight: activeFlowchartMenu === "payment" ? 600 : 500,
-                  }}
-                >
+                <span className="ref-business-icon pay" style={{ marginBottom: 6 }}>
+                  <span
+                    className="ref-document-sheet"
+                    style={{
+                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      border: "1px solid #34d399",
+                    }}
+                  >
+                    <b style={{ color: "#ffffff", fontWeight: 800 }}>CHI</b>
+                    <i /><i /><i />
+                  </span>
+                  <span
+                    className="ref-gold-icon"
+                    style={{ background: "#ea580c", borderColor: "#f97316" }}
+                  >
+                    <Coins size={16} />
+                  </span>
+                </span>
+                <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500 }}>
                   Chi tiền
                 </span>
               </div>
 
               {activeFlowchartMenu === "payment" && (
                 <div
+                  className="ref-action-options"
                   style={{
                     position: "absolute",
                     top: "calc(100% + 4px)",
@@ -9471,11 +9395,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setVoucherCategoryChoice("cash");
@@ -9496,11 +9417,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowSupplierPayment(true);
@@ -9520,11 +9438,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowTaxModal(true);
@@ -9544,11 +9459,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowInsuranceModal(true);
@@ -9568,11 +9480,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowSalaryModal(true);
@@ -9592,11 +9501,8 @@ export default function MisaCashWorkspace({
                       cursor: "pointer",
                       width: "100%",
                       fontFamily: "inherit",
-                      transition: "background 0.15s, color 0.15s",
                       display: "block",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveFlowchartMenu(null);
                       setShowInternalTransfer(true);
@@ -9608,19 +9514,19 @@ export default function MisaCashWorkspace({
               )}
             </div>
 
-            {/* Node 4: Kiểm kê quỹ (Right Center) */}
+            {/* Node 4: Kiểm kê quỹ (Right, middle vertical) */}
             <div
               style={{
                 position: "absolute",
-                left: 490,
-                top: 120,
+                left: 350,
+                top: 96,
                 width: 100,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 cursor: "pointer",
                 textAlign: "center",
-                zIndex: 10,
+                zIndex: 2,
               }}
               onClick={() => {
                 if (href) {
@@ -9628,49 +9534,37 @@ export default function MisaCashWorkspace({
                 }
                 notify("Đã mở phân hệ Kiểm kê quỹ tiền mặt.");
               }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  if (href) {
+                    window.location.hash = href("/reference/cash/inventory");
+                  }
+                }
+              }}
               title="Kiểm kê quỹ tiền mặt"
             >
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 14,
-                  background: "#dcfce7",
-                  border: "1px solid #86efac",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 6,
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 4px 10px rgba(16, 185, 129, 0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.04)";
-                }}
-              >
-                <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                  <rect x="6" y="5" width="20" height="26" rx="3" fill="#059669" />
-                  <rect x="11.5" y="3" width="9" height="3.5" rx="1.2" fill="#047857" stroke="#a7f3d0" strokeWidth="0.6" />
-                  <path d="M 9 11 L 11 13 L 13.5 9.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M 9 16.5 L 11 18.5 L 13.5 15" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M 9 22 L 11 24 L 13.5 20.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  <rect x="16.5" y="14" width="16" height="19" rx="2.5" fill="#f59e0b" stroke="#d97706" strokeWidth="0.8" />
-                  <rect x="18.5" y="16" width="12" height="3.8" rx="1" fill="#fef3c7" stroke="#d97706" strokeWidth="0.5" />
-                  <circle cx="20.5" cy="23" r="0.9" fill="#78350f" />
-                  <circle cx="24.5" cy="23" r="0.9" fill="#78350f" />
-                  <circle cx="28.5" cy="23" r="0.9" fill="#78350f" />
-                  <circle cx="20.5" cy="26.5" r="0.9" fill="#78350f" />
-                  <circle cx="24.5" cy="26.5" r="0.9" fill="#78350f" />
-                  <circle cx="28.5" cy="26.5" r="0.9" fill="#78350f" />
-                  <rect x="19.5" y="29.5" width="10" height="1.8" rx="0.7" fill="#d97706" />
-                </svg>
-              </div>
-              <span style={{ fontSize: 13, color: "#1e293b", fontWeight: 500, lineHeight: 1.3 }}>
+              <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>KK</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                >
+                  <FileText size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3 }}>
                 Kiểm kê quỹ
               </span>
             </div>

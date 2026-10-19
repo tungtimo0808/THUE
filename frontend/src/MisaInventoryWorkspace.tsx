@@ -580,10 +580,22 @@ export default function MisaInventoryWorkspace({
             }}
           >
             {/* Title */}
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <h2
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  textAlign: "center",
+                  margin: 0,
+                  padding: "4px 10px 14px 10px",
+                  borderBottom: "1px solid #f1f5f9",
+                  color: "#1e293b",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                }}
+              >
                 NGHIỆP VỤ KHO
-              </h3>
+              </h2>
             </div>
 
             {/* Interactive Flowchart Diagram */}
@@ -623,28 +635,29 @@ export default function MisaInventoryWorkspace({
                   onClick={() => navigateTo("production-orders")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 110 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <Package size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon prod" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>LSX</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Package size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Lệnh sản xuất
                   </span>
                   {/* Vertical connecting line down to main horizontal line */}
-                  <div style={{ position: "absolute", top: 54, width: 1.5, height: 42, background: "#cbd5e1", zIndex: -1 }} />
+                  <div style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* 2. Xuất kho */}
@@ -652,27 +665,28 @@ export default function MisaInventoryWorkspace({
                   onClick={() => navigateTo("issues")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 110 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <Building2 size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon export" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>XK</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#ea580c", borderColor: "#f97316" }}
+                    >
+                      <Building2 size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Xuất kho
                   </span>
-                  <div style={{ position: "absolute", top: 54, width: 1.5, height: 42, background: "#cbd5e1", zIndex: -1 }} />
+                  <div style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* 3. Chuyển kho */}
@@ -680,27 +694,28 @@ export default function MisaInventoryWorkspace({
                   onClick={() => navigateTo("transfers")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 110 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <ArrowRightLeft size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon transfer" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>CK</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <ArrowRightLeft size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Chuyển kho
                   </span>
-                  <div style={{ position: "absolute", top: 54, width: 1.5, height: 42, background: "#cbd5e1", zIndex: -1 }} />
+                  <div style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
               </div>
 
@@ -711,24 +726,25 @@ export default function MisaInventoryWorkspace({
                   onClick={() => navigateTo("assembly")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <Wrench size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon assemble" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>LR</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Wrench size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Lắp ráp, tháo dỡ
                   </span>
                 </div>
@@ -738,24 +754,25 @@ export default function MisaInventoryWorkspace({
                   onClick={() => navigateTo("receipts")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <Boxes size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon import" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>NK</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Boxes size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Nhập kho
                   </span>
                 </div>
@@ -765,24 +782,25 @@ export default function MisaInventoryWorkspace({
                   onClick={() => setShowCalculateCostModal(true)}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <Calculator size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon calc" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>TG</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <Calculator size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Tính giá xuất kho
                   </span>
                 </div>
@@ -792,24 +810,25 @@ export default function MisaInventoryWorkspace({
                   onClick={() => navigateTo("stocktake")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
-                  <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 14,
-                      background: "#e6f4ea",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "1px solid #bbf7d0",
-                      boxShadow: "0 4px 10px rgba(0, 168, 98, 0.15)",
-                      transition: "transform 0.15s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.08)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <ClipboardCheck size={26} style={{ color: "#00a862" }} />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginTop: 8, textAlign: "center" }}>
+                  <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
+                    <span
+                      className="ref-document-sheet"
+                      style={{
+                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        border: "1px solid #34d399",
+                      }}
+                    >
+                      <b style={{ color: "#ffffff", fontWeight: 800 }}>KK</b>
+                      <i /><i /><i />
+                    </span>
+                    <span
+                      className="ref-gold-icon"
+                      style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                    >
+                      <ClipboardCheck size={14} strokeWidth={2.2} />
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Kiểm kê
                   </span>
                 </div>

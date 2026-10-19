@@ -846,27 +846,29 @@ export default function MisaLedgerWorkspace({
                   background: "#ffffff",
                   borderRadius: 8,
                   border: "1px solid #e2e8f0",
-                  padding: "24px 28px 32px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
                   display: "flex",
                   flexDirection: "column",
                   position: "relative",
                   minHeight: 380,
+                  padding: 0,
+                  boxSizing: "border-box",
                 }}
               >
-                <div
+                <h2
                   style={{
-                    textAlign: "center",
+                    fontSize: 13,
                     fontWeight: 700,
-                    fontSize: 14,
+                    textAlign: "center",
+                    padding: "14px 10px",
+                    margin: 0,
+                    borderBottom: "1px solid #f1f5f9",
                     color: "#1e293b",
                     letterSpacing: "0.5px",
-                    textTransform: "uppercase",
-                    marginBottom: 36,
                   }}
                 >
                   NGHIỆP VỤ TỔNG HỢP
-                </div>
+                </h2>
 
                 {/* Workflow Canvas */}
                 <div
@@ -876,7 +878,7 @@ export default function MisaLedgerWorkspace({
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-around",
-                    padding: "0 20px",
+                    padding: "20px 24px",
                   }}
                 >
                   {/* Subtle connection lines background SVG */}
@@ -893,24 +895,37 @@ export default function MisaLedgerWorkspace({
                       zIndex: 1,
                     }}
                   >
+                    <defs>
+                      <marker
+                        id="arrow-ledger"
+                        markerWidth="8"
+                        markerHeight="8"
+                        refX="6"
+                        refY="3.5"
+                        orient="auto"
+                      >
+                        <polygon points="0 0, 7 3.5, 0 7" fill="#94a3b8" />
+                      </marker>
+                    </defs>
+
                     {/* Top Row horizontal connector */}
                     <line
                       x1="180"
                       y1="60"
                       x2="330"
                       y2="60"
-                      stroke="#86efac"
-                      strokeWidth="2"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
                       strokeDasharray="4 3"
+                      markerEnd="url(#arrow-ledger)"
                     />
-                    <polygon points="335,60 325,55 325,65" fill="#86efac" />
 
                     {/* From Quyết toán to Bottom line */}
                     <path
                       d="M 335,90 Q 335,190 420,190"
                       fill="none"
-                      stroke="#bbf7d0"
-                      strokeWidth="2"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
                       strokeDasharray="3 3"
                     />
 
@@ -920,30 +935,30 @@ export default function MisaLedgerWorkspace({
                       y1="190"
                       x2="420"
                       y2="190"
-                      stroke="#86efac"
-                      strokeWidth="2"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
+                      markerEnd="url(#arrow-ledger)"
                     />
-                    <polygon points="425,190 415,185 415,195" fill="#86efac" />
 
                     <line
                       x1="480"
                       y1="190"
                       x2="600"
                       y2="190"
-                      stroke="#86efac"
-                      strokeWidth="2"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
+                      markerEnd="url(#arrow-ledger)"
                     />
-                    <polygon points="605,190 595,185 595,195" fill="#86efac" />
 
                     <line
                       x1="660"
                       y1="190"
                       x2="780"
                       y2="190"
-                      stroke="#86efac"
-                      strokeWidth="2"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
+                      markerEnd="url(#arrow-ledger)"
                     />
-                    <polygon points="785,190 775,185 775,195" fill="#86efac" />
 
                     {/* Continuing rightwards */}
                     <line
@@ -951,10 +966,10 @@ export default function MisaLedgerWorkspace({
                       y1="190"
                       x2="940"
                       y2="190"
-                      stroke="#86efac"
-                      strokeWidth="2"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
+                      markerEnd="url(#arrow-ledger)"
                     />
-                    <polygon points="945,190 935,185 935,195" fill="#86efac" />
                   </svg>
 
                   {/* Row 1: Đề nghị quyết toán tạm ứng -> Quyết toán tạm ứng */}
@@ -981,71 +996,30 @@ export default function MisaLedgerWorkspace({
                         cursor: "pointer",
                         width: 120,
                         textAlign: "center",
-                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                      title="Đề nghị quyết toán tạm ứng"
                     >
-                      <div
-                        style={{
-                          width: 58,
-                          height: 58,
-                          borderRadius: 16,
-                          background: "#e6fcf5",
-                          border: "1.5px solid #a7f3d0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          position: "relative",
-                          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
-                        }}
-                      >
-                        {/* Custom Green Note with Send Airplane icon */}
-                        <div
+                      <span className="ref-business-icon request" style={{ marginBottom: 6 }}>
+                        <span
+                          className="ref-document-sheet"
                           style={{
-                            width: 32,
-                            height: 38,
-                            background: "#00a862",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            border: "1px solid #34d399",
                           }}
                         >
-                          <DollarSign size={16} color="#ffffff" strokeWidth={2.5} />
-                          {/* Circle badge */}
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: -4,
-                              right: -4,
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              background: "#f59e0b",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              border: "1.5px solid #ffffff",
-                            }}
-                          >
-                            <ArrowUpRight size={10} color="#ffffff" strokeWidth={3} />
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 10,
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          lineHeight: 1.35,
-                        }}
-                      >
+                          <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐN</b>
+                          <i /><i /><i />
+                        </span>
+                        <span
+                          className="ref-gold-icon"
+                          style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                        >
+                          <ArrowRight size={14} strokeWidth={2.2} />
+                        </span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                         Đề nghị quyết<br />toán tạm ứng
-                      </div>
+                      </span>
                     </div>
 
                     {/* Node 2: Quyết toán tạm ứng */}
@@ -1061,68 +1035,30 @@ export default function MisaLedgerWorkspace({
                         cursor: "pointer",
                         width: 120,
                         textAlign: "center",
-                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                      title="Quyết toán tạm ứng"
                     >
-                      <div
-                        style={{
-                          width: 58,
-                          height: 58,
-                          borderRadius: 16,
-                          background: "#e6fcf5",
-                          border: "1.5px solid #a7f3d0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
-                          position: "relative",
-                        }}
-                      >
-                        <div
+                      <span className="ref-business-icon settlement" style={{ marginBottom: 6 }}>
+                        <span
+                          className="ref-document-sheet"
                           style={{
-                            width: 32,
-                            height: 38,
-                            background: "#00a862",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
+                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            border: "1px solid #34d399",
                           }}
                         >
-                          <DollarSign size={16} color="#ffffff" strokeWidth={2.5} />
-                          <div
-                            style={{
-                              position: "absolute",
-                              bottom: -4,
-                              right: -4,
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              background: "#eab308",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              border: "1.5px solid #ffffff",
-                            }}
-                          >
-                            <Check size={10} color="#ffffff" strokeWidth={3} />
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 10,
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          lineHeight: 1.35,
-                        }}
-                      >
+                          <b style={{ color: "#ffffff", fontWeight: 800 }}>QT</b>
+                          <i /><i /><i />
+                        </span>
+                        <span
+                          className="ref-gold-icon"
+                          style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                        >
+                          <Check size={14} strokeWidth={2.5} />
+                        </span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                         Quyết toán<br />tạm ứng
-                      </div>
+                      </span>
                     </div>
                   </div>
 
@@ -1150,71 +1086,30 @@ export default function MisaLedgerWorkspace({
                         cursor: "pointer",
                         width: 120,
                         textAlign: "center",
-                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                      title="Chứng từ nghiệp vụ khác"
                     >
-                      <div
-                        style={{
-                          width: 58,
-                          height: 58,
-                          borderRadius: 16,
-                          background: "#e6fcf5",
-                          border: "1.5px solid #a7f3d0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
-                          position: "relative",
-                        }}
-                      >
-                        <div
+                      <span className="ref-business-icon voucher" style={{ marginBottom: 6 }}>
+                        <span
+                          className="ref-document-sheet"
                           style={{
-                            width: 32,
-                            height: 38,
-                            background: "#00a862",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
+                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            border: "1px solid #34d399",
                           }}
                         >
-                          <FileText size={18} color="#ffffff" />
-                          <div
-                            style={{
-                              position: "absolute",
-                              bottom: -4,
-                              right: -4,
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              background: "#f59e0b",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              border: "1.5px solid #ffffff",
-                              fontSize: 9,
-                              fontWeight: 900,
-                              color: "#fff",
-                            }}
-                          >
-                            ...
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 10,
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          lineHeight: 1.35,
-                        }}
-                      >
+                          <b style={{ color: "#ffffff", fontWeight: 800 }}>PK</b>
+                          <i /><i /><i />
+                        </span>
+                        <span
+                          className="ref-gold-icon"
+                          style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                        >
+                          <FileText size={14} strokeWidth={2.2} />
+                        </span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                         Chứng từ<br />nghiệp vụ khác
-                      </div>
+                      </span>
                     </div>
 
                     {/* Node 4: Kết chuyển lãi lỗ */}
@@ -1230,51 +1125,30 @@ export default function MisaLedgerWorkspace({
                         cursor: "pointer",
                         width: 120,
                         textAlign: "center",
-                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                      title="Kết chuyển lãi lỗ"
                     >
-                      <div
-                        style={{
-                          width: 58,
-                          height: 58,
-                          borderRadius: 16,
-                          background: "#e6fcf5",
-                          border: "1.5px solid #a7f3d0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
-                          position: "relative",
-                        }}
-                      >
-                        <div
+                      <span className="ref-business-icon transfer" style={{ marginBottom: 6 }}>
+                        <span
+                          className="ref-document-sheet"
                           style={{
-                            width: 34,
-                            height: 38,
-                            background: "#eab308",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
+                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            border: "1px solid #34d399",
                           }}
                         >
-                          <TrendingUp size={20} color="#ffffff" strokeWidth={2.5} />
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 10,
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          lineHeight: 1.35,
-                        }}
-                      >
+                          <b style={{ color: "#ffffff", fontWeight: 800 }}>KC</b>
+                          <i /><i /><i />
+                        </span>
+                        <span
+                          className="ref-gold-icon"
+                          style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                        >
+                          <TrendingUp size={14} strokeWidth={2.2} />
+                        </span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                         Kết chuyển<br />lãi lỗ
-                      </div>
+                      </span>
                     </div>
 
                     {/* Node 5: Khóa sổ kỳ kế toán (With Image 1 Popover) */}
@@ -1292,49 +1166,30 @@ export default function MisaLedgerWorkspace({
                         width: 120,
                         textAlign: "center",
                         position: "relative",
-                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                      title="Khóa sổ kỳ kế toán"
                     >
-                      <div
-                        style={{
-                          width: 58,
-                          height: 58,
-                          borderRadius: 16,
-                          background: "#e6fcf5",
-                          border: "1.5px solid #a7f3d0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
-                        }}
-                      >
-                        <div
+                      <span className="ref-business-icon lock" style={{ marginBottom: 6 }}>
+                        <span
+                          className="ref-document-sheet"
                           style={{
-                            width: 32,
-                            height: 38,
-                            background: "#00a862",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            border: "1px solid #34d399",
                           }}
                         >
-                          <Lock size={18} color="#ffffff" />
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 10,
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          lineHeight: 1.35,
-                        }}
-                      >
+                          <b style={{ color: "#ffffff", fontWeight: 800 }}>KS</b>
+                          <i /><i /><i />
+                        </span>
+                        <span
+                          className="ref-gold-icon"
+                          style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                        >
+                          <Lock size={14} strokeWidth={2.2} />
+                        </span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                         Khóa sổ kỳ<br />kế toán
-                      </div>
+                      </span>
 
                       {/* POPOVER MENU 1 (Exact Image 1) */}
                       {showLockMenu && (
@@ -1460,68 +1315,30 @@ export default function MisaLedgerWorkspace({
                         width: 120,
                         textAlign: "center",
                         position: "relative",
-                        transition: "transform 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                      title="Lập báo cáo tài chính"
                     >
-                      <div
-                        style={{
-                          width: 58,
-                          height: 58,
-                          borderRadius: 16,
-                          background: "#e6fcf5",
-                          border: "1.5px solid #a7f3d0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
-                          position: "relative",
-                        }}
-                      >
-                        <div
+                      <span className="ref-business-icon report" style={{ marginBottom: 6 }}>
+                        <span
+                          className="ref-document-sheet"
                           style={{
-                            width: 34,
-                            height: 38,
-                            background: "#00a862",
-                            borderRadius: 4,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
+                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            border: "1px solid #34d399",
                           }}
                         >
-                          <BarChart3 size={18} color="#ffffff" />
-                          <div
-                            style={{
-                              position: "absolute",
-                              bottom: -4,
-                              right: -4,
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              background: "#eab308",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              border: "1.5px solid #ffffff",
-                            }}
-                          >
-                            <Sparkles size={9} color="#ffffff" />
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: 10,
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          lineHeight: 1.35,
-                        }}
-                      >
+                          <b style={{ color: "#ffffff", fontWeight: 800 }}>BC</b>
+                          <i /><i /><i />
+                        </span>
+                        <span
+                          className="ref-gold-icon"
+                          style={{ background: "#f59e0b", borderColor: "#fbbf24" }}
+                        >
+                          <BarChart3 size={14} strokeWidth={2.2} />
+                        </span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3, textAlign: "center" }}>
                         Lập báo cáo<br />tài chính
-                      </div>
+                      </span>
 
                       {/* POPOVER MENU 2 (Exact Image 2) */}
                       {showStatementsMenu && (
