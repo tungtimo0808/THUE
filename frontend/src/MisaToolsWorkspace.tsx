@@ -3220,7 +3220,7 @@ export default function MisaToolsWorkspace({
                   setAllocationVouchers([newVoucher, ...allocationVouchers.filter((v) => v.voucherNo !== allocationVoucherNo)]);
                   setShowAllocationVoucherModal(false);
                   setAllocationViewMode("list");
-                  notify(`Đã cất chứng từ phân bổ CCDC số ${allocationVoucherNo} thành công`);
+                  notify(`Đã lưu chứng từ phân bổ CCDC số ${allocationVoucherNo} thành công`);
                 }}
                 style={{
                   height: 32,
@@ -3233,10 +3233,8 @@ export default function MisaToolsWorkspace({
                   color: "#334155",
                   fontWeight: 500,
                 }}
-              >
-                Cất
-              </button>
-              {/* Split button: Cất và In ▾ */}
+              >Lưu</button>
+              {/* Split button: Lưu và In ▾ */}
               <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden", boxShadow: "0 1px 3px rgba(0, 168, 98, 0.25)" }}>
                 <button
                   type="button"
@@ -3253,7 +3251,7 @@ export default function MisaToolsWorkspace({
                     setAllocationVouchers([newVoucher, ...allocationVouchers.filter((v) => v.voucherNo !== allocationVoucherNo)]);
                     setShowAllocationVoucherModal(false);
                     setAllocationViewMode("list");
-                    notify(`Đã cất và chuẩn bị in chứng từ phân bổ CCDC số ${allocationVoucherNo}`);
+                    notify(`Đã lưu và chuẩn bị in chứng từ phân bổ CCDC số ${allocationVoucherNo}`);
                   }}
                   style={{
                     height: 32,
@@ -3266,7 +3264,7 @@ export default function MisaToolsWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Cất và In
+                  Lưu và In
                 </button>
                 <button
                   type="button"
@@ -3967,9 +3965,7 @@ export default function MisaToolsWorkspace({
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
                 <button
                   type="button"
                   onClick={() => {
@@ -4001,7 +3997,7 @@ export default function MisaToolsWorkspace({
                     gap: 6,
                   }}
                 >
-                  <span>Cất và In</span>
+                  <span>Lưu và In</span>
                   <ChevronDown size={14} />
                 </button>
               </div>
@@ -4697,9 +4693,7 @@ export default function MisaToolsWorkspace({
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -4731,7 +4725,7 @@ export default function MisaToolsWorkspace({
                   gap: 6,
                 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -5319,9 +5313,7 @@ export default function MisaToolsWorkspace({
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -5354,7 +5346,7 @@ export default function MisaToolsWorkspace({
                   gap: 6,
                 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -6028,9 +6020,7 @@ export default function MisaToolsWorkspace({
                   notify(`Đã lưu biên bản kiểm kê CCDC ${stocktakeVoucherNo} thành công`);
                 }}
                 style={{ height: 32, padding: "0 20px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, color: "#1e293b", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -6051,7 +6041,7 @@ export default function MisaToolsWorkspace({
                 }}
                 style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -10280,9 +10270,7 @@ export default function MisaToolsWorkspace({
                     notify(`Đã lưu chi phí trả trước ${form1Code} thành công`);
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
                 <button
                   type="button"
                   onClick={() => {
@@ -10305,7 +10293,7 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
                 >
-                  Cất và Thêm
+                  Lưu và Thêm
                 </button>
               </div>
             </div>
@@ -10754,9 +10742,7 @@ export default function MisaToolsWorkspace({
                     notify(`Đã lưu chi phí trả trước đầu kỳ ${form2Code} thành công`);
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
                 <button
                   type="button"
                   onClick={() => {
@@ -10779,7 +10765,7 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
                 >
-                  Cất và Thêm
+                  Lưu và Thêm
                 </button>
               </div>
             </div>
@@ -11522,7 +11508,7 @@ export default function MisaToolsWorkspace({
                 )}
               </div>
 
-              {/* Footer Buttons matching Screenshot 2 exactly: [Cất và In ▾] [Cất] [Xuất khẩu bảng phân bổ ra Excel] [Hủy] */}
+              {/* Footer Buttons matching Screenshot 2 exactly: [Lưu và In ▾] [Cất] [Xuất khẩu bảng phân bổ ra Excel] [Hủy] */}
               <div
                 style={{
                   height: 50,
@@ -11569,7 +11555,7 @@ export default function MisaToolsWorkspace({
                     gap: 6,
                   }}
                 >
-                  <span>Cất và In</span>
+                  <span>Lưu và In</span>
                   <ChevronDown size={14} />
                 </button>
 
@@ -11602,9 +11588,7 @@ export default function MisaToolsWorkspace({
                     color: "#334155",
                     cursor: "pointer",
                   }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
 
                 <button
                   type="button"
@@ -12032,9 +12016,7 @@ export default function MisaToolsWorkspace({
                     notify(`Đã lưu chứng từ ghi giảm ${prepaidDecreaseVoucherNo} thành công`);
                   }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
                 <button
                   type="button"
                   onClick={() => {
@@ -12065,7 +12047,7 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                 >
-                  <span>Cất và Đóng</span>
+                  <span>Lưu và Đóng</span>
                   <ChevronDown size={14} />
                 </button>
               </div>

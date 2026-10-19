@@ -1765,7 +1765,7 @@ export function SaleCommercialInvoiceModal({
         </div>
 
         {/* ================================================================= */}
-        {/* 6. FOOTER (SCREENSHOT 2: Hủy | Cất | Cất và Đóng ▾)              */}
+        {/* 6. FOOTER (SCREENSHOT 2: Hủy | Cất | Lưu và Đóng ▾)              */}
         {/* ================================================================= */}
         <footer
           style={{
@@ -1812,11 +1812,9 @@ export function SaleCommercialInvoiceModal({
               cursor: "pointer",
               color: "#334155",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
 
-          {/* Solid Green Split Button: Cất và Đóng ▾ */}
+          {/* Solid Green Split Button: Lưu và Đóng ▾ */}
           <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
             <button
               type="button"
@@ -1834,11 +1832,11 @@ export function SaleCommercialInvoiceModal({
                 alignItems: "center",
               }}
             >
-              Cất và Đóng
+              Lưu và Đóng
             </button>
             <button
               type="button"
-              onClick={() => notify("Tùy chọn Cất khác: Cất và In, Cất và Thêm mới")}
+              onClick={() => notify("Tùy chọn Lưu khác: Lưu và In, Lưu và Thêm mới")}
               style={{
                 height: 30,
                 padding: "0 8px",

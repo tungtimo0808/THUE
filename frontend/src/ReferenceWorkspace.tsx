@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -12,6 +12,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Bell,
+  Building2,
   Calendar,
   Check,
   CheckCheck,
@@ -19,23 +20,21 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleHelp,
-  Clock,
+  Database,
   Download,
-  Grip,
-  Landmark,
   Lightbulb,
+  LogIn,
+  LogOut,
+  MapPin,
   Megaphone,
   Menu,
-  MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
-  Play,
   Plus,
   Search,
   Settings,
   SlidersHorizontal,
-  Sparkles,
   UserRoundPlus,
   X,
 } from "lucide-react";
@@ -92,6 +91,7 @@ import { ApiSessionProvider, useApiSession } from "./ApiSession";
 import LiveAccount from "./LiveAccount";
 import LiveJoin from "./LiveJoin";
 import LiveLogin from "./LiveLogin";
+import LiveCompanySelect from "./LiveCompanySelect";
 import LivePasswordReset from "./LivePasswordReset";
 import LiveProfile from "./LiveProfile";
 import LiveScope from "./LiveScope";
@@ -191,17 +191,57 @@ function ReferenceWorkspace() {
     companies: apiCompanies,
     companyId: apiCompanyId,
     selectCompany: apiSelectCompany,
+    session: apiSession,
   } = useApiSession();
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
 
-  // Enforce flow: If not logged in, navigate to /login
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [activeClusterMenu, setActiveClusterMenu] = useState<"company" | "dataset" | "branch" | "period" | null>(null);
+  const clusterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (userDropdownRef.current && !userDropdownRef.current.contains(target)) {
+        setUserDropdownOpen(false);
+      }
+      if (clusterRef.current && !clusterRef.current.contains(target)) {
+        setActiveClusterMenu(null);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setUserDropdownOpen(false);
+        setActiveClusterMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const userEmail = apiSession?.user?.email || "";
+  const userDisplayName =
+    apiSession?.user?.display_name ||
+    apiSession?.user?.username ||
+    (userEmail ? userEmail.split("@")[0] : "Admin");
+  const userInitial = (userDisplayName || "A").charAt(0).toUpperCase();
+
+  // Enforce flow: If not logged in, navigate to /login; if logged in but no company, navigate to /select-company
   useEffect(() => {
     if (!apiRestoring && !apiToken) {
       navigate("/login");
+    } else if (!apiRestoring && apiToken && apiCompanies.length === 0) {
+      navigate("/select-company");
     }
-  }, [apiRestoring, apiToken, navigate]);
+  }, [apiRestoring, apiToken, apiCompanies.length, navigate]);
 
   const pathParts = location.pathname.split("/");
   const moduleId = pathParts[1] || "overview",
@@ -225,6 +265,11 @@ function ReferenceWorkspace() {
   )
     ? params.get("period")!
     : "2026-09";
+  const [dataset, setDataset] = useState("accounting-2026");
+  const [branch, setBranch] = useState("head-office");
+  const datasetLabel = dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026";
+  const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
+  const periodLabel = period === "2026-09" ? "K9.2026" : period === "2026-08" ? "K8.2026" : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
   const scoped = items.filter(
     (t) => t.company === company.id && t.date.startsWith(period),
@@ -446,64 +491,187 @@ function ReferenceWorkspace() {
         >
           {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
-        <Link to={href("/overview")} className="ref-brand">
-          <Grip size={17} />
-          <span className="ref-logo">
-            <span />
-          </span>
-          <strong>KẾ TOÁN</strong>
+        <Link to={href("/overview")} className="ref-brand" title="Sổ Việt ERP">
+          <div className="ref-brand-logo-icon">
+            <Building2 size={18} />
+          </div>
+          <div className="ref-brand-text">
+            <strong className="ref-brand-name">SỔ VIỆT ERP</strong>
+            <span className="ref-brand-sub">KẾ TOÁN & THUẾ</span>
+          </div>
         </Link>
-        <label className="ref-company">
-          <span className="sr-only">Doanh nghiệp</span>
-          <select
-            aria-label="Doanh nghiệp"
-            value={company.id}
-            onChange={(e) => {
-              if (apiCompanies.some((c) => c.id === e.target.value)) {
-                apiSelectCompany(e.target.value);
-              }
-              context("company", e.target.value);
-            }}
-          >
-            {apiCompanies.length > 0
-              ? apiCompanies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))
-              : companies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-          </select>
-        </label>
-        <label className="ref-dataset">
-          <span className="sr-only">Dữ liệu kế toán</span>
-          <select aria-label="Dữ liệu kế toán" defaultValue="accounting-2026">
-            <option value="accounting-2026">Dữ liệu kế toán 2026</option>
-            <option value="management-2026">Dữ liệu quản trị 2026</option>
-          </select>
-        </label>
-        <label className="ref-branch">
-          <span className="sr-only">Chi nhánh, đơn vị</span>
-          <select aria-label="Chi nhánh, đơn vị" defaultValue="head-office">
-            <option value="head-office">Trụ sở chính</option>
-            <option value="hcm">Chi nhánh TP. Hồ Chí Minh</option>
-          </select>
-        </label>
-        <label className="ref-period">
-          <span className="ref-dot" />
-          <select
-            aria-label="Kỳ kế toán"
-            value={period}
-            onChange={(e) => context("period", e.target.value)}
-          >
-            <option value="2026-09">K9.2026</option>
-            <option value="2026-08">K8.2026</option>
-            <option value="2026">Năm 2026</option>
-          </select>
-        </label>
+        <div className="ref-options-cluster" ref={clusterRef}>
+          {/* 1. Doanh nghiệp */}
+          <div className={`ref-cluster-item ${activeClusterMenu === "company" ? "open" : ""}`}>
+            <button
+              type="button"
+              className="ref-cluster-trigger"
+              onClick={() => setActiveClusterMenu(activeClusterMenu === "company" ? null : "company")}
+              title="Doanh nghiệp làm việc"
+            >
+              <Building2 size={13} className="ref-cluster-icon" />
+              <span className="ref-cluster-label ref-cluster-company-label">{company.name}</span>
+              <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "company" ? "rotated" : ""}`} />
+            </button>
+            {activeClusterMenu === "company" && (
+              <div className="ref-cluster-popover ref-cluster-popover-company">
+                <div className="ref-cluster-popover-header">Doanh nghiệp làm việc</div>
+                <div className="ref-cluster-popover-list">
+                  {(apiCompanies.length > 0 ? apiCompanies : companies).map((c) => {
+                    const isSelected = c.id === company.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
+                        onClick={() => {
+                          if (apiCompanies.some((ac) => ac.id === c.id)) {
+                            apiSelectCompany(c.id);
+                          }
+                          context("company", c.id);
+                          setActiveClusterMenu(null);
+                        }}
+                      >
+                        <span className="ref-cluster-item-name">{c.name}</span>
+                        {isSelected && <Check size={14} className="ref-cluster-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="ref-cluster-divider" />
+
+          {/* 2. Dữ liệu kế toán */}
+          <div className={`ref-cluster-item ${activeClusterMenu === "dataset" ? "open" : ""}`}>
+            <button
+              type="button"
+              className="ref-cluster-trigger"
+              onClick={() => setActiveClusterMenu(activeClusterMenu === "dataset" ? null : "dataset")}
+              title="Dữ liệu kế toán"
+            >
+              <Database size={13} className="ref-cluster-icon" />
+              <span className="ref-cluster-label">{datasetLabel}</span>
+              <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "dataset" ? "rotated" : ""}`} />
+            </button>
+            {activeClusterMenu === "dataset" && (
+              <div className="ref-cluster-popover">
+                <div className="ref-cluster-popover-header">Dữ liệu kế toán</div>
+                <div className="ref-cluster-popover-list">
+                  {[
+                    { id: "accounting-2026", label: "Dữ liệu kế toán 2026" },
+                    { id: "management-2026", label: "Dữ liệu quản trị 2026" },
+                  ].map((item) => {
+                    const isSelected = dataset === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
+                        onClick={() => {
+                          setDataset(item.id);
+                          setActiveClusterMenu(null);
+                        }}
+                      >
+                        <span className="ref-cluster-item-name">{item.label}</span>
+                        {isSelected && <Check size={14} className="ref-cluster-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="ref-cluster-divider" />
+
+          {/* 3. Chi nhánh */}
+          <div className={`ref-cluster-item ${activeClusterMenu === "branch" ? "open" : ""}`}>
+            <button
+              type="button"
+              className="ref-cluster-trigger"
+              onClick={() => setActiveClusterMenu(activeClusterMenu === "branch" ? null : "branch")}
+              title="Chi nhánh, đơn vị"
+            >
+              <MapPin size={13} className="ref-cluster-icon" />
+              <span className="ref-cluster-label">{branchLabel}</span>
+              <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "branch" ? "rotated" : ""}`} />
+            </button>
+            {activeClusterMenu === "branch" && (
+              <div className="ref-cluster-popover">
+                <div className="ref-cluster-popover-header">Chi nhánh, đơn vị</div>
+                <div className="ref-cluster-popover-list">
+                  {[
+                    { id: "head-office", label: "Trụ sở chính" },
+                    { id: "hcm", label: "Chi nhánh TP. HCM" },
+                  ].map((item) => {
+                    const isSelected = branch === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
+                        onClick={() => {
+                          setBranch(item.id);
+                          setActiveClusterMenu(null);
+                        }}
+                      >
+                        <span className="ref-cluster-item-name">{item.label}</span>
+                        {isSelected && <Check size={14} className="ref-cluster-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="ref-cluster-divider" />
+
+          {/* 4. Kỳ kế toán */}
+          <div className={`ref-cluster-item ${activeClusterMenu === "period" ? "open" : ""}`}>
+            <button
+              type="button"
+              className="ref-cluster-trigger"
+              onClick={() => setActiveClusterMenu(activeClusterMenu === "period" ? null : "period")}
+              title="Kỳ kế toán"
+            >
+              <Calendar size={13} className="ref-cluster-icon" />
+              <span className="ref-cluster-label">{periodLabel}</span>
+              <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "period" ? "rotated" : ""}`} />
+            </button>
+            {activeClusterMenu === "period" && (
+              <div className="ref-cluster-popover">
+                <div className="ref-cluster-popover-header">Kỳ làm việc</div>
+                <div className="ref-cluster-popover-list">
+                  {[
+                    { id: "2026-09", label: "K9.2026 (Tháng 09/2026)" },
+                    { id: "2026-08", label: "K8.2026 (Tháng 08/2026)" },
+                    { id: "2026", label: "Năm 2026 (Cả năm)" },
+                  ].map((item) => {
+                    const isSelected = period === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
+                        onClick={() => {
+                          context("period", item.id);
+                          setActiveClusterMenu(null);
+                        }}
+                      >
+                        <span className="ref-cluster-item-name">{item.label}</span>
+                        {isSelected && <Check size={14} className="ref-cluster-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="ref-header-tools">
           <div className="ref-search-shell">
             <form
@@ -539,15 +707,10 @@ function ReferenceWorkspace() {
           >
             {workMode} <ChevronDown size={13} />
           </button>
-          <button className="ref-help" onClick={() => setPanel("help")}>
-            <span className="ref-help-icon">
-              <Play size={8} fill="currentColor" strokeWidth={0} style={{ marginLeft: 1.5 }} />
-            </span>
-            Hướng dẫn
-          </button>
           <button
             className="ref-icon secondary-tool"
             aria-label="Tải dữ liệu"
+            title="Tải báo cáo, dữ liệu"
             onClick={() => navigate(href("/reports"))}
           >
             <Download size={18} />
@@ -555,20 +718,15 @@ function ReferenceWorkspace() {
           <button
             className="ref-icon secondary-tool"
             aria-label="Tính năng mới"
+            title="Tính năng mới"
             onClick={() => infoAction("Tính năng mới")}
           >
             <Megaphone size={18} />
           </button>
           <button
-            className="ref-icon secondary-tool"
-            aria-label="Quản lý người dùng"
-            onClick={() => infoAction("Quản lý người dùng và phân quyền")}
-          >
-            <UserRoundPlus size={18} />
-          </button>
-          <button
             className="ref-icon"
             aria-label="Các tiện ích và thiết lập"
+            title="Thiết lập hệ thống"
             onClick={() => setPanel("settings")}
           >
             <Settings size={18} />
@@ -576,31 +734,115 @@ function ReferenceWorkspace() {
           <button
             className="ref-icon ref-bell"
             aria-label="Thông báo"
+            title="Thông báo"
             onClick={() => navigate("/common")}
           >
             <Bell size={18} />
           </button>
-          <button className="ref-icon" aria-label="Tài khoản BE" title={apiToken ? apiCompanies.find(item => item.id === apiCompanyId)?.name || "Tài khoản BE" : "Đăng nhập BE"} onClick={() => navigate("/login")}>
-            <UserRoundPlus size={18} />
-          </button>
-          {apiToken && <button className="ref-icon" aria-label="Đăng xuất BE" onClick={apiSignOut} title="Đăng xuất BE"><X size={18} /></button>}
           <button
             className="ref-icon secondary-tool"
-            aria-label="Trợ giúp"
+            aria-label="Hướng dẫn & Trợ giúp"
+            title="Hướng dẫn & Trợ giúp (F1)"
             onClick={() => setPanel("help")}
           >
             <CircleHelp size={18} />
           </button>
-          <button
-            className="ref-icon secondary-tool"
-            aria-label="Tiện ích khác"
-            onClick={() => setPanel("settings")}
-          >
-            <MoreHorizontal size={18} />
-          </button>
-          <span className="ref-demo">
+
+          <span className="ref-demo" title="Chế độ dữ liệu">
             {apiToken && ["bank", "cash"].includes(moduleId) ? "Dữ liệu API" : "Dữ liệu mẫu"}
           </span>
+
+          <div className="ref-header-divider" />
+
+          {/* User profile & Action menu */}
+          {apiToken ? (
+            <div className="ref-user-menu-wrap" ref={userDropdownRef}>
+              <button
+                type="button"
+                className="ref-user-badge-btn"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                title={`Tài khoản: ${userDisplayName} (bấm để xem cài đặt và đăng xuất)`}
+              >
+                <div className="ref-user-avatar">
+                  {userInitial}
+                </div>
+                <span className="ref-user-name">{userDisplayName}</span>
+                <ChevronDown size={13} color="#64748b" />
+              </button>
+
+              {userDropdownOpen && (
+                <div className="ref-user-dropdown">
+                  <div className="ref-user-dropdown-header">
+                    <div className="ref-user-dropdown-title">{userDisplayName}</div>
+                    {userEmail && <div className="ref-user-dropdown-email">{userEmail}</div>}
+                    <div className="ref-user-dropdown-company">
+                      🏢 {apiCompanies.find(item => item.id === apiCompanyId)?.name || company.name || "Doanh nghiệp"}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="ref-user-dropdown-item"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      navigate("/select-company");
+                    }}
+                  >
+                    <Building2 size={15} />
+                    <span>Đổi / Quản lý doanh nghiệp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ref-user-dropdown-item"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      infoAction("Quản lý người dùng và phân quyền");
+                    }}
+                  >
+                    <UserRoundPlus size={15} />
+                    <span>Quản lý người dùng</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ref-user-dropdown-item"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      setPanel("settings");
+                    }}
+                  >
+                    <Settings size={15} />
+                    <span>Thiết lập hệ thống</span>
+                  </button>
+
+                  <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+
+                  <button
+                    type="button"
+                    className="ref-user-dropdown-item danger"
+                    onClick={async () => {
+                      setUserDropdownOpen(false);
+                      await apiSignOut();
+                      navigate("/login");
+                    }}
+                  >
+                    <LogOut size={15} />
+                    <span>Đăng xuất tài khoản</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="ref-login-header-btn"
+              onClick={() => navigate("/login")}
+            >
+              <LogIn size={14} />
+              <span>Đăng nhập</span>
+            </button>
+          )}
         </div>
       </header>
       {mobileOpen && (
@@ -770,14 +1012,14 @@ function ReferenceWorkspace() {
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: "#00a862",
+                  background: "#0284c7",
                   border: "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#ffffff",
                   cursor: "pointer",
-                  boxShadow: "0 2px 6px rgba(0, 168, 98, 0.3)",
+                  boxShadow: "0 2px 6px rgba(2, 132, 199, 0.3)",
                 }}
               >
                 <Lightbulb size={18} />
@@ -830,7 +1072,7 @@ function ReferenceWorkspace() {
                         style={{
                           padding: "8px 14px",
                           fontSize: 13,
-                          color: payrollOption === "Tiền lương AMIS Kế toán" ? "#00a862" : "#334155",
+                          color: payrollOption === "Tiền lương AMIS Kế toán" ? "#0284c7" : "#334155",
                           fontWeight: payrollOption === "Tiền lương AMIS Kế toán" ? 600 : 400,
                           cursor: "pointer",
                           display: "flex",
@@ -850,7 +1092,7 @@ function ReferenceWorkspace() {
                         style={{
                           padding: "8px 14px",
                           fontSize: 13,
-                          color: payrollOption === "AMIS Tiền lương" ? "#00a862" : "#334155",
+                          color: payrollOption === "AMIS Tiền lương" ? "#0284c7" : "#334155",
                           fontWeight: payrollOption === "AMIS Tiền lương" ? 600 : 400,
                           cursor: "pointer",
                           display: "flex",
@@ -890,13 +1132,13 @@ function ReferenceWorkspace() {
                   width: 26,
                   height: 26,
                   borderRadius: "50%",
-                  background: "#00a862",
+                  background: "#0284c7",
                   border: "none",
                   display: "grid",
                   placeItems: "center",
                   cursor: "pointer",
                   color: "#ffffff",
-                  boxShadow: "0 2px 4px rgba(0, 168, 98, 0.25)",
+                  boxShadow: "0 2px 4px rgba(2, 132, 199, 0.25)",
                 }}
                 title="Gợi ý & Hướng dẫn chính sách thuế"
               >
@@ -1476,7 +1718,8 @@ function AppRoute() {
   const location = useLocation();
   if (location.pathname === "/account") return <LiveAccount />;
   if (location.pathname === "/join") return <LiveJoin />;
-  if (location.pathname === "/login" || location.pathname === "/login/" || location.pathname === "/select-company") return <LiveLogin />;
+  if (location.pathname === "/login" || location.pathname === "/login/") return <LiveLogin />;
+  if (location.pathname === "/select-company" || location.pathname === "/select-company/") return <LiveCompanySelect />;
   if (location.pathname === "/reset-password") return <LivePasswordReset />;
   if (location.pathname === "/profile") return <LiveProfile />;
   if (location.pathname === "/scope") return <LiveScope />;

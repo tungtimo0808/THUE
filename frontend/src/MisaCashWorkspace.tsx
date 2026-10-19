@@ -3042,7 +3042,7 @@ export function CreateVoucherModal({
   };
 
   // Handle Save
-  const handleSave = (andNew = false) => {
+  const handleSave = (andNew = false, andPrint = false) => {
     const formattedIsoDate = voucherDate.includes("/")
       ? voucherDate.split("/").reverse().join("-")
       : voucherDate;
@@ -3075,7 +3075,13 @@ export function CreateVoucherModal({
       reasonLabel: currentType.label.replace(/^\d+\.\s*/,''),
     });
 
-    if (andNew) {
+    if (andPrint) {
+      setToastMessage(`✓ Đã lưu chứng từ ${code} thành công! Đang kết nối máy in...`);
+      setTimeout(() => {
+        window.print();
+        onClose();
+      }, 700);
+    } else if (andNew) {
       const numPart = parseInt(code.replace(/\D/g, "") || "1", 10) + 1;
       const prefix = isBank ? (isReceipt ? "NTTK" : "UNC") : (isReceipt ? "PT" : "PC");
       const nextCode = `${prefix}${String(numPart).padStart(5, "0")}`;
@@ -3103,11 +3109,14 @@ export function CreateVoucherModal({
           loanDisbursementContract: "",
         },
       ]);
-      const msg = `Đã cất chứng từ ${code}! Sẵn sàng nhập tiếp ${nextCode}.`;
+      const msg = `✓ Đã lưu chứng từ ${code} thành công! Sẵn sàng nhập tiếp ${nextCode}.`;
       setToastMessage(msg);
       setTimeout(() => setToastMessage(null), 3000);
     } else {
-      onClose();
+      setToastMessage(`✓ Đã lưu chứng từ ${code} thành công!`);
+      setTimeout(() => {
+        onClose();
+      }, 600);
     }
   };
 
@@ -3475,33 +3484,37 @@ export function CreateVoucherModal({
 
                   {/* Row 2: Mã nhà cung cấp / đối tượng / nhân viên [+] [v] [($)] | Tên */}
                   <div className="misa-voucher-row-main">
-                    <div className="misa-voucher-field" style={{ width: 240, flexShrink: 0 }}>
+                    <div className="misa-voucher-field" style={{ width: currentType.hasCustomerDebtBtn ? 280 : 240, flexShrink: 0 }}>
                       <label>{currentType.codeLabel || "Mã đối tượng"}</label>
-                      <div className="misa-voucher-combo-input">
-                        <input
-                          type="text"
-                          className="misa-voucher-input"
-                          onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
-                          value={partnerCode}
-                          onChange={(e) => setPartnerCode(e.target.value)}
-                        />
-                        <div className="misa-voucher-combo-actions">
-                          <button
-                            type="button"
-                            className="misa-voucher-mini-btn"
-                            title="Thêm nhanh"
-                            onClick={()=>setQuickDirectory(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp")}
-                          >
-                            <Plus size={13} style={{ strokeWidth: 2.5 }} />
-                          </button>
-                          <button
-                            type="button"
-                            className="misa-voucher-mini-btn"
-                            title="Chọn từ danh mục"
-                            onClick={() => setShowPartnerDropdown(!showPartnerDropdown)}
-                          >
-                            <ChevronDown size={13} />
-                          </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div className="misa-voucher-combo-input" style={{ flex: 1, position: "relative" }}>
+                          <input
+                            type="text"
+                            className="misa-voucher-input"
+                            onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
+                            value={partnerCode}
+                            onChange={(e) => setPartnerCode(e.target.value)}
+                          />
+                          <div className="misa-voucher-combo-actions">
+                            <button
+                              type="button"
+                              className="misa-voucher-mini-btn"
+                              title="Thêm nhanh"
+                              onClick={()=>setQuickDirectory(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp")}
+                            >
+                              <Plus size={13} style={{ strokeWidth: 2.5 }} />
+                            </button>
+                            <button
+                              type="button"
+                              className="misa-voucher-mini-btn"
+                              title="Chọn từ danh mục"
+                              onClick={() => setShowPartnerDropdown(!showPartnerDropdown)}
+                            >
+                              <ChevronDown size={13} />
+                            </button>
+                          </div>
+
+                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                         </div>
 
                         {currentType.hasCustomerDebtBtn && (
@@ -3514,8 +3527,6 @@ export function CreateVoucherModal({
                             $
                           </button>
                         )}
-
-                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                       </div>
                     </div>
 
@@ -3784,33 +3795,37 @@ export function CreateVoucherModal({
                 <>
                   {/* Row 1: Code and Name */}
                   <div className="misa-voucher-row-main">
-                    <div className="misa-voucher-field" style={{ width: 240, flexShrink: 0 }}>
+                    <div className="misa-voucher-field" style={{ width: currentType.hasCustomerDebtBtn ? 280 : 240, flexShrink: 0 }}>
                       <label>{currentType.codeLabel || (isReceipt ? "Mã đối tượng" : "Mã nhà cung cấp")}</label>
-                      <div className="misa-voucher-combo-input">
-                        <input
-                          type="text"
-                          className="misa-voucher-input"
-                          onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
-                          value={partnerCode}
-                          onChange={(e) => setPartnerCode(e.target.value)}
-                        />
-                        <div className="misa-voucher-combo-actions">
-                          <button
-                            type="button"
-                            className="misa-voucher-mini-btn"
-                            title="Thêm nhanh"
-                            onClick={()=>setQuickDirectory(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp")}
-                          >
-                            <Plus size={13} style={{ strokeWidth: 2.5 }} />
-                          </button>
-                          <button
-                            type="button"
-                            className="misa-voucher-mini-btn"
-                            title="Chọn từ danh mục"
-                            onClick={() => setShowPartnerDropdown(!showPartnerDropdown)}
-                          >
-                            <ChevronDown size={13} />
-                          </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div className="misa-voucher-combo-input" style={{ flex: 1, position: "relative" }}>
+                          <input
+                            type="text"
+                            className="misa-voucher-input"
+                            onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
+                            value={partnerCode}
+                            onChange={(e) => setPartnerCode(e.target.value)}
+                          />
+                          <div className="misa-voucher-combo-actions">
+                            <button
+                              type="button"
+                              className="misa-voucher-mini-btn"
+                              title="Thêm nhanh"
+                              onClick={()=>setQuickDirectory(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp")}
+                            >
+                              <Plus size={13} style={{ strokeWidth: 2.5 }} />
+                            </button>
+                            <button
+                              type="button"
+                              className="misa-voucher-mini-btn"
+                              title="Chọn từ danh mục"
+                              onClick={() => setShowPartnerDropdown(!showPartnerDropdown)}
+                            >
+                              <ChevronDown size={13} />
+                            </button>
+                          </div>
+
+                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                         </div>
 
                         {currentType.hasCustomerDebtBtn && (
@@ -3823,8 +3838,6 @@ export function CreateVoucherModal({
                             $
                           </button>
                         )}
-
-                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                       </div>
                     </div>
 
@@ -4116,33 +4129,37 @@ export function CreateVoucherModal({
                 /* PHIẾU CHI TIỀN MẶT LAYOUT */
                 <>
                   <div className="misa-voucher-row-main">
-                    <div className="misa-voucher-field" style={{ width: 240, flexShrink: 0 }}>
+                    <div className="misa-voucher-field" style={{ width: currentType.hasCustomerDebtBtn ? 280 : 240, flexShrink: 0 }}>
                       <label>{currentType.codeLabel}</label>
-                      <div className="misa-voucher-combo-input">
-                        <input
-                          type="text"
-                          className="misa-voucher-input"
-                          onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
-                          value={partnerCode}
-                          onChange={(e) => setPartnerCode(e.target.value)}
-                        />
-                        <div className="misa-voucher-combo-actions">
-                          <button
-                            type="button"
-                            className="misa-voucher-mini-btn"
-                            title="Thêm nhanh"
-                            onClick={()=>setQuickDirectory(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp")}
-                          >
-                            <Plus size={13} style={{ strokeWidth: 2.5 }} />
-                          </button>
-                          <button
-                            type="button"
-                            className="misa-voucher-mini-btn"
-                            title="Chọn từ danh mục"
-                            onClick={() => setShowPartnerDropdown(!showPartnerDropdown)}
-                          >
-                            <ChevronDown size={13} />
-                          </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div className="misa-voucher-combo-input" style={{ flex: 1, position: "relative" }}>
+                          <input
+                            type="text"
+                            className="misa-voucher-input"
+                            onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
+                            value={partnerCode}
+                            onChange={(e) => setPartnerCode(e.target.value)}
+                          />
+                          <div className="misa-voucher-combo-actions">
+                            <button
+                              type="button"
+                              className="misa-voucher-mini-btn"
+                              title="Thêm nhanh"
+                              onClick={()=>setQuickDirectory(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp")}
+                            >
+                              <Plus size={13} style={{ strokeWidth: 2.5 }} />
+                            </button>
+                            <button
+                              type="button"
+                              className="misa-voucher-mini-btn"
+                              title="Chọn từ danh mục"
+                              onClick={() => setShowPartnerDropdown(!showPartnerDropdown)}
+                            >
+                              <ChevronDown size={13} />
+                            </button>
+                          </div>
+
+                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                         </div>
 
                         {currentType.hasCustomerDebtBtn && (
@@ -4155,8 +4172,6 @@ export function CreateVoucherModal({
                             $
                           </button>
                         )}
-
-                        {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                       </div>
                     </div>
 
@@ -5039,19 +5054,25 @@ export function CreateVoucherModal({
             <button
               type="button"
               className="misa-voucher-btn-white"
-              onClick={() => handleSave(false)}
+              onClick={() => handleSave(false, false)}
             >
-              Cất
+              Lưu
             </button>
 
-            <button type="button" className="misa-voucher-btn-white" onClick={() => handleSave(false)}>Cất và In</button>
+            <button
+              type="button"
+              className="misa-voucher-btn-white"
+              onClick={() => handleSave(false, true)}
+            >
+              Lưu và In
+            </button>
 
             <button
               type="button"
               className="misa-voucher-btn-green"
-              onClick={() => handleSave(true)}
+              onClick={() => handleSave(true, false)}
             >
-              <span>Cất và Thêm</span>
+              <span>Lưu và Thêm</span>
               <ChevronDown size={14} />
             </button>
           </div>

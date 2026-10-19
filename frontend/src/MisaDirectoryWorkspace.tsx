@@ -546,9 +546,9 @@ export default function MisaDirectoryWorkspace({
             )}
             <footer>
               <button onClick={() => closeEditor()}>Hủy</button>
-              <button onClick={() => save()}>Cất</button>
+              <button onClick={() => save()}>Lưu</button>
               <button className="md-primary" onClick={() => save(true)}>
-                Cất và Thêm
+                Lưu và Thêm
               </button>
             </footer>
           </div>

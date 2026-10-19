@@ -84,6 +84,30 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     setRestoring(false);
   }, []);
 
+  // Listen for background token updates or session expiry
+  useEffect(() => {
+    const handleUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ token: string }>;
+      if (customEvent.detail?.token) {
+        setToken(customEvent.detail.token);
+      }
+    };
+    const handleExpired = () => {
+      setToken("");
+      setRefreshToken("");
+      setCompanyId("");
+      setCompanies([]);
+      setUser(null);
+    };
+
+    window.addEventListener("erp_token_updated", handleUpdated);
+    window.addEventListener("erp_session_expired", handleExpired);
+    return () => {
+      window.removeEventListener("erp_token_updated", handleUpdated);
+      window.removeEventListener("erp_session_expired", handleExpired);
+    };
+  }, []);
+
   const selectCompany = useCallback((id: string) => {
     setCompanyId(id);
     localStorage.setItem("erp_company_id", id);

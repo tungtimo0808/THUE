@@ -9816,7 +9816,7 @@ export default function MisaCostWorkspace({
                     return;
                   }
                   notify(
-                    `Đã cất thành công ${
+                    `Đã lưu thành công ${
                       itemDrawerType === "material" ? "nguyên vật liệu" : "thành phẩm"
                     }: ${itemName} (${itemCode})`
                   );
@@ -9832,9 +9832,7 @@ export default function MisaCostWorkspace({
                   fontWeight: 500,
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
 
               <button
                 type="button"
@@ -9864,7 +9862,7 @@ export default function MisaCostWorkspace({
                   boxShadow: "0 1px 2px rgba(0, 168, 98, 0.3)",
                 }}
               >
-                Cất và Thêm
+                Lưu và Thêm
               </button>
             </div>
           </div>
@@ -10929,7 +10927,7 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                  notify(`Đã cất chứng từ ${voucherNumber} thành công!`);
+                  notify(`Đã lưu chứng từ ${voucherNumber} thành công!`);
                   setOtherExpenseModalOpen(false);
                 }}
                 style={{
@@ -10940,13 +10938,11 @@ export default function MisaCostWorkspace({
                   fontSize: 13,
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
-                  notify(`Đã cất và in Chứng từ nghiệp vụ khác ${voucherNumber}!`);
+                  notify(`Đã lưu và in Chứng từ nghiệp vụ khác ${voucherNumber}!`);
                   setOtherExpenseModalOpen(false);
                 }}
                 style={{
@@ -10963,7 +10959,7 @@ export default function MisaCostWorkspace({
                   cursor: "pointer",
                 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -11364,9 +11360,7 @@ export default function MisaCostWorkspace({
                   cursor: "pointer",
                   boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -12014,9 +12008,7 @@ export default function MisaCostWorkspace({
                   cursor: "pointer",
                   boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -12290,9 +12282,7 @@ export default function MisaCostWorkspace({
                   setStepProcessModalOpen(false);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -13904,9 +13894,7 @@ export default function MisaCostWorkspace({
                   setWipOpeningModalOpen(false);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -14054,9 +14042,7 @@ export default function MisaCostWorkspace({
                   setNormCostModalOpen(false);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -14190,9 +14176,7 @@ export default function MisaCostWorkspace({
                   setNormAllocModalOpen(false);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -14329,9 +14313,7 @@ export default function MisaCostWorkspace({
                   setPlannedCostModalOpen(false);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -14683,9 +14665,7 @@ export default function MisaCostWorkspace({
                   setShowProjectPeriodList(true);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -15236,17 +15216,15 @@ export default function MisaCostWorkspace({
                   setShowProjectNormList(true);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
-                  notify("Đã cất và sẵn sàng thêm định mức mới!");
+                  notify("Đã lưu và sẵn sàng thêm định mức mới!");
                 }}
                 style={{ padding: "6px 18px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#00a862", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
-                Cất & Thêm
+                Lưu & Thêm
               </button>
             </div>
           </div>
@@ -15600,9 +15578,7 @@ export default function MisaCostWorkspace({
                   color: "#374151",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => handleSaveEstimate(true)}
@@ -15621,7 +15597,7 @@ export default function MisaCostWorkspace({
                   gap: 6,
                 }}
               >
-                <span>Cất và Đóng</span>
+                <span>Lưu và Đóng</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -15830,9 +15806,7 @@ export default function MisaCostWorkspace({
                   setShowOrderPeriodList(true);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -16465,9 +16439,7 @@ export default function MisaCostWorkspace({
                   setShowContractPeriodList(true);
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>

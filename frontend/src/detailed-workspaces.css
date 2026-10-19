@@ -784,9 +784,10 @@
   width: 460px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 7px;
-  box-shadow: 0 14px 38px rgba(60, 45, 32, 0.18);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.16);
   color: #0f172a;
+  overflow: hidden;
 }
 .erp3-smart-results > header,
 .erp3-smart-results > footer {
@@ -801,9 +802,11 @@
 }
 .erp3-smart-results kbd {
   background: #f1f5f9;
-  padding: 2px 5px;
-  border-radius: 3px;
-  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
 }
 .erp3-search-groups {
   display: grid;
@@ -814,11 +817,11 @@
   grid-row: span 2;
 }
 .erp3-search-groups h3 {
-  font-size: 9px !important;
+  font-size: 10px !important;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #7c826d;
-  margin: 6px;
+  color: #94a3b8;
+  margin: 6px 8px;
 }
 .erp3-search-groups button {
   border: 0;
@@ -827,109 +830,160 @@
   display: flex;
   gap: 8px;
   text-align: left;
-  padding: 8px;
-  border-radius: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
   color: #1e293b;
+  cursor: pointer;
+  transition: all 0.12s ease;
 }
 .erp3-search-groups button:hover {
-  background: #eff6ff;
+  background: #f0f9ff;
+  color: #0284c7;
 }
 .erp3-search-groups button span {
   display: grid;
   gap: 2px;
 }
 .erp3-search-groups small {
-  font-size: 9px;
-  color: #7a7f6f;
+  font-size: 11px;
+  color: #64748b;
 }
 .erp3-smart-results > footer {
   border-top: 1px solid #e2e8f0;
   border-bottom: 0;
   justify-content: space-between;
-  color: #7c816f;
-  font-size: 9px;
+  color: #64748b;
+  font-size: 11px;
 }
 .erp3-smart-results > footer button {
   border: 0;
   background: transparent;
   color: #0284c7;
+  cursor: pointer;
+  font-weight: 600;
 }
 .erp3-mode-list {
   display: grid;
-  gap: 8px;
-  padding: 16px;
+  gap: 10px;
+  padding: 18px 20px 22px;
 }
 .erp3-mode-list button {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-align: left;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #e2e8f0;
   background: #ffffff;
-  border-radius: 7px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 14px 16px;
   color: #1e293b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+.erp3-mode-list button:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);
 }
 .erp3-mode-list button.active {
-  background: #eff6ff;
-  border-color: #98a376;
+  background: #f0f9ff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 1px #0284c7;
+}
+.erp3-mode-list button.active svg {
+  color: #0284c7;
 }
 .erp3-mode-list button span {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
 }
+.erp3-mode-list button strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
 .erp3-mode-list small {
+  font-size: 13.5px;
   color: #64748b;
+  line-height: 1.4;
 }
 .erp3-mode-list b {
-  color: #606c38;
+  color: #0284c7;
+  font-size: 18px;
+  font-weight: 700;
 }
 .erp3-tab-settings {
-  padding: 15px;
+  padding: 20px;
 }
 .erp3-tab-settings > p {
   margin-top: 0;
-  color: #737866;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.5;
 }
 .erp3-drag-hint {
   background: #f8fafc;
-  padding: 8px;
-  border-radius: 5px;
-  margin-bottom: 8px;
-  color: #737866;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 13px;
+  border: 1px solid #e2e8f0;
 }
 .erp3-tab-setting {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   border-bottom: 1px solid #f1f5f9;
-  padding: 7px;
+  padding: 10px 8px;
+  font-size: 14px;
 }
 .erp3-tab-setting label {
   flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .erp3-tab-setting button {
   display: grid;
   place-items: center;
-  border: 0;
-  background: transparent;
-  padding: 4px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px;
+  color: #64748b;
+  cursor: pointer;
+}
+.erp3-tab-setting button:hover:not(:disabled) {
+  border-color: #0284c7;
+  color: #0284c7;
+  background: #f0f9ff;
 }
 .erp3-tab-settings footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding-top: 14px;
+  gap: 10px;
+  padding-top: 18px;
 }
 .erp3-tab-settings footer button {
   border: 1px solid #e2e8f0;
   background: #fff;
-  padding: 7px 12px;
-  border-radius: 5px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
 }
 .erp3-tab-settings .erp3-primary {
   background: #0284c7;
+  border-color: #0284c7;
   color: white;
 }
 @media (max-width: 1280px) {

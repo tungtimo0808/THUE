@@ -334,7 +334,7 @@ export function SaleInvoiceDiscountModal({
             <button
               type="button"
               title="Phím tắt"
-              onClick={() => notify("Phím tắt: F3 (Tìm kiếm), F9 (Thêm dòng), Ctrl+S (Cất)")}
+              onClick={() => notify("Phím tắt: F3 (Tìm kiếm), F9 (Thêm dòng), Ctrl+S (Lưu)")}
               style={{
                 background: "none",
                 border: "none",
@@ -1550,9 +1550,7 @@ export function SaleInvoiceDiscountModal({
               color: "#334155",
               cursor: "pointer",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
 
           {/* Button: Cất và Phát hành hóa đơn */}
           <button

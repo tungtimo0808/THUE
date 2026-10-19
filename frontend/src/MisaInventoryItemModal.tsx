@@ -2996,9 +2996,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               fontWeight: 600,
               cursor: "pointer",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
           <button
             type="button"
             onClick={() => handleSave(true)}
@@ -3015,7 +3013,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
             }}
           >
-            Cất và Thêm
+            Lưu và Thêm
           </button>
         </div>
       </div>

@@ -945,11 +945,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>
                 Đóng
               </button>
-              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Số dư tài khoản", true)}>
-                Cất
-              </button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Số dư tài khoản", true)}>Lưu</button>
               <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Số dư tài khoản", false)}>
-                Cất và Đóng
+                Lưu và Đóng
               </button>
             </div>
           </div>
@@ -1007,11 +1005,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>
                 Đóng
               </button>
-              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Số dư TK ngân hàng", false)}>
-                Cất
-              </button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Số dư TK ngân hàng", false)}>Lưu</button>
               <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Số dư TK ngân hàng", true)}>
-                Cất và Thêm
+                Lưu và Thêm
               </button>
             </div>
           </div>
@@ -1157,8 +1153,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>Đóng</button>
-              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Công nợ khách hàng", false)}>Cất</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Công nợ khách hàng", true)}>Cất và Thêm</button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Công nợ khách hàng", false)}>Lưu</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Công nợ khách hàng", true)}>Lưu và Thêm</button>
             </div>
           </div>
         </div>
@@ -1302,8 +1298,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>Đóng</button>
-              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Công nợ nhà cung cấp", false)}>Cất</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Công nợ nhà cung cấp", true)}>Cất và Thêm</button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Công nợ nhà cung cấp", false)}>Lưu</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Công nợ nhà cung cấp", true)}>Lưu và Thêm</button>
             </div>
           </div>
         </div>
@@ -1355,8 +1351,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>Đóng</button>
-              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Công nợ nhân viên", false)}>Cất</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Công nợ nhân viên", true)}>Cất và Thêm</button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Công nợ nhân viên", false)}>Lưu</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Công nợ nhân viên", true)}>Lưu và Thêm</button>
             </div>
           </div>
         </div>
@@ -1420,8 +1416,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>Đóng</button>
-              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Tồn kho vật tư", false)}>Cất</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Tồn kho vật tư", true)}>Cất và Thêm</button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Tồn kho vật tư", false)}>Lưu</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Tồn kho vật tư", true)}>Lưu và Thêm</button>
             </div>
           </div>
         </div>
@@ -2064,9 +2060,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   color: "#374151",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -2089,7 +2083,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   cursor: "pointer",
                 }}
               >
-                Cất và thêm
+                Lưu và thêm
               </button>
             </div>
           </div>
@@ -3656,9 +3650,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   color: "#374151",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -3681,7 +3673,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   cursor: "pointer",
                 }}
               >
-                Cất và Thêm
+                Lưu và Thêm
               </button>
             </div>
           </div>
@@ -4496,9 +4488,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   color: "#ffffff",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -4539,7 +4529,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>Đóng</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Chi phí trả trước", false)}>Cất và Đóng</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Chi phí trả trước", false)}>Lưu và Đóng</button>
             </div>
           </div>
         </div>

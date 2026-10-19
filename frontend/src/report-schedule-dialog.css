@@ -28,7 +28,7 @@
   height: 32px;
   padding: 4px 8px;
   border: 1px solid #cdd3da;
-  border-radius: 3px;
+  border-radius: 6px;
   background: white;
   font: inherit;
 }
@@ -37,23 +37,23 @@
   box-sizing: border-box;
   padding: 8px;
   border: 1px solid #cdd3da;
-  border-radius: 3px;
+  border-radius: 6px;
   font: inherit;
 }
 .misa-report-schedule-dialog button {
   min-height: 30px;
   padding: 4px 10px;
   border: 1px solid #cdd3da;
-  border-radius: 3px;
+  border-radius: 6px;
   background: #fff;
   color: #222;
   cursor: pointer;
   font: inherit;
 }
 .misa-report-schedule-dialog button[role="tab"][aria-selected="true"] {
-  background: #009b71;
+  background: #0284c7;
   color: white;
-  border-color: #009b71;
+  border-color: #0284c7;
 }
 .misa-report-schedule-dialog .pc-date-input {
   position: relative;

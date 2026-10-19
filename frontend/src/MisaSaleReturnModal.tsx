@@ -4298,7 +4298,7 @@ export function SaleReturnModal({
         </div>
 
         {/* ================================================================= */}
-        {/* 8. FOOTER: Toggle Hiển thị tài khoản + Hủy | Cất | Cất và Thêm    */}
+        {/* 8. FOOTER: Toggle Hiển thị tài khoản + Hủy | Cất | Lưu và Thêm    */}
         {/* ================================================================= */}
         <footer
           style={{
@@ -4387,9 +4387,7 @@ export function SaleReturnModal({
                 cursor: "pointer",
                 color: "#334155",
               }}
-            >
-              Cất
-            </button>
+            >Lưu</button>
 
             <button
               type="button"
@@ -4406,7 +4404,7 @@ export function SaleReturnModal({
                 color: "#ffffff",
               }}
             >
-              Cất và Thêm
+              Lưu và Thêm
             </button>
           </div>
         </footer>

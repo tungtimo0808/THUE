@@ -453,7 +453,7 @@ export function SaleInvoiceModal({
             <button
               type="button"
               title="Phím tắt"
-              onClick={() => notify("Phím tắt: F3 (Tìm kiếm), F9 (Thêm dòng), Ctrl+S (Cất)")}
+              onClick={() => notify("Phím tắt: F3 (Tìm kiếm), F9 (Thêm dòng), Ctrl+S (Lưu)")}
               style={{
                 background: "none",
                 border: "none",
@@ -1807,11 +1807,9 @@ export function SaleInvoiceModal({
               color: "#334155",
               cursor: "pointer",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
 
-          {/* Split button: Cất và In ▾ */}
+          {/* Split button: Lưu và In ▾ */}
           <div style={{ display: "inline-flex" }}>
             <button
               type="button"
@@ -1829,7 +1827,7 @@ export function SaleInvoiceModal({
                 cursor: "pointer",
               }}
             >
-              Cất và In
+              Lưu và In
             </button>
             <button
               type="button"

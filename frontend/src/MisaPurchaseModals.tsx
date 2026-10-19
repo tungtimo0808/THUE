@@ -1004,16 +1004,14 @@ export function PurchaseOrderModal({
               type="button"
               className="misa-invoice-btn-cancel"
               onClick={() => handleSave(false)}
-            >
-              Cất
-            </button>
+            >Lưu</button>
             <button
               type="button"
               className="misa-invoice-btn-submit"
               onClick={() => handleSave(true)}
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              <span>Cất và In</span>
+              <span>Lưu và In</span>
               <ChevronDown size={14} />
             </button>
           </div>
@@ -2457,16 +2455,14 @@ export function PurchaseContractModal({
           <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>
             Hủy
           </button>
-          <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>
-            Cất
-          </button>
+          <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Lưu</button>
           <button
             type="button"
             className="misa-invoice-btn-submit"
             onClick={() => handleSave(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <span>Cất và Đóng</span>
+            <span>Lưu và Đóng</span>
             <ChevronDown size={14} />
           </button>
         </footer>
@@ -4583,7 +4579,7 @@ export function PurchaseVoucherModal({
 
           <div style={{ display: "flex", gap: 8, position: "relative" }}>
             <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>Hủy</button>
-            <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Cất</button>
+            <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Lưu</button>
             <div style={{ position: "relative" }}>
               <button
                 type="button"
@@ -4591,7 +4587,7 @@ export function PurchaseVoucherModal({
                 onClick={() => handleSave(true)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và Đóng</span>
+                <span>Lưu và Đóng</span>
                 <span
                   onClick={(e) => {
                     e.stopPropagation();
@@ -4636,7 +4632,7 @@ export function PurchaseVoucherModal({
                     onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
-                    Cất và Thêm
+                    Lưu và Thêm
                   </button>
                 </div>
               )}
@@ -5220,9 +5216,9 @@ export function PurchaseReturnModal({
 
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>Hủy</button>
-            <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Cất</button>
+            <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Lưu</button>
             <button type="button" className="misa-invoice-btn-submit" onClick={() => handleSave(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <span>Cất và In</span>
+              <span>Lưu và In</span>
               <ChevronDown size={14} />
             </button>
           </div>
@@ -6709,9 +6705,7 @@ export function PurchaseDiscountModal({
                 cursor: "pointer",
                 boxSizing: "border-box",
               }}
-            >
-              Cất
-            </button>
+            >Lưu</button>
             <div style={{ display: "inline-flex", height: 28, borderRadius: 4, overflow: "hidden" }}>
               <button
                 type="button"
@@ -6728,7 +6722,7 @@ export function PurchaseDiscountModal({
                   cursor: "pointer",
                 }}
               >
-                Cất và In
+                Lưu và In
               </button>
               <button
                 type="button"
@@ -7949,9 +7943,7 @@ export function SupplierModal({
               cursor: "pointer",
               fontWeight: 500,
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
           <button
             type="button"
             onClick={() => handleSave(true)}
@@ -7967,7 +7959,7 @@ export function SupplierModal({
               fontWeight: 600,
             }}
           >
-            Cất và Thêm
+            Lưu và Thêm
           </button>
         </footer>
       </div>
@@ -10055,15 +10047,13 @@ export function PurchaseServiceModal({
               type="button"
               className="misa-invoice-btn-cancel"
               onClick={() => handleSave(false)}
-            >
-              Cất
-            </button>
+            >Lưu</button>
             <button
               type="button"
               className="misa-invoice-btn-submit"
               onClick={() => handleSave(true)}
             >
-              Cất và Đóng
+              Lưu và Đóng
             </button>
           </div>
         </footer>
@@ -11651,16 +11641,14 @@ export function PurchaseMultiInvoiceModal({
               type="button"
               className="misa-invoice-btn-cancel"
               onClick={() => handleSave(false)}
-            >
-              Cất
-            </button>
+            >Lưu</button>
             <button
               type="button"
               className="misa-invoice-btn-submit"
               onClick={() => handleSave(true)}
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              <span>Cất và Đóng</span>
+              <span>Lưu và Đóng</span>
               <ChevronDown size={14} />
             </button>
           </div>

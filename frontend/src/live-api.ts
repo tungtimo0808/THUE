@@ -29,27 +29,116 @@ export class ApiError extends Error {
   }
 }
 
-export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {
+let isRefreshing = false;
+let refreshSubscribers: ((newToken: string) => void)[] = [];
+
+function onTokenRefreshed(newToken: string) {
+  refreshSubscribers.forEach((cb) => cb(newToken));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(cb: (newToken: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+export async function refreshAccessToken(): Promise<string> {
+  const refresh = localStorage.getItem("erp_refresh");
+  if (!refresh) throw new Error("No refresh token");
+
+  const res = await fetch("/api/token/refresh/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh }),
+  });
+  if (!res.ok) {
+    throw new Error("Refresh failed");
+  }
+  const data = await res.json();
+  const newAccess = data.access;
+  if (!newAccess) throw new Error("No access in refresh response");
+
+  localStorage.setItem("erp_token", newAccess);
+  if (data.refresh) {
+    localStorage.setItem("erp_refresh", data.refresh);
+  }
+  try {
+    const raw = localStorage.getItem("erp_api_session");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      parsed.token = newAccess;
+      parsed.access = newAccess;
+      parsed.access_token = newAccess;
+      if (data.refresh) parsed.refresh = data.refresh;
+      localStorage.setItem("erp_api_session", JSON.stringify(parsed));
+    }
+  } catch {}
+
+  window.dispatchEvent(new CustomEvent("erp_token_updated", { detail: { token: newAccess } }));
+  return newAccess;
+}
+
+export async function request<T>(path: string, token?: string, options?: RequestInit, isRetry = false): Promise<T> {
   let response: Response;
+  const currentToken = token || localStorage.getItem("erp_token") || undefined;
   try {
     response = await fetch(path, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         ...options?.headers,
       },
     });
   } catch {
     throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
   }
+
+  // Handle 401 token expired: automatically attempt refresh
+  if (response.status === 401 && !isRetry && !path.startsWith("/api/token/")) {
+    const hasRefresh = !!localStorage.getItem("erp_refresh");
+    if (hasRefresh) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          const newAccess = await refreshAccessToken();
+          isRefreshing = false;
+          onTokenRefreshed(newAccess);
+          return request<T>(path, newAccess, options, true);
+        } catch {
+          isRefreshing = false;
+          refreshSubscribers = [];
+          localStorage.removeItem("erp_api_session");
+          localStorage.removeItem("erp_token");
+          localStorage.removeItem("erp_refresh");
+          window.dispatchEvent(new Event("erp_session_expired"));
+          throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
+        }
+      }
+
+      return new Promise<T>((resolve, reject) => {
+        addRefreshSubscriber((newToken) => {
+          request<T>(path, newToken, options, true).then(resolve).catch(reject);
+        });
+      });
+    } else {
+      localStorage.removeItem("erp_api_session");
+      localStorage.removeItem("erp_token");
+      localStorage.removeItem("erp_refresh");
+      window.dispatchEvent(new Event("erp_session_expired"));
+      throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
+    }
+  }
+
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     if ([502, 503, 504].includes(response.status)) {
       throw new ApiError("Backend chưa sẵn sàng. Hãy đợi migrations hoàn tất rồi thử lại.", response.status);
     }
+    if (response.status === 401) {
+      throw new ApiError("Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.", 401);
+    }
     const detail = body && typeof body === "object"
-      ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : String(value)}`).join("; ")
+      ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : (typeof value === "object" ? JSON.stringify(value) : String(value))}`).join("; ")
       : `Yêu cầu thất bại (HTTP ${response.status}).`;
     throw new ApiError(detail, response.status);
   }

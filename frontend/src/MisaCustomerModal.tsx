@@ -1687,9 +1687,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
               fontWeight: 500,
               cursor: "pointer",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
 
           <button
             type="button"
@@ -1706,7 +1704,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
               cursor: "pointer",
             }}
           >
-            Cất và Thêm
+            Lưu và Thêm
           </button>
         </div>
       </div>

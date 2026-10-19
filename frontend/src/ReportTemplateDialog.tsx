@@ -457,9 +457,7 @@ export default function ReportTemplateDialog({
           >
             Lấy mẫu ngầm định
           </button>
-          <button type="button" onClick={onClose}>
-            Cất
-          </button>
+          <button type="button" onClick={onClose}>Lưu</button>
         </div>
         {columnDialogOpen && (
           <ReportColumnDialog

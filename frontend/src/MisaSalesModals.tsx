@@ -1307,9 +1307,7 @@ export function SaleQuoteModal({
                 cursor: "pointer",
                 color: "#1e293b",
               }}
-            >
-              Cất
-            </button>
+            >Lưu</button>
 
             <button
               type="button"
@@ -1327,7 +1325,7 @@ export function SaleQuoteModal({
                 boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
               }}
             >
-              Cất và Thêm
+              Lưu và Thêm
             </button>
           </div>
         </footer>
@@ -3171,9 +3169,7 @@ export function SaleOrderModal({
                 cursor: "pointer",
                 color: "#1e293b",
               }}
-            >
-              Cất
-            </button>
+            >Lưu</button>
 
             <button
               type="button"
@@ -3191,7 +3187,7 @@ export function SaleOrderModal({
                 boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
               }}
             >
-              Cất và Thêm
+              Lưu và Thêm
             </button>
           </div>
         </footer>
@@ -4847,9 +4843,7 @@ export function SaleContractModal({
               color: "#1e293b",
               cursor: "pointer",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
 
           <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
             <button
@@ -4870,7 +4864,7 @@ export function SaleContractModal({
                 boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
               }}
             >
-              <span>Cất và Thêm</span>
+              <span>Lưu và Thêm</span>
               <ChevronDown size={13} />
             </button>
           </div>

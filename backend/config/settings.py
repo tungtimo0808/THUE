@@ -4,6 +4,7 @@ Django settings for config project.
 
 from pathlib import Path
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -195,6 +196,10 @@ COMMON_AI_PROVIDER_API_KEY = os.getenv('COMMON_AI_PROVIDER_API_KEY', '')
 COMMON_AI_TIMEOUT_SECONDS = int(os.getenv('COMMON_AI_TIMEOUT_SECONDS', '20'))
 
 SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'TOKEN_REFRESH_SERIALIZER': 'common_services.authentication.RevocableTokenRefreshSerializer',
 }
 

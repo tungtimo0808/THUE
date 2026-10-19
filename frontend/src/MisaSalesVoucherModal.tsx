@@ -4148,7 +4148,7 @@ export function SaleVoucherModal({
             </label>
           </div>
 
-          {/* Right: Hủy, Cất, Cất và In */}
+          {/* Right: Hủy, Cất, Lưu và In */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
@@ -4182,9 +4182,7 @@ export function SaleVoucherModal({
                 color: "#1e293b",
                 cursor: "pointer",
               }}
-            >
-              Cất
-            </button>
+            >Lưu</button>
 
             <div style={{ display: "inline-flex" }}>
               <button
@@ -4206,7 +4204,7 @@ export function SaleVoucherModal({
                   gap: 6,
                 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
               </button>
               <button
                 type="button"

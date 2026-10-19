@@ -90,7 +90,7 @@ export function LoanContractModal({
     { name: "KHE_UOC_CHO_VAY_KUCV00001.pdf", size: "1.4 MB", time: "09/10/2026 10:15" },
   ]);
 
-  // Dropdown menu for Cất và Đóng
+  // Dropdown menu for Lưu và Đóng
   const [showSaveDropdown, setShowSaveDropdown] = useState(false);
 
   const handleAddInterestRow = () => {
@@ -1095,9 +1095,7 @@ export function LoanContractModal({
             type="button"
             className="misa-invoice-btn-cancel"
             onClick={() => handleSave(false)}
-          >
-            Cất
-          </button>
+          >Lưu</button>
           <div style={{ position: "relative", display: "inline-block" }}>
             <button
               type="button"
@@ -1105,7 +1103,7 @@ export function LoanContractModal({
               onClick={() => handleSave(true)}
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              <span>Cất và Đóng</span>
+              <span>Lưu và Đóng</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1151,7 +1149,7 @@ export function LoanContractModal({
                     setContractCode("KUCV00002");
                   }}
                 >
-                  Cất và Thêm
+                  Lưu và Thêm
                 </button>
               </div>
             )}
@@ -1231,7 +1229,7 @@ export function BorrowingContractModal({
     { name: "KHE_UOC_DI_VAY_KUDV00001.pdf", size: "2.1 MB", time: "09/10/2026 11:20" },
   ]);
 
-  // Dropdown menu for Cất và Đóng
+  // Dropdown menu for Lưu và Đóng
   const [showSaveDropdown, setShowSaveDropdown] = useState(false);
 
   const handleAddInterestRow = () => {
@@ -2142,9 +2140,7 @@ export function BorrowingContractModal({
             type="button"
             className="misa-invoice-btn-cancel"
             onClick={() => handleSave(false)}
-          >
-            Cất
-          </button>
+          >Lưu</button>
           <div style={{ position: "relative", display: "inline-block" }}>
             <button
               type="button"
@@ -2152,7 +2148,7 @@ export function BorrowingContractModal({
               onClick={() => handleSave(true)}
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              <span>Cất và Đóng</span>
+              <span>Lưu và Đóng</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -2197,7 +2193,7 @@ export function BorrowingContractModal({
                     setContractCode("KUDV00002");
                   }}
                 >
-                  Cất và Thêm
+                  Lưu và Thêm
                 </button>
               </div>
             )}
@@ -2610,9 +2606,7 @@ export function CreditContractModal({
             type="button"
             className="misa-invoice-btn-submit"
             onClick={handleSave}
-          >
-            Cất
-          </button>
+          >Lưu</button>
         </footer>
       </div>
     </div>

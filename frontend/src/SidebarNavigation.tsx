@@ -1,6 +1,6 @@
 import { useState, useRef, type FocusEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { referenceNav } from "./reference-config";
 import { MISA_MODULE_FLYOUTS } from "./misa-flyout-config";

@@ -597,7 +597,7 @@ export default function MisaLedgerWorkspace({
 
   const handleSaveClosingVoucher = () => {
     setClosingEntryModalOpen(false);
-    notify(`Đã cất chứng từ kết chuyển lãi lỗ ${closingVoucherNo} thành công!`);
+    notify(`Đã lưu chứng từ kết chuyển lãi lỗ ${closingVoucherNo} thành công!`);
   };
 
   // Tab 5: Lập báo cáo tài chính state (Matching user screenshots 1 - 5)
@@ -5672,9 +5672,7 @@ export default function MisaLedgerWorkspace({
                   fontSize: 13,
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
             </div>
           </div>
         </div>
@@ -7427,7 +7425,7 @@ export default function MisaLedgerWorkspace({
               </div>
             </div>
 
-            {/* 6. BOTTOM ACTION BAR (Hủy, Cất, Cất và In) */}
+            {/* 6. BOTTOM ACTION BAR (Hủy, Cất, Lưu và In) */}
             <div
               style={{
                 display: "flex",
@@ -7471,9 +7469,7 @@ export default function MisaLedgerWorkspace({
                   color: "#1e293b",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <div style={{ display: "flex", borderRadius: 6, overflow: "hidden" }}>
                 <button
                   type="button"
@@ -7491,7 +7487,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Cất và In
+                  Lưu và In
                 </button>
                 <button
                   type="button"
@@ -8289,7 +8285,7 @@ export default function MisaLedgerWorkspace({
               </div>
             </div>
 
-            {/* 6. BOTTOM ACTION BAR (F9, Hủy, Cất, Cất và Thêm) */}
+            {/* 6. BOTTOM ACTION BAR (F9, Hủy, Cất, Lưu và Thêm) */}
             <div
               style={{
                 display: "flex",
@@ -8338,9 +8334,7 @@ export default function MisaLedgerWorkspace({
                     color: "#1e293b",
                     cursor: "pointer",
                   }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
                 <div style={{ display: "flex", borderRadius: 6, overflow: "hidden" }}>
                   <button
                     type="button"
@@ -8358,7 +8352,7 @@ export default function MisaLedgerWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    Cất và Thêm
+                    Lưu và Thêm
                   </button>
                   <button
                     type="button"
@@ -8925,7 +8919,7 @@ export default function MisaLedgerWorkspace({
               </div>
             </div>
 
-            {/* 6. BOTTOM ACTION BAR (Hủy, Cất, Cất và In ˅) Matching Screenshot 1 */}
+            {/* 6. BOTTOM ACTION BAR (Hủy, Cất, Lưu và In ˅) Matching Screenshot 1 */}
             <div
               style={{
                 display: "flex",
@@ -8967,11 +8961,9 @@ export default function MisaLedgerWorkspace({
                     color: "#1e293b",
                     cursor: "pointer",
                   }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
 
-                {/* Split Button: Cất và In ˅ (Exact Match to Screenshot 1) */}
+                {/* Split Button: Lưu và In ˅ (Exact Match to Screenshot 1) */}
                 <div style={{ display: "inline-flex", borderRadius: 6, overflow: "hidden", boxShadow: "0 1px 3px rgba(0, 168, 98, 0.25)" }}>
                   <button
                     type="button"
@@ -8989,7 +8981,7 @@ export default function MisaLedgerWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    Cất và In
+                    Lưu và In
                   </button>
                   <button
                     type="button"

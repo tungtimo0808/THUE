@@ -2856,7 +2856,7 @@ export function SaleDiscountModal({
         </div>
 
         {/* ================================================================= */}
-        {/* 8. FOOTER: Toggle Hiển thị tài khoản + Hủy | Cất | Cất và In      */}
+        {/* 8. FOOTER: Toggle Hiển thị tài khoản + Hủy | Cất | Lưu và In      */}
         {/* ================================================================= */}
         <footer
           style={{
@@ -2911,7 +2911,7 @@ export function SaleDiscountModal({
             </label>
           </div>
 
-          {/* Right Action Buttons: Hủy | Cất | Cất và In */}
+          {/* Right Action Buttons: Hủy | Cất | Lưu và In */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
@@ -2945,9 +2945,7 @@ export function SaleDiscountModal({
                 cursor: "pointer",
                 color: "#334155",
               }}
-            >
-              Cất
-            </button>
+            >Lưu</button>
 
             <button
               type="button"
@@ -2964,7 +2962,7 @@ export function SaleDiscountModal({
                 color: "#ffffff",
               }}
             >
-              Cất và In
+              Lưu và In
             </button>
           </div>
         </footer>

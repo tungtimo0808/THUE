@@ -73,7 +73,7 @@ export default function ReportScheduleDialog({ onClose }: { onClose: () => void 
           </div>
           <fieldset style={{ border: 0, padding: 0, margin: "12px 0" }}><legend>Định dạng tệp báo cáo đính kèm</legend><label><input type="radio" name="schedule-format" value="excel" defaultChecked /> Excel</label><label><input type="radio" name="schedule-format" value="pdf" /> PDF</label></fieldset>
         </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}><button type="button" onClick={step === 1 ? onClose : ()=>setStep(1)}>{step === 1 ? "Hủy" : "Quay lại"}</button><button type="button" onClick={step === 1 ? ()=>setStep(2) : onClose}>{step === 1 ? "Tiếp tục" : "Cất"}</button></div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}><button type="button" onClick={step === 1 ? onClose : ()=>setStep(1)}>{step === 1 ? "Hủy" : "Quay lại"}</button><button type="button" onClick={step === 1 ? ()=>setStep(2) : onClose}>{step === 1 ? "Tiếp tục" : "Lưu"}</button></div>
       </form>
       {senderDialogOpen&&<EmailSenderDialog onClose={()=>setSenderDialogOpen(false)} />}
       {reportPickerOpen && <div style={{ position: "fixed", inset: 0, zIndex: 100001, background: "#0006", display: "grid", placeItems: "center" }}><div role="dialog" aria-modal="true" aria-label="Chọn báo cáo" style={{ width: "min(800px, 90vw)", maxHeight: "85vh", background: "white", padding: 20, borderRadius: 4 }}>

@@ -894,7 +894,8 @@ main {
 }
 .modal {
   border: 1px solid #dfe6f0;
-  border-radius: 13px;
+  border-radius: 16px;
+  overflow: hidden;
   padding: 0;
   width: min(580px, calc(100% - 32px));
   max-height: 90dvh;
@@ -925,9 +926,14 @@ main {
 }
 .modal-body {
   padding: 24px;
+  font-size: 14px;
+  color: #334155;
 }
 .modal-body > h3 {
   margin: 22px 0 13px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
 }
 .modal-footer {
   position: sticky;
@@ -943,13 +949,13 @@ main {
   margin-right: auto;
 }
 .info-note {
-  padding: 12px 15px;
-  background: #f1f6fe;
-  border: 1px solid #e0eafb;
-  color: #4d6990;
-  border-radius: 7px;
-  font-size: 11px;
-  line-height: 1.8;
+  padding: 12px 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
 }
 .form-grid {
   display: grid;
@@ -958,8 +964,9 @@ main {
 }
 .form-grid label,
 .entry-line label {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
 }
 .form-grid label input,
 .entry-line label input {
@@ -1052,9 +1059,9 @@ main {
 }
 .help-list {
   padding-left: 22px;
-  color: #596c83;
-  font-size: 12px;
-  line-height: 2.4;
+  color: #334155;
+  font-size: 14px;
+  line-height: 2.1;
   margin: 15px 0 24px;
 }
 .notification-item {
@@ -1192,27 +1199,42 @@ main {
 .toast {
   display: none;
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 100;
-  padding: 14px 18px;
-  background: #203c5b;
-  color: white;
-  border-radius: 9px;
-  box-shadow: 0 5px 25px #12264030;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99999 !important;
+  padding: 14px 22px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.4);
   max-width: calc(100% - 32px);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
   align-items: center;
   gap: 12px;
 }
+.toast svg {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
 .toast.visible {
   display: flex;
+  animation: slideInUp 0.25s ease-out;
 }
 .toast button {
   background: none;
   border: 0;
-  color: #cbd9ec;
-  padding: 3px;
+  color: #94a3b8;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+}
+.toast button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 .mobile-shade {
   display: none;

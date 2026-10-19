@@ -1011,9 +1011,7 @@ export function SaleInvoiceAdjustmentModal({
               cursor: "pointer",
               color: "#334155",
             }}
-          >
-            Cất
-          </button>
+          >Lưu</button>
           <button
             type="button"
             onClick={() => handleSave(true)}

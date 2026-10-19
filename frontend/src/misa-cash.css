@@ -80,12 +80,12 @@
 
 /* Active style for Tiền mặt / Active Module */
 .ref-nav-item.misa-active {
-  background: #00b067 !important;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
   color: #ffffff !important;
   border-radius: 8px !important;
   margin: 2px 6px !important;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 176, 103, 0.35);
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.38) !important;
 }
 
 .ref-collapsed .ref-nav-item.misa-active {
@@ -460,7 +460,7 @@
 .misa-tax-modal-window,
 .misa-tax-modal {
   background: #ffffff !important;
-  border-radius: 8px !important;
+  border-radius: 14px !important;
   box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
   border: 1px solid #cbd5e1 !important;
   display: flex !important;
@@ -2140,12 +2140,13 @@
 
 .misa-voucher-combo-actions {
   position: absolute;
-  right: 2px;
+  right: 3px;
   top: 2px;
   bottom: 2px;
   display: flex;
   align-items: center;
   gap: 2px;
+  z-index: 2;
 }
 
 .misa-voucher-mini-btn {
@@ -2158,7 +2159,7 @@
   background: transparent;
   color: #00b06b;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .misa-voucher-mini-btn:hover {
@@ -2169,26 +2170,26 @@
   width: 32px;
   height: 32px;
   min-width: 32px;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid #cbd5e1;
-  background: #f1f5f9;
-  color: #475569;
+  background: #f8fafc;
+  color: #334155;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-left: 6px;
+  margin-left: 0;
   flex-shrink: 0;
   box-sizing: border-box;
   transition: all 0.15s;
 }
 
 .misa-voucher-circle-icon-btn:hover {
-  background: #e2e8f0;
-  border-color: #94a3b8;
-  color: #0f172a;
+  background: #f0f9ff;
+  border-color: #0284c7;
+  color: #0284c7;
 }
 
 .misa-voucher-partner-dropdown {

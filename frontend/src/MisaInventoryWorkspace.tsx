@@ -4150,7 +4150,7 @@ export default function MisaInventoryWorkspace({
                   <span>Hiển thị tài khoản</span>
                 </label>
 
-                {/* Right: Actions Hủy, Cất, Cất và In */}
+                {/* Right: Actions Hủy, Cất, Lưu và In */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
@@ -4175,9 +4175,7 @@ export default function MisaInventoryWorkspace({
                       });
                     }}
                     style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                  >
-                    Cất
-                  </button>
+                  >Lưu</button>
 
                   <div style={{ display: "flex" }}>
                     <button
@@ -4193,7 +4191,7 @@ export default function MisaInventoryWorkspace({
                           description: receiptReason || `Nhập kho theo chứng từ ${receiptVoucherCode}`,
                           amount: totalAmt,
                         });
-                        notify(`Đã cất và chuyển sang chế độ in chứng từ ${receiptVoucherCode}`);
+                        notify(`Đã lưu và chuyển sang chế độ in chứng từ ${receiptVoucherCode}`);
                       }}
                       style={{
                         height: 32,
@@ -4207,7 +4205,7 @@ export default function MisaInventoryWorkspace({
                         cursor: "pointer",
                       }}
                     >
-                      Cất và In
+                      Lưu và In
                     </button>
                     <button
                       type="button"
@@ -5113,7 +5111,7 @@ export default function MisaInventoryWorkspace({
                   <span>Hiển thị tài khoản</span>
                 </label>
 
-                {/* Right: Actions Hủy, Cất, Cất và In */}
+                {/* Right: Actions Hủy, Cất, Lưu và In */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
@@ -5138,9 +5136,7 @@ export default function MisaInventoryWorkspace({
                       });
                     }}
                     style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                  >
-                    Cất
-                  </button>
+                  >Lưu</button>
 
                   <div style={{ display: "flex" }}>
                     <button
@@ -5156,7 +5152,7 @@ export default function MisaInventoryWorkspace({
                           description: issueReason || `Xuất kho theo chứng từ ${issueVoucherCode}`,
                           amount: totalAmt,
                         });
-                        notify(`Đã cất và chuyển sang chế độ in chứng từ ${issueVoucherCode}`);
+                        notify(`Đã lưu và chuyển sang chế độ in chứng từ ${issueVoucherCode}`);
                       }}
                       style={{
                         height: 32,
@@ -5170,7 +5166,7 @@ export default function MisaInventoryWorkspace({
                         cursor: "pointer",
                       }}
                     >
-                      Cất và In
+                      Lưu và In
                     </button>
                     <button
                       type="button"
@@ -6305,7 +6301,7 @@ export default function MisaInventoryWorkspace({
                   <span>Hiển thị tài khoản</span>
                 </label>
 
-                {/* Right: Actions Hủy, Cất, Cất và In */}
+                {/* Right: Actions Hủy, Cất, Lưu và In */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
@@ -6330,9 +6326,7 @@ export default function MisaInventoryWorkspace({
                       });
                     }}
                     style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                  >
-                    Cất
-                  </button>
+                  >Lưu</button>
 
                   <div style={{ display: "flex" }}>
                     <button
@@ -6349,7 +6343,7 @@ export default function MisaInventoryWorkspace({
                           description: transferPurpose || `Chuyển kho theo lệnh ${transferOrderNo || "ĐĐ01"}`,
                           amount: 0,
                         });
-                        notify(`Đã cất và chuyển sang chế độ in chứng từ chuyển kho ${vCode}`);
+                        notify(`Đã lưu và chuyển sang chế độ in chứng từ chuyển kho ${vCode}`);
                       }}
                       style={{
                         height: 32,
@@ -6363,7 +6357,7 @@ export default function MisaInventoryWorkspace({
                         cursor: "pointer",
                       }}
                     >
-                      Cất và In
+                      Lưu và In
                     </button>
                     <button
                       type="button"
@@ -7223,7 +7217,7 @@ export default function MisaInventoryWorkspace({
                   F3 - Tìm nhanh
                 </div>
 
-                {/* Right: Actions Hủy, Cất, Cất và In */}
+                {/* Right: Actions Hủy, Cất, Lưu và In */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
@@ -7255,12 +7249,10 @@ export default function MisaInventoryWorkspace({
                         ...prev,
                       ]);
                       setShowProductionOrderModal(false);
-                      notify(`Đã cất thành công Lệnh sản xuất ${vCode}`);
+                      notify(`Đã lưu thành công Lệnh sản xuất ${vCode}`);
                     }}
                     style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                  >
-                    Cất
-                  </button>
+                  >Lưu</button>
 
                   <div style={{ display: "flex" }}>
                     <button
@@ -7285,7 +7277,7 @@ export default function MisaInventoryWorkspace({
                           ...prev,
                         ]);
                         setShowProductionOrderModal(false);
-                        notify(`Đã cất và chuyển sang chế độ in Lệnh sản xuất ${vCode}`);
+                        notify(`Đã lưu và chuyển sang chế độ in Lệnh sản xuất ${vCode}`);
                       }}
                       style={{
                         height: 32,
@@ -7299,7 +7291,7 @@ export default function MisaInventoryWorkspace({
                         cursor: "pointer",
                       }}
                     >
-                      Cất và In
+                      Lưu và In
                     </button>
                     <button
                       type="button"
@@ -7953,12 +7945,10 @@ export default function MisaInventoryWorkspace({
                       ...prev,
                     ]);
                     setShowAssemblyModal(false);
-                    notify(`Đã cất thành công Lệnh lắp ráp ${vCode}`);
+                    notify(`Đã lưu thành công Lệnh lắp ráp ${vCode}`);
                   }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
 
                 <div style={{ display: "flex" }}>
                   <button
@@ -7984,7 +7974,7 @@ export default function MisaInventoryWorkspace({
                         ...prev,
                       ]);
                       setShowAssemblyModal(false);
-                      notify(`Đã cất và chuyển sang chế độ in Lệnh lắp ráp ${vCode}`);
+                      notify(`Đã lưu và chuyển sang chế độ in Lệnh lắp ráp ${vCode}`);
                     }}
                     style={{
                       height: 32,
@@ -7998,7 +7988,7 @@ export default function MisaInventoryWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    Cất và In
+                    Lưu và In
                   </button>
                   <button
                     type="button"
@@ -8663,12 +8653,10 @@ export default function MisaInventoryWorkspace({
                       ...prev,
                     ]);
                     setShowDisassemblyModal(false);
-                    notify(`Đã cất thành công Lệnh tháo dỡ ${vCode}`);
+                    notify(`Đã lưu thành công Lệnh tháo dỡ ${vCode}`);
                   }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                >
-                  Cất
-                </button>
+                >Lưu</button>
 
                 <div style={{ display: "flex" }}>
                   <button
@@ -8694,7 +8682,7 @@ export default function MisaInventoryWorkspace({
                         ...prev,
                       ]);
                       setShowDisassemblyModal(false);
-                      notify(`Đã cất và chuyển sang chế độ in Lệnh tháo dỡ ${vCode}`);
+                      notify(`Đã lưu và chuyển sang chế độ in Lệnh tháo dỡ ${vCode}`);
                     }}
                     style={{
                       height: 32,
@@ -8708,7 +8696,7 @@ export default function MisaInventoryWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    Cất và In
+                    Lưu và In
                   </button>
                   <button
                     type="button"

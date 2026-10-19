@@ -468,7 +468,7 @@ export default function MisaAssetsWorkspace({
     setShowStocktakeModal(false);
     setStocktakeView("table");
     if (isPrint) {
-      notify(`Đã cất và chuẩn bị in bảng kiểm kê tài sản cố định ${newV.voucherNo}!`);
+      notify(`Đã lưu và chuẩn bị in bảng kiểm kê tài sản cố định ${newV.voucherNo}!`);
     } else {
       notify(`Đã cất bảng kiểm kê tài sản cố định ${newV.voucherNo} thành công!`);
     }
@@ -2391,9 +2391,7 @@ export default function MisaAssetsWorkspace({
                   color: "#1e293b",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -2436,7 +2434,7 @@ export default function MisaAssetsWorkspace({
                   cursor: "pointer",
                 }}
               >
-                Cất và Thêm
+                Lưu và Thêm
               </button>
             </div>
           </div>
@@ -3064,7 +3062,7 @@ export default function MisaAssetsWorkspace({
               )}
             </div>
 
-            {/* Footer Buttons matching Screenshot 1 exactly: [Hủy] [Xuất khẩu bảng phân bổ ra Excel] [Cất] [Cất và In ▾] */}
+            {/* Footer Buttons matching Screenshot 1 exactly: [Hủy] [Xuất khẩu bảng phân bổ ra Excel] [Cất] [Lưu và In ▾] */}
             <div
               style={{
                 height: 50,
@@ -3142,9 +3140,7 @@ export default function MisaAssetsWorkspace({
                   color: "#334155",
                   cursor: "pointer",
                 }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
 
               <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
                 <button
@@ -3179,7 +3175,7 @@ export default function MisaAssetsWorkspace({
                     gap: 6,
                   }}
                 >
-                  <span>Cất và In</span>
+                  <span>Lưu và In</span>
                   <ChevronDown size={14} />
                 </button>
               </div>
@@ -4039,12 +4035,10 @@ export default function MisaAssetsWorkspace({
                   });
                   setShowRevalModal(false);
                   setRevalView("table");
-                  notify(`Đã cất chứng từ đánh giá lại tài sản cố định ${revalVoucherNo} thành công!`);
+                  notify(`Đã lưu chứng từ đánh giá lại tài sản cố định ${revalVoucherNo} thành công!`);
                 }}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -4066,11 +4060,11 @@ export default function MisaAssetsWorkspace({
                   });
                   setShowRevalModal(false);
                   setRevalView("table");
-                  notify(`Đã cất và chuẩn bị in biên bản đánh giá lại ${revalVoucherNo}!`);
+                  notify(`Đã lưu và chuẩn bị in biên bản đánh giá lại ${revalVoucherNo}!`);
                 }}
                 style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -4349,12 +4343,10 @@ export default function MisaAssetsWorkspace({
                   });
                   setShowTransferModal(false);
                   setTransferView("table");
-                  notify(`Đã cất chứng từ điều chuyển tài sản cố định ${transferVoucherNo} thành công!`);
+                  notify(`Đã lưu chứng từ điều chuyển tài sản cố định ${transferVoucherNo} thành công!`);
                 }}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -4376,11 +4368,11 @@ export default function MisaAssetsWorkspace({
                   });
                   setShowTransferModal(false);
                   setTransferView("table");
-                  notify(`Đã cất và chuẩn bị in biên bản điều chuyển ${transferVoucherNo}!`);
+                  notify(`Đã lưu và chuẩn bị in biên bản điều chuyển ${transferVoucherNo}!`);
                 }}
                 style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -4776,12 +4768,10 @@ export default function MisaAssetsWorkspace({
                   });
                   setShowDecreaseModal(false);
                   setDecreaseView("table");
-                  notify(`Đã cất chứng từ ghi giảm tài sản cố định ${decVoucherNo} thành công!`);
+                  notify(`Đã lưu chứng từ ghi giảm tài sản cố định ${decVoucherNo} thành công!`);
                 }}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -4803,11 +4793,11 @@ export default function MisaAssetsWorkspace({
                   });
                   setShowDecreaseModal(false);
                   setDecreaseView("table");
-                  notify(`Đã cất và chuẩn bị in biên bản ghi giảm ${decVoucherNo}!`);
+                  notify(`Đã lưu và chuẩn bị in biên bản ghi giảm ${decVoucherNo}!`);
                 }}
                 style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
@@ -5333,15 +5323,13 @@ export default function MisaAssetsWorkspace({
                 type="button"
                 onClick={() => handleSaveStocktake(false)}
                 style={{ height: 32, padding: "0 22px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#334155", cursor: "pointer" }}
-              >
-                Cất
-              </button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => handleSaveStocktake(true)}
                 style={{ height: 32, padding: "0 18px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và In</span>
                 <ChevronDown size={14} />
               </button>
             </div>
