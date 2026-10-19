@@ -289,7 +289,7 @@ export default function MisaStateObligationsReport({
             type="button"
             style={{ width: 30, height: 30, border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "#0284c7", cursor: "pointer" }}
             title="Trợ giúp / Phản hồi"
-            onClick={() => notify?.("Hệ thống hỗ trợ kế toán AMIS.")}
+            onClick={() => notify?.("Hệ thống hỗ trợ kế toán Sổ Việt ERP.")}
           >
             <MessageCircle size={14} />
           </button>

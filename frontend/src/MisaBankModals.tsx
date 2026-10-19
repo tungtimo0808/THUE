@@ -936,7 +936,7 @@ export function ExcelImportModal({
                 Kéo thả tệp Excel vào đây hoặc <span style={{ color: "#0284c7", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
               </h4>
               <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
-                Hỗ trợ định dạng .xlsx, .xls theo mẫu chuẩn kế toán MISA
+                Hỗ trợ định dạng .xlsx, .xls theo mẫu chuẩn Sổ Việt ERP
               </p>
             </div>
 
@@ -949,7 +949,7 @@ export function ExcelImportModal({
 
             <div style={{ marginTop: 16, textAlign: "left" }}>
               <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", textDecoration: "underline" }}>
-                Tải tệp mẫu Excel chuẩn MISA (.xlsx)
+                Tải tệp mẫu Excel chuẩn Sổ Việt ERP (.xlsx)
               </span>
             </div>
           </div>

@@ -937,7 +937,7 @@ function getSpecializedWorkspaceData(moduleId: string, title: string) {
             "0",
             "48 GD",
             "Online Open Banking",
-            "✓ Khớp 100% (AVA Verified)",
+            "✓ Khớp 100% (Sổ Việt AI Verified)",
           ],
           [
             "1121-VCB-02",
@@ -947,7 +947,7 @@ function getSpecializedWorkspaceData(moduleId: string, title: string) {
             "0",
             "32 GD",
             "Online Open Banking",
-            "✓ Khớp 100% (AVA Verified)",
+            "✓ Khớp 100% (Sổ Việt AI Verified)",
           ],
           [
             "1122-TCB-01",
@@ -1597,7 +1597,7 @@ function getSpecializedWorkspaceData(moduleId: string, title: string) {
         [
           "YC-2026-09-01",
           "Tháng 09/2026",
-          "Đề nghị hạch toán chi phí lương từ AMIS",
+          "Đề nghị hạch toán chi phí lương từ Sổ Việt Tiền lương",
           "73 người",
           "880.000.000",
           "92.400.000",

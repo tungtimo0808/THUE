@@ -495,11 +495,11 @@ export default function MisaPurchaseWorkspace({
         supplierDebt: 23650000,
         bookDebt: 23650000,
         difference: 0,
-        status: "AVA AI đã đối chiếu xong",
+        status: "Sổ Việt AI đã đối chiếu xong",
       },
       ...reconciliations,
     ]);
-    notify(`AVA Kế toán đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
+    notify(`Sổ Việt AI đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
   };
 
   const handleSaveSupplier = (data: any) => {
@@ -693,7 +693,7 @@ export default function MisaPurchaseWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`AVA Kế toán đã phân tích hóa đơn mua hàng ${doc.code}.`);
+            notify(`Sổ Việt AI đã phân tích hóa đơn mua hàng ${doc.code}.`);
           }}
         />
       )}
@@ -2022,7 +2022,7 @@ export default function MisaPurchaseWorkspace({
               }}
             >
               <Sparkles size={14} />
-              <span>AVA Kế toán đối chiếu</span>
+              <span>Sổ Việt AI đối chiếu</span>
             </button>
           </div>
 
@@ -4817,7 +4817,7 @@ export default function MisaPurchaseWorkspace({
                 textAlign: "center",
                 zIndex: 10,
               }}
-              onClick={() => notify("Đang mở chức năng Xử lý hóa đơn đầu vào MISA meInvoice...")}
+              onClick={() => notify("Đang mở chức năng Xử lý hóa đơn đầu vào Sổ Việt e-Invoice...")}
               title="Xử lý hóa đơn đầu vào"
             >
               <div

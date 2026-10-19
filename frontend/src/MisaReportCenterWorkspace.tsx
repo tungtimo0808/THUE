@@ -170,7 +170,7 @@ export const CATEGORY_STRUCTURES: Record<string, CategoryStructure> = {
   financial: {
     banner: {
       title: "Phân tích báo cáo tài chính kỳ tháng 9 bởi",
-      botHighlight: "AVA Kế Toán",
+      botHighlight: "Sổ Việt AI",
       linkText: "Xem chi tiết →",
     },
     groups: [
@@ -1787,10 +1787,10 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
         <div
           className="misa-reports-banner"
           onClick={() => setIsPrintBannerModalOpen(true)}
-          title="Trình in mới của AMIS Kế toán"
+          title="Trình in mới của Sổ Việt ERP"
         >
           <span className="misa-reports-banner-tag">Mới</span>
-          <span>In nhanh hơn - Ổn định hơn - In dữ liệu lớn với trình in mới của AMIS Kế toán.</span>
+          <span>In nhanh hơn - Ổn định hơn - In dữ liệu lớn với trình in mới của Sổ Việt ERP.</span>
           <span className="misa-reports-banner-link">Xem ngay &gt;</span>
         </div>
       </div>}
@@ -1812,9 +1812,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           <button
             type="button"
             className="misa-reports-ai-link"
-            onClick={() => notify?.("Trợ lý AVA Kế toán đã sẵn sàng tìm kiếm thông minh báo cáo cho bạn.")}
+            onClick={() => notify?.("Trợ lý Sổ Việt AI đã sẵn sàng tìm kiếm thông minh báo cáo cho bạn.")}
           >
-            <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+            <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
             <span style={{ fontSize: 14 }}>🤖</span>
           </button>
         </div>
@@ -1933,14 +1933,14 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                       <button
                         type="button"
                         className="misa-reports-ava-banner-link"
-                        onClick={() => notify?.("Trợ lý AVA Kế toán phân tích thông minh các chỉ số tài chính...")}
+                        onClick={() => notify?.("Trợ lý Sổ Việt AI phân tích thông minh các chỉ số tài chính...")}
                       >
                         <span>{currentStructure.banner.linkText}</span>
                       </button>
                     </div>
 
                     {/* Cute Futuristic AVA Robot Mascot */}
-                    <div className="misa-reports-ava-banner-mascot" title="AVA Kế toán">
+                    <div className="misa-reports-ava-banner-mascot" title="Sổ Việt AI">
                       <svg width="115" height="90" viewBox="0 0 120 95" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <ellipse cx="60" cy="50" rx="38" ry="32" fill="#eff6ff" />
                         <circle cx="36" cy="22" r="11" fill="#1e293b" />
@@ -2200,7 +2200,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                 <td style={{ padding: "10px 14px", fontWeight: 600 }}>Báo cáo Doanh thu tuần cho Giám đốc</td>
                 <td style={{ padding: "10px 14px" }}>Tổng hợp bán hàng theo mặt hàng</td>
                 <td style={{ padding: "10px 14px" }}>Thứ Hai hàng tuần (08:00)</td>
-                <td style={{ padding: "10px 14px" }}>ceo@misa.vn</td>
+                <td style={{ padding: "10px 14px" }}>ceo@soviet.vn</td>
                 <td style={{ padding: "10px 14px" }}>Excel, PDF</td>
                 <td style={{ padding: "10px 14px", textAlign: "center" }}>
                   <span style={{ padding: "2px 8px", background: "#f0fdf4", color: "#166534", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
@@ -2287,7 +2287,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                 <span style={{ color: "#475569" }}>Đơn vị:</span>
                 <select style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}>
                   <option>Tung</option>
-                  <option>Công ty Cổ phần MISA</option>
+                  <option>Công ty Cổ phần Giải pháp Số Việt</option>
                   <option>Văn phòng Tổng công ty</option>
                 </select>
               </div>
@@ -2459,7 +2459,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span className="misa-reports-badge-orange">Mới</span>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Trình in thông minh mới của AMIS Kế toán</h3>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Trình in thông minh mới của Sổ Việt ERP</h3>
               </div>
               <button
                 type="button"

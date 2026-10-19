@@ -66,7 +66,7 @@ export default function ChatRecipientPicker() {
         />
         <button
           type="button"
-          aria-label="Chọn người nhận Amis Chat"
+          aria-label="Chọn người nhận Sổ Việt Chat"
           onClick={() => setOpen((value) => !value)}
         >
           ⌄
@@ -76,7 +76,7 @@ export default function ChatRecipientPicker() {
         <div
           id="schedule-chat-recipients"
           role="listbox"
-          aria-label="Danh sách người nhận Amis Chat"
+          aria-label="Danh sách người nhận Sổ Việt Chat"
           aria-multiselectable="true"
           style={{
             position: "absolute",

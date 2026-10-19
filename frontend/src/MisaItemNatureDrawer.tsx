@@ -127,7 +127,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
-              onClick={() => notify("Hướng dẫn thiết lập tính chất hàng hóa, dịch vụ chuẩn MISA")}
+              onClick={() => notify("Hướng dẫn thiết lập tính chất hàng hóa, dịch vụ chuẩn Sổ Việt ERP")}
               title="Hướng dẫn sử dụng"
               style={{
                 background: "transparent",

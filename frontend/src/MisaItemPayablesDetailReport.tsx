@@ -273,7 +273,7 @@ export default function MisaItemPayablesDetailReport({
               justifyContent: "center",
               padding: 0,
             }}
-            title="Hỗ trợ trực tuyến MISA"
+            title="Hỗ trợ trực tuyến Sổ Việt ERP"
             onClick={() => notify?.("Mở hỗ trợ trực tuyến.")}
           >
             <MessageCircle size={13} fill="#ffffff" />

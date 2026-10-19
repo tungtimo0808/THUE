@@ -495,7 +495,7 @@ export const settingsGroups = [
       "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế",
       "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế",
       "Kiểm soát hồ sơ và hạch toán",
-      "Trợ lý AI MISA AVA: Cấu hình gợi ý hạch toán",
+      "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán",
       "Gợi ý, nhắc nhở thông minh",
       "Tra cứu thông tin doanh nghiệp",
       "Nhật ký truy cập",
@@ -507,7 +507,7 @@ export const settingsGroups = [
     items: [
       "Chuyển đổi dữ liệu sang Thông tư 99/2025/TT-BTC",
       "Hướng dẫn chuyển đổi từ SME",
-      "Chuyển đổi từ AMIS Kế toán bản cũ",
+      "Chuyển đổi từ Sổ Việt ERP bản cũ",
       "Danh sách lệnh tính giá, bảo trì… đang thực hiện",
       "Cập nhật số dư dữ liệu năm trước",
       "Danh sách người dùng đang truy cập",

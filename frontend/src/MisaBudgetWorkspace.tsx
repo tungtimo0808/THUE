@@ -523,7 +523,7 @@ export default function MisaBudgetWorkspace({
                   onChange={(e) => setSelectedUnit(e.target.value)}
                 >
                   <option value="Tung">Tung</option>
-                  <option value="Công ty Cổ phần MISA">Công ty Cổ phần MISA</option>
+                  <option value="Công ty Cổ phần Giải pháp Số Việt">Công ty Cổ phần Giải pháp Số Việt</option>
                   <option value="Văn phòng Tổng công ty">Văn phòng Tổng công ty</option>
                   <option value="Chi nhánh Hà Nội">Chi nhánh Hà Nội</option>
                   <option value="Chi nhánh TP.HCM">Chi nhánh TP.HCM</option>
@@ -1181,13 +1181,13 @@ export default function MisaBudgetWorkspace({
                 />
               </div>
 
-              {/* AVA AI shortcut */}
+              {/* Sổ Việt AI shortcut */}
               <button
                 type="button"
                 className="misa-budget-ava-ai-btn"
-                onClick={() => notify?.("Đang khởi tạo trợ lý AVA Kế toán cho báo cáo ngân sách...")}
+                onClick={() => notify?.("Đang khởi tạo trợ lý Sổ Việt AI cho báo cáo ngân sách...")}
               >
-                <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+                <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
                 <span style={{ fontSize: 14 }}>🤖</span>
               </button>
             </div>
@@ -1506,7 +1506,7 @@ export default function MisaBudgetWorkspace({
                   onChange={(e) => setModalUnit(e.target.value)}
                 >
                   <option value="Tung">Tung</option>
-                  <option value="Công ty Cổ phần MISA">Công ty Cổ phần MISA</option>
+                  <option value="Công ty Cổ phần Giải pháp Số Việt">Công ty Cổ phần Giải pháp Số Việt</option>
                   <option value="Văn phòng Tổng công ty">Văn phòng Tổng công ty</option>
                   <option value="Chi nhánh Hà Nội">Chi nhánh Hà Nội</option>
                   <option value="Chi nhánh TP.HCM">Chi nhánh TP.HCM</option>
@@ -1578,7 +1578,7 @@ export default function MisaBudgetWorkspace({
               </div>
 
               <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, background: "#f8fafc", padding: 10, borderRadius: 4, border: "1px solid #e2e8f0" }}>
-                Hệ thống AMIS Kế toán sẽ căn cứ ngày bắt đầu năm ngân sách để tính toán chu kỳ 12 tháng dự toán và đối soát dữ liệu thực tế.
+                Hệ thống Sổ Việt ERP sẽ căn cứ ngày bắt đầu năm ngân sách để tính toán chu kỳ 12 tháng dự toán và đối soát dữ liệu thực tế.
               </div>
             </div>
 

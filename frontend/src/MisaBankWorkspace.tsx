@@ -663,7 +663,7 @@ export default function MisaBankWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`AVA Kế toán đã tạo dự thảo chứng từ chuyển khoản ${doc.code}.`);
+            notify(`Sổ Việt AI đã tạo dự thảo chứng từ chuyển khoản ${doc.code}.`);
           }}
         />
       )}
@@ -727,7 +727,7 @@ export default function MisaBankWorkspace({
   if (tab === "transactions" || tab === "all") {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
-        {/* AVA Kế toán Smart Analysis Banner (Image 4 & 5) */}
+        {/* Sổ Việt AI Smart Analysis Banner (Image 4 & 5) */}
         {showAvaBanner && (
           <div
             style={{
@@ -762,7 +762,7 @@ export default function MisaBankWorkspace({
                 >
                   <Sparkles size={13} />
                 </div>
-                <strong style={{ fontSize: 13, color: "#4338ca" }}>AVA Kế toán</strong>
+                <strong style={{ fontSize: 13, color: "#4338ca" }}>Sổ Việt AI</strong>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: "#6b7280" }}>
@@ -2532,72 +2532,6 @@ export default function MisaBankWorkspace({
           >
             <SlidersHorizontal size={20} style={{ color: "#f59e0b" }} />
             <span>Tùy chọn</span>
-          </button>
-        </div>
-
-        {/* Panel 4: AMIS Quy trình Banner (Bottom row spanning 100%) */}
-        <div
-          style={{
-            gridColumn: "1 / -1",
-            background: "linear-gradient(90deg, #ecfdf5 0%, #ffffff 80%)",
-            border: "1px solid #d1fae5",
-            borderRadius: 8,
-            padding: "12px 18px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                background: "linear-gradient(135deg, #06b6d4, #0284c7)",
-                color: "#ffffff",
-                display: "grid",
-                placeItems: "center",
-                fontWeight: 800,
-                fontSize: 19,
-                boxShadow: "0 2px 4px rgba(6,182,212,0.3)",
-              }}
-            >
-              Q
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <strong style={{ fontSize: 13, color: "#111827", fontWeight: 700 }}>
-                AMIS Quy trình
-              </strong>
-              <span style={{ fontSize: 12, color: "#475569" }}>
-                Giảm tải công việc kế toán bằng cách số hóa phê duyệt đề nghị thanh toán, tạm ứng và tự động sinh chứng từ.
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            style={{
-              background: "#00b06b",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: 6,
-              padding: "8px 16px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              whiteSpace: "nowrap",
-              boxShadow: "0 1px 3px rgba(0, 176, 107, 0.3)",
-            }}
-            onClick={() => notify("Mở thiết lập tự động hóa AMIS Quy trình...")}
-          >
-            <SlidersHorizontal size={14} />
-            Thiết lập tự động
           </button>
         </div>
       </div>

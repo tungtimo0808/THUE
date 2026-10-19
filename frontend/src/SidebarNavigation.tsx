@@ -81,26 +81,26 @@ export function SidebarNavigation({
 
   return (
     <nav aria-label="Điều hướng chính">
-      {/* 1. AVA Kế toán Header */}
+      {/* 1. Sổ Việt AI Header */}
       <div
         className="misa-sidebar-ava ref-nav-item"
         onClick={() => onOpenAI?.()}
         role="button"
         tabIndex={0}
-        aria-label="Trợ lý AVA Kế toán (AI)"
-        title="Trợ lý AVA Kế toán (AI)"
+        aria-label="Trợ lý Sổ Việt AI"
+        title="Trợ lý Sổ Việt AI"
       >
         <span className="ref-nav-icon">
           <div className="misa-ava-avatar">
             <img
               src="/ava_avatar.jpg"
-              alt="AVA"
+              alt="Sổ Việt AI"
               style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
             />
           </div>
         </span>
         <div className="misa-ava-text ref-nav-label">
-          <strong>AVA Kế toán</strong>
+          <strong>Sổ Việt AI</strong>
           <small>Trợ lý AI thông minh</small>
         </div>
       </div>

@@ -316,7 +316,7 @@ function ReferenceWorkspace() {
   const [notifFilter, setNotifFilter] = useState<"all" | "pending" | "system">("all");
   const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
   const [payrollOptionOpen, setPayrollOptionOpen] = useState(false);
-  const [payrollOption, setPayrollOption] = useState("Tiền lương AMIS Kế toán");
+  const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
 
   const systemAlerts = [
     {
@@ -326,7 +326,7 @@ function ReferenceWorkspace() {
       kindLabel: "Dự báo dòng tiền",
       kind: "alert" as const,
       description: "Dự kiến số dư quỹ tiền mặt giảm dưới ngưỡng an toàn (25.000.000 đ) vào ngày 28/09. Đề xuất gửi nhắc nợ đối tác sớm.",
-      partner: "MISA AVA AI",
+      partner: "Sổ Việt AI",
       amount: 18250000,
       date: "25/09/2026 14:15",
       actionUrl: "/cash/cashflow",
@@ -868,7 +868,7 @@ function ReferenceWorkspace() {
           onNavigate={() => setMobileOpen(false)}
           onOpenAI={() => {
             navigate(href("/cash/transactions"));
-            setNotice("Trợ lý AVA Kế toán đã sẵn sàng.");
+            setNotice("Trợ lý Sổ Việt AI đã sẵn sàng.");
           }}
           onExchangeRate={() => {
             navigate(href("/cash/transactions"));
@@ -1062,42 +1062,42 @@ function ReferenceWorkspace() {
                     >
                       <div
                         onClick={() => {
-                          setPayrollOption("Tiền lương AMIS Kế toán");
+                          setPayrollOption("Tiền lương Sổ Việt ERP");
                           setPayrollOptionOpen(false);
                         }}
                         style={{
                           padding: "8px 14px",
                           fontSize: 13,
-                          color: payrollOption === "Tiền lương AMIS Kế toán" ? "#0284c7" : "#334155",
-                          fontWeight: payrollOption === "Tiền lương AMIS Kế toán" ? 600 : 400,
+                          color: payrollOption === "Tiền lương Sổ Việt ERP" ? "#0284c7" : "#334155",
+                          fontWeight: payrollOption === "Tiền lương Sổ Việt ERP" ? 600 : 400,
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
                         }}
                       >
-                        <span>Tiền lương AMIS Kế toán</span>
-                        {payrollOption === "Tiền lương AMIS Kế toán" && <Check size={14} />}
+                        <span>Tiền lương Sổ Việt ERP</span>
+                        {payrollOption === "Tiền lương Sổ Việt ERP" && <Check size={14} />}
                       </div>
                       <div
                         onClick={() => {
-                          setPayrollOption("AMIS Tiền lương");
+                          setPayrollOption("Sổ Việt Tiền lương");
                           setPayrollOptionOpen(false);
-                          setNotice("Đã chuyển kết nối với dịch vụ đám mây AMIS Tiền lương");
+                          setNotice("Đã chuyển kết nối với dịch vụ đám mây Sổ Việt Tiền lương");
                         }}
                         style={{
                           padding: "8px 14px",
                           fontSize: 13,
-                          color: payrollOption === "AMIS Tiền lương" ? "#0284c7" : "#334155",
-                          fontWeight: payrollOption === "AMIS Tiền lương" ? 600 : 400,
+                          color: payrollOption === "Sổ Việt Tiền lương" ? "#0284c7" : "#334155",
+                          fontWeight: payrollOption === "Sổ Việt Tiền lương" ? 600 : 400,
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
                         }}
                       >
-                        <span>AMIS Tiền lương</span>
-                        {payrollOption === "AMIS Tiền lương" && <Check size={14} />}
+                        <span>Sổ Việt Tiền lương</span>
+                        {payrollOption === "Sổ Việt Tiền lương" && <Check size={14} />}
                       </div>
                     </div>
                   )}
@@ -1153,7 +1153,7 @@ function ReferenceWorkspace() {
                   <button
                     type="button"
                     className="misa-ebank-header-btn"
-                    onClick={() => setNotice("Mở kết nối Ngân hàng điện tử MISA eBanking...")}
+                    onClick={() => setNotice("Mở kết nối Ngân hàng điện tử Sổ Việt eBanking...")}
                   >
                     <span className="misa-ebank-badge-dot" />
                     <div style={{ display: "flex", flexDirection: "column", textAlign: "left", lineHeight: 1.15 }}>

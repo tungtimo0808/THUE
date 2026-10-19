@@ -16,11 +16,11 @@ export default function ReportOutputMenu({
   const menuId = useId();
   const print = kind === "print";
   const options = print
-    ? ["In qua trình duyệt web", "In qua trình in của AMIS Kế toán"]
+    ? ["In qua trình duyệt web", "In qua trình in của Sổ Việt ERP"]
     : [
         "Xuất Excel (dạng dữ liệu)",
         "Xuất Excel (dạng mẫu in)",
-        "Xuất bằng trình in Amis Kế toán",
+        "Xuất bằng trình in Sổ Việt ERP",
       ];
   return (
     <div

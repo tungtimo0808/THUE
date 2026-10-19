@@ -35,8 +35,7 @@ export default function MisaPaymentWorkflow({
             <div>
               <h1>LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA {variant === "settlement" ? "ĐỀ NGHỊ QUYẾT TOÁN TẠM ỨNG" : "ĐỀ NGHỊ CHI TIỀN"}</h1>
               <p>
-                Hệ thống liên thông thông suốt giữa AMIS Quy trình và AMIS Kế
-                toán
+                Hệ thống liên thông thông suốt giữa Quy trình Sổ Việt và Sổ Việt ERP
               </p>
             </div>
             <button
@@ -50,8 +49,8 @@ export default function MisaPaymentWorkflow({
           <div className="pw-steps">
             <article>
               <span>BƯỚC 1</span>
-              <small>AMIS Quy trình</small>
-              <h2>Nhân viên lập {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền"} trên AMIS Quy trình</h2>
+              <small>Quy trình Sổ Việt</small>
+              <h2>Nhân viên lập {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền"} trên Quy trình Sổ Việt</h2>
               <p>{variant === "settlement" ? "Sau khi tổng hợp toàn bộ hóa đơn, chứng từ để quyết toán tạm ứng, nhân viên chủ động tạo đề nghị quyết toán tạm ứng." : "Nhân viên chủ động tạo các đề nghị phát sinh như:"}</p>
               <ul hidden={variant === "settlement"}>
                 {[
@@ -68,19 +67,18 @@ export default function MisaPaymentWorkflow({
             </article>
             <article>
               <span>BƯỚC 2</span>
-              <small>AMIS Quy trình</small>
+              <small>Quy trình Sổ Việt</small>
               <h2>Giám đốc/Kế toán phê duyệt</h2>
               <p>
                 Đề nghị được chuyển đến đúng người phụ trách để kiểm tra, trao
-                đổi, bổ sung thông tin và phê duyệt trực tiếp trên AMIS Quy
-                trình.
+                đổi, bổ sung thông tin và phê duyệt trực tiếp trên Quy trình Sổ Việt.
               </p>
               <footer>Tạo đề nghị nhanh chóng trên web và mobile</footer>
             </article>
             <article>
               <span>BƯỚC 3</span>
-              <small>AMIS Kế toán</small>
-              <h2>Đồng bộ đề nghị về AMIS Kế toán</h2>
+              <small>Sổ Việt ERP</small>
+              <h2>Đồng bộ đề nghị về Sổ Việt ERP</h2>
               <p>
                 Kế toán kế thừa thông tin từ {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi"} đã duyệt để lập chứng
                 từ hạch toán nhanh chóng, không cần nhập lại thủ công.

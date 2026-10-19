@@ -240,7 +240,7 @@ export function SaleQuoteModal({
   const handleAIAssistNote = () => {
     const suggested = `Báo giá có hiệu lực 15 ngày kể từ ngày lập. Giá đã bao gồm thuế GTGT và chi phí vận chuyển trong phạm vi 30km. Thanh toán 30% khi ký kết, 70% sau khi bàn giao nghiệm thu.`;
     setNote(suggested);
-    notify("AVA Kế toán đã tạo tự động ghi chú điều khoản báo giá!");
+    notify("Sổ Việt AI đã tạo tự động ghi chú điều khoản báo giá!");
   };
 
   const handleSave = (andNew = false) => {
@@ -651,7 +651,7 @@ export function SaleQuoteModal({
                 <button
                   type="button"
                   onClick={handleAIAssistNote}
-                  title="AVA AI gợi ý điều khoản ghi chú"
+                  title="Sổ Việt AI gợi ý điều khoản ghi chú"
                   style={{
                     background: "none",
                     border: "none",
@@ -1669,7 +1669,7 @@ export function SaleOrderModal({
   const handleAIAssistDesc = () => {
     const suggested = `Đơn đặt hàng cung cấp thiết bị và phụ kiện điện công trình. Giao hàng theo từng đợt tại chân công trình. Thanh toán theo hợp đồng kinh tế đã ký.`;
     setDescription(suggested);
-    notify("AVA Kế toán đã tạo tự động diễn giải đơn đặt hàng!");
+    notify("Sổ Việt AI đã tạo tự động diễn giải đơn đặt hàng!");
   };
 
   const handleSave = (andNew = false) => {
@@ -2190,7 +2190,7 @@ export function SaleOrderModal({
                 <button
                   type="button"
                   onClick={handleAIAssistDesc}
-                  title="AVA AI gợi ý diễn giải đơn hàng"
+                  title="Sổ Việt AI gợi ý diễn giải đơn hàng"
                   style={{
                     background: "none",
                     border: "none",
@@ -3640,7 +3640,7 @@ export function SaleContractModal({
   const handleAIAssistSummary = () => {
     const suggested = `Hợp đồng kinh tế cung cấp, lắp đặt và chuyển giao thiết bị điện hạ thế. Thời gian thi công 30 ngày kể từ ngày khởi công. Bảo hành 24 tháng theo tiêu chuẩn nhà sản xuất.`;
     setSummary(suggested);
-    notify("AVA Kế toán đã tạo tự động trích yếu hợp đồng bán!");
+    notify("Sổ Việt AI đã tạo tự động trích yếu hợp đồng bán!");
   };
 
   const handleSave = (andNew = false) => {
@@ -4265,7 +4265,7 @@ export function SaleContractModal({
                       <button
                         type="button"
                         onClick={handleAIAssistSummary}
-                        title="AVA AI gợi ý trích yếu"
+                        title="Sổ Việt AI gợi ý trích yếu"
                         style={{
                           position: "absolute",
                           right: 6,

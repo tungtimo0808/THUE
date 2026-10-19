@@ -1790,239 +1790,6 @@ export default function MisaLedgerWorkspace({
                 </div>
               ))}
             </div>
-
-            {/* Bottom Row: AMIS Quy trình Banner & 3 Story Cards (Exact Image 1 & 2) */}
-            <div
-              style={{
-                background: "#ecfdf5",
-                borderRadius: 8,
-                border: "1px solid #a7f3d0",
-                padding: "20px 24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 20,
-              }}
-            >
-              {/* Banner Header: Blue Q icon, title, description, and button */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  {/* Blue Q Icon */}
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#ffffff",
-                      fontSize: 24,
-                      fontWeight: 800,
-                      boxShadow: "0 4px 10px rgba(2, 132, 199, 0.3)",
-                      fontFamily: "sans-serif",
-                    }}
-                  >
-                    Q
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
-                      AMIS Quy trình
-                    </div>
-                    <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>
-                      Giảm tải công việc kế toán bằng cách số hóa phê duyệt đề nghị thanh toán, tạm ứng và tự động sinh chứng từ.
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    notify("Mở cấu hình thiết lập tự động hóa quy trình AMIS");
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    background: "#00a862",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: 6,
-                    padding: "9px 18px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
-                  }}
-                >
-                  <Settings size={16} />
-                  <span>Thiết lập tự động</span>
-                </button>
-              </div>
-
-              {/* Sub-section: CÂU CHUYỆN SỐ HÓA THÀNH CÔNG NỔI BẬT */}
-              <div>
-                <div
-                  style={{
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    color: "#334155",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                    marginBottom: 14,
-                  }}
-                >
-                  CÂU CHUYỆN SỐ HÓA THÀNH CÔNG NỔI BẬT
-                </div>
-
-                {/* 3 Story Cards */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: 16,
-                  }}
-                >
-                  {/* Card 1 */}
-                  <div
-                    style={{
-                      background: "#ffffff",
-                      borderRadius: 8,
-                      border: "1px solid #e2e8f0",
-                      padding: 12,
-                      display: "flex",
-                      gap: 12,
-                      cursor: "pointer",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                      transition: "transform 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-                    onClick={() => notify("Xem chi tiết: Câu chuyện Doanh nghiệp nhỏ tự động hóa")}
-                  >
-                    <img
-                      src={amisStory1}
-                      alt="Story 1"
-                      style={{
-                        width: 100,
-                        height: 72,
-                        borderRadius: 6,
-                        objectFit: "cover",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", lineHeight: 1.35 }}>
-                          Doanh nghiệp nhỏ có thể tự động hóa nhờ...
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                          Giảm thời gian duyệt chi, tự động...
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: "#00a862", display: "flex", alignItems: "center", gap: 4 }}>
-                        Chi tiết câu chuyện →
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 2 */}
-                  <div
-                    style={{
-                      background: "#ffffff",
-                      borderRadius: 8,
-                      border: "1px solid #e2e8f0",
-                      padding: 12,
-                      display: "flex",
-                      gap: 12,
-                      cursor: "pointer",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                      transition: "transform 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-                    onClick={() => notify("Xem chi tiết: Lợi ích của việc tự động hóa quy trình")}
-                  >
-                    <img
-                      src={amisStory2}
-                      alt="Story 2"
-                      style={{
-                        width: 100,
-                        height: 72,
-                        borderRadius: 6,
-                        objectFit: "cover",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", lineHeight: 1.35 }}>
-                          Lợi ích của việc tự động hóa quy trình đối v...
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                          Giảm thời gian duyệt chi, tự động...
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: "#00a862", display: "flex", alignItems: "center", gap: 4 }}>
-                        Chi tiết câu chuyện →
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 3 */}
-                  <div
-                    style={{
-                      background: "#ffffff",
-                      borderRadius: 8,
-                      border: "1px solid #e2e8f0",
-                      padding: 12,
-                      display: "flex",
-                      gap: 12,
-                      cursor: "pointer",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                      transition: "transform 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-                    onClick={() => notify("Xem chi tiết: Hành trình số hóa quy trình tại Đông Dương")}
-                  >
-                    <img
-                      src={amisStory3}
-                      alt="Story 3"
-                      style={{
-                        width: 100,
-                        height: 72,
-                        borderRadius: 6,
-                        objectFit: "cover",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", lineHeight: 1.35 }}>
-                          Hành trình số hóa quy trình tại Đông Dươn...
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                          Giải pháp tháo gỡ điểm nghẽn cho kế toán
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: "#00a862", display: "flex", alignItems: "center", gap: 4 }}>
-                        Chi tiết câu chuyện →
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </>
         )}
 
@@ -2071,7 +1838,7 @@ export default function MisaLedgerWorkspace({
                       LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA ĐỀ NGHỊ QUYẾT TOÁN TẠM ỨNG
                     </h2>
                     <div style={{ fontSize: 13, color: "#64748b", marginTop: 5 }}>
-                      Hệ thống liên thông thông suốt giữa AMIS Quy trình và AMIS Kế toán
+                      Hệ thống liên thông thông suốt giữa Quy trình Sổ Việt và Sổ Việt ERP
                     </div>
                   </div>
 
@@ -2118,7 +1885,7 @@ export default function MisaLedgerWorkspace({
                     marginTop: 6,
                   }}
                 >
-                  {/* CARD 1: BƯỚC 1 - AMIS Quy trình */}
+                  {/* CARD 1: BƯỚC 1 - Quy trình Sổ Việt */}
                   <div
                     style={{
                       flex: 1,
@@ -2135,7 +1902,7 @@ export default function MisaLedgerWorkspace({
                       boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
                     }}
                   >
-                    {/* Decorative Top-Right Watermark (AMIS Quy trình Logo) */}
+                    {/* Decorative Top-Right Watermark (Quy trình Sổ Việt Logo) */}
                     <div
                       style={{
                         position: "absolute",
@@ -2175,7 +1942,7 @@ export default function MisaLedgerWorkspace({
                         BƯỚC 1
                       </div>
                       <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                        AMIS Quy trình
+                        Quy trình Sổ Việt
                       </div>
 
                       <div
@@ -2187,7 +1954,7 @@ export default function MisaLedgerWorkspace({
                           marginTop: 24,
                         }}
                       >
-                        Nhân viên lập đề nghị quyết toán tạm ứng trên AMIS Quy trình
+                        Nhân viên lập đề nghị quyết toán tạm ứng trên Quy trình Sổ Việt
                       </div>
 
                       <div
@@ -2249,7 +2016,7 @@ export default function MisaLedgerWorkspace({
                         Q
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
-                        AMIS Quy trình
+                        Quy trình Sổ Việt
                       </span>
                     </div>
                   </div>
@@ -2265,7 +2032,7 @@ export default function MisaLedgerWorkspace({
                     </svg>
                   </div>
 
-                  {/* CARD 2: BƯỚC 2 - AMIS Quy trình */}
+                  {/* CARD 2: BƯỚC 2 - Quy trình Sổ Việt */}
                   <div
                     style={{
                       flex: 1,
@@ -2282,7 +2049,7 @@ export default function MisaLedgerWorkspace({
                       boxShadow: "0 1px 4px rgba(0,0,0,0.02)",
                     }}
                   >
-                    {/* Decorative Top-Right Watermark (AMIS Quy trình Logo) */}
+                    {/* Decorative Top-Right Watermark (Quy trình Sổ Việt Logo) */}
                     <div
                       style={{
                         position: "absolute",
@@ -2322,7 +2089,7 @@ export default function MisaLedgerWorkspace({
                         BƯỚC 2
                       </div>
                       <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                        AMIS Quy trình
+                        Quy trình Sổ Việt
                       </div>
 
                       <div
@@ -2345,7 +2112,7 @@ export default function MisaLedgerWorkspace({
                           marginTop: 14,
                         }}
                       >
-                        Đề nghị được chuyển đến đúng người phụ trách để kiểm tra, trao đổi, bổ sung thông tin và phê duyệt trực tiếp trên AMIS Quy trình.
+                        Đề nghị được chuyển đến đúng người phụ trách để kiểm tra, trao đổi, bổ sung thông tin và phê duyệt trực tiếp trên Quy trình Sổ Việt.
                       </div>
 
                       <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 22 }}>
@@ -2396,7 +2163,7 @@ export default function MisaLedgerWorkspace({
                         Q
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
-                        AMIS Quy trình
+                        Quy trình Sổ Việt
                       </span>
                     </div>
                   </div>
@@ -2412,7 +2179,7 @@ export default function MisaLedgerWorkspace({
                     </svg>
                   </div>
 
-                  {/* CARD 3: BƯỚC 3 - AMIS Kế toán */}
+                  {/* CARD 3: BƯỚC 3 - Sổ Việt ERP */}
                   <div
                     style={{
                       flex: 1,
@@ -2459,7 +2226,7 @@ export default function MisaLedgerWorkspace({
                         BƯỚC 3
                       </div>
                       <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                        AMIS Kế toán
+                        Sổ Việt ERP
                       </div>
 
                       <div
@@ -2471,7 +2238,7 @@ export default function MisaLedgerWorkspace({
                           marginTop: 24,
                         }}
                       >
-                        Đồng bộ đề nghị về AMIS Kế toán
+                        Đồng bộ đề nghị về Sổ Việt ERP
                       </div>
 
                       <div
@@ -2524,7 +2291,7 @@ export default function MisaLedgerWorkspace({
                         <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
                       </svg>
                       <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
-                        AMIS Kế toán
+                        Sổ Việt ERP
                       </span>
                     </div>
                   </div>
@@ -4475,7 +4242,7 @@ export default function MisaLedgerWorkspace({
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
-                  <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+                  <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
                   <span style={{ fontSize: 15 }}>🤖</span>
                 </div>
               </div>
@@ -6593,7 +6360,7 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <span title="AVA AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
@@ -6783,7 +6550,7 @@ export default function MisaLedgerWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý kế toán AVA đang sẵn sàng hỗ trợ định khoản!")}
+                  onClick={() => notify("Trợ lý Sổ Việt AI đang sẵn sàng hỗ trợ định khoản!")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -6799,7 +6566,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Bot size={14} color="#9333ea" />
-                  <span>AVA Kế toán</span>
+                  <span>Sổ Việt AI</span>
                   <ChevronDown size={13} color="#9333ea" />
                 </button>
               </div>
@@ -7690,7 +7457,7 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <span title="AVA AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
@@ -7847,7 +7614,7 @@ export default function MisaLedgerWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý kế toán AVA đang sẵn sàng hỗ trợ quyết toán tạm ứng!")}
+                  onClick={() => notify("Trợ lý Sổ Việt AI đang sẵn sàng hỗ trợ quyết toán tạm ứng!")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -7863,7 +7630,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Bot size={14} color="#9333ea" />
-                  <span>AVA Kế toán</span>
+                  <span>Sổ Việt AI</span>
                   <ChevronDown size={13} color="#9333ea" />
                 </button>
               </div>
@@ -9502,7 +9269,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <input type="checkbox" id="auto-sync-check" defaultChecked />
                 <label htmlFor="auto-sync-check" style={{ fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>
-                  Tự động đồng bộ đề nghị quyết toán đã phê duyệt từ AMIS Quy trình
+                  Tự động đồng bộ đề nghị quyết toán đã phê duyệt từ Quy trình Sổ Việt
                 </label>
               </div>
 
@@ -9526,7 +9293,7 @@ export default function MisaLedgerWorkspace({
 
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#475569" }}>
                   <input type="checkbox" defaultChecked />
-                  Tự động đính kèm file hóa đơn điện tử / chứng từ gốc từ AMIS Quy trình
+                  Tự động đính kèm file hóa đơn điện tử / chứng từ gốc từ Quy trình Sổ Việt
                 </label>
 
                 <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#475569" }}>
@@ -9609,7 +9376,7 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
-                    Trợ lý AI AVA - Tự động lập chứng từ
+                    Trợ lý Sổ Việt AI - Tự động lập chứng từ
                   </span>
                   <div style={{ fontSize: 12, color: "#64748b" }}>
                     Nhập nội dung nghiệp vụ bằng ngôn ngữ tự nhiên
@@ -9719,7 +9486,7 @@ export default function MisaLedgerWorkspace({
                     id: `PKT0000${generalVouchers.length + 1}`,
                     date: "31/10/2026",
                     voucherDate: "31/10/2026",
-                    desc: aiPrompt || "Hạch toán nghiệp vụ tự động bằng AI AVA",
+                    desc: aiPrompt || "Hạch toán nghiệp vụ tự động bằng Sổ Việt AI",
                     debitAcc: "6422",
                     creditAcc: "242",
                     amount: 18500000,
@@ -9727,7 +9494,7 @@ export default function MisaLedgerWorkspace({
                   };
                   setGeneralVouchers([newVoucher, ...generalVouchers]);
                   setShowVoucherTable(true);
-                  notify(`AI AVA đã phân tích và sinh chứng từ ${newVoucher.id} thành công!`);
+                  notify(`Sổ Việt AI đã phân tích và sinh chứng từ ${newVoucher.id} thành công!`);
                   setAiPrompt("");
                 }}
                 style={{

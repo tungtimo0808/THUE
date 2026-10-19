@@ -263,7 +263,7 @@ export function ReferenceProcess({
             <Grip size={18} />
           </span>
           <strong>
-            {moduleId === "sales" ? "AMIS CRM" : "AMIS Quy trình"}
+            {moduleId === "sales" ? "Sổ Việt CRM" : "Quy trình Sổ Việt"}
           </strong>
           <span>
             {moduleId === "sales"

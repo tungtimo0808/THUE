@@ -253,7 +253,7 @@ export default function MisaFinancialNotesReport({
             onClick={() => setShowAiAnalysis(!showAiAnalysis)}
           >
             <Sparkles size={14} color="#7c3aed" />
-            <span>{showAiAnalysis ? "Đóng phân tích AVA" : "✨ Trợ lý rà soát Thuyết minh BCTC"}</span>
+            <span>{showAiAnalysis ? "Đóng phân tích Sổ Việt AI" : "✨ Trợ lý rà soát Thuyết minh BCTC"}</span>
           </button>
         </div>
 
@@ -342,7 +342,7 @@ export default function MisaFinancialNotesReport({
               cursor: "pointer",
             }}
             title="Trợ giúp"
-            onClick={() => notify?.("Hệ thống trợ giúp AVA Kế toán.")}
+            onClick={() => notify?.("Hệ thống trợ giúp Sổ Việt AI.")}
           >
             <MessageCircle size={14} />
           </button>
@@ -431,7 +431,7 @@ export default function MisaFinancialNotesReport({
           <Sparkles size={20} color="#7c3aed" style={{ flexShrink: 0, marginTop: 2 }} />
           <div style={{ flex: 1, fontSize: 13, color: "#4c1d95", lineHeight: 1.6 }}>
             <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13.5 }}>
-              Kết quả rà soát tự động Thuyết minh BCTC (AVA Kế toán):
+              Kết quả rà soát tự động Thuyết minh BCTC (Sổ Việt AI):
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 8 }}>
               <div style={{ background: "#ffffff", padding: 10, borderRadius: 6, border: "1px solid #ddd6fe" }}>

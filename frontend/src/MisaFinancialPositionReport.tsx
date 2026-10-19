@@ -382,10 +382,10 @@ export default function MisaFinancialPositionReport({
           <button
             type="button"
             style={{ background: "transparent", border: "none", display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#0284c7", cursor: "pointer", fontWeight: 600 }}
-            onClick={() => notify?.("Kết nối cổng nộp thuế điện tử MISA mTax...")}
+            onClick={() => notify?.("Kết nối cổng nộp thuế điện tử Sổ Việt eTax...")}
           >
             <Send size={15} color="#0284c7" />
-            <span>Nộp báo cáo qua MISA mTax</span>
+            <span>Nộp báo cáo qua Sổ Việt eTax</span>
           </button>
 
           {/* AI Analysis Sparkles Badge matching screenshot */}
@@ -454,7 +454,7 @@ export default function MisaFinancialPositionReport({
             type="button"
             style={{ width: 30, height: 30, border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "#0284c7", cursor: "pointer" }}
             title="Trợ giúp"
-            onClick={() => notify?.("Hệ thống trợ giúp AVA Kế toán.")}
+            onClick={() => notify?.("Hệ thống trợ giúp Sổ Việt AI.")}
           >
             <MessageCircle size={14} />
           </button>
@@ -515,7 +515,7 @@ export default function MisaFinancialPositionReport({
         <div style={{ margin: "0 20px 12px", padding: "14px 18px", background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 6, fontSize: 13, color: "#4c1d95" }}>
           <div style={{ fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
             <Sparkles size={15} color="#7c3aed" />
-            <span>Phân tích thông minh từ Trợ lý AVA Kế toán:</span>
+            <span>Phân tích thông minh từ Trợ lý Sổ Việt AI:</span>
           </div>
           <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.6 }}>
             <li><strong>Chỉ số Tiền mặt:</strong> Mục Tiền đang ghi nhận âm (20.000.000đ) do TK 111, 112 có số dư có tạm thời, đề nghị kiểm tra lại chứng từ thu chi.</li>

@@ -255,7 +255,7 @@ export default function MisaTaxWorkspace({
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", display: "block", marginBottom: 5 }}>Phương thức nộp:</label>
                   <select style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}>
-                    <option>Nộp thuế điện tử qua dịch vụ MISA mTax (Khuyên dùng)</option>
+                    <option>Nộp thuế điện tử qua dịch vụ Sổ Việt eTax (Khuyên dùng)</option>
                     <option>Ủy nhiệm chi chuyển khoản qua Ngân hàng</option>
                     <option>Nộp tiền mặt tại Kho bạc / Ngân hàng thương mại</option>
                   </select>
@@ -474,7 +474,7 @@ export default function MisaTaxWorkspace({
                       <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>1</td>
                       <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", fontWeight: 600 }}>0001234</td>
                       <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>05/09/2026</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>Công ty Cổ phần MISA</td>
+                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>Công ty Cổ phần Giải pháp Số Việt</td>
                       <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>0101243150</td>
                       <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>150.000.000</td>
                       <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>10%</td>
@@ -656,7 +656,7 @@ export default function MisaTaxWorkspace({
           gap: 20,
         }}
       >
-        {/* Left Card: Form Kết nối MISA MTAX */}
+        {/* Left Card: Form Kết nối Sổ Việt eTax */}
         <div
           style={{
             background: "#ffffff",
@@ -671,7 +671,7 @@ export default function MisaTaxWorkspace({
             boxSizing: "border-box",
           }}
         >
-          {/* Logo MISA mTax */}
+          {/* Logo Sổ Việt eTax */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* MISA round logo icon */}
             <div
@@ -693,7 +693,7 @@ export default function MisaTaxWorkspace({
               </svg>
             </div>
             <span style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.5px" }}>
-              MISA mTax
+              Sổ Việt eTax
             </span>
           </div>
 
@@ -708,7 +708,7 @@ export default function MisaTaxWorkspace({
               letterSpacing: 0.2,
             }}
           >
-            Kết nối MISA MTAX
+            Kết nối Sổ Việt eTax
           </h2>
 
           {/* Input Form */}
@@ -793,12 +793,12 @@ export default function MisaTaxWorkspace({
 
             {/* Subtext */}
             <div style={{ fontSize: 12.5, color: "#374151", textAlign: "center", marginTop: 4 }}>
-              Bạn chưa có tài khoản <em>MISA MTAX</em>? Mua ngay{" "}
+              Bạn chưa có tài khoản <em>Sổ Việt eTax</em>? Mua ngay{" "}
               <a
                 href="#buy"
                 onClick={(e) => {
                   e.preventDefault();
-                  notify("Chuyển tới trang đăng ký dịch vụ MISA mTax");
+                  notify("Chuyển tới trang đăng ký dịch vụ Sổ Việt eTax");
                 }}
                 style={{ color: "#0073e6", textDecoration: "underline", fontWeight: 500 }}
               >
@@ -811,7 +811,7 @@ export default function MisaTaxWorkspace({
               type="button"
               onClick={() => {
                 setIsMtaxConnected(true);
-                notify("Kết nối dịch vụ thuế điện tử MISA mTax thành công!");
+                notify("Kết nối dịch vụ thuế điện tử Sổ Việt eTax thành công!");
               }}
               style={{
                 width: "100%",
@@ -906,12 +906,12 @@ export default function MisaTaxWorkspace({
               color: "#1e293b",
             }}
           >
-            Dịch vụ thuế điện tử MISA mTax
+            Dịch vụ thuế điện tử Sổ Việt eTax
           </h3>
 
           {/* Subtitle */}
           <p style={{ margin: "0 0 16px 0", fontSize: 13, color: "#475569", lineHeight: 1.45 }}>
-            Kê khai, nộp thuế thuận tiện, nhanh chóng hơn với MISA mTax
+            Kê khai, nộp thuế thuận tiện, nhanh chóng hơn với Sổ Việt eTax
           </p>
 
           {/* Bullets */}
@@ -924,7 +924,7 @@ export default function MisaTaxWorkspace({
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
               <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
-              <span>Tích hợp ngay trên phần mềm kế toán MISA</span>
+              <span>Tích hợp ngay trên phần mềm kế toán Sổ Việt ERP</span>
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
               <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
@@ -935,7 +935,7 @@ export default function MisaTaxWorkspace({
           {/* Link Xem thêm */}
           <div style={{ marginTop: 18 }}>
             <span
-              onClick={() => notify("Mở trang thông tin giới thiệu chi tiết MISA mTax")}
+              onClick={() => notify("Mở trang thông tin giới thiệu chi tiết Sổ Việt eTax")}
               style={{
                 color: "#0073e6",
                 fontSize: 13,
@@ -1154,7 +1154,7 @@ export default function MisaTaxWorkspace({
           gap: 12,
         }}
       >
-        {/* Left: Search input + AVA AI Link */}
+        {/* Left: Search input + Sổ Việt AI Link */}
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ position: "relative", width: 230 }}>
             <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "#94a3b8" }} />
@@ -1177,7 +1177,7 @@ export default function MisaTaxWorkspace({
           </div>
 
           <div
-            onClick={() => notify("Mở trợ lý AVA AI để tìm kiếm và lập báo cáo thuế thông minh")}
+            onClick={() => notify("Mở trợ lý Sổ Việt AI để tìm kiếm và lập báo cáo thuế thông minh")}
             style={{
               color: "#2563eb",
               fontSize: 13,
@@ -1188,7 +1188,7 @@ export default function MisaTaxWorkspace({
               fontWeight: 500,
             }}
           >
-            <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+            <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
             <span style={{ fontSize: 14 }}>🤖</span>
           </div>
         </div>

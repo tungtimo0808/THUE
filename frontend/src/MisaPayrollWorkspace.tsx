@@ -421,7 +421,7 @@ export default function MisaPayrollWorkspace({
   const [selectedDept, setSelectedDept] = useState("all");
   const [reportSearch, setReportSearch] = useState("");
   const [attendanceSearch, setAttendanceSearch] = useState("");
-  const [payrollOption, setPayrollOption] = useState("Tiền lương AMIS Kế toán");
+  const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
   const [showPayrollOptionDropdown, setShowPayrollOptionDropdown] = useState(false);
   const [reportLanguage, setReportLanguage] = useState("Tiếng Việt");
   const [showReportVisibilityModal, setShowReportVisibilityModal] = useState(false);
@@ -835,8 +835,8 @@ export default function MisaPayrollWorkspace({
                     onChange={(e) => setPayrollOption(e.target.value)}
                     style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1" }}
                   >
-                    <option value="Tiền lương AMIS Kế toán">Tiền lương AMIS Kế toán (Tính trực tiếp trên phần mềm)</option>
-                    <option value="AMIS Tiền lương đám mây">AMIS Tiền lương (Kết nối bộ ứng dụng quản trị nhân sự)</option>
+                    <option value="Tiền lương Sổ Việt ERP">Tiền lương Sổ Việt ERP (Tính trực tiếp trên phần mềm)</option>
+                    <option value="Sổ Việt Tiền lương đám mây">Sổ Việt Tiền lương (Kết nối bộ ứng dụng quản trị nhân sự)</option>
                   </select>
                 </div>
                 <div>
@@ -3364,35 +3364,35 @@ export default function MisaPayrollWorkspace({
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  notify("Mở liên kết AMIS Chấm công");
+                  notify("Mở liên kết Sổ Việt Chấm công");
                 }}
                 style={{ color: "#0073e6", fontWeight: 600, textDecoration: "none" }}
               >
-                AMIS Chấm công
+                Sổ Việt Chấm công
               </a>
               ,{" "}
               <a
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  notify("Mở liên kết AMIS Tiền lương");
+                  notify("Mở liên kết Sổ Việt Tiền lương");
                 }}
                 style={{ color: "#0073e6", fontWeight: 600, textDecoration: "none" }}
               >
-                AMIS Tiền lương
+                Sổ Việt Tiền lương
               </a>
               .{" "}
               <a
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  notify("Kết nối API tự động hóa giữa AMIS Tiền lương và Kế toán...");
+                  notify("Kết nối API tự động hóa giữa Sổ Việt Tiền lương và Kế toán...");
                 }}
                 style={{ color: "#0073e6", fontWeight: 600, textDecoration: "none" }}
               >
                 Kết nối ngay
               </a>{" "}
-              với AMIS Tiền lương để nhận dữ liệu hạch toán
+              với Sổ Việt Tiền lương để nhận dữ liệu hạch toán
             </span>
           </div>
 
@@ -4762,7 +4762,7 @@ export default function MisaPayrollWorkspace({
                   marginBottom: 6,
                 }}
               >
-                Bạn chưa kết nối với ứng dụng AMIS Thuế TNCN.
+                Bạn chưa kết nối với ứng dụng Sổ Việt Thuế TNCN.
               </div>
               <div
                 style={{
@@ -4779,7 +4779,7 @@ export default function MisaPayrollWorkspace({
             <button
               type="button"
               onClick={() => {
-                notify("Đã kết nối thành công với ứng dụng AMIS Thuế TNCN!");
+                notify("Đã kết nối thành công với ứng dụng Sổ Việt Thuế TNCN!");
                 setTaxDeductionMode("detail_view");
               }}
               style={{
@@ -4831,7 +4831,7 @@ export default function MisaPayrollWorkspace({
               <ArrowLeft size={14} /> Quay lại
             </button>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Kỳ thuế: <strong>Quý 3/2026 (Tháng 09/2026)</strong> • <span style={{ color: "#00a862", fontWeight: 600 }}>● Đã kết nối AMIS Thuế TNCN</span>
+              Kỳ thuế: <strong>Quý 3/2026 (Tháng 09/2026)</strong> • <span style={{ color: "#00a862", fontWeight: 600 }}>● Đã kết nối Sổ Việt Thuế TNCN</span>
             </div>
           </div>
 
@@ -4984,7 +4984,7 @@ export default function MisaPayrollWorkspace({
             gap: 12,
           }}
         >
-          {/* Left: Input tìm kiếm & Link AVA Kế toán cùng 1 dòng ngang */}
+          {/* Left: Input tìm kiếm & Link Sổ Việt AI cùng 1 dòng ngang */}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ position: "relative", width: 260 }}>
               {/* Purple Gradient Search Icon */}
@@ -5043,10 +5043,10 @@ export default function MisaPayrollWorkspace({
               />
             </div>
 
-            {/* Dòng link AVA Kế toán cùng 1 hàng */}
+            {/* Dòng link Sổ Việt AI cùng 1 hàng */}
             <div
               onClick={() => {
-                notify("Trợ lý AVA Kế toán: Sẵn sàng tra cứu, phân tích quỹ lương và đề xuất biểu mẫu phù hợp");
+                notify("Trợ lý Sổ Việt AI: Sẵn sàng tra cứu, phân tích quỹ lương và đề xuất biểu mẫu phù hợp");
               }}
               style={{
                 display: "inline-flex",
@@ -5061,7 +5061,7 @@ export default function MisaPayrollWorkspace({
               onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
             >
-              <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
               <div
                 style={{
                   width: 17,
@@ -5391,7 +5391,7 @@ export default function MisaPayrollWorkspace({
         {/* Tab neo nhỏ mép phải màn hình màu xanh dương ‹ */}
         <div
           title="Mở tiện ích bổ sung"
-          onClick={() => notify("Tiện ích trợ giúp & Báo cáo nâng cao AMIS")}
+          onClick={() => notify("Tiện ích trợ giúp & Báo cáo nâng cao Sổ Việt ERP")}
           style={{
             position: "fixed",
             right: 0,

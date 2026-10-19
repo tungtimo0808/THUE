@@ -234,7 +234,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
   simple: {
     label: "Giản đơn",
     headerTitle: "Các bước tính giá thành sản xuất liên tục - Giản đơn",
-    videoTopLabel: "[AMIS Kế toán] Hướng dẫn",
+    videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "TÍNH GIÁ THÀNH GIẢN ĐƠN",
     videoSubtitle: "THÔNG TƯ 200",
     videoBg: "linear-gradient(135deg, #09203f 0%, #537895 100%)",
@@ -256,7 +256,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
   coefficient: {
     label: "Hệ số, Tỷ lệ",
     headerTitle: "Các bước tính giá thành sản xuất liên tục - Hệ số tỷ lệ",
-    videoTopLabel: "[AMIS Kế toán] Hướng dẫn",
+    videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "TÍNH GIÁ THÀNH HỆ SỐ - TỶ LỆ",
     videoSubtitle: "THÔNG TƯ 200",
     videoBg: "linear-gradient(135deg, #09203f 0%, #537895 100%)",
@@ -279,9 +279,9 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
   step: {
     label: "Phân bước",
     headerTitle: "Các bước tính giá thành sản xuất liên tục - Phân bước",
-    videoTopLabel: "[AMIS Kế toán] Tính giá thành",
+    videoTopLabel: "[Sổ Việt ERP] Tính giá thành",
     videoMainTitle: "PHƯƠNG PHÁP PHÂN BƯỚC LIÊN TỤC",
-    videoSubtitle: "PHẦN MỀM KẾ TOÁN ONLINE MISA AMIS",
+    videoSubtitle: "PHẦN MỀM KẾ TOÁN DOANH NGHIỆP SỔ VIỆT ERP",
     videoBg: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 50%, #dc2626 100%)",
     hasUtilitiesBottom: true,
     row1: [
@@ -302,7 +302,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
   projects: {
     label: "Công trình",
     headerTitle: "Các bước tính giá thành - Công trình",
-    videoTopLabel: "[AMIS Kế toán] Hướng dẫn",
+    videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "CÔNG TRÌNH VỤ VIỆC - DỊCH VỤ",
     videoSubtitle: "THÔNG TƯ 200",
     videoBg: "linear-gradient(135deg, #09203f 0%, #1e3a8a 50%, #0369a1 100%)",
@@ -324,7 +324,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
   orders: {
     label: "Đơn hàng",
     headerTitle: "Các bước tính giá thành - Đơn hàng",
-    videoTopLabel: "[AMIS Kế toán] Hướng dẫn Tính giá thành",
+    videoTopLabel: "[Sổ Việt ERP] Hướng dẫn Tính giá thành",
     videoMainTitle: "ĐƠN ĐẶT HÀNG",
     videoSubtitle: "THÔNG TƯ 200",
     videoBg: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
@@ -346,7 +346,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
   contracts: {
     label: "Hợp đồng",
     headerTitle: "Các bước tính giá thành - Hợp đồng",
-    videoTopLabel: "[AMIS Kế toán] Hướng dẫn Tính giá thành",
+    videoTopLabel: "[Sổ Việt ERP] Hướng dẫn Tính giá thành",
     videoMainTitle: "HỢP ĐỒNG",
     videoSubtitle: "THÔNG TƯ 200",
     videoBg: "linear-gradient(135deg, #09203f 0%, #1e3a8a 100%)",
@@ -2139,7 +2139,7 @@ export default function MisaCostWorkspace({
             </div>
           )}
 
-          {/* AVA AI Suggestion Banner (Matching Screenshot 2) */}
+          {/* Sổ Việt AI Suggestion Banner (Matching Screenshot 2) */}
           <div
             style={{
               background: "linear-gradient(90deg, #f0fdf4 0%, #eff6ff 50%, #faf5ff 100%)",
@@ -2154,7 +2154,7 @@ export default function MisaCostWorkspace({
             }}
           >
             <div style={{ fontSize: 13.5, color: "#1e293b", fontWeight: 500 }}>
-              Bạn chưa chọn được phương pháp tính giá phù hợp? Hãy để AVA Kế toán gợi ý cho bạn nhé!
+              Bạn chưa chọn được phương pháp tính giá phù hợp? Hãy để Sổ Việt AI gợi ý cho bạn nhé!
             </div>
 
             <button
@@ -6991,12 +6991,12 @@ export default function MisaCostWorkspace({
               />
             </div>
 
-            {/* Right: AVA AI, Language, Visibility */}
+            {/* Right: Sổ Việt AI, Language, Visibility */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {/* AVA Kế toán button */}
+              {/* Sổ Việt AI button */}
               <button
                 type="button"
-                onClick={() => notify("AVA Kế toán: Đang tìm kiếm các báo cáo giá thành tối ưu cho bạn...")}
+                onClick={() => notify("Sổ Việt AI: Đang tìm kiếm các báo cáo giá thành tối ưu cho bạn...")}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -7012,7 +7012,7 @@ export default function MisaCostWorkspace({
                 }}
               >
                 <Sparkles size={14} color="#6366f1" />
-                <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+                <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
               </button>
 
               {/* Language Selector */}
@@ -7568,7 +7568,7 @@ export default function MisaCostWorkspace({
                 {currentSubtabData.videoTopLabel} {currentSubtabData.videoMainTitle}
               </h4>
               <p style={{ fontSize: 13, color: "#94a3b8", maxWidth: 500, margin: "0 auto 20px auto" }}>
-                Xem video chi tiết từ chuyên gia MISA để nắm vững toàn bộ các bước tập hợp chi phí, phân bổ và tính giá thành chuẩn quy định.
+                Xem video chi tiết từ chuyên gia Sổ Việt để nắm vững toàn bộ các bước tập hợp chi phí, phân bổ và tính giá thành chuẩn quy định.
               </p>
             </div>
             <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end" }}>
@@ -7950,7 +7950,7 @@ export default function MisaCostWorkspace({
         </div>
       )}
 
-      {/* Modal AVA AI Gợi ý phương pháp tính giá */}
+      {/* Modal Sổ Việt AI Gợi ý phương pháp tính giá */}
       {avaModalOpen && (
         <div
           style={{
@@ -7987,7 +7987,7 @@ export default function MisaCostWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={20} color="#7c3aed" />
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#5b21b6" }}>
-                  Trợ lý AVA: Gợi ý Phương pháp Tính giá thành Tối ưu
+                  Trợ lý Sổ Việt AI: Gợi ý Phương pháp Tính giá thành Tối ưu
                 </h3>
               </div>
               <button
@@ -8000,7 +8000,7 @@ export default function MisaCostWorkspace({
             </div>
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <p style={{ margin: 0, fontSize: 13.5, color: "#374151" }}>
-                Dựa trên loại hình sản xuất kinh doanh của bạn, AVA khuyến nghị các phương pháp phù hợp nhất:
+                Dựa trên loại hình sản xuất kinh doanh của bạn, Sổ Việt AI khuyến nghị các phương pháp phù hợp nhất:
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ border: "1px solid #a7f3d0", background: "#f0fdf4", padding: "12px 14px", borderRadius: 6 }}>
@@ -8086,7 +8086,7 @@ export default function MisaCostWorkspace({
               }}
             >
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
-                Giới thiệu 6 Phương pháp Tính giá thành trong AMIS Kế toán
+                Giới thiệu 6 Phương pháp Tính giá thành trong Sổ Việt ERP
               </h3>
               <button
                 type="button"
@@ -9497,7 +9497,7 @@ export default function MisaCostWorkspace({
                     }}
                   >
                     <Sparkles size={14} />
-                    <span>Trợ lý số AVA Kế toán đã có thể gợi ý Thuế suất GTGT</span>
+                    <span>Trợ lý số Sổ Việt AI đã có thể gợi ý Thuế suất GTGT</span>
                   </div>
                 </div>
 
@@ -10530,7 +10530,7 @@ export default function MisaCostWorkspace({
                         boxSizing: "border-box",
                       }}
                     />
-                    <span title="AVA AI Gợi ý diễn giải chứng từ" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Sổ Việt AI Gợi ý diễn giải chứng từ" style={{ display: "inline-flex" }}><Sparkles
                       size={16}
                       color="#7c3aed"
                       style={{ position: "absolute", right: 10, top: 9, cursor: "pointer" }}
@@ -10700,7 +10700,7 @@ export default function MisaCostWorkspace({
                 </label>
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý AVA: Kiểm tra chứng từ hợp lệ")}
+                  onClick={() => notify("Trợ lý Sổ Việt AI: Kiểm tra chứng từ hợp lệ")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -10716,7 +10716,7 @@ export default function MisaCostWorkspace({
                   }}
                 >
                   <Sparkles size={13} />
-                  <span>AVA Kế toán</span>
+                  <span>Sổ Việt AI</span>
                   <ChevronDown size={12} />
                 </button>
               </div>

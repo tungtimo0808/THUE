@@ -800,7 +800,7 @@ export function SaleInvoiceDiscountModal({
                     type="button"
                     onClick={() => {
                       setDescription("Chiết khấu thương mại theo bảng kê số " + registryNo);
-                      notify("AVA Kế toán: Đã tự động tạo diễn giải nghiệp vụ chiết khấu!");
+                      notify("Sổ Việt AI: Đã tự động tạo diễn giải nghiệp vụ chiết khấu!");
                     }}
                     title="Gợi ý diễn giải thông minh"
                     style={{ background: "none", border: "none", color: "#8b5cf6", cursor: "pointer", padding: "2px" }}

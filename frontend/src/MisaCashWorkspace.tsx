@@ -1205,7 +1205,7 @@ export function AccountingVoucherModal({
 </head>
 <body>
   <table>
-    <tr class="no-border"><td colspan="3" class="no-border">Công ty cổ phần MISA</td><td colspan="2" class="no-border"></td></tr>
+    <tr class="no-border"><td colspan="3" class="no-border">Công ty Cổ phần Giải pháp Số Việt</td><td colspan="2" class="no-border"></td></tr>
     <tr class="no-border"><td colspan="3" class="no-border">Hà Nội</td><td colspan="2" class="no-border"></td></tr>
     <tr class="no-border"><td colspan="5" class="no-border" style="height: 18px;"></td></tr>
     <tr class="no-border"><td colspan="5" class="no-border title">CHỨNG TỪ KẾ TOÁN</td></tr>
@@ -1303,7 +1303,7 @@ export function AccountingVoucherModal({
 </head>
 <body>
   <div style="margin-bottom: 20px;">
-    <div>Công ty cổ phần MISA</div>
+    <div>Công ty Cổ phần Giải pháp Số Việt</div>
     <div>Hà Nội</div>
   </div>
   <div class="title">CHỨNG TỪ KẾ TOÁN</div>
@@ -1387,7 +1387,7 @@ export function AccountingVoucherModal({
           <button
             className="misa-voucher-action-btn amis-chat"
             type="button"
-            title="Gửi chứng từ qua AMIS Chat"
+            title="Gửi chứng từ qua Sổ Việt Chat"
           >
             <MessageSquare size={16} />
             Gửi chứng từ
@@ -1560,7 +1560,7 @@ export function AccountingVoucherModal({
             {/* Company Header (Matching Screenshot) */}
             <div className="misa-paper-company-header">
               <div className="misa-paper-company-left">
-                <div>Công ty cổ phần MISA</div>
+                <div>Công ty Cổ phần Giải pháp Số Việt</div>
                 <div>Hà Nội</div>
               </div>
             </div>
@@ -3366,7 +3366,7 @@ export function CreateVoucherModal({
               onClick={(e) => {
                 e.preventDefault();
                 alert(
-                  `Hướng dẫn hạch toán theo chuẩn MISA:\n- Nghiệp vụ: ${currentType.label}\n- Nợ TK: ${currentType.defaultDebit || "(Tùy chọn)"}\n- Có TK: ${currentType.defaultCredit || "(Tùy chọn)"}`
+                  `Hướng dẫn hạch toán theo chuẩn Sổ Việt ERP:\n- Nghiệp vụ: ${currentType.label}\n- Nợ TK: ${currentType.defaultDebit || "(Tùy chọn)"}\n- Có TK: ${currentType.defaultCredit || "(Tùy chọn)"}`
                 );
               }}
             >
@@ -3643,7 +3643,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -3694,7 +3694,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -3756,7 +3756,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -3967,7 +3967,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason}${partnerName}`
@@ -4077,7 +4077,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} của ${partnerName}`
@@ -4223,7 +4223,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4320,7 +4320,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="AVA AI Gợi ý lý do tự động"
+                              title="Sổ Việt AI Gợi ý lý do tự động"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4445,8 +4445,8 @@ export function CreateVoucherModal({
             {/* Drawer side toggle button matching MISA assistant */}
             <div
               className="misa-voucher-drawer-handle"
-              title="Mở trợ lý kế toán AVA"
-              onClick={() => alert("Trợ lý AVA AMIS Kế toán")}
+              title="Mở trợ lý Sổ Việt AI"
+              onClick={() => alert("Trợ lý Sổ Việt AI Sổ Việt ERP")}
             >
               <ChevronLeft size={14} />
             </div>
@@ -4504,16 +4504,16 @@ export function CreateVoucherModal({
                   className="misa-voucher-ava-pill"
                   onClick={() => {
                     alert(
-                      `AVA Kế toán: Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
+                      `Sổ Việt AI: Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
                     );
                   }}
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="AVA"
+                    alt="Sổ Việt AI"
                     style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }}
                   />
-                  <span>AVA Kế toán</span>
+                  <span>Sổ Việt AI</span>
                   <ChevronDown size={12} />
                 </button>
               </div>
@@ -5229,7 +5229,7 @@ export function AIAssistantModal({
               <Sparkles size={16} />
             </div>
             <div>
-              <h2 style={{ fontSize: 16 }}>AVA Kế toán — Thêm chứng từ bằng AI</h2>
+              <h2 style={{ fontSize: 16 }}>Sổ Việt AI — Thêm chứng từ bằng AI</h2>
               <small style={{ color: "#6b7280" }}>
                 Nhập câu lệnh tự nhiên, quét hóa đơn hoặc dán nội dung tin nhắn
               </small>
@@ -5261,7 +5261,7 @@ export function AIAssistantModal({
 
           <div>
             <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>
-              Gợi ý nhanh từ mẫu MISA:
+              Gợi ý nhanh từ mẫu Sổ Việt ERP:
             </span>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
               {samplePrompts.map((p, idx) => (
@@ -5336,7 +5336,7 @@ export const MISA_CASH_REPORTS: CashReportItem[] = [
     id: "th_tc_t",
     code: "TH-TC-T",
     name: "Báo cáo tổng hợp tình hình thu, chi, tồn quỹ tiền mặt theo tháng (12 tháng)",
-    circular: "Mẫu quản trị MISA AMIS (Theo TT 99/2025/TT-BTC)",
+    circular: "Mẫu quản trị Sổ Việt ERP (Theo TT 99/2025/TT-BTC)",
     category: "cashflow",
     categoryLabel: "Thống kê cả tháng",
     description: "Bảng tổng hợp và biểu đồ dòng tiền thu - chi - tồn quỹ so sánh 12 tháng trong năm tài chính 2026, giúp kế toán trưởng và ban giám đốc đánh giá thanh khoản cả năm.",
@@ -5356,7 +5356,7 @@ export const MISA_CASH_REPORTS: CashReportItem[] = [
     id: "bksd",
     code: "BK-SDT",
     name: "Bảng kê số dư tiền mặt theo ngày trong tháng",
-    circular: "Mẫu biểu quản trị MISA",
+    circular: "Mẫu biểu quản trị Sổ Việt ERP",
     category: "ledger",
     categoryLabel: "Sổ sách tiền mặt",
     description: "Theo dõi biến động số dư tồn quỹ tiền mặt từng ngày trong tháng, đối chiếu với định mức tồn quỹ an toàn.",
@@ -5412,10 +5412,10 @@ export const MISA_CASH_REPORTS: CashReportItem[] = [
     description: "Ghi nhận kết quả kiểm kê thực tế các loại tiền mặt tại két, đối chiếu số dư sổ sách và lập phương án xử lý chênh lệch.",
     isFavorite: false,
   },
-  {id:'movement',code:'DONG-TIEN',name:'Dòng tiền',circular:'Mẫu quản trị MISA',category:'cashflow',categoryLabel:'Dòng tiền',description:'Theo dõi tiền tồn đầu kỳ, thu, chi và tồn cuối kỳ.',isFavorite:false},
+  {id:'movement',code:'DONG-TIEN',name:'Dòng tiền',circular:'Mẫu quản trị Sổ Việt ERP',category:'cashflow',categoryLabel:'Dòng tiền',description:'Theo dõi tiền tồn đầu kỳ, thu, chi và tồn cuối kỳ.',isFavorite:false},
 ];
 
-// Dữ liệu dòng tiền thống kê cả 12 tháng năm 2026 (Chuẩn MISA AMIS)
+// Dữ liệu dòng tiền thống kê cả 12 tháng năm 2026 (Chuẩn Sổ Việt ERP)
 export const MONTHLY_CASH_STATS_2026 = [
   { month: "Tháng 01/2026", mShort: "T1", opening: 32000000, inAmount: 58000000, outAmount: 51200000, diff: 6800000, closing: 38800000 },
   { month: "Tháng 02/2026", mShort: "T2", opening: 38800000, inAmount: 62500000, outAmount: 55000000, diff: 7500000, closing: 46300000 },
@@ -5589,7 +5589,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
             <div className="misa-report-paper-header">
               <div className="misa-report-company-info">
                 <strong>CÔNG TY CỔ PHẦN CÔNG NGHỆ MINH AN</strong>
-                <div>Địa chỉ: Tầng 4, Tòa nhà MISA, Cầu Giấy, Hà Nội</div>
+                <div>Địa chỉ: Tòa nhà Sổ Việt, Cầu Giấy, Hà Nội</div>
                 <div>Mã số thuế: <strong>0108923456</strong></div>
               </div>
 
@@ -5950,7 +5950,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
             <span>Báo cáo Tiền mặt</span>
           </h2>
           <p>
-            Hệ thống sổ kế toán, sổ quỹ và báo cáo dòng tiền theo <strong>Thông tư 99/2025/TT-BTC</strong> & Chuẩn quản trị MISA AMIS
+            Hệ thống sổ kế toán, sổ quỹ và báo cáo dòng tiền theo <strong>Thông tư 99/2025/TT-BTC</strong> & Chuẩn quản trị Sổ Việt ERP
           </p>
         </div>
 
@@ -6146,7 +6146,7 @@ export const INITIAL_FORECAST_ITEMS: ForecastItem[] = [
     date: "08/10/2026",
     kind: "out",
     category: "Tiền điện nước & Dịch vụ tòa nhà",
-    partner: "BQL Tòa nhà MISA Cầu Giấy",
+    partner: "BQL Tòa nhà Sổ Việt Cầu Giấy",
     documentRef: "Thông báo cước định kỳ",
     amount: 4500000,
     probability: 100,
@@ -6325,7 +6325,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             <TrendingUp size={20} style={{ color: "#107e3e" }} />
             <span>Dự báo dòng tiền (Cash Flow Forecast)</span>
             <span style={{ fontSize: 11, background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0", padding: "2px 8px", borderRadius: 12 }}>
-              Chuẩn MISA AMIS
+              Chuẩn Sổ Việt ERP
             </span>
           </h2>
           <p>
@@ -6359,7 +6359,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             onClick={() => setShowAdvisorModal(true)}
           >
             <Sparkles size={15} style={{ color: "#8b5cf6" }} />
-            <span>AVA Phân tích</span>
+            <span>Sổ Việt AI Phân tích</span>
           </button>
 
           <button
@@ -6440,7 +6440,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
         <div className="misa-forecast-advisor-body" style={{ flex: 1 }}>
           <h4>
-            <span>Khuyến nghị thông minh từ Trợ lý MISA AVA:</span>
+            <span>Khuyến nghị thông minh từ Trợ lý Sổ Việt AI:</span>
             <span style={{ fontSize: 11, background: "#dcfce7", color: "#15803d", padding: "1px 6px", borderRadius: 4 }}>
               Độ tin cậy 96%
             </span>
@@ -6790,7 +6790,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
       )}
 
-      {/* 7. Modal AVA AI Phân tích dòng tiền */}
+      {/* 7. Modal Sổ Việt AI Phân tích dòng tiền */}
       {showAdvisorModal && (
         <div className="misa-modal-backdrop" onClick={() => setShowAdvisorModal(false)}>
           <div
@@ -6801,7 +6801,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             <div className="misa-modal-header">
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={18} style={{ color: "#8b5cf6" }} />
-                <span>Báo cáo tư vấn dòng tiền từ Trợ lý MISA AVA</span>
+                <span>Báo cáo tư vấn dòng tiền từ Trợ lý Sổ Việt AI</span>
               </h3>
               <button
                 type="button"
@@ -6832,7 +6832,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
               </div>
 
               <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                3 Điểm lưu ý trọng yếu từ MISA AVA:
+                3 Điểm lưu ý trọng yếu từ Sổ Việt AI:
               </h4>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#334155", display: "flex", flexDirection: "column", gap: 8, lineHeight: 1.45 }}>
                 <li>
@@ -7345,7 +7345,7 @@ export default function MisaCashWorkspace({
     code: "PT00005",
     date: "2026-09-03",
     person: "Hoàng Thiên Bảo",
-    address: "Tầng 4, Tòa nhà MISA, Cầu Giấy, Hà Nội",
+    address: "Tòa nhà Sổ Việt, Cầu Giấy, Hà Nội",
     reason: "Thu hoàn ứng sau khi quyết toán tạm ứng cho Hoàng Thiên Bảo",
     debitAccount: "111",
     creditAccount: "141",
@@ -8057,7 +8057,7 @@ export default function MisaCashWorkspace({
             >
               <img
                 src="/ava_avatar.jpg"
-                alt="AVA AI"
+                alt="Sổ Việt AI"
                 style={{
                   width: 22,
                   height: 22,
@@ -8775,7 +8775,7 @@ export default function MisaCashWorkspace({
   if (tab === "inventory") {
     return (
       <div style={{ padding: 16, background: "#f8fafc", overflowY: "auto", height: "100%" }}>
-        <div className="ce-toolbar"><button onClick={()=>setCashInventoryMode('misa')}>Lập biên bản kiểm kê theo MISA</button></div>
+        <div className="ce-toolbar"><button onClick={()=>setCashInventoryMode('misa')}>Lập biên bản kiểm kê theo Sổ Việt ERP</button></div>
         {/* KPI Grid */}
         <div className="misa-kpi-grid">
           <div className="misa-kpi-card highlight">
@@ -8966,7 +8966,7 @@ export default function MisaCashWorkspace({
   // RENDER TAB: "Dự báo dòng tiền" (CASHFLOW FORECAST - CHUẨN MISA AMIS)
   // --------------------------------------------------------------------
   if (tab === "cashflow") {
-    return <><nav className="ce-toolbar" aria-label="Chế độ dự báo dòng tiền"><button onClick={()=>setCashForecastMode('misa')}>Bảng dự báo theo MISA</button><button onClick={()=>setCashForecastMode('legacy')}>Kế hoạch và biểu đồ hiện có</button></nav><div hidden={cashForecastMode!=='misa'}><MisaCashForecastWorkspace key={company?.id} companyId={company?.id} entries={transactions}/></div><div hidden={cashForecastMode!=='legacy'}><CashForecastTab notify={notify}/></div></>;
+    return <><nav className="ce-toolbar" aria-label="Chế độ dự báo dòng tiền"><button onClick={()=>setCashForecastMode('misa')}>Bảng dự báo theo Sổ Việt ERP</button><button onClick={()=>setCashForecastMode('legacy')}>Kế hoạch và biểu đồ hiện có</button></nav><div hidden={cashForecastMode!=='misa'}><MisaCashForecastWorkspace key={company?.id} companyId={company?.id} entries={transactions}/></div><div hidden={cashForecastMode!=='legacy'}><CashForecastTab notify={notify}/></div></>;
   }
 
   // --------------------------------------------------------------------
@@ -9877,263 +9877,6 @@ export default function MisaCashWorkspace({
             <SlidersHorizontal size={20} style={{ color: "#f59e0b" }} />
             <span>Tùy chọn</span>
           </button>
-        </div>
-
-        {/* Panel 4: AMIS Quy trình Banner & Featured Stories (Screenshot 2) */}
-        <div
-          style={{
-            gridColumn: "1 / -1",
-            background: "linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%)",
-            border: "1px solid #bbf7d0",
-            borderRadius: 8,
-            padding: "14px 18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-          }}
-        >
-          {/* Top Banner Row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  background: "linear-gradient(135deg, #06b6d4, #0284c7)",
-                  color: "#ffffff",
-                  display: "grid",
-                  placeItems: "center",
-                  fontWeight: 800,
-                  fontSize: 20,
-                  boxShadow: "0 2px 4px rgba(6,182,212,0.3)",
-                  flexShrink: 0,
-                }}
-              >
-                Q
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <strong style={{ fontSize: 13, color: "#111827", fontWeight: 700 }}>
-                  AMIS Quy trình
-                </strong>
-                <span style={{ fontSize: 12, color: "#475569" }}>
-                  Giảm tải công việc kế toán bằng cách số hóa phê duyệt đề nghị thanh toán, tạm ứng và tự động sinh chứng từ.
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              style={{
-                background: "#00b06b",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: 6,
-                padding: "8px 16px",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                whiteSpace: "nowrap",
-                boxShadow: "0 1px 3px rgba(0, 176, 107, 0.3)",
-              }}
-              onClick={() => notify("Mở thiết lập tự động hóa AMIS Quy trình...")}
-            >
-              <SlidersHorizontal size={14} />
-              Thiết lập tự động
-            </button>
-          </div>
-
-          {/* Bottom Row: CÂU CHUYỆN SỐ HÓA THÀNH CÔNG NỔI BẬT */}
-          <div style={{ paddingTop: 12, borderTop: "1px solid #d1fae5" }}>
-            <div
-              style={{
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: "#1e293b",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                marginBottom: 10,
-              }}
-            >
-              CÂU CHUYỆN SỐ HÓA THÀNH CÔNG NỔI BẬT
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 12,
-              }}
-            >
-              {/* Story 1 */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 8,
-                  border: "1px solid #e2e8f0",
-                  padding: "8px 10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-                onClick={() => notify("Mở bài viết: Doanh nghiệp nhỏ có thể tự động hóa...")}
-              >
-                <img
-                  src="/story_1.jpg"
-                  alt="Story 1"
-                  style={{
-                    width: 72,
-                    height: 48,
-                    borderRadius: 6,
-                    objectFit: "cover",
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                  <strong
-                    style={{
-                      fontSize: 11.5,
-                      color: "#1e293b",
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title="Doanh nghiệp nhỏ có thể tự động hóa nhờ..."
-                  >
-                    Doanh nghiệp nhỏ có thể tự động hóa nhờ...
-                  </strong>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: "#64748b",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      marginTop: 2,
-                    }}
-                  >
-                    Giảm thời gian duyệt chi, tự động...
-                  </span>
-                </div>
-              </div>
-
-              {/* Story 2 */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 8,
-                  border: "1px solid #e2e8f0",
-                  padding: "8px 10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-                onClick={() => notify("Mở bài viết: Lợi ích của việc tự động hóa quy trình đối v...")}
-              >
-                <img
-                  src="/story_2.jpg"
-                  alt="Story 2"
-                  style={{
-                    width: 72,
-                    height: 48,
-                    borderRadius: 6,
-                    objectFit: "cover",
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                  <strong
-                    style={{
-                      fontSize: 11.5,
-                      color: "#1e293b",
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title="Lợi ích của việc tự động hóa quy trình đối v..."
-                  >
-                    Lợi ích của việc tự động hóa quy trình đối v...
-                  </strong>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: "#64748b",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      marginTop: 2,
-                    }}
-                  >
-                    Giảm thời gian duyệt chi, tự động...
-                  </span>
-                </div>
-              </div>
-
-              {/* Story 3 */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 8,
-                  border: "1px solid #e2e8f0",
-                  padding: "8px 10px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-                }}
-                onClick={() => notify("Mở bài viết: Hành trình số hóa quy trình tại Đông Dươn...")}
-              >
-                <img
-                  src="/story_3.jpg"
-                  alt="Story 3"
-                  style={{
-                    width: 72,
-                    height: 48,
-                    borderRadius: 6,
-                    objectFit: "cover",
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-                  <strong
-                    style={{
-                      fontSize: 11.5,
-                      color: "#1e293b",
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title="Hành trình số hóa quy trình tại Đông Dươn..."
-                  >
-                    Hành trình số hóa quy trình tại Đông Dươn...
-                  </strong>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: "#64748b",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      marginTop: 2,
-                    }}
-                  >
-                    Giải pháp tháo gỡ điểm nghẽn cho kế toán
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

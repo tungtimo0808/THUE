@@ -624,7 +624,7 @@ export default function MisaSalesWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`AVA Kế toán đã phân tích nghiệp vụ bán hàng ${doc.code}.`);
+            notify(`Sổ Việt AI đã phân tích nghiệp vụ bán hàng ${doc.code}.`);
           }}
         />
       )}
@@ -1726,7 +1726,7 @@ export default function MisaSalesWorkspace({
           </button>
         </div>
 
-        {/* Panel 4: AMIS CRM Integration Banner */}
+        {/* Panel 4: Sổ Việt CRM Integration Banner */}
         <div
           style={{
             background: "linear-gradient(90deg, #dbeafe 0%, #eff6ff 100%)",
@@ -1739,7 +1739,7 @@ export default function MisaSalesWorkspace({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* AMIS CRM Logo */}
+            {/* Sổ Việt CRM Logo */}
             <div
               style={{
                 width: 28,
@@ -1759,7 +1759,7 @@ export default function MisaSalesWorkspace({
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <strong style={{ color: "#1e293b", fontWeight: 700 }}>AMIS CRM</strong>
+              <strong style={{ color: "#1e293b", fontWeight: 700 }}>Sổ Việt CRM</strong>
               <span style={{ color: "#334155" }}>
                 <strong>Kết nối dữ liệu</strong> giữa bộ phận bán hàng và kế toán
               </span>
@@ -1769,7 +1769,7 @@ export default function MisaSalesWorkspace({
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button
               type="button"
-              onClick={() => notify("Xem chi tiết tính năng đồng bộ AMIS CRM...")}
+              onClick={() => notify("Xem chi tiết tính năng đồng bộ Sổ Việt CRM...")}
               style={{
                 background: "none",
                 border: "none",
@@ -1788,7 +1788,7 @@ export default function MisaSalesWorkspace({
 
             <button
               type="button"
-              onClick={() => notify("Đang kết nối hệ thống AMIS CRM...")}
+              onClick={() => notify("Đang kết nối hệ thống Sổ Việt CRM...")}
               style={{
                 background: "#00b06b",
                 color: "#ffffff",
@@ -2118,7 +2118,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowQuoteModal(true);
-                  notify("AVA AI đã tự động tổng hợp thông tin báo giá từ yêu cầu chào hàng!");
+                  notify("Sổ Việt AI đã tự động tổng hợp thông tin báo giá từ yêu cầu chào hàng!");
                 }}
                 style={{
                   height: 38,
@@ -2153,7 +2153,7 @@ export default function MisaSalesWorkspace({
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="AVA"
+                    alt="Sổ Việt AI"
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = "none";
@@ -2586,7 +2586,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowOrderModal(true);
-                  notify("AVA AI đã tổng hợp tự động đơn đặt hàng bán!");
+                  notify("Sổ Việt AI đã tổng hợp tự động đơn đặt hàng bán!");
                 }}
                 style={{
                   height: 38,
@@ -2621,7 +2621,7 @@ export default function MisaSalesWorkspace({
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="AVA"
+                    alt="Sổ Việt AI"
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = "none";
@@ -3124,7 +3124,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowContractModal(true);
-                  notify("AVA Kế toán đã khởi tạo Hợp đồng bán từ gợi ý AI!");
+                  notify("Sổ Việt AI đã khởi tạo Hợp đồng bán từ gợi ý AI!");
                 }}
                 style={{
                   height: 38,
@@ -3649,7 +3649,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowVoucherModal(true);
-                  notify("AVA Kế toán đã khởi tạo Chứng từ bán hàng từ gợi ý AI!");
+                  notify("Sổ Việt AI đã khởi tạo Chứng từ bán hàng từ gợi ý AI!");
                 }}
                 style={{
                   height: 36,
@@ -5108,7 +5108,7 @@ export default function MisaSalesWorkspace({
               { title: "Báo cáo công nợ phải thu khách hàng", desc: "Theo dõi số dư nợ 131, hạn thanh toán và tuổi nợ theo khách hàng", count: "2 khách hàng" },
               { title: "Báo cáo lãi lỗ theo đơn đặt hàng / hợp đồng", desc: "Phân tích doanh thu, giá vốn và tỷ suất lợi nhuận gộp", count: "8 hợp đồng" },
               { title: "Tổng hợp bán hàng theo mặt hàng", desc: "Thống kê số lượng xuất bán, đơn giá bình quân và doanh thu theo mã hàng", count: "6 mặt hàng" },
-              { title: "Biên bản đối chiếu và xác nhận công nợ", desc: "Mẫu in biên bản đối chiếu gửi khách hàng ký xác nhận số dư", count: "Mẫu chuẩn MISA" },
+              { title: "Biên bản đối chiếu và xác nhận công nợ", desc: "Mẫu in biên bản đối chiếu gửi khách hàng ký xác nhận số dư", count: "Mẫu chuẩn Sổ Việt ERP" },
             ].map((rep, idx) => (
               <div
                 key={idx}
@@ -5758,7 +5758,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, padding: 20, color: "#64748b", textAlign: "center" }}>
           <div style={{ maxWidth: 480, margin: "40px auto" }}>
             <Sparkles size={40} style={{ color: "#00b06b", marginBottom: 12 }} />
-            <h3 style={{ fontSize: 16, color: "#1e293b", margin: "0 0 8px 0" }}>Tự động hạch toán Hóa đơn bán hàng MISA meInvoice</h3>
+            <h3 style={{ fontSize: 16, color: "#1e293b", margin: "0 0 8px 0" }}>Tự động hạch toán Hóa đơn bán hàng Sổ Việt e-Invoice</h3>
             <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
               Hệ thống tự động đồng bộ hóa đơn đầu ra mới nhất từ meInvoice, tự động nhận diện khách hàng và sinh chứng từ bán hàng theo thiết lập sẵn.
             </p>

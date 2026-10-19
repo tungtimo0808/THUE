@@ -1263,7 +1263,7 @@ export default function MisaToolsWorkspace({
                         onChange={(e) => setSingleReason(e.target.value)}
                         style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                       />
-                      <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                      <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                         <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                       </span>
                     </div>
@@ -2822,8 +2822,8 @@ export default function MisaToolsWorkspace({
                     />
                     <button
                       type="button"
-                      onClick={() => notify("AVA Kế toán: Đã tối ưu hóa diễn giải chứng từ phân bổ CCDC")}
-                      title="Trợ lý AVA"
+                      onClick={() => notify("Sổ Việt AI: Đã tối ưu hóa diễn giải chứng từ phân bổ CCDC")}
+                      title="Trợ lý Sổ Việt AI"
                       style={{
                         position: "absolute",
                         right: 6,
@@ -9221,7 +9221,7 @@ export default function MisaToolsWorkspace({
                   type="button"
                   onClick={() => {
                     setShowPrepaidDateModal(true);
-                    notify("AVA Kế toán: Sẵn sàng tự động tổng hợp & phân bổ chi phí trả trước theo kỳ được chọn");
+                    notify("Sổ Việt AI: Sẵn sàng tự động tổng hợp & phân bổ chi phí trả trước theo kỳ được chọn");
                   }}
                   style={{
                     height: 34,
@@ -9293,7 +9293,7 @@ export default function MisaToolsWorkspace({
                     type="button"
                     onClick={() => {
                       setShowPrepaidDateModal(true);
-                      notify("AVA Kế toán: Sẵn sàng tự động tổng hợp & phân bổ chi phí trả trước theo kỳ được chọn");
+                      notify("Sổ Việt AI: Sẵn sàng tự động tổng hợp & phân bổ chi phí trả trước theo kỳ được chọn");
                     }}
                     style={{ height: 30, padding: "0 14px", background: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
@@ -10984,7 +10984,7 @@ export default function MisaToolsWorkspace({
                         style={{ accentColor: "#00a862" }}
                       />
                       <label htmlFor="prepaid-excel-ava" style={{ fontSize: 12.5, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>Tự động ghép cột với AVA Kế toán</span>
+                        <span>Tự động ghép cột với Sổ Việt AI</span>
                         <Sparkles size={14} style={{ color: "#7c3aed" }} />
                       </label>
                     </div>
@@ -10997,7 +10997,7 @@ export default function MisaToolsWorkspace({
                       <Check size={28} />
                     </div>
                     <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", margin: "0 0 8px 0" }}>
-                      Ghép cột dữ liệu tự động với AVA Kế toán hoàn tất
+                      Ghép cột dữ liệu tự động với Sổ Việt AI hoàn tất
                     </h3>
                     <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
                       Hệ thống đã nhận diện chính xác 10/10 trường thông tin cần thiết từ tệp Excel.
@@ -11032,7 +11032,7 @@ export default function MisaToolsWorkspace({
                   onClick={() => {
                     if (excelStep === 1) {
                       setExcelStep(2);
-                      notify("AVA Kế toán: Đã tự động phân tích & ánh xạ các cột dữ liệu");
+                      notify("Sổ Việt AI: Đã tự động phân tích & ánh xạ các cột dữ liệu");
                     } else {
                       setShowPrepaidExcelModal(false);
                       setPrepaidViewMode("list");
@@ -11182,8 +11182,8 @@ export default function MisaToolsWorkspace({
                       />
                       <button
                         type="button"
-                        onClick={() => notify("AVA Kế toán: Đã tối ưu hóa diễn giải chứng từ phân bổ chi phí trả trước")}
-                        title="Trợ lý AVA"
+                        onClick={() => notify("Sổ Việt AI: Đã tối ưu hóa diễn giải chứng từ phân bổ chi phí trả trước")}
+                        title="Trợ lý Sổ Việt AI"
                         style={{
                           position: "absolute",
                           right: 6,
@@ -11738,7 +11738,7 @@ export default function MisaToolsWorkspace({
                       />
                       <div style={{ marginTop: 6 }}>
                         <span
-                          onClick={() => notify("AVA Kế toán: Chọn chứng từ gốc hoặc hợp đồng để tham chiếu...")}
+                          onClick={() => notify("Sổ Việt AI: Chọn chứng từ gốc hoặc hợp đồng để tham chiếu...")}
                           style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
                         >
                           Tham chiếu ...
@@ -12083,10 +12083,10 @@ export default function MisaToolsWorkspace({
             </div>
 
             <div
-              onClick={() => notify("AVA Kế toán: Bạn có thể nhập yêu cầu 'Xem bảng phân bổ CCDC tháng này' để mở báo cáo tức thì.")}
+              onClick={() => notify("Sổ Việt AI: Bạn có thể nhập yêu cầu 'Xem bảng phân bổ CCDC tháng này' để mở báo cáo tức thì.")}
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#6366f1", cursor: "pointer", fontWeight: 500 }}
             >
-              <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
               <Sparkles size={14} style={{ color: "#a855f7" }} />
             </div>
           </div>

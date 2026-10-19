@@ -214,7 +214,7 @@ export default function MisaDirectoryWorkspace({
       <div>
         <div className="md-legacy-bar">
           <button onClick={() => setLegacyView(false)}>
-            <ArrowLeft size={14} /> Danh mục MISA
+            <ArrowLeft size={14} /> Danh mục Sổ Việt
           </button>
         </div>
         {legacy}

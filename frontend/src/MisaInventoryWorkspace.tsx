@@ -1143,7 +1143,7 @@ export default function MisaInventoryWorkspace({
               type="button"
               onClick={() => {
                 setShowReceiptModal(true);
-                notify("AVA Kế toán đã sẵn sàng hỗ trợ khởi tạo phiếu nhập kho!");
+                notify("Sổ Việt AI đã sẵn sàng hỗ trợ khởi tạo phiếu nhập kho!");
               }}
               style={{
                 height: 36,
@@ -1378,7 +1378,7 @@ export default function MisaInventoryWorkspace({
               type="button"
               onClick={() => {
                 setShowIssueModal(true);
-                notify("AVA Kế toán đã phân tích số lượng tồn kho khả dụng để xuất hàng!");
+                notify("Sổ Việt AI đã phân tích số lượng tồn kho khả dụng để xuất hàng!");
               }}
               style={{
                 height: 36,
@@ -1638,7 +1638,7 @@ export default function MisaInventoryWorkspace({
               type="button"
               onClick={() => {
                 setShowTransferModal(true);
-                notify("AVA Kế toán đã phân tích tuyến điều chuyển kho tối ưu!");
+                notify("Sổ Việt AI đã phân tích tuyến điều chuyển kho tối ưu!");
               }}
               style={{
                 height: 36,
@@ -1898,7 +1898,7 @@ export default function MisaInventoryWorkspace({
               type="button"
               onClick={() => {
                 setShowProductionOrderModal(true);
-                notify("AVA Kế toán đã phân tích kế hoạch và định mức nguyên vật liệu sản xuất!");
+                notify("Sổ Việt AI đã phân tích kế hoạch và định mức nguyên vật liệu sản xuất!");
               }}
               style={{
                 height: 36,
@@ -2139,7 +2139,7 @@ export default function MisaInventoryWorkspace({
               type="button"
               onClick={() => {
                 setShowAssemblyModal(true);
-                notify("AVA Kế toán đã phân tích cấu trúc linh kiện thành phẩm!");
+                notify("Sổ Việt AI đã phân tích cấu trúc linh kiện thành phẩm!");
               }}
               style={{
                 height: 36,
@@ -2404,7 +2404,7 @@ export default function MisaInventoryWorkspace({
               type="button"
               onClick={() => {
                 setShowStocktakeModal(true);
-                notify("AVA Kế toán đã đồng bộ số liệu sổ sách sẵn sàng đối chiếu kiểm kê!");
+                notify("Sổ Việt AI đã đồng bộ số liệu sổ sách sẵn sàng đối chiếu kiểm kê!");
               }}
               style={{
                 height: 36,
@@ -2581,10 +2581,10 @@ export default function MisaInventoryWorkspace({
             </div>
 
             <div
-              onClick={() => notify("AVA Kế toán: Bạn có thể gõ 'Tồn kho theo kho', 'Hàng sắp hết', 'Thẻ kho 152' để tìm tức thì!")}
+              onClick={() => notify("Sổ Việt AI: Bạn có thể gõ 'Tồn kho theo kho', 'Hàng sắp hết', 'Thẻ kho 152' để tìm tức thì!")}
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#7c3aed", fontWeight: 600, cursor: "pointer" }}
             >
-              <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
               <span>🤖</span>
             </div>
           </div>
@@ -3455,7 +3455,7 @@ export default function MisaInventoryWorkspace({
                               placeholder="Nhập kho thành phẩm sản xuất"
                               style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                             />
-                            <span title="AVA gợi ý diễn giải kế toán thông minh" style={{ display: "inline-flex" }}>
+                            <span title="Sổ Việt AI gợi ý diễn giải kế toán thông minh" style={{ display: "inline-flex" }}>
                               <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -3760,7 +3760,7 @@ export default function MisaInventoryWorkspace({
                   {/* Button Gợi ý hồ sơ */}
                   <button
                     type="button"
-                    onClick={() => notify("AVA Kế toán đang phân tích hồ sơ chứng từ để gợi ý...")}
+                    onClick={() => notify("Sổ Việt AI đang phân tích hồ sơ chứng từ để gợi ý...")}
                     style={{
                       height: 28,
                       padding: "0 12px",
@@ -4434,7 +4434,7 @@ export default function MisaInventoryWorkspace({
                                 onChange={(e) => setIssueReason(e.target.value)}
                                 style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                               />
-                              <span title="AVA gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
+                              <span title="Sổ Việt AI gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
                                 <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                               </span>
                             </div>
@@ -4513,7 +4513,7 @@ export default function MisaInventoryWorkspace({
                                 onChange={(e) => setIssueReason(e.target.value)}
                                 style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                               />
-                              <span title="AVA gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
+                              <span title="Sổ Việt AI gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
                                 <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                               </span>
                             </div>
@@ -4601,7 +4601,7 @@ export default function MisaInventoryWorkspace({
                                 onChange={(e) => setIssueReason(e.target.value)}
                                 style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                               />
-                              <span title="AVA gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
+                              <span title="Sổ Việt AI gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
                                 <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                               </span>
                             </div>
@@ -4691,7 +4691,7 @@ export default function MisaInventoryWorkspace({
                   {/* Button Gợi ý hồ sơ */}
                   <button
                     type="button"
-                    onClick={() => notify("AVA Kế toán đang phân tích gợi ý hồ sơ xuất kho...")}
+                    onClick={() => notify("Sổ Việt AI đang phân tích gợi ý hồ sơ xuất kho...")}
                     style={{
                       height: 28,
                       padding: "0 12px",
@@ -5343,7 +5343,7 @@ export default function MisaInventoryWorkspace({
                               onChange={(e) => setTransferPurpose(e.target.value)}
                               style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                             />
-                            <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                            <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                               <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -5629,7 +5629,7 @@ export default function MisaInventoryWorkspace({
                               onChange={(e) => setTransferExplanation(e.target.value)}
                               style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                             />
-                            <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                            <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                               <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -5683,7 +5683,7 @@ export default function MisaInventoryWorkspace({
                               onChange={(e) => setTransferExplanation(e.target.value)}
                               style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                             />
-                            <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                            <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                               <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -5832,7 +5832,7 @@ export default function MisaInventoryWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <button
                     type="button"
-                    onClick={() => notify("AVA Kế toán đang kiểm tra hồ sơ chuyển kho...")}
+                    onClick={() => notify("Sổ Việt AI đang kiểm tra hồ sơ chuyển kho...")}
                     style={{
                       height: 28,
                       padding: "0 12px",
@@ -6600,7 +6600,7 @@ export default function MisaInventoryWorkspace({
             >
               {/* Collapsible right sidebar trigger */}
               <div
-                onClick={() => notify("AVA Kế toán: Trợ lý lệnh sản xuất")}
+                onClick={() => notify("Sổ Việt AI: Trợ lý lệnh sản xuất")}
                 title="Mở trợ lý sản xuất"
                 style={{
                   position: "absolute",
@@ -6748,7 +6748,7 @@ export default function MisaInventoryWorkspace({
                           }}
                         />
                         <div style={{ position: "absolute", right: 8, bottom: 8, display: "flex", alignItems: "center" }}>
-                          <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                          <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                             <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                           </span>
                         </div>
@@ -7351,7 +7351,7 @@ export default function MisaInventoryWorkspace({
             >
               {/* Collapsible right sidebar trigger */}
               <div
-                onClick={() => notify("AVA Kế toán: Trợ lý lắp ráp")}
+                onClick={() => notify("Sổ Việt AI: Trợ lý lắp ráp")}
                 title="Mở trợ lý lắp ráp"
                 style={{
                   position: "absolute",
@@ -7467,7 +7467,7 @@ export default function MisaInventoryWorkspace({
                           }}
                         />
                         <div style={{ position: "absolute", right: 8, bottom: 8, display: "flex", alignItems: "center" }}>
-                          <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                          <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                             <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                           </span>
                         </div>
@@ -8047,7 +8047,7 @@ export default function MisaInventoryWorkspace({
             >
               {/* Collapsible right sidebar trigger */}
               <div
-                onClick={() => notify("AVA Kế toán: Trợ lý tháo dỡ")}
+                onClick={() => notify("Sổ Việt AI: Trợ lý tháo dỡ")}
                 title="Mở trợ lý tháo dỡ"
                 style={{
                   position: "absolute",
@@ -8163,7 +8163,7 @@ export default function MisaInventoryWorkspace({
                           }}
                         />
                         <div style={{ position: "absolute", right: 8, bottom: 8, display: "flex", alignItems: "center" }}>
-                          <span title="AVA gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                          <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
                             <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                           </span>
                         </div>

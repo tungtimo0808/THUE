@@ -482,10 +482,10 @@ export default function MisaInterimCashFlowIndirectReport({
               cursor: "pointer",
               fontWeight: 600,
             }}
-            onClick={() => notify?.("Kết nối cổng nộp thuế điện tử MISA mTax...")}
+            onClick={() => notify?.("Kết nối cổng nộp thuế điện tử Sổ Việt eTax...")}
           >
             <Send size={15} color="#0284c7" />
-            <span>Nộp báo cáo qua MISA mTax</span>
+            <span>Nộp báo cáo qua Sổ Việt eTax</span>
           </button>
         </div>
 
@@ -534,7 +534,7 @@ export default function MisaInterimCashFlowIndirectReport({
               cursor: "pointer",
             }}
             title="Trợ giúp"
-            onClick={() => notify?.("Hệ thống trợ giúp AVA Kế toán.")}
+            onClick={() => notify?.("Hệ thống trợ giúp Sổ Việt AI.")}
           >
             <MessageCircle size={14} />
           </button>

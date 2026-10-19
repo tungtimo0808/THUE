@@ -2468,7 +2468,7 @@ export default function MisaAssetsWorkspace({
             <div style={{ height: 46, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #f0fdf4 0%, #ede9fe 100%)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={18} style={{ color: "#7c3aed" }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>AVA Kế toán: Thêm tài sản bằng AI</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Sổ Việt AI: Thêm tài sản bằng AI</span>
               </div>
               <button type="button" onClick={() => setShowAiModal(false)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer" }}>
                 <X size={18} />
@@ -2501,7 +2501,7 @@ export default function MisaAssetsWorkspace({
                   setIncName("Xe ô tô Hyundai SantaFe 2.5 HTRAC");
                   setIncOriginalCost(1250000000);
                   setIncUseDuration(8);
-                  notify("AVA Kế toán đã phân tích hóa đơn và điền sẵn thông tin vào chứng từ ghi tăng!");
+                  notify("Sổ Việt AI đã phân tích hóa đơn và điền sẵn thông tin vào chứng từ ghi tăng!");
                 }}
                 style={{ height: 32, padding: "0 20px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
               >
@@ -2721,8 +2721,8 @@ export default function MisaAssetsWorkspace({
                     />
                     <button
                       type="button"
-                      onClick={() => notify("AVA Kế toán: Đã tối ưu hóa diễn giải chứng từ tính khấu hao")}
-                      title="Trợ lý AVA"
+                      onClick={() => notify("Sổ Việt AI: Đã tối ưu hóa diễn giải chứng từ tính khấu hao")}
+                      title="Trợ lý Sổ Việt AI"
                       style={{
                         position: "absolute",
                         right: 6,
@@ -6803,10 +6803,10 @@ export default function MisaAssetsWorkspace({
             </div>
             <button
               type="button"
-              onClick={() => notify("AVA Kế toán: Trợ lý tìm kiếm báo cáo tài sản thông minh")}
+              onClick={() => notify("Sổ Việt AI: Trợ lý tìm kiếm báo cáo tài sản thông minh")}
               style={{ height: 30, padding: "0 10px", border: "none", background: "transparent", fontSize: 12.5, color: "#7c3aed", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 500 }}
             >
-              <span>Tìm kiếm nhanh báo cáo với AVA Kế toán</span>
+              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
               <Sparkles size={14} style={{ color: "#7c3aed" }} />
             </button>
           </div>

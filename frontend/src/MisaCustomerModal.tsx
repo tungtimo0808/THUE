@@ -350,7 +350,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
-              onClick={() => notify("Hướng dẫn thêm mới Khách hàng theo chuẩn MISA AMIS")}
+              onClick={() => notify("Hướng dẫn thêm mới Khách hàng theo chuẩn Sổ Việt ERP")}
               title="Hướng dẫn sử dụng"
               style={{
                 background: "transparent",

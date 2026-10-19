@@ -258,9 +258,11 @@ export default function MisaInvoiceWorkspace({
                   </p>
                 )}
                 <a
-                  href="https://helpact.misa.vn/"
-                  target="_blank"
-                  rel="noreferrer"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert("Tài liệu hướng dẫn xử lý hóa đơn điện tử Sổ Việt e-Invoice");
+                  }}
                 >
                   Xem hướng dẫn chi tiết
                 </a>

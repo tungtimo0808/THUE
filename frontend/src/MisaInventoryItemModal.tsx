@@ -604,7 +604,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
-              onClick={() => notify("Hướng dẫn lập danh mục Hàng hóa, dịch vụ chuẩn MISA AMIS")}
+              onClick={() => notify("Hướng dẫn lập danh mục Hàng hóa, dịch vụ chuẩn Sổ Việt ERP")}
               title="Hướng dẫn"
               style={{
                 background: "transparent",
@@ -1316,7 +1316,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   }}
                 >
                   <Bot size={14} />
-                  <span>Trợ lý số AVA Kế toán đã có thể gợi ý Thuế suất GTGT</span>
+                  <span>Trợ lý số Sổ Việt AI đã có thể gợi ý Thuế suất GTGT</span>
                 </span>
               </div>
             </div>

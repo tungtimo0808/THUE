@@ -559,7 +559,7 @@ export function PurchaseOrderModal({
                     style={{ paddingRight: 30 }}
                   />
                   <span
-                    title="AVA AI gợi ý diễn giải"
+                    title="Sổ Việt AI gợi ý diễn giải"
                     style={{
                       position: "absolute",
                       right: 8,
@@ -1686,7 +1686,7 @@ export function PurchaseContractModal({
                       <button
                         type="button"
                         onClick={() => setSummary("Hợp đồng mua thiết bị máy móc phục vụ sản xuất")}
-                        title="AVA AI gợi ý trích yếu"
+                        title="Sổ Việt AI gợi ý trích yếu"
                         style={{
                           position: "absolute",
                           right: 6,
@@ -3217,7 +3217,7 @@ export function PurchaseVoucherModal({
                           style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                         />
                         <div
-                          title="AVA AI Gợi ý diễn giải tự động"
+                          title="Sổ Việt AI Gợi ý diễn giải tự động"
                           onClick={() => setDescription(supplierName ? `Mua hàng của ${supplierName}` : "Mua hàng")}
                           style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                         >
@@ -3428,7 +3428,7 @@ export function PurchaseVoucherModal({
                             style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                           />
                           <div
-                            title="AVA AI Gợi ý lý do chi"
+                            title="Sổ Việt AI Gợi ý lý do chi"
                             onClick={() => setPaymentReason(supplierName ? `Chi tiền mua hàng của ${supplierName}` : "Chi tiền mua hàng")}
                             style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                           >
@@ -3460,7 +3460,7 @@ export function PurchaseVoucherModal({
                             style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                           />
                           <div
-                            title="AVA AI Gợi ý lý do chi"
+                            title="Sổ Việt AI Gợi ý lý do chi"
                             onClick={() => setPaymentReason(supplierName ? `Chi tiền mua hàng của ${supplierName}` : "Chi tiền mua hàng")}
                             style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                           >
@@ -3946,7 +3946,7 @@ export function PurchaseVoucherModal({
               )}
             </div>
 
-            {/* Right Tools: AVA Kế toán & Chiết khấu */}
+            {/* Right Tools: Sổ Việt AI & Chiết khấu */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 type="button"
@@ -3965,7 +3965,7 @@ export function PurchaseVoucherModal({
                 }}
               >
                 <Sparkles size={13} />
-                <span>AVA Kế toán</span>
+                <span>Sổ Việt AI</span>
                 <ChevronDown size={12} />
               </button>
 
@@ -5856,7 +5856,7 @@ export function PurchaseDiscountModal({
                           }}
                         />
                         <span
-                          title="AVA AI gợi ý"
+                          title="Sổ Việt AI gợi ý"
                           style={{
                             position: "absolute",
                             right: 8,
@@ -6880,13 +6880,13 @@ export function ReconciliationPeriodModal({
               </span>
             </div>
 
-            {/* Purple AVA AI banner box */}
+            {/* Purple Sổ Việt AI banner box */}
             <div style={{ background: "linear-gradient(135deg, #f5f3ff, #ede9fe)", border: "1px solid #ddd6fe", borderRadius: 6, padding: "10px 14px", display: "flex", alignItems: "flex-start", gap: 10 }}>
               <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#7c3aed", color: "#ffffff", display: "grid", placeItems: "center", flexShrink: 0, marginTop: 1 }}>
                 <Sparkles size={13} />
               </div>
               <p style={{ margin: 0, fontSize: 12, color: "#5b21b6", lineHeight: 1.4 }}>
-                Vui lòng <strong>lựa chọn mẫu giống nhất</strong> với tệp bạn tải lên để <strong>AVA Kế toán</strong> có thể thực hiện đối chiếu chính xác.
+                Vui lòng <strong>lựa chọn mẫu giống nhất</strong> với tệp bạn tải lên để <strong>Sổ Việt AI</strong> có thể thực hiện đối chiếu chính xác.
               </p>
             </div>
           </div>
@@ -9395,7 +9395,7 @@ export function PurchaseServiceModal({
                           style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                         />
                         <div
-                          title="AVA AI Gợi ý diễn giải"
+                          title="Sổ Việt AI Gợi ý diễn giải"
                           onClick={() => setDescription("Mua dịch vụ")}
                           style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                         >
@@ -9493,7 +9493,7 @@ export function PurchaseServiceModal({
                         style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                       />
                       <div
-                        title="AVA AI Gợi ý lý do chi"
+                        title="Sổ Việt AI Gợi ý lý do chi"
                         onClick={() => setPaymentReason("Chi tiền mua dịch vụ")}
                         style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                       >
@@ -9699,7 +9699,7 @@ export function PurchaseServiceModal({
               </button>
             </div>
 
-            {/* Right Tools: AVA Kế toán & Chiết khấu */}
+            {/* Right Tools: Sổ Việt AI & Chiết khấu */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 type="button"
@@ -9718,7 +9718,7 @@ export function PurchaseServiceModal({
                 }}
               >
                 <Sparkles size={13} />
-                <span>AVA Kế toán</span>
+                <span>Sổ Việt AI</span>
                 <ChevronDown size={12} />
               </button>
 
@@ -10764,7 +10764,7 @@ export function PurchaseMultiInvoiceModal({
                         style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                       />
                       <div
-                        title="AVA AI Gợi ý diễn giải"
+                        title="Sổ Việt AI Gợi ý diễn giải"
                         onClick={() => setDescription("Mua hàng nhiều hóa đơn")}
                         style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                       >
@@ -10882,7 +10882,7 @@ export function PurchaseMultiInvoiceModal({
                         style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                       />
                       <div
-                        title="AVA AI Gợi ý diễn giải"
+                        title="Sổ Việt AI Gợi ý diễn giải"
                         onClick={() => setDescription("Mua hàng nhiều hóa đơn")}
                         style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                       >
@@ -11006,7 +11006,7 @@ export function PurchaseMultiInvoiceModal({
                         style={{ width: "100%", height: 28, padding: "0 28px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
                       />
                       <div
-                        title="AVA AI Gợi ý lý do chi"
+                        title="Sổ Việt AI Gợi ý lý do chi"
                         onClick={() => setPaymentReason("Chi tiền mua hàng nhiều hóa đơn")}
                         style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8b5cf6", display: "grid", placeItems: "center" }}
                       >
@@ -11317,7 +11317,7 @@ export function PurchaseMultiInvoiceModal({
               )}
             </div>
 
-            {/* Right Tools: AVA Kế toán & Chiết khấu */}
+            {/* Right Tools: Sổ Việt AI & Chiết khấu */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
                 type="button"
@@ -11336,7 +11336,7 @@ export function PurchaseMultiInvoiceModal({
                 }}
               >
                 <Sparkles size={13} />
-                <span>AVA Kế toán</span>
+                <span>Sổ Việt AI</span>
                 <ChevronDown size={12} />
               </button>
 

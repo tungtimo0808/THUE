@@ -292,7 +292,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
     ],
     utilities: [
       { label: "So sánh lãi suất ngân hàng", path: "/connections/rates" },
-      { label: "Kết nối vay vốn MISA Lend", path: "/connections/misa-lend" },
+      { label: "Kết nối nguồn vốn Sổ Việt Lend", path: "/connections/misa-lend" },
     ],
   },
 };

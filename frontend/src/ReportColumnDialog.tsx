@@ -91,7 +91,7 @@ export default function ReportColumnDialog({
               value={format}
               onChange={(event) => setFormat(event.target.value)}
             >
-              <optgroup label="Định dạng theo MISA">
+              <optgroup label="Định dạng theo Sổ Việt ERP">
                 {[
                   "Kiểu chữ",
                   "Kiểu tiền quy đổi",
