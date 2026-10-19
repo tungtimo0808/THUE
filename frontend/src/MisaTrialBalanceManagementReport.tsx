@@ -422,19 +422,19 @@ export default function MisaTrialBalanceManagementReport({
             <thead>
               {/* Row 1 Header */}
               <tr style={{ background: "#e2f0d9", color: "#1e293b", fontWeight: 700, borderBottom: "1px solid #bbf7d0" }}>
-                <th rowSpan={2} style={{ padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1", width: 90 }}>
+                <th rowSpan={2} style={{ padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1", width: 90 }}>
                   Số tài khoản
                 </th>
-                <th rowSpan={2} style={{ padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1", minWidth: 220 }}>
+                <th rowSpan={2} style={{ padding: "5px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1", minWidth: 220 }}>
                   Tên tài khoản
                 </th>
-                <th colSpan={2} style={{ padding: "6px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
+                <th colSpan={2} style={{ padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
                   Đầu kỳ
                 </th>
-                <th colSpan={4} style={{ padding: "6px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
+                <th colSpan={4} style={{ padding: "4px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
                   Phát sinh
                 </th>
-                <th colSpan={2} style={{ padding: "6px 10px", textAlign: "center" }}>
+                <th colSpan={2} style={{ padding: "4px 8px", textAlign: "center" }}>
                   Cuối kỳ
                 </th>
               </tr>
@@ -442,16 +442,16 @@ export default function MisaTrialBalanceManagementReport({
               {/* Row 2 Sub-headers */}
               <tr style={{ background: "#e2f0d9", color: "#1e293b", fontWeight: 600, borderBottom: "1px solid #cbd5e1" }}>
                 {/* Đầu kỳ */}
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 100 }}>Nợ</th>
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 100 }}>Có</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 100 }}>Nợ</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 100 }}>Có</th>
                 {/* Phát sinh */}
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Nợ</th>
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Có</th>
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Nợ lũy kế</th>
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Có lũy kế</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Nợ</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Có</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Nợ lũy kế</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Có lũy kế</th>
                 {/* Cuối kỳ */}
-                <th style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Nợ</th>
-                <th style={{ padding: "6px 10px", textAlign: "right", width: 110 }}>Có</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", width: 110 }}>Nợ</th>
+                <th style={{ padding: "4px 8px", textAlign: "right", width: 110 }}>Có</th>
               </tr>
             </thead>
 
@@ -467,7 +467,7 @@ export default function MisaTrialBalanceManagementReport({
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     {/* Số TK */}
-                    <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
+                    <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
                       onClick={() => notify?.(`Mở sổ chi tiết tài khoản ${row.code} - ${row.name}`)}
                       title="Bấm để xem sổ chi tiết tài khoản"
                     >
@@ -475,38 +475,38 @@ export default function MisaTrialBalanceManagementReport({
                     </td>
 
                     {/* Tên TK */}
-                    <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
+                    <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
                       {row.name}
                     </td>
 
                     {/* Đầu kỳ Nợ / Có */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
                       {formatCurrency(row.openingDebit).text}
                     </td>
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
                       {formatCurrency(row.openingCredit).text}
                     </td>
 
                     {/* Phát sinh Nợ / Có */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
                       {formatCurrency(row.periodDebit).text}
                     </td>
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
                       {formatCurrency(row.periodCredit).text}
                     </td>
 
                     {/* Lũy kế Nợ / Có */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
                       {formatCurrency(row.accumDebit).text}
                     </td>
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
                       {formatCurrency(row.accumCredit).text}
                     </td>
 
                     {/* Cuối kỳ Nợ / Có (Red if negative) */}
                     <td
                       style={{
-                        padding: "7px 10px",
+                        padding: "4px 8px",
                         textAlign: "right",
                         borderRight: "1px solid #e2e8f0",
                         color: cDebit.isNegative ? "#dc2626" : "#334155",
@@ -517,7 +517,7 @@ export default function MisaTrialBalanceManagementReport({
                     </td>
                     <td
                       style={{
-                        padding: "7px 10px",
+                        padding: "4px 8px",
                         textAlign: "right",
                         color: cCredit.isNegative ? "#dc2626" : "#334155",
                         fontWeight: cCredit.isNegative ? 600 : 400,
@@ -531,27 +531,27 @@ export default function MisaTrialBalanceManagementReport({
 
               {/* Total Summary Row */}
               <tr style={{ background: "#f1f5f9", fontWeight: 700, borderTop: "2px solid #cbd5e1" }}>
-                <td colSpan={2} style={{ padding: "9px 10px", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <td colSpan={2} style={{ padding: "5px 8px", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   Tổng cộng
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}></td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}></td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}></td>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}></td>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   {totals.periodDebit.toLocaleString("vi-VN")}
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   {totals.periodCredit.toLocaleString("vi-VN")}
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   {totals.accumDebit.toLocaleString("vi-VN")}
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   {totals.accumCredit.toLocaleString("vi-VN")}
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   {totals.closingDebit.toLocaleString("vi-VN")}
                 </td>
-                <td style={{ padding: "9px 10px", textAlign: "right", color: "#1e293b" }}>
+                <td style={{ padding: "5px 8px", textAlign: "right", color: "#1e293b" }}>
                   {totals.closingCredit.toLocaleString("vi-VN")}
                 </td>
               </tr>

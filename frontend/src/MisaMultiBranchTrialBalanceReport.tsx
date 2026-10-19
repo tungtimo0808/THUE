@@ -658,7 +658,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   <td
                     onClick={() => setDrilldownItem({ code: row.accountCode, name: row.accountName })}
                     style={{
-                      padding: "7px 10px",
+                      padding: "4px 8px",
                       borderRight: "1px solid #f1f5f9",
                       fontWeight: 600,
                       color: "#0073e6",
@@ -669,34 +669,34 @@ export default function MisaMultiBranchTrialBalanceReport({
                   </td>
                   <td
                     style={{
-                      padding: "7px 12px",
+                      padding: "4px 8px",
                       borderRight: "1px solid #f1f5f9",
                       color: "#1e293b",
                     }}
                   >
                     {row.accountName}
                   </td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
                     {formatCell(row.openDebit).text}
                   </td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
                     {formatCell(row.openCredit).text}
                   </td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
                     {formatCell(row.occurDebit).text}
                   </td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
                     {formatCell(row.occurCredit).text}
                   </td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
                     {formatCell(row.accumDebit).text}
                   </td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "4px 8px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
                     {formatCell(row.accumCredit).text}
                   </td>
                   <td
                     style={{
-                      padding: "7px 8px",
+                      padding: "4px 8px",
                       textAlign: "right",
                       borderRight: "1px solid #f1f5f9",
                       color: cCloseDeb.isNegative ? "#dc2626" : "#1e293b",
@@ -707,7 +707,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   </td>
                   <td
                     style={{
-                      padding: "7px 8px",
+                      padding: "4px 8px",
                       textAlign: "right",
                       color: cCloseCred.isNegative ? "#dc2626" : "#1e293b",
                       fontWeight: cCloseCred.isNegative ? 600 : 400,

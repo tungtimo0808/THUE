@@ -549,11 +549,11 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     zIndex: 2,
                     background: "#e2f0d9",
                     border: "1px solid #cbd5e1",
-                    padding: "8px 10px",
+                    padding: "5px 8px",
                     textAlign: "center",
                     fontWeight: 700,
                     color: "#1e293b",
-                    minWidth: 105,
+                    minWidth: 95,
                   }}
                 >
                   Số hiệu tài khoản
@@ -562,15 +562,15 @@ export default function MisaTimePeriodicTrialBalanceReport({
                   rowSpan={2}
                   style={{
                     position: "sticky",
-                    left: 105,
+                    left: 95,
                     zIndex: 2,
                     background: "#e2f0d9",
                     border: "1px solid #cbd5e1",
-                    padding: "8px 12px",
+                    padding: "5px 8px",
                     textAlign: "left",
                     fontWeight: 700,
                     color: "#1e293b",
-                    minWidth: 200,
+                    minWidth: 180,
                   }}
                 >
                   Tên tài khoản
@@ -580,7 +580,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                   colSpan={2}
                   style={{
                     border: "1px solid #cbd5e1",
-                    padding: "6px 10px",
+                    padding: "4px 8px",
                     textAlign: "center",
                     fontWeight: 700,
                     color: "#1e293b",
@@ -595,11 +595,11 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     colSpan={2}
                     style={{
                       border: "1px solid #cbd5e1",
-                      padding: "6px 10px",
+                      padding: "4px 8px",
                       textAlign: "center",
                       fontWeight: 700,
                       color: "#1e293b",
-                      minWidth: 160,
+                      minWidth: 140,
                     }}
                   >
                     Phát sinh tháng {m}/{toYear}
@@ -610,11 +610,11 @@ export default function MisaTimePeriodicTrialBalanceReport({
                   colSpan={2}
                   style={{
                     border: "1px solid #cbd5e1",
-                    padding: "6px 10px",
+                    padding: "4px 8px",
                     textAlign: "center",
                     fontWeight: 700,
                     color: "#1e293b",
-                    minWidth: 170,
+                    minWidth: 150,
                   }}
                 >
                   Tổng tiền
@@ -624,11 +624,11 @@ export default function MisaTimePeriodicTrialBalanceReport({
                   colSpan={2}
                   style={{
                     border: "1px solid #cbd5e1",
-                    padding: "6px 10px",
+                    padding: "4px 8px",
                     textAlign: "center",
                     fontWeight: 700,
                     color: "#1e293b",
-                    minWidth: 170,
+                    minWidth: 150,
                   }}
                 >
                   Cuối kỳ
@@ -684,7 +684,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                         zIndex: 1,
                         background: "#ffffff",
                         border: "1px solid #e2e8f0",
-                        padding: "7px 10px",
+                        padding: "4px 8px",
                         textAlign: "center",
                         color: "#0284c7",
                         fontWeight: 600,
@@ -699,11 +699,11 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     <td
                       style={{
                         position: "sticky",
-                        left: 105,
+                        left: 95,
                         zIndex: 1,
                         background: "#ffffff",
                         border: "1px solid #e2e8f0",
-                        padding: "7px 12px",
+                        padding: "4px 8px",
                         color: "#0f172a",
                       }}
                     >
@@ -711,8 +711,8 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     </td>
 
                     {/* Đầu kỳ Nợ / Có */}
-                    <td style={{ border: "1px solid #e2e8f0", padding: "7px 8px", textAlign: "right" }}></td>
-                    <td style={{ border: "1px solid #e2e8f0", padding: "7px 8px", textAlign: "right" }}></td>
+                    <td style={{ border: "1px solid #e2e8f0", padding: "4px 8px", textAlign: "right" }}></td>
+                    <td style={{ border: "1px solid #e2e8f0", padding: "4px 8px", textAlign: "right" }}></td>
 
                     {/* Months 1..10 */}
                     {monthsRange.map((m) => {
@@ -726,7 +726,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                           <td
                             style={{
                               border: "1px solid #e2e8f0",
-                              padding: "7px 8px",
+                              padding: "4px 8px",
                               textAlign: "right",
                               color: dFmt.isNegative ? "#dc2626" : "#334155",
                             }}
@@ -736,7 +736,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                           <td
                             style={{
                               border: "1px solid #e2e8f0",
-                              padding: "7px 8px",
+                              padding: "4px 8px",
                               textAlign: "right",
                               color: cFmt.isNegative ? "#dc2626" : "#334155",
                             }}
@@ -751,7 +751,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     <td
                       style={{
                         border: "1px solid #e2e8f0",
-                        padding: "7px 8px",
+                        padding: "4px 8px",
                         textAlign: "right",
                         color: totalDebitFmt.isNegative ? "#dc2626" : "#334155",
                       }}
@@ -761,7 +761,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     <td
                       style={{
                         border: "1px solid #e2e8f0",
-                        padding: "7px 8px",
+                        padding: "4px 8px",
                         textAlign: "right",
                         color: totalCreditFmt.isNegative ? "#dc2626" : "#334155",
                       }}
@@ -773,7 +773,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     <td
                       style={{
                         border: "1px solid #e2e8f0",
-                        padding: "7px 8px",
+                        padding: "4px 8px",
                         textAlign: "right",
                         color: closeDebitFmt.isNegative ? "#dc2626" : "#334155",
                       }}
@@ -783,7 +783,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     <td
                       style={{
                         border: "1px solid #e2e8f0",
-                        padding: "7px 8px",
+                        padding: "4px 8px",
                         textAlign: "right",
                         color: closeCreditFmt.isNegative ? "#dc2626" : "#334155",
                       }}
@@ -810,7 +810,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     zIndex: 1,
                     background: "#ffffff",
                     border: "1px solid #cbd5e1",
-                    padding: "8px 12px",
+                    padding: "5px 8px",
                     color: "#0f172a",
                   }}
                 >
