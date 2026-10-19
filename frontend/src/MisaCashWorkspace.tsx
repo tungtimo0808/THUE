@@ -4793,12 +4793,10 @@ export function CreateVoucherModal({
                           />
                         </td>
 <td>
-                          <input
-                            type="text"
-                            className="misa-voucher-cell-input"
-                            style={{ textAlign: "center" }}
+                          <LedgerAccountField
                             value={tr.taxAccount}
-                            onChange={(e) => handleUpdateTaxRow(tr.id, "taxAccount", e.target.value)}
+                            onChange={(value) => handleUpdateTaxRow(tr.id, "taxAccount", value)}
+                            label="TK thuế GTGT"
                           />
                         </td>
 <td>
