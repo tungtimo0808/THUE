@@ -34,7 +34,7 @@ export interface CommercialInvoiceItem {
 export interface SaleCommercialInvoiceModalProps {
   initialData?: any;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -205,7 +205,7 @@ export function SaleCommercialInvoiceModal({
   const totalQuantity = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0);
   const totalAmount = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
 
-  const handleSave = (close = true) => {
+  const handleSave = async (close = true) => {
     const payload = {
       invoiceType: "Hóa đơn thương mại",
       customerCode,
@@ -231,8 +231,9 @@ export function SaleCommercialInvoiceModal({
       totalPayment: totalAmount,
     };
 
-    onSubmit(payload);
-    notify(`Đã lưu Hóa đơn thương mại ${invoiceNo || ""} thành công!`);
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(`Đã lưu Hóa đơn thương mại ${invoiceNo || ""} thành công!`);
     if (close) {
       onClose();
     }

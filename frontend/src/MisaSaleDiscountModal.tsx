@@ -40,7 +40,7 @@ export interface SaleDiscountItem {
 export interface SaleDiscountModalProps {
   initialData?: any;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -349,7 +349,7 @@ export function SaleDiscountModal({
   const totalVat = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const totalPayment = isExportTrust ? totalAmount : totalAmount + totalVat;
 
-  const handleSave = (andPrint = false) => {
+  const handleSave = async (andPrint = false) => {
     const payload = {
       returnType,
       formType,
@@ -378,8 +378,9 @@ export function SaleDiscountModal({
       andPrint,
     };
 
-    onSubmit(payload);
-    notify(`Đã lưu chứng từ giảm giá hàng bán ${currentVoucherNo} thành công!`);
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(`Đã lưu chứng từ giảm giá hàng bán ${currentVoucherNo} thành công!`);
 
     if (andPrint) {
       notify(`Đang chuẩn bị in chứng từ giảm giá hàng bán ${currentVoucherNo}...`);

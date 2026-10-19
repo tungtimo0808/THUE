@@ -39,7 +39,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-change-me}
       DB_HOST: "postgres"
       DB_PORT: "5432"
-      DB_CONN_MAX_AGE: "60"
+      DB_CONN_MAX_AGE: "0"
       COMMON_REQUIRE_VERIFICATION: "True"
     volumes:
       - ./backend:/app
@@ -47,7 +47,7 @@ services:
     ports:
       - "8080:8080"
     command: >
-      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8080"
+      sh -c "python manage.py migrate && python manage.py sync_company_setup && python manage.py runserver 0.0.0.0:8080"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/docs/', timeout=2)"]
       interval: 5s

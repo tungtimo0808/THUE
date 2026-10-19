@@ -53,7 +53,7 @@ export interface CustomerData {
 interface MisaCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (customer: CustomerData, andAddNew?: boolean) => void;
+  onSave: (customer: CustomerData, andAddNew?: boolean) => boolean | void | Promise<boolean | void>;
   initialData?: Partial<CustomerData> | null;
   defaultCode?: string;
   notify?: (msg: string) => void;
@@ -157,7 +157,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
     }
   };
 
-  const handleSaveInternal = (andAddNew: boolean = false) => {
+  const handleSaveInternal = async (andAddNew: boolean = false) => {
     if (!name.trim()) {
       notify("Vui lòng nhập Tên khách hàng!");
       return;
@@ -198,7 +198,8 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
       notes,
     };
 
-    onSave(customer, andAddNew);
+    const saved = await onSave(customer, andAddNew);
+    if (saved === false) return;
     notify(`Đã lưu khách hàng "${name}" thành công!`);
 
     if (andAddNew) {

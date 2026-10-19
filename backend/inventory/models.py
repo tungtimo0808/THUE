@@ -327,3 +327,37 @@ class ApprovalDecision(models.Model):
 
     class Meta:
         db_table = "inv_approval_decision"
+
+
+class ProductionOrder(models.Model):
+    """Lệnh sản xuất: finished goods to make and the materials they use; stock moves via issue/receipt vouchers."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT, related_name="production_orders")
+    number = models.CharField(max_length=80)
+    document_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True)
+    description = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=20, choices=(
+        ("PLANNED", "Chưa thực hiện"), ("IN_PROGRESS", "Đang thực hiện"), ("COMPLETED", "Hoàn thành"), ("CANCELLED", "Đã hủy"),
+    ), default="IN_PROGRESS")
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="production_orders")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "inv_production_order"
+        ordering = ("-document_date", "-created_at")
+        constraints = [models.UniqueConstraint(fields=("company", "number"), name="uq_inv_production_order_number")]
+
+
+class ProductionOrderLine(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(ProductionOrder, on_delete=models.CASCADE, related_name="lines")
+    role = models.CharField(max_length=10, choices=(("PRODUCT", "Thành phẩm"), ("MATERIAL", "Nguyên vật liệu")))
+    line_no = models.PositiveIntegerField()
+    item = models.ForeignKey("master_data.Item", on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=20, decimal_places=4, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "inv_production_order_line"
+        ordering = ("role", "line_no")

@@ -144,6 +144,18 @@ def lock_order_lines(purchase):
     return [(locked[pk], quantity) for pk, quantity in quantities.items()]
 
 
+
+def input_vat_split(company, line):
+    """(goods value, deductible VAT, VAT account) of a purchase line: deductible VAT goes to 133x, not into cost."""
+    tax = line.tax_amount or Decimal("0")
+    if tax <= 0 or (line.tax_rate_id and not line.tax_rate.deductible):
+        return line.total_amount, Decimal("0"), None
+    account = (Account.objects.filter(company=company, code="1331", status="ACTIVE", is_postable=True).first()
+               or Account.objects.filter(company=company, code__startswith="133", status="ACTIVE", is_postable=True).order_by("code").first())
+    if account is None:
+        raise ValidationError("Chưa có tài khoản thuế GTGT được khấu trừ (1331) để hạch toán thuế đầu vào.")
+    return line.total_amount - tax, tax, account
+
 @transaction.atomic
 def submit(purchase, request):
     purchase = GoodsPurchase.objects.select_for_update().get(pk=purchase.pk)
@@ -239,11 +251,16 @@ def post(purchase, request):
         if line.total_amount == 0:
             continue
         currency = purchase.company.accounting_currency
+        goods_value, vat, vat_account = input_vat_split(purchase.company, line)
         n += 1
-        JournalLine.objects.create(entry=journal, line_no=n, account=line.debit_account, debit=line.total_amount,
+        JournalLine.objects.create(entry=journal, line_no=n, account=line.debit_account, debit=goods_value,
             currency=currency, party=purchase.supplier, warehouse=line.warehouse or purchase.receiving_warehouse,
             department=line.department,
             dimensions={"expense_item_id": str(line.expense_item_id or ""), "statistical_code_id": str(line.statistical_code_id or "")})
+        if vat:
+            n += 1
+            JournalLine.objects.create(entry=journal, line_no=n, account=vat_account, debit=vat,
+                currency=currency, party=purchase.supplier, description="Thuế GTGT đầu vào được khấu trừ")
         n += 1
         JournalLine.objects.create(entry=journal, line_no=n, account=line.credit_account, credit=line.total_amount,
             currency=currency, party=purchase.supplier)

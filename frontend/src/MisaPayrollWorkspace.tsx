@@ -27,6 +27,13 @@ import {
   Coins,
 } from "lucide-react";
 import { SalaryPaymentModal, InsurancePaymentModal } from "./MisaBankModals";
+import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import {
+  createApiWriter, insurancePaymentRows, payrollEmployees, postSalarySheet, salaryPaymentRows, saveAttendanceSheet,
+  savePayProfiles, savePayrollPayment, saveSalarySheet,
+} from "./misa-api-writes";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import "./misa-cash.css";
 
 export function formatVND(amount: number): string {
@@ -275,6 +282,13 @@ export default function MisaPayrollWorkspace({
   href = (path) => path,
   notify,
 }: MisaPayrollWorkspaceProps) {
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(company.id, {
+    salarySheets: "/api/v1/payroll/salary-sheets/",
+  }, notify);
+  const apiSave = useMisaApiSave(company.id, notify, reloadApi);
+  const { token: apiToken } = useApiSession();
+  const payrollWriter = () => createApiWriter(company.id, (path, init) => request(path, apiToken, init));
+  const [apiEmployees, setApiEmployees] = useState<any[] | null>(null);
   // Navigation helper
   const navigateTo = (tabName: string) => {
     const url = href(`/payroll/${tabName}`);
@@ -288,6 +302,10 @@ export default function MisaPayrollWorkspace({
   const [showSalaryPaymentModal, setShowSalaryPaymentModal] = useState(false);
   const [showInsurancePaymentModal, setShowInsurancePaymentModal] = useState(false);
   const [showEmployeesModal, setShowEmployeesModal] = useState(false);
+  useEffect(() => {
+    if (!apiConnected || !showEmployeesModal) return;
+    payrollEmployees(payrollWriter()).then(setApiEmployees).catch((error) => notify(`Không tải được nhân viên: ${error instanceof Error ? error.message : String(error)}`));
+  }, [apiConnected, showEmployeesModal]);
   const [showAttendanceSymbolsModal, setShowAttendanceSymbolsModal] = useState(false);
   const [showTaxBracketsModal, setShowTaxBracketsModal] = useState(false);
   const [showRegulationsModal, setShowRegulationsModal] = useState(false);
@@ -408,6 +426,20 @@ export default function MisaPayrollWorkspace({
   };
 
   const [createdSalarySheets, setCreatedSalarySheets] = useState<any[]>([]);
+  useEffect(() => {
+    if (!apiConnected || !apiRows.salarySheets) return;
+    const labels: Record<string, string> = { CALCULATED: "Chưa hạch toán", POSTED: "Đã hạch toán", PAID: "Đã thanh toán" };
+    setCreatedSalarySheets(apiRows.salarySheets.map((row) => {
+      const lines = row.lines || [];
+      const sum = (field: string) => lines.reduce((total: number, line: any) => total + apiNumber(line[field]), 0);
+      return {
+        id: row.id, name: row.name, period: `Tháng ${String(row.period).slice(5, 7)}/${String(row.period).slice(0, 4)}`, dept: "Toàn công ty",
+        employeeCount: lines.length, standardDays: apiNumber(row.standard_days), grossSalary: sum("gross"),
+        insuranceAmount: sum("employee_insurance"), taxAmount: sum("personal_income_tax"), netSalary: sum("net"),
+        status: labels[row.status] || row.status, createdDate: apiDate(row.created_at), approvedBy: row.journal_number || "",
+      };
+    }));
+  }, [apiConnected, apiRows]);
 
   // Posting (Hạch toán chi phí) Mode & Select Salary Sheet Modal State (Ảnh 3)
   const [postingMode, setPostingMode] = useState<"empty" | "voucher_view">("empty");
@@ -423,6 +455,20 @@ export default function MisaPayrollWorkspace({
   const [reportSearch, setReportSearch] = useState("");
   const [attendanceSearch, setAttendanceSearch] = useState("");
   const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
+  const [accountingRule, setAccountingRule] = useState<"DETAIL" | "DEPARTMENT">("DETAIL");
+  const [standardDaysOption, setStandardDaysOption] = useState(22);
+  const [payrollSettings, setPayrollSettings] = useState<any>(null);
+  useEffect(() => {
+    if (!apiConnected || !apiToken) return;
+    request<any>(`/api/v1/payroll/settings/?company_id=${encodeURIComponent(company.id)}`, apiToken)
+      .then((settings) => {
+        setPayrollSettings(settings);
+        setPayrollOption(settings.integration_mode === "CLOUD" ? "Sổ Việt Tiền lương đám mây" : "Tiền lương Sổ Việt ERP");
+        setAccountingRule(settings.accounting_rule === "DEPARTMENT" ? "DEPARTMENT" : "DETAIL");
+        setStandardDaysOption(apiNumber(settings.standard_days) || 22);
+      })
+      .catch((error) => notify(`Không tải được thiết lập lương: ${error instanceof Error ? error.message : String(error)}`));
+  }, [apiConnected, apiToken, company.id]);
   const [showPayrollOptionDropdown, setShowPayrollOptionDropdown] = useState(false);
   const [reportLanguage, setReportLanguage] = useState("Tiếng Việt");
   const [showReportVisibilityModal, setShowReportVisibilityModal] = useState(false);
@@ -478,7 +524,12 @@ export default function MisaPayrollWorkspace({
         {showSalaryPaymentModal && (
           <SalaryPaymentModal
             onClose={() => setShowSalaryPaymentModal(false)}
-            onSubmit={(data) => {
+            loadRecords={apiConnected ? () => salaryPaymentRows(payrollWriter()) : undefined}
+            onSubmit={async (data) => {
+              if (apiConnected) {
+                if (await apiSave((writer) => savePayrollPayment(writer, data, false))) setShowSalaryPaymentModal(false);
+                return;
+              }
               setShowSalaryPaymentModal(false);
               notify(`Đã lập thành công chứng từ Trả lương - Số tiền: ${formatVND(data.totalAmount)}đ!`);
             }}
@@ -489,7 +540,12 @@ export default function MisaPayrollWorkspace({
         {showInsurancePaymentModal && (
           <InsurancePaymentModal
             onClose={() => setShowInsurancePaymentModal(false)}
-            onSubmit={(data) => {
+            loadRecords={apiConnected ? () => insurancePaymentRows(payrollWriter()) : undefined}
+            onSubmit={async (data) => {
+              if (apiConnected) {
+                if (await apiSave((writer) => savePayrollPayment(writer, data, true))) setShowInsurancePaymentModal(false);
+                return;
+              }
               setShowInsurancePaymentModal(false);
               notify(`Đã lập chứng từ Nộp bảo hiểm thành công - Số tiền: ${formatVND(data.totalAmount)}đ!`);
             }}
@@ -536,7 +592,7 @@ export default function MisaPayrollWorkspace({
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Thêm mới hồ sơ nhân viên thành công")}
+                    onClick={() => notify(apiConnected ? "Thêm nhân viên mới tại Danh mục > Nhân viên, sau đó nhập lương trong bảng này." : "Thêm mới hồ sơ nhân viên thành công")}
                     style={{ height: 32, padding: "0 12px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
                   >
                     <Plus size={15} /> Thêm nhân viên
@@ -567,16 +623,16 @@ export default function MisaPayrollWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {SAMPLE_EMPLOYEES.map((emp) => (
+                    {(apiConnected && apiEmployees ? apiEmployees : SAMPLE_EMPLOYEES).map((emp: any) => (
                       <tr key={emp.id} style={{ borderBottom: "1px solid #f1f5f9", height: 38 }}>
                         <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{emp.id}</td>
                         <td style={{ padding: "8px 10px", fontWeight: 600, color: "#1e293b" }}>{emp.name}</td>
                         <td style={{ padding: "8px 10px", color: "#475569" }}>{emp.dept}</td>
                         <td style={{ padding: "8px 10px", color: "#475569" }}>{emp.title}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(emp.salaryRate)}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(emp.allowance)}</td>
-                        <td style={{ padding: "8px 10px", color: "#64748b" }}>{emp.bankAcc}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "center" }}>{emp.dependents}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{apiConnected && apiEmployees ? <input value={emp.salaryRate} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, salaryRate: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }} /> : formatVND(emp.salaryRate)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{apiConnected && apiEmployees ? <input value={emp.allowance} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, allowance: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }} /> : formatVND(emp.allowance)}</td>
+                        <td style={{ padding: "8px 10px", color: "#64748b" }}>{apiConnected && apiEmployees ? <input value={emp.bankAcc} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, bankAcc: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "left" }} /> : emp.bankAcc}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center" }}>{apiConnected && apiEmployees ? <input value={emp.dependents} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, dependents: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "center" }} /> : emp.dependents}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center" }}>
                           <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
                             {emp.status}
@@ -589,10 +645,15 @@ export default function MisaPayrollWorkspace({
               </div>
 
               <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12.5, color: "#64748b" }}>Tổng số nhân sự: {SAMPLE_EMPLOYEES.length} người</span>
+                <span style={{ fontSize: 12.5, color: "#64748b" }}>Tổng số nhân sự: {(apiConnected && apiEmployees ? apiEmployees : SAMPLE_EMPLOYEES).length} người</span>
                 <button
                   type="button"
-                  onClick={() => setShowEmployeesModal(false)}
+                  onClick={async () => {
+                    if (apiConnected && apiEmployees?.some((row) => row.dirty)) {
+                      if (!(await apiSave((writer) => savePayProfiles(writer, apiEmployees)))) return;
+                    }
+                    setShowEmployeesModal(false);
+                  }}
                   style={{ height: 32, padding: "0 20px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, cursor: "pointer" }}
                 >
                   Đóng
@@ -674,10 +735,10 @@ export default function MisaPayrollWorkspace({
               </div>
               <div style={{ padding: "16px 20px" }}>
                 <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "10px 14px", borderRadius: 6, marginBottom: 14, fontSize: 13, color: "#065f46" }}>
-                  <strong>Quy định giảm trừ gia cảnh hiện hành:</strong>
+                  <strong>Mức giảm trừ đang cấu hình cho doanh nghiệp:</strong>
                   <ul style={{ margin: "6px 0 0 18px", padding: 0 }}>
-                    <li>Giảm trừ cho bản thân người nộp thuế: <strong>11.000.000 đ/tháng</strong> (132.000.000 đ/năm)</li>
-                    <li>Giảm trừ cho mỗi người phụ thuộc: <strong>4.400.000 đ/tháng</strong></li>
+                    <li>Giảm trừ cho bản thân người nộp thuế: <strong>{formatVND(apiNumber(payrollSettings?.personal_deduction))} đ/tháng</strong></li>
+                    <li>Giảm trừ cho mỗi người phụ thuộc: <strong>{formatVND(apiNumber(payrollSettings?.dependent_deduction))} đ/tháng</strong></li>
                   </ul>
                 </div>
 
@@ -687,19 +748,16 @@ export default function MisaPayrollWorkspace({
                       <th style={{ padding: "8px 10px", textAlign: "center", width: 60 }}>Bậc</th>
                       <th style={{ padding: "8px 10px", textAlign: "left" }}>Phần thu nhập tính thuế / tháng</th>
                       <th style={{ padding: "8px 10px", textAlign: "center", width: 100 }}>Thuế suất</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right" }}>Số thuế tính theo phương pháp rút gọn</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right" }}>Cách tính từng bậc</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { step: 1, range: "Đến 5 triệu đồng", rate: "5%", formula: "Thu nhập tính thuế × 5%" },
-                      { step: 2, range: "Trên 5 triệu đồng đến 10 triệu đồng", rate: "10%", formula: "TNTT × 10% - 0.25 tr.đ" },
-                      { step: 3, range: "Trên 10 triệu đồng đến 18 triệu đồng", rate: "15%", formula: "TNTT × 15% - 0.75 tr.đ" },
-                      { step: 4, range: "Trên 18 triệu đồng đến 32 triệu đồng", rate: "20%", formula: "TNTT × 20% - 1.65 tr.đ" },
-                      { step: 5, range: "Trên 32 triệu đồng đến 52 triệu đồng", rate: "25%", formula: "TNTT × 25% - 3.25 tr.đ" },
-                      { step: 6, range: "Trên 52 triệu đồng đến 80 triệu đồng", rate: "30%", formula: "TNTT × 30% - 5.85 tr.đ" },
-                      { step: 7, range: "Trên 80 triệu đồng", rate: "35%", formula: "TNTT × 35% - 9.85 tr.đ" },
-                    ].map((b) => (
+                    {(payrollSettings?.tax_brackets || []).map((bracket: any, index: number, brackets: any[]) => ({
+                      step: index + 1,
+                      range: bracket.up_to == null ? `Trên ${formatVND(Number(brackets[index - 1]?.up_to || 0))} đ` : `Đến ${formatVND(Number(bracket.up_to))} đ`,
+                      rate: `${bracket.rate}%`,
+                      formula: `Phần thu nhập trong bậc × ${bracket.rate}%`,
+                    })).map((b: { step: number; range: string; rate: string; formula: string }) => (
                       <tr key={b.step} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
                         <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: "#00a862" }}>{b.step}</td>
                         <td style={{ padding: "8px 10px", color: "#1e293b", fontWeight: 500 }}>{b.range}</td>
@@ -754,52 +812,20 @@ export default function MisaPayrollWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    <tr style={{ borderBottom: "1px solid #f1f5f9", height: 32 }}>
-                      <td style={{ padding: "6px 10px" }}>Bảo hiểm xã hội (BHXH)</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>17.5%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>8.0%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 700, color: "#00a862" }}>25.5%</td>
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #f1f5f9", height: 32 }}>
-                      <td style={{ padding: "6px 10px" }}>Bảo hiểm y tế (BHYT)</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>3.0%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>1.5%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 700, color: "#00a862" }}>4.5%</td>
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #f1f5f9", height: 32 }}>
-                      <td style={{ padding: "6px 10px" }}>Bảo hiểm thất nghiệp (BHTN)</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>1.0%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>1.0%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 700, color: "#00a862" }}>2.0%</td>
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #f1f5f9", height: 32 }}>
-                      <td style={{ padding: "6px 10px" }}>Kinh phí công đoàn (KPCĐ)</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 600 }}>2.0%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center" }}>-</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 700, color: "#00a862" }}>2.0%</td>
-                    </tr>
-                    <tr style={{ background: "#f8fafc", fontWeight: 700, height: 34 }}>
-                      <td style={{ padding: "6px 10px", color: "#1e293b" }}>TỔNG CỘNG</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", color: "#2563eb" }}>23.5%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", color: "#d97706" }}>10.5%</td>
-                      <td style={{ padding: "6px 10px", textAlign: "center", color: "#dc2626" }}>34.0%</td>
-                    </tr>
+                    {([['social', 'Bảo hiểm xã hội'], ['health', 'Bảo hiểm y tế'], ['unemployment', 'Bảo hiểm thất nghiệp'], ['union', 'Kinh phí công đoàn']] as const).map(([fund, label]) => {
+                      const employer = apiNumber(payrollSettings?.insurance_rates?.employer?.[fund]);
+                      const employee = apiNumber(payrollSettings?.insurance_rates?.employee?.[fund]);
+                      return <tr key={fund} style={{ borderBottom: "1px solid #f1f5f9", height: 32 }}>
+                        <td style={{ padding: "6px 10px" }}>{label}</td>
+                        <td style={{ padding: "6px 10px", textAlign: "center" }}>{employer}%</td>
+                        <td style={{ padding: "6px 10px", textAlign: "center" }}>{employee}%</td>
+                        <td style={{ padding: "6px 10px", textAlign: "center", fontWeight: 700 }}>{employer + employee}%</td>
+                      </tr>;
+                    })}
                   </tbody>
                 </table>
 
-                <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#1e293b" }}>2. Mức lương chuẩn & trần đóng bảo hiểm</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 13 }}>
-                  <div style={{ background: "#f8fafc", padding: "10px 14px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                    <div style={{ color: "#64748b", fontSize: 12 }}>Mức lương cơ sở:</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#00a862", marginTop: 4 }}>2.340.000 đ/tháng</div>
-                    <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>Trần đóng BHXH/BHYT (20 lần): <strong>46.800.000 đ</strong></div>
-                  </div>
-                  <div style={{ background: "#f8fafc", padding: "10px 14px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                    <div style={{ color: "#64748b", fontSize: 12 }}>Lương tối thiểu vùng I (Hà Nội, TP.HCM):</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#2563eb", marginTop: 4 }}>4.960.000 đ/tháng</div>
-                    <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>Trần đóng BHTN (20 lần): <strong>99.200.000 đ</strong></div>
-                  </div>
-                </div>
+                <p style={{ fontSize: 13, color: "#64748b" }}>Mức lương cơ sở và trần đóng bảo hiểm chưa được cấu hình trong hệ thống.</p>
               </div>
               <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", textAlign: "right" }}>
                 <button
@@ -844,18 +870,18 @@ export default function MisaPayrollWorkspace({
                   <label style={{ fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>Phương pháp hạch toán chi phí lương mặc định:</label>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                      <input type="radio" name="accountingRule" defaultChecked style={{ accentColor: "#00a862" }} />
+                      <input type="radio" name="accountingRule" checked={accountingRule === "DETAIL"} onChange={() => setAccountingRule("DETAIL")} style={{ accentColor: "#00a862" }} />
                       <span>Hạch toán chi tiết theo từng nhân viên và phòng ban</span>
                     </label>
                     <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                      <input type="radio" name="accountingRule" style={{ accentColor: "#00a862" }} />
+                      <input type="radio" name="accountingRule" checked={accountingRule === "DEPARTMENT"} onChange={() => setAccountingRule("DEPARTMENT")} style={{ accentColor: "#00a862" }} />
                       <span>Hạch toán tổng hợp theo từng bộ phận tính giá thành & chi phí</span>
                     </label>
                   </div>
                 </div>
                 <div>
                   <label style={{ fontWeight: 600, color: "#334155", display: "block", marginBottom: 6 }}>Số ngày công chuẩn trong tháng:</label>
-                  <input type="number" defaultValue={22} style={{ width: 120, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1" }} />
+                  <input type="number" min={1} max={31} value={standardDaysOption} onChange={(e) => setStandardDaysOption(Number(e.target.value))} style={{ width: 120, height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1" }} />
                 </div>
               </div>
               <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 10 }}>
@@ -869,8 +895,21 @@ export default function MisaPayrollWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    setShowOptionsModal(false);
-                    notify("Đã lưu thiết lập tùy chọn phân hệ Tiền lương thành công!");
+                    if (apiConnected) {
+                      if (standardDaysOption < 1 || standardDaysOption > 31) { notify("Số ngày công chuẩn phải từ 1 đến 31."); return; }
+                      void apiSave(async () => {
+                        const settings = await request<any>(`/api/v1/payroll/settings/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
+                          method: "PUT", body: JSON.stringify({
+                            integration_mode: payrollOption === "AMIS Tiền lương đám mây" ? "CLOUD" : "LOCAL",
+                            accounting_rule: accountingRule, standard_days: standardDaysOption,
+                          }),
+                        });
+                        setPayrollSettings(settings);
+                        return { message: "Đã lưu thiết lập tùy chọn phân hệ Tiền lương." };
+                      }).then((saved) => { if (saved) setShowOptionsModal(false); });
+                      return;
+                    }
+                    notify("Cần kết nối API để lưu thiết lập Tiền lương.");
                   }}
                   style={{ height: 32, padding: "0 20px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 >
@@ -1459,7 +1498,13 @@ export default function MisaPayrollWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (apiConnected) {
+                      if (!(await apiSave((writer) => saveAttendanceSheet(writer, { month: attMonth, year: attYear, type: attendanceType, name: attSheetName }, "DETAIL")))) return;
+                      setShowAddAttendanceModal(false);
+                      setAttendanceMode("sheet_view");
+                      return;
+                    }
                     notify(`Đã tạo thành công ${attSheetName}!`);
                     setShowAddAttendanceModal(false);
                     setAttendanceMode("sheet_view");
@@ -1809,7 +1854,13 @@ export default function MisaPayrollWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (apiConnected) {
+                      if (!(await apiSave((writer) => saveAttendanceSheet(writer, { month: summaryMonth, year: summaryYear, type: summaryType, name: summarySheetName }, "SUMMARY")))) return;
+                      setShowAddSummaryModal(false);
+                      setSummaryMode("list_view");
+                      return;
+                    }
                     notify(`Đã tạo thành công ${summarySheetName}!`);
                     setShowAddSummaryModal(false);
                     setSummaryMode("list_view");
@@ -2232,7 +2283,13 @@ export default function MisaPayrollWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (apiConnected) {
+                      if (!(await apiSave((writer) => saveSalarySheet(writer, { month: calcMonth, year: calcYear, type: salarySheetType, name: calcSheetName })))) return;
+                      setShowAddSalarySheetModal(false);
+                      setCalcMode("sheet_view");
+                      return;
+                    }
                     const newSheet = {
                       id: `BL-${calcYear}-${calcMonth}-${Date.now().toString().slice(-4)}`,
                       name: calcSheetName,
@@ -2446,6 +2503,14 @@ export default function MisaPayrollWorkspace({
                   onClick={() => {
                     if (!selectedSalarySheetForPosting && createdSalarySheets.length === 0) {
                       notify("Vui lòng chọn bảng lương để hạch toán chi phí!");
+                      return;
+                    }
+                    if (apiConnected) {
+                      const sheet = createdSalarySheets.find((row: any) => row.name === selectedSalarySheetForPosting);
+                      if (!sheet) { notify("Chọn bảng lương cần hạch toán."); return; }
+                      void apiSave((writer) => postSalarySheet(writer, sheet.id)).then((saved) => {
+                        if (saved) { setShowSelectSalaryModal(false); setPostingMode("voucher_view"); }
+                      });
                       return;
                     }
                     notify(`Đã lập chứng từ hạch toán chi phí lương cho ${selectedSalarySheetForPosting || "Bảng lương"} thành công!`);
@@ -4819,20 +4884,27 @@ export default function MisaPayrollWorkspace({
                 </tr>
               </thead>
               <tbody>
-                {SAMPLE_EMPLOYEES.map((emp) => {
-                  const gross = emp.salaryRate + emp.allowance;
-                  const insurance = Math.round(emp.salaryRate * 0.105);
-                  const depDeduct = emp.dependents * 4400000;
-                  const selfDeduct = 11000000;
-                  const taxable = Math.max(0, gross - insurance - selfDeduct - depDeduct);
-                  const tax = Math.max(0, Math.round(taxable * 0.1));
+                {(apiConnected ? (apiRows.salarySheets?.[0]?.lines || []).map((line: any) => ({
+                  id: line.employee_code, name: line.employee_name, taxCode: "—", gross: apiNumber(line.gross),
+                  insurance: apiNumber(line.employee_insurance), deductions: apiNumber(line.detail?.deductions),
+                  taxable: apiNumber(line.taxable_income), tax: apiNumber(line.personal_income_tax),
+                })) : SAMPLE_EMPLOYEES.map((emp) => ({
+                  ...emp, gross: emp.salaryRate + emp.allowance,
+                  insurance: Math.round(emp.salaryRate * 0.105), deductions: 11000000 + emp.dependents * 4400000,
+                  taxable: Math.max(0, emp.salaryRate + emp.allowance - Math.round(emp.salaryRate * 0.105) - 11000000 - emp.dependents * 4400000),
+                  tax: 0,
+                }))).map((emp: any) => {
+                  const gross = emp.gross, insurance = emp.insurance;
+                  const selfDeduct = apiConnected ? apiNumber(payrollSettings?.personal_deduction) : 11000000;
+                  const depDeduct = emp.deductions - selfDeduct;
+                  const taxable = emp.taxable, tax = emp.tax;
                   return (
                     <tr key={emp.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{emp.id}</td>
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "#1e293b" }}>{emp.name}</td>
                       <td style={{ padding: "8px 10px", color: "#64748b" }}>{emp.taxCode}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(gross)}</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right" }}>11.000.000</td>
+                      <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(selfDeduct)}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(depDeduct)}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", color: "#ea580c" }}>{formatVND(insurance)}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(taxable)}</td>

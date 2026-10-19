@@ -1,7 +1,15 @@
 import MisaPaymentTermsWorkspace from "./MisaPaymentTermsWorkspace";
 import {useNavigate,useSearchParams} from "react-router-dom";
 import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
+import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import {
+  saveGoodsPurchase, saveInputInvoice, saveItem, saveMultiInvoicePurchase, savePurchaseContract, savePurchaseDiscount,
+  savePurchaseReturn, saveServicePurchase, saveSupplierReconciliation, uninvoicedPurchases, createApiWriter,
+} from "./misa-api-writes";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import {
   Search,
   RefreshCw,
@@ -51,6 +59,7 @@ import {
   PurchaseServiceModal,
   PurchaseMultiInvoiceModal,
   type UninvoicedVoucher,
+  type ReceivedInvoiceInfo,
   SAMPLE_SUPPLIERS,
   formatVND,
 } from "./MisaPurchaseModals";
@@ -79,6 +88,33 @@ export default function MisaPurchaseWorkspace({
   href?: (path: string) => string;
   notify: (msg: string) => void;
 }) {
+  const { token } = useApiSession();
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
+    suppliers: "/api/v1/master-data/parties/",
+    items: "/api/v1/master-data/items/",
+    units: "/api/v1/master-data/units-of-measure/",
+    taxRates: "/api/v1/master-data/tax-rates/",
+    orders: "/api/v1/purchases/purchase-orders/",
+    contracts: "/api/v1/purchases/purchase-contracts/",
+    vouchers: "/api/v1/purchases/goods-purchases/",
+    serviceVouchers: "/api/v1/purchases/service-purchases/",
+    returns: "/api/v1/purchases/purchase-returns/",
+    discounts: "/api/v1/purchases/purchase-discounts/",
+    invoices: "/api/v1/purchases/input-invoices/",
+    payables: "/api/v1/accounts-payable/payables/",
+    reconciliations: "/api/v1/accounts-payable/supplier-reconciliations/",
+  }, notify);
+  const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
+  /** Status cell of a row loaded from the backend: label plus its next workflow action. */
+  const apiStatus = (path: string, key: string, id: string, fallback: string, canPost = true) => {
+    const record = apiConnected ? apiRows[key]?.find((row) => row.id === id) : undefined;
+    return record ? <MisaApiDocumentStatus path={path} record={record} companyId={_company.id}
+      notify={notify} onChanged={reloadApi} canPost={canPost} /> : fallback;
+  };
+  const loadUninvoicedVouchers = useCallback(async () => {
+    const rows = await uninvoicedPurchases(createApiWriter(_company.id, (path, init) => request(path, token, init)));
+    return rows.map((row) => ({ ...row, postDate: apiDate(row.postDate), docDate: apiDate(row.docDate) }) as UninvoicedVoucher);
+  }, [_company.id, token]);
   const [paymentTermsOpen,setPaymentTermsOpen]=useState(false);
   const navigate=useNavigate();
   const [purchaseParams]=useSearchParams();
@@ -372,7 +408,12 @@ export default function MisaPurchaseWorkspace({
     notify(`Đã chọn tính chất: ${natureName}. Mở form thêm mới Hàng hóa, dịch vụ.`);
   };
 
-  const handleSaveInventoryItem = (itemData: InventoryItemData, keepOpen?: boolean) => {
+  const handleSaveInventoryItem = async (itemData: InventoryItemData, keepOpen?: boolean) => {
+    if (apiConnected && !editingItem) {
+      const saved = await apiSave((writer) => saveItem(writer, itemData));
+      if (saved && !keepOpen) setShowItemModal(false);
+      return saved;
+    }
     if (editingItem) {
       setInventoryItems((prev) =>
         prev.map((it) => (it.id === editingItem.id ? { ...it, ...itemData } : it))
@@ -408,8 +449,155 @@ export default function MisaPurchaseWorkspace({
     },
   ]);
 
+  useEffect(() => {
+    if (!apiConnected) return;
+    const parties = apiRows.suppliers;
+    const supplierName = (row: any) => row.supplier_name || row.seller_name ||
+      parties?.find((party) => party.id === row.supplier)?.name || "";
+    if (parties) setSuppliers(parties.map((party) => ({
+      id: party.id, code: party.code || "", name: party.name || "",
+      address: party.address || "",
+      debtAmount: apiRows.payables?.filter((debt) => debt.supplier === party.id)
+        .reduce((total, debt) => total + apiNumber(debt.balance), 0) || 0,
+      taxCode: party.tax_code || "",
+      invoiceRisk: "", refDoc: "", phone: party.phone || "",
+      isInternal: false, isBranch: false, partnerType: "org" as const, isCustomer: false,
+    })));
+    if (apiRows.items) setInventoryItems(apiRows.items.map((item) => ({
+      id: item.id, code: item.code || "", name: item.name || "",
+      vatPolicy: "", nature: item.item_type || "Hàng hóa", stockQty: 0,
+      stockValue: 0, unit: apiUnitName(apiRows.units, item.base_uom),
+    })));
+    if (apiRows.orders) setOrders(apiRows.orders.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      deliveryDate: apiDate(row.delivery_date), supplier: supplierName(row),
+      amount: apiNumber(row.total_amount), status: row.status_display || row.status || "",
+      description: row.notes || "",
+    })));
+    if (apiRows.contracts) setContracts(apiRows.contracts.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      supplier: supplierName(row), amount: apiNumber(row.total_amount),
+      status: row.status_display || row.status || "", deliveryStatus: "",
+    })));
+    if (apiRows.vouchers) setVouchers(([
+      ...apiRows.vouchers.map((row) => ({ ...row, apiKey: "vouchers", apiPath: "/api/v1/purchases/goods-purchases/" })),
+      ...(apiRows.serviceVouchers || []).map((row) => ({ ...row, apiKey: "serviceVouchers", apiPath: "/api/v1/purchases/service-purchases/" })),
+    ] as Record<string, any>[]).sort((a, b) => String(b.document_date).localeCompare(String(a.document_date))).map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      supplier: supplierName(row), amount: apiNumber(row.total_amount),
+      kind: row.apiKey === "serviceVouchers" ? "Mua dịch vụ" : row.purchase_type === "DIRECT" ? "Không qua kho" : "Nhập kho",
+      status: row.status || "", description: row.notes || "", apiKey: row.apiKey, apiPath: row.apiPath,
+    })));
+    if (apiRows.returns) setReturns(apiRows.returns.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      supplier: supplierName(row), amount: apiNumber(row.total_amount),
+      reason: row.reason || "", status: row.status || "",
+    })));
+    if (apiRows.discounts) setDiscounts(apiRows.discounts.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.document_date),
+      supplier: supplierName(row), amount: apiNumber(row.total_amount),
+      reason: row.reason || "", status: row.status || "",
+    })));
+    if (apiRows.invoices) setReceivedInvoices(apiRows.invoices.map((row) => ({
+      id: row.id, receivedDate: apiDate(row.created_at), invoiceNo: row.invoice_number || "",
+      invoiceSeries: row.invoice_series || "", invoiceDate: apiDate(row.invoice_date),
+      supplierName: supplierName(row), supplierTaxCode: row.supplier_tax_code || "",
+      voucherCode: "", subtotal: apiNumber(row.subtotal), vatAmount: apiNumber(row.tax_amount),
+      totalAmount: apiNumber(row.total_amount), status: row.status || "",
+    })));
+    if (apiRows.reconciliations) setReconciliations(apiRows.reconciliations.map((row) => ({
+      id: row.id, period: `${apiDate(row.period_start)} - ${apiDate(row.period_end)}`,
+      supplier: supplierName(row), account: "331", supplierDebt: apiNumber(row.supplier_balance),
+      bookDebt: apiNumber(row.closing_balance), difference: apiNumber(row.difference),
+      status: row.status_display || row.status || "",
+    })));
+  }, [apiRows, apiConnected]);
+
   // Handlers for saves
-  const handleSaveOrder = (data: any) => {
+  const handleSaveOrder = async (data: any): Promise<boolean> => {
+    if (apiConnected && token) {
+      const toDate = (value: string) => {
+        const match = String(value || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        return match ? `${match[3]}-${match[2]}-${match[1]}` : value;
+      };
+      const supplier = apiRows.suppliers?.find((row) => row.code === data.supplierCode);
+      if (!supplier) {
+        notify("Chọn mã nhà cung cấp có trong danh mục trước khi lưu đơn mua.");
+        return false;
+      }
+      const inputLines = (data.items || []).filter((line: any) => line.code && Number(line.quantity) > 0);
+      if (!inputLines.length) {
+        notify("Đơn mua cần ít nhất một hàng hóa có mã và số lượng.");
+        return false;
+      }
+      const catalogLines = inputLines.map((line: any) => ({ input: line, item: apiRows.items?.find((row) => row.code === line.code) }));
+      const missing = catalogLines.find(({ item }: any) => !item);
+      if (missing) {
+        notify(`Mã hàng ${missing.input.code} chưa có trong danh mục.`);
+        return false;
+      }
+      const taxRateFor = (input: any) => apiRows.taxRates?.find((rate) =>
+        rate.status === "ACTIVE" && rate.application_form === "PERCENT" &&
+        ["INPUT", "BOTH"].includes(rate.business_scope) &&
+        Number(rate.rate_percent) === Number(input.vatRate || 0));
+      if (catalogLines.some(({ input }: any) => Number(input.vatRate) > 0 && !taxRateFor(input))) {
+        notify("Thuế suất đầu vào trên đơn mua chưa có trong danh mục thuế.");
+        return false;
+      }
+      try {
+        const list = async (path: string): Promise<any[]> => {
+          const result = await request<any[] | { results: any[] }>(`${path}?company_id=${encodeURIComponent(_company.id)}`, token);
+          return Array.isArray(result) ? result : result.results;
+        };
+        const branches = await list("/api/v1/organization/branches/");
+        const branch = branches.find((row) => row.status === "ACTIVE");
+        if (!branch) {
+          notify("Cần có chi nhánh đang hoạt động để lập đơn mua.");
+          return false;
+        }
+        let warehouse: any;
+        if (catalogLines.some(({ item }: any) => item.track_inventory)) {
+          const warehouses = await list("/api/v1/master-data/warehouses/");
+          warehouse = warehouses.find((row) => row.status === "ACTIVE" && (row.code === data.deliveryLocation || row.name === data.deliveryLocation))
+            || warehouses.find((row) => row.status === "ACTIVE");
+          if (!warehouse) {
+            notify("Cần có kho đang hoạt động để nhận hàng theo dõi tồn kho.");
+            return false;
+          }
+        }
+        const saved = await request<any>(`/api/v1/purchases/purchase-orders/?company_id=${encodeURIComponent(_company.id)}`, token, {
+          method: "POST",
+          body: JSON.stringify({
+            company: _company.id,
+            branch: branch.id,
+            supplier: supplier.id,
+            number: data.orderCode || "",
+            document_date: toDate(data.orderDate),
+            delivery_date: toDate(data.deliveryDate),
+            receiving_location: data.deliveryLocation || warehouse?.name || "",
+            receiving_warehouse: warehouse?.id || null,
+            contact_person: data.contactPerson || "",
+            notes: data.description || "",
+            lines: catalogLines.map(({ input, item }: any, index: number) => ({
+              line_no: index + 1,
+              item: item.id,
+              uom: item.purchase_uom || item.base_uom,
+              quantity: input.quantity,
+              unit_price: input.unitPrice || 0,
+              description: input.name || item.name,
+              tax_rate: taxRateFor(input)?.id || null,
+              warehouse: warehouse?.id || null,
+            })),
+          }),
+        });
+        reloadApi();
+        notify(`Đã lưu đơn mua hàng ${saved.number || data.orderCode}.`);
+        return true;
+      } catch (error) {
+        notify(`Không lưu được đơn mua hàng: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+      }
+    }
     setOrders([
       {
         id: `po-${Date.now()}`,
@@ -424,9 +612,11 @@ export default function MisaPurchaseWorkspace({
       ...orders,
     ]);
     notify(`Đã lưu Đơn mua hàng ${data.orderCode}!`);
+    return true;
   };
 
   const handleSaveContract = (data: any) => {
+    if (apiConnected) return apiSave((writer) => savePurchaseContract(writer, data));
     setContracts([
       {
         id: `hd-${Date.now()}`,
@@ -443,6 +633,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveVoucher = (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveGoodsPurchase(writer, data));
     setVouchers([
       {
         id: `nk-${Date.now()}`,
@@ -460,6 +651,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveReturn = (data: any) => {
+    if (apiConnected) return apiSave((writer) => savePurchaseReturn(writer, data));
     setReturns([
       {
         id: `xk-${Date.now()}`,
@@ -476,6 +668,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveDiscount = (data: any) => {
+    if (apiConnected) return apiSave((writer) => savePurchaseDiscount(writer, data));
     setDiscounts([
       {
         id: `mgg-${Date.now()}`,
@@ -492,6 +685,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveReconciliation = (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveSupplierReconciliation(writer, data));
     setReconciliations([
       {
         id: `dc-${Date.now()}`,
@@ -508,7 +702,39 @@ export default function MisaPurchaseWorkspace({
     notify(`Sổ Việt AI đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
   };
 
-  const handleSaveSupplier = (data: any) => {
+  const handleSaveSupplier = async (data: any, andNew = false): Promise<boolean> => {
+    if (apiConnected && token) {
+      const input = {
+        company: _company.id,
+        code: String(data.code || "").trim(),
+        name: String(data.name || "").trim(),
+        party_type: data.partnerType === "individual" ? "INDIVIDUAL" : "ORGANIZATION",
+        tax_code: String(data.taxCode || "").trim() || null,
+        legal_name: String(data.name || "").trim(),
+        notes: String(data.notes || ""),
+      };
+      if (!input.code || !input.name) {
+        notify("Cần nhập mã và tên nhà cung cấp.");
+        return false;
+      }
+      try {
+        const path = editingSupplier
+          ? `/api/v1/master-data/parties/${editingSupplier.id}/?company_id=${encodeURIComponent(_company.id)}`
+          : `/api/v1/master-data/parties/?company_id=${encodeURIComponent(_company.id)}`;
+        await request(path, token, {
+          method: editingSupplier ? "PATCH" : "POST",
+          body: JSON.stringify(input),
+        });
+        reloadApi();
+        notify(`Đã lưu nhà cung cấp ${input.name}.`);
+        setEditingSupplier(null);
+        if (!andNew) setShowSupplierModal(false);
+        return true;
+      } catch (error) {
+        notify(`Không lưu được nhà cung cấp: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+      }
+    }
     if (editingSupplier) {
       setSuppliers((prev) =>
         prev.map((s) =>
@@ -552,10 +778,16 @@ export default function MisaPurchaseWorkspace({
       setSuppliers([newSupplier, ...suppliers]);
       notify(`Đã lưu nhà cung cấp ${data.name || data.code}!`);
     }
-    setShowSupplierModal(false);
+    if (!andNew) setShowSupplierModal(false);
+    return true;
   };
 
-  const handleSaveReceivedInvoice = (selectedVouchers: UninvoicedVoucher[]) => {
+  const handleSaveReceivedInvoice = async (selectedVouchers: UninvoicedVoucher[], invoice?: ReceivedInvoiceInfo) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveInputInvoice(writer, { ...invoice, purchaseIds: selectedVouchers.map((row) => row.id) }));
+      if (saved) setShowReceiveInvoiceModal(false);
+      return saved;
+    }
     const newItems = selectedVouchers.map((v, idx) => {
       const num = (2811 + receivedInvoices.length + idx).toString().padStart(7, "0");
       const subtotal = Math.round(v.amount / 1.1);
@@ -582,6 +814,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveService = (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveServicePurchase(writer, data));
     setVouchers([
       {
         id: `mdv-${Date.now()}`,
@@ -599,6 +832,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   const handleSaveMultiInvoice = (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveMultiInvoicePurchase(writer, data));
     setVouchers([
       {
         id: `mhd-${Date.now()}`,
@@ -622,6 +856,8 @@ export default function MisaPurchaseWorkspace({
         <PurchaseOrderModal
           onClose={() => setShowOrderModal(false)}
           onSubmit={handleSaveOrder}
+          supplierCatalog={apiConnected ? (apiRows.suppliers || []).map((row) => ({ code: row.code, name: row.name, tax_code: row.tax_code })) : undefined}
+          itemCatalog={apiConnected ? (apiRows.items || []).map((row) => ({ code: row.code, name: row.name, unit: apiUnitName(apiRows.units, row.purchase_uom || row.base_uom), price: Number(row.purchase_price || 0) })) : undefined}
           onOpenSupplierModal={() => setShowSupplierModal(true)}
         />
       )}
@@ -662,6 +898,7 @@ export default function MisaPurchaseWorkspace({
         <ReconciliationPeriodModal
           onClose={() => setShowReconciliationModal(false)}
           onSubmit={handleSaveReconciliation}
+          supplierOptions={apiConnected ? (apiRows.suppliers || []).map((row) => ({ code: row.code, name: row.name })) : undefined}
         />
       )}
 
@@ -690,6 +927,7 @@ export default function MisaPurchaseWorkspace({
         <ReceiveInvoiceSelectModal
           onClose={() => setShowReceiveInvoiceModal(false)}
           onSubmit={handleSaveReceivedInvoice}
+          loadVouchers={apiConnected ? loadUninvoicedVouchers : undefined}
           onOpenSupplierModal={() => setShowSupplierModal(true)}
         />
       )}
@@ -2157,7 +2395,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#b91c1c" }}>{formatVND(d.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
-                      {d.status}
+                      {apiStatus("/api/v1/purchases/purchase-discounts/", "discounts", d.id, d.status)}
                     </span>
                   </td>
                 </tr>
@@ -2227,7 +2465,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{po.description}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#059669" }}>{formatVND(po.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{po.status}</span>
+                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/purchases/purchase-orders/", "orders", po.id, po.status, false)}</span>
                   </td>
                 </tr>
               ))}
@@ -2279,7 +2517,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{c.supplier}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#059669" }}>{formatVND(c.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{c.status}</span>
+                    <span style={{ background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/purchases/purchase-contracts/", "contracts", c.id, c.status, false)}</span>
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <span style={{ background: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{c.deliveryStatus}</span>
@@ -2662,7 +2900,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px" }}>{v.description}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#059669" }}>{formatVND(v.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ background: v.status === "Đã thanh toán" ? "#dcfce7" : "#fee2e2", color: v.status === "Đã thanh toán" ? "#15803d" : "#b91c1c", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{v.status}</span>
+                    <span style={{ background: v.status === "Đã thanh toán" ? "#dcfce7" : "#fee2e2", color: v.status === "Đã thanh toán" ? "#15803d" : "#b91c1c", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus((v as any).apiPath || "/api/v1/purchases/goods-purchases/", (v as any).apiKey || "vouchers", v.id, v.status)}</span>
                   </td>
                 </tr>
               ))}
@@ -2715,7 +2953,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px" }}>{r.reason}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#b91c1c" }}>{formatVND(r.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{r.status}</span>
+                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/purchases/purchase-returns/", "returns", r.id, r.status)}</span>
                   </td>
                 </tr>
               ))}
@@ -3377,10 +3615,18 @@ export default function MisaPurchaseWorkspace({
       );
     };
 
-    const handleDeleteSupplier = (id: string, name: string) => {
-      if (confirm(`Bạn có chắc muốn xóa nhà cung cấp "${name}"?`)) {
-        setSuppliers((prev) => prev.filter((s) => s.id !== id));
+    const handleDeleteSupplier = async (id: string, name: string) => {
+      if (!confirm(`Bạn có chắc muốn xóa nhà cung cấp "${name}"?`)) return;
+      try {
+        if (apiConnected && token) {
+          await request(`/api/v1/master-data/parties/${id}/?company_id=${encodeURIComponent(_company.id)}`, token, { method: "DELETE" });
+          reloadApi();
+        } else {
+          setSuppliers((prev) => prev.filter((s) => s.id !== id));
+        }
         notify(`Đã xóa nhà cung cấp "${name}".`);
+      } catch (error) {
+        notify(`Không xóa được nhà cung cấp: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
 

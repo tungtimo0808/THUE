@@ -83,16 +83,19 @@ export function MisaEmptyState({ text = "Không có dữ liệu" }: { text?: str
 export function InsurancePaymentModal({
   onClose,
   onSubmit,
+  loadRecords,
   initialMethod = "cash",
 }: {
   onClose: () => void;
   initialMethod?: "cash" | "bank";
+  /** Backend rows for "Lấy dữ liệu"; the sample rows are used when absent. */
+  loadRecords?: () => Promise<any[]>;
   onSubmit: (data: {
     payMethod: "cash" | "bank";
     payDate: string;
     totalAmount: number;
     items?: any[];
-  }) => void;
+  }) => boolean | void | Promise<boolean | void>;
 }) {
 
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
@@ -103,6 +106,10 @@ export function InsurancePaymentModal({
   >([]);
 
   const handleFetchData = () => {
+    if (loadRecords) {
+      loadRecords().then((rows) => setItems(rows)).catch((error) => alert(error instanceof Error ? error.message : String(error)));
+      return;
+    }
     setItems([
       { id: "bhxh", name: "Bảo hiểm Xã hội (BHXH - 25.5%)", due: 38250000, pay: 38250000, checked: true },
       { id: "bhyt", name: "Bảo hiểm Y tế (BHYT - 4.5%)", due: 6750000, pay: 6750000, checked: true },
@@ -369,16 +376,19 @@ export function InsurancePaymentModal({
 export function SalaryPaymentModal({
   onClose,
   onSubmit,
+  loadRecords,
   initialMethod = "cash",
 }: {
   onClose: () => void;
   initialMethod?: "cash" | "bank";
+  /** Backend rows for "Lấy dữ liệu"; the sample rows are used when absent. */
+  loadRecords?: () => Promise<any[]>;
   onSubmit: (data: {
     payMethod: "cash" | "bank";
     payDate: string;
     totalAmount: number;
     employees?: any[];
-  }) => void;
+  }) => boolean | void | Promise<boolean | void>;
 }) {
   const [salarySearch,setSalarySearch]=useState("");
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
@@ -399,6 +409,10 @@ export function SalaryPaymentModal({
   >([]);
 
   const handleFetchData = () => {
+    if (loadRecords) {
+      loadRecords().then((rows) => setRecords(rows)).catch((error) => alert(error instanceof Error ? error.message : String(error)));
+      return;
+    }
     setRecords([
       {
         id: "e1",
@@ -754,8 +768,10 @@ export function SalaryPaymentModal({
 export function InternalTransferModal({
   onClose,
   onSubmit,
+  accounts,
 }: {
   onClose: () => void;
+  accounts?: { value: string; label: string }[];
   onSubmit: (data: {
     sourceAccount: string;
     targetAccount: string;
@@ -764,8 +780,8 @@ export function InternalTransferModal({
     reason: string;
   }) => void;
 }) {
-  const [sourceAccount, setSourceAccount] = useState("1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
-  const [targetAccount, setTargetAccount] = useState("2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
+  const [sourceAccount, setSourceAccount] = useState(accounts ? accounts[0]?.value || "" : "1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
+  const [targetAccount, setTargetAccount] = useState(accounts ? accounts[1]?.value || "" : "2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
   const [amount, setAmount] = useState(50000000);
   const [transferDate, setTransferDate] = useState(()=>currentCashDate().split("/").reverse().join("-"));
   const [reason, setReason] = useState("Chuyển tiền nội bộ thanh toán chi phí SXKD");
@@ -800,9 +816,11 @@ export function InternalTransferModal({
                 onChange={(e) => setSourceAccount(e.target.value)}
                 style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }}
               >
-                <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
-                <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
-                <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt</option>
+                {accounts ? accounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>) : <>
+                  <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
+                  <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
+                  <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt</option>
+                </>}
               </select>
             </div>
 
@@ -819,9 +837,11 @@ export function InternalTransferModal({
                 onChange={(e) => setTargetAccount(e.target.value)}
                 style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }}
               >
-                <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
-                <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
-                <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt (Rút tiền về quỹ)</option>
+                {accounts ? accounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>) : <>
+                  <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
+                  <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
+                  <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt (Rút tiền về quỹ)</option>
+                </>}
               </select>
             </div>
 

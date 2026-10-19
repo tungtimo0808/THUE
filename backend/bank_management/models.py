@@ -33,3 +33,64 @@ class IntegrationRequest(models.Model):
 class FxRevaluation(models.Model):
     id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False);company=models.ForeignKey("organization.Company",on_delete=models.PROTECT,related_name="bank_fx_revaluations");account=models.ForeignKey(AccountProfile,on_delete=models.PROTECT,related_name="revaluations");revaluation_date=models.DateField();old_rate=models.DecimalField(max_digits=20,decimal_places=8);new_rate=models.DecimalField(max_digits=20,decimal_places=8);foreign_balance=models.DecimalField(max_digits=20,decimal_places=4);difference=models.DecimalField(max_digits=20,decimal_places=4);gl_reference=models.CharField(max_length=120,blank=True);created_by=models.ForeignKey("iam.UserAccount",on_delete=models.PROTECT,related_name="bank_fx_revaluations");created_at=models.DateTimeField(auto_now_add=True)
     class Meta:db_table="bank_fx_revaluation";constraints=[models.UniqueConstraint(fields=("account","revaluation_date"),name="uq_bank_fx_revaluation"),models.CheckConstraint(condition=Q(old_rate__gt=0,new_rate__gt=0),name="ck_bank_fx_rates")]
+
+
+class CreditContract(models.Model):
+    """Hợp đồng tín dụng: a credit line granted to us (BORROWING) or by us (LENDING)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT, related_name="bank_credit_contracts")
+    direction = models.CharField(max_length=10, choices=(("BORROWING", "Đi vay"), ("LENDING", "Cho vay")))
+    contract_type = models.CharField(max_length=20, choices=(("LIMIT", "Hạn mức"), ("PRINCIPLE", "Nguyên tắc")), default="LIMIT")
+    number = models.CharField(max_length=80)
+    sign_date = models.DateField()
+    partner_name = models.CharField(max_length=255)
+    credit_limit = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    purpose = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=20, choices=(("PENDING", "Chưa thực hiện"), ("ACTIVE", "Đang thực hiện"), ("CLOSED", "Đã tất toán")), default="PENDING")
+    collaterals = models.JSONField(default=list, blank=True)
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="bank_credit_contracts")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "bank_credit_contract"
+        ordering = ("-sign_date", "-created_at")
+        constraints = [
+            models.UniqueConstraint(fields=("company", "number"), name="uq_bank_credit_contract_number"),
+            models.CheckConstraint(condition=Q(credit_limit__gte=0), name="ck_bank_credit_limit_nonnegative"),
+        ]
+
+
+class LoanAgreement(models.Model):
+    """Khế ước cho vay / đi vay; disbursement and repayment happen through bank or cash vouchers."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT, related_name="bank_loan_agreements")
+    direction = models.CharField(max_length=10, choices=(("BORROWING", "Đi vay"), ("LENDING", "Cho vay")))
+    number = models.CharField(max_length=80)
+    counterparty_name = models.CharField(max_length=255)
+    credit_contract = models.ForeignKey(CreditContract, on_delete=models.PROTECT, null=True, blank=True, related_name="loans")
+    purpose = models.CharField(max_length=500, blank=True)
+    principal_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, related_name="bank_loans_principal")
+    interest_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, related_name="bank_loans_interest")
+    amount = models.DecimalField(max_digits=20, decimal_places=4)
+    term = models.PositiveIntegerField()
+    term_unit = models.CharField(max_length=10, choices=(("DAY", "Ngày"), ("MONTH", "Tháng"), ("YEAR", "Năm")), default="MONTH")
+    disbursement_date = models.DateField()
+    due_date = models.DateField()
+    interest_rates = models.JSONField(default=list, blank=True)
+    principal_period = models.CharField(max_length=50, blank=True)
+    interest_period = models.CharField(max_length=50, blank=True)
+    settlement_account = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=20, choices=(("ACTIVE", "Đang hiệu lực"), ("CLOSED", "Đã tất toán")), default="ACTIVE")
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="bank_loan_agreements")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "bank_loan_agreement"
+        ordering = ("-disbursement_date", "-created_at")
+        constraints = [
+            models.UniqueConstraint(fields=("company", "number"), name="uq_bank_loan_number"),
+            models.CheckConstraint(condition=Q(amount__gt=0), name="ck_bank_loan_amount_positive"),
+            models.CheckConstraint(condition=Q(due_date__gte=models.F("disbursement_date")), name="ck_bank_loan_dates"),
+        ]

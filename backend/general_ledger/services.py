@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from audit_log.services import record_audit
 from approval_workflows.submission import configured_snapshot
 from approval_workflows.execution import approval_progress
+from common_services.document_lock_services import assert_not_locked, journal_lock_code
 from . import models
 
 
@@ -167,6 +168,7 @@ def post(entry, request):
         raise ValidationError("Chỉ bút toán đã duyệt mới được ghi sổ.")
     if entry.created_by_id == actor(request).id and not entry.workflow_snapshot.get("allow_creator_posting", False):
         raise ValidationError("Người tạo không được tự ghi sổ.")
+    assert_not_locked(entry.company, journal_lock_code(entry), entry.posting_date)
     _validate_entry(entry)
     for line in entry.lines.all():
         balance = _balance(entry.period, line.account, entry.branch)

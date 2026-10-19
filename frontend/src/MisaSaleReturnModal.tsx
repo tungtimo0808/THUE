@@ -49,7 +49,7 @@ export interface SaleReturnItem {
 export interface SaleReturnModalProps {
   initialData?: any;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
 }
@@ -367,7 +367,7 @@ export function SaleReturnModal({
   const totalVat = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const totalPayment = totalAmount + totalVat;
 
-  const handleSave = (andAdd = false) => {
+  const handleSave = async (andAdd = false) => {
     const payload = {
       returnType,
       isStockInward,
@@ -399,8 +399,9 @@ export function SaleReturnModal({
       andAdd,
     };
 
-    onSubmit(payload);
-    notify(`Đã lưu chứng từ bán hàng bị trả lại ${currentVoucherNo} thành công!`);
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(`Đã lưu chứng từ bán hàng bị trả lại ${currentVoucherNo} thành công!`);
 
     if (andAdd) {
       // Reset or increment voucher number

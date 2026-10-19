@@ -1,4 +1,4 @@
-export type Company = { id: string; code: string; name: string };
+export type Company = { id: string; code: string; name: string; status?: string };
 export type Customer = {
   id: string;
   code: string;
@@ -29,104 +29,106 @@ export class ApiError extends Error {
   }
 }
 
-let isRefreshing = false;
-let refreshSubscribers: ((newToken: string) => void)[] = [];
+const SESSION_EXPIRED_MESSAGE = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+let refreshInFlight: Promise<string | null> | null = null;
 
-function onTokenRefreshed(newToken: string) {
-  refreshSubscribers.forEach((cb) => cb(newToken));
-  refreshSubscribers = [];
+function storedSession(): Record<string, any> | null {
+  try {
+    const raw = localStorage.getItem("erp_api_session");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
-function addRefreshSubscriber(cb: (newToken: string) => void) {
-  refreshSubscribers.push(cb);
+function expireSession(staleToken?: string) {
+  const current = storedSession();
+  if (staleToken && current && (current.token || current.access) !== staleToken) return;
+  localStorage.removeItem("erp_api_session");
+  localStorage.removeItem("erp_token");
+  localStorage.removeItem("erp_refresh");
+  localStorage.removeItem("erp_company_id");
+  window.dispatchEvent(new Event("erp_api_session_expired"));
+  window.dispatchEvent(new Event("erp_session_expired"));
+}
+
+export async function renewAccessToken(staleToken?: string): Promise<string | null> {
+  const current = storedSession();
+  const latestToken = current?.token || current?.access || localStorage.getItem("erp_token");
+  if (staleToken && latestToken && latestToken !== staleToken) return latestToken;
+  const refresh = current?.refresh || localStorage.getItem("erp_refresh");
+  if (!refresh) {
+    if (staleToken) expireSession(staleToken);
+    return null;
+  }
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch("/api/token/refresh/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh }),
+        });
+        if (!response.ok) throw new Error("Token refresh failed");
+        const body = (await response.json()) as { access?: string; refresh?: string };
+        if (!body.access) throw new Error("Missing access token");
+        const session = storedSession();
+        const next = {
+          ...(session || {}),
+          token: body.access,
+          access: body.access,
+          access_token: body.access,
+          refresh: body.refresh || refresh,
+        };
+        localStorage.setItem("erp_api_session", JSON.stringify(next));
+        localStorage.setItem("erp_token", body.access);
+        if (body.refresh) localStorage.setItem("erp_refresh", body.refresh);
+        window.dispatchEvent(new CustomEvent("erp_api_token_changed", { detail: next }));
+        window.dispatchEvent(new CustomEvent("erp_token_updated", { detail: { token: body.access } }));
+        return body.access;
+      } catch {
+        if (staleToken) expireSession(staleToken);
+        return null;
+      }
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 }
 
 export async function refreshAccessToken(): Promise<string> {
-  const refresh = localStorage.getItem("erp_refresh");
-  if (!refresh) throw new Error("No refresh token");
-
-  const res = await fetch("/api/token/refresh/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh }),
-  });
-  if (!res.ok) {
-    throw new Error("Refresh failed");
-  }
-  const data = await res.json();
-  const newAccess = data.access;
-  if (!newAccess) throw new Error("No access in refresh response");
-
-  localStorage.setItem("erp_token", newAccess);
-  if (data.refresh) {
-    localStorage.setItem("erp_refresh", data.refresh);
-  }
-  try {
-    const raw = localStorage.getItem("erp_api_session");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      parsed.token = newAccess;
-      parsed.access = newAccess;
-      parsed.access_token = newAccess;
-      if (data.refresh) parsed.refresh = data.refresh;
-      localStorage.setItem("erp_api_session", JSON.stringify(parsed));
-    }
-  } catch {}
-
-  window.dispatchEvent(new CustomEvent("erp_token_updated", { detail: { token: newAccess } }));
-  return newAccess;
+  const token = await renewAccessToken();
+  if (!token) throw new Error("Refresh failed");
+  return token;
 }
 
-export async function request<T>(path: string, token?: string, options?: RequestInit, isRetry = false): Promise<T> {
+export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {
   let response: Response;
-  const currentToken = token || localStorage.getItem("erp_token") || undefined;
+  const initialToken = token || localStorage.getItem("erp_token") || undefined;
   try {
-    response = await fetch(path, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
-        ...options?.headers,
-      },
-    });
-  } catch {
-    throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
-  }
-
-  // Handle 401 token expired: automatically attempt refresh
-  if (response.status === 401 && !isRetry && !path.startsWith("/api/token/")) {
-    const hasRefresh = !!localStorage.getItem("erp_refresh");
-    if (hasRefresh) {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        try {
-          const newAccess = await refreshAccessToken();
-          isRefreshing = false;
-          onTokenRefreshed(newAccess);
-          return request<T>(path, newAccess, options, true);
-        } catch {
-          isRefreshing = false;
-          refreshSubscribers = [];
-          localStorage.removeItem("erp_api_session");
-          localStorage.removeItem("erp_token");
-          localStorage.removeItem("erp_refresh");
-          window.dispatchEvent(new Event("erp_session_expired"));
-          throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
-        }
-      }
-
-      return new Promise<T>((resolve, reject) => {
-        addRefreshSubscriber((newToken) => {
-          request<T>(path, newToken, options, true).then(resolve).catch(reject);
-        });
+    const fetchWithToken = (access?: string) =>
+      fetch(path, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...(access ? { Authorization: `Bearer ${access}` } : {}),
+        },
       });
-    } else {
-      localStorage.removeItem("erp_api_session");
-      localStorage.removeItem("erp_token");
-      localStorage.removeItem("erp_refresh");
-      window.dispatchEvent(new Event("erp_session_expired"));
-      throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
+    response = await fetchWithToken(initialToken);
+    if (response.status === 401 && !path.startsWith("/api/token/")) {
+      const renewed = await renewAccessToken(initialToken);
+      if (!renewed) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
+      response = await fetchWithToken(renewed);
+      if (response.status === 401) {
+        expireSession(renewed);
+        throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
+      }
     }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
   }
 
   const body: unknown = await response.json().catch(() => null);

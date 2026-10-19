@@ -2,6 +2,10 @@ import {useNavigate} from "react-router-dom";
 import DirectoryChoiceField from "./DirectoryChoiceField";
 import VoucherDateField from "./VoucherDateField";
 import { useEffect, useRef, useState } from "react";
+import { useApiSession } from "./ApiSession";
+import { useMisaApiLists } from "./misa-api-lists";
+import { request } from "./live-api";
+import { createApiWriter, directoryInput } from "./misa-api-writes";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
@@ -21,6 +25,39 @@ import {
   normalizeDirectoryValues,
 } from "./directory-entry";
 type DirectoryRow = { id: string; values: Record<string, string> };
+const directoryApiPaths: Record<string, string> = {
+  "Khách hàng": "/api/v1/master-data/customers/",
+  "Nhà cung cấp": "/api/v1/master-data/parties/",
+  "Nhân viên": "/api/v1/organization/employees/",
+  "Vật tư hàng hóa": "/api/v1/master-data/items/",
+  "Kho": "/api/v1/master-data/warehouses/",
+  "Nhóm vật tư, hàng hóa, dịch vụ": "/api/v1/master-data/item-categories/",
+  "Đơn vị tính": "/api/v1/master-data/units-of-measure/",
+  "Ngân hàng": "/api/v1/master-data/banks/",
+  "Tài khoản ngân hàng": "/api/v1/master-data/company-bank-accounts/",
+  "Khoản mục chi phí": "/api/v1/master-data/expense-items/",
+  "Mã thống kê": "/api/v1/master-data/statistical-codes/",
+  "Loại tiền": "/api/v1/master-data/currencies/",
+  "Loại chứng từ": "/api/v1/master-data/document-types/",
+  "Điều khoản thanh toán": "/api/v1/master-data/payment-terms/",
+};
+const writableDirectories = new Set([
+  "Kho", "Khoản mục chi phí", "Mã thống kê", "Ngân hàng",
+  "Nhóm vật tư, hàng hóa, dịch vụ", "Điều khoản thanh toán", "Loại tiền",
+  "Nhà cung cấp", "Khách hàng", "Đơn vị tính", "Vật tư hàng hóa", "Tài khoản ngân hàng", "Nhân viên",
+]);
+const directoryValue = (row: Record<string, any>, header: string): string => {
+  if (/^Mã/.test(header)) return String(row.code || row.number || "");
+  if (/^Tên viết tắt/.test(header)) return String(row.code || "");
+  if (/^Số tài khoản/.test(header)) return String(row.account_number || "");
+  if (/^Tên/.test(header)) return String(row.name || row.full_name || row.bank_name || "");
+  if (/^Địa chỉ/.test(header)) return String(row.address || "");
+  if (/^Mô tả|^Diễn giải/.test(header)) return String(row.description || row.notes || "");
+  if (/^Đơn vị tính/.test(header)) return String(row.name || row.code || "");
+  if (/^Trạng thái/.test(header)) return String(row.status || "");
+  if (/^Mã số thuế/.test(header)) return String(row.tax_code || "");
+  return "";
+};
 const seedRows = (definition: DirectoryDefinition): DirectoryRow[] =>
   [1, 2].map((index) => ({
     id: String(index),
@@ -57,13 +94,19 @@ export default function MisaDirectoryWorkspace({
   notify: (text: string) => void;
 }) {
   const directoryNavigate=useNavigate();
+  const { companyId, token } = useApiSession();
   const [definition, setDefinition] = useState<DirectoryDefinition | null>(
     MISA_DIRECTORY_DEFINITIONS.find(item=>item.name===initialName) || null,
+  );
+  const apiPath = definition ? directoryApiPaths[definition.name] : undefined;
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(
+    companyId, apiPath ? { entries: apiPath } : {}, notify,
   );
   const [legacyView, setLegacyView] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
   const [query, setQuery] = useState("");
   const [records, setRecords] = useState<Record<string, DirectoryRow[]>>({});
+  useEffect(() => setRecords({}), [companyId]);
   const [selected, setSelected] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
@@ -119,7 +162,12 @@ export default function MisaDirectoryWorkspace({
   };
   const allRows = definition
     ? records[definition.name] ||
-      seedRows(definition).map((row) => ({
+      (apiConnected && apiPath
+        ? (apiRows.entries || []).map((row) => ({
+            id: String(row.id),
+            values: Object.fromEntries(definition.headers.map((header) => [header, directoryValue(row, header)])),
+          }))
+        : seedRows(definition)).map((row) => ({
         ...row,
         values: normalizeDirectoryValues(
           definition.fields,
@@ -166,7 +214,7 @@ export default function MisaDirectoryWorkspace({
     setError("");
     setTab(definition?.tabs[0] || "");
   };
-  const save = (addAnother = false) => {
+  const save = async (addAnother = false) => {
     if (!definition || !editor) return;
     const normalized = {
       ...editor,
@@ -186,13 +234,66 @@ export default function MisaDirectoryWorkspace({
       setError(problem);
       return;
     }
+    if (apiConnected && apiPath && writableDirectories.has(definition.name)) {
+      const original = apiRows.entries?.find((row) => String(row.id) === editor.id);
+      const existing = allRows.some((row) => row.id === editor.id);
+      const values = normalized.values;
+      const code = definition.name === "Ngân hàng"
+        ? values["Tên viết tắt"]
+        : Object.entries(values).find(([label]) => /^Mã/.test(label))?.[1] || values["Mã"];
+      const name = definition.name === "Ngân hàng"
+        ? values["Tên đầy đủ"]
+        : Object.entries(values).find(([label]) => /^Tên/.test(label))?.[1] || values["Tên"];
+      try {
+        const baseInput: Record<string, any> = {
+          ...(definition.name === "Ngân hàng" || definition.name === "Loại tiền" ? {} : { company: companyId }),
+          code, name,
+          ...(original?.version ? { version: original.version } : {}),
+        };
+        if (definition.name === "Kho") Object.assign(baseInput, {
+          address: values["Địa chỉ"] || "", warehouse_type: "PHYSICAL", warehouse_scope: "COMPANY_SHARED",
+        });
+        if (definition.name === "Nhà cung cấp" || definition.name === "Khách hàng") {
+          baseInput.party_type = values["Loại"] === "Cá nhân" ? "INDIVIDUAL" : "ORGANIZATION";
+          baseInput.tax_code = values["Mã số thuế"] || null;
+          baseInput.legal_name = name;
+        }
+        if (definition.name === "Điều khoản thanh toán") {
+          baseInput.due_days = Number(values["Số ngày được nợ"] || 0);
+          baseInput.discount_days = values["Thời hạn hưởng chiết khấu"] ? Number(values["Thời hạn hưởng chiết khấu"]) : null;
+          baseInput.discount_rate = values["Tỷ lệ chiết khấu"] ? Number(values["Tỷ lệ chiết khấu"]) : null;
+          baseInput.scope = "BOTH";
+          baseInput.due_base = "DOCUMENT";
+          baseInput.has_discount = Boolean(baseInput.discount_rate);
+        }
+        const special = await directoryInput(
+          createApiWriter(companyId, (path, init) => request(path, token, init)), definition.name, values,
+        );
+        if (special) Object.assign(baseInput, special);
+        const saved = await request<Record<string, any>>(
+          existing ? `${apiPath}${editor.id}/?company_id=${encodeURIComponent(companyId)}`
+            : `${apiPath}?company_id=${encodeURIComponent(companyId)}`,
+          token,
+          {
+            method: existing ? "PATCH" : "POST",
+            body: JSON.stringify(baseInput),
+          },
+        );
+        normalized.id = String(saved.id);
+        reloadApi();
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Không lưu được danh mục.");
+        return;
+      }
+    }
     setRecords((previous) => ({
       ...previous,
       [definition.name]: allRows.some((row) => row.id === editor.id)
         ? allRows.map((row) => (row.id === editor.id ? normalized : row))
         : [...allRows, normalized],
     }));
-    notify("Đã cất dữ liệu danh mục trên frontend.");
+    notify(apiConnected && apiPath && writableDirectories.has(definition.name)
+      ? "Đã lưu danh mục lên hệ thống." : "Đã cất dữ liệu danh mục trên frontend.");
     onEntrySaved?.(normalized.values);
     if (addAnother) {
       setEditor({

@@ -3,6 +3,7 @@ import ReportDateInput from "./ReportDateInput";
 import { parseReportDate } from "./report-date";
 import { reconciliationAmounts } from "./bank-reconciliation";
 import type { ReconciliationTransaction } from "./bank-reconciliation";
+import { useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import "./misa-bank-reconciliation.css";
 function readDraft(): {
   loaded: { from: string; to: string; account: string };
@@ -29,10 +30,21 @@ function readDraft(): {
 export default function MisaBankReconciliation({
   transactions,
   notify,
+  companyId,
 }: {
   transactions: ReconciliationTransaction[];
   notify: (text: string) => void;
+  companyId: string;
 }) {
+  const { rows: apiRows, connected, reload } = useMisaApiLists(companyId, {
+    profiles: "/api/v1/bank/accounts/", statements: "/api/v1/bank/statements/",
+    bankTransactions: "/api/v1/bank/transactions/", matches: "/api/v1/bank/reconciliations/",
+  }, notify);
+  const apiSave = useMisaApiSave(companyId, notify, reload);
+  const [statementLineId, setStatementLineId] = useState("");
+  const [bankTransactionId, setBankTransactionId] = useState("");
+  const [matchedAmount, setMatchedAmount] = useState(0);
+  const [matching, setMatching] = useState(false);
   const [saved] = useState(readDraft);
   const [tab, setTab] = useState(saved ? "offline" : "online");
   const [account, setAccount] = useState(saved?.loaded.account || "");
@@ -48,6 +60,40 @@ export default function MisaBankReconciliation({
   const [lastDate, setLastDate] = useState("");
   const [error, setError] = useState("");
   const [connection, setConnection] = useState("");
+  const statementLines = (apiRows.statements || []).filter((entry) => !account || entry.account === account)
+    .flatMap((entry) => (entry.lines || []).filter((line: any) => line.match_status !== "MATCHED").map((line: any) => ({ ...line, statementNumber: entry.source_reference, account: entry.account })));
+  const selectedLine = statementLines.find((line) => line.id === statementLineId);
+  // Every statement line (matched or not), to describe past matches.
+  const allStatementLines = new Map<string, any>((apiRows.statements || []).flatMap((entry) =>
+    (entry.lines || []).map((line: any) => [line.id, { ...line, statementNumber: entry.source_reference, account: entry.account }] as [string, any])));
+  const matchHistory: any[] = (apiRows.matches || [])
+    .map((row: any) => ({ ...row, line: allStatementLines.get(row.statement_line), tx: (apiRows.bankTransactions || []).find((item) => item.id === row.transaction) }))
+    .filter((row) => !account || row.line?.account === account)
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const lastMatchDate = matchHistory[0]?.created_at ? new Date(matchHistory[0].created_at).toLocaleDateString("vi-VN") : "";
+  const matchCandidates = (apiRows.bankTransactions || []).filter((row) => row.status === "POSTED" && row.account === selectedLine?.account &&
+    (selectedLine?.direction === "CREDIT" ? ["RECEIPT", "INTEREST", "OTHER_IN"].includes(row.transaction_type) : ["PAYMENT", "FEE", "OTHER_OUT"].includes(row.transaction_type)));
+  const handleMatch = async () => {
+    if (matching) return;
+    setMatching(true);
+    try {
+      const saved = await apiSave(async (writer) => {
+      if (!selectedLine || !bankTransactionId) throw new Error("Chọn dòng sao kê và giao dịch ngân hàng cần đối chiếu.");
+      if (!(matchedAmount > 0)) throw new Error("Nhập số tiền đối chiếu lớn hơn 0.");
+      const record = await writer.post("/api/v1/bank/reconciliations/match/", {
+        statement_line: selectedLine.id, transaction: bankTransactionId,
+        matched_amount: String(matchedAmount),
+      });
+      return { record, message: `Đã đối chiếu dòng sao kê ${selectedLine.statementNumber || selectedLine.id}: ${record.status}.` };
+      });
+      if (saved) {
+        setStatementLineId(""); setBankTransactionId(""); setMatchedAmount(0);
+        setLastDate(new Date().toLocaleDateString("vi-VN"));
+      }
+    } finally {
+      setMatching(false);
+    }
+  };
   const rows = useMemo(
     () =>
       loaded
@@ -170,8 +216,10 @@ export default function MisaBankReconciliation({
                 onChange={(e) => setAccount(e.target.value)}
               >
                 <option value="">Chọn tài khoản ngân hàng</option>
-                <option value="VCB">0011000123456 — Vietcombank</option>
-                <option value="BIDV">1201000123456 — BIDV</option>
+                {connected ? (apiRows.profiles || []).map((profile) => <option key={profile.id} value={profile.id}>{profile.account_number} — {profile.bank_name}</option>) : <>
+                  <option value="VCB">0011000123456 — Vietcombank</option>
+                  <option value="BIDV">1201000123456 — BIDV</option>
+                </>}
               </select>
             </label>
             <label>
@@ -179,7 +227,7 @@ export default function MisaBankReconciliation({
               <input
                 readOnly
                 value={
-                  account === "VCB"
+                  connected ? (apiRows.profiles || []).find((profile) => profile.id === account)?.bank_name || "" : account === "VCB"
                     ? "Vietcombank"
                     : account === "BIDV"
                       ? "BIDV"
@@ -264,8 +312,51 @@ export default function MisaBankReconciliation({
               </dl>
             </div>
           </div>
+          {connected && <section className="br-table" style={{ marginTop: 12, padding: 12, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff" }}>
+            <h3>Ghép dòng sao kê với giao dịch</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr", gap: 10 }}>
+              <label>Dòng sao kê
+                <select value={statementLineId} onChange={(event) => {
+                  const id = event.target.value; setStatementLineId(id); setBankTransactionId("");
+                  setMatchedAmount(Number(statementLines.find((line) => line.id === id)?.amount || 0));
+                }}><option value="">Chọn dòng sao kê</option>
+                  {statementLines.map((line) => <option key={line.id} value={line.id}>{line.statementNumber} · {line.transaction_date} · {line.direction} · {Number(line.amount).toLocaleString("vi-VN")} đ</option>)}
+                </select>
+              </label>
+              <label>Giao dịch ngân hàng
+                <select value={bankTransactionId} onChange={(event) => setBankTransactionId(event.target.value)}><option value="">Chọn giao dịch</option>
+                  {matchCandidates.map((row) => <option key={row.id} value={row.id}>{row.number} · {Number(row.amount).toLocaleString("vi-VN")} đ</option>)}
+                </select>
+              </label>
+              <label>Số tiền khớp
+                <input type="number" min="0" value={matchedAmount} onChange={(event) => setMatchedAmount(Number(event.target.value))} />
+              </label>
+            </div>
+            {!statementLines.length && <p>Chưa có dòng sao kê chưa khớp cho tài khoản này. Nhập sao kê trong phân hệ Ngân hàng trước khi đối chiếu.</p>}
+            <h3 style={{ marginTop: 14 }}>Lịch sử các lần ghép</h3>
+            <table>
+              <thead><tr>
+                <th>Ngày ghép</th><th>Sao kê</th><th>Ngày giao dịch NH</th><th>Chứng từ</th>
+                <th style={{ textAlign: "right" }}>Số tiền khớp</th><th style={{ textAlign: "right" }}>Chênh lệch</th><th>Trạng thái</th>
+              </tr></thead>
+              <tbody>
+                {matchHistory.map((row) => (
+                  <tr key={row.id}>
+                    <td>{new Date(row.created_at).toLocaleDateString("vi-VN")}</td>
+                    <td>{row.line?.statementNumber || ""}</td>
+                    <td>{row.line?.transaction_date ? String(row.line.transaction_date).slice(0, 10).split("-").reverse().join("/") : ""}</td>
+                    <td>{row.tx?.number || ""}</td>
+                    <td style={{ textAlign: "right" }}>{money(Number(row.matched_amount))}</td>
+                    <td style={{ textAlign: "right" }}>{money(Number(row.variance || 0))}</td>
+                    <td>{row.status === "MATCHED" ? "Đã khớp" : row.status === "PARTIAL" ? "Khớp một phần" : row.status}</td>
+                  </tr>
+                ))}
+                {!matchHistory.length && <tr><td colSpan={7}>Chưa có lần ghép nào.</td></tr>}
+              </tbody>
+            </table>
+          </section>}
           <footer>
-            <span>Ngày đối chiếu gần nhất: {lastDate || "—"}</span>
+            <span>Ngày đối chiếu gần nhất: {lastDate || lastMatchDate || "—"}</span>
             <button
               onClick={() => {
                 setSelected([]);
@@ -288,8 +379,9 @@ export default function MisaBankReconciliation({
             </button>
             <button
               className="br-primary"
-              disabled={!loaded || !selected.length}
+              disabled={connected ? matching || !statementLineId || !bankTransactionId : !loaded || !selected.length}
               onClick={() => {
+                if (connected) { void handleMatch(); return; }
                 if (totals.difference) {
                   setError("Số dư sau đối chiếu và sổ ngân hàng chưa khớp.");
                   return;
@@ -299,7 +391,7 @@ export default function MisaBankReconciliation({
                 notify("Đã xác nhận đối chiếu dữ liệu mẫu.");
               }}
             >
-              Xác nhận đối chiếu
+              {matching ? "Đang đối chiếu…" : "Xác nhận đối chiếu"}
             </button>
           </footer>
         </>

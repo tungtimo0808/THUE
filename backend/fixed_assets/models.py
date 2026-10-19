@@ -36,6 +36,7 @@ class TransactionType(models.TextChoices):
     VALUE_INCREASE = "VALUE_INCREASE", "Tăng nguyên giá"
     VALUE_DECREASE = "VALUE_DECREASE", "Giảm nguyên giá"
     DISPOSAL = "DISPOSAL", "Ghi giảm/Thanh lý"
+    LIFE_CHANGE = "LIFE_CHANGE", "Điều chỉnh số kỳ khấu hao/phân bổ"
     REVERSAL = "REVERSAL", "Đảo giao dịch"
 
 
@@ -193,6 +194,10 @@ class AssetTransaction(models.Model):
     target_branch = models.ForeignKey("organization.Branch", on_delete=models.PROTECT, null=True, blank=True, related_name="target_asset_transactions")
     target_department = models.ForeignKey("organization.Department", on_delete=models.PROTECT, null=True, blank=True, related_name="target_asset_transactions")
     target_custodian = models.ForeignKey("organization.Employee", on_delete=models.PROTECT, null=True, blank=True, related_name="target_asset_transactions")
+    # Transfer/disposal of part of the quantity: that part is split off into split_asset first.
+    quantity = models.DecimalField(max_digits=20, decimal_places=4, null=True, blank=True)
+    split_asset = models.ForeignKey(AssetRecord, on_delete=models.PROTECT, null=True, blank=True, related_name="split_from_transactions")
+    target_useful_life_periods = models.PositiveIntegerField(null=True, blank=True)
     before_snapshot = models.JSONField(default=dict, blank=True)
     after_snapshot = models.JSONField(default=dict, blank=True)
     workflow_snapshot = models.JSONField(default=dict, blank=True)
@@ -265,3 +270,38 @@ class ApprovalDecision(models.Model):
 
     class Meta:
         db_table = "fa_approval_decision"
+
+
+class AssetCount(models.Model):
+    """Biên bản kiểm kê TSCĐ/CCDC: book vs counted quantity; differences are settled by increase/disposal vouchers."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT, related_name="asset_counts")
+    asset_type = models.CharField(max_length=20, choices=AssetType.choices)
+    number = models.CharField(max_length=80)
+    count_date = models.DateField()
+    purpose = models.CharField(max_length=500, blank=True)
+    conclusion = models.TextField(blank=True)
+    committee = models.JSONField(default=list, blank=True)
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="asset_counts_created")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "fa_asset_count"
+        ordering = ("-count_date", "-created_at")
+        constraints = [models.UniqueConstraint(fields=("company", "number"), name="uq_fa_asset_count_number")]
+
+
+class AssetCountLine(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    count = models.ForeignKey(AssetCount, on_delete=models.CASCADE, related_name="lines")
+    asset = models.ForeignKey(AssetRecord, on_delete=models.PROTECT, related_name="count_lines")
+    book_quantity = models.DecimalField(max_digits=20, decimal_places=4)
+    actual_quantity = models.DecimalField(max_digits=20, decimal_places=4)
+    book_value = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    condition = models.CharField(max_length=255, blank=True)
+    recommendation = models.CharField(max_length=255, blank=True)
+    note = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        db_table = "fa_asset_count_line"
+        constraints = [models.CheckConstraint(condition=Q(actual_quantity__gte=0), name="ck_fa_count_actual_nonnegative")]

@@ -79,6 +79,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = models.AssetTransaction
         fields = "__all__"
         read_only_fields = (
+            "split_asset",
             "id", "before_snapshot", "after_snapshot", "workflow_snapshot", "status", "asset_applied",
             "gl_status", "gl_reference", "created_by", "submitted_at", "approved_at", "posted_at",
             "created_at", "updated_at",
@@ -98,8 +99,17 @@ class TransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Tài sản đã ghi giảm không được phát sinh giao dịch mới.")
         if kind == "DEPRECIATION" and asset.asset_type != "FIXED_ASSET" or kind == "ALLOCATION" and asset.asset_type != "TOOL":
             raise serializers.ValidationError("Loại giao dịch không phù hợp loại tài sản.")
-        if kind in {"ACQUISITION", "DEPRECIATION", "ALLOCATION", "VALUE_INCREASE", "VALUE_DECREASE", "DISPOSAL"} and amount <= 0:
+        quantity = attrs.get("quantity", getattr(instance, "quantity", None))
+        # A partial disposal takes its value from the split-off part when posted.
+        partial = kind == "DISPOSAL" and quantity is not None
+        if kind in {"ACQUISITION", "DEPRECIATION", "ALLOCATION", "VALUE_INCREASE", "VALUE_DECREASE", "DISPOSAL"} and amount <= 0 and not partial:
             raise serializers.ValidationError({"amount": "Giá trị giao dịch phải lớn hơn 0."})
+        if quantity is not None and kind not in {"TRANSFER", "DISPOSAL"}:
+            raise serializers.ValidationError({"quantity": "Chỉ điều chuyển hoặc ghi giảm mới được chọn một phần số lượng."})
+        if quantity is not None and (quantity <= 0 or quantity > asset.quantity):
+            raise serializers.ValidationError({"quantity": "Số lượng phải lớn hơn 0 và không vượt số lượng đang theo dõi."})
+        if kind == "LIFE_CHANGE" and not attrs.get("target_useful_life_periods", getattr(instance, "target_useful_life_periods", None)):
+            raise serializers.ValidationError({"target_useful_life_periods": "Nhập số kỳ khấu hao/phân bổ mới."})
         reason = attrs.get("reason", getattr(instance, "reason", ""))
         if kind in {"TRANSFER", "RECLASSIFICATION", "VALUE_INCREASE", "VALUE_DECREASE", "DISPOSAL"} and not reason:
             raise serializers.ValidationError({"reason": "Giao dịch bắt buộc có lý do."})

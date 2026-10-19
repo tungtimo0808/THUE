@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveItem, saveProductionOrder, toApiDate } from "./misa-api-writes";
+import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import {
   Search,
   Plus,
@@ -76,6 +79,22 @@ export default function MisaInventoryWorkspace({
   href,
   notify,
 }: MisaInventoryWorkspaceProps) {
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
+    items: "/api/v1/master-data/items/",
+    warehouses: "/api/v1/master-data/warehouses/",
+    units: "/api/v1/master-data/units-of-measure/",
+    balances: "/api/v1/inventory/balances/",
+    transactions: "/api/v1/inventory/transactions/",
+    counts: "/api/v1/inventory/counts/",
+    assemblies: "/api/v1/inventory/assemblies/",
+    productionOrders: "/api/v1/inventory/production-orders/",
+  }, notify);
+  const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
+  const apiStatus = (key: string, id: string, fallback: string) => {
+    const record = apiConnected ? apiRows[key]?.find((row) => row.id === id) : undefined;
+    return record ? <MisaApiDocumentStatus path="/api/v1/inventory/transactions/" record={record} companyId={_company.id}
+      notify={notify} onChanged={reloadApi} /> : fallback;
+  };
   // Navigation helper
   const navigateTo = (targetTab: string) => {
     if (href) {
@@ -228,6 +247,41 @@ export default function MisaInventoryWorkspace({
   ]);
   const [showCalculateCostModal, setShowCalculateCostModal] = useState(false);
   const [showStocktakeModal, setShowStocktakeModal] = useState(false);
+  const [stocktakeWarehouse, setStocktakeWarehouse] = useState("");
+  const [stocktakeDate, setStocktakeDate] = useState("30/09/2026");
+  const [stocktakePurpose, setStocktakePurpose] = useState("Kiểm kê định kỳ");
+  const [stocktakeActuals, setStocktakeActuals] = useState<Record<string, number>>({});
+  const selectedStocktakeWarehouse = stocktakeWarehouse || apiRows.warehouses?.find((row) => row.status === "ACTIVE")?.id || "";
+  const stocktakeItems = (apiRows.items || []).filter((item) => item.track_inventory && item.status === "ACTIVE");
+  const assemblyCatalog = apiConnected ? (apiRows.items || []).map((item) => ({
+    code: item.code, name: item.name, unit: apiUnitName(apiRows.units, item.base_uom),
+    price: apiNumber(item.purchase_price),
+  })) : SAMPLE_INVENTORY_ITEMS;
+  const stocktakeBookQuantity = (itemId: string) => (apiRows.balances || [])
+    .filter((balance) => balance.warehouse === selectedStocktakeWarehouse && balance.item === itemId)
+    .reduce((sum, balance) => sum + apiNumber(balance.quantity), 0);
+  const stocktakeWarehouseOptions = apiConnected ? (apiRows.warehouses || []).map((row) => ({ id: row.id, code: row.code, name: row.name }))
+    : SAMPLE_WAREHOUSES.map((row) => ({ id: row.name, code: row.code, name: row.name }));
+  const stocktakeDisplayItems = apiConnected ? stocktakeItems.map((row) => ({
+    id: row.id, code: row.code, name: row.name, unit: apiUnitName(apiRows.units, row.base_uom), stock: stocktakeBookQuantity(row.id),
+  })) : SAMPLE_INVENTORY_ITEMS.slice(0, 4).map((row) => ({ id: row.code, code: row.code, name: row.name, unit: row.unit, stock: row.stock }));
+  const handleSaveStocktake = async () => {
+    if (!apiConnected) { notify("Cần đăng nhập để lưu biên bản kiểm kê."); return; }
+    const saved = await apiSave(async (writer) => {
+      if (!selectedStocktakeWarehouse) throw new Error("Chọn kho kiểm kê đang hoạt động.");
+      if (!stocktakeItems.length) throw new Error("Chưa có hàng hóa theo dõi tồn kho trong danh mục.");
+      const date = toApiDate(stocktakeDate);
+      const record = await writer.post("/api/v1/inventory/counts/", {
+        number: await nextVoucherNumber(writer, "/api/v1/inventory/counts/", "KK"),
+        warehouse: selectedStocktakeWarehouse, count_date: date,
+        snapshot_at: `${date}T23:59:59`, notes: stocktakePurpose,
+        lines: stocktakeItems.map((item) => ({ item: item.id,
+          actual_quantity: String(stocktakeActuals[item.id] ?? stocktakeBookQuantity(item.id)) })),
+      });
+      return { message: `Đã lưu biên bản kiểm kê ${record.number} dưới dạng dự thảo.` };
+    });
+    if (saved) setShowStocktakeModal(false);
+  };
   const [showWarehouseListModal, setShowWarehouseListModal] = useState(false);
   const [showProductionOrderModal, setShowProductionOrderModal] = useState(false);
   const [prodOrderCode, setProdOrderCode] = useState("LSX00001");
@@ -263,8 +317,8 @@ export default function MisaInventoryWorkspace({
     { id: "tp-1", itemCode: "", itemName: "", unit: "", qty: 1, price: 0, amount: 0 },
   ]);
   const [assemblyComponentRows, setAssemblyComponentRows] = useState([
-    { id: "lk-1", itemCode: "", description: "", warehouse: "" },
-    { id: "lk-2", itemCode: "", description: "", warehouse: "" },
+    { id: "lk-1", itemCode: "", description: "", warehouse: "", qty: 1 },
+    { id: "lk-2", itemCode: "", description: "", warehouse: "", qty: 1 },
   ]);
 
   const [showDisassemblyModal, setShowDisassemblyModal] = useState(false);
@@ -276,9 +330,48 @@ export default function MisaInventoryWorkspace({
     { id: "hh-1", itemCode: "", itemName: "", unit: "", qty: 1, price: 0, amount: 0 },
   ]);
   const [disassemblyOutputRows, setDisassemblyOutputRows] = useState([
-    { id: "tp-1", itemCode: "", itemName: "", unit: "" },
-    { id: "tp-2", itemCode: "", itemName: "", unit: "" },
+    { id: "tp-1", itemCode: "", itemName: "", unit: "", qty: 1 },
+    { id: "tp-2", itemCode: "", itemName: "", unit: "", qty: 1 },
   ]);
+  const handleSaveAssembly = async (operation: "ASSEMBLE" | "DISASSEMBLE", andPrint = false) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveAssemblyOrder(writer, {
+        operation, number: operation === "ASSEMBLE" ? assemblyCode : disassemblyCode,
+        date: operation === "ASSEMBLE" ? assemblyDate : disassemblyDate,
+        inputRows: operation === "ASSEMBLE" ? assemblyComponentRows : disassemblyGoodRows,
+        outputRows: operation === "ASSEMBLE" ? assemblyProductRows : disassemblyOutputRows,
+      }));
+      if (!saved) return;
+      if (operation === "ASSEMBLE") setShowAssemblyModal(false);
+      else setShowDisassemblyModal(false);
+      if (andPrint) window.print();
+      return;
+    }
+    const isAssemble = operation === "ASSEMBLE";
+    const pName = isAssemble ? (assemblyProductRows[0]?.itemName || "Thành phẩm lắp ráp") : (disassemblyOutputRows[0]?.itemName || "Thành phẩm tháo dỡ");
+    const pQty = isAssemble ? assemblyProductRows.reduce((sum, r) => sum + (r.qty || 0), 0) : disassemblyOutputRows.reduce((sum, r) => sum + (r.qty || 0), 0);
+    const pUnit = isAssemble ? (assemblyProductRows[0]?.unit || "Bộ") : (disassemblyOutputRows[0]?.unit || "Bộ");
+    const pAmount = isAssemble ? assemblyProductRows.reduce((sum, r) => sum + (r.amount || 0), 0) : disassemblyOutputRows.reduce((sum, r) => sum + (r.amount || 0), 0);
+    const vCode = isAssemble ? (assemblyCode || "LR00001") : (disassemblyCode || "TD00001");
+    setAssemblyOrders((prev) => [
+      {
+        id: `${isAssemble ? "lr" : "td"}-${Date.now()}`,
+        code: vCode,
+        date: isAssemble ? assemblyDate : disassemblyDate,
+        type: isAssemble ? "Lắp ráp" : "Tháo dỡ",
+        productName: pName,
+        qty: pQty,
+        unit: pUnit,
+        amount: pAmount,
+        status: "Đã ghi sổ",
+      },
+      ...prev,
+    ]);
+    if (isAssemble) setShowAssemblyModal(false);
+    else setShowDisassemblyModal(false);
+    notify(`Đã lưu thành công Lệnh ${isAssemble ? "lắp ráp" : "tháo dỡ"} ${vCode}`);
+    if (andPrint) window.print();
+  };
   const [showNatureDrawer, setShowNatureDrawer] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedNature, setSelectedNature] = useState<string>("Hàng hóa");
@@ -292,7 +385,12 @@ export default function MisaInventoryWorkspace({
     notify(`Đã chọn tính chất: ${natureName}. Mở form thêm mới Hàng hóa, dịch vụ.`);
   };
 
-  const handleSaveInventoryItem = (itemData: InventoryItemData, keepOpen?: boolean) => {
+  const handleSaveInventoryItem = async (itemData: InventoryItemData, keepOpen?: boolean) => {
+    if (apiConnected && !editingItem) {
+      const saved = await apiSave((writer) => saveItem(writer, itemData));
+      if (saved && !keepOpen) setShowItemModal(false);
+      return saved;
+    }
     if (editingItem) {
       setCatalogItems((prev) =>
         prev.map((it) => (it.id === editingItem.id ? { ...it, ...itemData } : it))
@@ -487,7 +585,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Stocktake data
-  const [stocktakes] = useState([
+  const [stocktakes, setStocktakes] = useState([
     {
       id: "kk-01",
       code: "KK00001",
@@ -499,8 +597,66 @@ export default function MisaInventoryWorkspace({
     },
   ]);
 
+  useEffect(() => {
+    if (!apiConnected) return;
+    const warehouseName = (id: string) => apiRows.warehouses?.find((warehouse) => warehouse.id === id)?.name || "";
+    const outputLine = (row: any) => row.lines?.find((line: any) => line.role === "OUTPUT");
+    const itemName = (id: string) => apiRows.items?.find((item) => item.id === id)?.name || "";
+    if (apiRows.items) setCatalogItems(apiRows.items.map((row) => ({
+      id: row.id, code: row.code || "", name: row.name || "",
+      vatPolicy: "", nature: row.item_type || "Hàng hóa",
+      stockQty: apiRows.balances?.filter((balance) => balance.item === row.id)
+        .reduce((total, balance) => total + apiNumber(balance.quantity), 0) || 0,
+      stockValue: apiRows.balances?.filter((balance) => balance.item === row.id)
+        .reduce((total, balance) => total + apiNumber(balance.inventory_value), 0) || 0,
+      unit: apiUnitName(apiRows.units, row.base_uom),
+    })));
+    if (apiRows.transactions) {
+      const transactionRows = apiRows.transactions;
+      const common = (row: any) => ({
+        id: row.id, code: row.number || "", date: apiDate(row.transaction_date),
+        description: row.reason || "", amount: apiNumber(row.total_value), status: row.status || "",
+      });
+      setReceipts(transactionRows.filter((row) => row.transaction_type === "RECEIPT").map((row) => ({
+        ...common(row), type: row.business_type || "Nhập kho",
+        warehouse: row.destination_warehouse_name || "", partner: row.supplier_name || "",
+      })));
+      setIssues(transactionRows.filter((row) => row.transaction_type === "ISSUE").map((row) => ({
+        ...common(row), type: row.business_type || "Xuất kho",
+        warehouse: row.source_warehouse_name || "", partner: row.supplier_name || "",
+      })));
+      setTransfers(transactionRows.filter((row) => row.transaction_type === "TRANSFER").map((row) => ({
+        ...common(row), sourceWarehouse: row.source_warehouse_name || "",
+        destWarehouse: row.destination_warehouse_name || "",
+      })));
+    }
+    if (apiRows.counts) setStocktakes(apiRows.counts.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.count_date),
+      warehouse: warehouseName(row.warehouse), purpose: row.notes || "",
+      difference: (row.lines || []).reduce((total: number, line: any) => total + apiNumber(line.variance_quantity), 0),
+      status: row.status || "",
+    })));
+    if (apiRows.productionOrders) setProductionOrders(apiRows.productionOrders.map((row) => {
+      const product = (row.lines || []).find((line: any) => line.role === "PRODUCT");
+      const labels: Record<string, string> = { PLANNED: "Chưa thực hiện", IN_PROGRESS: "Đang thực hiện", COMPLETED: "Hoàn thành", CANCELLED: "Đã hủy" };
+      return { id: row.id, code: row.number, date: apiDate(row.document_date), productName: product?.item_name || "",
+        qty: apiNumber(product?.quantity), unit: "", dept: row.description || "", status: labels[row.status] || row.status, dueDate: apiDate(row.due_date) };
+    }));
+    if (apiRows.assemblies) setAssemblyOrders(apiRows.assemblies.map((row) => ({
+      id: row.id, code: row.number || "", date: apiDate(row.assembly_date),
+      type: row.operation === "DISASSEMBLE" ? "Tháo dỡ" : "Lắp ráp",
+      productName: itemName(outputLine(row)?.item), qty: apiNumber(outputLine(row)?.quantity), unit: "",
+      amount: 0, status: row.status || "",
+    })));
+  }, [apiRows, apiConnected]);
+
   // Handle Save Receipt
-  const handleSaveReceipt = (data: any) => {
+  const handleSaveReceipt = async (data: any) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveInventoryTransaction(writer, "receipt", data));
+      if (saved) setShowReceiptModal(false);
+      return saved;
+    }
     setReceipts([
       {
         id: `nk-${Date.now()}`,
@@ -520,7 +676,12 @@ export default function MisaInventoryWorkspace({
   };
 
   // Handle Save Issue
-  const handleSaveIssue = (data: any) => {
+  const handleSaveIssue = async (data: any) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveInventoryTransaction(writer, "issue", data));
+      if (saved) setShowIssueModal(false);
+      return saved;
+    }
     setIssues([
       {
         id: `xk-${Date.now()}`,
@@ -540,7 +701,12 @@ export default function MisaInventoryWorkspace({
   };
 
   // Handle Save Transfer
-  const handleSaveTransfer = (data: any) => {
+  const handleSaveTransfer = async (data: any) => {
+    if (apiConnected) {
+      const saved = await apiSave((writer) => saveInventoryTransaction(writer, "transfer", data));
+      if (saved) setShowTransferModal(false);
+      return saved;
+    }
     setTransfers([
       {
         id: `ck-${Date.now()}`,
@@ -1340,7 +1506,7 @@ export default function MisaInventoryWorkspace({
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{row.status}</span>
+                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("receipts", row.id, row.status)}</span>
                     </td>
                   </tr>
                 ))}
@@ -1598,7 +1764,7 @@ export default function MisaInventoryWorkspace({
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{row.status}</span>
+                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("issues", row.id, row.status)}</span>
                     </td>
                   </tr>
                 ))}
@@ -1856,7 +2022,7 @@ export default function MisaInventoryWorkspace({
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{row.status}</span>
+                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("transfers", row.id, row.status)}</span>
                     </td>
                   </tr>
                 ))}
@@ -4186,6 +4352,8 @@ export default function MisaInventoryWorkspace({
                       const partnerName = receiptDeliveryPersonName || receiptCustomerName || "Đối tác giao hàng";
                       handleSaveReceipt({
                         code: receiptVoucherCode,
+                        lines: receiptRows,
+                        partnerCode: receiptCustomerCode,
                         date: receiptVoucherDate,
                         warehouse: receiptRows[0]?.warehouse || "Kho Thành phẩm",
                         partner: partnerName,
@@ -4204,13 +4372,15 @@ export default function MisaInventoryWorkspace({
                         const partnerName = receiptDeliveryPersonName || receiptCustomerName || "Đối tác giao hàng";
                         handleSaveReceipt({
                           code: receiptVoucherCode,
+                          lines: receiptRows,
+                          partnerCode: receiptCustomerCode,
                           date: receiptVoucherDate,
                           warehouse: receiptRows[0]?.warehouse || "Kho Thành phẩm",
                           partner: partnerName,
                           description: receiptReason || `Nhập kho theo chứng từ ${receiptVoucherCode}`,
                           amount: totalAmt,
                         });
-                        notify(`Đã lưu và chuyển sang chế độ in chứng từ ${receiptVoucherCode}`);
+                        if (!apiConnected) notify(`Đã lưu và chuyển sang chế độ in chứng từ ${receiptVoucherCode}`);
                       }}
                       style={{
                         height: 32,
@@ -5147,6 +5317,7 @@ export default function MisaInventoryWorkspace({
                       const partnerName = issueReceiverName || issueCustomerName || "Khách hàng mua hàng";
                       handleSaveIssue({
                         code: issueVoucherCode,
+                        lines: issueRows,
                         date: issueVoucherDate,
                         warehouse: issueRows[0]?.warehouse || "Kho tổng Minh An",
                         partner: partnerName,
@@ -5165,13 +5336,14 @@ export default function MisaInventoryWorkspace({
                         const partnerName = issueReceiverName || issueCustomerName || "Khách hàng mua hàng";
                         handleSaveIssue({
                           code: issueVoucherCode,
+                          lines: issueRows,
                           date: issueVoucherDate,
                           warehouse: issueRows[0]?.warehouse || "Kho tổng Minh An",
                           partner: partnerName,
                           description: issueReason || `Xuất kho theo chứng từ ${issueVoucherCode}`,
                           amount: totalAmt,
                         });
-                        notify(`Đã lưu và chuyển sang chế độ in chứng từ ${issueVoucherCode}`);
+                        if (!apiConnected) notify(`Đã lưu và chuyển sang chế độ in chứng từ ${issueVoucherCode}`);
                       }}
                       style={{
                         height: 32,
@@ -6338,6 +6510,7 @@ export default function MisaInventoryWorkspace({
                       handleSaveTransfer({
                         code: transferVoucherCode || `CK0000${transfers.length + 1}`,
                         date: transferVoucherDate,
+                        lines: transferRows,
                         sourceWarehouse: srcWh,
                         destWarehouse: dstWh,
                         description: transferPurpose || `Chuyển kho theo lệnh ${transferOrderNo || "ĐĐ01"}`,
@@ -6357,12 +6530,13 @@ export default function MisaInventoryWorkspace({
                         handleSaveTransfer({
                           code: vCode,
                           date: transferVoucherDate,
+                          lines: transferRows,
                           sourceWarehouse: srcWh,
                           destWarehouse: dstWh,
                           description: transferPurpose || `Chuyển kho theo lệnh ${transferOrderNo || "ĐĐ01"}`,
                           amount: 0,
                         });
-                        notify(`Đã lưu và chuyển sang chế độ in chứng từ chuyển kho ${vCode}`);
+                        if (!apiConnected) notify(`Đã lưu và chuyển sang chế độ in chứng từ chuyển kho ${vCode}`);
                       }}
                       style={{
                         height: 32,
@@ -6478,19 +6652,20 @@ export default function MisaInventoryWorkspace({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
                   <div>
                     <label style={{ fontSize: 12, color: "#475569", display: "block", marginBottom: 4 }}>Kho kiểm kê</label>
-                    <select defaultValue="Kho tổng Minh An" style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box", background: "#ffffff" }}>
-                      {SAMPLE_WAREHOUSES.map((w) => (
-                        <option key={w.code} value={w.name}>{w.name}</option>
+                    <select value={selectedStocktakeWarehouse} onChange={(event) => { setStocktakeWarehouse(event.target.value); setStocktakeActuals({}); }} style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box", background: "#ffffff" }}>
+                      <option value="">Chọn kho</option>
+                      {stocktakeWarehouseOptions.map((w) => (
+                        <option key={w.code} value={w.id}>{w.name}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize: 12, color: "#475569", display: "block", marginBottom: 4 }}>Ngày kiểm kê</label>
-                    <input defaultValue="30/09/2026" style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
+                    <input value={stocktakeDate} onChange={(event) => setStocktakeDate(event.target.value)} style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
                   </div>
                   <div>
                     <label style={{ fontSize: 12, color: "#475569", display: "block", marginBottom: 4 }}>Mục đích</label>
-                    <input defaultValue="Kiểm kê định kỳ quý III" style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
+                    <input value={stocktakePurpose} onChange={(event) => setStocktakePurpose(event.target.value)} style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
                   </div>
                 </div>
 
@@ -6507,14 +6682,14 @@ export default function MisaInventoryWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {SAMPLE_INVENTORY_ITEMS.slice(0, 4).map((it) => (
+                      {stocktakeDisplayItems.map((it) => (
                         <tr key={it.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
                           <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{it.code}</td>
                           <td style={{ padding: "6px 8px" }}>{it.name}</td>
                           <td style={{ padding: "6px 8px", textAlign: "center" }}>{it.unit}</td>
                           <td style={{ padding: "6px 8px", textAlign: "right" }}>{it.stock}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>{it.stock}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", color: "#16a34a" }}>0</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}><input type="number" min="0" value={stocktakeActuals[it.id] ?? it.stock} onChange={(event) => setStocktakeActuals((previous) => ({ ...previous, [it.id]: Number(event.target.value) }))} style={{ width: 75, textAlign: "right", border: "1px solid #cbd5e1", borderRadius: 4 }} /></td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", color: "#16a34a" }}>{(stocktakeActuals[it.id] ?? it.stock) - it.stock}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -6525,10 +6700,7 @@ export default function MisaInventoryWorkspace({
                   <button type="button" onClick={() => setShowStocktakeModal(false)} style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", cursor: "pointer" }}>Đóng</button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowStocktakeModal(false);
-                      notify("Đã lưu biên bản kiểm kê kho thành công!");
-                    }}
+                    onClick={() => { void handleSaveStocktake(); }}
                     style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}
                   >
                     Lưu biên bản
@@ -7249,6 +7421,11 @@ export default function MisaInventoryWorkspace({
                   <button
                     type="button"
                     onClick={() => {
+                      if (apiConnected) {
+                        void apiSave((writer) => saveProductionOrder(writer, { code: prodOrderCode, date: prodOrderDate, status: prodOrderStatus, description: prodOrderDescription, products: prodOrderProductRows, materials: prodOrderMaterialRows }))
+                          .then((saved) => { if (saved) setShowProductionOrderModal(false); });
+                        return;
+                      }
                       const pName = prodOrderProductRows[0]?.productName || "Thành phẩm sản xuất theo lệnh";
                       const pQty = prodOrderProductRows.reduce((sum, r) => sum + (r.qty || 0), 0);
                       const pUnit = prodOrderProductRows[0]?.unit || "Bộ";
@@ -7277,6 +7454,11 @@ export default function MisaInventoryWorkspace({
                     <button
                       type="button"
                       onClick={() => {
+                        if (apiConnected) {
+                          void apiSave((writer) => saveProductionOrder(writer, { code: prodOrderCode, date: prodOrderDate, status: prodOrderStatus, description: prodOrderDescription, products: prodOrderProductRows, materials: prodOrderMaterialRows }))
+                            .then((saved) => { if (saved) setShowProductionOrderModal(false); });
+                          return;
+                        }
                         const pName = prodOrderProductRows[0]?.productName || "Thành phẩm sản xuất theo lệnh";
                         const pQty = prodOrderProductRows.reduce((sum, r) => sum + (r.qty || 0), 0);
                         const pUnit = prodOrderProductRows[0]?.unit || "Bộ";
@@ -7581,7 +7763,7 @@ export default function MisaInventoryWorkspace({
                                 placeholder="Chọn mã hàng"
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  const matched = SAMPLE_INVENTORY_ITEMS.find((it) => it.code.toLowerCase() === val.toLowerCase());
+                                  const matched = assemblyCatalog.find((it) => it.code.toLowerCase() === val.toLowerCase());
                                   setAssemblyProductRows((prev) =>
                                     prev.map((r, i) =>
                                       i === idx
@@ -7597,10 +7779,10 @@ export default function MisaInventoryWorkspace({
                                     )
                                   );
                                   // Suggest components in right panel
-                                  if (matched && (!assemblyComponentRows[0].itemCode || !assemblyComponentRows[1].itemCode)) {
+                                  if (!apiConnected && matched && (!assemblyComponentRows[0].itemCode || !assemblyComponentRows[1].itemCode)) {
                                     setAssemblyComponentRows([
-                                      { id: "lk-1", itemCode: "VO-CS-NT", description: "Vỏ tủ composite ngoài trời 600x400x250", warehouse: "Kho Nguyên vật liệu" },
-                                      { id: "lk-2", itemCode: "MCCB-100A", description: "Aptomat khối MCCB 3P 100A Mitsubishi", warehouse: "Kho Nguyên vật liệu" },
+                                      { id: "lk-1", itemCode: "VO-CS-NT", description: "Vỏ tủ composite ngoài trời 600x400x250", warehouse: "Kho Nguyên vật liệu", qty: 1 },
+                                      { id: "lk-2", itemCode: "MCCB-100A", description: "Aptomat khối MCCB 3P 100A Mitsubishi", warehouse: "Kho Nguyên vật liệu", qty: 1 },
                                     ]);
                                   }
                                 }}
@@ -7807,6 +7989,7 @@ export default function MisaInventoryWorkspace({
                           </th>
                           <th style={{ minWidth: 160, padding: "8px 6px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải</th>
                           <th style={{ width: 120, padding: "8px 4px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Kho</th>
+                          <th style={{ width: 80, padding: "8px 4px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số lượng</th>
                           <th style={{ width: 34, padding: "8px 2px", textAlign: "center" }}></th>
                         </tr>
                       </thead>
@@ -7821,7 +8004,7 @@ export default function MisaInventoryWorkspace({
                                 placeholder="Chọn mã linh kiện"
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  const matched = SAMPLE_INVENTORY_ITEMS.find((it) => it.code.toLowerCase() === val.toLowerCase());
+                                  const matched = assemblyCatalog.find((it) => it.code.toLowerCase() === val.toLowerCase());
                                   setAssemblyComponentRows((prev) =>
                                     prev.map((r, i) =>
                                       i === idx
@@ -7865,6 +8048,11 @@ export default function MisaInventoryWorkspace({
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
                               />
                             </td>
+                            <td style={{ padding: "4px 4px", borderRight: "1px solid #e2e8f0" }}>
+                              <input type="number" min="0.001" step="any" value={row.qty}
+                                onChange={(e) => setAssemblyComponentRows((prev) => prev.map((r, i) => i === idx ? { ...r, qty: Number(e.target.value) || 0 } : r))}
+                                style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12 }} />
+                            </td>
                             <td style={{ textAlign: "center", padding: "2px" }}>
                               <button
                                 type="button"
@@ -7894,7 +8082,7 @@ export default function MisaInventoryWorkspace({
                       onClick={() => {
                         setAssemblyComponentRows((prev) => [
                           ...prev,
-                          { id: `lk-${Date.now()}`, itemCode: "", description: "", warehouse: "Kho Nguyên vật liệu" },
+                          { id: `lk-${Date.now()}`, itemCode: "", description: "", warehouse: "Kho Nguyên vật liệu", qty: 1 },
                         ]);
                       }}
                       style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#1e293b" }}
@@ -7907,7 +8095,7 @@ export default function MisaInventoryWorkspace({
                       type="button"
                       onClick={() => {
                         setAssemblyComponentRows([
-                          { id: `lk-${Date.now()}`, itemCode: "", description: "", warehouse: "Kho Nguyên vật liệu" },
+                          { id: `lk-${Date.now()}`, itemCode: "", description: "", warehouse: "Kho Nguyên vật liệu", qty: 1 },
                         ]);
                       }}
                       style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#ef4444" }}
@@ -7943,58 +8131,14 @@ export default function MisaInventoryWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const pName = assemblyProductRows[0]?.itemName || "Thành phẩm lắp ráp";
-                    const pQty = assemblyProductRows.reduce((sum, r) => sum + (r.qty || 0), 0);
-                    const pUnit = assemblyProductRows[0]?.unit || "Bộ";
-                    const pAmount = assemblyProductRows.reduce((sum, r) => sum + (r.amount || 0), 0);
-                    const vCode = assemblyCode || "LR00001";
-                    setAssemblyOrders((prev) => [
-                      {
-                        id: `lr-${Date.now()}`,
-                        code: vCode,
-                        date: assemblyDate,
-                        type: "Lắp ráp",
-                        productName: pName,
-                        qty: pQty,
-                        unit: pUnit,
-                        amount: pAmount,
-                        status: "Đã ghi sổ",
-                      },
-                      ...prev,
-                    ]);
-                    setShowAssemblyModal(false);
-                    notify(`Đã lưu thành công Lệnh lắp ráp ${vCode}`);
-                  }}
+                  onClick={() => { void handleSaveAssembly("ASSEMBLE"); }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                 >Lưu</button>
 
                 <div style={{ display: "flex" }}>
                   <button
                     type="button"
-                    onClick={() => {
-                      const pName = assemblyProductRows[0]?.itemName || "Thành phẩm lắp ráp";
-                      const pQty = assemblyProductRows.reduce((sum, r) => sum + (r.qty || 0), 0);
-                      const pUnit = assemblyProductRows[0]?.unit || "Bộ";
-                      const pAmount = assemblyProductRows.reduce((sum, r) => sum + (r.amount || 0), 0);
-                      const vCode = assemblyCode || "LR00001";
-                      setAssemblyOrders((prev) => [
-                        {
-                          id: `lr-${Date.now()}`,
-                          code: vCode,
-                          date: assemblyDate,
-                          type: "Lắp ráp",
-                          productName: pName,
-                          qty: pQty,
-                          unit: pUnit,
-                          amount: pAmount,
-                          status: "Đã ghi sổ",
-                        },
-                        ...prev,
-                      ]);
-                      setShowAssemblyModal(false);
-                      notify(`Đã lưu và chuyển sang chế độ in Lệnh lắp ráp ${vCode}`);
-                    }}
+                    onClick={() => { void handleSaveAssembly("ASSEMBLE", true); }}
                     style={{
                       height: 32,
                       padding: "0 18px",
@@ -8290,7 +8434,7 @@ export default function MisaInventoryWorkspace({
                                 placeholder="Chọn mã hàng"
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  const matched = SAMPLE_INVENTORY_ITEMS.find((it) => it.code.toLowerCase() === val.toLowerCase());
+                                  const matched = assemblyCatalog.find((it) => it.code.toLowerCase() === val.toLowerCase());
                                   setDisassemblyGoodRows((prev) =>
                                     prev.map((r, i) =>
                                       i === idx
@@ -8306,10 +8450,10 @@ export default function MisaInventoryWorkspace({
                                     )
                                   );
                                   // Auto suggest output components
-                                  if (matched && (!disassemblyOutputRows[0].itemCode || !disassemblyOutputRows[1].itemCode)) {
+                                  if (!apiConnected && matched && (!disassemblyOutputRows[0].itemCode || !disassemblyOutputRows[1].itemCode)) {
                                     setDisassemblyOutputRows([
-                                      { id: "tp-1", itemCode: "DYNAMO-150KVA", itemName: "Đầu phát điện Stamford 150kVA cũ còn tốt", unit: "Cái" },
-                                      { id: "tp-2", itemCode: "PANNEL-DSE", itemName: "Bảng điều khiển DeepSea DSE7320", unit: "Bộ" },
+                                      { id: "tp-1", itemCode: "DYNAMO-150KVA", itemName: "Đầu phát điện Stamford 150kVA cũ còn tốt", unit: "Cái", qty: 1 },
+                                      { id: "tp-2", itemCode: "PANNEL-DSE", itemName: "Bảng điều khiển DeepSea DSE7320", unit: "Bộ", qty: 1 },
                                     ]);
                                   }
                                 }}
@@ -8516,6 +8660,7 @@ export default function MisaInventoryWorkspace({
                           </th>
                           <th style={{ minWidth: 160, padding: "8px 6px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên hàng</th>
                           <th style={{ width: 80, padding: "8px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>ĐVT</th>
+                          <th style={{ width: 80, padding: "8px 4px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số lượng</th>
                           <th style={{ width: 34, padding: "8px 2px", textAlign: "center" }}></th>
                         </tr>
                       </thead>
@@ -8530,7 +8675,7 @@ export default function MisaInventoryWorkspace({
                                 placeholder="Chọn mã hàng"
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  const matched = SAMPLE_INVENTORY_ITEMS.find((it) => it.code.toLowerCase() === val.toLowerCase());
+                                  const matched = assemblyCatalog.find((it) => it.code.toLowerCase() === val.toLowerCase());
                                   setDisassemblyOutputRows((prev) =>
                                     prev.map((r, i) =>
                                       i === idx
@@ -8573,6 +8718,11 @@ export default function MisaInventoryWorkspace({
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
                               />
                             </td>
+                            <td style={{ padding: "4px 4px", borderRight: "1px solid #e2e8f0" }}>
+                              <input type="number" min="0.001" step="any" value={row.qty}
+                                onChange={(e) => setDisassemblyOutputRows((prev) => prev.map((r, i) => i === idx ? { ...r, qty: Number(e.target.value) || 0 } : r))}
+                                style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12 }} />
+                            </td>
                             <td style={{ textAlign: "center", padding: "2px" }}>
                               <button
                                 type="button"
@@ -8602,7 +8752,7 @@ export default function MisaInventoryWorkspace({
                       onClick={() => {
                         setDisassemblyOutputRows((prev) => [
                           ...prev,
-                          { id: `tp-${Date.now()}`, itemCode: "", itemName: "", unit: "" },
+                          { id: `tp-${Date.now()}`, itemCode: "", itemName: "", unit: "", qty: 1 },
                         ]);
                       }}
                       style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#1e293b" }}
@@ -8615,7 +8765,7 @@ export default function MisaInventoryWorkspace({
                       type="button"
                       onClick={() => {
                         setDisassemblyOutputRows([
-                          { id: `tp-${Date.now()}`, itemCode: "", itemName: "", unit: "" },
+                          { id: `tp-${Date.now()}`, itemCode: "", itemName: "", unit: "", qty: 1 },
                         ]);
                       }}
                       style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#ef4444" }}
@@ -8651,58 +8801,14 @@ export default function MisaInventoryWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const pName = disassemblyGoodRows[0]?.itemName || "Hàng hóa tháo dỡ";
-                    const pQty = disassemblyGoodRows.reduce((sum, r) => sum + (r.qty || 0), 0);
-                    const pUnit = disassemblyGoodRows[0]?.unit || "Bộ";
-                    const pAmount = disassemblyGoodRows.reduce((sum, r) => sum + (r.amount || 0), 0);
-                    const vCode = disassemblyCode || "TD00001";
-                    setAssemblyOrders((prev) => [
-                      {
-                        id: `td-${Date.now()}`,
-                        code: vCode,
-                        date: disassemblyDate,
-                        type: "Tháo dỡ",
-                        productName: pName,
-                        qty: pQty,
-                        unit: pUnit,
-                        amount: pAmount,
-                        status: "Đã ghi sổ",
-                      },
-                      ...prev,
-                    ]);
-                    setShowDisassemblyModal(false);
-                    notify(`Đã lưu thành công Lệnh tháo dỡ ${vCode}`);
-                  }}
+                  onClick={() => { void handleSaveAssembly("DISASSEMBLE"); }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                 >Lưu</button>
 
                 <div style={{ display: "flex" }}>
                   <button
                     type="button"
-                    onClick={() => {
-                      const pName = disassemblyGoodRows[0]?.itemName || "Hàng hóa tháo dỡ";
-                      const pQty = disassemblyGoodRows.reduce((sum, r) => sum + (r.qty || 0), 0);
-                      const pUnit = disassemblyGoodRows[0]?.unit || "Bộ";
-                      const pAmount = disassemblyGoodRows.reduce((sum, r) => sum + (r.amount || 0), 0);
-                      const vCode = disassemblyCode || "TD00001";
-                      setAssemblyOrders((prev) => [
-                        {
-                          id: `td-${Date.now()}`,
-                          code: vCode,
-                          date: disassemblyDate,
-                          type: "Tháo dỡ",
-                          productName: pName,
-                          qty: pQty,
-                          unit: pUnit,
-                          amount: pAmount,
-                          status: "Đã ghi sổ",
-                        },
-                        ...prev,
-                      ]);
-                      setShowDisassemblyModal(false);
-                      notify(`Đã lưu và chuyển sang chế độ in Lệnh tháo dỡ ${vCode}`);
-                    }}
+                    onClick={() => { void handleSaveAssembly("DISASSEMBLE", true); }}
                     style={{
                       height: 32,
                       padding: "0 18px",

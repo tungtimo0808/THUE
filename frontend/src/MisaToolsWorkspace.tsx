@@ -31,6 +31,11 @@ import {
   Filter,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
+import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import {
+  previewPrepaidAllocation, saveAssetCount, saveAssetMovement, saveDepreciation, savePrepaidAllocation, savePrepaidDecrease, savePrepaidExpense, saveToolAsset,
+} from "./misa-api-writes";
+import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 
 export type MisaToolsWorkspaceProps = {
   company?: { id: string; name: string };
@@ -595,6 +600,24 @@ export default function MisaToolsWorkspace({
   href,
   notify,
 }: MisaToolsWorkspaceProps) {
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
+    assets: "/api/v1/fixed-assets/assets/", transactions: "/api/v1/fixed-assets/transactions/",
+    calculations: "/api/v1/fixed-assets/calculations/",
+    allocationRules: "/api/v1/general-ledger/allocation-rules/",
+    allocationRuns: "/api/v1/general-ledger/allocation-runs/",
+    prepaidExpenses: "/api/v1/general-ledger/prepaid-expenses/",
+    prepaidAllocations: "/api/v1/general-ledger/prepaid-allocations/",
+    prepaidDecreases: "/api/v1/general-ledger/prepaid-decreases/",
+    toolCounts: "/api/v1/fixed-assets/counts/?asset_type=TOOL",
+  }, notify);
+  const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
+  const toolsData = apiConnected ? (apiRows.assets || []).filter((row) => row.asset_type === "TOOL").map((row) => ({
+    code: row.code, name: row.name, category: row.category_name || "", dept: row.department_name || "",
+    qty: apiNumber(row.quantity), originalCost: apiNumber(row.original_cost), allocatedAmount: apiNumber(row.allocated_value),
+    remainingAmount: apiNumber(row.remaining_value), allocationMonths: apiNumber(row.useful_life_periods),
+    remainingMonths: Math.max(0, apiNumber(row.useful_life_periods) - apiNumber(row.periods_processed)),
+    costAccount: "", startDate: apiDate(row.in_service_date),
+  })) : SAMPLE_TOOLS_DATA;
   // Navigation helper
   const navigateTo = (targetTab: string) => {
     if (href) {
@@ -805,6 +828,65 @@ export default function MisaToolsWorkspace({
   const totalDecreaseCurrentQty = decreaseRows.reduce((s, r) => s + (r.currentQty || 0), 0);
   const totalDecreaseQty = decreaseRows.reduce((s, r) => s + (r.decreaseQty || 0), 0);
   const totalDecreaseRemainingValue = decreaseRows.reduce((s, r) => s + (r.remainingValue || 0), 0);
+  const handleSaveToolAllocation = async (print = false) => {
+    const saved = await apiSave((writer) => {
+      if ((apiRows.calculations || []).some((row) => row.number === allocationVoucherNo)) throw new Error("Chứng từ phân bổ đã lưu chỉ xem được ở form này.");
+      return saveDepreciation(writer, {
+      year: allocationYear, month: allocationMonth, voucherNo: allocationVoucherNo,
+      }, "ALLOCATION");
+    });
+    if (saved) {
+      setShowAllocationVoucherModal(false);
+      if (print) window.print();
+    }
+  };
+  const handleSaveToolMovement = async (kind: "transfer" | "disposal") => {
+    const rows = kind === "transfer" ? transferRows.map((row) => ({
+      assetCode: row.code, toDept: row.toDept, requestedQty: row.transferQty,
+    })) : decreaseRows.map((row) => ({ assetCode: row.code, requestedQty: row.decreaseQty }));
+    const saved = await apiSave(async (writer) => {
+      if ((apiRows.transactions || []).some((row) => row.number === (kind === "transfer" ? transferVoucherNo : decreaseVoucherNo))) throw new Error("Chứng từ đã lưu chỉ xem được ở form này.");
+      const assets = await writer.list("assets");
+      for (const row of rows.filter((item) => item.assetCode)) {
+        const asset = assets.find((item) => item.code === row.assetCode && item.asset_type === "TOOL");
+        if (!asset) throw new Error(`CCDC ${row.assetCode} chưa có trong danh mục.`);
+      }
+      return saveAssetMovement(writer, kind, {
+        rows, voucherNo: kind === "transfer" ? transferVoucherNo : decreaseVoucherNo,
+        date: kind === "transfer" ? transferVoucherDate : decreaseVoucherDate,
+        reason: kind === "transfer" ? transferReason : decreaseReason,
+      });
+    });
+    if (saved) {
+      if (kind === "transfer") setShowTransferModal(false);
+      else setShowDecreaseModal(false);
+    }
+  };
+  const handleSaveToolAdjustment = async () => {
+    const saved = await apiSave(async (writer) => {
+      if ((apiRows.transactions || []).some((row) => row.number === adjustmentVoucherNo)) throw new Error("Chứng từ đã lưu chỉ xem được ở form này.");
+      const selected = adjustmentRows.filter((row) => row.code);
+      if (!selected.length) throw new Error("Chọn ít nhất một CCDC cần điều chỉnh.");
+      const assets = await writer.list("assets");
+      for (const row of selected) {
+        if (!assets.some((asset) => asset.code === row.code && asset.asset_type === "TOOL")) throw new Error(`CCDC ${row.code} chưa có trong danh mục.`);
+        if (!Number(row.remainingDiff) && !Number(row.periodDiff)) throw new Error(`CCDC ${row.code}: nhập giá trị hoặc số kỳ điều chỉnh khác 0.`);
+      }
+      const common = { date: adjustmentVoucherDate, reason: adjustmentReason };
+      const messages: string[] = [];
+      const valueRows = selected.filter((row) => Number(row.remainingDiff));
+      const periodRows = selected.filter((row) => Number(row.periodDiff));
+      if (valueRows.length) messages.push((await saveAssetMovement(writer, "revaluation", {
+        ...common, voucherNo: adjustmentVoucherNo, rows: valueRows.map((row) => ({ assetCode: row.code, origDiff: row.remainingDiff })),
+      })).message);
+      if (periodRows.length) messages.push((await saveAssetMovement(writer, "lifeChange", {
+        ...common, voucherNo: valueRows.length ? "" : adjustmentVoucherNo,
+        rows: periodRows.map((row) => ({ assetCode: row.code, periodDiff: row.periodDiff })),
+      })).message);
+      return { message: messages.join(" ") };
+    });
+    if (saved) setShowAdjustmentModal(false);
+  };
 
   // =========================================================================
   // STATE CHO KIỂM KÊ CÔNG CỤ DỤNG CỤ (Ảnh của user)
@@ -932,6 +1014,46 @@ export default function MisaToolsWorkspace({
   const [batchDeptRows, setBatchDeptRows] = useState([
     { id: "bdept-1", code: "", name: "", qty: 0 },
   ]);
+  const handleSaveSingleTool = async () => {
+    const saved = await apiSave((writer) => saveToolAsset(writer, {
+      code: singleToolCode, name: singleToolName, category: singleCategory || singleGroup,
+      quantity: singleQty, originalCost: singleAmount || singlePrice * singleQty,
+      allocationMonths: singleAllocMonths, startDate: singleVoucherDate,
+      voucherNo: singleVoucherNo, reason: singleReason,
+    }));
+    if (saved) setShowSingleAddModal(false);
+  };
+  const handleSaveBatchTools = async () => {
+    const filled = batchRows.filter((row) => row.code.trim() || row.name.trim());
+    const saved = await apiSave(async (writer) => {
+      if (!filled.length) throw new Error("Nhập ít nhất một công cụ dụng cụ.");
+      const codes = new Set<string>();
+      for (const row of filled) {
+        if (!row.code.trim() || !row.name.trim() || !(row.qty > 0) || !((row.amount || row.price * row.qty) > 0)) throw new Error("Mỗi dòng cần mã, tên, số lượng và nguyên giá hợp lệ.");
+        if (codes.has(row.code.trim())) throw new Error(`Mã CCDC ${row.code} bị lặp trong danh sách.`);
+        codes.add(row.code.trim());
+      }
+      const existing = await writer.list("assets");
+      if (filled.some((row) => existing.some((asset) => asset.code === row.code.trim()))) throw new Error("Có mã CCDC đã tồn tại trên hệ thống.");
+      let completed = 0;
+      for (const row of filled) {
+        try {
+          await saveToolAsset(writer, {
+            code: row.code, name: row.name, category: row.category || row.group,
+            quantity: row.qty, originalCost: row.amount || row.price * row.qty,
+            allocationMonths: 1, startDate: row.date,
+            voucherNo: row.voucherNo, reason: row.reason,
+          });
+          completed += 1;
+        } catch (error) {
+          reloadApi();
+          throw new Error(`Đã lưu ${completed}/${filled.length} CCDC. Dòng ${row.code}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      return { message: `Đã lưu ${filled.length} CCDC và chứng từ ghi tăng dưới dạng dự thảo.` };
+    });
+    if (saved) setShowBatchAddModal(false);
+  };
 
   // =========================================================================
   // STATE CHO CHI PHÍ TRẢ TRƯỚC (3 Trang theo ảnh người dùng)
@@ -1026,6 +1148,8 @@ export default function MisaToolsWorkspace({
   ]);
   const [prepaidDecreaseFilterPeriod, setPrepaidDecreaseFilterPeriod] = useState("Năm 2026");
   const [prepaidDecreaseSearch, setPrepaidDecreaseSearch] = useState("");
+  // Backend amounts of the next allocation per item code (loaded when the allocation voucher opens).
+  const [prepaidPreview, setPrepaidPreview] = useState<Record<string, number> | null>(null);
   const [prepaidDecreaseVouchers, setPrepaidDecreaseVouchers] = useState([
     {
       voucherNo: "GGCP00001",
@@ -1036,6 +1160,42 @@ export default function MisaToolsWorkspace({
       status: "Đã ghi sổ",
     },
   ]);
+
+  useEffect(() => {
+    if (!apiConnected) return;
+    const voucherStatus = (row: any) => row.status === "POSTED" ? "Đã ghi sổ" : row.status || "";
+    if (apiRows.prepaidExpenses) setPrepaidExpensesList(apiRows.prepaidExpenses.map((row) => ({
+      code: row.code, name: row.name, totalAmount: apiNumber(row.amount), allocationMonths: row.allocation_periods,
+      allocatedAmount: apiNumber(row.amount) - apiNumber(row.remaining_amount), remainingAmount: apiNumber(row.remaining_amount),
+      costAccount: row.targets?.map((target: any) => target.expense_account_code).join(", ") || "",
+      dept: row.targets?.[0]?.description || "", startDate: apiDate(row.start_date),
+    })));
+    if (apiRows.prepaidAllocations) setPrepaidAllocVouchers(apiRows.prepaidAllocations.map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.posting_date),
+      period: `Tháng ${String(row.period_code || "").slice(5, 7)}/${String(row.period_code || "").slice(0, 4)}`,
+      reason: row.description, totalAmount: apiNumber(row.total_amount), status: voucherStatus(row),
+    })));
+    if (apiRows.toolCounts) setStocktakeVouchers(apiRows.toolCounts.map((row) => {
+      const book = (row.lines || []).reduce((total: number, line: any) => total + apiNumber(line.book_quantity), 0);
+      const actual = (row.lines || []).reduce((total: number, line: any) => total + apiNumber(line.actual_quantity), 0);
+      return { voucherNo: row.number, voucherDate: apiDate(row.count_date), toDate: apiDate(row.count_date), purpose: row.purpose,
+        bookQty: book, actualQty: actual, diffQty: actual - book, status: "Đã hoàn thành" };
+    }));
+    if (apiRows.prepaidDecreases) setPrepaidDecreaseVouchers(apiRows.prepaidDecreases.map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.document_date), reason: row.description,
+      totalAmount: apiNumber(row.total_amount), itemCount: new Set((row.lines || []).map((line: any) => line.prepaid)).size,
+      status: voucherStatus(row),
+    })));
+  }, [apiConnected, apiRows]);
+
+  useEffect(() => {
+    if (!apiConnected || !showPrepaidAllocVoucherModal) { setPrepaidPreview(null); return; }
+    void apiSave(async (writer) => {
+      const rows = await previewPrepaidAllocation(writer, prepaidAllocPostingDate);
+      setPrepaidPreview(Object.fromEntries(rows.map((row) => [row.code, apiNumber(row.amount)])));
+      return { message: rows.length ? `Kỳ này có ${rows.length} khoản cần phân bổ.` : "Kỳ này không còn khoản nào cần phân bổ." };
+    });
+  }, [apiConnected, showPrepaidAllocVoucherModal, prepaidAllocPostingDate]);
 
   const toggleFavorite = (reportName: string) => {
     if (favoriteReports.includes(reportName)) {
@@ -1564,6 +1724,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) { void handleSaveSingleTool(); return; }
                   if (!singleToolCode.trim() && !singleToolName.trim()) {
                     notify("Vui lòng nhập Mã và Tên công cụ dụng cụ!");
                     return;
@@ -2060,6 +2221,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) { void handleSaveBatchTools(); return; }
                   notify(`Đã ghi tăng hàng loạt thành công ${batchRows.filter((r) => r.name || r.code).length || batchRows.length} CCDC vào sổ`);
                   setShowBatchAddModal(false);
                 }}
@@ -2398,7 +2560,7 @@ export default function MisaToolsWorkspace({
                   </tr>
                 </thead>
                 <tbody>
-                  {SAMPLE_TOOLS_DATA.map((item, idx) => {
+                  {toolsData.map((item, idx) => {
                     const monthlyAllocation = Math.round(item.originalCost / item.allocationMonths);
                     return (
                       <tr key={item.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
@@ -3208,6 +3370,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                    if (apiConnected) { void handleSaveToolAllocation(); return; }
                   const newVoucher = {
                     voucherNo: allocationVoucherNo,
                     postingDate: allocationPostingDate,
@@ -3239,6 +3402,7 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) { void handleSaveToolAllocation(true); return; }
                     const newVoucher = {
                       voucherNo: allocationVoucherNo,
                       postingDate: allocationPostingDate,
@@ -3566,7 +3730,7 @@ export default function MisaToolsWorkspace({
                               value={row.code}
                               onChange={(e) => {
                                 const selectedCode = e.target.value;
-                                const tool = SAMPLE_TOOLS_DATA.find((t) => t.code === selectedCode);
+                                const tool = toolsData.find((t) => t.code === selectedCode);
                                 setAdjustmentRows((prev) =>
                                   prev.map((r) =>
                                     r.id === row.id
@@ -3599,7 +3763,7 @@ export default function MisaToolsWorkspace({
                               }}
                             >
                               <option value="">-- Chọn CCDC --</option>
-                              {SAMPLE_TOOLS_DATA.map((t) => (
+                              {toolsData.map((t) => (
                                 <option key={t.code} value={t.code}>
                                   {t.code} - {t.name}
                                 </option>
@@ -3941,6 +4105,7 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) { void handleSaveToolAdjustment(); return; }
                     const newVoucher = {
                       voucherNo: adjustmentVoucherNo,
                       voucherDate: adjustmentVoucherDate,
@@ -3969,6 +4134,7 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) { void handleSaveToolAdjustment(); return; }
                     const newVoucher = {
                       voucherNo: adjustmentVoucherNo,
                       voucherDate: adjustmentVoucherDate,
@@ -4296,7 +4462,7 @@ export default function MisaToolsWorkspace({
                             value={row.code}
                             onChange={(e) => {
                               const selectedCode = e.target.value;
-                              const tool = SAMPLE_TOOLS_DATA.find((t) => t.code === selectedCode);
+                              const tool = toolsData.find((t) => t.code === selectedCode);
                               setTransferRows((prev) =>
                                 prev.map((r) =>
                                   r.id === row.id
@@ -4323,7 +4489,7 @@ export default function MisaToolsWorkspace({
                             }}
                           >
                             <option value="">-- Chọn CCDC --</option>
-                            {SAMPLE_TOOLS_DATA.map((t) => (
+                            {toolsData.map((t) => (
                               <option key={t.code} value={t.code}>
                                 {t.code} - {t.name}
                               </option>
@@ -4669,6 +4835,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                    if (apiConnected) { void handleSaveToolMovement("transfer"); return; }
                   const newVoucher = {
                     voucherNo: transferVoucherNo,
                     voucherDate: transferVoucherDate,
@@ -4697,6 +4864,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                    if (apiConnected) { void handleSaveToolMovement("transfer"); return; }
                   const newVoucher = {
                     voucherNo: transferVoucherNo,
                     voucherDate: transferVoucherDate,
@@ -4991,7 +5159,7 @@ export default function MisaToolsWorkspace({
                             value={row.code}
                             onChange={(e) => {
                               const selectedCode = e.target.value;
-                              const tool = SAMPLE_TOOLS_DATA.find((t) => t.code === selectedCode);
+                              const tool = toolsData.find((t) => t.code === selectedCode);
                               setDecreaseRows((prev) =>
                                 prev.map((r) =>
                                   r.id === row.id
@@ -5019,7 +5187,7 @@ export default function MisaToolsWorkspace({
                             }}
                           >
                             <option value="">-- Chọn CCDC --</option>
-                            {SAMPLE_TOOLS_DATA.map((t) => (
+                            {toolsData.map((t) => (
                               <option key={t.code} value={t.code}>
                                 {t.code} - {t.name}
                               </option>
@@ -5049,7 +5217,7 @@ export default function MisaToolsWorkspace({
                             value={row.decreaseQty || ""}
                             onChange={(e) => {
                               const val = Number(e.target.value) || 0;
-                              const tool = SAMPLE_TOOLS_DATA.find((t) => t.code === row.code);
+                              const tool = toolsData.find((t) => t.code === row.code);
                               const remVal = tool && tool.qty > 0 ? Math.round((tool.remainingAmount / tool.qty) * val) : 0;
                               setDecreaseRows((prev) =>
                                 prev.map((r) =>
@@ -5288,6 +5456,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                    if (apiConnected) { void handleSaveToolMovement("disposal"); return; }
                   const newVoucher = {
                     voucherNo: decreaseVoucherNo,
                     voucherDate: decreaseVoucherDate,
@@ -5317,6 +5486,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                    if (apiConnected) { void handleSaveToolMovement("disposal"); return; }
                   const newVoucher = {
                     voucherNo: decreaseVoucherNo,
                     voucherDate: decreaseVoucherDate,
@@ -5719,7 +5889,7 @@ export default function MisaToolsWorkspace({
                               value={row.code}
                               onChange={(e) => {
                                 const selectedCode = e.target.value;
-                                const tool = SAMPLE_TOOLS_DATA.find((t) => t.code === selectedCode);
+                                const tool = toolsData.find((t) => t.code === selectedCode);
                                 setStocktakeRows((prev) =>
                                   prev.map((r) =>
                                     r.id === row.id
@@ -5741,7 +5911,7 @@ export default function MisaToolsWorkspace({
                               style={{ width: "100%", height: 28, border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, background: "#ffffff", outline: "none" }}
                             >
                               <option value="">-- Chọn CCDC --</option>
-                              {SAMPLE_TOOLS_DATA.map((t) => (
+                              {toolsData.map((t) => (
                                 <option key={t.code} value={t.code}>
                                   {t.code} - {t.name}
                                 </option>
@@ -5924,7 +6094,7 @@ export default function MisaToolsWorkspace({
                     <button
                       type="button"
                       onClick={() => {
-                        setStocktakeRows(SAMPLE_TOOLS_DATA.map((t, i) => ({
+                        setStocktakeRows(toolsData.map((t, i) => ({
                           id: `stk-all-${i}`,
                           code: t.code,
                           name: t.name,
@@ -6004,6 +6174,11 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetCount(writer, "TOOL", { number: stocktakeVoucherNo, date: stocktakeVoucherDate, purpose: stocktakePurpose, rows: stocktakeRows }))
+                      .then((saved) => { if (saved) { setShowStocktakeVoucherModal(false); setStocktakeViewMode("list"); } });
+                    return;
+                  }
                   const newVoucher = {
                     voucherNo: stocktakeVoucherNo,
                     voucherDate: stocktakeVoucherDate,
@@ -6024,6 +6199,11 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetCount(writer, "TOOL", { number: stocktakeVoucherNo, date: stocktakeVoucherDate, purpose: stocktakePurpose, rows: stocktakeRows }))
+                      .then((saved) => { if (saved) { setShowStocktakeVoucherModal(false); setStocktakeViewMode("list"); } });
+                    return;
+                  }
                   const newVoucher = {
                     voucherNo: stocktakeVoucherNo,
                     voucherDate: stocktakeVoucherDate,
@@ -6054,6 +6234,37 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   // 1. TAB: QUY TRÌNH (Ảnh 1)
   // =========================================================================
+  const increaseVouchers = apiConnected ? (apiRows.transactions || []).filter((row) =>
+    row.transaction_type === "ACQUISITION" && (apiRows.assets || []).some((asset) => asset.id === row.asset && asset.asset_type === "TOOL")
+  ).map((row) => ({ voucherNo: row.number, postingDate: apiDate(row.transaction_date), voucherDate: apiDate(row.transaction_date),
+    reason: row.reason || "", totalCost: apiNumber(row.amount), creator: "", source: "CCDC" })) : SAMPLE_INCREASE_VOUCHERS;
+  const toolTransactionStatus = (number: string, fallback: string) => apiConnected ? <MisaApiDocumentStatus
+    path="/api/v1/fixed-assets/transactions/"
+    record={(apiRows.transactions || []).find((row) => row.number === number)}
+    companyId={_company.id} notify={notify} onChanged={reloadApi} /> : fallback;
+
+  useEffect(() => {
+    if (!apiConnected) return;
+    const toolTransactions = (apiRows.transactions || []).filter((row) =>
+      (apiRows.assets || []).some((asset) => asset.id === row.asset && asset.asset_type === "TOOL"));
+    setAllocationVouchers((apiRows.calculations || []).filter((row) => row.calculation_type === "ALLOCATION").map((row) => ({
+      voucherNo: row.number, postingDate: apiDate(row.period_end), voucherDate: apiDate(row.period_end),
+      reason: `Phân bổ CCDC kỳ ${row.period_code}`, totalAmount: apiNumber(row.total_amount), creator: "", status: row.status || "DRAFT",
+    })));
+    setAdjustmentVouchers(toolTransactions.filter((row) => ["VALUE_INCREASE", "VALUE_DECREASE"].includes(row.transaction_type)).map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.transaction_date), reason: row.reason || "",
+      adjustmentAmount: apiNumber(row.amount) * (row.transaction_type === "VALUE_DECREASE" ? -1 : 1), creator: "", status: row.status || "DRAFT",
+    })));
+    setTransferVouchers(toolTransactions.filter((row) => row.transaction_type === "TRANSFER").map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.transaction_date), deliverer: "", receiver: "",
+      reason: row.reason || "", status: row.status || "DRAFT",
+    })));
+    setDecreaseVouchers(toolTransactions.filter((row) => row.transaction_type === "DISPOSAL").map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.transaction_date), reason: row.reason || "",
+      itemCount: 1, totalQty: 1, totalRemainingAmount: apiNumber(row.amount), status: row.status || "DRAFT",
+    })));
+  }, [apiConnected, apiRows]);
+
   if (tab === "process") {
     return (
       <div style={{ background: "#f1f5f9", minHeight: "100%", padding: "30px 24px", boxSizing: "border-box" }}>
@@ -6415,7 +6626,7 @@ export default function MisaToolsWorkspace({
               </tr>
             </thead>
             <tbody>
-              {SAMPLE_TOOLS_DATA.map((row, idx) => (
+              {toolsData.map((row, idx) => (
                 <tr key={row.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
@@ -6697,10 +6908,11 @@ export default function MisaToolsWorkspace({
                       <th style={{ width: 130, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tổng giá trị</th>
                       <th style={{ width: 220, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Nguồn gốc</th>
                       <th style={{ width: 140, padding: "8px", textAlign: "left" }}>Người lập</th>
+                      <th style={{ width: 170, padding: "8px", textAlign: "left" }}>Trạng thái</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {SAMPLE_INCREASE_VOUCHERS.map((v, i) => (
+                    {increaseVouchers.map((v, i) => (
                       <tr key={v.voucherNo} style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
@@ -6710,6 +6922,10 @@ export default function MisaToolsWorkspace({
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(v.totalCost)}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.source}</td>
                         <td style={{ padding: "8px", color: "#475569" }}>{v.creator}</td>
+                        <td style={{ padding: "8px", color: "#475569" }}>{apiConnected && <MisaApiDocumentStatus
+                          path="/api/v1/fixed-assets/transactions/"
+                          record={(apiRows.transactions || []).find((row) => row.number === v.voucherNo)}
+                          companyId={_company.id} notify={notify} onChanged={reloadApi} />}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -7473,7 +7689,7 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.creator}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                             <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
-                              {v.status}
+                              {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
                           <td style={{ padding: "9px", textAlign: "center" }}>
@@ -7910,7 +8126,7 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0" }}>{v.reason}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                             <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
-                              {v.status}
+                              {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
                           <td style={{ padding: "9px", textAlign: "center" }}>
@@ -8336,7 +8552,7 @@ export default function MisaToolsWorkspace({
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                             <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
-                              {v.status}
+                              {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
                           <td style={{ padding: "9px", textAlign: "center" }}>
@@ -10331,6 +10547,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows }, false))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form1Code,
                       name: form1Name || "Chi phí trả trước mới",
@@ -10352,6 +10573,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows }, false))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form1Code,
                       name: form1Name || "Chi phí trả trước mới",
@@ -10803,6 +11029,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form2Code, name: form2Name, allocMonths: form2AllocMonths, remainingMonths: form2RemainingMonths, recordDate: form2RecordDate, amount: form2Amount, allocatedAmount: form2AllocatedAmount, waitingAcc: form2WaitingAcc, stopAlloc: form2StopAlloc, rows: form2Rows }, true))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form2Code,
                       name: form2Name || "Chi phí trả trước đầu kỳ",
@@ -10824,6 +11055,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form2Code, name: form2Name, allocMonths: form2AllocMonths, remainingMonths: form2RemainingMonths, recordDate: form2RecordDate, amount: form2Amount, allocatedAmount: form2AllocatedAmount, waitingAcc: form2WaitingAcc, stopAlloc: form2StopAlloc, rows: form2Rows }, true))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form2Code,
                       name: form2Name || "Chi phí trả trước đầu kỳ",
@@ -11529,8 +11765,8 @@ export default function MisaToolsWorkspace({
                         </tr>
                       </thead>
                       <tbody>
-                        {prepaidExpensesList.map((cp, idx) => {
-                          const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                        {prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
+                          const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
                           return (
                             <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
@@ -11566,8 +11802,8 @@ export default function MisaToolsWorkspace({
                         </tr>
                       </thead>
                       <tbody>
-                        {prepaidExpensesList.map((cp, idx) => {
-                          const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                        {prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
+                          const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
                           return (
                             <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
@@ -11603,6 +11839,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidAllocation(writer, { number: prepaidAllocVoucherNo, postingDate: prepaidAllocPostingDate, documentDate: prepaidAllocVoucherDate, description: prepaidAllocReason }))
+                        .then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                      return;
+                    }
                     const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const newV = {
@@ -11640,6 +11881,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidAllocation(writer, { number: prepaidAllocVoucherNo, postingDate: prepaidAllocPostingDate, documentDate: prepaidAllocVoucherDate, description: prepaidAllocReason }))
+                        .then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                      return;
+                    }
                     const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const newV = {
@@ -12070,6 +12316,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidDecrease(writer, { number: prepaidDecreaseVoucherNo, date: prepaidDecreaseVoucherDate, reason: prepaidDecreaseReason, rows: prepaidDecreaseDetailRows }))
+                        .then((saved) => { if (saved) setShowPrepaidDecreaseModal(false); });
+                      return;
+                    }
                     const totalAmt = prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0);
                     const newV = {
                       voucherNo: prepaidDecreaseVoucherNo,
@@ -12098,6 +12349,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidDecrease(writer, { number: prepaidDecreaseVoucherNo, date: prepaidDecreaseVoucherDate, reason: prepaidDecreaseReason, rows: prepaidDecreaseDetailRows }))
+                        .then((saved) => { if (saved) setShowPrepaidDecreaseModal(false); });
+                      return;
+                    }
                     const totalAmt = prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0);
                     const newV = {
                       voucherNo: prepaidDecreaseVoucherNo,

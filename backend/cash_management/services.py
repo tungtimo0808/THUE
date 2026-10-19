@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from audit_log.services import record_audit
 from approval_workflows.submission import configured_snapshot
 from approval_workflows.execution import approval_progress
+from common_services.document_lock_services import assert_not_locked
 from . import models
 
 def actor(request):return request.user.iam_account
@@ -41,6 +42,7 @@ def decide(tx,request,approved):
 def confirm(tx,request):
     tx=models.CashTransaction.objects.select_for_update().get(pk=tx.pk);fund=models.CashFund.objects.select_for_update().get(pk=tx.fund_id)
     if tx.status!=models.TransactionStatus.APPROVED or tx.balance_applied:raise ValidationError("Giao dịch chưa được duyệt hoặc đã cập nhật số dư.")
+    assert_not_locked(tx.company,"PT" if incoming(tx) else "PC",tx.transaction_date)
     if tx.workflow_snapshot.get("separate_cashier",True) and tx.created_by_id==actor(request).id:raise ValidationError("Người lập không được đồng thời xác nhận tiền theo cấu hình.")
     if not incoming(tx) and not fund.allow_negative and fund.balance<tx.amount:raise ValidationError("Số dư quỹ không đủ.")
     fund.balance=fund.balance+tx.amount if incoming(tx) else fund.balance-tx.amount;fund.save(update_fields=("balance","updated_at"));tx.balance_applied=True;tx.status=models.TransactionStatus.POSTED;tx.cashier=actor(request);tx.posted_at=timezone.now();tx.save(update_fields=("balance_applied","status","cashier","posted_at","updated_at"))
@@ -73,7 +75,11 @@ def reverse(tx,request):
 def post_gl(tx,request):
     tx=models.CashTransaction.objects.select_for_update().get(pk=tx.pk)
     if tx.status!=models.TransactionStatus.POSTED or tx.gl_status=="POSTED":raise ValidationError("Giao dịch chưa có hiệu lực hoặc đã chuyển GL.")
-    reference=request.data.get("gl_reference","").strip()
+    if request.data.get("lines"):
+        # The voucher's own accounting rows: the journal is generated and posted here.
+        from general_ledger.money_journal import journalize
+        fund=tx.fund;reference=journalize(tx,request,module="CASH",money_account=fund.gl_account,incoming=incoming(tx),branch=fund.branch,counterpart_name=tx.payer_payee,lines=request.data["lines"]).number
+    else:reference=request.data.get("gl_reference","").strip()
     if not reference:raise ValidationError({"gl_reference":"Mã bút toán GL là bắt buộc."})
     tx.gl_status="POSTED";tx.gl_reference=reference;tx.save(update_fields=("gl_status","gl_reference","updated_at"));audit(request,tx,"POST_GL",after={"gl_status":tx.gl_status,"gl_reference":reference});return tx
 
@@ -114,6 +120,7 @@ def disburse_advance(obj,request):
 def settle_advance(obj,request):
     obj=models.CashAdvance.objects.select_for_update().get(pk=obj.pk)
     if obj.status not in {"ACTIVE","PARTIAL"}:raise ValidationError("Khoản tạm ứng không còn mở.")
+    assert_not_locked(obj.company,"QTU",request.data.get("settlement_date") or timezone.localdate())
     accepted=Decimal(str(request.data.get("accepted_expense",0)));returned=Decimal(str(request.data.get("returned_cash",0)));additional=Decimal(str(request.data.get("additional_cash",0)))
     if min(accepted,returned,additional)<0 or accepted+returned>obj.remaining_amount+additional:raise ValidationError("Số liệu quyết toán không hợp lệ.")
     settlement=models.AdvanceSettlement.objects.create(advance=obj,settlement_date=request.data.get("settlement_date",timezone.localdate()),accepted_expense=accepted,returned_cash=returned,additional_cash=additional,documents=request.data.get("documents",[]),note=request.data.get("note",""),created_by=actor(request));fund=models.CashFund.objects.select_for_update().get(pk=obj.fund_id)

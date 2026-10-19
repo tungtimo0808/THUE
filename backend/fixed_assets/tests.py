@@ -141,3 +141,64 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(duplicate.status_code, 400, duplicate.data)
+
+    def test_tool_life_change_spreads_the_remainder_over_the_new_periods(self):
+        asset_id = self.create_asset("CC001", "TOOL", self.tool_category, 1200, 6)
+        self.create_and_post_transaction(asset_id, "GT-CC1", "ACQUISITION", 1200)
+        self.create_and_post_transaction(asset_id, "DC-CC1", "LIFE_CHANGE", 0, target_useful_life_periods=12)
+        run = self.client.post(f"/api/v1/fixed-assets/calculations/{self.query}", {
+            "company": str(self.company.id), "number": "PB-2026", "calculation_type": "ALLOCATION",
+            "period_code": "2026-LC", "period_start": str(self.today.replace(day=1)), "period_end": str(self.today),
+        }, format="json")
+        calculated = self.client.post(f"/api/v1/fixed-assets/calculations/{run.data['id']}/calculate/{self.query}", {}, format="json")
+        self.assertEqual(calculated.status_code, 200, calculated.data)
+        self.assertEqual(Decimal(calculated.data["total_amount"]), Decimal("100"))
+
+    def test_partial_disposal_splits_and_reversal_merges_back(self):
+        response = self.client.post(f"/api/v1/fixed-assets/assets/{self.query}", {
+            "company": str(self.company.id), "code": "CC010", "name": "Bàn ghế", "asset_type": "TOOL",
+            "category": self.tool_category, "quantity": "10", "acquisition_date": str(self.today),
+            "in_service_date": str(self.today), "original_cost": "1000", "method": "STRAIGHT_LINE",
+            "useful_life_periods": 5, "branch": str(self.branch.id),
+        }, format="json")
+        asset_id = response.data["id"]
+        self.create_and_post_transaction(asset_id, "GT-CC10", "ACQUISITION", 1000)
+        disposal = self.create_and_post_transaction(asset_id, "GG-CC10", "DISPOSAL", 0, quantity="3", reason="Hỏng 3 bộ")
+        asset = AssetRecord.objects.get(pk=asset_id)
+        part = AssetRecord.objects.get(code="CC010.1")
+        self.assertEqual((asset.quantity, asset.original_cost, asset.status), (Decimal("7"), Decimal("700"), "ACTIVE"))
+        self.assertEqual((part.quantity, part.original_cost, part.status), (Decimal("3"), Decimal("300"), "DISPOSED"))
+        self.assertEqual(AssetTransaction.objects.get(pk=disposal).amount, Decimal("300"))
+        reversed_ = self.client.post(f"/api/v1/fixed-assets/transactions/{disposal}/reverse/{self.query}", {"reason": "Nhầm"}, format="json")
+        self.assertIn(reversed_.status_code, (200, 201), reversed_.data)
+        asset.refresh_from_db()
+        self.assertEqual((asset.quantity, asset.original_cost), (Decimal("10"), Decimal("1000")))
+        self.assertFalse(AssetRecord.objects.filter(code="CC010.1").exists())
+
+    def test_partial_quantity_cannot_exceed_tracked_quantity(self):
+        asset_id = self.create_asset("CC020", "TOOL", self.tool_category, 500, 5)
+        self.create_and_post_transaction(asset_id, "GT-CC20", "ACQUISITION", 500)
+        created = self.client.post(f"/api/v1/fixed-assets/transactions/{self.query}", {
+            "company": str(self.company.id), "asset": asset_id, "number": "DC-CC20", "transaction_type": "TRANSFER",
+            "transaction_date": str(self.today), "quantity": "2", "target_department": str(self.department2.id),
+            "idempotency_key": "KEY-DC-CC20",
+        }, format="json")
+        self.assertEqual(created.status_code, 400)
+        self.assertIn("quantity", created.data)
+
+    def test_asset_count_records_book_and_actual_quantities(self):
+        asset_id = self.create_asset("CC030", "TOOL", self.tool_category, 600, 6)
+        self.create_and_post_transaction(asset_id, "GT-CC30", "ACQUISITION", 600)
+        url = f"/api/v1/fixed-assets/counts/{self.query}"
+        created = self.client.post(url, {
+            "company": str(self.company.id), "asset_type": "TOOL", "number": "BBKK-01", "count_date": str(self.today),
+            "purpose": "Kiểm kê quý", "lines": [{"asset": asset_id, "actual_quantity": "0", "condition": "Mất"}],
+        }, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        line = created.data["lines"][0]
+        self.assertEqual((Decimal(line["book_quantity"]), Decimal(line["difference"])), (Decimal("1"), Decimal("-1")))
+        wrong_type = self.client.post(url, {
+            "company": str(self.company.id), "asset_type": "FIXED_ASSET", "number": "BBKK-02", "count_date": str(self.today),
+            "lines": [{"asset": asset_id, "actual_quantity": "1"}],
+        }, format="json")
+        self.assertEqual(wrong_type.status_code, 400)

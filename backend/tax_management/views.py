@@ -3,6 +3,7 @@ from rest_framework import mixins, serializers as drf_serializers, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelViewSet
 
 from . import models, serializers, services
@@ -187,13 +188,37 @@ class ObligationViewSet(CompanyViewSet):
     queryset = models.TaxObligation.objects.select_related("company", "period", "filing", "created_by")
     serializer_class = serializers.ObligationSerializer
     iam_permissions = permissions("TAX.OBLIGATION")
-    action_permissions = {"link_payment": "TAX.OBLIGATION.PAYMENT"}
+    action_permissions = {"link_payment": "TAX.OBLIGATION.PAYMENT", "e_payment": "TAX.OBLIGATION.PAYMENT"}
     search_fields = ("tax_type", "period__code", "reason")
     ordering_fields = ("due_date", "assessed_amount", "paid_amount", "created_at")
 
     @action(detail=True, methods=("post",), url_path="link-payment")
     def link_payment(self, request, pk=None):
         return Response(serializers.PaymentLinkSerializer(services.link_payment(self.get_object(), request)).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=("post",), url_path="e-payment")
+    def e_payment(self, request, pk=None):
+        """Electronic payment order (giấy nộp tiền điện tử) queued for the tax portal."""
+        return Response(serializers.IntegrationSerializer(services.request_e_payment(self.get_object(), request)).data, status=status.HTTP_201_CREATED)
+
+
+class TaxAuthoritySettingView(APIView):
+    """Managing tax office, tax agent and registered declaration forms."""
+    permission_classes = (TaxPermission,)
+    iam_permissions = {"GET": "TAX.CONNECTOR.VIEW", "PUT": "TAX.CONNECTOR.EDIT"}
+
+    def _company(self, request):
+        from organization.models import Company
+        company = Company.objects.filter(pk=request.query_params.get("company_id") or request.data.get("company")).first()
+        if not company:
+            raise drf_serializers.ValidationError({"company": "Không tìm thấy doanh nghiệp."})
+        return company
+
+    def get(self, request):
+        return Response(services.authority_settings(self._company(request)))
+
+    def put(self, request):
+        return Response(services.save_authority_settings(self._company(request), request.data, request))
 
 
 class ReconciliationViewSet(ReadOnlyModelViewSet):

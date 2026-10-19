@@ -172,15 +172,17 @@ class Account(models.Model):
         else:
             self.account_level = 1
 
-        # Auto-sync dimension boolean flags for backward compatibility
+        # Auto-sync dimension boolean flags: only REQUIRED dimensions are enforced on journal lines;
+        # OPTIONAL / CONDITIONAL ones may be filled but must not block posting.
         reqs = self.dimension_requirements or {}
-        if any(reqs.get(k) in (DimensionRequirementLevel.REQUIRED, DimensionRequirementLevel.OPTIONAL, DimensionRequirementLevel.CONDITIONAL, "REQUIRED", "OPTIONAL", "CONDITIONAL") for k in ("CUSTOMER", "SUPPLIER", "EMPLOYEE")):
+        required = {key for key, level in reqs.items() if level in (DimensionRequirementLevel.REQUIRED, "REQUIRED")}
+        if required & {"CUSTOMER", "SUPPLIER", "EMPLOYEE"}:
             self.requires_party = True
-        if reqs.get("PROJECT") in (DimensionRequirementLevel.REQUIRED, DimensionRequirementLevel.OPTIONAL, DimensionRequirementLevel.CONDITIONAL, "REQUIRED", "OPTIONAL", "CONDITIONAL"):
+        if "PROJECT" in required:
             self.requires_project = True
-        if reqs.get("COST_CENTER") in (DimensionRequirementLevel.REQUIRED, DimensionRequirementLevel.OPTIONAL, DimensionRequirementLevel.CONDITIONAL, "REQUIRED", "OPTIONAL", "CONDITIONAL"):
+        if "COST_CENTER" in required:
             self.requires_cost_center = True
-        if reqs.get("WAREHOUSE") in (DimensionRequirementLevel.REQUIRED, DimensionRequirementLevel.OPTIONAL, DimensionRequirementLevel.CONDITIONAL, "REQUIRED", "OPTIONAL", "CONDITIONAL"):
+        if "WAREHOUSE" in required:
             self.requires_warehouse = True
 
         # Auto-assign account_class if empty
@@ -457,3 +459,99 @@ class GlReconciliation(models.Model):
 
     class Meta:
         db_table = "gl_reconciliation"
+
+
+class PrepaidExpense(models.Model):
+    """A prepaid cost (TK 242) allocated to expense accounts over a number of periods."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Đang phân bổ"
+        COMPLETED = "COMPLETED", "Đã phân bổ hết"
+        STOPPED = "STOPPED", "Ngừng phân bổ"
+        DECREASED = "DECREASED", "Đã ghi giảm"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT)
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
+    record_date = models.DateField()
+    start_date = models.DateField()
+    amount = models.DecimalField(max_digits=24, decimal_places=4)
+    allocation_periods = models.PositiveIntegerField()
+    prepaid_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="prepaid_expenses")
+    is_opening = models.BooleanField(default=False)
+    opening_allocated_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    opening_allocated_periods = models.PositiveIntegerField(default=0)
+    allocated_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    allocated_periods = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gl_prepaid_expense"
+        constraints = [
+            models.UniqueConstraint(fields=("company", "code"), name="uq_gl_prepaid_expense_code"),
+            models.CheckConstraint(condition=Q(amount__gt=0), name="ck_gl_prepaid_amount_positive"),
+            models.CheckConstraint(condition=Q(allocation_periods__gt=0), name="ck_gl_prepaid_periods_positive"),
+        ]
+
+    @property
+    def remaining_amount(self):
+        return self.amount - self.opening_allocated_amount - self.allocated_amount
+
+    @property
+    def remaining_periods(self):
+        return max(self.allocation_periods - self.opening_allocated_periods - self.allocated_periods, 0)
+
+
+class PrepaidExpenseTarget(models.Model):
+    """Where each period's allocation goes: an expense account and its share."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    prepaid = models.ForeignKey(PrepaidExpense, on_delete=models.CASCADE, related_name="targets")
+    line_no = models.PositiveIntegerField()
+    expense_account = models.ForeignKey(Account, on_delete=models.PROTECT)
+    rate = models.DecimalField(max_digits=9, decimal_places=4)
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "gl_prepaid_expense_target"
+        ordering = ("line_no",)
+
+
+class PrepaidAllocation(models.Model):
+    """One period's allocation voucher (Nợ TK chi phí / Có 242), or a write-off of the remainder."""
+
+    class Kind(models.TextChoices):
+        ALLOCATION = "ALLOCATION", "Phân bổ"
+        DECREASE = "DECREASE", "Ghi giảm"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT)
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    number = models.CharField(max_length=80)
+    period = models.ForeignKey(AccountingPeriod, on_delete=models.PROTECT, related_name="prepaid_allocations")
+    document_date = models.DateField()
+    posting_date = models.DateField()
+    description = models.CharField(max_length=500, blank=True)
+    total_amount = models.DecimalField(max_digits=24, decimal_places=4)
+    entry = models.OneToOneField(JournalEntry, on_delete=models.PROTECT, related_name="prepaid_allocation")
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "gl_prepaid_allocation"
+        ordering = ("-posting_date", "-created_at")
+        constraints = [models.UniqueConstraint(fields=("company", "number"), name="uq_gl_prepaid_allocation_number")]
+
+
+class PrepaidAllocationLine(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    allocation = models.ForeignKey(PrepaidAllocation, on_delete=models.CASCADE, related_name="lines")
+    prepaid = models.ForeignKey(PrepaidExpense, on_delete=models.PROTECT, related_name="allocation_lines")
+    expense_account = models.ForeignKey(Account, on_delete=models.PROTECT)
+    amount = models.DecimalField(max_digits=24, decimal_places=4)
+
+    class Meta:
+        db_table = "gl_prepaid_allocation_line"

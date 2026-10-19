@@ -34,9 +34,11 @@ export interface DiscountInvoiceItem {
 export interface SaleInvoiceDiscountModalProps {
   initialData?: any;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
   notify?: (msg: string) => void;
+  customers?: { code: string; name: string; tax_code?: string }[];
+  loadEligible?: (customerCode: string, start: string, end: string) => Promise<{ lines: any[] }>;
 }
 
 export function SaleInvoiceDiscountModal({
@@ -45,6 +47,8 @@ export function SaleInvoiceDiscountModal({
   onSubmit,
   onOpenCustomerModal,
   notify = () => {},
+  customers,
+  loadEligible,
 }: SaleInvoiceDiscountModalProps) {
   // Master fields Left
   const [customerCode, setCustomerCode] = useState(initialData?.customerCode || "");
@@ -70,6 +74,13 @@ export function SaleInvoiceDiscountModal({
   const [invoiceSeries, setInvoiceSeries] = useState(initialData?.invoiceSeries || "");
   const [invoiceNo, setInvoiceNo] = useState(initialData?.invoiceNo || "");
   const [invoiceDate, setInvoiceDate] = useState(initialData?.invoiceDate || "02/10/2026");
+  const [periodStart, setPeriodStart] = useState(initialData?.periodStart || "2026-10-01");
+  const [periodEnd, setPeriodEnd] = useState(initialData?.periodEnd || "2026-10-31");
+  const [discountBasis, setDiscountBasis] = useState(initialData?.discountBasis || "");
+  const [eligibleLines, setEligibleLines] = useState<any[]>([]);
+  const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
+  const [showEligible, setShowEligible] = useState(false);
+  const [loadingEligible, setLoadingEligible] = useState(false);
 
   // Tab & options
   const [activeTab, setActiveTab] = useState<"items" | "related">("items");
@@ -101,10 +112,10 @@ export function SaleInvoiceDiscountModal({
 
   const handleSelectCustomer = (code: string) => {
     setCustomerCode(code);
-    const found = SAMPLE_SALE_CUSTOMERS.find((c) => c.code === code);
+    const found: any = (customers || SAMPLE_SALE_CUSTOMERS).find((c) => c.code === code);
     if (found) {
       setCustomerName(found.name);
-      setTaxCode(found.taxCode || "");
+      setTaxCode(found.tax_code || found.taxCode || "");
       setAddress(found.address || "");
       setBuyerName(found.contact || "");
       setPhone(found.phone || "");
@@ -194,7 +205,7 @@ export function SaleInvoiceDiscountModal({
   const totalVat = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const grandTotal = totalAmount + totalVat;
 
-  const handleSave = (publish = false) => {
+  const handleSave = async (publish = false) => {
     const payload = {
       invoiceType: "Hóa đơn chiết khấu",
       customerCode,
@@ -218,6 +229,10 @@ export function SaleInvoiceDiscountModal({
       invoiceSeries,
       invoiceNo,
       invoiceDate,
+      periodStart,
+      periodEnd,
+      discountBasis,
+      originalInvoiceLineIds: selectedLineIds,
       storeCode,
       storeName,
       lookupCode,
@@ -229,8 +244,9 @@ export function SaleInvoiceDiscountModal({
       publish,
     };
 
-    onSubmit(payload);
-    notify(
+    const saved = await onSubmit(payload);
+    if (saved === false) return;
+    if (saved !== true) notify(
       publish
         ? `Đã lưu và chuẩn bị phát hành Hóa đơn chiết khấu ${invoiceNo || ""}!`
         : `Đã lưu Hóa đơn chiết khấu ${invoiceNo || ""} thành công!`
@@ -425,8 +441,10 @@ export function SaleInvoiceDiscountModal({
                         type="text"
                         value={customerCode}
                         onChange={(e) => setCustomerCode(e.target.value)}
+                        list={customers ? "discount-invoice-customers" : undefined}
                         style={{ border: "none", outline: "none", flex: 1, minWidth: 0, height: "100%", padding: 0, fontSize: 12.5 }}
                       />
+                      {customers && <datalist id="discount-invoice-customers">{customers.map((customer) => <option key={customer.code} value={customer.code}>{customer.name}</option>)}</datalist>}
                       <button
                         type="button"
                         onClick={() => {
@@ -440,7 +458,7 @@ export function SaleInvoiceDiscountModal({
                       <button
                         type="button"
                         onClick={() => {
-                          const next = SAMPLE_SALE_CUSTOMERS[0];
+                          const next = (customers || SAMPLE_SALE_CUSTOMERS)[0];
                           handleSelectCustomer(next.code);
                         }}
                         style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
@@ -1059,7 +1077,20 @@ export function SaleInvoiceDiscountModal({
 
             <button
               type="button"
-              onClick={() => notify("Mở danh sách chọn các hóa đơn liên quan để lập chiết khấu...")}
+              onClick={async () => {
+                if (!loadEligible) { notify("Mở danh sách chọn các hóa đơn liên quan để lập chiết khấu..."); return; }
+                setLoadingEligible(true);
+                try {
+                  const result = await loadEligible(customerCode, periodStart, periodEnd);
+                  setEligibleLines(result.lines || []);
+                  setShowEligible(true);
+                } catch (error) {
+                  notify(error instanceof Error ? error.message : "Không tải được hóa đơn gốc.");
+                } finally {
+                  setLoadingEligible(false);
+                }
+              }}
+              disabled={loadingEligible}
               style={{
                 height: 26,
                 padding: "0 12px",
@@ -1072,10 +1103,24 @@ export function SaleInvoiceDiscountModal({
                 fontWeight: 500,
               }}
             >
-              Chọn hóa đơn liên quan
+              {loadingEligible ? "Đang tải hóa đơn…" : "Chọn hóa đơn liên quan"}
             </button>
           </div>
         </div>
+
+        {loadEligible && <div style={{ padding: "8px 18px", background: "#f8fafc", borderBottom: "1px solid #cbd5e1", fontSize: 12.5 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "end", flexWrap: "wrap" }}>
+            <label>Kỳ từ <input type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} style={{ height: 28, border: "1px solid #cbd5e1", borderRadius: 4 }} /></label>
+            <label>Đến <input type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} style={{ height: 28, border: "1px solid #cbd5e1", borderRadius: 4 }} /></label>
+            <label style={{ flex: 1, minWidth: 180 }}>Căn cứ chiết khấu <input value={discountBasis} onChange={(event) => setDiscountBasis(event.target.value)} style={{ width: "100%", height: 28, border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} /></label>
+          </div>
+          {showEligible && <div style={{ maxHeight: 130, overflowY: "auto", marginTop: 8, border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff" }}>
+            {eligibleLines.length ? eligibleLines.map((line) => <label key={line.original_invoice_line_id} style={{ display: "flex", gap: 8, padding: "4px 8px", borderBottom: "1px solid #e2e8f0" }}>
+              <input type="checkbox" checked={selectedLineIds.includes(line.original_invoice_line_id)} onChange={(event) => setSelectedLineIds((previous) => event.target.checked ? [...previous, line.original_invoice_line_id] : previous.filter((id) => id !== line.original_invoice_line_id))} />
+              <span>{line.original_invoice_number} · {line.item_name || line.description} · {Number(line.eligible_revenue).toLocaleString("vi-VN")} đ</span>
+            </label>) : <div style={{ padding: 8, color: "#64748b" }}>Không có hóa đơn đã phát hành trong kỳ.</div>}
+          </div>}
+        </div>}
 
         {/* ================================================================= */}
         {/* 4. ITEMS TABLE (SOLID BORDERS, NO DASHED!)                        */}
