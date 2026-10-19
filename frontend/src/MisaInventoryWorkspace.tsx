@@ -8947,7 +8947,7 @@ export default function MisaInventoryWorkspace({
                 </table>
               </div>
               <div style={{ padding: "12px 20px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "#64748b" }}>Trích xuất theo chuẩn kế toán VAS & TT 200/2014/TT-BTC</span>
+                <span style={{ fontSize: 12, color: "#64748b" }}>Trích xuất theo chuẩn kế toán & TT 99/2025/TT-BTC</span>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button type="button" onClick={() => notify("Đã xuất báo cáo ra file Excel")} style={{ height: 32, padding: "0 14px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
                     <FileSpreadsheet size={14} style={{ color: "#16a34a" }} />

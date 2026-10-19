@@ -449,7 +449,7 @@ export default function MisaFinancialNotesReport({
               <div style={{ background: "#ffffff", padding: 10, borderRadius: 6, border: "1px solid #ddd6fe" }}>
                 <strong style={{ color: "#2563eb" }}>3. Chính sách kế toán áp dụng</strong>
                 <p style={{ margin: "4px 0 0", color: "#6b21a8", fontSize: 12 }}>
-                  Đầy đủ điều khoản theo Thông tư 200/2014/TT-BTC: phương pháp tính giá HTK bình quân, thuế suất thuế TNDN 20%.
+                  Đầy đủ điều khoản theo Thông tư 99/2025/TT-BTC: phương pháp tính giá HTK bình quân, thuế suất thuế TNDN 20%.
                 </p>
               </div>
             </div>
@@ -550,7 +550,7 @@ export default function MisaFinancialNotesReport({
               Kỳ kế toán tháng 10 năm 2026 (Từ ngày {fromDate} đến ngày {toDate})
             </div>
             <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
-              (Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)
+              (Ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)
             </div>
           </div>
 
@@ -590,7 +590,7 @@ export default function MisaFinancialNotesReport({
                 III. CHUẨN MỰC VÀ CHẾ ĐỘ KẾ TOÁN ÁP DỤNG
               </h3>
               <ul style={{ paddingLeft: 20, margin: "10px 0", display: "flex", flexDirection: "column", gap: 6 }}>
-                <li><strong>1. Chế độ kế toán áp dụng:</strong> Doanh nghiệp áp dụng Chế độ Kế toán Doanh nghiệp ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính.</li>
+                <li><strong>1. Chế độ kế toán áp dụng:</strong> Doanh nghiệp áp dụng Chế độ Kế toán Doanh nghiệp ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính.</li>
                 <li><strong>2. Tuyên bố tuân thủ:</strong> Báo cáo tài chính được lập và trình bày tuân thủ đầy đủ các Chuẩn mực Kế toán Việt Nam và các quy định hiện hành.</li>
               </ul>
             </div>

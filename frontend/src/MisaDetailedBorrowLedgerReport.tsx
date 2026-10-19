@@ -372,10 +372,7 @@ export default function MisaDetailedBorrowLedgerReport({
             <div style={{ textAlign: "center", fontSize: 12, lineHeight: 1.4 }}>
               <div style={{ fontWeight: 700, fontSize: 13 }}>Mẫu số: S34-DN</div>
               <div style={{ fontStyle: "italic", fontSize: 11.5 }}>
-                (Ban hành theo Thông tư số 200/2014/TT-BTC
-              </div>
-              <div style={{ fontStyle: "italic", fontSize: 11.5 }}>
-                ngày 22 tháng 12 năm 2014 của Bộ trưởng Bộ Tài chính)
+                (Ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)
               </div>
             </div>
           </div>

@@ -68,6 +68,7 @@ export const modules = [
   { id: "settings", label: "Thiết lập", icon: Settings2, group: "Hệ thống" },
 ];
 export const companies = [
+  { id: "abc", name: "Công ty TNHH Thương mại và Dịch vụ ABC", short: "ABC" },
   { id: "minh-an", name: "Công ty TNHH Minh An", short: "MA" },
   { id: "an-phat", name: "Công ty CP An Phát", short: "AP" },
 ];

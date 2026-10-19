@@ -487,7 +487,7 @@ export default function MisaMultiBranchBalanceSheetReport({
               letterSpacing: "-0.2px",
             }}
           >
-            Bảng cân đối kế toán theo nhiều chi nhánh
+            Báo cáo tình hình tài chính theo nhiều chi nhánh (TT 99)
           </h2>
         </div>
 
@@ -701,8 +701,11 @@ export default function MisaMultiBranchBalanceSheetReport({
                 margin: "0 0 6px 0",
               }}
             >
-              BẢNG CÂN ĐỐI KẾ TOÁN THEO NHIỀU CHI NHÁNH
+              BÁO CÁO TÌNH HÌNH TÀI CHÍNH THEO NHIỀU CHI NHÁNH
             </h1>
+            <div style={{ fontSize: 12, color: "#64748b", margin: "2px 0 6px 0" }}>
+              (Ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)
+            </div>
             <div
               style={{
                 fontSize: 13,

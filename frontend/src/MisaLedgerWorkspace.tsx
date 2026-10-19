@@ -4171,7 +4171,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 12.5, color: "#64748b" }}>
                   <span>Hiển thị 5 báo cáo tài chính</span>
                   <div style={{ fontWeight: 500, color: "#1e293b" }}>
-                    Chế độ kế toán áp dụng: Thông tư 200/2014/TT-BTC & Thông tư 99/2025/TT-BTC
+                    Chế độ kế toán áp dụng: Thông tư 99/2025/TT-BTC (Chính thức từ 01/01/2026)
                   </div>
                 </div>
               </div>
@@ -9105,7 +9105,7 @@ export default function MisaLedgerWorkspace({
               <button onClick={() => setChartOfAccountsModalOpen(false)} style={{ border: "none", background: "none" }}><X size={18} /></button>
             </div>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Danh mục hệ thống tài khoản đầy đủ theo Thông tư 200/2014/TT-BTC và chuẩn mực TT 99.
+              Danh mục hệ thống tài khoản chuẩn mực theo Thông tư 99/2025/TT-BTC.
             </div>
             <div style={{ marginTop: 16, textAlign: "right" }}>
               <button
