@@ -502,7 +502,7 @@ function ReferenceWorkspace() {
         </Link>
         <div className="ref-options-cluster" ref={clusterRef}>
           {/* 1. Doanh nghiệp */}
-          <div className={`ref-cluster-item ${activeClusterMenu === "company" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-company ${activeClusterMenu === "company" ? "open" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -542,10 +542,10 @@ function ReferenceWorkspace() {
             )}
           </div>
 
-          <div className="ref-cluster-divider" />
+          <div className="ref-cluster-divider ref-cluster-divider-dataset" />
 
           {/* 2. Dữ liệu kế toán */}
-          <div className={`ref-cluster-item ${activeClusterMenu === "dataset" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-dataset ${activeClusterMenu === "dataset" ? "open" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -553,7 +553,7 @@ function ReferenceWorkspace() {
               title="Dữ liệu kế toán"
             >
               <Database size={13} className="ref-cluster-icon" />
-              <span className="ref-cluster-label">{datasetLabel}</span>
+              <span className="ref-cluster-label ref-cluster-dataset-label">{datasetLabel}</span>
               <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "dataset" ? "rotated" : ""}`} />
             </button>
             {activeClusterMenu === "dataset" && (
@@ -585,10 +585,10 @@ function ReferenceWorkspace() {
             )}
           </div>
 
-          <div className="ref-cluster-divider" />
+          <div className="ref-cluster-divider ref-cluster-divider-branch" />
 
           {/* 3. Chi nhánh */}
-          <div className={`ref-cluster-item ${activeClusterMenu === "branch" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-branch ${activeClusterMenu === "branch" ? "open" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -596,7 +596,7 @@ function ReferenceWorkspace() {
               title="Chi nhánh, đơn vị"
             >
               <MapPin size={13} className="ref-cluster-icon" />
-              <span className="ref-cluster-label">{branchLabel}</span>
+              <span className="ref-cluster-label ref-cluster-branch-label">{branchLabel}</span>
               <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "branch" ? "rotated" : ""}`} />
             </button>
             {activeClusterMenu === "branch" && (
@@ -628,10 +628,10 @@ function ReferenceWorkspace() {
             )}
           </div>
 
-          <div className="ref-cluster-divider" />
+          <div className="ref-cluster-divider ref-cluster-divider-period" />
 
           {/* 4. Kỳ kế toán */}
-          <div className={`ref-cluster-item ${activeClusterMenu === "period" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-period ${activeClusterMenu === "period" ? "open" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -639,7 +639,7 @@ function ReferenceWorkspace() {
               title="Kỳ kế toán"
             >
               <Calendar size={13} className="ref-cluster-icon" />
-              <span className="ref-cluster-label">{periodLabel}</span>
+              <span className="ref-cluster-label ref-cluster-period-label">{periodLabel}</span>
               <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "period" ? "rotated" : ""}`} />
             </button>
             {activeClusterMenu === "period" && (
@@ -747,10 +747,6 @@ function ReferenceWorkspace() {
           >
             <CircleHelp size={18} />
           </button>
-
-          <span className="ref-demo" title="Chế độ dữ liệu">
-            {apiToken && ["bank", "cash"].includes(moduleId) ? "Dữ liệu API" : "Dữ liệu mẫu"}
-          </span>
 
           <div className="ref-header-divider" />
 

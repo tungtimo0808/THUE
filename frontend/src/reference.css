@@ -77,9 +77,15 @@ select:has(~ svg),
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 13px;
+  padding: 0 14px;
   border-bottom: 1px solid #e2e8f0;
+  box-sizing: border-box;
+  max-width: 100vw;
   min-width: 0;
+  transition: background-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              gap 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-mobile-trigger {
   display: none;
@@ -88,6 +94,7 @@ select:has(~ svg),
   color: #475569;
   padding: 4px;
   cursor: pointer;
+  transition: all 0.18s ease;
 }
 .ref-sidebar-toggle {
   display: inline-flex;
@@ -100,7 +107,7 @@ select:has(~ svg),
   background: #f8fafc;
   color: #475569;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   margin-right: 2px;
 }
@@ -108,6 +115,10 @@ select:has(~ svg),
   background: #eff6ff;
   color: #0284c7;
   border-color: #bae6fd;
+  transform: scale(1.05);
+}
+.ref-sidebar-toggle:active {
+  transform: scale(0.95);
 }
 .ref-brand {
   display: flex;
@@ -116,10 +127,10 @@ select:has(~ svg),
   flex-shrink: 0;
   text-decoration: none;
   padding-right: 6px;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-brand:hover {
-  opacity: 0.9;
+  opacity: 0.92;
 }
 .ref-brand-logo-icon {
   width: 32px;
@@ -132,27 +143,31 @@ select:has(~ svg),
   color: #ffffff;
   box-shadow: 0 4px 10px -2px rgba(2, 132, 199, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
   flex-shrink: 0;
-  transition: transform 0.18s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-brand:hover .ref-brand-logo-icon {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 .ref-brand-text {
   display: flex;
   flex-direction: column;
   line-height: 1.15;
+  transition: opacity 0.2s ease;
 }
 .ref-brand-name {
   font-size: 13.5px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 .ref-brand-sub {
   font-size: 8.5px;
   font-weight: 700;
   color: #64748b;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
 }
 /* Modern Unified Options Cluster */
 .ref-options-cluster {
@@ -163,8 +178,9 @@ select:has(~ svg),
   border-radius: 8px;
   padding: 3px 4px;
   gap: 2px;
-  flex-shrink: 0;
-  transition: all 0.18s ease;
+  flex-shrink: 1;
+  min-width: 0;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .ref-options-cluster:hover {
@@ -177,11 +193,14 @@ select:has(~ svg),
   background: #cbd5e1;
   margin: 0 2px;
   flex-shrink: 0;
+  transition: opacity 0.2s ease;
 }
 .ref-cluster-item {
   position: relative;
   display: inline-flex;
   align-items: center;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .ref-cluster-trigger {
@@ -194,12 +213,11 @@ select:has(~ svg),
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   font-family: inherit;
   font-size: 12.5px;
-  font-weight: 600;
-  color: #1e293b;
+  max-width: 100%;
 }
 
 .ref-cluster-trigger:hover,
@@ -208,22 +226,11 @@ select:has(~ svg),
   border-color: #cbd5e1;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   color: #0284c7;
+  transform: translateY(-0.5px);
 }
 
-.ref-cluster-item.open .ref-cluster-trigger {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
-}
-
-.ref-cluster-icon {
-  color: #64748b;
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-
-.ref-cluster-trigger:hover .ref-cluster-icon,
-.ref-cluster-item.open .ref-cluster-icon {
-  color: #0284c7;
+.ref-cluster-trigger:active {
+  transform: translateY(0);
 }
 
 .ref-cluster-label {
@@ -232,19 +239,38 @@ select:has(~ svg),
   font-weight: 600;
   line-height: 26px;
   white-space: nowrap;
-  transition: color 0.15s ease;
+  transition: color 0.18s ease, max-width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .ref-cluster-company-label {
-  max-width: 220px;
+  max-width: clamp(85px, 11vw, 210px);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ref-cluster-dataset-label {
+  max-width: clamp(70px, 9vw, 140px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ref-cluster-branch-label {
+  max-width: clamp(55px, 7vw, 105px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ref-cluster-period-label {
+  white-space: nowrap;
 }
 
 .ref-cluster-caret {
   color: #64748b;
   flex-shrink: 0;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
 }
 
 .ref-cluster-trigger:hover .ref-cluster-caret,
@@ -351,8 +377,11 @@ select:has(~ svg),
 .ref-header-tools {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   margin-left: auto;
+  flex-shrink: 0;
+  min-width: 0;
+  transition: gap 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-global-search {
   display: flex;
@@ -364,7 +393,10 @@ select:has(~ svg),
   background: #f8fafc;
   color: #64748b;
   gap: 6px;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease,
+              background-color 0.2s ease,
+              box-shadow 0.2s ease,
+              width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-global-search:hover {
   border-color: #94a3b8;
@@ -381,11 +413,15 @@ select:has(~ svg),
   color: #0f172a;
   padding: 0;
   border: 0;
-  width: 155px;
+  width: clamp(85px, 8.5vw, 145px);
   border-radius: 0;
   height: 28px;
   background: transparent;
   outline: none;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ref-global-search:focus-within input {
+  width: clamp(130px, 13vw, 190px);
 }
 .ref-global-search input::placeholder {
   color: #94a3b8;
@@ -400,6 +436,7 @@ select:has(~ svg),
   padding: 1px 5px;
   border-radius: 4px;
   letter-spacing: 0.03em;
+  transition: all 0.15s ease;
 }
 .ref-help {
   display: inline-flex;
@@ -416,12 +453,13 @@ select:has(~ svg),
   color: #334155;
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-help:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #0284c7;
+  transform: translateY(-1px);
 }
 .ref-help > span,
 .ref-help-icon {
@@ -435,6 +473,10 @@ select:has(~ svg),
   width: 18px;
   flex-shrink: 0;
   box-shadow: 0 1px 2px rgba(2, 132, 199, 0.25);
+  transition: transform 0.2s ease;
+}
+.ref-help:hover .ref-help-icon {
+  transform: scale(1.08);
 }
 .ref-icon {
   border: 0;
@@ -449,18 +491,18 @@ select:has(~ svg),
   border-radius: 7px;
   flex-shrink: 0;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-icon:hover {
   background: #f1f5f9;
   color: #0f172a;
-  transform: translateY(-1px);
+  transform: translateY(-1.5px);
 }
 .ref-icon:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.96);
 }
-.ref-header-tools > .secondary-tool:nth-of-type(2) {
-  color: #64748b;
+.ref-header-tools > .secondary-tool {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-header-tools > .secondary-tool:nth-of-type(2):hover {
   color: #0284c7;
@@ -866,6 +908,7 @@ select:has(~ svg),
   margin: 0 -16px;
   padding: 4px 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: padding 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
 }
 .ref-module-menu {
   display: none !important;
@@ -887,23 +930,32 @@ select:has(~ svg),
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  padding: 5px 12px;
+  padding: 6px 12px;
   margin: 0;
   color: #334155;
   border-bottom: 2.5px solid transparent;
-  transition: all 0.15s ease;
   text-decoration: none;
   line-height: 18px;
+  position: relative;
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-bottom-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.15s ease;
+  border-radius: 4px 4px 0 0;
 }
 .ref-module-bar > nav > a:hover {
   background: #f0f9ff;
   color: #0284c7;
+  transform: translateY(-0.5px);
 }
 .ref-module-bar > nav > a.active {
   background: transparent;
   border-bottom-color: #0284c7;
   color: #0284c7;
   font-weight: 600;
+}
+.ref-module-bar > nav > a:active {
+  transform: scale(0.98);
 }
 .ref-module-bar small {
   background: #e88137;
@@ -912,12 +964,14 @@ select:has(~ svg),
   border-radius: 2px;
   padding: 0 2px;
   margin-left: 6px;
+  transition: transform 0.18s ease;
 }
 .ref-tab-tools {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 .ref-tip {
   display: none !important;
@@ -2668,12 +2722,40 @@ select:has(~ svg),
     height: 245px;
   }
 }
+/* Smooth, progressive responsiveness across all zoom levels and viewports */
+@media (max-width: 1580px) {
+  .ref-header {
+    gap: 6px;
+    padding: 0 10px;
+  }
+  .ref-header-tools {
+    gap: 5px;
+  }
+  .ref-header-tools .secondary-tool:nth-of-type(2) {
+    display: none;
+  }
+}
+@media (max-width: 1420px) {
+  .ref-header-tools .secondary-tool {
+    display: none;
+  }
+  .ref-cluster-item-branch {
+    max-width: 95px;
+  }
+}
 @media (max-width: 1280px) {
   .ref-header-tools {
     gap: 4px;
   }
-  .ref-company {
-    max-width: 245px;
+  .ref-cluster-company-label {
+    max-width: 140px;
+  }
+  .ref-cluster-item-branch,
+  .ref-cluster-divider-branch {
+    display: none;
+  }
+  .ref-user-name {
+    max-width: 80px;
   }
   .ref-header-tools .secondary-tool {
     display: none;
@@ -2694,19 +2776,35 @@ select:has(~ svg),
     gap: 8px;
   }
   .ref-module-bar > nav > a {
-    padding-left: 11px;
-    padding-right: 11px;
-    font-size: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 11.5px;
+  }
+}
+@media (max-width: 1120px) {
+  .ref-user-name {
+    display: none;
+  }
+  .ref-user-badge-btn {
+    padding: 0 6px 0 4px;
+    gap: 4px;
+  }
+  .ref-brand-sub {
+    display: none;
+  }
+  .ref-global-search input {
+    width: 95px;
   }
 }
 @media (max-width: 1050px) {
-  .ref-company {
-    max-width: 220px;
+  .ref-cluster-company-label {
+    max-width: 120px;
   }
   .ref-global-search {
     display: none;
   }
-  .ref-dataset {
+  .ref-cluster-item-dataset,
+  .ref-cluster-divider-dataset {
     display: none;
   }
   .ref-process-wrapper {
@@ -3509,6 +3607,7 @@ select:has(~ svg),
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: 2px;
 }
 
 .ref-user-badge-btn {
@@ -3522,13 +3621,17 @@ select:has(~ svg),
   background: #ffffff;
   color: #0f172a;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
 }
 .ref-user-badge-btn:hover {
   background: #f0f9ff;
   border-color: #7dd3fc;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.15);
+  transform: translateY(-1px);
+}
+.ref-user-badge-btn:active {
+  transform: translateY(0);
 }
 
 .ref-user-avatar {
@@ -3543,16 +3646,21 @@ select:has(~ svg),
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+  transition: transform 0.2s ease;
+}
+.ref-user-badge-btn:hover .ref-user-avatar {
+  transform: scale(1.08);
 }
 
 .ref-user-name {
   font-size: 12.5px;
   font-weight: 600;
   color: #1e293b;
-  max-width: 120px;
+  max-width: clamp(55px, 8vw, 115px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: max-width 0.2s ease, opacity 0.2s ease;
 }
 
 .ref-login-header-btn {
