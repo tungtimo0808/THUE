@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveItem, saveProductionOrder, toApiDate } from "./misa-api-writes";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
@@ -3502,10 +3503,10 @@ export default function MisaInventoryWorkspace({
                   </h2>
 
                   {/* Dropdown: Loại nhập kho */}
-                  <select
+                  <MisaDropdownSelect
                     value={receiptType}
-                    onChange={(e) => {
-                      const newType = e.target.value as typeof receiptType;
+                    onChange={(val) => {
+                      const newType = val as typeof receiptType;
                       setReceiptType(newType);
                       if (newType === "1. Thành phẩm sản xuất") {
                         setReceiptReason("Nhập kho thành phẩm sản xuất");
@@ -3518,23 +3519,24 @@ export default function MisaInventoryWorkspace({
                         setReceiptRows((prev) => prev.map((r) => ({ ...r, debitAcc: "155", creditAcc: "" })));
                       }
                     }}
-                    style={{
+                    title="LOẠI NHẬP KHO"
+                    options={[
+                      { value: "1. Thành phẩm sản xuất", label: "1. Thành phẩm sản xuất" },
+                      { value: "2. Hàng bán bị trả lại", label: "2. Hàng bán bị trả lại" },
+                      { value: "3. Khác (NVL thừa, HH thuê gia công, ...)", label: "3. Khác (NVL thừa, HH thuê gia công, ...)" },
+                    ]}
+                    buttonStyle={{
                       height: 28,
-                      padding: "0 8px",
+                      padding: "0 10px",
                       border: "1px solid #00a862",
                       borderRadius: 4,
-                      background: "#ffffff",
                       fontSize: 12.5,
                       fontWeight: 600,
                       color: "#0f172a",
-                      outline: "none",
-                      cursor: "pointer",
                     }}
-                  >
-                    <option value="1. Thành phẩm sản xuất">1. Thành phẩm sản xuất</option>
-                    <option value="2. Hàng bán bị trả lại">2. Hàng bán bị trả lại</option>
-                    <option value="3. Khác (NVL thừa, HH thuê gia công, ...)">3. Khác (NVL thừa, HH thuê gia công, ...)</option>
-                  </select>
+                    minWidth={290}
+                    ariaLabel="Loại nhập kho"
+                  />
 
                   {/* Search box for reference */}
                   <div style={{ position: "relative", width: 280, display: "flex", alignItems: "center" }}>
@@ -4444,10 +4446,10 @@ export default function MisaInventoryWorkspace({
                   </h2>
 
                   {/* Dropdown: Loại xuất kho */}
-                  <select
+                  <MisaDropdownSelect
                     value={issueType}
-                    onChange={(e) => {
-                      const newType = e.target.value as typeof issueType;
+                    onChange={(val) => {
+                      const newType = val as typeof issueType;
                       setIssueType(newType);
                       if (newType === "1. Bán hàng") {
                         setIssueReason("Xuất kho bán hàng");
@@ -4460,23 +4462,24 @@ export default function MisaInventoryWorkspace({
                         setIssueRows((prev) => prev.map((r) => ({ ...r, debitAcc: "", creditAcc: "" })));
                       }
                     }}
-                    style={{
+                    title="LOẠI XUẤT KHO"
+                    options={[
+                      { value: "1. Bán hàng", label: "1. Bán hàng" },
+                      { value: "2. Sản xuất", label: "2. Sản xuất" },
+                      { value: "3. Khác (Xuất sử dụng, góp vốn, ...)", label: "3. Khác (Xuất sử dụng, góp vốn, ...)" },
+                    ]}
+                    buttonStyle={{
                       height: 28,
-                      padding: "0 8px",
+                      padding: "0 10px",
                       border: "1px solid #00a862",
                       borderRadius: 4,
-                      background: "#ffffff",
                       fontSize: 12.5,
                       fontWeight: 600,
                       color: "#0f172a",
-                      outline: "none",
-                      cursor: "pointer",
                     }}
-                  >
-                    <option value="1. Bán hàng">1. Bán hàng</option>
-                    <option value="2. Sản xuất">2. Sản xuất</option>
-                    <option value="3. Khác (Xuất sử dụng, góp vốn, ...)">3. Khác (Xuất sử dụng, góp vốn, ...)</option>
-                  </select>
+                    minWidth={280}
+                    ariaLabel="Loại xuất kho"
+                  />
 
                   {/* Search box for reference */}
                   <div style={{ position: "relative", width: 280, display: "flex", alignItems: "center" }}>

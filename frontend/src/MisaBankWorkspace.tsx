@@ -1,4 +1,5 @@
 import {CASH_PERIODS} from "./cash-report-periods";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import CashColumnDialog from "./CashColumnDialog";
 import {defaultBankColumns,readBankColumns} from "./bank-columns";
 import {parseReportDate} from "./report-date";
@@ -1109,51 +1110,43 @@ export default function MisaBankWorkspace({
             </div>
 
             {/* Loại chứng từ dropdown */}
-            <select
+            <MisaDropdownSelect
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              style={{
-                height: 32,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                fontSize: 13,
-                background: "#ffffff",
-                color: "#334155",
-                cursor: "pointer",
-              }}
-              aria-label="Lọc theo trạng thái"
-            >
-              <option value="all">Loại phiếu: Tất cả</option>
-              <option value="receipt">Loại phiếu: Thu tiền</option>
-              <option value="payment">Loại phiếu: Chi tiền (UNC)</option>
-              <option value="transfer">Loại phiếu: Chuyển tiền nội bộ</option>
-            </select>
+              onChange={(val) => setFilterType(val)}
+              title="LOẠI PHIẾU"
+              options={[
+                { value: "all", label: "Loại phiếu: Tất cả" },
+                { value: "receipt", label: "Loại phiếu: Thu tiền" },
+                { value: "payment", label: "Loại phiếu: Chi tiền (UNC)" },
+                { value: "transfer", label: "Loại phiếu: Chuyển tiền nội bộ" },
+              ]}
+              ariaLabel="Lọc theo loại phiếu"
+            />
 
             {/* Period select: Đầu năm tới hiện tại */}
-            <select
+            <MisaDropdownSelect
               value={filterPeriod}
-              onChange={e=>setFilterPeriod(e.target.value)}
-              aria-label="Kỳ thu chi tiền gửi"
-              style={{
-                height: 32,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#334155",
-                background: "#ffffff",
-                cursor: "pointer",
-                boxSizing: "border-box",
-              }}
-            >
-              <option value="ytd">Kỳ: Đầu năm tới hiện tại</option>
-              <option value="month">Kỳ: Tháng này</option>
-              <option value="quarter">Kỳ: Quý này</option>
-              <option value="year">Kỳ: Năm nay</option>
-            <option value="custom">Kỳ: Tùy chọn</option>
-              {CASH_PERIODS.filter(period=>!["Đầu năm đến hiện tại","Tháng này","Quý này","Năm nay","Tùy chọn"].includes(period)).map(period=><option key={period} value={period}>Kỳ: {period}</option>)}</select>
+              onChange={(val) => setFilterPeriod(val)}
+              title="KỲ THỜI GIAN"
+              options={[
+                { value: "ytd", label: "Kỳ: Đầu năm tới hiện tại" },
+                { value: "month", label: "Kỳ: Tháng này" },
+                { value: "quarter", label: "Kỳ: Quý này" },
+                { value: "year", label: "Kỳ: Năm nay" },
+                { value: "custom", label: "Kỳ: Tùy chọn" },
+                ...CASH_PERIODS.filter(
+                  (period) =>
+                    ![
+                      "Đầu năm đến hiện tại",
+                      "Tháng này",
+                      "Quý này",
+                      "Năm nay",
+                      "Tùy chọn",
+                    ].includes(period)
+                ).map((period) => ({ value: period, label: `Kỳ: ${period}` })),
+              ]}
+              ariaLabel="Kỳ thu chi tiền gửi"
+            />
 
             {/* Icon buttons group */}
             <button
@@ -1852,11 +1845,24 @@ export default function MisaBankWorkspace({
             Tổng số: <strong>{filteredTransactions.length}</strong>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span>Số dòng/trang</span>
-            <select aria-label="Số dòng trang danh sách tiền gửi" value={bankPageSize} onChange={event=>{setBankPageSize(Number(event.target.value));setBankPage(1);}} style={{ height: 26, borderRadius: 4, border: "1px solid #d1d5db", fontSize: 12 }}>
-              <option value="20">20</option>
-              <option value="50">50</option><option value="100">100</option>
-            </select>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span>Số dòng/trang</span>
+              <MisaDropdownSelect
+                value={bankPageSize}
+                onChange={(val) => {
+                  setBankPageSize(Number(val));
+                  setBankPage(1);
+                }}
+                options={[
+                  { value: 20, label: "20" },
+                  { value: 50, label: "50" },
+                  { value: 100, label: "100" },
+                ]}
+                minWidth={90}
+                buttonStyle={{ height: 26, padding: "0 8px", fontSize: 12 }}
+                ariaLabel="Số dòng/trang"
+              />
+            </div>
             <div style={{ display: "flex", gap: 4 }}>
               <button aria-label="Trang đầu tiền gửi" disabled={bankVisiblePage===1} onClick={()=>setBankPage(1)}>|&lt;</button><button aria-label="Trang trước tiền gửi" disabled={bankVisiblePage===1} onClick={()=>setBankPage(bankVisiblePage-1)}>&lt;</button><span>{bankVisiblePage}/{bankPages}</span><button aria-label="Trang sau tiền gửi" disabled={bankVisiblePage===bankPages} onClick={()=>setBankPage(bankVisiblePage+1)}>&gt;</button><button aria-label="Trang cuối tiền gửi" disabled={bankVisiblePage===bankPages} onClick={()=>setBankPage(bankPages)}>&gt;|</button>
             </div>

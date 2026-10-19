@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import {
   Search,
   Plus,
@@ -7141,31 +7142,19 @@ export default function MisaToolsWorkspace({
                     <span>Thêm chứng từ</span>
                   </button>
 
-                  <div style={{ position: "relative" }}>
-                    <select
-                      value={allocationFilterPeriod}
-                      onChange={(e) => setAllocationFilterPeriod(e.target.value)}
-                      style={{
-                        height: 32,
-                        padding: "0 28px 0 10px",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 4,
-                        fontSize: 12.5,
-                        background: "#ffffff",
-                        color: "#1e293b",
-                        outline: "none",
-                        cursor: "pointer",
-                        appearance: "none",
-                      }}
-                    >
-                      <option value="Năm 2026">Năm 2026</option>
-                      <option value="Tháng 9/2026">Tháng 9/2026</option>
-                      <option value="Tháng 8/2026">Tháng 8/2026</option>
-                      <option value="Tháng 7/2026">Tháng 7/2026</option>
-                      <option value="Tất cả">Tất cả thời gian</option>
-                    </select>
-                    <ChevronDown size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
-                  </div>
+                  <MisaDropdownSelect
+                    value={allocationFilterPeriod}
+                    onChange={(val) => setAllocationFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Tháng 9/2026", label: "Tháng 9/2026" },
+                      { value: "Tháng 8/2026", label: "Tháng 8/2026" },
+                      { value: "Tháng 7/2026", label: "Tháng 7/2026" },
+                      { value: "Tất cả", label: "Tất cả thời gian" },
+                    ]}
+                    ariaLabel="Kỳ thời gian"
+                  />
 
                   <div style={{ position: "relative", width: 260 }}>
                     <input
@@ -7548,30 +7537,27 @@ export default function MisaToolsWorkspace({
                     <span>Thêm chứng từ</span>
                   </button>
 
-                  <div style={{ position: "relative" }}>
-                    <select
-                      value={adjustmentFilterPeriod}
-                      onChange={(e) => setAdjustmentFilterPeriod(e.target.value)}
-                      style={{
-                        height: 32,
-                        padding: "0 28px 0 10px",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 4,
-                        fontSize: 12.5,
-                        background: "#ffffff",
-                        color: "#1e293b",
-                        outline: "none",
-                        cursor: "pointer",
-                        appearance: "none",
-                      }}
-                    >
-                      <option value="Năm 2026">Năm 2026</option>
-                      <option value="Tháng 9/2026">Tháng 9/2026</option>
-                      <option value="Tháng 8/2026">Tháng 8/2026</option>
-                      <option value="Tất cả">Tất cả thời gian</option>
-                    </select>
-                    <ChevronDown size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
-                  </div>
+                  <MisaDropdownSelect
+                    value={adjustmentFilterPeriod}
+                    onChange={(val) => setAdjustmentFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Tháng 9/2026", label: "Tháng 9/2026" },
+                      { value: "Tháng 8/2026", label: "Tháng 8/2026" },
+                      { value: "Tất cả", label: "Tất cả thời gian" },
+                    ]}
+                    buttonStyle={{
+                      height: 32,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={170}
+                    ariaLabel="Kỳ thời gian"
+                  />
 
                   <div style={{ position: "relative", width: 260 }}>
                     <input
@@ -7974,30 +7960,27 @@ export default function MisaToolsWorkspace({
                     <span>Thêm chứng từ</span>
                   </button>
 
-                  <div style={{ position: "relative" }}>
-                    <select
-                      value={transferFilterPeriod}
-                      onChange={(e) => setTransferFilterPeriod(e.target.value)}
-                      style={{
-                        height: 32,
-                        padding: "0 28px 0 10px",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 4,
-                        fontSize: 12.5,
-                        background: "#ffffff",
-                        color: "#1e293b",
-                        outline: "none",
-                        cursor: "pointer",
-                        appearance: "none",
-                      }}
-                    >
-                      <option value="Năm 2026">Năm 2026</option>
-                      <option value="Tháng 9/2026">Tháng 9/2026</option>
-                      <option value="Tháng 8/2026">Tháng 8/2026</option>
-                      <option value="Tất cả">Tất cả thời gian</option>
-                    </select>
-                    <ChevronDown size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
-                  </div>
+                  <MisaDropdownSelect
+                    value={transferFilterPeriod}
+                    onChange={(val) => setTransferFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Tháng 9/2026", label: "Tháng 9/2026" },
+                      { value: "Tháng 8/2026", label: "Tháng 8/2026" },
+                      { value: "Tất cả", label: "Tất cả thời gian" },
+                    ]}
+                    buttonStyle={{
+                      height: 32,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={170}
+                    ariaLabel="Kỳ thời gian"
+                  />
 
                   <div style={{ position: "relative", width: 280 }}>
                     <input
@@ -8400,30 +8383,27 @@ export default function MisaToolsWorkspace({
                     <span>Thêm chứng từ</span>
                   </button>
 
-                  <div style={{ position: "relative" }}>
-                    <select
-                      value={decreaseFilterPeriod}
-                      onChange={(e) => setDecreaseFilterPeriod(e.target.value)}
-                      style={{
-                        height: 32,
-                        padding: "0 28px 0 10px",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 4,
-                        fontSize: 12.5,
-                        background: "#ffffff",
-                        color: "#1e293b",
-                        outline: "none",
-                        cursor: "pointer",
-                        appearance: "none",
-                      }}
-                    >
-                      <option value="Năm 2026">Năm 2026</option>
-                      <option value="Tháng 9/2026">Tháng 9/2026</option>
-                      <option value="Tháng 8/2026">Tháng 8/2026</option>
-                      <option value="Tất cả">Tất cả thời gian</option>
-                    </select>
-                    <ChevronDown size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
-                  </div>
+                  <MisaDropdownSelect
+                    value={decreaseFilterPeriod}
+                    onChange={(val) => setDecreaseFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Tháng 9/2026", label: "Tháng 9/2026" },
+                      { value: "Tháng 8/2026", label: "Tháng 8/2026" },
+                      { value: "Tất cả", label: "Tất cả thời gian" },
+                    ]}
+                    buttonStyle={{
+                      height: 32,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={170}
+                    ariaLabel="Kỳ thời gian"
+                  />
 
                   <div style={{ position: "relative", width: 280 }}>
                     <input
@@ -8804,30 +8784,27 @@ export default function MisaToolsWorkspace({
                     <span>Thêm biên bản</span>
                   </button>
 
-                  <div style={{ position: "relative" }}>
-                    <select
-                      value={stocktakeFilterPeriod}
-                      onChange={(e) => setStocktakeFilterPeriod(e.target.value)}
-                      style={{
-                        height: 32,
-                        padding: "0 28px 0 10px",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 4,
-                        fontSize: 12.5,
-                        background: "#ffffff",
-                        color: "#1e293b",
-                        outline: "none",
-                        cursor: "pointer",
-                        appearance: "none",
-                      }}
-                    >
-                      <option value="Năm 2026">Năm 2026</option>
-                      <option value="Quý 3/2026">Quý 3/2026</option>
-                      <option value="Quý 2/2026">Quý 2/2026</option>
-                      <option value="Tất cả">Tất cả thời gian</option>
-                    </select>
-                    <ChevronDown size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
-                  </div>
+                  <MisaDropdownSelect
+                    value={stocktakeFilterPeriod}
+                    onChange={(val) => setStocktakeFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Quý 3/2026", label: "Quý 3/2026" },
+                      { value: "Quý 2/2026", label: "Quý 2/2026" },
+                      { value: "Tất cả", label: "Tất cả thời gian" },
+                    ]}
+                    buttonStyle={{
+                      height: 32,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={170}
+                    ariaLabel="Kỳ thời gian"
+                  />
 
                   <div style={{ position: "relative", width: 280 }}>
                     <input
@@ -9404,16 +9381,27 @@ export default function MisaToolsWorkspace({
                     />
                   </div>
 
-                  <select
+                  <MisaDropdownSelect
                     value={prepaidFilterPeriod}
-                    onChange={(e) => setPrepaidFilterPeriod(e.target.value)}
-                    style={{ height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 10px", fontSize: 12.5, background: "#ffffff" }}
-                  >
-                    <option value="Năm 2026">Năm 2026</option>
-                    <option value="Quý 3/2026">Quý 3/2026</option>
-                    <option value="Tháng 09/2026">Tháng 09/2026</option>
-                    <option value="Tất cả">Tất cả các năm</option>
-                  </select>
+                    onChange={(val) => setPrepaidFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Quý 3/2026", label: "Quý 3/2026" },
+                      { value: "Tháng 09/2026", label: "Tháng 09/2026" },
+                      { value: "Tất cả", label: "Tất cả các năm" },
+                    ]}
+                    buttonStyle={{
+                      height: 30,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={170}
+                    ariaLabel="Kỳ thời gian"
+                  />
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -9615,15 +9603,26 @@ export default function MisaToolsWorkspace({
                     />
                   </div>
 
-                  <select
+                  <MisaDropdownSelect
                     value={prepaidAllocFilterPeriod}
-                    onChange={(e) => setPrepaidAllocFilterPeriod(e.target.value)}
-                    style={{ height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 10px", fontSize: 12.5, background: "#ffffff" }}
-                  >
-                    <option value="Năm 2026">Năm 2026</option>
-                    <option value="Quý 1/2026">Quý 1/2026</option>
-                    <option value="Tất cả">Tất cả</option>
-                  </select>
+                    onChange={(val) => setPrepaidAllocFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Quý 1/2026", label: "Quý 1/2026" },
+                      { value: "Tất cả", label: "Tất cả" },
+                    ]}
+                    buttonStyle={{
+                      height: 30,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={150}
+                    ariaLabel="Kỳ thời gian"
+                  />
                 </div>
 
                 <button
@@ -9834,15 +9833,26 @@ export default function MisaToolsWorkspace({
                     />
                   </div>
 
-                  <select
+                  <MisaDropdownSelect
                     value={prepaidDecreaseFilterPeriod}
-                    onChange={(e) => setPrepaidDecreaseFilterPeriod(e.target.value)}
-                    style={{ height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 10px", fontSize: 12.5, background: "#ffffff" }}
-                  >
-                    <option value="Năm 2026">Năm 2026</option>
-                    <option value="Quý 3/2026">Quý 3/2026</option>
-                    <option value="Tất cả">Tất cả</option>
-                  </select>
+                    onChange={(val) => setPrepaidDecreaseFilterPeriod(val)}
+                    title="KỲ THỜI GIAN"
+                    options={[
+                      { value: "Năm 2026", label: "Năm 2026" },
+                      { value: "Quý 3/2026", label: "Quý 3/2026" },
+                      { value: "Tất cả", label: "Tất cả" },
+                    ]}
+                    buttonStyle={{
+                      height: 30,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 12.5,
+                      color: "#1e293b",
+                    }}
+                    minWidth={150}
+                    ariaLabel="Kỳ thời gian"
+                  />
                 </div>
 
                 <button

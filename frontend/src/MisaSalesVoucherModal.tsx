@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 
 export interface SaleVoucherItem {
   id: string;
@@ -609,29 +610,28 @@ export function SaleVoucherModal({
 
             {/* Sale Type Select Dropdown (1, 2, 3, 4) - only for regular sale */}
             {!isService && (
-              <div style={{ position: "relative" }}>
-                <select
-                  value={saleType}
-                  onChange={(e) => handleChangeSaleType(Number(e.target.value))}
-                  style={{
-                    height: 28,
-                    padding: "0 26px 0 10px",
-                    borderRadius: 4,
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: "#1e293b",
-                    cursor: "pointer",
-                    outline: "none",
-                  }}
-                >
-                  <option value={1}>1. Bán hàng hóa trong nước</option>
-                  <option value={2}>2. Bán hàng xuất khẩu</option>
-                  <option value={3}>3. Bán hàng đại lý bán đúng giá</option>
-                  <option value={4}>4. Bán hàng ủy thác xuất khẩu</option>
-                </select>
-              </div>
+              <MisaDropdownSelect
+                value={saleType}
+                onChange={(val) => handleChangeSaleType(Number(val))}
+                title="LOẠI BÁN HÀNG"
+                options={[
+                  { value: 1, label: "1. Bán hàng hóa trong nước" },
+                  { value: 2, label: "2. Bán hàng xuất khẩu" },
+                  { value: 3, label: "3. Bán hàng đại lý bán đúng giá" },
+                  { value: 4, label: "4. Bán hàng ủy thác xuất khẩu" },
+                ]}
+                buttonStyle={{
+                  height: 28,
+                  padding: "0 10px",
+                  borderRadius: 4,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#1e293b",
+                }}
+                minWidth={260}
+                ariaLabel="Loại bán hàng"
+              />
             )}
 
             {/* Gear + Quick lookup input */}

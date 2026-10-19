@@ -1,4 +1,5 @@
 import LedgerAccountField from "./LedgerAccountField";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import VoucherDateField from "./VoucherDateField";
 import {SupplierModal} from "./MisaPurchaseModals";
 import MisaDirectoryWorkspace from "./MisaDirectoryWorkspace";
@@ -3219,167 +3220,51 @@ export function CreateVoucherModal({
             </h2>
 
             {/* Type selector pill button */}
-            <div style={{ position: "relative" }}>
-              <button
-                type="button"
-                className="misa-voucher-type-pill"
-                style={{
-                  border: showTypeDropdown ? "1px solid #00b06b" : "1px solid #cbd5e1",
-                  borderRadius: 4,
-                  padding: "4px 10px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: "#ffffff",
-                  cursor: "pointer",
-                }}
-                onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              >
-                <span style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>
-                  {currentType.label}
-                </span>
-                <Plus size={14} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
-                {showTypeDropdown ? (
-                  <ChevronUp size={14} style={{ color: "#111827" }} />
-                ) : (
-                  <ChevronDown size={14} style={{ color: "#64748b" }} />
-                )}
-              </button>
+            <MisaDropdownSelect
+              value={selectedTypeIndex}
+              onChange={(val) => handleSelectType(Number(val))}
+              title="LOẠI CHỨNG TỪ"
+              options={voucherTypes.map((t, idx) => ({
+                value: idx,
+                label: t.label,
+              }))}
+              buttonStyle={{
+                height: 28,
+                padding: "0 10px",
+                border: "1px solid #00b06b",
+                borderRadius: 4,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#1e293b",
+              }}
+              minWidth={320}
+              ariaLabel="Loại chứng từ"
+            />
 
-              {/* Type Dropdown Popover */}
-              {showTypeDropdown && (
-                <div
-                  className="misa-voucher-type-menu"
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 4px)",
-                    left: 0,
-                    minWidth: 340,
-                    maxHeight: 280,
-                    overflowY: "auto",
-                    width: "max-content",
-                    background: "#ffffff",
-                    borderRadius: 6,
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                    border: "1px solid #e2e8f0",
-                    padding: "4px 0",
-                    zIndex: 100,
-                  }}
-                >
-                  {voucherTypes.map((t, idx) => {
-                    const isActive = idx === selectedTypeIndex;
-                    return (
-                      <div
-                        key={t.id}
-                        className={`misa-voucher-type-item ${isActive ? "active" : ""}`}
-                        style={{
-                          padding: "9px 16px",
-                          fontSize: 13,
-                          cursor: "pointer",
-                          background: isActive ? "#00b06b" : "transparent",
-                          color: isActive ? "#ffffff" : "#1e293b",
-                          fontWeight: isActive ? 600 : 400,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = "#dbece2";
-                            e.currentTarget.style.color = "#047857";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = "transparent";
-                            e.currentTarget.style.color = "#1e293b";
-                          }
-                        }}
-                        onClick={() => handleSelectType(idx)}
-                      >
-                        <span>{t.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Payment Method Selector Dropdown for Bank Payment (Matching all 5 screenshots) */}
+            {/* Payment Method Selector Dropdown for Bank Payment (Matching taskbar style) */}
             {isBank && !isReceipt && (
-              <div style={{ position: "relative" }}>
-                <button
-                  type="button"
-                  className="misa-voucher-type-pill"
-                  style={{
-                    border: showPaymentMethodDropdown ? "1px solid #00b06b" : "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    padding: "4px 10px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    background: "#ffffff",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setShowPaymentMethodDropdown(!showPaymentMethodDropdown)}
-                >
-                  <span style={{ fontWeight: 500, color: "#1e293b", fontSize: 13 }}>
-                    {paymentMethod}
-                  </span>
-                  <ChevronDown size={14} style={{ color: "#64748b" }} />
-                </button>
-
-                {showPaymentMethodDropdown && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "calc(100% + 4px)",
-                      left: 0,
-                      minWidth: 180,
-                      background: "#ffffff",
-                      borderRadius: 6,
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                      border: "1px solid #e2e8f0",
-                      padding: "4px 0",
-                      zIndex: 100,
-                    }}
-                  >
-                    {[
-                      "Ủy nhiệm chi",
-                      "Séc chuyển khoản",
-                      "Séc tiền mặt",
-                      "Bảng kê nộp thuế",
-                    ].map((method) => {
-                      const isActive = method === paymentMethod;
-                      return (
-                        <div
-                          key={method}
-                          style={{
-                            padding: "8px 14px",
-                            fontSize: 13,
-                            cursor: "pointer",
-                            background: isActive ? "#00b06b" : "transparent",
-                            color: isActive ? "#ffffff" : "#1e293b",
-                            fontWeight: isActive ? 600 : 400,
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isActive) e.currentTarget.style.background = "#f1f5f9";
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActive) e.currentTarget.style.background = "transparent";
-                          }}
-                          onClick={() => {
-                            setPaymentMethod(method);
-                            setShowPaymentMethodDropdown(false);
-                          }}
-                        >
-                          {method}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <MisaDropdownSelect
+                value={paymentMethod}
+                onChange={(val) => setPaymentMethod(val)}
+                title="PHƯƠNG THỨC THANH TOÁN"
+                options={[
+                  { value: "Ủy nhiệm chi", label: "Ủy nhiệm chi" },
+                  { value: "Séc chuyển khoản", label: "Séc chuyển khoản" },
+                  { value: "Séc tiền mặt", label: "Séc tiền mặt" },
+                  { value: "Bảng kê nộp thuế", label: "Bảng kê nộp thuế" },
+                ]}
+                buttonStyle={{
+                  height: 28,
+                  padding: "0 10px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#1e293b",
+                }}
+                minWidth={200}
+                ariaLabel="Phương thức thanh toán"
+              />
             )}
           </div>
 
@@ -7970,50 +7855,42 @@ export default function MisaCashWorkspace({
             </div>
 
             {/* Loại phiếu dropdown */}
-            <select
+            <MisaDropdownSelect
               value={voucherTypeFilter}
-              onChange={(e) => setVoucherTypeFilter(e.target.value)}
-              style={{
-                height: 32,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                fontSize: 13,
-                background: "#ffffff",
-                color: "#334155",
-                cursor: "pointer",
-              }}
-            >
-              <option value="all">Loại phiếu: Tất cả</option>
-              <option value="receipt">Loại phiếu: Thu tiền</option>
-              <option value="payment">Loại phiếu: Chi tiền</option>
-            </select>
+              onChange={(val) => setVoucherTypeFilter(val)}
+              title="LOẠI PHIẾU"
+              options={[
+                { value: "all", label: "Loại phiếu: Tất cả" },
+                { value: "receipt", label: "Loại phiếu: Thu tiền" },
+                { value: "payment", label: "Loại phiếu: Chi tiền" },
+              ]}
+              ariaLabel="Lọc theo loại phiếu"
+            />
 
             {/* Period select: Đầu năm tới hiện tại */}
-            <select
+            <MisaDropdownSelect
               value={filterPeriod}
-              aria-label="Kỳ thu chi tiền mặt"
-              onChange={(e) => setFilterPeriod(e.target.value)}
-              style={{
-                height: 32,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#334155",
-                background: "#ffffff",
-                cursor: "pointer",
-                boxSizing: "border-box",
-              }}
-            >
-              <option value="ytd">Kỳ: Đầu năm tới hiện tại</option>
-              <option value="month">Kỳ: Tháng này</option>
-              <option value="quarter">Kỳ: Quý này</option>
-              <option value="year">Kỳ: Năm nay</option>
-              <option value="custom">Kỳ: Tùy chọn</option>
-              {CASH_PERIODS.filter(period=>!["Đầu năm đến hiện tại","Tháng này","Quý này","Năm nay","Tùy chọn"].includes(period)).map(period=><option key={period} value={period}>Kỳ: {period}</option>)}
-            </select>
+              onChange={(val) => setFilterPeriod(val)}
+              title="KỲ THỜI GIAN"
+              options={[
+                { value: "ytd", label: "Kỳ: Đầu năm tới hiện tại" },
+                { value: "month", label: "Kỳ: Tháng này" },
+                { value: "quarter", label: "Kỳ: Quý này" },
+                { value: "year", label: "Kỳ: Năm nay" },
+                { value: "custom", label: "Kỳ: Tùy chọn" },
+                ...CASH_PERIODS.filter(
+                  (period) =>
+                    ![
+                      "Đầu năm đến hiện tại",
+                      "Tháng này",
+                      "Quý này",
+                      "Năm nay",
+                      "Tùy chọn",
+                    ].includes(period)
+                ).map((period) => ({ value: period, label: `Kỳ: ${period}` })),
+              ]}
+              ariaLabel="Kỳ thu chi tiền mặt"
+            />
 
             {/* Icon buttons group */}
             <button
@@ -8706,7 +8583,29 @@ export default function MisaCashWorkspace({
           </table>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',fontSize:13}}>
             <span>Tổng số: <strong>{filteredList.length}</strong>{checkedCashRows.length > 0 && ` · Đã chọn ${checkedCashRows.length}`}</span>
-            <div style={{display:'flex',alignItems:'center',gap:8}}><label>Số dòng/trang <select aria-label="Số dòng/trang thu chi" value={cashPageSize} onChange={event=>{setCashPageSize(Number(event.target.value));setCashPage(1);}}>{[20,50,100].map(size=><option key={size} value={size}>{size}</option>)}</select></label><button aria-label="Trang trước thu chi" disabled={visibleCashPage===1} onClick={()=>setCashPage(visibleCashPage-1)}>‹</button><span>{visibleCashPage}/{cashPageCount}</span><button aria-label="Trang sau thu chi" disabled={visibleCashPage===cashPageCount} onClick={()=>setCashPage(visibleCashPage+1)}>›</button></div>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span>Số dòng/trang:</span>
+                <MisaDropdownSelect
+                  value={cashPageSize}
+                  onChange={(val) => {
+                    setCashPageSize(Number(val));
+                    setCashPage(1);
+                  }}
+                  options={[
+                    { value: 20, label: "20" },
+                    { value: 50, label: "50" },
+                    { value: 100, label: "100" },
+                  ]}
+                  minWidth={90}
+                  buttonStyle={{ height: 26, padding: "0 8px", fontSize: 12 }}
+                  ariaLabel="Số dòng/trang"
+                />
+              </div>
+              <button aria-label="Trang trước thu chi" disabled={visibleCashPage===1} onClick={()=>setCashPage(visibleCashPage-1)}>‹</button>
+              <span>{visibleCashPage}/{cashPageCount}</span>
+              <button aria-label="Trang sau thu chi" disabled={visibleCashPage===cashPageCount} onClick={()=>setCashPage(visibleCashPage+1)}>›</button>
+            </div>
           </div>
         </div>
 
