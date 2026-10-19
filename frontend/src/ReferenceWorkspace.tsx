@@ -754,29 +754,6 @@ function ReferenceWorkspace() {
           >
             <CircleHelp size={18} />
           </button>
-          {apiToken && pendingSetup && (
-            <button
-              className="ref-demo"
-              disabled={completingSetup}
-              title="Tạo năm tài chính, kỳ kế toán, hệ thống tài khoản, thuế suất và kích hoạt doanh nghiệp"
-              onClick={async () => {
-                setCompletingSetup(true);
-                try {
-                  await apiRequest(`/api/v1/common/companies/complete-setup/?company_id=${encodeURIComponent(apiCompanyId)}`, apiToken, {
-                    method: "POST", body: JSON.stringify({ company: apiCompanyId }),
-                  });
-                  await apiRefreshCompanies();
-                  setNotice("Đã hoàn tất thiết lập ban đầu. Doanh nghiệp đã được kích hoạt.");
-                } catch (error) {
-                  setNotice(`Không hoàn tất được thiết lập: ${error instanceof Error ? error.message : String(error)}`);
-                } finally {
-                  setCompletingSetup(false);
-                }
-              }}
-            >
-              {completingSetup ? "Đang thiết lập…" : "Hoàn tất thiết lập"}
-            </button>
-          )}
 
           <div className="ref-header-divider" />
 
