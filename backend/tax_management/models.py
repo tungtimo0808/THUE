@@ -289,6 +289,7 @@ class IntegrationRequest(models.Model):
     connector = models.ForeignKey(ConnectorConfig, on_delete=models.PROTECT, related_name="requests")
     invoice = models.ForeignKey(TaxInvoice, on_delete=models.PROTECT, null=True, blank=True, related_name="integration_requests")
     filing = models.ForeignKey(TaxFiling, on_delete=models.PROTECT, null=True, blank=True, related_name="integration_requests")
+    obligation = models.ForeignKey("TaxObligation", on_delete=models.PROTECT, null=True, blank=True, related_name="integration_requests")
     task_type = models.CharField(max_length=30)
     idempotency_key = models.CharField(max_length=150, unique=True)
     request_payload = models.JSONField(default=dict)

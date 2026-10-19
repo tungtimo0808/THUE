@@ -29,7 +29,7 @@ const DEFAULT_CUSTOMERS = SAMPLE_SALE_CUSTOMERS || [
 
 export interface SpecializedInvoiceModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
 }
 
@@ -203,8 +203,8 @@ export function SaleInvoiceAdjustmentModal({
   const totalVat = 0;
   const grandTotal = totalGoods - totalDiscount + totalVat;
 
-  const handleSave = (publish = false) => {
-    onSubmit({
+  const handleSave = async (publish = false) => {
+    const saved = await onSubmit({
       invoiceType: "Hóa đơn điều chỉnh",
       targetInvoiceSearch,
       isCommercialInvoice,
@@ -232,6 +232,7 @@ export function SaleInvoiceAdjustmentModal({
       items,
       publish,
     });
+    if (saved === false) return;
     onClose();
   };
 

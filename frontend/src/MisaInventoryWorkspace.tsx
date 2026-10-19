@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveItem, toApiDate } from "./misa-api-writes";
+import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveItem, saveProductionOrder, toApiDate } from "./misa-api-writes";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import {
   Search,
@@ -87,6 +87,7 @@ export default function MisaInventoryWorkspace({
     transactions: "/api/v1/inventory/transactions/",
     counts: "/api/v1/inventory/counts/",
     assemblies: "/api/v1/inventory/assemblies/",
+    productionOrders: "/api/v1/inventory/production-orders/",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   const apiStatus = (key: string, id: string, fallback: string) => {
@@ -609,6 +610,12 @@ export default function MisaInventoryWorkspace({
       difference: (row.lines || []).reduce((total: number, line: any) => total + apiNumber(line.variance_quantity), 0),
       status: row.status || "",
     })));
+    if (apiRows.productionOrders) setProductionOrders(apiRows.productionOrders.map((row) => {
+      const product = (row.lines || []).find((line: any) => line.role === "PRODUCT");
+      const labels: Record<string, string> = { PLANNED: "Chưa thực hiện", IN_PROGRESS: "Đang thực hiện", COMPLETED: "Hoàn thành", CANCELLED: "Đã hủy" };
+      return { id: row.id, code: row.number, date: apiDate(row.document_date), productName: product?.item_name || "",
+        qty: apiNumber(product?.quantity), unit: "", dept: row.description || "", status: labels[row.status] || row.status, dueDate: apiDate(row.due_date) };
+    }));
     if (apiRows.assemblies) setAssemblyOrders(apiRows.assemblies.map((row) => ({
       id: row.id, code: row.number || "", date: apiDate(row.assembly_date),
       type: row.operation === "DISASSEMBLE" ? "Tháo dỡ" : "Lắp ráp",
@@ -7375,6 +7382,11 @@ export default function MisaInventoryWorkspace({
                   <button
                     type="button"
                     onClick={() => {
+                      if (apiConnected) {
+                        void apiSave((writer) => saveProductionOrder(writer, { code: prodOrderCode, date: prodOrderDate, status: prodOrderStatus, description: prodOrderDescription, products: prodOrderProductRows, materials: prodOrderMaterialRows }))
+                          .then((saved) => { if (saved) setShowProductionOrderModal(false); });
+                        return;
+                      }
                       const pName = prodOrderProductRows[0]?.productName || "Thành phẩm sản xuất theo lệnh";
                       const pQty = prodOrderProductRows.reduce((sum, r) => sum + (r.qty || 0), 0);
                       const pUnit = prodOrderProductRows[0]?.unit || "Bộ";
@@ -7405,6 +7417,11 @@ export default function MisaInventoryWorkspace({
                     <button
                       type="button"
                       onClick={() => {
+                        if (apiConnected) {
+                          void apiSave((writer) => saveProductionOrder(writer, { code: prodOrderCode, date: prodOrderDate, status: prodOrderStatus, description: prodOrderDescription, products: prodOrderProductRows, materials: prodOrderMaterialRows }))
+                            .then((saved) => { if (saved) setShowProductionOrderModal(false); });
+                          return;
+                        }
                         const pName = prodOrderProductRows[0]?.productName || "Thành phẩm sản xuất theo lệnh";
                         const pQty = prodOrderProductRows.reduce((sum, r) => sum + (r.qty || 0), 0);
                         const pUnit = prodOrderProductRows[0]?.unit || "Bộ";

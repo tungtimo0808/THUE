@@ -1,4 +1,11 @@
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
+import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
+import {
+  acceptCostObjects, acceptCostPeriod, costObjectCatalog, createApiWriter, postSalarySheet, saveCostObjectSettings, saveCostPeriod, saveDepreciation,
+  saveJournalVoucher, savePrepaidAllocation, transferCostPeriod,
+} from "./misa-api-writes";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import {
   Search,
   RotateCw,
@@ -368,11 +375,97 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
 };
 
 export default function MisaCostWorkspace({
+  company = { id: "", name: "" },
   period = "2026",
   tab = "process",
   notify,
 }: MisaCostWorkspaceProps) {
   const arrowMarkerId = useId();
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(company.id, {
+    costPeriods: "/api/v1/costing/periods/",
+    costSettings: "/api/v1/costing/object-settings/",
+  }, notify);
+  /** Editable norm values per cost center, keyed by object code, prefilled from the saved settings. */
+  const [normEdits, setNormEdits] = useState<Record<string, Record<string, string>>>({});
+  const settingOf = (code: string) => (apiRows.costSettings || []).find((row) => row.object_type === "COST_CENTER" && row.object_code === code);
+  const normValue = (code: string, field: string, fallback: unknown) => normEdits[code]?.[field] ?? String(fallback ?? "");
+  const editNorm = (code: string, field: string, value: string) => setNormEdits((prev) => ({ ...prev, [code]: { ...prev[code], [field]: value } }));
+  const saveNorms = (rows: Record<string, unknown>[], close: () => void) => {
+    void apiSave((writer) => saveCostObjectSettings(writer, "COST_CENTER", rows)).then((saved) => { if (saved) { setNormEdits({}); close(); } });
+  };
+  const apiSave = useMisaApiSave(company.id, notify, reloadApi);
+  const { token: apiToken } = useApiSession();
+  const [allocationBasis, setAllocationBasis] = useState<{ labor_basis: string; overhead_basis: string }>({ labor_basis: "AUTO", overhead_basis: "AUTO" });
+  useEffect(() => {
+    if (!apiConnected || !apiToken) return;
+    request<{ labor_basis: string; overhead_basis: string }>(`/api/v1/costing/allocation-settings/?company_id=${encodeURIComponent(company.id)}`, apiToken)
+      .then(setAllocationBasis)
+      .catch((error) => notify(`Không tải được tiêu thức phân bổ: ${error instanceof Error ? error.message : String(error)}`));
+  }, [apiConnected, apiToken, company.id]);
+  const costWriter = () => createApiWriter(company.id, (path, init) => request(path, apiToken, init));
+  const [apiCostCenters, setApiCostCenters] = useState<any[] | null>(null);
+  const [apiProcesses, setApiProcesses] = useState<any[] | null>(null);
+  useEffect(() => {
+    if (!apiConnected || !apiToken) return;
+    costObjectCatalog(costWriter(), "COST_CENTER").then(setApiCostCenters).catch(() => setApiCostCenters([]));
+    costObjectCatalog(costWriter(), "PROCESS").then(setApiProcesses).catch(() => setApiProcesses([]));
+  }, [apiConnected, apiToken, company.id]);
+  /** Fills a picker from a backend catalog, reporting failures instead of falling back to samples. */
+  const loadCatalog = (type: "PROJECT" | "ORDER" | "CONTRACT", apply: (rows: any[]) => void, label: string) => {
+    costObjectCatalog(costWriter(), type).then((rows) => {
+      apply(rows);
+      notify(rows.length ? `Đã lấy ${rows.length} ${label}.` : `Chưa có ${label} nào trên hệ thống.`);
+    }).catch((error) => notify(`Không lấy được ${label}: ${error instanceof Error ? error.message : String(error)}`));
+  };
+  const methodLabels: Record<string, string> = {
+    SIMPLE: "Sản xuất liên tục - Giản đơn", COEFFICIENT: "Sản xuất liên tục - Hệ số, tỷ lệ", STEP: "Sản xuất liên tục - Phân bước",
+    PROJECT: "Công trình", ORDER: "Đơn hàng", CONTRACT: "Hợp đồng",
+  };
+  /** Backend periods of the given methods, shaped like the period tables of this screen. */
+  const apiPeriodRows = (methods: string[]) => (apiRows.costPeriods || []).filter((row) => methods.includes(row.method)).map((row) => {
+    const objects = row.objects || [];
+    const sum = (field: string) => objects.reduce((total: number, item: any) => total + apiNumber(item[field]), 0);
+    const opening = sum("opening_wip"), closing = sum("closing_wip"), finished = sum("total_cost");
+    return {
+      id: row.id, code: row.code, name: row.name, method: methodLabels[row.method] || row.method,
+      fromDate: apiDate(row.start_date), toDate: apiDate(row.end_date),
+      targetObject: objects.map((item: any) => item.object_name).join(", "),
+      openingWip: opening, incurredCost: finished - opening + closing, endingWip: closing, totalFinishedCost: finished,
+      status: row.status === "CALCULATED" ? "in_progress" as const : "completed" as const,
+    };
+  });
+  const costTransfers = (method: string) => (apiRows.costPeriods || [])
+    .filter((row) => row.method === method && row.transfer_number)
+    .map((row, index) => ({
+      stt: index + 1, date: apiDate(row.end_date), code: row.transfer_number,
+      desc: `Kết chuyển chi phí ${row.name}`, dr: "154", cr: "621, 622, 627",
+      amount: Object.values(row.pools || {}).reduce((sum: number, value) => sum + apiNumber(value), 0),
+      object: (row.objects || []).map((item: any) => `${item.object_code} - ${item.object_name}`).join(", "),
+    }));
+  const costAcceptances = (method: string) => (apiRows.costPeriods || [])
+    .filter((row) => row.method === method && row.acceptance_number)
+    .flatMap((row) => (row.objects || []).filter((item: any) => item.accepted).map((item: any) => ({
+      date: apiDate(row.end_date), code: row.acceptance_number,
+      objectCode: item.object_code, objectName: item.object_name,
+      cogs: apiNumber(item.total_cost),
+    })))
+    .map((row, index) => ({ ...row, stt: index + 1 }));
+  const projectSettings = (apiRows.costSettings || []).filter((row) => row.object_type === "PROJECT");
+  const projectNormRows = projectSettings.flatMap((setting) => (setting.material_norms || []).map((norm: any, index: number) => ({
+    stt: index + 1, code: `${setting.object_code}-${index + 1}`, pcode: setting.object_code,
+    pname: setting.object_name, count: (norm.lines || []).length,
+    total: (norm.lines || []).reduce((sum: number, line: any) => sum + apiNumber(line.amount), 0),
+    from: norm.from || "", to: norm.to || "",
+  })));
+  const projectEstimateRows = projectSettings.filter((setting) => (setting.estimate?.rows || []).length).map((setting, index) => {
+    const actual = (apiRows.costPeriods || []).filter((period) => period.method === "PROJECT")
+      .flatMap((period) => period.objects || []).filter((item: any) => item.object_code === setting.object_code)
+      .reduce((sum: number, item: any) => sum + apiNumber(item.total_cost), 0);
+    const planned = (setting.estimate.rows || []).reduce((sum: number, estimate: any) => sum + apiNumber(estimate.estimatedValue), 0);
+    return { stt: index + 1, pcode: setting.object_code, pname: setting.object_name,
+      desc: `${setting.estimate.rows.length} hạng mục`, est: planned, act: actual,
+      diff: actual - planned, pct: planned ? `${(actual / planned * 100).toFixed(1)}%` : "—" };
+  });
   // State for process tab
   const [subtab, setSubtab] = useState<CostMethod>("simple");
   const [guideTab, setGuideTab] = useState<"guide" | "report">("guide");
@@ -509,6 +602,9 @@ export default function MisaCostWorkspace({
 
   // Cost periods for continuous-simple / continuous-coefficient (starts empty to match screenshot 1)
   const [simplePeriods, setSimplePeriods] = useState<CostPeriodRecord[]>([]);
+  useEffect(() => {
+    if (apiConnected && apiRows.costPeriods) setSimplePeriods(apiPeriodRows(["SIMPLE", "COEFFICIENT"]));
+  }, [apiConnected, apiRows]);
 
   // Form state for Modal "Thêm kỳ tính giá thành" (Screenshot 2)
   const [simplePeriodType, setSimplePeriodType] = useState("Tháng này");
@@ -573,6 +669,11 @@ export default function MisaCostWorkspace({
 
   // Helper to fetch cost objects into table
   const handleFetchCostObjects = () => {
+    if (apiConnected) {
+      setSelectedCostObjects((apiCostCenters || []).map((row) => ({ code: row.code, name: row.name, type: row.type })));
+      notify(apiCostCenters?.length ? `Đã lấy ${apiCostCenters.length} đối tượng tập hợp chi phí.` : "Chưa có trung tâm chi phí nào trong Danh mục.");
+      return;
+    }
     setSelectedCostObjects([
       { code: "PX-CK", name: "Phân xưởng Cơ khí", type: "Phân xưởng" },
       { code: "PX-MAY", name: "Phân xưởng May", type: "Phân xưởng" },
@@ -587,6 +688,13 @@ export default function MisaCostWorkspace({
       notify("Vui lòng nhập tên kỳ tính giá thành!");
       return;
     }
+if (apiConnected) {
+  void apiSave((writer) => saveCostPeriod(writer, {
+    method: subtab === "coefficient" ? "COEFFICIENT" : "SIMPLE", name: simplePeriodName, from: simpleFromDate, to: simpleToDate,
+    codes: selectedCostObjects.map((item) => item.code),
+  })).then((saved) => { if (saved) setAddSimplePeriodModalOpen(false); });
+  return;
+}
     const newPeriod: CostPeriodRecord = {
       id: `GT-${Date.now()}`,
       code: `GT-10/2026`,
@@ -616,6 +724,12 @@ export default function MisaCostWorkspace({
       notify("Vui lòng chọn kỳ tính giá thành!");
       return;
     }
+if (apiConnected) {
+  void apiSave((writer) => transferCostPeriod(writer, selectedTransferPeriod)).then((saved) => {
+    if (saved) { setSelectPeriodModalOpen(false); setShowTransferList(true); }
+  });
+  return;
+}
     const newVoucher = {
       id: `KC-${Date.now()}`,
       docDate: simpleToDate,
@@ -809,6 +923,11 @@ export default function MisaCostWorkspace({
   };
 
   const handleSaveEstimate = (andClose: boolean) => {
+    if (apiConnected) {
+      void apiSave((writer) => saveCostObjectSettings(writer, "PROJECT", [{ code: estimateProjectCode.split(" - ")[0], estimate: { ...(apiRows.costSettings || []).find((row) => row.object_type === "PROJECT" && row.object_code === estimateProjectCode.split(" - ")[0])?.estimate, rows: estimateRows } }]))
+        .then((saved) => { if (saved && andClose) { setProjectEstimateModalOpen(false); setShowProjectEstimateList(true); } });
+      return;
+    }
     notify("Đã lưu dự toán chi phí công trình thành công!");
     if (andClose) {
       setProjectEstimateModalOpen(false);
@@ -874,6 +993,12 @@ export default function MisaCostWorkspace({
 
   // Form state for Modal "Chọn đơn hàng" (Screenshot)
   const [acceptanceOrderPeriodCode, setAcceptanceOrderPeriodCode] = useState("");
+  const acceptanceOrderRows = (apiRows.costPeriods || [])
+    .filter((row) => row.method === "ORDER" && row.code === acceptanceOrderPeriodCode && row.status === "TRANSFERRED")
+    .flatMap((row) => (row.objects || []).filter((item: any) => !item.accepted).map((item: any) => ({
+      code: item.object_code, date: apiDate(row.end_date), customer: item.object_name,
+      rev: null, unacc: apiNumber(item.total_cost),
+    })));
   const [acceptanceOrdersFetched, setAcceptanceOrdersFetched] = useState(false);
   const [orderAcceptanceSearchText, setOrderAcceptanceSearchText] = useState("");
   const [selectedOrderCodes, setSelectedOrderCodes] = useState<string[]>([]);
@@ -987,6 +1112,9 @@ export default function MisaCostWorkspace({
 
   // Period list for continuous-step (starts empty to match screenshot 1)
   const [stepPeriods, setStepPeriods] = useState<CostPeriodRecord[]>([]);
+  useEffect(() => {
+    if (apiConnected && apiRows.costPeriods) setStepPeriods(apiPeriodRows(["STEP"]));
+  }, [apiConnected, apiRows]);
 
   // Transfer vouchers for continuous-step
   const [stepTransferPeriodDropdownOpen, setStepTransferPeriodDropdownOpen] = useState(true);
@@ -1039,6 +1167,11 @@ export default function MisaCostWorkspace({
 
   // Helper to fetch sample production processes
   const handleFetchStepProcesses = () => {
+    if (apiConnected) {
+      setSelectedProcesses((apiProcesses || []).map((row) => ({ code: row.code, name: `${row.name} (${row.stagesCount} công đoạn)` })));
+      notify(apiProcesses?.length ? `Đã lấy ${apiProcesses.length} quy trình sản xuất.` : "Chưa có quy trình (trung tâm chi phí cha có công đoạn con) trong Danh mục.");
+      return;
+    }
     setSelectedProcesses([
       { code: "QT-SOI-DET", name: "Quy trình sản xuất Sợi - Dệt - Nhuộm (3 công đoạn)" },
       { code: "QT-CO-KHI", name: "Quy trình gia công Cơ khí chính xác (Cắt phôi -> Phay CNC -> Hoàn thiện)" },
@@ -1052,6 +1185,12 @@ export default function MisaCostWorkspace({
       notify("Vui lòng nhập tên kỳ tính giá thành!");
       return;
     }
+if (apiConnected) {
+  void apiSave((writer) => saveCostPeriod(writer, {
+    method: "STEP", name: stepPeriodName, from: stepFromDate, to: stepToDate, codes: selectedProcesses.map((item) => item.code),
+  })).then((saved) => { if (saved) setAddStepPeriodModalOpen(false); });
+  return;
+}
     const newPeriod: CostPeriodRecord = {
       id: `PB-${Date.now()}`,
       code: `PB-10/2026`,
@@ -1081,6 +1220,12 @@ export default function MisaCostWorkspace({
       notify("Vui lòng chọn kỳ tính giá thành!");
       return;
     }
+if (apiConnected) {
+  void apiSave((writer) => transferCostPeriod(writer, selectedStepTransferPeriod)).then((saved) => {
+    if (saved) { setSelectStepPeriodModalOpen(false); setShowStepTransferList(true); }
+  });
+  return;
+}
     const newVoucher = {
       id: `KC-PB-${Date.now()}`,
       docDate: stepToDate,
@@ -5141,11 +5286,7 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, date: "31/10/2026", code: "PKC-CT-001", desc: "Kết chuyển chi phí SX công trình Sky Tower", dr: "154", cr: "621, 622, 627", amount: 450000000, project: "CT-SKYTOWER - Sky Tower" },
-                            { stt: 2, date: "31/10/2026", code: "PKC-CT-002", desc: "Kết chuyển chi phí SX công trình Vinhomes Ocean", dr: "154", cr: "621, 622, 627", amount: 280000000, project: "CT-VIN-OCEAN - Vinhomes Ocean Park" },
-                            { stt: 3, date: "31/10/2026", code: "PKC-CT-003", desc: "Kết chuyển chi phí SX công trình Cầu Nhật Tân", dr: "154", cr: "621, 622, 627", amount: 120000000, project: "CT-CAU-NHATHAN - Cầu Nhật Tân" },
-                          ].map((row) => (
+                          {costTransfers("PROJECT").map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
@@ -5154,7 +5295,7 @@ export default function MisaCostWorkspace({
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
                               <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
-                              <td>{row.project}</td>
+                              <td>{row.object}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -5292,17 +5433,14 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, date: "28/10/2026", code: "NT-CT-001", pcode: "CT-SKYTOWER", pname: "Tòa nhà Sky Tower Discovery Complex", rev: 1250000000, cogs: 850000000 },
-                            { stt: 2, date: "15/10/2026", code: "NT-CT-002", pcode: "CT-VIN-OCEAN", pname: "Khu đô thị Vinhomes Ocean Park phân khu 2", rev: 600000000, cogs: 420000000 },
-                          ].map((row) => (
+                          {costAcceptances("PROJECT").map((row) => ({ ...row, pcode: row.objectCode, pname: row.objectName, rev: null })).map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
                               <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.pcode}</td>
                               <td>{row.pname}</td>
-                              <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.rev)}</td>
+                              <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
                               <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
@@ -5455,10 +5593,7 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, code: "ĐM-CT-01", pcode: "CT-SKYTOWER", pname: "Tòa nhà Sky Tower Discovery Complex", count: 8, total: 1850000000, from: "01/10/2026", to: "31/12/2026" },
-                            { stt: 2, code: "ĐM-CT-02", pcode: "CT-VIN-OCEAN", pname: "Khu đô thị Vinhomes Ocean Park phân khu 2", count: 5, total: 920000000, from: "01/10/2026", to: "31/12/2026" },
-                          ].map((row) => (
+                          {projectNormRows.map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
@@ -5655,10 +5790,7 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, pcode: "CT-SKYTOWER", pname: "Tòa nhà Sky Tower Discovery Complex", desc: "Dự toán gói thầu xây thô và hoàn thiện cơ điện", est: 4500000000, act: 3850000000, diff: -650000000, pct: "85.6%" },
-                            { stt: 2, pcode: "CT-VIN-OCEAN", pname: "Khu đô thị Vinhomes Ocean Park phân khu 2", desc: "Dự toán san nền và đường giao thông nội khu", est: 2100000000, act: 1980000000, diff: -120000000, pct: "94.3%" },
-                          ].map((row) => (
+                          {projectEstimateRows.map((row) => (
                             <tr key={row.pcode}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td style={{ fontWeight: 600, color: "#00a862" }}>{row.pcode}</td>
@@ -6132,10 +6264,7 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, date: "31/10/2026", code: "PKC-DH-001", desc: "Kết chuyển chi phí SX theo đơn hàng DH2026-0089", dr: "154", cr: "621, 622, 627", amount: 165000000, order: "DH2026-0089 - Công ty TNHH Á Châu" },
-                            { stt: 2, date: "31/10/2026", code: "PKC-DH-002", desc: "Kết chuyển chi phí SX theo đơn hàng DH2026-0092", dr: "154", cr: "621, 622, 627", amount: 233000000, order: "DH2026-0092 - Tập đoàn Hòa Bình" },
-                          ].map((row) => (
+                          {costTransfers("ORDER").map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
@@ -6144,7 +6273,7 @@ export default function MisaCostWorkspace({
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
                               <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
-                              <td>{row.order}</td>
+                              <td>{row.object}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -6285,16 +6414,14 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, date: "25/10/2026", code: "NT-DH-001", order: "DH2026-0089", customer: "Công ty TNHH Á Châu", rev: 245000000, cogs: 165000000 },
-                          ].map((row) => (
+                          {costAcceptances("ORDER").map((row) => ({ ...row, order: row.objectCode, customer: row.objectName, rev: null })).map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
                               <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.order}</td>
                               <td>{row.customer}</td>
-                              <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.rev)}</td>
+                              <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
                               <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
@@ -6763,10 +6890,7 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, date: "31/10/2026", code: "PKC-HD-001", desc: "Kết chuyển chi phí thực hiện hợp đồng HD-2026/042", dr: "154", cr: "621, 622, 627", amount: 340000000, contract: "HD-2026/042 - Techcombank" },
-                            { stt: 2, date: "31/10/2026", code: "PKC-HD-002", desc: "Kết chuyển chi phí thực hiện hợp đồng HD-2026/045", dr: "154", cr: "621, 622, 627", amount: 240000000, contract: "HD-2026/045 - Vina Industry" },
-                          ].map((row) => (
+                          {costTransfers("CONTRACT").map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
@@ -6775,7 +6899,7 @@ export default function MisaCostWorkspace({
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
                               <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
-                              <td>{row.contract}</td>
+                              <td>{row.object}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -6920,16 +7044,14 @@ export default function MisaCostWorkspace({
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { stt: 1, date: "30/10/2026", code: "NT-HD-001", contract: "HD-2026/042", customer: "Ngân hàng Techcombank", rev: 520000000, cogs: 340000000 },
-                          ].map((row) => (
+                          {costAcceptances("CONTRACT").map((row) => ({ ...row, contract: row.objectCode, customer: row.objectName, rev: null })).map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
                               <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.contract}</td>
                               <td>{row.customer}</td>
-                              <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.rev)}</td>
+                              <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
                               <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
@@ -8559,6 +8681,16 @@ export default function MisaCostWorkspace({
                   if (wizardStep < 3) {
                     setWizardStep(wizardStep + 1);
                   } else {
+                    if (apiConnected) {
+                      const method = /hệ số|tỷ lệ/i.test(wizardData.method) ? "COEFFICIENT" : /phân bước/i.test(wizardData.method) ? "STEP" : "SIMPLE";
+                      const target = (apiCostCenters || []).find((row) => wizardData.costObject.includes(row.code) || wizardData.costObject.includes(row.name));
+                      if (!target) { notify("Đối tượng tập hợp chi phí của kỳ chưa có trong Danh mục trung tâm chi phí."); return; }
+                      void apiSave((writer) => saveCostPeriod(writer, {
+                        method, name: wizardData.name, from: wizardData.fromDate, to: wizardData.toDate, codes: [target.code],
+                        quantities: { [target.code]: wizardData.finishedQty },
+                      })).then((saved) => { if (saved) setAddPeriodModalOpen(false); });
+                      return;
+                    }
                     notify(`Đã hoàn tất tính giá thành cho kỳ: ${wizardData.name}`);
                     setAddPeriodModalOpen(false);
                   }
@@ -10000,6 +10132,10 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveDepreciation(writer, { month: allocMonth, year: allocYear })).then((saved) => { if (saved) setDepreciationModalOpen(false); });
+                    return;
+                  }
                   notify(`Đã tính khấu hao TSCĐ Tháng ${allocMonth}/${allocYear} thành công!`);
                   setDepreciationModalOpen(false);
                 }}
@@ -10146,6 +10282,22 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave(async (writer) => {
+                      const code = `${allocYear}-${String(allocMonth).padStart(2, "0")}`;
+                      const start = `${code}-01`;
+                      const end = `${code}-${String(new Date(allocYear, allocMonth, 0).getDate()).padStart(2, "0")}`;
+                      const path = "/api/v1/fixed-assets/calculations/";
+                      if (!(await writer.list("/api/v1/fixed-assets/periods/")).some((row) => row.code === code)) {
+                        await writer.post("/api/v1/fixed-assets/periods/", { code, start_date: start, end_date: end, status: "OPEN" });
+                      }
+                      let run = await writer.post(path, { number: `PBCC-${code}-${Date.now().toString().slice(-4)}`, calculation_type: "ALLOCATION", period_code: code, period_start: start, period_end: end });
+                      run = await writer.action(path, run.id, "calculate", {});
+                      run = await writer.action(path, run.id, "post", {});
+                      return { message: `Đã phân bổ chi phí CCDC kỳ ${code}: ${Number(run.total_amount).toLocaleString("vi-VN")}đ.` };
+                    }).then((saved) => { if (saved) setToolAllocModalOpen(false); });
+                    return;
+                  }
                   notify(`Đã phân bổ chi phí CCDC Tháng ${allocMonth}/${allocYear} thành công!`);
                   setToolAllocModalOpen(false);
                 }}
@@ -10292,6 +10444,12 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    const lastDay = new Date(allocYear, allocMonth, 0).getDate();
+                    void apiSave((writer) => savePrepaidAllocation(writer, { postingDate: `${lastDay}/${String(allocMonth).padStart(2, "0")}/${allocYear}` }))
+                      .then((saved) => { if (saved) setPrepaidAllocModalOpen(false); });
+                    return;
+                  }
                   notify(`Đã phân bổ chi phí trả trước Tháng ${allocMonth}/${allocYear} thành công!`);
                   setPrepaidAllocModalOpen(false);
                 }}
@@ -10413,6 +10571,14 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave(async (writer) => {
+                      const sheet = (await writer.list("/api/v1/payroll/salary-sheets/")).find((row) => row.name === selectedPayrollSheet || row.status === "CALCULATED");
+                      if (!sheet) throw new Error("Không có bảng lương nào chờ hạch toán.");
+                      return postSalarySheet(writer, sheet.id);
+                    }).then((saved) => { if (saved) setPayrollAllocModalOpen(false); });
+                    return;
+                  }
                   notify(`Đã hạch toán chi phí lương cho ${selectedPayrollSheet} thành công! (Nợ 622, 627 / Có 334)`);
                   setPayrollAllocModalOpen(false);
                 }}
@@ -10929,6 +11095,13 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveJournalVoucher(writer, {
+                      number: voucherNumber, postingDate: voucherPostingDate, docDate: voucherDocDate, description: voucherDesc,
+                      rows: voucherLines.map((line) => ({ debitAcc: line.debitAccount, creditAcc: line.creditAccount, amount: line.amount, desc: line.desc })),
+                    })).then((saved) => { if (saved) setOtherExpenseModalOpen(false); });
+                    return;
+                  }
                   notify(`Đã cất chứng từ ${voucherNumber} thành công!`);
                   setOtherExpenseModalOpen(false);
                 }}
@@ -12088,12 +12261,12 @@ export default function MisaCostWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {[
+                    {((apiConnected ? apiProcesses : null) || [
                       { code: "QT-SOI-DET", name: "Quy trình sản xuất Sợi - Dệt - Nhuộm (3 công đoạn)" },
                       { code: "QT-CO-KHI", name: "Quy trình gia công Cơ khí chính xác (Cắt phôi -> Phay CNC -> Hoàn thiện)" },
                       { code: "QT-MAY-MAC", name: "Quy trình may mặc công nghiệp (Cắt vải -> May ráp -> Đóng gói)" },
                       { code: "QT-DONG-HO", name: "Quy trình chế biến thực phẩm đóng hộp (Sơ chế -> Nấu -> Đóng lon)" },
-                    ].map((item) => {
+                    ]).map((item) => {
                       const isSelected = selectedProcesses.some((x) => x.code === item.code);
                       return (
                         <tr
@@ -12242,12 +12415,12 @@ export default function MisaCostWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {[
+                    {((apiConnected ? apiProcesses?.map((row) => ({ ...row, status: "Đang sử dụng" })) : null) || [
                       { code: "QT-SOI-DET", name: "Quy trình sản xuất Sợi - Dệt - Nhuộm", stagesCount: 3, stages: "1. Kéo sợi ➔ 2. Dệt vải ➔ 3. Nhuộm hoàn tất", status: "Đang sử dụng" },
                       { code: "QT-CO-KHI", name: "Quy trình gia công Cơ khí chính xác", stagesCount: 3, stages: "1. Cắt phôi ➔ 2. Phay tiện CNC ➔ 3. Hoàn thiện", status: "Đang sử dụng" },
                       { code: "QT-MAY-MAC", name: "Quy trình may mặc công nghiệp", stagesCount: 3, stages: "1. Cắt vải ➔ 2. May ráp ➔ 3. KCS & Đóng thùng", status: "Đang sử dụng" },
                       { code: "QT-DONG-HO", name: "Quy trình chế biến đóng hộp", stagesCount: 3, stages: "1. Sơ chế ➔ 2. Nấu thanh trùng ➔ 3. Đóng hộp", status: "Đang sử dụng" },
-                    ].map((row) => (
+                    ]).map((row) => (
                       <tr key={row.code} style={{ borderTop: "1px solid #f1f5f9" }}>
                         <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.name}</td>
@@ -13650,7 +13823,7 @@ export default function MisaCostWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {[
+                    {((apiConnected ? apiCostCenters : null) || [
                       { code: "PX-CK", name: "Phân xưởng Cơ khí chế tạo", type: "Phân xưởng" },
                       { code: "PX-MAY", name: "Phân xưởng May xuất khẩu", type: "Phân xưởng" },
                       { code: "PX-DONGGOI", name: "Phân xưởng Đóng gói & Hoàn thiện", type: "Phân xưởng" },
@@ -13658,7 +13831,7 @@ export default function MisaCostWorkspace({
                       { code: "SP-BAN01", name: "Bàn inox cao cấp 1.2m", type: "Sản phẩm" },
                       { code: "SP-GHE01", name: "Ghế tựa inox 304", type: "Sản phẩm" },
                       { code: "SP-TUDONG", name: "Tủ đông bảo quản công nghiệp", type: "Sản phẩm" },
-                    ].map((item) => {
+                    ]).map((item) => {
                       const isSelected = selectedCostObjects.some((o) => o.code === item.code);
                       return (
                         <tr
@@ -13834,7 +14007,7 @@ export default function MisaCostWorkspace({
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["c621", "Dở dang 621", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c621 ?? settingOf(code)?.opening_wip], ["c622", "Dở dang 622", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c622 ?? 0], ["c627", "Dở dang 627", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c627 ?? 0]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
                       <th style={{ width: 120, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Mã ĐT THCP</th>
@@ -13875,7 +14048,7 @@ export default function MisaCostWorkspace({
                       <td style={{ padding: "8px 10px", textAlign: "right", color: "#d97706" }}>{formatMoney(77500000)}</td>
                     </tr>
                   </tfoot>
-                </table>
+                </table>)}
               </div>
             </div>
 
@@ -13900,6 +14073,14 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    saveNorms((apiCostCenters || []).filter((row) => normEdits[row.code]).map((row) => {
+                      const part = (field: string) => Number(normValue(row.code, field, field === "c621" ? settingOf(row.code)?.estimate?.opening_wip_detail?.c621 ?? settingOf(row.code)?.opening_wip : settingOf(row.code)?.estimate?.opening_wip_detail?.[field] ?? 0)) || 0;
+                      const detail = { c621: part("c621"), c622: part("c622"), c627: part("c627") };
+                      return { code: row.code, openingWip: detail.c621 + detail.c622 + detail.c627, estimate: { ...(settingOf(row.code)?.estimate || {}), opening_wip_detail: detail } };
+                    }), () => setWipOpeningModalOpen(false));
+                    return;
+                  }
                   notify("Đã cất số liệu chi phí dở dang đầu kỳ thành công!");
                   setWipOpeningModalOpen(false);
                 }}
@@ -13984,7 +14165,7 @@ export default function MisaCostWorkspace({
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["coefficient", "Hệ số giá thành", (code) => settingOf(code)?.coefficient ?? 1]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
                       <th style={{ width: 110, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Mã TP</th>
@@ -14025,7 +14206,7 @@ export default function MisaCostWorkspace({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table>)}
               </div>
             </div>
 
@@ -14050,6 +14231,10 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    saveNorms((apiCostCenters || []).filter((row) => normEdits[row.code]).map((row) => ({ code: row.code, coefficient: normValue(row.code, "coefficient", 1) })), () => setNormCostModalOpen(false));
+                    return;
+                  }
                   notify("Đã cất định mức giá thành hệ số, tỷ lệ thành công!");
                   setNormCostModalOpen(false);
                 }}
@@ -14145,19 +14330,21 @@ export default function MisaCostWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { item: "Chi phí nhân công trực tiếp", acc: "622", method: "Theo chi phí NVL trực tiếp", pct: "100%", note: "Phân xưởng Đúc" },
-                      { item: "Chi phí nhân công gián tiếp SX", acc: "6271", method: "Theo chi phí nhân công trực tiếp", pct: "100%", note: "Quản lý phân xưởng" },
-                      { item: "Chi phí vật liệu SXC", acc: "6272", method: "Theo định mức giá thành", pct: "100%", note: "Nhiên liệu, dầu mỡ" },
-                      { item: "Chi phí khấu hao máy đúc CNC", acc: "6274", method: "Theo giờ máy chạy thực tế", pct: "100%", note: "Máy đúc lò điện" },
-                      { item: "Chi phí dịch vụ điện nước ngoài", acc: "6277", method: "Theo sản lượng sản phẩm quy đổi", pct: "100%", note: "Điện 3 pha sản xuất" },
-                    ].map((row, i) => (
-                      <tr key={i} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.item}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 600, color: "#2563eb" }}>{row.acc}</td>
-                        <td style={{ padding: "8px 10px" }}>{row.method}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{row.pct}</td>
-                        <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.note}</td>
+                    {([['labor_basis', 'Chi phí nhân công', '622'], ['overhead_basis', 'Chi phí sản xuất chung', '627']] as const).map(([field, label, account]) => (
+                      <tr key={account} style={{ borderTop: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "8px 10px" }}>{label}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center" }}>{account}</td>
+                        <td style={{ padding: "8px 10px" }}>
+                          <select value={allocationBasis[field]} onChange={(e) => setAllocationBasis((current) => ({ ...current, [field]: e.target.value }))}>
+                            <option value="AUTO">Tự động</option>
+                            <option value="MATERIAL">Theo chi phí NVL trực tiếp</option>
+                            <option value="LABOR">Theo chi phí nhân công trực tiếp</option>
+                            <option value="PLAN">Theo giá thành kế hoạch</option>
+                            <option value="OUTPUT">Theo sản lượng quy đổi</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: "8px 10px", textAlign: "right" }}>100%</td>
+                        <td style={{ padding: "8px 10px" }}></td>
                       </tr>
                     ))}
                   </tbody>
@@ -14186,8 +14373,16 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                  notify("Đã cất định mức phân bổ chi phí thành công!");
-                  setNormAllocModalOpen(false);
+                  if (apiConnected) {
+                    void apiSave(async () => {
+                      await request(`/api/v1/costing/allocation-settings/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
+                        method: "PUT", body: JSON.stringify(allocationBasis),
+                      });
+                      return { message: "Đã lưu tiêu thức phân bổ chi phí." };
+                    }).then((saved) => { if (saved) setNormAllocModalOpen(false); });
+                    return;
+                  }
+                  notify("Cần kết nối API để lưu tiêu thức phân bổ chi phí.");
                 }}
                 style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
@@ -14270,7 +14465,7 @@ export default function MisaCostWorkspace({
               </div>
 
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["plannedCost", "Giá thành kế hoạch", (code) => settingOf(code)?.planned_cost ?? 0]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
                       <th style={{ width: 120, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Mã TP</th>
@@ -14300,7 +14495,7 @@ export default function MisaCostWorkspace({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table>)}
               </div>
             </div>
 
@@ -14325,6 +14520,10 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    saveNorms((apiCostCenters || []).filter((row) => normEdits[row.code]).map((row) => ({ code: row.code, plannedCost: normValue(row.code, "plannedCost", 0) })), () => setPlannedCostModalOpen(false));
+                    return;
+                  }
                   notify("Đã cất giá thành kế hoạch thành công!");
                   setPlannedCostModalOpen(false);
                 }}
@@ -14505,6 +14704,7 @@ export default function MisaCostWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (apiConnected) { loadCatalog("PROJECT", (rows) => setProjectModalItems(rows.map((row) => ({ code: row.code, name: row.name, type: row.type }))), "công trình"); return; }
                     setProjectModalItems([
                       { code: "CT-SKYTOWER", name: "Tòa nhà Sky Tower Discovery Complex", type: "Dân dụng cao tầng" },
                       { code: "CT-VIN-OCEAN", name: "Khu đô thị Vinhomes Ocean Park phân khu 2", type: "Hạ tầng đô thị" },
@@ -14678,6 +14878,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveCostPeriod(writer, { method: "PROJECT", name: projectPeriodName, from: projectFromDate, to: projectToDate, codes: projectModalItems.map((item) => item.code) }))
+                      .then((saved) => { if (saved) { setAddProjectPeriodModalOpen(false); setShowProjectPeriodList(true); } });
+                    return;
+                  }
                   notify(`Đã cất "${projectPeriodName}" thành công!`);
                   setAddProjectPeriodModalOpen(false);
                   setShowProjectPeriodList(true);
@@ -14759,7 +14964,7 @@ export default function MisaCostWorkspace({
                 Kỳ tính giá thành <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <select
-                value={selectedProjectTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
+                value={apiConnected ? selectedProjectTransferPeriod : selectedProjectTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
                 onChange={(e) => setSelectedProjectTransferPeriod(e.target.value)}
                 style={{
                   width: "100%",
@@ -14771,9 +14976,9 @@ export default function MisaCostWorkspace({
                   outline: "none",
                 }}
               >
-                <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
+                {apiConnected ? [<option key="" value="">Chọn kỳ tính giá thành</option>, ...(apiRows.costPeriods || []).filter((row) => row.method === "PROJECT" && row.status === "CALCULATED").map((row) => <option key={row.id} value={row.name}>{row.name}</option>)] : <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
                   Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026
-                </option>
+                </option>}
                 <option value="Kỳ tính giá thành từ ngày 01/09/2026 đến ngày 30/09/2026">
                   Kỳ tính giá thành từ ngày 01/09/2026 đến ngày 30/09/2026
                 </option>
@@ -14801,6 +15006,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => transferCostPeriod(writer, selectedProjectTransferPeriod))
+                      .then((saved) => { if (saved) { setSelectProjectTransferPeriodModalOpen(false); setShowProjectTransferList(true); } });
+                    return;
+                  }
                   notify("Đã thực hiện kết chuyển chi phí từ TK 621, 622, 627 sang TK 154 theo công trình!");
                   setSelectProjectTransferPeriodModalOpen(false);
                   setShowProjectTransferList(true);
@@ -14983,7 +15193,7 @@ export default function MisaCostWorkspace({
                             </td>
                             <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
                             <td style={{ padding: "8px 10px" }}>{row.name}</td>
-                            <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.rev)}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
                             <td style={{ padding: "8px 10px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
                           </tr>
                         );
@@ -15014,6 +15224,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => acceptCostObjects(writer, "PROJECT", selectedAcceptanceProjects, "COGS"))
+                      .then((saved) => { if (saved) { setProjectAcceptanceModalOpen(false); setShowProjectAcceptanceList(true); } });
+                    return;
+                  }
                   notify(`Đã nghiệm thu ${selectedAcceptanceProjects.length} công trình sang TK 632!`);
                   setProjectAcceptanceModalOpen(false);
                   setShowProjectAcceptanceList(true);
@@ -15231,6 +15446,13 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveCostObjectSettings(writer, "PROJECT", [{
+                      code: selectedProjectForNorm.split(" - ")[0],
+                      materialNorms: [{ from: projectNormFromDate, to: projectNormToDate, description: projectNormDesc, lines: projectNormLines }],
+                    }])).then((saved) => { if (saved) { setAddProjectNormModalOpen(false); setShowProjectNormList(true); } });
+                    return;
+                  }
                   notify("Đã cất định mức NVL công trình thành công!");
                   setAddProjectNormModalOpen(false);
                   setShowProjectNormList(true);
@@ -15242,6 +15464,13 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveCostObjectSettings(writer, "PROJECT", [{
+                      code: selectedProjectForNorm.split(" - ")[0],
+                      materialNorms: [{ from: projectNormFromDate, to: projectNormToDate, description: projectNormDesc, lines: projectNormLines }],
+                    }])).then((saved) => { if (saved) setAddProjectNormModalOpen(false); });
+                    return;
+                  }
                   notify("Đã cất và sẵn sàng thêm định mức mới!");
                 }}
                 style={{ padding: "6px 18px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#00a862", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
@@ -15743,7 +15972,9 @@ export default function MisaCostWorkspace({
                 </div>
                 <button
                   type="button"
-                  onClick={() => notify("Đã lấy danh sách đơn hàng trong kỳ!")}
+                  onClick={() => apiConnected
+                    ? loadCatalog("ORDER", (rows) => setOrderModalItems(rows.map((row) => ({ code: row.code, date: row.date, customer: row.customer }))), "đơn hàng")
+                    : notify("Đã lấy danh sách đơn hàng trong kỳ!")}
                   style={{ padding: "6px 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 13, cursor: "pointer" }}
                 >
                   Lấy dữ liệu
@@ -15825,6 +16056,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveCostPeriod(writer, { method: "ORDER", name: orderPeriodName, from: orderFromDate, to: orderToDate, codes: orderModalItems.map((item) => item.code) }))
+                      .then((saved) => { if (saved) { setAddOrderPeriodModalOpen(false); setShowOrderPeriodList(true); } });
+                    return;
+                  }
                   notify(`Đã cất "${orderPeriodName}" thành công!`);
                   setAddOrderPeriodModalOpen(false);
                   setShowOrderPeriodList(true);
@@ -15881,13 +16117,13 @@ export default function MisaCostWorkspace({
                 Kỳ tính giá thành <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <select
-                value={selectedOrderTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
+                value={apiConnected ? selectedOrderTransferPeriod : selectedOrderTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
                 onChange={(e) => setSelectedOrderTransferPeriod(e.target.value)}
                 style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1.5px solid #00a862", fontSize: 13, background: "#ffffff" }}
               >
-                <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
+                {apiConnected ? [<option key="" value="">Chọn kỳ tính giá thành</option>, ...(apiRows.costPeriods || []).filter((row) => row.method === "ORDER" && row.status === "CALCULATED").map((row) => <option key={row.id} value={row.name}>{row.name}</option>)] : <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
                   Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026
-                </option>
+                </option>}
               </select>
             </div>
 
@@ -15896,6 +16132,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => transferCostPeriod(writer, selectedOrderTransferPeriod))
+                      .then((saved) => { if (saved) { setSelectOrderTransferPeriodModalOpen(false); setShowOrderTransferList(true); } });
+                    return;
+                  }
                   notify("Đã thực hiện kết chuyển chi phí từ TK 621, 622, 627 sang TK 154 theo đơn hàng!");
                   setSelectOrderTransferPeriodModalOpen(false);
                   setShowOrderTransferList(true);
@@ -16036,10 +16277,9 @@ export default function MisaCostWorkspace({
                       }}
                     >
                       <option value="">&nbsp;</option>
-                      <option value="KTG-10-2026">Kỳ tính giá thành Tháng 10/2026 (01/10/2026 - 31/10/2026)</option>
-                      <option value="KTG-09-2026">Kỳ tính giá thành Tháng 09/2026 (01/09/2026 - 30/09/2026)</option>
-                      <option value="KTG-Q3-2026">Kỳ tính giá thành Quý 3/2026 (01/07/2026 - 30/09/2026)</option>
-                      <option value="KTG-08-2026">Kỳ tính giá thành Tháng 08/2026 (01/08/2026 - 31/08/2026)</option>
+                      {(apiRows.costPeriods || []).filter((row) => row.method === "ORDER" && row.status === "TRANSFERRED").map((row) => (
+                        <option key={row.id} value={row.code}>{row.name} ({apiDate(row.start_date)} - {apiDate(row.end_date)})</option>
+                      ))}
                     </select>
                     <ChevronDown size={14} style={{ position: "absolute", right: 8, top: 9, color: "#64748b", pointerEvents: "none" }} />
                   </div>
@@ -16048,7 +16288,8 @@ export default function MisaCostWorkspace({
                     type="button"
                     onClick={() => {
                       if (!acceptanceOrderPeriodCode) {
-                        setAcceptanceOrderPeriodCode("KTG-10-2026");
+                        notify("Chọn kỳ tính giá thành đã kết chuyển.");
+                        return;
                       }
                       setAcceptanceOrdersFetched(true);
                       notify("Đã lấy danh sách đơn hàng cho kỳ tính giá!");
@@ -16087,14 +16328,14 @@ export default function MisaCostWorkspace({
                     checked={
                       acceptanceOrdersFetched &&
                       selectedOrderCodes.length > 0 &&
-                      selectedOrderCodes.length === 4
+                      selectedOrderCodes.length === acceptanceOrderRows.length
                     }
                     onChange={(e) => {
                       if (!acceptanceOrdersFetched) {
                         setAcceptanceOrdersFetched(true);
                       }
                       if (e.target.checked) {
-                        setSelectedOrderCodes(["DH2026-0089", "DH2026-0092", "DH2026-0105", "DH2026-0118"]);
+                        setSelectedOrderCodes(acceptanceOrderRows.map((row) => row.code));
                       } else {
                         setSelectedOrderCodes([]);
                       }
@@ -16147,11 +16388,11 @@ export default function MisaCostWorkspace({
                           checked={
                             acceptanceOrdersFetched &&
                             selectedOrderCodes.length > 0 &&
-                            selectedOrderCodes.length === 4
+                            selectedOrderCodes.length === acceptanceOrderRows.length
                           }
                           onChange={(e) => {
                             if (!acceptanceOrdersFetched) setAcceptanceOrdersFetched(true);
-                            if (e.target.checked) setSelectedOrderCodes(["DH2026-0089", "DH2026-0092", "DH2026-0105", "DH2026-0118"]);
+                            if (e.target.checked) setSelectedOrderCodes(acceptanceOrderRows.map((row) => row.code));
                             else setSelectedOrderCodes([]);
                           }}
                           style={{ accentColor: "#00a862" }}
@@ -16179,12 +16420,7 @@ export default function MisaCostWorkspace({
                   </thead>
                   <tbody>
                     {acceptanceOrdersFetched ? (
-                      [
-                        { code: "DH2026-0089", date: "05/10/2026", customer: "Công ty TNHH Á Châu", rev: 245000000, unacc: 165000000 },
-                        { code: "DH2026-0092", date: "12/10/2026", customer: "Tập đoàn Xây dựng Hòa Bình", rev: 350000000, unacc: 233000000 },
-                        { code: "DH2026-0105", date: "18/10/2026", customer: "Công ty Cổ phần May Sông Hồng", rev: 180000000, unacc: 120000000 },
-                        { code: "DH2026-0118", date: "24/10/2026", customer: "Công ty CP Cơ điện Lạnh REE", rev: 420000000, unacc: 295000000 },
-                      ]
+                      acceptanceOrderRows
                         .filter(
                           (o) =>
                             o.code.toLowerCase().includes(orderAcceptanceSearchText.toLowerCase()) ||
@@ -16213,7 +16449,7 @@ export default function MisaCostWorkspace({
                               {row.customer}
                             </td>
                             <td style={{ padding: "6px 12px", textAlign: "right", color: "#2563eb", fontWeight: 600, borderRight: "1px dotted #cbd5e1" }}>
-                              {formatMoney(row.rev)}
+                              {row.rev == null ? "—" : formatMoney(row.rev)}
                             </td>
                             <td style={{ padding: "6px 12px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>
                               {formatMoney(row.unacc)}
@@ -16267,6 +16503,11 @@ export default function MisaCostWorkspace({
                 onClick={() => {
                   if (selectedOrderCodes.length === 0) {
                     notify("Vui lòng chọn ít nhất một đơn hàng để nghiệm thu!");
+                    return;
+                  }
+                  if (apiConnected) {
+                    void apiSave((writer) => acceptCostPeriod(writer, acceptanceOrderPeriodCode, selectedOrderCodes, "COGS"))
+                      .then((saved) => { if (saved) { setOrderAcceptanceModalOpen(false); setShowOrderAcceptanceList(true); } });
                     return;
                   }
                   notify(`Đã nghiệm thu ${selectedOrderCodes.length} đơn hàng hoàn thành sang TK 632!`);
@@ -16392,7 +16633,9 @@ export default function MisaCostWorkspace({
                 </div>
                 <button
                   type="button"
-                  onClick={() => notify("Đã lấy danh sách hợp đồng trong kỳ!")}
+                  onClick={() => apiConnected
+                    ? loadCatalog("CONTRACT", (rows) => setContractModalItems(rows.map((row) => ({ code: row.code, date: row.date, note: row.note, customer: row.customer }))), "hợp đồng")
+                    : notify("Đã lấy danh sách hợp đồng trong kỳ!")}
                   style={{ padding: "6px 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 13, cursor: "pointer" }}
                 >
                   Lấy dữ liệu
@@ -16460,6 +16703,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveCostPeriod(writer, { method: "CONTRACT", name: contractPeriodName, from: contractFromDate, to: contractToDate, codes: contractModalItems.map((item) => item.code) }))
+                      .then((saved) => { if (saved) { setAddContractPeriodModalOpen(false); setShowContractPeriodList(true); } });
+                    return;
+                  }
                   notify(`Đã cất "${contractPeriodName}" thành công!`);
                   setAddContractPeriodModalOpen(false);
                   setShowContractPeriodList(true);
@@ -16516,13 +16764,13 @@ export default function MisaCostWorkspace({
                 Kỳ tính giá thành <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <select
-                value={selectedContractTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
+                value={apiConnected ? selectedContractTransferPeriod : selectedContractTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
                 onChange={(e) => setSelectedContractTransferPeriod(e.target.value)}
                 style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1.5px solid #00a862", fontSize: 13, background: "#ffffff" }}
               >
-                <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
+                {apiConnected ? [<option key="" value="">Chọn kỳ tính giá thành</option>, ...(apiRows.costPeriods || []).filter((row) => row.method === "CONTRACT" && row.status === "CALCULATED").map((row) => <option key={row.id} value={row.name}>{row.name}</option>)] : <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
                   Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026
-                </option>
+                </option>}
               </select>
             </div>
 
@@ -16531,6 +16779,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => transferCostPeriod(writer, selectedContractTransferPeriod))
+                      .then((saved) => { if (saved) { setSelectContractTransferPeriodModalOpen(false); setShowContractTransferList(true); } });
+                    return;
+                  }
                   notify("Đã thực hiện kết chuyển chi phí từ TK 621, 622, 627 sang TK 154 theo hợp đồng!");
                   setSelectContractTransferPeriodModalOpen(false);
                   setShowContractTransferList(true);
@@ -16616,7 +16869,7 @@ export default function MisaCostWorkspace({
                         <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px" }}>{row.date}</td>
                         <td style={{ padding: "8px 10px" }}>{row.customer}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.rev)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
                       </tr>
                     ))}
@@ -16630,6 +16883,11 @@ export default function MisaCostWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => acceptCostObjects(writer, "CONTRACT", selectedAcceptanceContracts, "COGS"))
+                      .then((saved) => { if (saved) { setContractAcceptanceModalOpen(false); setShowContractAcceptanceList(true); } });
+                    return;
+                  }
                   notify(`Đã nghiệm thu ${selectedAcceptanceContracts.length} hợp đồng sang TK 632!`);
                   setContractAcceptanceModalOpen(false);
                   setShowContractAcceptanceList(true);
@@ -16643,5 +16901,44 @@ export default function MisaCostWorkspace({
         </div>
       )}
     </div>
+  );
+}
+
+
+/** Editable norm table for the cost-center utilities (dở dang đầu kỳ, hệ số, giá thành kế hoạch). */
+function CostNormEditor({ rows, columns, value, onChange }: {
+  rows: { code: string; name: string }[];
+  columns: [string, string, (code: string) => unknown][];
+  value: (code: string, field: string, fallback: unknown) => string;
+  onChange: (code: string, field: string, value: string) => void;
+}) {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <thead>
+        <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
+          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Mã</th>
+          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Tên đối tượng tập hợp chi phí</th>
+          {columns.map(([field, label]) => <th key={field} style={{ padding: "8px 12px", fontWeight: 600, textAlign: "right" }}>{label}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
+            <td style={{ padding: "8px 12px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+            <td style={{ padding: "8px 12px" }}>{row.name}</td>
+            {columns.map(([field, , fallback]) => (
+              <td key={field} style={{ padding: "6px 12px" }}>
+                <input
+                  value={value(row.code, field, fallback(row.code))}
+                  onChange={(e) => onChange(row.code, field, e.target.value.replace(/[^\d.]/g, ""))}
+                  style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }}
+                />
+              </td>
+            ))}
+          </tr>
+        ))}
+        {!rows.length && <tr><td colSpan={2 + columns.length} style={{ padding: 16, textAlign: "center", color: "#64748b" }}>Chưa có trung tâm chi phí nào trong Danh mục.</td></tr>}
+      </tbody>
+    </table>
   );
 }

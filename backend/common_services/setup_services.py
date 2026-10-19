@@ -18,7 +18,7 @@ from .numbering_services import create_default_numbering_rules_for_company
 from .period_services import activate_fiscal_year, create_fiscal_year
 
 # Modules shown in the accounting workspace, ordered so dependencies are enabled first.
-WORKSPACE_MODULES = ("GL", "TAX", "RPT", "CASH", "BANK", "AP", "PUR", "AR", "SAL", "INV", "FA")
+WORKSPACE_MODULES = ("GL", "TAX", "RPT", "CASH", "BANK", "AP", "PUR", "AR", "SAL", "INV", "FA", "PAYROLL", "COST")
 
 DEFAULT_VAT_RATES = (
     ("VAT0", "Thuế GTGT 0%", Decimal("0")),
@@ -86,6 +86,26 @@ def _ensure_defaults(company):
                                  warehouse_scope="COMPANY_SHARED", status="ACTIVE")
 
 
+def _ensure_cash_fund(company):
+    """A VND cash fund on 1111 so receipts and payments can be saved without extra setup."""
+    from cash_management.models import CashFund
+    from master_data.models import Currency
+    from organization.models import Branch
+
+    if CashFund.objects.filter(company=company).exists():
+        return
+    if not Branch.objects.filter(company=company).exists():
+        # Vouchers are recorded per branch; a company without one gets its head office.
+        Branch.objects.create(company=company, code="TRUSO", name=f"Trụ sở chính - {company.name}"[:255],
+                              tax_code=company.tax_code or "", address=company.address or "", is_head_office=True)
+    branch = Branch.objects.filter(company=company, status="ACTIVE").order_by("-is_head_office", "code").first()
+    currency = Currency.objects.filter(code="VND").first()
+    account = (Account.objects.filter(company=company, code="1111", is_postable=True).first()
+               or Account.objects.filter(company=company, code__startswith="111", is_postable=True).order_by("code").first())
+    if branch and currency and account:
+        CashFund.objects.create(company=company, branch=branch, code="TM", name="Quỹ tiền mặt", currency=currency, gl_account=account)
+
+
 @transaction.atomic
 def complete_company_setup(company, actor, request=None):
     """Idempotently create the data every posting flow requires and activate the company."""
@@ -101,6 +121,7 @@ def complete_company_setup(company, actor, request=None):
     _ensure_tax_rates(company, today)
     _ensure_units(company)
     _ensure_defaults(company)
+    _ensure_cash_fund(company)
     for module_code in WORKSPACE_MODULES:
         if not check_module_active(company, module_code):
             enable_module(company, module_code, actor, notes="Bật khi hoàn tất thiết lập ban đầu")

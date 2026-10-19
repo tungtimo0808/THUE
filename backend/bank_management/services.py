@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from audit_log.services import record_audit
 from approval_workflows.submission import configured_snapshot
 from approval_workflows.execution import approval_progress
+from common_services.document_lock_services import assert_not_locked
 from . import models
 def actor(r):
     if hasattr(r, "user") and hasattr(r.user, "iam_account"):
@@ -43,6 +44,7 @@ def decide(tx,r,approved):
 def post(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);account=models.AccountProfile.objects.select_for_update().get(pk=tx.account_id)
     if tx.status!="APPROVED" or tx.balance_applied:raise ValidationError("Giao dịch chưa duyệt hoặc đã cập nhật số dư.")
+    assert_not_locked(tx.company,"BC" if incoming(tx) else "BN",tx.transaction_date)
     available=account.balance+account.overdraft_limit
     if not incoming(tx) and not account.allow_overdraft and account.balance<tx.amount or not incoming(tx) and account.allow_overdraft and available<tx.amount:raise ValidationError("Số dư khả dụng không đủ.")
     account.balance=account.balance+tx.amount if incoming(tx) else account.balance-tx.amount;account.save(update_fields=("balance","updated_at"));tx.balance_applied=True;tx.status="POSTED";tx.posted_at=timezone.now();tx.bank_reference=r.data.get("bank_reference",tx.bank_reference);tx.save(update_fields=("balance_applied","status","posted_at","bank_reference","updated_at"));allocs=r.data.get("allocations",[])
@@ -70,6 +72,10 @@ def reverse(tx,r):
 @transaction.atomic
 def post_gl(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);ref=r.data.get("gl_reference","").strip()
+    if tx.status=="POSTED" and tx.gl_status!="POSTED" and r.data.get("lines"):
+        # The voucher's own accounting rows: the journal is generated and posted here.
+        from general_ledger.money_journal import journalize
+        bank=tx.account.account;ref=journalize(tx,r,module="BANK",money_account=bank.gl_account,incoming=tx.transaction_type in {"RECEIPT","INTEREST","OTHER_IN"},branch=bank.branch,counterpart_name=tx.counterparty_name,lines=r.data["lines"],money_dimensions={"bank_account_id":str(bank.id)}).number
     if tx.status!="POSTED" or tx.gl_status=="POSTED" or not ref:raise ValidationError("Giao dịch chưa hiệu lực, đã hạch toán hoặc thiếu mã GL.")
     tx.gl_status="POSTED";tx.gl_reference=ref;tx.save(update_fields=("gl_status","gl_reference","updated_at"));audit(r,tx,"POST_GL",after={"gl_reference":ref});return tx
 @transaction.atomic

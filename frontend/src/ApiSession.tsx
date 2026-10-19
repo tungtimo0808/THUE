@@ -42,6 +42,27 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [user, setUser] = useState<any>(null);
 
+  useEffect(() => {
+    const onTokenChanged = (event: Event) => {
+      const session = (event as CustomEvent<ApiSessionData>).detail;
+      setToken(session.token);
+      setRefreshToken(session.refresh || "");
+    };
+    const onSessionExpired = () => {
+      setToken("");
+      setRefreshToken("");
+      setCompanyId("");
+      setCompanies([]);
+      setUser(null);
+    };
+    window.addEventListener("erp_api_token_changed", onTokenChanged);
+    window.addEventListener("erp_api_session_expired", onSessionExpired);
+    return () => {
+      window.removeEventListener("erp_api_token_changed", onTokenChanged);
+      window.removeEventListener("erp_api_session_expired", onSessionExpired);
+    };
+  }, []);
+
   // Restore session from localStorage on startup
   useEffect(() => {
     try {

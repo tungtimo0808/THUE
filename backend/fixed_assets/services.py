@@ -36,7 +36,40 @@ def _snapshot(asset):
         "department": str(asset.department_id) if asset.department_id else None,
         "custodian": str(asset.custodian_id) if asset.custodian_id else None,
         "status": asset.status, "disposed_at": str(asset.disposed_at) if asset.disposed_at else None,
+        "quantity": str(asset.quantity), "salvage_value": str(asset.salvage_value),
+        "useful_life_periods": asset.useful_life_periods,
     }
+
+
+def _split(asset, quantity, obj):
+    """Move `quantity` units (and their share of every value) of an asset into a new record."""
+    if quantity <= 0 or quantity > asset.quantity:
+        raise ValidationError("Số lượng điều chuyển/ghi giảm phải lớn hơn 0 và không vượt số lượng đang theo dõi.")
+    if quantity == asset.quantity:
+        return asset
+    ratio = quantity / asset.quantity
+    share = lambda value: (value * ratio).quantize(Decimal("0.0001"))
+    suffix = 1
+    while models.AssetRecord.objects.filter(company=asset.company, code=f"{asset.code}.{suffix}").exists():
+        suffix += 1
+    part = models.AssetRecord.objects.create(
+        company=asset.company, code=f"{asset.code}.{suffix}", name=asset.name, asset_type=asset.asset_type,
+        category=asset.category, description=asset.description, quantity=quantity,
+        acquisition_date=asset.acquisition_date, in_service_date=asset.in_service_date,
+        original_cost=share(asset.original_cost), salvage_value=share(asset.salvage_value),
+        accumulated_depreciation=share(asset.accumulated_depreciation), allocated_value=share(asset.allocated_value),
+        method=asset.method, useful_life_periods=asset.useful_life_periods, periods_processed=asset.periods_processed,
+        branch=asset.branch, department=asset.department, custodian=asset.custodian, source_module="FA",
+        source_reference=obj.number, status=asset.status, created_by=obj.created_by,
+    )
+    asset.quantity -= quantity
+    asset.original_cost -= part.original_cost
+    asset.salvage_value -= part.salvage_value
+    asset.accumulated_depreciation -= part.accumulated_depreciation
+    asset.allocated_value -= part.allocated_value
+    asset.save()
+    obj.split_asset = part
+    return part
 
 
 @transaction.atomic
@@ -101,6 +134,8 @@ def post_transaction(obj, request):
         raise ValidationError("Không được ghi nhận giao dịch vào kỳ đã đóng.")
     before = _snapshot(asset)
     kind = obj.transaction_type
+    # A partial transfer/disposal acts on the split-off part; the rest stays on the original record.
+    target = _split(asset, obj.quantity, obj) if kind in ("TRANSFER", "DISPOSAL") and obj.quantity is not None else asset
     if kind == "ACQUISITION":
         if asset.status != "DRAFT" or asset.transactions.filter(transaction_type="ACQUISITION", status="POSTED").exists():
             raise ValidationError("Tài sản đã được ghi tăng.")
@@ -130,11 +165,11 @@ def post_transaction(obj, request):
             if value and value.company_id != asset.company_id:
                 raise ValidationError("Đơn vị/người nhận phải thuộc cùng doanh nghiệp.")
         if obj.target_branch_id:
-            asset.branch = obj.target_branch
+            target.branch = obj.target_branch
         if obj.target_department_id:
-            asset.department = obj.target_department
+            target.department = obj.target_department
         if obj.target_custodian_id:
-            asset.custodian = obj.target_custodian
+            target.custodian = obj.target_custodian
         obj.gl_status = "NOT_REQUIRED"
     elif kind == "RECLASSIFICATION":
         if not obj.target_category_id or obj.target_category_id == asset.category_id or obj.target_category.asset_type != asset.asset_type:
@@ -148,21 +183,32 @@ def post_transaction(obj, request):
             raise ValidationError("Giảm nguyên giá làm giá trị còn lại không hợp lệ.")
         asset.original_cost -= obj.amount
     elif kind == "DISPOSAL":
-        if asset.status == "DISPOSED":
+        if target.status == "DISPOSED":
             raise ValidationError("Tài sản đã được ghi giảm.")
-        if obj.amount != asset.remaining_value:
+        if target is not asset:
+            obj.amount = target.remaining_value
+        elif obj.amount != asset.remaining_value:
             raise ValidationError("Giá trị ghi giảm phải bằng giá trị còn lại tại thời điểm xử lý.")
-        asset.status = "DISPOSED"
-        asset.disposed_at = obj.transaction_date
+        target.status = "DISPOSED"
+        target.disposed_at = obj.transaction_date
+    elif kind == "LIFE_CHANGE":
+        periods = obj.target_useful_life_periods
+        if not periods or periods <= asset.periods_processed:
+            raise ValidationError("Số kỳ mới phải lớn hơn số kỳ đã khấu hao/phân bổ.")
+        asset.useful_life_periods = periods
+        obj.gl_status = "NOT_REQUIRED"
     else:
         raise ValidationError("Loại giao dịch không được ghi nhận trực tiếp.")
     asset.save()
+    if target is not asset:
+        target.save()
     obj.before_snapshot = before
     obj.after_snapshot = _snapshot(asset)
     obj.asset_applied = True
     obj.status = "POSTED"
     obj.posted_at = timezone.now()
-    obj.save(update_fields=("before_snapshot", "after_snapshot", "asset_applied", "status", "posted_at", "gl_status", "updated_at"))
+    obj.save(update_fields=("before_snapshot", "after_snapshot", "asset_applied", "status", "posted_at", "gl_status",
+                            "split_asset", "amount", "updated_at"))
     audit(request, obj, "POST", before, obj.after_snapshot)
     return obj
 
@@ -187,6 +233,19 @@ def reverse(obj, request):
     asset.custodian_id = snapshot["custodian"]
     asset.status = snapshot["status"]
     asset.disposed_at = snapshot["disposed_at"] or None
+    for field in ("quantity", "salvage_value"):
+        if field in snapshot:
+            setattr(asset, field, Decimal(snapshot[field]))
+    if "useful_life_periods" in snapshot:
+        asset.useful_life_periods = snapshot["useful_life_periods"]
+    if obj.split_asset_id:
+        # The split-off part merges back; refuse if it has a history of its own since.
+        part = models.AssetRecord.objects.select_for_update().get(pk=obj.split_asset_id)
+        if part.transactions.exists():
+            raise ValidationError("Phần tài sản đã tách có phát sinh giao dịch khác; hãy đảo các giao dịch đó trước.")
+        obj.split_asset = None
+        obj.save(update_fields=("split_asset",))
+        part.delete()
     asset.save()
     reversal = models.AssetTransaction.objects.create(
         company=obj.company, asset=asset, number=f"REV-{obj.number}", transaction_type="REVERSAL",
@@ -221,7 +280,9 @@ def calculate(run, request):
         remaining = depreciable - processed
         if remaining <= 0:
             continue
-        amount = min(remaining, depreciable / asset.useful_life_periods)
+        # Spread what is left over the periods left, so life changes and value changes are absorbed going forward.
+        periods_left = max(asset.useful_life_periods - asset.periods_processed, 1)
+        amount = min(remaining, (remaining / periods_left).quantize(Decimal("0.0001")))
         models.CalculationLine.objects.create(run=run, asset=asset, opening_value=opening, amount=amount, closing_value=opening - amount)
         total += amount
     if not run.lines.exists():

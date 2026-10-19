@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'fixed_assets',
     'tax_management',
     'reporting',
+    'payroll',
+    'costing',
     'common_services',
 ]
 

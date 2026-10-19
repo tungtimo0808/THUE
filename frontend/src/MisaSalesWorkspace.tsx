@@ -3,7 +3,7 @@ import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   saveCommercialInvoice, saveItem, saveSalesAllowance, saveSalesContract, saveSalesInvoice, saveSalesOrder,
-  saveSalesReturn, saveSalesVoucher, saveCustomerReceipts, openReceivables, createApiWriter,
+  saveSalesReturn, saveSalesVoucher, saveCustomerReceipts, saveAdjustmentInvoice, openReceivables, createApiWriter,
   toApiDate,
 } from "./misa-api-writes";
 import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
@@ -659,7 +659,8 @@ export default function MisaSalesWorkspace({
     notify(`Đã lưu Hóa đơn thương mại ${data.invoiceNo || ""}!`);
   };
 
-  const handleSaveAdjustmentInvoice = (data: any) => {
+  const handleSaveAdjustmentInvoice = async (data: any) => {
+    if (apiConnected) return apiSave((writer) => saveAdjustmentInvoice(writer, data));
     setInvoices([
       {
         id: `inv-${Date.now()}`,

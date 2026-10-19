@@ -21,7 +21,7 @@ export function formatVND(amount: number): string {
 // ============================================================================
 export interface LoanContractModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCreditContract?: () => void;
 }
 
@@ -134,8 +134,8 @@ export function LoanContractModal({
     }
   };
 
-  const handleSave = (andClose = false) => {
-    onSubmit({
+  const handleSave = async (andClose = false) => {
+    const saved = await onSubmit({
       kind: "loan",
       code: contractCode,
       borrower,
@@ -174,6 +174,7 @@ export function LoanContractModal({
       department,
       attachments,
     });
+    if (saved === false) return;
     if (andClose) onClose();
   };
 
@@ -1167,7 +1168,7 @@ export function LoanContractModal({
 // ============================================================================
 export interface BorrowingContractModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCreditContract?: () => void;
 }
 
@@ -1275,8 +1276,8 @@ export function BorrowingContractModal({
     }
   };
 
-  const handleSave = (andClose = false) => {
-    onSubmit({
+  const handleSave = async (andClose = false) => {
+    const saved = await onSubmit({
       kind: "borrowing",
       code: contractCode,
       lender,
@@ -1311,6 +1312,7 @@ export function BorrowingContractModal({
       department,
       attachments,
     });
+    if (saved === false) return;
     if (andClose) onClose();
   };
 
@@ -2214,7 +2216,7 @@ export function BorrowingContractModal({
 export interface CreditContractModalProps {
   kind?: "borrowing" | "lending"; // borrowing: Image 3 ("Hợp đồng tín dụng"), lending: Image 4 ("Hợp đồng tín dụng cho vay")
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
 }
 
 export function CreditContractModal({
@@ -2257,8 +2259,8 @@ export function CreditContractModal({
     setAssets([]);
   };
 
-  const handleSave = () => {
-    onSubmit({
+  const handleSave = async () => {
+    const saved = await onSubmit({
       kind,
       contractType,
       contractNum,
@@ -2271,6 +2273,7 @@ export function CreditContractModal({
       purpose,
       assets,
     });
+    if (saved === false) return;
     onClose();
   };
 
@@ -2630,6 +2633,8 @@ export interface CreditOverviewViewProps {
   onOpenAIModal?: () => void;
   onOpenExcelModal?: () => void;
   notify: (msg: string) => void;
+  /** Loan agreements from the backend; the sample rows are used when absent. */
+  records?: { id: string; code: string; date: string; dueDate: string; partner: string; amount: number; rate: number; status: string }[];
 }
 
 export function CreditOverviewView({
@@ -2640,6 +2645,7 @@ export function CreditOverviewView({
   onOpenAIModal,
   onOpenExcelModal,
   notify,
+  records,
 }: CreditOverviewViewProps) {
   const isLoans = type === "loans";
   const [showListView, setShowListView] = useState(false);
@@ -3051,7 +3057,7 @@ export function CreditOverviewView({
                 </tr>
               </thead>
               <tbody>
-                {sampleRecords.map((r, i) => (
+                {(records || sampleRecords).map((r, i) => (
                   <tr key={r.id} style={{ background: "#ffffff" }}>
                     <td style={{ textAlign: "center", color: "#6b7280" }}>{i + 1}</td>
                     <td>

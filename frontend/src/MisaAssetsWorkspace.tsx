@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { saveAssetMovement, saveDepreciation, saveFixedAsset } from "./misa-api-writes";
+import { saveAssetCount, saveAssetMovement, saveDepreciation, saveFixedAsset } from "./misa-api-writes";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import {
   Car,
@@ -194,6 +194,7 @@ export default function MisaAssetsWorkspace({
     assets: "/api/v1/fixed-assets/assets/",
     transactions: "/api/v1/fixed-assets/transactions/",
     calculations: "/api/v1/fixed-assets/calculations/",
+    assetCounts: "/api/v1/fixed-assets/counts/?asset_type=FIXED_ASSET",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   // Navigation helper
@@ -245,6 +246,12 @@ export default function MisaAssetsWorkspace({
         originalCost: apiNumber(assetOf(row)?.original_cost), remainingValue: apiNumber(row.amount), status: row.status,
       })));
     }
+    if (apiRows.assetCounts) setStocktakeVouchers(apiRows.assetCounts.map((row) => {
+      const lines = row.lines || [];
+      const matched = lines.filter((line: any) => apiNumber(line.actual_quantity) === apiNumber(line.book_quantity)).length;
+      return { voucherNo: row.number, date: apiDate(row.created_at), auditDate: apiDate(row.count_date), purpose: row.purpose,
+        totalAssets: lines.length, matchedAssets: matched, diffAssets: lines.length - matched, conclusion: row.conclusion, status: "Đã ghi sổ" };
+    }));
     if (apiRows.calculations) setDeprVouchers(apiRows.calculations.map((row) => ({
       id: row.id, voucherNo: row.number, date: apiDate(row.period_end),
       period: `Tháng ${String(row.period_code || "").slice(5, 7)}/${String(row.period_code || "").slice(0, 4)}`,
@@ -504,6 +511,12 @@ export default function MisaAssetsWorkspace({
   };
 
   const handleSaveStocktake = (isPrint: boolean = false) => {
+    if (apiConnected) {
+      void apiSave((writer) => saveAssetCount(writer, "FIXED_ASSET", {
+        number: stocktakeVoucherNo, date: stocktakeAuditDate, purpose: stocktakePurpose, conclusion: stocktakeConclusion, rows: stocktakeRows,
+      })).then((saved) => { if (saved) { setShowStocktakeModal(false); setStocktakeView("table"); } });
+      return;
+    }
     const newV = {
       voucherNo: stocktakeVoucherNo || "KKTS00001",
       date: stocktakeDate || "12/10/2026 11:23:21",

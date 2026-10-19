@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { closingRowsFromLedger, createApiWriter, errorText, saveAdvanceSettlement, saveJournalVoucher, toApiDate } from "./misa-api-writes";
+import { closingRowsFromLedger, createApiWriter, errorText, saveAdvanceSettlement, saveJournalVoucher, toApiDate, toViDate } from "./misa-api-writes";
 import { useApiSession } from "./ApiSession";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { request } from "./live-api";
@@ -117,6 +117,8 @@ export default function MisaLedgerWorkspace({
   const [unlockPeriodModalOpen, setUnlockPeriodModalOpen] = useState(false);
   const [lockByTypeModalOpen, setLockByTypeModalOpen] = useState(false);
   const [autoLockModalOpen, setAutoLockModalOpen] = useState(false);
+  const [autoLockEnabled, setAutoLockEnabled] = useState(true);
+  const [autoLockDay, setAutoLockDay] = useState("20");
 
   const [statementModalOpen, setStatementModalOpen] = useState(false);
   const [statementModalType, setStatementModalType] = useState<string>("Báo cáo tài chính");
@@ -796,18 +798,12 @@ export default function MisaLedgerWorkspace({
     else if (statementCategory === "thuyet_minh_bctc_giua_nien_do") title = "Thuyết minh báo cáo tài chính giữa niên độ";
 
     if (apiConnected && apiToken) {
-      if (statementCategory.includes("giua_nien_do")) {
-        notify("Backend chưa có mã báo cáo tài chính giữa niên độ.");
-        return;
-      }
       const selected = statementCategory === "bctc"
         ? Object.entries(selectedBctcReports).filter(([, checked]) => checked).map(([code]) => code)
-        : ["B09-DN"];
+        : statementCategory === "bctc_giua_nien_do"
+          ? Object.entries(selectedMidYearReports).filter(([, checked]) => checked).map(([code]) => code)
+          : [statementCategory === "thuyet_minh_bctc" ? "B09-DN" : "B09a-DN"];
       if (!selected.length) { notify("Chọn ít nhất một báo cáo."); return; }
-      if (selected.some((code) => !["B01-DN", "B02-DN", "B03-DN", "B09-DN"].includes(code))) {
-        notify("Một báo cáo đã chọn chưa có mã tương ứng trên backend.");
-        return;
-      }
       try {
         const runs = [];
         for (const code of selected) {
@@ -863,6 +859,38 @@ export default function MisaLedgerWorkspace({
     { id: "BN", name: "Chi tiền gửi (Báo Nợ)", locked: true, lockDate: "30/09/2026" },
     { id: "HDBH", name: "Hóa đơn bán hàng", locked: true, lockDate: "30/09/2026" },
   ]);
+
+  const documentLocksUrl = `/api/v1/common/document-locks/?company_id=${encodeURIComponent(company.id)}`;
+  // Both lock dialogs read the saved backend configuration when they open.
+  useEffect(() => {
+    if (!(lockByTypeModalOpen || autoLockModalOpen) || !apiConnected || !apiToken) return;
+    request<any>(documentLocksUrl, apiToken)
+      .then((data) => {
+        setVoucherTypes((data.locks || []).map((row: any) => ({
+          id: row.code, name: row.name, locked: Boolean(row.locked), lockDate: toViDate(row.lock_date || ""),
+        })));
+        setAutoLockEnabled(Boolean(data.auto_lock?.enabled));
+        setAutoLockDay(data.auto_lock?.day === "END" ? "cuoi_thang" : String(data.auto_lock?.day || 20));
+      })
+      .catch((error) => notify(`Không tải được cấu hình khóa sổ: ${errorText(error)}`));
+  }, [lockByTypeModalOpen, autoLockModalOpen, apiConnected, apiToken, documentLocksUrl]);
+  const saveDocumentLocks = async (close: () => void) => {
+    if (!apiConnected || !apiToken) { close(); notify("Đã lưu thiết lập khóa sổ!"); return; }
+    try {
+      await request(documentLocksUrl, apiToken, {
+        method: "PUT",
+        body: JSON.stringify({
+          company: company.id,
+          locks: voucherTypes.map((row) => ({ code: row.id, locked: row.locked, lock_date: row.locked ? toApiDate(row.lockDate) : null })),
+          auto_lock: { enabled: autoLockEnabled, day: autoLockDay === "cuoi_thang" ? "END" : Number(autoLockDay) },
+        }),
+      });
+      close();
+      notify("Đã lưu thiết lập khóa sổ.");
+    } catch (error) {
+      notify(`Không lưu được thiết lập khóa sổ: ${errorText(error)}`);
+    }
+  };
 
   // Sample Data for Tables in Subtabs
   const [advanceRequests, setAdvanceRequests] = useState([
@@ -5812,7 +5840,7 @@ export default function MisaLedgerWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => notify("Backend chưa hỗ trợ khóa sổ riêng theo loại chứng từ.")}
+                onClick={() => saveDocumentLocks(() => setLockByTypeModalOpen(false))}
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
@@ -5880,7 +5908,7 @@ export default function MisaLedgerWorkspace({
 
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <input type="checkbox" id="auto-lock-enable" defaultChecked />
+                <input type="checkbox" id="auto-lock-enable" checked={autoLockEnabled} onChange={(e) => setAutoLockEnabled(e.target.checked)} />
                 <label htmlFor="auto-lock-enable" style={{ fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>
                   Bật tính năng tự động khóa sổ định kỳ
                 </label>
@@ -5890,7 +5918,8 @@ export default function MisaLedgerWorkspace({
                 <div style={{ fontSize: 13, color: "#475569" }}>
                   Tự động khóa sổ vào ngày:
                   <select
-                    defaultValue="20"
+                    value={autoLockDay}
+                    onChange={(e) => setAutoLockDay(e.target.value)}
                     style={{
                       marginLeft: 8,
                       marginRight: 8,
@@ -5939,7 +5968,7 @@ export default function MisaLedgerWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => notify("Backend chưa có cấu hình hoặc lịch chạy tự động khóa sổ.")}
+                onClick={() => saveDocumentLocks(() => setAutoLockModalOpen(false))}
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,

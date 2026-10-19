@@ -40,6 +40,8 @@ urlpatterns = [
     path('api/v1/fixed-assets/', include('fixed_assets.urls')),
     path('api/v1/tax/', include('tax_management.urls')),
     path('api/v1/reports/', include('reporting.urls')),
+    path('api/v1/payroll/', include('payroll.urls')),
+    path('api/v1/costing/', include('costing.urls')),
     path('api/v1/common/', include('common_services.urls')),
 
     # OpenAPI / Swagger Documentation

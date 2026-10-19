@@ -39,9 +39,8 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
     setBusy(true);
     setError("");
     try {
-      const available = await authenticate(email.trim(), password);
+      await authenticate(email.trim(), password);
       setPassword("");
-      if (!available.length) setError("Tài khoản chưa có quyền xem công ty nào.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không đăng nhập được.");
     } finally {

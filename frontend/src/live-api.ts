@@ -29,18 +29,91 @@ export class ApiError extends Error {
   }
 }
 
+const SESSION_EXPIRED_MESSAGE = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+let refreshInFlight: Promise<string | null> | null = null;
+
+function storedSession(): Record<string, any> | null {
+  try {
+    const raw = localStorage.getItem("erp_api_session");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function expireSession(staleToken: string) {
+  const current = storedSession();
+  if (current && (current.token || current.access) !== staleToken) return;
+  localStorage.removeItem("erp_api_session");
+  localStorage.removeItem("erp_token");
+  localStorage.removeItem("erp_refresh");
+  localStorage.removeItem("erp_company_id");
+  window.dispatchEvent(new Event("erp_api_session_expired"));
+}
+
+async function renewAccessToken(staleToken: string): Promise<string | null> {
+  const current = storedSession();
+  const latestToken = current?.token || current?.access;
+  if (latestToken && latestToken !== staleToken) return latestToken;
+  const refresh = current?.refresh || localStorage.getItem("erp_refresh");
+  if (!refresh) {
+    expireSession(staleToken);
+    return null;
+  }
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch("/api/token/refresh/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh }),
+        });
+        if (!response.ok) throw new Error("Token refresh failed");
+        const body = await response.json() as { access?: string; refresh?: string };
+        if (!body.access) throw new Error("Missing access token");
+        const session = storedSession();
+        if (!session || (session.token || session.access) !== staleToken) {
+          return session?.token || session?.access || null;
+        }
+        const next = { ...session, token: body.access, access: body.access,
+          access_token: body.access, refresh: body.refresh || refresh };
+        localStorage.setItem("erp_api_session", JSON.stringify(next));
+        localStorage.setItem("erp_token", body.access);
+        if (body.refresh) localStorage.setItem("erp_refresh", body.refresh);
+        window.dispatchEvent(new CustomEvent("erp_api_token_changed", { detail: next }));
+        return body.access;
+      } catch {
+        expireSession(staleToken);
+        return null;
+      }
+    })().finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
 export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(path, {
+    const fetchWithToken = (access?: string) => fetch(path, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options?.headers,
+        ...(access ? { Authorization: `Bearer ${access}` } : {}),
       },
     });
-  } catch {
+    response = await fetchWithToken(token);
+    if (response.status === 401 && token) {
+      const renewed = await renewAccessToken(token);
+      if (!renewed) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
+      response = await fetchWithToken(renewed);
+      if (response.status === 401) {
+        expireSession(renewed);
+        throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
+      }
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
     throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
   }
   const body: unknown = await response.json().catch(() => null);

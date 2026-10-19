@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApiSession } from "./ApiSession";
-import { request } from "./live-api";
+import { ApiError, request } from "./live-api";
 import { createApiWriter, errorText, FormDataError, type ApiWriter } from "./misa-api-writes";
 
 type ApiRow = Record<string, any>;
@@ -46,7 +46,9 @@ export function useMisaApiLists(
       const errors: string[] = [];
       results.forEach((result, index) => {
         if (result.status === "fulfilled") next[result.value[0]] = result.value[1];
-        else errors.push(`${entries[index][0]}: ${result.reason instanceof Error ? result.reason.message : "lỗi tải dữ liệu"}`);
+        else if (!(result.reason instanceof ApiError && result.reason.status === 401)) {
+          errors.push(`${entries[index][0]}: ${result.reason instanceof Error ? result.reason.message : "lỗi tải dữ liệu"}`);
+        }
       });
       setRows(next);
       if (errors.length) notify(`Không tải được dữ liệu ${errors.join("; ")}`);

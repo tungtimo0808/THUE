@@ -93,6 +93,28 @@ export default function MisaTaxWorkspace({
   // State: Tab 1 (Khai thuế)
   const [declarations, setDeclarations] = useState<DeclarationItem[]>(INITIAL_DECLARATIONS);
   const [selectAllDec, setSelectAllDec] = useState(false);
+  const [authority, setAuthority] = useState({ department: "001 - Cục Thuế Thành phố Hà Nội", branchOffice: "00109 - Chi cục Thuế Quận Cầu Giấy", taxAgent: "" });
+  const authorityUrl = `/api/v1/tax/authority-settings/?company_id=${encodeURIComponent(company.id)}`;
+  // Managing tax office and registered declaration forms are stored on the backend.
+  useEffect(() => {
+    if (!apiConnected || !apiToken) return;
+    request<any>(authorityUrl, apiToken).then((data) => {
+      if (data.branch_office) setAuthority({ department: data.department, branchOffice: data.branch_office, taxAgent: data.tax_agent || "" });
+      const codes = new Set((data.registered_forms || []).map((row: any) => row.code));
+      if (codes.size) setDeclarations((prev) => prev.map((row) => ({ ...row, checked: codes.has(row.code) })));
+    }).catch((error) => notify(`Không tải được thiết lập cơ quan thuế: ${errorText(error)}`));
+  }, [apiConnected, apiToken, authorityUrl]);
+  const saveAuthority = async (body: Record<string, unknown>, message: string) => {
+    if (!apiConnected || !apiToken) { notify(message); return true; }
+    try {
+      await request(authorityUrl, apiToken, { method: "PUT", body: JSON.stringify({ company: company.id, ...body }) });
+      notify(message);
+      return true;
+    } catch (error) {
+      notify(`Không lưu được: ${errorText(error)}`);
+      return false;
+    }
+  };
 
   const handleToggleDeclaration = (id: string) => {
     setDeclarations((prev) =>
@@ -392,6 +414,21 @@ export default function MisaTaxWorkspace({
                 >
                   {apiConnected ? "Ghi nhận thanh toán thuế" : "Lập giấy nộp tiền"}
                 </button>
+                {apiConnected && <button
+                  type="button"
+                  onClick={() => void apiSave(async (writer) => {
+                    const obligation = openObligations.find((row) => row.id === selectedObligation);
+                    if (!obligation) throw new Error("Chọn nghĩa vụ thuế cần nộp.");
+                    const queued = await writer.action("/api/v1/tax/obligations/", obligation.id, "e-payment", {
+                      amount: String(paymentAmount || obligation.outstanding_amount),
+                    });
+                    setShowTaxPaymentModal(false);
+                    return { record: queued, message: `Đã lập giấy nộp tiền điện tử ${Number(queued.request_payload?.amount || 0).toLocaleString("vi-VN")} đ, đang chờ cổng thuế điện tử xử lý.` };
+                  })}
+                  style={{ height: 32, padding: "0 18px", background: "#ffffff", color: "#00a862", border: "1px solid #00a862", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                >
+                  Lập giấy nộp tiền điện tử
+                </button>}
               </div>
             </div>
           </div>
@@ -429,7 +466,7 @@ export default function MisaTaxWorkspace({
               <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", display: "block", marginBottom: 5 }}>Cục Thuế quản lý:</label>
-                  <select style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}>
+                  <select value={authority.department} onChange={(e) => setAuthority((prev) => ({ ...prev, department: e.target.value }))} style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}>
                     <option>001 - Cục Thuế Thành phố Hà Nội</option>
                     <option>002 - Cục Thuế Thành phố Hồ Chí Minh</option>
                     <option>003 - Cục Thuế Thành phố Đà Nẵng</option>
@@ -438,7 +475,7 @@ export default function MisaTaxWorkspace({
 
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", display: "block", marginBottom: 5 }}>Chi cục Thuế quản lý trực tiếp:</label>
-                  <select style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}>
+                  <select value={authority.branchOffice} onChange={(e) => setAuthority((prev) => ({ ...prev, branchOffice: e.target.value }))} style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}>
                     <option>00109 - Chi cục Thuế Quận Cầu Giấy</option>
                     <option>00101 - Chi cục Thuế Quận Ba Đình</option>
                     <option>00103 - Chi cục Thuế Quận Đống Đa</option>
@@ -450,6 +487,8 @@ export default function MisaTaxWorkspace({
                   <input
                     type="text"
                     placeholder="Tên đại lý thuế hoặc tổ chức kê khai thay..."
+                    value={authority.taxAgent}
+                    onChange={(e) => setAuthority((prev) => ({ ...prev, taxAgent: e.target.value }))}
                     style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, boxSizing: "border-box" }}
                   />
                 </div>
@@ -465,9 +504,12 @@ export default function MisaTaxWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    notify("Đã lưu thiết lập thông tin cơ quan thuế thành công!");
-                    setShowTaxAuthorityModal(false);
+                  onClick={async () => {
+                    const saved = await saveAuthority(
+                      { department: authority.department, branch_office: authority.branchOffice, tax_agent: authority.taxAgent },
+                      "Đã lưu thiết lập thông tin cơ quan thuế thành công!",
+                    );
+                    if (saved) setShowTaxAuthorityModal(false);
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 >
@@ -712,7 +754,9 @@ export default function MisaTaxWorkspace({
         <div style={{ textAlign: "center", marginTop: 36 }}>
           <button
             type="button"
-            onClick={() => notify("Đã lưu đăng ký tờ khai sử dụng thành công!")}
+            onClick={() => void saveAuthority({
+              registered_forms: declarations.filter((row) => row.checked).map((row) => ({ code: row.code, name: row.name, frequency: row.cycle })),
+            }, "Đã lưu đăng ký tờ khai sử dụng thành công!")}
             style={{
               height: 36,
               padding: "0 32px",

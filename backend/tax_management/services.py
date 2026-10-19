@@ -293,3 +293,71 @@ def export_data(data, request):
     obj = models.TaxExport.objects.create(**data, data_snapshot=snapshot, warnings=warnings, exported_by=actor(request))
     audit(request, obj, "EXPORT", after={"format": obj.format_code, "version": obj.format_version, "warnings": warnings})
     return obj
+
+
+AUTHORITY_CONNECTOR = "TAX_AUTHORITY"
+
+
+def authority_settings(company):
+    """Managing tax office, tax agent and the declaration forms the company files (stored on its tax-authority connector)."""
+    connector = models.ConnectorConfig.objects.filter(company=company, code=AUTHORITY_CONNECTOR).first()
+    config = connector.config if connector else {}
+    return {
+        "department": config.get("department", ""), "branch_office": config.get("branch_office", ""),
+        "tax_agent": config.get("tax_agent", ""), "registered_forms": config.get("registered_forms", []),
+        "configured": bool(connector and config.get("branch_office")),
+    }
+
+
+@transaction.atomic
+def save_authority_settings(company, data, request):
+    connector, _ = models.ConnectorConfig.objects.get_or_create(
+        company=company, code=AUTHORITY_CONNECTOR,
+        defaults={"provider": "Cơ quan thuế", "channel": "TAX_AUTHORITY", "config": {}},
+    )
+    config = dict(connector.config or {})
+    for field in ("department", "branch_office", "tax_agent"):
+        if field in data:
+            config[field] = str(data.get(field) or "")[:255]
+    if "registered_forms" in data:
+        forms = data.get("registered_forms") or []
+        if not isinstance(forms, list) or any(not isinstance(item, dict) or not item.get("code") for item in forms):
+            raise ValidationError({"registered_forms": "Danh sách tờ khai không hợp lệ."})
+        config["registered_forms"] = [
+            {"code": str(item["code"])[:30], "name": str(item.get("name", ""))[:255], "frequency": str(item.get("frequency", ""))[:30]}
+            for item in forms
+        ]
+    connector.config = config
+    connector.is_active = True
+    connector.save(update_fields=("config", "is_active", "updated_at"))
+    audit(request, connector, "CONFIGURE", after=config)
+    return authority_settings(company)
+
+
+@transaction.atomic
+def request_e_payment(obligation, request):
+    """Prepare an electronic state-budget payment order for the tax portal; it stays PENDING until the portal answers."""
+    obligation = models.TaxObligation.objects.select_for_update().get(pk=obligation.pk)
+    connector = models.ConnectorConfig.objects.filter(company=obligation.company, code=AUTHORITY_CONNECTOR, is_active=True).first()
+    if not connector or not connector.config.get("branch_office"):
+        raise ValidationError("Chưa thiết lập cơ quan thuế quản lý; hãy thiết lập trước khi lập giấy nộp tiền điện tử.")
+    outstanding = obligation.assessed_amount + obligation.adjustment_amount - obligation.paid_amount
+    amount = Decimal(str(request.data.get("amount") or outstanding))
+    if amount <= 0 or amount > outstanding:
+        raise ValidationError({"amount": "Số tiền nộp phải lớn hơn 0 và không vượt số còn phải nộp."})
+    if obligation.integration_requests.filter(task_type="E_PAYMENT", status="PENDING").exists():
+        raise ValidationError("Nghĩa vụ thuế này đã có giấy nộp tiền điện tử đang chờ cổng thuế xử lý.")
+    payload = {
+        "tax_type": obligation.tax_type, "period": obligation.period.code, "amount": str(amount),
+        "treasury": str(request.data.get("treasury") or "")[:255],
+        "bank_account": str(request.data.get("bank_account") or "")[:100],
+        "payment_method": str(request.data.get("payment_method") or "BANK_TRANSFER")[:50],
+        "tax_office": connector.config.get("branch_office", ""),
+    }
+    obj = models.IntegrationRequest.objects.create(
+        company=obligation.company, connector=connector, obligation=obligation, task_type="E_PAYMENT",
+        idempotency_key=f"E_PAYMENT:{obligation.pk}:{timezone.now().timestamp()}", request_payload=payload,
+        created_by=actor(request),
+    )
+    audit(request, obligation, "REQUEST_E_PAYMENT", after={"integration_request": str(obj.id), "amount": str(amount)})
+    return obj

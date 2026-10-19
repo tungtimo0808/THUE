@@ -32,7 +32,9 @@ import {
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { saveAssetMovement, saveDepreciation, saveToolAsset } from "./misa-api-writes";
+import {
+  previewPrepaidAllocation, saveAssetCount, saveAssetMovement, saveDepreciation, savePrepaidAllocation, savePrepaidDecrease, savePrepaidExpense, saveToolAsset,
+} from "./misa-api-writes";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 
 export type MisaToolsWorkspaceProps = {
@@ -603,6 +605,10 @@ export default function MisaToolsWorkspace({
     calculations: "/api/v1/fixed-assets/calculations/",
     allocationRules: "/api/v1/general-ledger/allocation-rules/",
     allocationRuns: "/api/v1/general-ledger/allocation-runs/",
+    prepaidExpenses: "/api/v1/general-ledger/prepaid-expenses/",
+    prepaidAllocations: "/api/v1/general-ledger/prepaid-allocations/",
+    prepaidDecreases: "/api/v1/general-ledger/prepaid-decreases/",
+    toolCounts: "/api/v1/fixed-assets/counts/?asset_type=TOOL",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   const toolsData = apiConnected ? (apiRows.assets || []).filter((row) => row.asset_type === "TOOL").map((row) => ({
@@ -844,7 +850,6 @@ export default function MisaToolsWorkspace({
       for (const row of rows.filter((item) => item.assetCode)) {
         const asset = assets.find((item) => item.code === row.assetCode && item.asset_type === "TOOL");
         if (!asset) throw new Error(`CCDC ${row.assetCode} chưa có trong danh mục.`);
-        if (Number(row.requestedQty) !== Number(asset.quantity)) throw new Error(`API chỉ hỗ trợ ${kind === "transfer" ? "điều chuyển" : "ghi giảm"} toàn bộ CCDC ${row.assetCode}; số lượng phải bằng ${asset.quantity}.`);
       }
       return saveAssetMovement(writer, kind, {
         rows, voucherNo: kind === "transfer" ? transferVoucherNo : decreaseVoucherNo,
@@ -865,13 +870,20 @@ export default function MisaToolsWorkspace({
       const assets = await writer.list("assets");
       for (const row of selected) {
         if (!assets.some((asset) => asset.code === row.code && asset.asset_type === "TOOL")) throw new Error(`CCDC ${row.code} chưa có trong danh mục.`);
-        if (Number(row.periodDiff)) throw new Error("API chưa hỗ trợ thay đổi số kỳ phân bổ trong chứng từ điều chỉnh.");
-        if (!Number(row.remainingDiff)) throw new Error(`CCDC ${row.code}: nhập giá trị điều chỉnh khác 0.`);
+        if (!Number(row.remainingDiff) && !Number(row.periodDiff)) throw new Error(`CCDC ${row.code}: nhập giá trị hoặc số kỳ điều chỉnh khác 0.`);
       }
-      return saveAssetMovement(writer, "revaluation", {
-        voucherNo: adjustmentVoucherNo, date: adjustmentVoucherDate, reason: adjustmentReason,
-        rows: selected.map((row) => ({ assetCode: row.code, origDiff: row.remainingDiff })),
-      });
+      const common = { date: adjustmentVoucherDate, reason: adjustmentReason };
+      const messages: string[] = [];
+      const valueRows = selected.filter((row) => Number(row.remainingDiff));
+      const periodRows = selected.filter((row) => Number(row.periodDiff));
+      if (valueRows.length) messages.push((await saveAssetMovement(writer, "revaluation", {
+        ...common, voucherNo: adjustmentVoucherNo, rows: valueRows.map((row) => ({ assetCode: row.code, origDiff: row.remainingDiff })),
+      })).message);
+      if (periodRows.length) messages.push((await saveAssetMovement(writer, "lifeChange", {
+        ...common, voucherNo: valueRows.length ? "" : adjustmentVoucherNo,
+        rows: periodRows.map((row) => ({ assetCode: row.code, periodDiff: row.periodDiff })),
+      })).message);
+      return { message: messages.join(" ") };
     });
     if (saved) setShowAdjustmentModal(false);
   };
@@ -1136,6 +1148,8 @@ export default function MisaToolsWorkspace({
   ]);
   const [prepaidDecreaseFilterPeriod, setPrepaidDecreaseFilterPeriod] = useState("Năm 2026");
   const [prepaidDecreaseSearch, setPrepaidDecreaseSearch] = useState("");
+  // Backend amounts of the next allocation per item code (loaded when the allocation voucher opens).
+  const [prepaidPreview, setPrepaidPreview] = useState<Record<string, number> | null>(null);
   const [prepaidDecreaseVouchers, setPrepaidDecreaseVouchers] = useState([
     {
       voucherNo: "GGCP00001",
@@ -1146,6 +1160,42 @@ export default function MisaToolsWorkspace({
       status: "Đã ghi sổ",
     },
   ]);
+
+  useEffect(() => {
+    if (!apiConnected) return;
+    const voucherStatus = (row: any) => row.status === "POSTED" ? "Đã ghi sổ" : row.status || "";
+    if (apiRows.prepaidExpenses) setPrepaidExpensesList(apiRows.prepaidExpenses.map((row) => ({
+      code: row.code, name: row.name, totalAmount: apiNumber(row.amount), allocationMonths: row.allocation_periods,
+      allocatedAmount: apiNumber(row.amount) - apiNumber(row.remaining_amount), remainingAmount: apiNumber(row.remaining_amount),
+      costAccount: row.targets?.map((target: any) => target.expense_account_code).join(", ") || "",
+      dept: row.targets?.[0]?.description || "", startDate: apiDate(row.start_date),
+    })));
+    if (apiRows.prepaidAllocations) setPrepaidAllocVouchers(apiRows.prepaidAllocations.map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.posting_date),
+      period: `Tháng ${String(row.period_code || "").slice(5, 7)}/${String(row.period_code || "").slice(0, 4)}`,
+      reason: row.description, totalAmount: apiNumber(row.total_amount), status: voucherStatus(row),
+    })));
+    if (apiRows.toolCounts) setStocktakeVouchers(apiRows.toolCounts.map((row) => {
+      const book = (row.lines || []).reduce((total: number, line: any) => total + apiNumber(line.book_quantity), 0);
+      const actual = (row.lines || []).reduce((total: number, line: any) => total + apiNumber(line.actual_quantity), 0);
+      return { voucherNo: row.number, voucherDate: apiDate(row.count_date), toDate: apiDate(row.count_date), purpose: row.purpose,
+        bookQty: book, actualQty: actual, diffQty: actual - book, status: "Đã hoàn thành" };
+    }));
+    if (apiRows.prepaidDecreases) setPrepaidDecreaseVouchers(apiRows.prepaidDecreases.map((row) => ({
+      voucherNo: row.number, voucherDate: apiDate(row.document_date), reason: row.description,
+      totalAmount: apiNumber(row.total_amount), itemCount: new Set((row.lines || []).map((line: any) => line.prepaid)).size,
+      status: voucherStatus(row),
+    })));
+  }, [apiConnected, apiRows]);
+
+  useEffect(() => {
+    if (!apiConnected || !showPrepaidAllocVoucherModal) { setPrepaidPreview(null); return; }
+    void apiSave(async (writer) => {
+      const rows = await previewPrepaidAllocation(writer, prepaidAllocPostingDate);
+      setPrepaidPreview(Object.fromEntries(rows.map((row) => [row.code, apiNumber(row.amount)])));
+      return { message: rows.length ? `Kỳ này có ${rows.length} khoản cần phân bổ.` : "Kỳ này không còn khoản nào cần phân bổ." };
+    });
+  }, [apiConnected, showPrepaidAllocVoucherModal, prepaidAllocPostingDate]);
 
   const toggleFavorite = (reportName: string) => {
     if (favoriteReports.includes(reportName)) {
@@ -6132,6 +6182,11 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetCount(writer, "TOOL", { number: stocktakeVoucherNo, date: stocktakeVoucherDate, purpose: stocktakePurpose, rows: stocktakeRows }))
+                      .then((saved) => { if (saved) { setShowStocktakeVoucherModal(false); setStocktakeViewMode("list"); } });
+                    return;
+                  }
                   const newVoucher = {
                     voucherNo: stocktakeVoucherNo,
                     voucherDate: stocktakeVoucherDate,
@@ -6154,6 +6209,11 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) => saveAssetCount(writer, "TOOL", { number: stocktakeVoucherNo, date: stocktakeVoucherDate, purpose: stocktakePurpose, rows: stocktakeRows }))
+                      .then((saved) => { if (saved) { setShowStocktakeVoucherModal(false); setStocktakeViewMode("list"); } });
+                    return;
+                  }
                   const newVoucher = {
                     voucherNo: stocktakeVoucherNo,
                     voucherDate: stocktakeVoucherDate,
@@ -10419,7 +10479,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows }, false))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form1Code,
                       name: form1Name || "Chi phí trả trước mới",
@@ -10443,7 +10507,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows }, false))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form1Code,
                       name: form1Name || "Chi phí trả trước mới",
@@ -10895,7 +10963,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form2Code, name: form2Name, allocMonths: form2AllocMonths, remainingMonths: form2RemainingMonths, recordDate: form2RecordDate, amount: form2Amount, allocatedAmount: form2AllocatedAmount, waitingAcc: form2WaitingAcc, stopAlloc: form2StopAlloc, rows: form2Rows }, true))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form2Code,
                       name: form2Name || "Chi phí trả trước đầu kỳ",
@@ -10919,7 +10991,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form2Code, name: form2Name, allocMonths: form2AllocMonths, remainingMonths: form2RemainingMonths, recordDate: form2RecordDate, amount: form2Amount, allocatedAmount: form2AllocatedAmount, waitingAcc: form2WaitingAcc, stopAlloc: form2StopAlloc, rows: form2Rows }, true))
+                        .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
                     const newItem = {
                       code: form2Code,
                       name: form2Name || "Chi phí trả trước đầu kỳ",
@@ -11625,8 +11701,8 @@ export default function MisaToolsWorkspace({
                         </tr>
                       </thead>
                       <tbody>
-                        {prepaidExpensesList.map((cp, idx) => {
-                          const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                        {prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
+                          const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
                           return (
                             <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
@@ -11662,8 +11738,8 @@ export default function MisaToolsWorkspace({
                         </tr>
                       </thead>
                       <tbody>
-                        {prepaidExpensesList.map((cp, idx) => {
-                          const allocThisPeriod = Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                        {prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
+                          const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
                           return (
                             <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
@@ -11699,7 +11775,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidAllocation(writer, { number: prepaidAllocVoucherNo, postingDate: prepaidAllocPostingDate, documentDate: prepaidAllocVoucherDate, description: prepaidAllocReason }))
+                        .then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                      return;
+                    }
                     const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const newV = {
@@ -11737,7 +11817,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidAllocation(writer, { number: prepaidAllocVoucherNo, postingDate: prepaidAllocPostingDate, documentDate: prepaidAllocVoucherDate, description: prepaidAllocReason }))
+                        .then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                      return;
+                    }
                     const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const newV = {
@@ -12170,7 +12254,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidDecrease(writer, { number: prepaidDecreaseVoucherNo, date: prepaidDecreaseVoucherDate, reason: prepaidDecreaseReason, rows: prepaidDecreaseDetailRows }))
+                        .then((saved) => { if (saved) setShowPrepaidDecreaseModal(false); });
+                      return;
+                    }
                     const totalAmt = prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0);
                     const newV = {
                       voucherNo: prepaidDecreaseVoucherNo,
@@ -12201,7 +12289,11 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) { notify("API phân bổ tài khoản chưa hỗ trợ hồ sơ chi phí trả trước theo từng khoản và lịch phân bổ; chưa tạo chứng từ."); return; }
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidDecrease(writer, { number: prepaidDecreaseVoucherNo, date: prepaidDecreaseVoucherDate, reason: prepaidDecreaseReason, rows: prepaidDecreaseDetailRows }))
+                        .then((saved) => { if (saved) setShowPrepaidDecreaseModal(false); });
+                      return;
+                    }
                     const totalAmt = prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0);
                     const newV = {
                       voucherNo: prepaidDecreaseVoucherNo,

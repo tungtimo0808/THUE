@@ -717,6 +717,26 @@ export async function saveInventoryTransaction(w: ApiWriter, kind: keyof typeof 
   return { ...result, message: describeResult(label, result) };
 }
 
+/** "Lệnh sản xuất": finished goods (with quantity) and the materials they consume. */
+export async function saveProductionOrder(w: ApiWriter, d: Row) {
+  const products = (d.products || []).filter((row: Row) => String(row.productCode || "").trim());
+  if (!products.length) throw new FormDataError("Lệnh sản xuất cần ít nhất một thành phẩm có mã.");
+  const materials = (d.materials || []).filter((row: Row) => String(row.materialCode || "").trim());
+  const path = "/api/v1/inventory/production-orders/";
+  const status = /hoàn thành/i.test(String(d.status)) ? "COMPLETED" : /chưa/i.test(String(d.status)) ? "PLANNED" : /hủy/i.test(String(d.status)) ? "CANCELLED" : "IN_PROGRESS";
+  const record = await w.post(path, {
+    number: await nextVoucherNumber(w, path, "LSX", d.code), document_date: toApiDate(d.date), description: String(d.description || ""), status,
+    products: await Promise.all(products.map(async (row: Row) => {
+      if (num(row.qty) <= 0) throw new FormDataError(`Nhập số lượng cho thành phẩm ${row.productCode}.`);
+      return { item: (await w.item(row.productCode)).id, quantity: String(num(row.qty)), note: String(row.salesOrder || row.costObject || "") };
+    })),
+    materials: await Promise.all(materials.map(async (row: Row) => ({
+      item: (await w.item(row.materialCode)).id, quantity: num(row.qty) ? String(num(row.qty)) : null,
+    }))),
+  });
+  return { record, message: `Đã lưu lệnh sản xuất ${record.number}.` };
+}
+
 /* ───────────────────────────── Tài sản cố định ───────────────────────────── */
 
 const FIXED_ASSETS = "/api/v1/fixed-assets/";
@@ -829,13 +849,13 @@ export async function saveDepreciation(w: ApiWriter, d: Row, calculationType: "D
 }
 
 /** Đánh giá lại / Điều chuyển / Ghi giảm TSCĐ: one asset transaction per filled row. */
-export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "transfer" | "disposal", d: Row) {
+export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "transfer" | "disposal" | "lifeChange", d: Row) {
   const rows = (d.rows || []).filter((row: Row) => String(row.assetCode || "").trim());
   if (!rows.length) throw new FormDataError("Chọn ít nhất một tài sản.");
   const assets = await w.list("assets");
   const departments = kind === "transfer" ? await w.list("/api/v1/organization/departments/") : [];
   const path = `${FIXED_ASSETS}transactions/`;
-  const prefix = { revaluation: "ĐGL", transfer: "ĐCTS", disposal: "GGTS" }[kind];
+  const prefix = { revaluation: "ĐGL", transfer: "ĐCTS", disposal: "GGTS", lifeChange: "ĐCKY" }[kind];
   const messages: string[] = [];
   for (const [index, row] of rows.entries()) {
     const asset = assets.find((item) => item.code === String(row.assetCode).trim());
@@ -844,7 +864,19 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
       number: await nextVoucherNumber(w, path, prefix, index === 0 ? d.voucherNo : ""),
       transaction_date: toApiDate(d.date), asset: asset.id, reason: String(d.reason || ""),
     };
-    if (kind === "revaluation") {
+    // Part of the tracked quantity: the backend splits that part off before moving or disposing of it.
+    const requested = row.requestedQty === undefined || row.requestedQty === "" ? null : num(row.requestedQty);
+    if (requested !== null && (kind === "transfer" || kind === "disposal")) {
+      if (requested <= 0 || requested > num(asset.quantity)) {
+        throw new FormDataError(`Số lượng của ${asset.code} phải lớn hơn 0 và không vượt ${num(asset.quantity)}.`);
+      }
+      if (requested < num(asset.quantity)) body.quantity = String(requested);
+    }
+    if (kind === "lifeChange") {
+      const periods = Math.round(num(row.newPeriods) || num(asset.useful_life_periods) + num(row.periodDiff));
+      if (periods <= num(asset.periods_processed)) throw new FormDataError(`Số kỳ mới của ${asset.code} phải lớn hơn số kỳ đã phân bổ (${num(asset.periods_processed)}).`);
+      Object.assign(body, { transaction_type: "LIFE_CHANGE", target_useful_life_periods: periods });
+    } else if (kind === "revaluation") {
       const diff = num(row.origDiff) || num(row.origAfter) - num(row.origBefore);
       if (!diff) throw new FormDataError(`Tài sản ${asset.code}: nhập nguyên giá sau đánh giá khác nguyên giá hiện tại.`);
       Object.assign(body, { transaction_type: diff > 0 ? "VALUE_INCREASE" : "VALUE_DECREASE", amount: String(Math.abs(diff)) });
@@ -853,13 +885,191 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
       if (!target) throw new FormDataError(`Phòng ban nhận "${row.toDept || ""}" chưa có trong cơ cấu tổ chức.`);
       Object.assign(body, { transaction_type: "TRANSFER", target_department: target.id });
     } else {
-      // The backend only accepts the book value at the time of disposal.
-      Object.assign(body, { transaction_type: "DISPOSAL", amount: String(num(asset.remaining_value)) });
+      // The backend only accepts the book value at the time of disposal; a partial one computes its own share.
+      Object.assign(body, { transaction_type: "DISPOSAL", amount: body.quantity ? "0" : String(num(asset.remaining_value)) });
     }
     const result = await createAndPost(w, path, body);
     messages.push(describeResult(`chứng từ ${asset.code}`, result));
   }
   return { message: messages.join(" ") };
+}
+
+/** "Kiểm kê TSCĐ / CCDC": records book vs counted quantity per asset. */
+export async function saveAssetCount(w: ApiWriter, assetType: "FIXED_ASSET" | "TOOL", d: Row) {
+  const assets = (await w.list("assets")).filter((row) => row.asset_type === assetType);
+  const rows = (d.rows || []).filter((row: Row) => String(row.assetCode || row.code || "").trim());
+  if (!rows.length) throw new FormDataError("Chọn ít nhất một tài sản để kiểm kê.");
+  const path = `${FIXED_ASSETS}counts/`;
+  const lines = rows.map((row: Row) => {
+    const code = String(row.assetCode || row.code).trim();
+    const asset = assets.find((item) => item.code === code);
+    if (!asset) throw new FormDataError(`${assetType === "TOOL" ? "CCDC" : "TSCĐ"} ${code} chưa có trên hệ thống.`);
+    const actual = row.actualQty !== undefined ? num(row.actualQty) : row.exists === false ? 0 : num(asset.quantity);
+    return {
+      asset: asset.id, actual_quantity: String(actual), condition: String(row.currentQuality || ""),
+      recommendation: String(row.recommendation || row.solution || ""), note: String(row.note || ""),
+    };
+  });
+  const record = await w.post(path, {
+    asset_type: assetType, number: await nextVoucherNumber(w, path, assetType === "TOOL" ? "BBKK" : "KKTS", d.number),
+    count_date: toApiDate(d.date), purpose: String(d.purpose || ""), conclusion: String(d.conclusion || ""), lines,
+  });
+  return { record, message: `Đã lưu biên bản kiểm kê ${record.number} (${lines.length} tài sản).` };
+}
+
+/* ───────────────────────── Tiền mặt / Ngân hàng ───────────────────────── */
+
+/**
+ * "Ghi sổ" on a cash or bank voucher: walk it through submit → approve → confirm (cash) / post (bank).
+ * Stops where the backend requires another person (e.g. the cashier must not be the preparer).
+ */
+export async function postMoneyTransaction(w: ApiWriter, module: "cash" | "bank", id: string) {
+  const path = `/api/v1/${module}/transactions/`;
+  const finalStep = module === "cash" ? "confirm" : "post";
+  let record = await w.get(`${path}${id}/`);
+  for (let guard = 0; guard < 4 && record.status !== "POSTED"; guard += 1) {
+    const step = ["DRAFT", "REJECTED", "REVISION_REQUIRED"].includes(record.status) ? "submit"
+      : record.status === "PENDING_APPROVAL" ? "approve" : record.status === "APPROVED" ? finalStep : "";
+    if (!step) throw new FormDataError(`Chứng từ ${record.number} đang ở trạng thái ${record.status}, không ghi sổ được.`);
+    record = await w.action(path, id, step, { version: record.version });
+  }
+  return record;
+}
+
+/**
+ * "Cất" on Phiếu thu / Phiếu chi / Nộp tiền / Ủy nhiệm chi. Thu tiền khách hàng (Có 131) goes through the AR
+ * receipt voucher so the customer's debt is credited; every other voucher saves the money document, takes it
+ * through gửi → duyệt → ghi sổ, then has the backend post its accounting rows to the ledger.
+ */
+export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d: Row) {
+  const receipt = d.kind === "receipt";
+  const rows = (d.rows || []).filter((row: Row) => num(row.amount) > 0);
+  const amount = rows.reduce((total: number, row: Row) => total + num(row.amount), 0);
+  if (amount <= 0) throw new FormDataError("Nhập Số tiền trên dòng hạch toán (phải lớn hơn 0) trước khi cất.");
+  // Every account is checked before anything is saved; the money side comes from the fund / bank account.
+  const lines: Row[] = [];
+  for (const [index, row] of rows.entries()) {
+    if (!String(row.debit || "").trim() || !String(row.credit || "").trim()) {
+      throw new FormDataError(`Dòng ${index + 1}: nhập đủ TK Nợ và TK Có.`);
+    }
+    await w.account(receipt ? row.debit : row.credit, receipt ? "TK Nợ" : "TK Có");
+    const counter = await w.account(receipt ? row.credit : row.debit, receipt ? "TK Có" : "TK Nợ");
+    lines.push({ account: counter.id, amount: String(num(row.amount)), description: String(row.description || d.description || "") });
+  }
+  const partnerText = String(d.partnerCode || d.partner || "").trim().toLowerCase();
+  const parties = partnerText ? await w.list("parties") : [];
+  const party = parties.find((row) => String(row.code).toLowerCase() === partnerText)
+    || parties.find((row) => String(row.name).toLowerCase() === partnerText);
+  const date = toApiDate(d.postDate || d.date);
+  const description = String(d.description || d.reasonLabel || (receipt ? "Thu tiền" : "Chi tiền")).trim();
+  const label = module === "cash" ? (receipt ? "phiếu thu" : "phiếu chi") : (receipt ? "chứng từ thu tiền gửi" : "ủy nhiệm chi");
+  const counterpart = String(d.person || party?.name || d.partner || "").trim() || (receipt ? "Người nộp tiền" : "Người nhận tiền");
+
+  let fund: Row | undefined, profile: Row | undefined;
+  if (module === "cash") {
+    fund = (await w.list("/api/v1/cash/funds/")).find((row) => row.status === "ACTIVE");
+    if (!fund) throw new FormDataError("Chưa có quỹ tiền mặt đang hoạt động. Hãy khai báo quỹ trong Danh mục.");
+  } else {
+    const profiles = await w.list("/api/v1/bank/accounts/");
+    profile = profiles.find((row) => d.bankAccount && row.account_number === d.bankAccount) || profiles[0];
+    if (!profile) throw new FormDataError("Chưa có tài khoản ngân hàng nào có sổ tiền gửi. Hãy khai báo trong Danh mục.");
+  }
+
+  if (receipt && party && rows.every((row: Row) => String(row.credit).startsWith("131"))) {
+    const customers = await w.list("customers");
+    if (customers.some((row) => row.id === party.id)) {
+      const result = await createAndPost(w, "/api/v1/accounts-receivable/customer-receipt-vouchers/", {
+        branch: (module === "cash" ? fund?.branch : null) || (await w.branch()).id, customer: party.id,
+        method: module === "cash" ? "CASH" : "BANK", purpose: "ADVANCE",
+        ...(module === "cash" ? { cash_fund: fund?.id } : { bank_account: profile?.account }),
+        number: d.code || undefined, document_date: toApiDate(d.date || d.postDate), posting_date: date,
+        amount: String(amount), payer_name: String(d.person || party.name), credit_account: (await w.account(rows[0].credit, "TK Có")).id,
+        description, lines: [],
+      });
+      return { record: result.record, message: describeResult(label, result) };
+    }
+  }
+
+  const path = `/api/v1/${module}/transactions/`;
+  const number = await nextVoucherNumber(w, path, module === "cash" ? (receipt ? "PT" : "PC") : (receipt ? "NTTK" : "UNC"), d.code);
+  let record = await w.post(path, {
+    ...(module === "cash"
+      ? { fund: fund?.id, currency: fund?.currency, payer_payee: counterpart }
+      : { account: profile?.id, currency: profile?.currency_id || profile?.currency, counterparty_name: counterpart }),
+    number, transaction_type: receipt ? "RECEIPT" : "PAYMENT", business_type: "GENERAL",
+    transaction_date: date, party: party?.id || null, amount: String(amount), description,
+  });
+  try {
+    // Single-user default; a workflow configured for the company still overrides it on the server.
+    record = await w.action(path, record.id, "submit", { workflow_snapshot: { levels: 1, allow_self_approval: true, separate_cashier: false } });
+    record = await postMoneyTransaction(w, module, record.id);
+  } catch (error) {
+    return { record, message: `Đã lưu ${label} ${number} nhưng chưa ghi sổ: ${errorText(error)}` };
+  }
+  try {
+    record = await w.action(path, record.id, "post-gl", { lines });
+  } catch (error) {
+    return { record, message: `Đã ghi sổ quỹ ${label} ${number} nhưng chưa hạch toán sổ cái: ${errorText(error)}` };
+  }
+  return { record, message: `Đã lưu và ghi sổ ${label} ${number} (${amount.toLocaleString("vi-VN")}đ, bút toán ${record.gl_reference}).` };
+}
+
+/** "Bỏ ghi" a posted cash or bank voucher (the backend requires a reason). */
+export async function reverseMoneyTransaction(w: ApiWriter, module: "cash" | "bank", id: string, reason = "Bỏ ghi từ danh sách chứng từ") {
+  return w.action(`/api/v1/${module}/transactions/`, id, "reverse", { reason });
+}
+
+/** Complete an internal transfer: cash dispatches then receives; bank confirms in one step. */
+export async function completeTransfer(w: ApiWriter, module: "cash" | "bank", id: string) {
+  const path = `/api/v1/${module}/transfers/`;
+  let record = await w.get(`${path}${id}/`);
+  if (module === "bank") return record.status === "DRAFT" ? w.action(path, id, "confirm", {}) : record;
+  if (record.status === "DRAFT") record = await w.action(path, id, "dispatch", {});
+  if (record.status === "IN_TRANSIT") record = await w.action(path, id, "receive", {});
+  return record;
+}
+
+/** Internal transfers shown alongside the vouchers they move money between. */
+export async function internalTransfers(w: ApiWriter, module: "cash" | "bank") {
+  return w.list(`/api/v1/${module}/transfers/`);
+}
+
+/** "Hợp đồng tín dụng" (CreditContractModal; kind "lending" = we lend). */
+export async function saveCreditContract(w: ApiWriter, d: Row) {
+  const number = String(d.contractNum || "").trim();
+  if (!number || !String(d.partner || "").trim()) throw new FormDataError("Nhập số hợp đồng và đối tác.");
+  const status = /đang/i.test(String(d.status)) ? "ACTIVE" : /tất toán|kết thúc|đã/i.test(String(d.status)) ? "CLOSED" : "PENDING";
+  const record = await w.post("/api/v1/bank/credit-contracts/", {
+    direction: d.kind === "lending" ? "LENDING" : "BORROWING", contract_type: d.contractType === "principle" ? "PRINCIPLE" : "LIMIT",
+    number, sign_date: toApiDate(d.signDate), partner_name: String(d.partner).trim(), credit_limit: String(num(d.creditLimit)),
+    start_date: d.startDate ? toApiDate(d.startDate) : null, end_date: d.endDate ? toApiDate(d.endDate) : null,
+    purpose: String(d.purpose || ""), status, collaterals: d.assets || [],
+  });
+  return { record, message: `Đã lưu hợp đồng tín dụng ${record.number}.` };
+}
+
+/** "Khế ước cho vay" (direction LENDING) and "Khế ước đi vay" (BORROWING). */
+export async function saveLoanAgreement(w: ApiWriter, d: Row, direction: "LENDING" | "BORROWING") {
+  const number = String(d.code || "").trim();
+  const counterparty = String((direction === "LENDING" ? d.borrower : d.lender) || "").trim();
+  if (!number || !counterparty) throw new FormDataError("Nhập số khế ước và đối tượng vay.");
+  if (num(d.loanAmount) <= 0) throw new FormDataError("Số tiền vay phải lớn hơn 0.");
+  const contracts = String(d.creditContract || "").trim()
+    ? (await w.list("/api/v1/bank/credit-contracts/")).filter((row) => row.number === String(d.creditContract).trim()) : [];
+  const record = await w.post("/api/v1/bank/loans/", {
+    direction, number, counterparty_name: counterparty, credit_contract: contracts[0]?.id || null, purpose: String(d.purpose || ""),
+    principal_account: (await w.account(d.debitAccount || (direction === "LENDING" ? "1283" : "3411"), "TK gốc")).id,
+    interest_account: (await w.account(d.creditInterestAccount || (direction === "LENDING" ? "515" : "635"), "TK lãi")).id,
+    amount: String(num(d.loanAmount)), term: Math.max(1, Math.round(num(d.loanTerm))),
+    term_unit: /ngày/i.test(String(d.termUnit)) ? "DAY" : /năm/i.test(String(d.termUnit)) ? "YEAR" : "MONTH",
+    disbursement_date: toApiDate(d.disbursementDate), due_date: toApiDate(d.dueDate || d.disbursementDate),
+    interest_rates: (d.interestRows || []).map((row: Row) => ({
+      rate: num(row.rate), overdue_rate: num(row.overdueRate), effective_date: toApiDate(row.effectiveDate), note: String(row.note || ""),
+    })),
+    principal_period: String(d.principalPeriod || ""), interest_period: String(d.interestPeriod || ""),
+    settlement_account: String(d.collectionAccount || d.repaymentAccount || d.beneficiaryAccount || ""),
+  });
+  return { record, message: `Đã lưu khế ước ${direction === "LENDING" ? "cho vay" : "đi vay"} ${record.number}.` };
 }
 
 /* ───────────────────────── Thu/chi theo hóa đơn ───────────────────────── */
@@ -1002,8 +1212,11 @@ export async function saveJournalVoucher(w: ApiWriter, d: Row) {
   for (const row of rows) {
     const amount = String(Math.round(num(row.amount)));
     const description = String(row.desc || d.description || "");
-    lines.push({ line_no: lines.length + 1, account: (await w.account(row.debitAcc, "TK Nợ")).id, debit: amount, credit: "0", currency, description });
-    lines.push({ line_no: lines.length + 1, account: (await w.account(row.creditAcc, "TK Có")).id, debit: "0", credit: amount, currency, description });
+    // Accounts tracked by object (131, 331, 141…) take the voucher's object.
+    const party = row.party || d.party || null;
+    const debit = await w.account(row.debitAcc, "TK Nợ"), credit = await w.account(row.creditAcc, "TK Có");
+    lines.push({ line_no: lines.length + 1, account: debit.id, debit: amount, credit: "0", currency, description, ...(party && debit.requires_party ? { party } : {}) });
+    lines.push({ line_no: lines.length + 1, account: credit.id, debit: "0", credit: amount, currency, description, ...(party && credit.requires_party ? { party } : {}) });
   }
   const path = "/api/v1/general-ledger/journals/";
   const result = await createAndPost(w, path, {
@@ -1065,6 +1278,348 @@ export async function saveAssemblyOrder(w: ApiWriter, d: Row) {
     warehouse: warehouse.id, assembly_date: toApiDate(d.date), operation: d.operation, lines,
   });
   return { record, message: `Đã lưu lệnh ${disassemble ? "tháo dỡ" : "lắp ráp"} ${record.number} dưới dạng dự thảo.` };
+}
+
+/* ─────────────────────────── Chi phí trả trước ─────────────────────────── */
+
+const PREPAID = "/api/v1/general-ledger/";
+
+/** "Thêm chi phí trả trước" (opening = false) and "… đầu kỳ" (opening = true). */
+export async function savePrepaidExpense(w: ApiWriter, d: Row, opening: boolean) {
+  const code = String(d.code || "").trim();
+  if (!code || !String(d.name || "").trim()) throw new FormDataError("Cần nhập mã và tên chi phí trả trước.");
+  const amount = num(d.amount);
+  const periods = Math.round(num(d.allocMonths));
+  if (amount <= 0 || periods <= 0) throw new FormDataError("Số tiền và số kỳ phân bổ phải lớn hơn 0.");
+  const targets = (d.rows || []).filter((row: Row) => String(row.costAccount || "").trim());
+  if (!targets.length) throw new FormDataError("Cần ít nhất một dòng TK chi phí nhận phân bổ.");
+  const rates = targets.map((row: Row) => num(row.rate));
+  // A single line without a rate takes the whole amount.
+  if (targets.length === 1 && !rates[0]) rates[0] = 100;
+  if (Math.abs(rates.reduce((total: number, rate: number) => total + rate, 0) - 100) > 0.0001) {
+    throw new FormDataError("Tổng tỷ lệ phân bổ các dòng phải bằng 100%.");
+  }
+  const remainingPeriods = Math.round(num(d.remainingMonths));
+  const record = await w.post(`${PREPAID}prepaid-expenses/`, {
+    code, name: String(d.name).trim(), record_date: toApiDate(d.recordDate), start_date: toApiDate(d.startDate || d.recordDate),
+    amount: String(amount), allocation_periods: periods,
+    prepaid_account: (await w.account(d.waitingAcc || "242", "TK chờ phân bổ")).id,
+    is_opening: opening, stop_allocation: Boolean(d.stopAlloc),
+    opening_allocated_amount: opening ? String(num(d.allocatedAmount)) : "0",
+    opening_allocated_periods: opening ? Math.max(periods - remainingPeriods, 0) : 0,
+    targets: await Promise.all(targets.map(async (row: Row, index: number) => ({
+      expense_account: (await w.account(row.costAccount, "TK chi phí")).id, rate: String(rates[index]),
+      description: String(row.targetName || row.costItem || ""),
+    }))),
+  });
+  return { record, message: `Đã lưu chi phí trả trước ${code}.` };
+}
+
+/** Items the allocation of that posting date would book (the "Phân bổ" tab). */
+export async function previewPrepaidAllocation(w: ApiWriter, postingDate: unknown) {
+  return await w.get(`${PREPAID}prepaid-allocations/preview/?posting_date=${toApiDate(postingDate)}`) as Row[];
+}
+
+/** "Phân bổ chi phí trả trước" for the period of the posting date. */
+export async function savePrepaidAllocation(w: ApiWriter, d: Row) {
+  const record = await w.post(`${PREPAID}prepaid-allocations/`, {
+    number: String(d.number || ""), posting_date: toApiDate(d.postingDate), document_date: toApiDate(d.documentDate || d.postingDate),
+    description: String(d.description || ""),
+  });
+  return { record, message: `Đã ghi sổ phân bổ chi phí trả trước ${record.number}: ${num(record.total_amount).toLocaleString("vi-VN")}đ.` };
+}
+
+/** "Ghi giảm chi phí trả trước": the remainder of each chosen item goes to expense. */
+export async function savePrepaidDecrease(w: ApiWriter, d: Row) {
+  const codes = (d.rows || []).map((row: Row) => String(row.code || "").trim()).filter(Boolean);
+  if (!codes.length) throw new FormDataError("Chọn ít nhất một khoản chi phí trả trước cần ghi giảm.");
+  const items = await w.list(`${PREPAID}prepaid-expenses/`);
+  const lines = codes.map((code: string) => {
+    const item = items.find((row) => row.code === code);
+    if (!item) throw new FormDataError(`Chi phí trả trước ${code} chưa có trên hệ thống.`);
+    return { prepaid: item.id };
+  });
+  const record = await w.post(`${PREPAID}prepaid-decreases/`, {
+    number: String(d.number || ""), document_date: toApiDate(d.date), reason: String(d.reason || ""), lines,
+  });
+  return { record, message: `Đã ghi sổ ghi giảm chi phí trả trước ${record.number}: ${num(record.total_amount).toLocaleString("vi-VN")}đ.` };
+}
+
+/** "Hóa đơn điều chỉnh": an ADJUSTMENT tax invoice against the original output invoice the form searched for. */
+export async function saveAdjustmentInvoice(w: ApiWriter, d: Row) {
+  const wanted = String(d.targetInvoiceSearch || "").trim();
+  if (!wanted) throw new FormDataError("Nhập số hóa đơn gốc cần điều chỉnh.");
+  const original = (await w.list("/api/v1/tax/invoices/"))
+    .find((row) => row.direction === "OUTPUT" && row.invoice_type !== "ADJUSTMENT" && [row.invoice_number, `${row.invoice_series}-${row.invoice_number}`].includes(wanted));
+  if (!original) throw new FormDataError(`Không tìm thấy hóa đơn đầu ra số ${wanted} để điều chỉnh.`);
+  if (original.status !== "ISSUED") throw new FormDataError(`Hóa đơn ${wanted} chưa phát hành nên chưa thể lập hóa đơn điều chỉnh.`);
+  const rows = (d.items || []).filter((row: Row) => String(row.itemName || row.itemCode || "").trim() && num(row.quantity) > 0);
+  if (!rows.length) throw new FormDataError("Nhập ít nhất một dòng hàng điều chỉnh.");
+  if (!String(d.invoiceSeries || "").trim() || !String(d.invoiceNo || "").trim()) throw new FormDataError("Nhập ký hiệu và số hóa đơn điều chỉnh.");
+  const items = await w.list("items");
+  // Tax invoice lines carry the percentage itself; the adjustment follows the original invoice's rate.
+  const taxRate = String(num(original.lines?.[0]?.tax_rate));
+  const record = await w.post("/api/v1/tax/invoices/", {
+    branch: original.branch, direction: "OUTPUT", invoice_type: "ADJUSTMENT", original_invoice: original.id,
+    adjustment_effect: /giảm/i.test(String(d.adjustReason)) ? "DECREASE" : "INCREASE",
+    invoice_series: String(d.invoiceSeries).trim(), invoice_number: String(d.invoiceNo).trim(), invoice_date: toApiDate(d.invoiceDate),
+    seller_name: original.seller_name, seller_tax_code: original.seller_tax_code,
+    buyer_name: String(d.buyerName || d.customerName || original.buyer_name), buyer_tax_code: String(d.taxCode || original.buyer_tax_code || ""),
+    party: original.party, currency: original.currency, source: "MANUAL",
+    raw_data: { reason: String(d.adjustReason || ""), content: String(d.adjustContent || "") },
+    lines: rows.map((row: Row, index: number) => ({
+      line_no: index + 1, description: String(row.itemName || row.itemCode), quantity: String(num(row.quantity)),
+      unit_price: String(num(row.unitPrice)), discount_amount: String(num(row.discountAmount)), tax_rate: taxRate,
+      item: items.find((item) => item.code === row.itemCode)?.id || null,
+    })),
+  });
+  return { record, message: `Đã lưu hóa đơn điều chỉnh ${record.invoice_series}-${record.invoice_number} cho hóa đơn ${wanted}.` };
+}
+
+/* ───────────────────────────── Tiền lương ───────────────────────────── */
+
+const PAYROLL = "/api/v1/payroll/";
+
+/** Employees with their pay profile (if any), shaped like the payroll employee table. */
+export async function payrollEmployees(w: ApiWriter) {
+  const [employees, profiles, departments] = await Promise.all([
+    w.list("/api/v1/organization/employees/"), w.list(`${PAYROLL}profiles/`), w.list("/api/v1/organization/departments/"),
+  ]);
+  return employees.filter((row) => row.status === "ACTIVE").map((employee) => {
+    const profile = profiles.find((row) => row.employee === employee.id);
+    return {
+      id: employee.employee_code, employeeId: employee.id, profileId: profile?.id || "", name: employee.full_name,
+      dept: departments.find((row) => row.id === employee.department)?.name || "", title: "",
+      salaryRate: num(profile?.base_salary), allowance: num(profile?.allowance), bankAcc: profile?.bank_account || "",
+      dependents: num(profile?.dependents), insuranceSalary: num(profile?.insurance_salary),
+      status: profile?.is_active === false ? "Ngừng tính lương" : profile ? "Đang làm việc" : "Chưa có hồ sơ lương",
+    };
+  });
+}
+
+/** Saves the salary columns edited in the payroll employee table. */
+export async function savePayProfiles(w: ApiWriter, rows: Row[]) {
+  const changed = rows.filter((row) => row.dirty);
+  if (!changed.length) return { message: "Không có thay đổi hồ sơ lương." };
+  const expense = await w.account("642", "TK chi phí lương");
+  for (const row of changed) {
+    const body = {
+      base_salary: String(num(row.salaryRate)), allowance: String(num(row.allowance)), dependents: Math.round(num(row.dependents)),
+      insurance_salary: String(num(row.insuranceSalary) || num(row.salaryRate)), bank_account: String(row.bankAcc || ""),
+    };
+    if (row.profileId) await w.patch(`${PAYROLL}profiles/${row.profileId}/`, body);
+    else await w.post(`${PAYROLL}profiles/`, { ...body, employee: row.employeeId, expense_account: expense.id });
+  }
+  return { message: `Đã lưu hồ sơ lương của ${changed.length} nhân viên.` };
+}
+
+/** "Bảng chấm công" (DETAIL) / "Bảng tổng hợp chấm công" (SUMMARY) of a month, prefilled with active employees. */
+export async function saveAttendanceSheet(w: ApiWriter, d: Row, kind: "DETAIL" | "SUMMARY") {
+  const month = String(d.month).padStart(2, "0");
+  const record = await w.post(`${PAYROLL}attendance-sheets/`, {
+    kind, method: /giờ/i.test(String(d.type)) ? "HOUR" : "SESSION", name: String(d.name || ""), period: `${d.year}-${month}`,
+  });
+  return { record, message: `Đã tạo ${record.name} (${(record.lines || []).length} nhân viên).` };
+}
+
+/** "Bảng lương": calculated on the backend from pay profiles (and the month's attendance sheet when one exists). */
+export async function saveSalarySheet(w: ApiWriter, d: Row) {
+  const period = `${d.year}-${String(d.month).padStart(2, "0")}`;
+  const basedOnAttendance = !/cố định/i.test(String(d.type || ""));
+  const attendance = basedOnAttendance
+    ? (await w.list(`${PAYROLL}attendance-sheets/`)).find((row) => row.period === period) : null;
+  if (basedOnAttendance && !attendance) throw new FormDataError(`Chưa có bảng chấm công tháng ${d.month}/${d.year}.`);
+  const record = await w.post(`${PAYROLL}salary-sheets/`, { name: String(d.name || ""), period, attendance_sheet: attendance?.id || null });
+  return { record, message: `Đã tính ${record.name}: ${(record.lines || []).length} nhân viên.` };
+}
+
+/** "Hạch toán chi phí lương" of a calculated salary sheet. */
+export async function postSalarySheet(w: ApiWriter, sheetId: string) {
+  const record = await w.action(`${PAYROLL}salary-sheets/`, sheetId, "post", {});
+  return { record, message: `Đã hạch toán ${record.name} (chứng từ ${record.journal_number}).` };
+}
+
+/** Latest posted salary sheet still waiting for the given payment. */
+export async function payableSalarySheet(w: ApiWriter, insurance: boolean) {
+  const sheets = (await w.list(`${PAYROLL}salary-sheets/`)).filter((row) =>
+    insurance ? row.status !== "CALCULATED" && !row.insurance_payment_reference : row.status === "POSTED");
+  const sheet = sheets.sort((a, b) => String(b.period).localeCompare(String(a.period)))[0];
+  if (!sheet) throw new FormDataError(insurance ? "Không có bảng lương đã hạch toán nào chưa nộp bảo hiểm." : "Không có bảng lương đã hạch toán nào chưa trả lương.");
+  return sheet;
+}
+
+/** Rows of the salary-payment form: each employee's net pay. */
+export async function salaryPaymentRows(w: ApiWriter) {
+  const sheet = await payableSalarySheet(w, false);
+  const profiles = await w.list(`${PAYROLL}profiles/`);
+  return (sheet.lines || []).map((line: Row) => {
+    const profile = profiles.find((row) => row.employee === line.employee);
+    return {
+      id: line.id, code: line.employee_code, name: line.employee_name, department: profile?.department_name || "",
+      account: profile?.bank_account || "", bank: "", due: num(line.net), pay: num(line.net), checked: true,
+    };
+  });
+}
+
+const FUND_NAMES: Record<string, string> = {
+  social: "Bảo hiểm Xã hội (BHXH)", health: "Bảo hiểm Y tế (BHYT)", unemployment: "Bảo hiểm Thất nghiệp (BHTN)", union: "Kinh phí công đoàn (KPCĐ)",
+};
+
+/** Rows of the insurance-payment form: employee + employer share per fund. */
+export async function insurancePaymentRows(w: ApiWriter) {
+  const sheet = await payableSalarySheet(w, true);
+  const totals = new Map<string, number>();
+  for (const line of sheet.lines || []) {
+    for (const side of ["employee", "employer"]) {
+      for (const [fund, amount] of Object.entries(line.detail?.[side] || {})) totals.set(fund, (totals.get(fund) || 0) + num(amount));
+    }
+  }
+  return [...totals].map(([fund, amount]) => ({ id: fund, name: FUND_NAMES[fund] || fund, due: amount, pay: amount, checked: true }));
+}
+
+/** Pays the salaries or the insurance of the latest posted sheet with a cash or bank payment voucher. */
+export async function savePayrollPayment(w: ApiWriter, d: Row, insurance: boolean) {
+  const sheet = await payableSalarySheet(w, insurance);
+  const amount = num(d.totalAmount);
+  if (amount <= 0) throw new FormDataError("Chọn ít nhất một dòng cần chi.");
+  const date = toApiDate(d.payDate);
+  const description = `${insurance ? "Nộp bảo hiểm" : "Trả lương"} ${sheet.name}`.slice(0, 500);
+  const counterparty = insurance ? "Cơ quan Bảo hiểm xã hội" : "Người lao động";
+  let voucher: Row;
+  if (d.payMethod === "bank") {
+    const account = (await w.list("/api/v1/bank/accounts/")).find((row) => row.status === "ACTIVE") || (await w.list("/api/v1/bank/accounts/"))[0];
+    if (!account) throw new FormDataError("Chưa có tài khoản ngân hàng để chi.");
+    const path = "/api/v1/bank/transactions/";
+    voucher = await w.post(path, {
+      number: await nextVoucherNumber(w, path, "UNC"), transaction_type: "PAYMENT", business_type: insurance ? "INSURANCE" : "SALARY",
+      transaction_date: date, counterparty_name: counterparty, amount: String(amount), description, account: account.id,
+      currency: account.currency_id || account.currency,
+    });
+  } else {
+    const fund = (await w.list("/api/v1/cash/funds/")).find((row) => row.status === "ACTIVE");
+    if (!fund) throw new FormDataError("Chưa có quỹ tiền mặt đang hoạt động.");
+    const path = "/api/v1/cash/transactions/";
+    voucher = await w.post(path, {
+      number: await nextVoucherNumber(w, path, "PC"), transaction_type: "PAYMENT", business_type: insurance ? "INSURANCE" : "SALARY",
+      transaction_date: date, payer_payee: counterparty, amount: String(amount), description, fund: fund.id, currency: fund.currency,
+    });
+  }
+  await w.action(`${PAYROLL}salary-sheets/`, sheet.id, insurance ? "insurance-paid" : "paid", { reference: voucher.number });
+  return { record: voucher, message: `Đã lập chứng từ chi ${voucher.number} - ${description}: ${amount.toLocaleString("vi-VN")}đ (chờ duyệt và ghi sổ).` };
+}
+
+/* ───────────────────────────── Giá thành ───────────────────────────── */
+
+const COSTING = "/api/v1/costing/";
+export type CostObjectType = "COST_CENTER" | "PROJECT" | "ORDER" | "CONTRACT";
+
+/** Cost objects of a type from the catalogs they live in, as { id, code, name, type, ... } rows. */
+export async function costObjectCatalog(w: ApiWriter, objectType: CostObjectType | "PROCESS"): Promise<Row[]> {
+  if (objectType === "COST_CENTER" || objectType === "PROCESS") {
+    const centers = (await w.list("/api/v1/master-data/cost-centers/")).filter((row) => row.status === "ACTIVE");
+    if (objectType === "COST_CENTER") return centers.map((row) => ({ id: row.id, code: row.code, name: row.name, type: "Phân xưởng" }));
+    // A production process is a parent cost center; its children are the stages in code order.
+    return centers.filter((row) => centers.some((child) => child.parent === row.id)).map((row) => {
+      const stages = centers.filter((child) => child.parent === row.id).sort((a, b) => String(a.code).localeCompare(String(b.code)));
+      return { id: row.id, code: row.code, name: row.name, stagesCount: stages.length, stages: stages.map((stage) => stage.name).join(" → "), stageIds: stages.map((stage) => stage.id) };
+    });
+  }
+  if (objectType === "PROJECT") {
+    return (await w.list("/api/v1/master-data/projects/")).filter((row) => row.status === "ACTIVE").map((row) => ({ id: row.id, code: row.code, name: row.name, type: "Công trình" }));
+  }
+  const rows = await w.list(objectType === "ORDER" ? "/api/v1/sales/orders/" : "/api/v1/sales/contracts/");
+  return rows.filter((row) => !["DRAFT", "CANCELLED", "REJECTED"].includes(row.status)).map((row) => ({
+    id: row.id, code: row.number || row.contract_number, name: row.title || row.customer_name || row.number,
+    date: toViDate(row.document_date), customer: row.customer_name || "", note: row.title || "",
+  }));
+}
+
+/** "Thêm kỳ tính giá thành" for any method; objects are referenced by their codes on the form. */
+export async function saveCostPeriod(w: ApiWriter, d: Row) {
+  const method = String(d.method);
+  const objectType: CostObjectType = method === "PROJECT" ? "PROJECT" : method === "ORDER" ? "ORDER" : method === "CONTRACT" ? "CONTRACT" : "COST_CENTER";
+  const codes: string[] = (d.codes || []).map((code: unknown) => String(code).trim()).filter(Boolean);
+  if (!codes.length) throw new FormDataError("Chọn ít nhất một đối tượng tập hợp chi phí.");
+  let objects: Row[];
+  if (method === "STEP") {
+    const processes = await costObjectCatalog(w, "PROCESS");
+    objects = codes.flatMap((code) => {
+      const process = processes.find((row) => row.code === code || row.name === code);
+      if (!process) throw new FormDataError(`Quy trình ${code} chưa khai báo (trung tâm chi phí cha có các công đoạn con).`);
+      return (process.stageIds as string[]).map((id) => ({ object_type: "COST_CENTER", object_id: id }));
+    });
+  } else {
+    const catalog = await costObjectCatalog(w, objectType);
+    objects = codes.map((code) => {
+      const row = catalog.find((item) => item.code === code);
+      if (!row) throw new FormDataError(`Đối tượng ${code} chưa có trong danh mục.`);
+      return { object_type: objectType, object_id: row.id, output_quantity: String(num(d.quantities?.[code])) };
+    });
+  }
+  const path = `${COSTING}periods/`;
+  const used = new Set((await w.list(path)).map((row) => String(row.code)));
+  let counter = used.size + 1;
+  while (used.has(`GT${String(counter).padStart(5, "0")}`)) counter += 1;
+  const record = await w.post(path, {
+    code: `GT${String(counter).padStart(5, "0")}`, name: String(d.name || ""), method,
+    start_date: toApiDate(d.from), end_date: toApiDate(d.to), objects,
+  });
+  const total = (record.objects || []).reduce((sum: number, row: Row) => sum + num(row.total_cost), 0);
+  return { record, message: `Đã cất "${record.name}" - giá thành ${total.toLocaleString("vi-VN")}đ cho ${(record.objects || []).length} đối tượng.` };
+}
+
+async function costPeriodByName(w: ApiWriter, name: unknown) {
+  const period = (await w.list(`${COSTING}periods/`)).find((row) => row.name === String(name || "").trim() || row.code === String(name || "").trim());
+  if (!period) throw new FormDataError("Chọn kỳ tính giá thành đã lưu trên hệ thống.");
+  return period;
+}
+
+/** "Kết chuyển chi phí" 621/622/627 → 154 of a period. */
+export async function transferCostPeriod(w: ApiWriter, periodName: unknown) {
+  const period = await costPeriodByName(w, periodName);
+  const record = await w.action(`${COSTING}periods/`, period.id, "transfer", {});
+  return { record, message: `Đã kết chuyển chi phí sang TK 154 (chứng từ ${record.transfer_number}).` };
+}
+
+/** "Nghiệm thu" (632) or "nhập kho thành phẩm" (155) of the chosen objects of a period. */
+export async function acceptCostPeriod(w: ApiWriter, periodName: unknown, codes: string[], target: "COGS" | "FINISHED_GOODS") {
+  const period = await costPeriodByName(w, periodName);
+  const objects = (period.objects || []).filter((row: Row) => !codes.length || codes.includes(row.object_code)).map((row: Row) => row.id);
+  if (!objects.length) throw new FormDataError("Chọn ít nhất một đối tượng thuộc kỳ tính giá thành.");
+  const record = await w.action(`${COSTING}periods/`, period.id, "accept", { objects, target });
+  return { record, message: `Đã ${target === "COGS" ? "nghiệm thu sang TK 632" : "nhập kho thành phẩm"} ${objects.length} đối tượng (chứng từ ${record.acceptance_number}).` };
+}
+
+/** Acceptance screens pick objects only: accept them in the latest transferred period of the method that holds them. */
+export async function acceptCostObjects(w: ApiWriter, method: string, codes: string[], target: "COGS" | "FINISHED_GOODS") {
+  if (!codes.length) throw new FormDataError("Chọn ít nhất một đối tượng để nghiệm thu.");
+  const periods = (await w.list(`${COSTING}periods/`))
+    .filter((row) => row.method === method && row.status === "TRANSFERRED"
+      && (row.objects || []).some((object: Row) => codes.includes(object.object_code) && !object.accepted))
+    .sort((a, b) => String(b.end_date).localeCompare(String(a.end_date)));
+  if (!periods.length) throw new FormDataError("Chưa có kỳ tính giá thành đã kết chuyển chi phí chứa các đối tượng đã chọn.");
+  return acceptCostPeriod(w, periods[0].code, codes, target);
+}
+
+/** Norms of cost objects (opening WIP, coefficient, planned cost, material norms, estimate) keyed by object code. */
+export async function saveCostObjectSettings(w: ApiWriter, objectType: CostObjectType, rows: Row[]) {
+  const catalog = await costObjectCatalog(w, objectType);
+  let saved = 0;
+  for (const row of rows.filter((item) => String(item.code || "").trim())) {
+    const target = catalog.find((item) => item.code === String(row.code).trim());
+    if (!target) throw new FormDataError(`Đối tượng ${row.code} chưa có trong danh mục.`);
+    const body: Row = { object_type: objectType, object_id: target.id };
+    if (row.openingWip !== undefined) body.opening_wip = String(num(row.openingWip));
+    if (row.coefficient !== undefined) body.coefficient = String(num(row.coefficient) || 1);
+    if (row.plannedCost !== undefined) body.planned_cost = String(num(row.plannedCost));
+    if (row.materialNorms !== undefined) body.material_norms = row.materialNorms;
+    if (row.estimate !== undefined) body.estimate = row.estimate;
+    if (row.finishedItemCode) body.finished_item = (await w.item(row.finishedItemCode)).id;
+    await w.post(`${COSTING}object-settings/`, body);
+    saved += 1;
+  }
+  if (!saved) throw new FormDataError("Chưa nhập số liệu cho đối tượng nào.");
+  return { message: `Đã lưu số liệu cho ${saved} đối tượng tập hợp chi phí.` };
 }
 
 /* ───────────────────────────── Thuế ───────────────────────────── */

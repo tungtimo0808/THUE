@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
@@ -14,4 +15,4 @@ router.register("connectors", views.ConnectorViewSet, basename="tax-connector")
 router.register("integrations", views.IntegrationViewSet, basename="tax-integration")
 router.register("exports", views.ExportViewSet, basename="tax-export")
 
-urlpatterns = router.urls
+urlpatterns = [path("authority-settings/", views.TaxAuthoritySettingView.as_view(), name="tax-authority-settings")] + router.urls
