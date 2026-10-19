@@ -1,0 +1,1128 @@
+THÔNG TIN DOANH NGHIỆP
+Thông tin
+Chi tiết
+Tên công ty
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+Địa chỉ trụ sở chính
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+Địa điểm kinh doanh
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+Mã số thuế
+109876543
+Ngành nghề kinh doanh
+Kinh doanh thương mại các mặt hàng điện tử. thiết bị công nghệ và phụ kiện
+Vốn điều lệ
+5.000.000.000 đồng
+Đơn vị tiền tệ hạch toán
+Đồng Việt Nam
+Chế độ kế toán áp dụng
+Chế độ kế toán doanh nghiệp áp dụng theo Thông tư 200/2014/TT-BTC của Bộ trưởng Bộ Tài chính và các thông tư hướng dẫn. sửa đổi. bổ sung chế độ kế toán của Bộ Tài chính
+Hình thức kế toán áp dụng
+Nhật ký chung
+Phương pháp kế toán hàng tồn kho
+Kê khai thường xuyên
+Phương pháp tính giá hàng tồn kho
+Bình quân cuối kỳ
+Phương pháp tính thuế
+Khấu trừ
+Phương pháp khấu hao
+Khấu hao đường thẳng
+DANH MỤC CÁC ĐỐI TƯỢNG
+I. Danh mục khách hàng: Danh mục/ Đối tượng/ Khách hàng/ Thêm
+STT
+Mã khách
+Tên khách hàng
+Mã số thuế
+Địa chỉ
+1
+KHACHLE
+Khách hàng cá nhân
+2
+THANHHA
+Công ty TNHH Thanh Hà
+110085253
+Số 1 ngõ 70 phố Văn Trì. P. Minh Khai. Hà Nội
+3
+NHATMINH
+CTCP Nội thất Nhật Minh
+801382946
+Thôn An Liệt 2. Xã Thanh Hải. Thanh Hà. Hải Dương
+4
+MINHHANH
+Công ty TNHH Kinh doanh Minh Hạnh
+110086627
+Số 20 ngách 141/17 ngõ 1194 đường Láng. P. Láng Thượng. Hà Nội
+5
+ANHTUAN
+Công ty TNHH Công nghệ số Anh Tuấn
+110094515
+Số 86/185 Phố Chùa Láng. P. Láng Thượng. Hà Nội
+6
+CAUGIAY
+CTCP Thương mại Cầu Giấy
+100408152
+Số 139 Cầu Giấy. P. Quan Hoa. Hà Nội
+7
+HIEPPHAT
+Công ty TNHH Giải pháp Hiệp Phát
+110101949
+Số nhà BT21 làng Việt kiều Châu Âu. P. Mộ Lao. Hà Nội
+8
+BAOKIM
+Công ty TNHH Đầu tư Bảo Kim
+110086049
+Số 25. ngõ 321 Bát Khối. P. Long Biên. Hà Nội
+9
+THUANPHAT
+Công ty TNHH Thương mại Thuận Phát
+601238247
+Xóm 6 xã Xuân Hồng. Xuân Trường. Nam Định
+10
+DUYVINH
+Công ty TNHH Xây dựng Duy Vinh
+700865055
+Xóm 6. thôn Mã Não. X. Ngọc Sơn. Kim Bảng. Hà Nam
+11
+KIENQUAN
+CTCP Đầu tư Kiến Quân Việt Nam
+107527141
+Số 168 đường Chiến Thắng. P. Văn Quán. Hà Nội
+12
+VIETHUNG
+Công ty TNHH Việt Hùng
+102020196
+Số 5. ngõ 165/2 Thái Hà. P. Láng Hạ. Hà Nội
+II. Danh mục nhà cung cấp: Danh mục/ Đối tượng/ Nhà cung cấp/ Thêm
+STT
+Mã NCC
+Tên nhà cung cấp
+Mã số thuế
+Địa chỉ
+1
+PHATMAI
+Công ty TNHH Phát Mai Group
+110084806
+Số 140 Đường Vạn Hạnh. P. Đức Giang. Hà Nội
+2
+MINHQUAN
+Công ty Cổ phần Minh Quân Logistics
+110087035
+Số 16. KĐT Văn Khê. Đường Tố Hữu. Hà Nội
+3
+THANHTRU
+Công ty TNHH Thiết bị Thanh Trúc
+110092821
+Số 13 ngõ 10 Văn Nội. P. Phú Lương. Hà Nội
+4
+MAISON
+CTCP Tư vấn và Dịch vụ Bất động sản Maison
+106639438
+Số 9. Ngõ 68 Trung Kính. P. Yên Hoà. Hà Nội
+5
+VANPHO
+CTCP Vận tải và Thương mại Vạn Phát
+200463686
+Số 7 lô 2A Lê Hồng Phong. P. Đông Khê. Hải Phòng
+6
+MEDIAZ
+Công ty TNHH Truyền thông AZ Việt Nam
+402155162
+72 Nguyễn Chí Thanh. P. Hải Châu I. Đà Nẵng
+7
+LOCATIO
+Công ty TNHH Dịch vụ Logistics Việt Hưng
+101353160
+Số 135. phố Phúc Tân. P. Phúc Tân. Hà Nội
+8
+VIETGIA
+Công ty Cổ phần Công nghệ Việt Gia
+101217009
+Số 1174 đường Láng. P. Láng Thượng. Hà Nội
+9
+CONGNGHE
+Công ty TNHH Phát triển Công nghệ KTS
+100366488
+Số 177. phố Giảng Võ. P. Cát Linh. Hà Nội
+10
+ANLOC
+Công ty TNHH Thương mại Máy tính An Lộc
+101468933
+Số 49 Phố Thái Hà. P. Trung Liệt. Hà Nội
+11
+TANCANG
+Công ty cổ phần đại lý giao nhận vận tải xếp dỡ tân cảng
+304875444
+470 Đường Đồng Văn Cống. Phường Thạnh Mỹ Lợi. TP. Thủ Đức. TP. Hồ Chí Minh
+12
+QUOCTE
+Công ty cổ phần đầu tư thương mại và dịch vụ quốc tế
+100110052
+Số 17 đường Phạm Hùng. Phường Mỹ Đình 2. Hà Nội
+III. Danh mục ngân hàng: Danh mục/ Ngân hàng/ Ngân hàng
+STT
+Mã NH
+Tên ngân hàng
+Mã số thuế
+Địa chỉ
+1
+NH001
+Ngân hàng TMCP Kỹ thương Việt Nam - Chi nhánh Hà Nội
+100230800
+ 30B Phố Nguyễn Hữu Huân. Lý Thái Tổ. Hoàn Kiếm. TP. Hà Nội
+IV. Nhóm danh mục cơ quan nhà nước: 
+TT
+Mã
+Tên cơ quan
+Địa chỉ
+1
+CCTHK
+Chi cục Thuế Hoàn Kiếm
+Số 885 Hồng Hà. Phường Chương Dương. TP. Hà Nội
+2
+BHXHK
+Bảo hiểm xã hội Hoàn Kiếm
+9D phố Hàm Long. TP. Hà Nội
+3
+KBNHK
+Kho bạc nhà nước Hoàn Kiếm
+72 Quán Sứ. Phường Trần Hưng Đạo. TP. Hà Nội
+4
+EVNHN
+Tổng công ty Điện lực TP. Hà Nội
+69 Đinh Tiên Hoàng. P. Lý Thái Tổ. TP. Hà Nội
+5
+HNWSCO
+Công ty CP SXKD Nước sạch Số 3 Hà Nội
+Số 8C. đường Đinh Công Tráng. P. Phan Chu Trinh. TP. Hà Nội
+V. Danh mục phòng ban: Danh mục/ Cơ cấu tổ chức
+Mã Đơn vị
+Tên đơn vị
+BGĐ
+Ban Giám đốc
+PKT
+Phòng Kế toán
+PHCNS
+Phòng Hành chính - Nhân sự
+PKTH
+Phòng Kỹ thuật
+VI. Danh mục nhân viên: Danh mục/ Đối tượng/ Nhân viên/ Thêm
+STT
+Mã nhân viên
+Họ và tên
+Đơn vị
+Vị trí công việc
+Số TK (NH TECH)
+1
+TRUONGTHANHQUAN
+Trương Thanh Quân
+Ban Giám đốc
+Giám đốc
+1500205888888
+2
+NGUYENTHIYEN
+Nguyễn Thị Yến
+Phòng Kế toán
+Kế toán trưởng
+1500205888889
+3
+LEVANHIEU
+Lê Văn Hiếu
+Phòng Kế toán
+Kế toán viên
+1500205888890
+4
+TRANVANHUNG
+Trần Văn Hùng
+Phòng Kế toán
+Thủ quỹ
+1500205888891
+5
+HOANGBACUNG
+Hoàng Bá Cung
+Phòng HC Nhân sự
+Nhân viên
+1500205888892
+6
+LUONGMINHTHANH
+Lương Minh Thành
+Phòng Kỹ thuật
+Trưởng phòng
+1500205888898
+7
+DANGTHUAN
+Đặng Thuận
+Phòng Kỹ thuật
+Nhân viên
+1500205888899
+8
+BUIDUCDUNG
+Bùi Đức Dũng
+Phòng Kỹ thuật
+Nhân viên
+1500205888900
+9
+PHAMDINHTAI
+Phạm Đình Tài
+Phòng Kỹ thuật
+Nhân viên
+1500205888901
+VII. Danh mục kho hàng: Danh mục/ Vật tư hàng hóa/ Kho/ Thêm
+STT
+Mã kho
+Tên kho
+1
+156
+Kho hàng hóa
+2
+152
+Kho nguyên liệu
+3
+153
+Kho dụng cụ
+4
+155
+Kho thành phẩm
+5
+157
+Kho hàng gửi đại lý
+VIII. Danh mục hàng hóa: Danh mục/ Vật tư hàng hóa/ Vật tư hàng hóa/ Thêm
+STT
+Mã VTHH
+Tên VTHH
+Tính chất
+ĐVT
+Thuế suất GTGT (%)
+Kho ngầm định
+TK kho
+1
+DT_IP15
+Điện thoại iPhone 15 Pro Max 256GB
+VTHH
+Cái
+10
+156
+1561
+2
+DT_SS24
+Điện thoại Samsung Galaxy S24 Ultra 256GB
+VTHH
+Cái
+10
+156
+1561
+3
+LT_MBAIR
+Máy tính xách tay Macbook Air 13-inch M2
+VTHH
+Cái
+10
+156
+1561
+4
+LT_HPPAV
+Máy tính xách tay HP Pavilion 14 i5
+VTHH
+Cái
+10
+156
+1561
+5
+MTB_IPAD10
+Máy tính bảng iPad Gen 10 64GB
+VTHH
+Cái
+10
+156
+1561
+6
+DH_AWSE
+Đồng hồ thông minh Apple Watch SE
+VTHH
+Cái
+10
+156
+1561
+7
+DH_SSGW6
+Đồng hồ thông minh Samsung Galaxy Watch 6
+VTHH
+Cái
+10
+156
+1561
+8
+TN_APSPRO2
+Tai nghe AirPods Pro 2
+VTHH
+Bộ
+10
+156
+1561
+9
+TN_SSGWEB
+Tai nghe Samsung Galaxy Buds FE
+VTHH
+Bộ
+10
+156
+1561
+10
+MCG_PS5
+Máy chơi game PlayStation 5 Slim
+VTHH
+Cái
+10
+156
+1561
+11
+LOA_JBL
+Loa Bluetooth JBL Flip 6
+VTHH
+Cái
+10
+156
+1561
+12
+SDP_ANKER
+Sạc dự phòng Anker PowerCore 20000mAh
+VTHH
+Cái
+10
+156
+1561
+13
+MH_LGMQ2
+Màn hình máy tính LG 27-inch 4K
+VTHH
+Cái
+10
+156
+1561
+IX. Danh mục công cụ dụng cụ: Danh mục/ Vật tư hàng hóa/ Vật tư hàng hóa/ Thêm
+STT
+Mã VTHH
+Tên VTHH
+Tính chất
+ĐVT
+Thuế suất GTGT (%)
+Kho ngầm định
+TK kho
+1
+GXV-001
+Ghế xoay văn phòng
+VTHH
+Cái
+10
+153
+1531
+2
+MHTL-001
+Máy hủy tài liệu
+VTHH
+Cái
+10
+153
+1531
+3
+BLV-001
+Bàn làm việc
+VTHH
+Cái
+10
+153
+1531
+X. Danh mục vật liệu: Danh mục/ Vật tư hàng hóa/ Vật tư hàng hóa/ Thêm
+STT
+Mã VTHH
+Tên VTHH
+Tính chất
+ĐVT
+Thuế suất GTGT (%)
+Kho ngầm định
+TK kho
+1
+VL_DCD
+Dây cáp điện
+VTHH
+Cuộn
+10
+152
+1521
+2
+VL_KDN
+Keo dán đa năng
+VTHH
+Lọ
+10
+152
+1521
+3
+VL_VCN
+Vải lau công nghiệp
+VTHH
+Kg
+10
+152
+1521
+XI. Danh mục tài khoản ngân hàng: Danh mục/ Ngân hàng/ Tài khoản ngân hàng/ Thêm
+Ngân hàng
+Số tài khoản
+Loại tiền
+Ngân hàng Thương mại Cổ phần Kỹ thương Việt Nam (Techcombank)
+123456789
+VND
+Ngân hàng Thương mại Cổ phần Kỹ thương Việt Nam (Techcombank)
+987654321
+USD
+SỐ DƯ ĐẦU KỲ 
+I. Số dư chi tiết nợ phải trả tại ngày 01/01: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Công nợ nhà cung cấp chọn Nhập số dư
+Tài khoản
+Tên nhà cung cấp
+Dư Nợ (VND)
+Dư Có (VND)
+331
+Công ty TNHH Phát Mai Group
+10.000.000
+331
+Công ty Cổ phần Minh Quân Logistics
+25.000.000
+331
+Công ty TNHH Thiết bị Thanh Trúc
+75.000.000
+331
+CTCP Tư vấn và Dịch vụ Bất động sản Maison
+5.000.000
+331
+CTCP Vận tải và Thương mại Vạn Phát
+12.000.000
+331
+Công ty TNHH Truyền thông AZ Việt Nam
+5.000.000
+Tổng
+27.000.000
+105.000.000
+II. Số dư chi tiết phải thu khách hàng tại ngày 01/01: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Công nợ khách hàng chọn Nhập số dư
+Tài khoản
+Tên khách hàng
+Dư Nợ (VND)
+Dư Có (VND)
+131
+Công ty TNHH Kinh doanh Minh Hạnh
+75.000.000
+131
+Công ty TNHH Công nghệ số Anh Tuấn
+5.000.000
+131
+Công ty TNHH Giải pháp Hiệp Phát
+22.500.000
+131
+Công ty TNHH Đầu tư Bảo Kim
+40.000.000
+131
+Công ty TNHH Xây dựng Duy Vinh
+15.000.000
+Tổng
+142.500.000
+15.000.000
+III. Tồn kho đầu kỳ
+Tồn kho hàng hóa: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Tồn kho vật tư, hàng hóa chọn Kho hàng hóa/ Nhập tồn kho
+STT
+Mã hàng
+Tên mặt hàng
+ĐVT
+Số lượng
+Đơn giá (VND)
+Thành tiền (VND)
+1
+DT_IP15
+Điện thoại iPhone 15 Pro Max 256GB
+Cái
+15
+16.200.000
+243.000.000
+2
+DT_SS24
+Điện thoại Samsung Galaxy S24 Ultra 256GB
+Cái
+10
+14.700.000
+147.000.000
+3
+LT_MBAIR
+Máy tính xách tay Macbook Air 13-inch M2
+Cái
+8
+12.900.000
+103.200.000
+4
+LT_HPPAV
+Máy tính xách tay HP Pavilion 14 i5
+Cái
+12
+7.800.000
+93.600.000
+5
+MTB_IPAD10
+Máy tính bảng iPad Gen 10 64GB
+Cái
+20
+5.100.000
+102.000.000
+6
+DH_AWSE
+Đồng hồ thông minh Apple Watch SE
+Cái
+25
+3.600.000
+90.000.000
+7
+DH_SSGW6
+Đồng hồ thông minh Samsung Galaxy Watch 6
+Cái
+18
+3.120.000
+56.160.000
+8
+TN_APSPRO2
+Tai nghe AirPods Pro 2
+Bộ
+30
+2.880.000
+86.400.000
+9
+TN_SSGWEB
+Tai nghe Samsung Galaxy Buds FE
+Bộ
+22
+1.020.000
+22.440.000
+10
+MCG_PS5
+Máy chơi game PlayStation 5 Slim
+Cái
+10
+6.300.000
+63.000.000
+11
+LOA_JBL
+Loa Bluetooth JBL Flip 6
+Cái
+40
+1.380.000
+55.200.000
+12
+SDP_ANKER
+Sạc dự phòng Anker PowerCore 20000mAh
+Cái
+50
+210.000
+10.500.000
+13
+MH_LGMQ2
+Màn hình máy tính LG 27-inch 4K
+Cái
+15
+5.700.000
+85.500.000
+Tổng cộng
+1.158.000.000
+Tồn kho công cụ dụng cụ: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Tồn kho vật tư, hàng hóa chọn Kho dụng cụ/ Nhập tồn kho
+STT
+Mã hàng
+Tên mặt hàng
+ĐVT
+Số lượng
+Đơn giá (VND)
+Thành tiền tồn kho (VND)
+1
+GXV-001
+Ghế xoay văn phòng
+Cái
+5
+800.000
+4.000.000
+2
+MHTL-001
+Máy hủy tài liệu
+Cái
+1
+2.500.000
+2.500.000
+3
+BLV-001
+Bàn làm việc
+Cái
+3
+2.500.000
+7.500.000
+Tổng cộng
+14.000.000
+Tồn kho vật liệu: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Tồn kho vật tư, hàng hóa chọn Kho vật liệu/ Nhập tồn kho
+STT
+Mã VTHH
+Tên VTHH
+ĐVT
+Số lượng
+Đơn giá (VND)
+Thành tiền tồn kho (VND)
+1
+VL_DCD
+Dây cáp điện
+Cuộn
+20
+1.500.000
+30.000.000
+2
+VL_KDN
+Keo dán đa năng
+Lọ
+50
+20.000
+1.000.000
+3
+VL_VCN
+Vải lau công nghiệp
+Kg
+100
+50.000
+5.000.000
+Tổng cộng
+36.000.000
+IV. Số dư phân bổ công cụ dụng cụ: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Công cụ dụng cụ chọn Khai báo CCDC
+Mã CCDC
+Tên CCDC
+Phòng ban sử dụng
+Ngày bắt đầu phân bổ
+Nguyên giá (VND)
+Số tháng phân bổ
+Số tháng phân bổ còn lại
+Giá trị đã phân bổ lũy kế
+Giá trị còn lại
+PD001
+Máy in Canon LBP2900
+Phòng Hành chính
+01/02/2024
+5.400.000
+18
+7
+3.300.000
+2.100.000
+TS001
+Tủ sắt văn phòng 4 cánh
+Phòng Kế toán
+01/04/2024
+6.480.000
+24
+14
+2.700.000
+3.780.000
+BG001
+Bộ bàn ghế họp phòng ban
+Phòng Hành chính
+01/05/2024
+21.600.000
+36
+28
+12.000.000
+9.600.000
+TD001
+Tủ đựng tài liệu
+Phòng Giám đốc
+01/06/2024
+9.600.000
+24
+17
+3.200.000
+6.400.000
+DT001
+Dụng cụ trang trí văn phòng
+Phòng Hành chính
+01/07/2024
+8.400.000
+12
+6
+4.200.000
+4.200.000
+KD001
+Kệ đựng hàng
+Phòng Kỹ thuật
+01/08/2024
+14.400.000
+36
+31
+2.000.000
+12.400.000
+Tổng cộng
+65.880.000
+27.400.000
+38.480.000
+V. Khấu hao tài sản cố định: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Tài sản cố định chọn Khai báo TSCĐ
+Mã TSCĐ
+Tên TSCĐ
+Bộ phận sử dụng
+Ngày bắt đầu tính khấu hao
+Số kỳ khấu hao (tháng)
+Nguyên giá
+Giá trị khấu hao một kỳ
+Giá trị đã khấu hao lũy kế
+Giá trị còn lại
+LT001
+Máy tính xách tay Dell XPS 15
+Phòng Kỹ thuật
+01/05/2021
+48
+43.200.000
+900.000
+39.600.000
+3.600.000
+PD001
+Máy photocopy Ricoh MP 5054
+Phòng Hành chính
+01/02/2021
+60
+60.000.000
+1.000.000
+47.000.000
+13.000.000
+DH002
+Máy lạnh Daikin VRV A Series
+Toàn công ty
+01/03/2022
+120
+252.000.000
+2.100.000
+71.400.000
+180.600.000
+MPD001
+Máy phát điện Cummins
+Toàn công ty
+01/01/2023
+144
+158.400.000
+1.100.000
+26.400.000
+132.000.000
+OT002
+Xe ô tô Ford Transit 2023
+Phòng hành chính
+01/05/2023
+96
+816.000.000
+8.500.000
+170.000.000
+646.000.000
+PM002
+Phần mềm kế toán Misa
+Phòng Kế toán
+01/04/2024
+48
+48.000.000
+1.000.000
+9.000.000
+39.000.000
+Tổng cộng
+1.377.600.000
+14.600.000
+363.400.000
+1.014.200.000
+VI. Số dư tài khoản ngân hàng: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Số dư TK ngân hàng chọn Loại tiền/ Nhập số dư
+Ngân hàng
+Số tài khoản
+Loại tiền
+Số dư
+Tỷ giá
+Quy đổi ra VND
+Techcombank
+123456789
+VND
+3.255.000.000 VNĐ
+3.255.000.000
+Techcombank
+987654321
+USD
+150.000 USD
+25.445 VND/USD
+3.816.750.000
+VII. Số dư các tài khoản: Nghiệp vụ/ Nhập số dư ban đầu/ tại tab Số dư tài khoản chọn Nhập số dư
+Nhập số dư TK 141: Nghiệp vụ/ Nhập số dư ban đầu/ Công nợ nhân viên
+STT
+Số hiệu TK
+Tên tài khoản
+Nợ
+Có
+1
+111
+Tiền mặt
+500.000.000
+2
+112
+Tiền gửi ngân hàng
+7.071.750.000
+3
+131
+Phải thu khách hàng
+142.500.000
+15.000.000
+4
+133
+Thuế GTGT được khấu trừ
+12.000.000
+5
+141
+Tạm ứng (Hoàng Bá Cung)
+12.000.000
+6
+152
+Nguyên vật liệu
+36.000.000
+7
+153
+Công cụ. dụng cụ
+14.000.000
+8
+156
+Hàng hóa
+1.158.000.000
+9
+211
+TSCĐ hữu hình
+2113: 816.000.000
+2114: 513.600.000
+1.329.600.000
+10
+213
+TSCĐ vô hình
+48.000.000
+11
+214
+Hao mòn TSCĐ
+2141
+Hao mòn TSCĐ hữu hình
+354.400.000
+2143
+Hao mòn TSCĐ vô hình
+9.000.000
+12
+221
+Đầu tư vào công ty con
+150.000.000
+13
+222
+Đầu tư vào công ty liên kết
+120.000.000
+14
+241
+Xây dựng cơ bản dở dang
+100.000.000
+15
+242
+Chi phí trả trước
+38.480.000
+16
+331
+Phải trả người bán
+27.000.000
+105.000.000
+17
+333
+Thuế và các khoản phải nộp
+18
+3331
+Thuế GTGT phải nộp
+5.000.000
+19
+334
+Phải trả người lao động
+45.000.000
+20
+338
+Phải trả. phải nộp khác
+5.000.000
+21
+341
+Vay và nợ thuê tài chính
+2.500.000.000
+22
+411
+Vốn đầu tư của chủ sở hữu
+23
+4111
+Vốn góp của chủ sở hữu
+7.685.930.000
+24
+421
+Lợi nhuận sau thuế chưa phân phối
+4212
+Lợi nhuận chưa phân phối năm trước
+25.000.000
+25
+441
+Quỹ đầu tư phát triển
+10.000.000
+TỔNG CỘNG
+10.759.330.000
+10.759.330.000
+PHÂN HỆ MUA HÀNG
+Nghiệp vụ 1: Ngày 09/01, Công ty mua hàng hóa nhập về kho Công ty, thời hạn thanh toán 20 ngày kể từ ngày nhận hàng.
+Mua hàng/Chứng từ mua hàng hóa/ Chọn Mua hàng trong nước NK; Chọn Kèm hóa đơn
+Nhập các thông tin chung và thông tin về hàng hóa, Thuế.
+Nghiệp vụ 2: Ngày 12/01, Công ty mua hàng hóa nhập về kho Công ty. Thanh toán ngay bằng tiền gửi ngân hàng, chiết khấu thương mại được hưởng 5 % 
+Mua hàng/Chứng từ mua hàng hóa/ Chọn Mua hàng trong nước NK; Chọn Kèm hóa đơn
+Nhập các thông tin chung và thông tin về hàng hóa, Thuế
+Nghiệp vụ 3: Ngày 15/01, Công ty mua hàng hóa nhập về kho công ty, lô hàng có phát sinh chi phí vận chuyển trên cùng một hóa đơn. Thời hạn thanh toán trong vòng 30 ngày kể từ ngày phát hành hóa đơn.
+Mua hàng/Chứng từ mua hàng hóa/ Chọn Mua hàng trong nước NK; Chọn Kèm hóa đơn
+Nhập các thông tin chung và thông tin về hàng hóa, CP mua hàng và Thuế
+Để phân bổ chi phí : Tại tab Chi phí/ Phân bổ chi phí chọn tiêu thức phân bổ theo giá trị/ Phân bổ/ Thực hiện
+Nghiệp vụ 4: Ngày 16/01, Công ty nhập mua hàng hóa với về kho công ty theo hợp đồng mua hàng số HĐ001 ngày 05/01/2025 đã ký. Thời hạn thanh toán 15 ngày kể từ ngày phát hành hóa đơn. Lô hàng phát sinh chi phí vận chuyển từ Nghệ An về Kho Công ty, Công ty thuê dịch vụ vận chuyển của Công ty vận tải. Công ty thực hiện phân bổ chi phí vận chuyển theo tỷ lệ giá trị từng của mặt hàng. Chi phí vận chuyển thanh toán bằng chuyển khoản. 
+Cách 1:
+Bước 1: Cập nhật chừng từ chi phí vận chuyển
+Mua hàng/ Chứng từ mua dịch vụ, tích Là chi phí mua hàng
+Thêm mã dịch vụ là chi phí vận chuyển
+Bước 2: Cập nhật chứng từ mua hàng và phân bổ chi phí vận chuyển 
+Mua hàng/ Chứng từ mua hàng/ Tab Chi phí/ Chọn/ Tìm chứng từ chi phí vận chuyển, lấy dữ liệu bằng cách tích chọn, đồng ý. Chọn tiêu thức phân bổ theo % giá trị, phân bổ/ Thực hiện.
+Cách 2: 
+Bước 1: Cập nhật chứng từ mua hàng
+Bước 2: Cập nhật chứng từ chi phí vận chuyển và phân bổ chi phí vận chuyển
+Mua hàng/ Chứng từ mua dịch vụ, tích Là chi phí mua hàng
+Thêm mã dịch vụ là chi phí vận chuyển
+Tại Chứng từ chi phí vận chuyển chọn Phân bổ chi phí/ Tìm chứng từ mua hàng, lấy dữ liệu bằng cách tích chọn, đồng ý. Chọn tiêu thức phân bổ theo % giá trị, phân bổ/ Thực hiện.
+Nghiệp vụ 5: Ngày 20/01, hàng mua của CTCP Vận tải và Thương mại Vạn Phát bị lỗi yêu cầu trả lại 2 chiếc Điện thoại Samsung Galaxy S24 Ultra 256GB do màn hình cháy. Hai bên lập biên bản trả lại hàng. Doanh nghiệp đã trừ công nợ 
+Mua hàng/ Trả lại hàng mua ->Thêm. Tại phần tìm kiếm tìm chứng từ bán hàng phát sinh nghiệp vụ trả lại, tích chọn, đồng ý. Sau đó trên chứng từ trả lại hàng mua điền thông tin chung và thông tin hàng hóa bị trả lại.
+Nghiệp vụ 06: Ngày 23/01, Công ty nhận được Invocie từ Tech world global trading limited. Hàng được nhập khẩu theo giá CIF tại cảng Tân Cảng, Hải Phòng. Thanh toán: T/T in advance (Thanh toán toàn bộ số tiền trước khi nhận được hàng). 
+Ngân hàng/ Chi tiền chọn Chi khác
+Nghiệp vụ 07: Ngày 27/01, Công ty nhập hàng về kho theo nội dung của tờ khai nhập khẩu hàng hóa đã được thông quan.
+Mua hàng/ Chứng từ mua hàng/ Chọn Mua hàng nhập khẩu nhập kho, tích Kèm Hóa đơn
+Nhập các thông tin chung và thông tin về hàng hóa, tỷ giá, Thuế GTGT, thuế nhập khẩu.
+Nghiệp vụ 8: Ngày 27/01, Công ty thực hiện nộp tiền thuế GTGT hàng nhập khẩu cho lô hàng nhập khẩu. 
+Quỹ/ Nộp thuế/ Chọn loại thuế “Thuế khác” tích Thuế GTGT hàng nhập khẩu/ Nộp thuế 
+Nghiệp vụ 9: Ngày 28/01, Công ty nhận được Hóa đơn GTGT của Công ty Cổ phần Thương mại dịch vụ và Xuất nhập khẩu Hải Phòng về chi phí lưu kho bãi cho lô hàng hóa nhập khẩu theo tờ khai hải quan số 104589632701 ngày 27/01. Chi phí lưu kho thanh toán trong thời hạn 05 ngày kể từ khi phát hành hóa đơn.
+Mua hàng/ Chứng từ mua dịch vụ, Thêm mã dịch vụ là chi phí lưu kho
+Nghiệp vụ 10: Ngày 28/01, Công ty nhận được Hóa đơn GTGT của Công ty Cổ phần Thương mại dịch vụ và Xuất nhập khẩu Hải Phòng về chi phí vận chuyển cho lô hàng hóa nhập khẩu theo tờ khai hải quan số 104589632701 ngày 27/01. Chi phí vận chuyển thanh toán ngay khi phát hành hóa đơn. 
+Mua hàng/ Chứng từ mua dịch vụ, tích Là chi phí mua hàng
+Nghiệp vụ 11: Ngày 29/01, Công ty thanh toán tiền chi phí lưu kho bãi cho lô hàng hóa nhập khẩu cho Công ty Cổ phần Thương mại dịch vụ và Xuất nhập khẩu Hải Phòng. 
+Mua hàng/ Trả tiền nhà cung cấp chọn phương thức thanh toán, loại tiền, Nhà cung cấp và Ngày trả tiền ấn Lấy dữ liệu
+Nghiệp vụ 12: Ngày 29/01, Công ty ABC phát hiện 2 chiếc màn hình Màn hình máy tính LG 27-inch 4K mua của công ty công nghệ số Việt bị lỗi. Hai bên kiểm tra lại kết luận hàng bị lỗi và lập biên bản xác nhận, điều chỉnh hóa đơn bán hàng
+Mua hàng/ Giảm giá hàng mua ->Thêm. Tại phần tìm kiếm tìm chứng từ bán hàng phát sinh nghiệp vụ giảm giá, tích chọn, đồng ý. Sau đó trên chứng từ giảm giá hàng mua điền thông tin chung và thông tin hàng hóa giảm giá.
+Nghiệp vụ 13: Ngày 29/01, Công ty TNHH Thương mại và Dịch vụ ABC thanh toán 234.000.000 bằng hình thức chuyển khoản cho Công ty TNHH Phát triển công nghệ KTS của hóa đơn ngày 15 tháng 01 năm 2025. 
+Mua hàng/ Trả tiền nhà cung cấp chọn phương thức thanh toán, loại tiền, Nhà cung cấp và Ngày trả tiền ấn Lấy dữ liệu
+Nghiệp vụ 14: Ngày 30/01, Công ty nhận hóa đơn đầu vào về chi phí thuê cửa hàng bán hàng tháng 01/2025 theo hợp đồng thuê nhà số 01/2025/HĐTN-ABC. Thời hạn thanh toán 05 ngày kể từ ngày phát hành hóa đơn.
+Mua hàng/ Chứng từ mua dịch vụ, Thêm mã dịch vụ Chi phí thuê cửa hàng
+PHÂN HỆ BÁN HÀNG
+Nghiệp vụ 1: Ngày 03/01, xuất bán công ty Minh Hạnh chưa thanh toán: Điện thoại Iphone 15; điện thoại Samsung.
+Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước, tích chọn Kiêm phiếu xuất kho, Lập kèm hóa đơn. Sau đó, nhập thông tin chung và thông tin hàng tiền, thuế, giá vốn 
+Nghiệp vụ 2: Ngày 08/01, Minh Hạnh thanh toán tiền hàng ngày 03/01/2025  
+Bán hàng/ Thu tiền bán hàng chọn phương thức thanh toán, loại tiền, Khách hàng và Ngày trả tiền ấn Lấy dữ liệu
+Nghiệp vụ 3: Ngày 13/1, dịch vụ bảo dưỡng máy tính định kỳ cho công ty Hiệp Phát, đã thanh toán bằng chuyển khoản 
+Nghiệp vụ 4: Ngày 14/01, xuất bán cho công ty Thanh Hà, chiết khấu 5%, thanh toán bằng TGNH 
+Bước 1: Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước, tích chọn Kiêm phiếu xuất kho, Lập kèm hóa đơn. Nhập thông tin chung và thông tin hàng tiền, thuế, giá vốn 
+Bước 2: Bán hàng/ Thu tiền bán hàng chọn phương thức thanh toán, loại tiền, Khách hàng và Ngày trả tiền ấn Lấy dữ liệu, điền chiết khấu thanh toán 5%/ Thu tiền
+Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước, tích chọn Kiêm phiếu xuất kho, Lập kèm hóa đơn. Nhập thông tin chung và thông tin hàng tiền (Thêm mã dịch vụ Bảo dưỡng máy tính), thuế
+Nghiệp vụ 5: Ngày 15/1, xuất bán công ty TNHH TV Đầu tư công nghệ Hacom, chưa thanh toán
+Chi phí vận chuyển thanh toán bằng chuyển khoản của công ty Vạn Phát 
+Bước 1: Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước, tích chọn Kiêm phiếu xuất kho, Lập kèm hóa đơn. Nhập thông tin chung (Thêm mã khách hàng công ty TNHH TV Đầu tư công nghệ Hacom) và thông tin hàng tiền, thuế
+Bước 2: Mua hàng/ Chứng từ mua dịch vụ, thêm mã dịch vụ CP vận chuyển hàng bán
+Nghiệp vụ 6: Ngày 16/1, công ty TNHH Đầu tư Bảo Kim thanh toán số nợ sau khi trừ được hưởng chiết khấu 2%. 
+Bán hàng/ Thu tiền bán hàng chọn phương thức thanh toán, loại tiền, Khách hàng và Ngày trả tiền ấn Lấy dữ liệu, điền chiết khấu thanh toán 2%/ Thu tiền
+Nghiệp vụ 7: Ngày 17/1, xuất kho gửi đại lý công ty CP Hoàng Long computer  bán đúng giá hưởng hoa hồng 10%. 
+Kho/ Chuyển kho chọn Xuất kho gửi đại lý, thêm mã đại lý công ty CP Hoàng Long và nhập thông tin hàng tiền
+Nghiệp vụ 8: Ngày 22/1, công ty CP Hoàng Long computer thông báo đã bán được toàn bộ số hàng 
+Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước tích chọn Kiêm phiếu xuất kho, Lập kèm hóa đơn. Tại phần tìm kiếm tìm chứng từ Chuyển kho ngày 17/1 tích chọn hàng hóa gửi đại lý Hoàng Long đã bán được. Sau đó nhập thông tin chung, thông tin hàng tiền, thuế và giá vốn
+Nghiệp vụ 9: Ngày 23/1, Công ty nhận được hóa đơn đầu vào về chi phí hoa hồng bán hàng qua đại lý từ Công ty cổ phần Hoàng Long Computer. Công ty cổ phần Hoàng Long Computer đã thanh toán bằng tiền gửi ngân hàng. 
+Tổng hợp/ Chứng từ nghiệp vụ khác, nhập thông tin chung, hạch toán và thuế
+Nghiệp vụ 10: Ngày 24/01, xuất bán cho khách lẻ đã thanh toán bằng chuyển khoản: Điện thoại Ip 15 được tặng kèm sạc dự phòng Anker PowerCore 20000mAh. 
+Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước, tích chọn Kiêm phiếu xuất kho, Lập kèm hóa đơn. Nhập thông tin chung và thông tin hàng tiền, thuế
+Nghiệp vụ 11: Ngày 26/1, công ty TNHH TV Đầu tư công nghệ Hacom trả lại 1 cái màn hình máy tính do chất lượng sản phẩm không đúng quy cách.
+Bán hàng/ Trả lại hàng bán chọn Bán hàng hóa, dịch vụ. Tại phần tìm kiếm tìm chứng từ bán hàng có phát sinh trả lại tích chọn hàng hóa bị trả lại. Sau đó nhập thông tin chung, thông tin hàng tiền, thuế, giá vốn.
+PHÂN HỆ KHO
+Nghiệp vụ 1: Ngày 5/1, xuất kho 2 cuộn dây cáp điện và 1 lọ keo dán đa năng để phục vụ bảo hành sản phẩm cho khách hàng. Theo PXK số 02 ngày 5/1/2025
+Kho/ Xuất kho Chọn Khác (Xuất sử dụng, góp vốn,…), điền thông tin về vật liệu xuất
+Nghiệp vụ 2: Ngày 6/1, xuất kho 2 ghế xoay và 1 bàn làm việc sử dụng cho phòng kế toán. Theo PXK số 03 ngày 6/1/2025
+Bước 1: Kho/ Xuất kho Chọn Khác (Xuất sử dụng, góp vốn,…), điền thông tin về công cụ dụng cụ xuất
+Bước 2: Công cụ dụng cụ/ Ghi tăng, điền các thông tin liên quan đến CCDC tăng (Mã, tên, số lượng, số kỳ phân bổ, đơn vị sử dụng, thiết lập phân bổ,…)
+Nghiệp vụ 03: Ngày 07/01, Công ty mua máy in về dùng ngay cho phòng kế toán, thời hạn thanh toán 20 ngày kể từ ngày nhận hàng
+Bước 1: Mua hàng/ Chứng từ mua hàng chọn Mua hàng trong nước không qua kho
+Bước 2: Công cụ dụng cụ/ Ghi tăng, điền các thông tin liên quan đến CCDC tăng (Mã, tên, số lượng, số kỳ phân bổ, đơn vị sử dụng, thiết lập phân bổ,…)
+Nghiệp vụ 4: Ngày 9/01, công ty nhập mua 3 Quạt cây Mitsubishi LV16-RV, 2 triệu đồng/ cái, hạn thanh toán là 20 ngày. Phiếu nhập kho số 02 ngày 09/01/2025
+Mua hàng/ Chứng từ mua hàng chọn Mua hàng trong nước nhập kho
+Nghiệp vụ 5: Ngày 12/01, công ty xuất 2 Quạt cây Mitsubishi LV16-RV cho phòng kỹ thuật sử dụng 
+Bước 1: Kho/ Xuất kho Chọn Khác (Xuất sử dụng, góp vốn,…), điền thông tin về CCDC xuất
+Bước 2: Công cụ dụng cụ/ Ghi tăng, điền các thông tin liên quan đến CCDC tăng (Mã, tên, số lượng, số kỳ phân bổ, đơn vị sử dụng, thiết lập phân bổ,…)
+Nghiệp vụ 6: Ngày 28/01, xuất kho 1 chiếc Loa Bluetooth JBL Flip 6 tặng thưởng cho khách hàng may mắn trúng thưởng nhân dịp Tết nguyên đán (doanh nghiệp không đăng ký chương trình khuyến mại với Sở công thương)
+Bán hàng/ Chứng từ bán hàng chọn Bán hàng hóa, dịch vụ trong nước
+Nghiệp vụ 7: Ngày 30/01/2025 xuất kho gửi hàng hóa tham gia bán hàng ở hội chợ Xuân theo lệnh điều động LDD006
+Kho/ Chuyển kho Chọn Xuất kho kiêm vận chuyển nội bộ
+Nghiệp vụ 8: Tính giá xuất kho tháng 1/2025
+Kho/ Tính giá xuất kho chọn tháng 1
+Nghiệp vụ 9: Phân bổ công cụ dụng cụ tháng 1/2025
+Công cụ dụng cụ/ Phân bổ chi phí chọn tháng 1
+PHÂN HỆ TIỀN MẶT VÀ TIỀN GỬI NGÂN HÀNG
+Nghiệp vụ 1: Ngày 06/01 Kế toán viên Lê Văn Hiếu thực hiện rút 50 triệu Việt Nam đồng tiền gửi ngân hàng Techcombank về nhập quỹ tiền mặt. 
+Quỹ/ Thu tiền chọn lý do nộp Rút tiền gửi về nộp quỹ
+Nghiệp vụ 2: Ngày 7/01 bộ phận hành chính nhân sự mua văn phòng phẩm phục vụ hoạt động quản lý
+Cách 1: Quỹ/ Chi tiền chọn lý do chi Chi khác
+Cách 2: Mua hàng/ Chứng từ mua hàng chọn Mua hàng trong nước không qua kho, thêm mã VTHH là Văn phòng phẩm
+Nghiệp vụ 3: Ngày 08/01, Công ty TNHH Thanh Hà ứng trước tiền mua hàng hóa bằng tiền gửi ngân hàng 50.000.000 VNĐ theo hợp đồng kinh tế 2 bên đã ký số 2025001/ABC- TH ngày 02/01/2025 
+Ngân hàng/ Thu tiền chọn lý do thu Thu khác (KH ứng trước tiền hàng không thực hiện được trên Ngân hàng/ Thu tiền khách hàng)
+Nghiệp vụ 4: Ngày 19/01 chuyển tiền thanh toán cho công ty cổ phần điện máy Tây Phương tiền mua hàng ngày 09/01/2025. 
+Cách 1: Ngân hàng/ Trả tiền nhà cung cấp chọn phương thức thanh toán, loại tiền, Nhà cung cấp và Ngày trả tiền ấn Lấy dữ liệu
+Cách 2: Mua hàng/ Trả tiền nhà cung cấp 
+Nghiệp vụ 5: Ngày 20/01, Công ty thực hiện bán 50.000 USD từ tài khoản USD tại Ngân hàng TMCP Kỹ thương Việt Nam (tăng vào tài khoản VND tại ngân hàng). 
+Ngân hàng/ Chuyển tiền nội bộ
+Nghiệp vụ 6: Ngày 22/01 chuyển khoản thanh toán cho công ty TNHH Thiết bị Thanh Trúc tiền nợ kỳ trước 75.000.000. Doanh nghiệp được hưởng chiết khấu thanh toán 5% do thanh toán trước thời hạn theo hợp đồng HĐKT-036/2024/TBT-ABC. 
+Cách 1: Ngân hàng/ Trả tiền nhà cung cấp chọn phương thức thanh toán, loại tiền, Nhà cung cấp và Ngày trả tiền ấn Lấy dữ liệu, điền chiết khấu thanh toán 5%/ Trả tiền
+Cách 2: Mua hàng/ Trả tiền nhà cung cấp 
+Nghiệp vụ 7: Ngày 23/01 chi ứng tạm ứng cho Phạm Đình Tài nhân viên kỹ thuật đi công tác theo đề nghị tạm ứng ngày 22/01/2025 số tiền 5.000.000 
+Quỹ/ Chi tiền chọn lý do chi Tạm ứng cho nhân viên
+Nghiệp vụ 8: Ngày 28/01 Phạm Đình Tài thanh toán tạm ứng thừa bằng tiền mặt
+Bước 1: Tổng hợp/ Chứng từ quyết toán tạm ứng phản ánh chi phí đi công tác của nhân viên
+Bước 2: Quỹ/ Thu tiền chọn lý do thu Thu hoàn ứng phản ánh số tạm ứng thừa
+PHÂN HỆ TSCĐ:
+Nghiệp vụ 1: Ngày 10/01, mua máy chủ phục vụ quản lý bán hàng Dell PowerEdge R350, đã thanh toán bằng TGNH. TSCĐ có thời gian sử dụng 4 năm. 
+Bước 1: Tổng hợp/ Chứng từ nghiệp vụ khác. Nhập thông tin chung, hạch toán và thuế
+Hoặc Mua hàng/ Chứng từ mua hàng chọn Mua hàng trong nước không qua kho, thêm mã hàng Máy chủ Dell … trong đó phần tính chất chọn Chỉ là diễn giải.
+Bước 2: Tài sản cố định/ Ghi tăng khai báo thông tin liên quan đến TSCĐ
+Nghiệp vụ 2: Ngày 13/01, bảo dưỡng định kỳ Máy lạnh Daikin VRV A Series của công ty TNHH Thiết bị Thanh Trúc, thanh toán bằng tiền mặt 
+Ngân hàng/ Chi tiền chọn lý do chi Chi khác
+Hoặc Tổng hợp/ Chứng từ nghiệp vụ khác. Nhập thông tin chung, hạch toán và thuế
+Nghiệp vụ 3: Ngày 16/01, nâng cấp phần mềm kế toán MISA bổ sung tính năng MeInvoice và eSign., trị giá 10.000.000, đã thanh toán bằng TGNH.
+Bước 1: Ngân hàng/ Chi tiền chọn lý do chi Chi khác
+Hoặc Tổng hợp/ Chứng từ nghiệp vụ khác. Nhập thông tin chung, hạch toán và thuế
+Bước 2: Tài sản cố định/ Đánh giá lại tài sản cố định chọn lý do Nâng cấp TSCĐ
+Nghiệp vụ 4: Ngày 20/01, mua máy tính xách tay Dell Precision 7780 Workstation cho phòng kỹ thuật giá 45.000.000/ chiếc; đã thanh toán bằng TGNH. TSCĐ có thời gian sử dụng 4 năm.
+Bước 1: Tổng hợp/ Chứng từ nghiệp vụ khác. Nhập thông tin chung, hạch toán và thuế
+Hoặc Mua hàng/ Chứng từ mua hàng chọn Mua hàng trong nước không qua kho, thêm mã hàng máy tính xách tay Dell … trong đó phần tính chất chọn Chỉ là diễn giải.
+Bước 2: Tài sản cố định/ Ghi tăng khai báo thông tin liên quan đến TSCĐ
+Nghiệp vụ 5: Ngày 24/01, thanh lý máy tính xách tay Dell XPS 15, thu bằng TGNH giá 2.200.000. 
+Bước 1: Tài sản cố định/ Ghi giảm. Nhập thông tin chung và chọn TSCĐ thanh lý
+Bước 2: Tổng hợp/ Chứng từ nghiệp vụ khác. Nhập thông tin chung, hạch toán và thuế
+Nghiệp vụ 6: Trích khấu hao tháng 1/ 2025
+Tài sản cố định/ Tính khấu hao chọn tháng 1. Tại tab Phân bổ kiểm tra lại thông tin về đối tượng phân bổ và TK chi phí, nếu các thông tin và hạch toán đúng  Cất
+PHÂN HỆ TIỀN LƯƠNG
+Trong tháng 01/2025 tất cả các nhân viên trong công ty đều đi làm đầy đủ.
+Yêu cầu: Lập bảng lương và trả lương cho công nhân viên các tháng trong tháng 01/2025 bằng tiền gửi ngân hàng. Tiền lương được trả vào ngày cuối cùng của từng tháng.
+Bước 1: Khai báo nhân viên vào Danh mục/ Đối tượng/ Nhân viên
+Bước 2: Lập bảng chấm công: Vào Tiền lương/ Chấm công, thêm, chọn loại chấm công, chọn kỳ cần lập bảng CC, chọn phòng ban, đồng ý. Phần mềm tự động sinh bảng chấm công, căn cứ vào thời gian đi làm, sửa đổi bằng cách chọn nhân viên, chọn ngày trong tháng cần sửa đổi rồi tích chọn lại. Cất. Lưu ý muốn chấm công cả ngày thứ 7, CN thì làm như sau Hệ thống/ Tùy chọn/ Tiền lương
+Bước 3: Lập bảng tổng hợp chấm công
+Tiền lương/ Tổng hợp chấm công, Thêm, chọn loại (Chấm công theo buổi), chọn kỳ, chọn phòng bab, tích chọn tổng hợp từ các bảng CC chi tiết, đồng ỳ, kiểm tra lại các thông tin. Muốn thay đổi tổng công nhấn vào nhân viên và sửa, cất
+Lưu ý phần mềm không tổng hợp công t7, CN và công làm đêm mà mình phải tự nhập bằng tay. Không nên làm thao tác Sinh bảng lương ở bước này)
+Bước 4: Lập bảng tính lương
+- Thiết lập các quy định về tiền lương. Nghiệp vụ/ Tiền lương/ Quy định lương, bảo hiểm…phần mềm tự động thiết lập, mình có thể chỉnh sửa theo ý muốn. Bước này chỉ lập 1 lần 
+-Xác định mức lương cơ bản: có 2 loại để bạn lựa chọn
+Hệ thống/ Tùy chọn/ Tiền lương chọn lương cơ bản hay lương thỏa thuận, hiển thị cột 141 trên bảng lương hay ko.
+Tiền lương/Tính lương, thêm, chọn loại lương theo buổi, chọn kỳ chấm công và đơn vị, lựa chọn tạo mới, đồng ý.
+Nếu lương của nhân viên có thêm các khoản khác, nhấn thêm các cột, kích chuột phải vào bảng lương chọn sửa mẫu, chọn tab thiết lập hiển thị, chọn cột kiểu số 1,2, tích chọn ở Hiển thị, sau đó nhập tên cột là phụ cấp điện thoại, ăn trưa, tab cấu trúc bảng lương, chọn thêm nhóm phụ cấp, sau đó đưa các khoản vừa tạo vào nhóm phù hợp. Những cột mới sửa mẫu phải thiết lập công thức cho cột mới. Nhấn vào cột vừa thêm, phải chuột, đặt công thức; Thiết lập tài khoản hạch toán phụ cấp. 
+Lưu ý: Chọn Lương cố định -> Sau khi hiện ra bảng tính lương tự đánh số tiền (…15tr, 8tr, 12tr) ở bảng của từng người.
+Hạch toán lương, cất (Lưu ý phải có ĐK Nợ 642/334)
+Tiền lương/ Hạch toán chi phí, thêm, đồng ý. Hệ thống tự động hạch toán chi phí lương, kiểm tra lại chứng từ, cất.
+Tiền lương/ trả lương, chọn phương thức trả lương, tích chọn nhân viên…
+Tiền lương/ Nộp bảo hiểm
+PHÂN HỆ THUẾ, TỔNG HỢP
+Nghiệp vụ 1: Ngày 20/01, thuế môn bài phải nộp 
+Tổng hợp/ Chứng từ nghiệp vụ khác
+Nghiệp vụ 2: Ngày 24/01, nộp thuế môn bài bằng TGNH 
+Ngân hàng/ Nộp thuế chọn Thuế khác
+Nghiệp vụ 3: Ngày 31/01, khấu trừ thuế GTGT 
+Bước 1: Thuế/ Tờ khai thuế GTGT khấu trừ chọn tờ khai tháng 1 (Tờ khai lần đầu), phụ lục kê khai/ Đồng ý
+Bước 2: Thuế/ Khấu trừ thuế GTGT
+Nghiệp vụ 4: Ngày 31/01, kết chuyển xác định kết quả kinh doanh
+Tổng hợp/ Kết chuyển lãi lỗ
