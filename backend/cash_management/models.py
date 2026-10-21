@@ -27,6 +27,7 @@ class CashTransaction(models.Model):
         db_table="cash_transaction";ordering=("-transaction_date","-created_at");constraints=[models.UniqueConstraint(fields=("company","number"),name="uq_cash_transaction_number"),models.CheckConstraint(condition=Q(amount__gt=0,exchange_rate__gt=0,base_amount__gt=0),name="ck_cash_transaction_amounts")]
     payment_method_config=models.ForeignKey("master_data.PaymentMethod",on_delete=models.PROTECT,null=True,blank=True,related_name="cash_transactions")
     payment_method_snapshot=models.JSONField(default=dict,blank=True)
+    receipt_details=models.JSONField(default=dict,blank=True)
 
 class ApprovalDecision(models.Model):
     id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False);company=models.ForeignKey("organization.Company",on_delete=models.PROTECT,related_name="cash_approvals");transaction=models.ForeignKey(CashTransaction,on_delete=models.PROTECT,related_name="approval_decisions");level=models.PositiveSmallIntegerField(default=1);decision=models.CharField(max_length=20,choices=(("SUBMITTED","Đã gửi"),("APPROVED","Phê duyệt"),("REJECTED","Từ chối")));actor=models.ForeignKey("iam.UserAccount",on_delete=models.PROTECT,related_name="cash_approvals");comment=models.CharField(max_length=1000,blank=True);decided_at=models.DateTimeField(auto_now_add=True)

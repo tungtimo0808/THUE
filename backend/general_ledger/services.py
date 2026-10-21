@@ -43,8 +43,10 @@ def _validate_entry(entry):
         dim_reqs = account.dimension_requirements or {}
         for dim_name, req_level in dim_reqs.items():
             if req_level in ("REQUIRED", models.DimensionRequirementLevel.REQUIRED):
-                if dim_name in ("CUSTOMER", "SUPPLIER", "EMPLOYEE") and not line.party_id:
+                if dim_name in ("CUSTOMER", "SUPPLIER") and not line.party_id:
                     raise ValidationError(f"Tài khoản {account.code} bắt buộc nhập đối tượng {dim_name} (Party).")
+                elif dim_name == "EMPLOYEE" and not (line.party_id or (line.dimensions or {}).get("employee_id")):
+                    raise ValidationError(f"Tài khoản {account.code} bắt buộc nhập nhân viên.")
                 elif dim_name == "PROJECT" and not line.project_id:
                     raise ValidationError(f"Tài khoản {account.code} bắt buộc nhập dự án (Project).")
                 elif dim_name == "COST_CENTER" and not line.cost_center_id:
@@ -77,8 +79,9 @@ def _validate_entry(entry):
                 msg = exc.messages[0] if hasattr(exc, "messages") else str(exc)
                 raise ValidationError(msg) from exc
 
+        employee_tracked = (account.dimension_requirements or {}).get("EMPLOYEE") == "REQUIRED" and (line.dimensions or {}).get("employee_id")
         required = {
-            "party": account.requires_party, "project": account.requires_project,
+            "party": account.requires_party and not employee_tracked, "project": account.requires_project,
             "cost_center": account.requires_cost_center, "warehouse": account.requires_warehouse,
         }
         missing = [name for name, needed in required.items() if needed and not getattr(line, f"{name}_id")]

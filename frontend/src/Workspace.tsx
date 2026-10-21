@@ -48,11 +48,11 @@ function Workspace() {
   const module = modules.find((m) => m.id === moduleId);
   const company =
     companies.find((c) => c.id === params.get("company")) || companies[0];
-  const period = ["2026-09", "2026-08", "2026"].includes(
+  const period = ["2026-12", "2026-09", "2026-08", "2026"].includes(
     params.get("period") || "",
   )
     ? params.get("period")!
-    : "2026-09";
+    : "2026-12";
   const [transactions, setTransactions] = useState(readTransactions);
   const [collapsed, setCollapsed] = useState(false),
     [mobileOpen, setMobileOpen] = useState(false);
@@ -310,6 +310,7 @@ function Workspace() {
                   value={period}
                   onChange={(e) => context({ period: e.target.value })}
                 >
+                  <option value="2026-12">Tháng 12, 2026</option>
                   <option value="2026-09">Tháng 9, 2026</option>
                   <option value="2026-08">Tháng 8, 2026</option>
                   <option value="2026">Cả năm 2026</option>

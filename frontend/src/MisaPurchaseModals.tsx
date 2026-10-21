@@ -28,34 +28,97 @@ export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
 
-// Common supplier sample data
+// Common supplier sample data from Company ABC (TT99/2025/TT-BTC)
 export const SAMPLE_SUPPLIERS = [
   {
-    code: "NCC001",
-    name: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
-    taxCode: "0102345678",
-    address: "Số 18 Hoàng Cầu, Đống Đa, Hà Nội",
-    contact: "Nguyễn Văn Hùng",
-    phone: "0912345678",
+    code: "PHATMAI",
+    name: "Công ty TNHH Phát Mai Group",
+    taxCode: "110084806",
+    address: "Số 140 Đường Vạn Hạnh. P. Đức Giang. Hà Nội",
+    contact: "Trần Văn Phát",
+    phone: "0243.827.1122",
     debtDays: 30,
   },
   {
-    code: "NCC002",
-    name: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
-    taxCode: "0900123456",
-    address: "KCN Phố Nối A, Hưng Yên",
-    contact: "Trần Thị Lan",
-    phone: "0987654321",
+    code: "MINHQUAN",
+    name: "Công ty Cổ phần Minh Quân Logistics",
+    taxCode: "110087035",
+    address: "Số 16. KĐT Văn Khê. Đường Tố Hữu. Hà Nội",
+    contact: "Lê Minh Quân",
+    phone: "0243.556.7788",
     debtDays: 45,
   },
   {
-    code: "NCC003",
-    name: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
-    taxCode: "0309876543",
-    address: "245 Điện Biên Phủ, P.15, Q. Bình Thạnh, TP.HCM",
-    contact: "Lê Minh Tuấn",
-    phone: "0903123456",
+    code: "THANHTRU",
+    name: "Công ty TNHH Thiết bị Thanh Trúc",
+    taxCode: "110092821",
+    address: "Số 13 ngõ 10 Văn Nội. P. Phú Lương. Hà Nội",
+    contact: "Phạm Thanh Trúc",
+    phone: "0243.998.3344",
+    debtDays: 30,
+  },
+  {
+    code: "MAISON",
+    name: "CTCP Tư vấn và Dịch vụ Bất động sản Maison",
+    taxCode: "106639438",
+    address: "Số 9. Ngõ 68 Trung Kính. P. Yên Hoà. Hà Nội",
+    contact: "Nguyễn Thị Mai",
+    phone: "0243.789.0123",
     debtDays: 15,
+  },
+  {
+    code: "VANPHO",
+    name: "CTCP Vận tải và Thương mại Vạn Phát",
+    taxCode: "200463686",
+    address: "Số 7 lô 2A Lê Hồng Phong. P. Đông Khê. Hải Phòng",
+    contact: "Đỗ Vạn Phát",
+    phone: "0225.388.9900",
+    debtDays: 30,
+  },
+  {
+    code: "MEDIAZ",
+    name: "Công ty TNHH Truyền thông AZ Việt Nam",
+    taxCode: "402155162",
+    address: "72 Nguyễn Chí Thanh. P. Hải Châu I. Đà Nẵng",
+    contact: "Vũ Hải Đăng",
+    phone: "0236.365.4321",
+    debtDays: 30,
+  },
+  {
+    code: "LOCATIO",
+    name: "Công ty TNHH Dịch vụ Logistics Việt Hưng",
+    taxCode: "101353160",
+    address: "Số 135. phố Phúc Tân. P. Phúc Tân. Hà Nội",
+    contact: "Trần Việt Hưng",
+    phone: "0243.824.5566",
+    debtDays: 30,
+  },
+  {
+    code: "VIETGIA",
+    name: "Công ty Cổ phần Công nghệ Việt Gia",
+    taxCode: "101217009",
+    address: "Số 1174 đường Láng. P. Láng Thượng. Hà Nội",
+    contact: "Lê Gia Việt",
+    phone: "0243.766.1199",
+    debtDays: 30,
+  },
+  {
+    code: "CONGNGHE",
+    name: "Công ty TNHH Phát triển Công nghệ KTS",
+    taxCode: "100366488",
+    address: "Số 177. phố Giảng Võ. P. Cát Linh. Hà Nội",
+    contact: "Ngô Quốc Tuấn",
+    phone: "0243.512.3344",
+    debtDays: 30,
+  },
+  {
+    code: "ANLOC",
+    name: "Công ty TNHH Thương mại Máy tính An Lộc",
+    taxCode: "101468933",
+    address: "Số 49 Phố Thái Hà. P. Trung Liệt. Hà Nội",
+    contact: "Hoàng An Lộc",
+    phone: "0243.857.2288",
+    debtDays: 30,
   },
 ];
 
@@ -74,103 +137,103 @@ export interface SampleInventoryItem {
 
 export const SAMPLE_ITEMS: SampleInventoryItem[] = [
   {
-    code: "VT001",
-    name: "Thép cuộn mạ kẽm Ø6",
-    unit: "Kg",
-    price: 21500,
+    code: "DT_IP15",
+    name: "Điện thoại iPhone 15 Pro Max 256GB",
+    unit: "Cái",
+    price: 16200000,
     vat: 10,
-    stock: "1561",
-    stockName: "1561 - Hàng hóa",
-    supplierCode: "NCC002",
-    supplierName: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "PHATMAI",
+    supplierName: "Công ty TNHH Phát Mai Group",
   },
   {
-    code: "VT002",
-    name: "Ống thép đúc phi 90 dày 3.5mm",
-    unit: "Cây",
-    price: 345000,
+    code: "DT_SS24",
+    name: "Điện thoại Samsung Galaxy S24 Ultra 256GB",
+    unit: "Cái",
+    price: 14700000,
     vat: 10,
-    stock: "1561",
-    stockName: "1561 - Hàng hóa",
-    supplierCode: "NCC002",
-    supplierName: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "PHATMAI",
+    supplierName: "Công ty TNHH Phát Mai Group",
   },
   {
-    code: "VT003",
-    name: "Bulong nở inox M12x100",
-    unit: "Bộ",
-    price: 12500,
-    vat: 8,
-    stock: "1561",
-    stockName: "1561 - Hàng hóa",
-    supplierCode: "NCC001",
-    supplierName: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
+    code: "LT_MBAIR",
+    name: "Máy tính xách tay Macbook Air 13-inch M2",
+    unit: "Cái",
+    price: 12900000,
+    vat: 10,
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "ANLOC",
+    supplierName: "Công ty TNHH Thương mại Máy tính An Lộc",
   },
   {
-    code: "VT004",
-    name: "Sơn chống rỉ Alkyd xám 20L",
-    unit: "Thùng",
-    price: 850000,
-    vat: 8,
+    code: "LT_HPPAV",
+    name: "Máy tính xách tay HP Pavilion 14 i5",
+    unit: "Cái",
+    price: 7800000,
+    vat: 10,
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "VIETGIA",
+    supplierName: "Công ty Cổ phần Công nghệ Việt Gia",
+  },
+  {
+    code: "LT_DELL",
+    name: "Laptop Dell Ins 15",
+    unit: "Cái",
+    price: 12000000,
+    vat: 10,
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "ANLOC",
+    supplierName: "Công ty TNHH Thương mại Máy tính An Lộc",
+  },
+  {
+    code: "MTB_IPAD10",
+    name: "Máy tính bảng iPad Gen 10 64GB",
+    unit: "Cái",
+    price: 5100000,
+    vat: 10,
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "CONGNGHE",
+    supplierName: "Công ty TNHH Phát triển Công nghệ KTS",
+  },
+  {
+    code: "DH_AWSE",
+    name: "Đồng hồ thông minh Apple Watch SE",
+    unit: "Cái",
+    price: 3600000,
+    vat: 10,
+    stock: "156",
+    stockName: "156 - Kho hàng hóa",
+    supplierCode: "CONGNGHE",
+    supplierName: "Công ty TNHH Phát triển Công nghệ KTS",
+  },
+  {
+    code: "VL_DCD",
+    name: "Dây cáp điện",
+    unit: "Cuộn",
+    price: 1500000,
+    vat: 10,
     stock: "152",
-    stockName: "152 - Nguyên vật liệu",
-    supplierCode: "NCC003",
-    supplierName: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
+    stockName: "152 - Kho nguyên liệu",
+    supplierCode: "THANHTRU",
+    supplierName: "Công ty TNHH Thiết bị Thanh Trúc",
   },
   {
-    code: "VT005",
-    name: "Máy mài góc công nghiệp Bosch GWS",
-    unit: "Chiếc",
-    price: 1850000,
+    code: "GXV-001",
+    name: "Ghế xoay văn phòng",
+    unit: "Cái",
+    price: 800000,
     vat: 10,
     stock: "153",
-    stockName: "153 - Công cụ dụng cụ",
-    supplierCode: "NCC001",
-    supplierName: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
-  },
-  {
-    code: "VT006",
-    name: "Thép hình chữ I 150x75x5x7mm",
-    unit: "Mét",
-    price: 285000,
-    vat: 10,
-    stock: "1561",
-    stockName: "1561 - Hàng hóa",
-    supplierCode: "NCC002",
-    supplierName: "Công ty Cổ phần Thép Hòa Phát Hưng Yên",
-  },
-  {
-    code: "VT007",
-    name: "Vòng bi bạc đạn công nghiệp SKF 6205",
-    unit: "Cái",
-    price: 95000,
-    vat: 8,
-    stock: "1561",
-    stockName: "1561 - Hàng hóa",
-    supplierCode: "NCC003",
-    supplierName: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
-  },
-  {
-    code: "DV001",
-    name: "Dịch vụ vận chuyển bốc dỡ hàng hóa",
-    unit: "Chuyến",
-    price: 1500000,
-    vat: 8,
-    stock: "1562",
-    stockName: "1562 - Chi phí thu mua",
-    supplierCode: "NCC003",
-    supplierName: "Công ty TNHH Nhập khẩu & Thương mại Sao Nam",
-  },
-  {
-    code: "DV002",
-    name: "Dịch vụ bảo trì hiệu chuẩn thiết bị",
-    unit: "Lần",
-    price: 3200000,
-    vat: 10,
-    stock: "6427",
-    stockName: "6427 - Chi phí dịch vụ mua ngoài",
-    supplierCode: "NCC001",
-    supplierName: "Công ty TNHH Thiết bị Công nghiệp Tân Phát",
+    stockName: "153 - Kho dụng cụ",
+    supplierCode: "THANHTRU",
+    supplierName: "Công ty TNHH Thiết bị Thanh Trúc",
   },
 ];
 
@@ -1147,7 +1210,6 @@ export function PurchaseContractModal({
   const handleItemChange = (index: number, field: string, value: any) => {
     const updated = [...items];
     const row: any = { ...updated[index], [field]: value };
-
     if (field === "reqQty" || field === "unitPrice") {
       row.amount = (Number(row.reqQty) || 0) * (Number(row.unitPrice) || 0);
       row.discountAmount = Math.round((row.amount * (Number(row.discountRate) || 0)) / 100);
@@ -2486,8 +2548,12 @@ export function PurchaseContractModal({
 // ============================================================================
 export interface PurchaseVoucherModalProps {
   onClose: () => void;
-  onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
+  onSubmit: (data: any) => any | Promise<any>;
   onOpenSupplierModal?: () => void;
+  supplierCatalog?: Array<{id?: string; code: string; name: string; address?: string; contact?: string; taxCode?: string; debtDays?: number}>;
+  itemCatalog?: Array<{id?: string; code: string; name: string; unit?: string; price?: number; stockAccount?: string}>;
+  warehouseCatalog?: Array<{id?: string; code: string; name: string}>;
+  initialRecord?: any;
 }
 
 export const PURCHASE_VOUCHER_TEMPLATES = [
@@ -2503,7 +2569,12 @@ export function PurchaseVoucherModal({
   onClose,
   onSubmit,
   onOpenSupplierModal,
+  supplierCatalog,
+  itemCatalog,
+  warehouseCatalog,
+  initialRecord,
 }: PurchaseVoucherModalProps) {
+  const today = new Date().toLocaleDateString("en-GB");
   // 4 Templates dropdown state
   const [purchaseType, setPurchaseType] = useState<PurchaseVoucherTemplate>(
     "Mua hàng trong nước nhập kho"
@@ -2536,25 +2607,40 @@ export function PurchaseVoucherModal({
   const [attachedCount, setAttachedCount] = useState<string | number>("");
   const [debtDays, setDebtDays] = useState<string | number>("");
   const [paymentDueDate, setPaymentDueDate] = useState("");
+  const [manualDueDate, setManualDueDate] = useState(false);
 
   // Fields for Phiếu chi tab
   const [recipient, setRecipient] = useState("");
   const [paymentReason, setPaymentReason] = useState("Chi tiền mua hàng");
   const [paymentVoucherCode, setPaymentVoucherCode] = useState("PC00001");
-  const [paymentPostingDate, setPaymentPostingDate] = useState("02/10/2026");
-  const [paymentDocDate, setPaymentDocDate] = useState("02/10/2026");
+  const [paymentPostingDate, setPaymentPostingDate] = useState(today);
+  const [paymentDocDate, setPaymentDocDate] = useState(today);
 
   // Fields for Hóa đơn tab
   const [taxCode, setTaxCode] = useState("");
   const [invoiceForm, setInvoiceForm] = useState("");
   const [invoiceSeries, setInvoiceSeries] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState("02/10/2026");
+  const [invoiceDate, setInvoiceDate] = useState(today);
 
   // Right dates & voucher number (NK00001 for warehouse, MH00001 for non-warehouse)
-  const [postingDate, setPostingDate] = useState("02/10/2026 09:08:40");
-  const [docDate, setDocDate] = useState("02/10/2026");
-  const [voucherCode, setVoucherCode] = useState("NK00001");
+  const [postingDate, setPostingDate] = useState(today);
+  const [docDate, setDocDate] = useState(today);
+  const [voucherCode, setVoucherCode] = useState(initialRecord?.number || "");
+  const [savedRecord, setSavedRecord] = useState<any>(initialRecord || null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const readOnlyRecord = Boolean(initialRecord && !["DRAFT", "REVISION_REQUIRED"].includes(initialRecord.status));
+  useEffect(() => {
+    if (manualDueDate) return;
+    const match = String(docDate).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const days = Number(debtDays);
+    if (!match || debtDays === "" || !Number.isInteger(days) || days < 0) return;
+    const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    if (date.getDate() !== Number(match[1]) || date.getMonth() !== Number(match[2]) - 1) return;
+    date.setDate(date.getDate() + days);
+    setPaymentDueDate(`${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`);
+  }, [docDate, debtDays, manualDueDate]);
 
   const [einvoiceLookupCode, setEinvoiceLookupCode] = useState("");
   const [einvoiceLookupUrl, setEinvoiceLookupUrl] = useState("");
@@ -2563,13 +2649,13 @@ export function PurchaseVoucherModal({
   const [showRefModal, setShowRefModal] = useState(false);
   const [showSaveDropdown, setShowSaveDropdown] = useState(false);
 
-  const handleSelectSupplier = (s: (typeof SAMPLE_SUPPLIERS)[0]) => {
+  const handleSelectSupplier = (s: {code:string; name:string; address?:string; contact?:string; taxCode?:string; debtDays?:number}) => {
     setSupplierCode(s.code);
     setSupplierName(s.name);
-    setAddress(s.address);
-    setDeliverer(s.contact);
-    setRecipient(s.contact);
-    setTaxCode(s.taxCode);
+    setAddress(s.address || "");
+    setDeliverer(s.contact || "");
+    setRecipient(s.contact || "");
+    setTaxCode(s.taxCode || "");
     setDebtDays(s.debtDays || 30);
     setShowSupplierDropdown(false);
   };
@@ -2639,6 +2725,35 @@ export function PurchaseVoucherModal({
   ]);
 
   // Phí trước hải quan sample items
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (!initialRecord || hydrated || !itemCatalog?.length || !supplierCatalog?.length || !warehouseCatalog?.length) return;
+    const viDate = (value: string) => value ? String(value).slice(0, 10).split("-").reverse().join("/") : "";
+    const supplier = supplierCatalog.find(row => row.id === initialRecord.supplier);
+    setPurchaseType(initialRecord.purchase_type === "DIRECT" ? "Mua hàng trong nước không qua kho" : "Mua hàng trong nước nhập kho");
+    setSupplierCode(supplier?.code || ""); setSupplierName(supplier?.name || "");
+    setAddress(initialRecord.supplier_address || supplier?.address || "");
+    setDeliverer(initialRecord.delivery_person || ""); setEmployee(initialRecord.contact_person || "");
+    setDescription(initialRecord.notes || ""); setAttachedCount(initialRecord.source_document_count || 0);
+    setDebtDays(initialRecord.debt_days ?? ""); setPaymentDueDate(viDate(initialRecord.payment_due_date || ""));
+    setManualDueDate(Boolean(initialRecord.payment_due_date));
+    setDocDate(viDate(initialRecord.document_date)); setPostingDate(viDate(initialRecord.posting_date));
+    setVoucherCode(initialRecord.number || "");
+    const invoice = initialRecord.invoice_details || {};
+    setWithInvoice(Boolean(invoice.received)); setInvoiceForm(invoice.template || "");
+    setInvoiceSeries(invoice.series || ""); setInvoiceNumber(invoice.number || ""); setInvoiceDate(viDate(invoice.date || ""));
+    if (initialRecord.lines?.length) setItems(initialRecord.lines.map((line: any) => {
+      const item = itemCatalog.find(row => row.id === line.item);
+      const warehouse = warehouseCatalog.find(row => row.id === (line.warehouse || initialRecord.receiving_warehouse));
+      return { ...items[0], id: line.id, code: item?.code || "", name: item?.name || "", unit: item?.unit || "",
+        stock: warehouse?.code || "", stockAccount: item?.stockAccount || "1561", debtAccount: "331",
+        quantity: Number(line.quantity), unitPrice: Number(line.unit_price), amount: Number(line.pre_tax_amount),
+        vatRate: Number(line.tax_amount) && Number(line.pre_tax_amount) ? 100 * Number(line.tax_amount) / Number(line.pre_tax_amount) : 0,
+        vatAmount: Number(line.tax_amount) };
+    }));
+    setHydrated(true);
+  }, [initialRecord, itemCatalog, supplierCatalog, warehouseCatalog, hydrated]);
+
   const [customsFees] = useState([
     {
       id: "cf-1",
@@ -2671,16 +2786,16 @@ export function PurchaseVoucherModal({
     setShowTypeDropdown(false);
     setActiveGridTab("goods");
     if (tpl === "Mua hàng trong nước không qua kho" || tpl === "Mua hàng nhập khẩu không qua kho") {
-      setVoucherCode("MH00001");
-      setPostingDate("02/10/2026");
+      setVoucherCode("");
+      setPostingDate(today);
       if (paymentOption === "paid") {
         setActiveSubTab("payment");
       } else {
         setActiveSubTab("receipt");
       }
     } else {
-      setVoucherCode("NK00001");
-      setPostingDate("02/10/2026 09:08:40");
+      setVoucherCode("");
+      setPostingDate(today);
       if (activeSubTab === "payment" && paymentOption === "unpaid") {
         setActiveSubTab("receipt");
       }
@@ -2690,6 +2805,16 @@ export function PurchaseVoucherModal({
   const handleItemChange = (index: number, field: string, value: any) => {
     const updated = [...items];
     const row: any = { ...updated[index], [field]: value };
+    if (field === "code") {
+      const catalogItem = itemCatalog?.find(item => item.code.toLowerCase() === String(value).trim().toLowerCase());
+      if (catalogItem) {
+        row.name = catalogItem.name; row.unit = catalogItem.unit || "";
+        row.stockAccount = catalogItem.stockAccount || row.stockAccount || "1561";
+        row.unitPrice = catalogItem.price || row.unitPrice || 0;
+        row.amount = Number(row.quantity || 0) * Number(row.unitPrice || 0);
+        row.vatAmount = Math.round(row.amount * Number(row.vatRate || 0) / 100);
+      }
+    }
     if (field === "quantity" || field === "unitPrice") {
       row.amount = (Number(row.quantity) || 0) * (Number(row.unitPrice) || 0);
       row.vatAmount = Math.round((row.amount * (Number(row.vatRate) || 0)) / 100);
@@ -2757,9 +2882,16 @@ export function PurchaseVoucherModal({
   const grandTotal = subtotal + vatTotal + (isImport ? importTaxTotal + exciseTaxTotal : 0);
   const inventoryValue = subtotal + purchaseCost;
 
-  const handleSave = async (andClose = true) => {
+  const handleSave = async (andClose = true, andNew = false) => {
+    if (readOnlyRecord) return;
+    if (saving) return;
+    setSaving(true);
+    setFormError("");
+    try {
     const saved = await onSubmit({
       kind: "purchase_voucher",
+      recordId: savedRecord?.id,
+      version: savedRecord?.version,
       voucherCode,
       purchaseType,
       paymentOption,
@@ -2769,6 +2901,14 @@ export function PurchaseVoucherModal({
       supplierName,
       deliverer,
       address,
+      employee,
+      attachedCount,
+      debtDays,
+      paymentDueDate,
+      invoiceForm,
+      invoiceSeries,
+      invoiceNumber,
+      invoiceDate,
       description,
       postingDate,
       docDate,
@@ -2782,12 +2922,29 @@ export function PurchaseVoucherModal({
       einvoiceLookupCode,
       einvoiceLookupUrl,
     });
-    if (saved !== false && andClose) onClose();
+    if (saved?.record) {
+      setSavedRecord(saved.record);
+      setVoucherCode(saved.record.number);
+    }
+    if (saved !== false && andNew) {
+      setSavedRecord(null); setVoucherCode(""); setSupplierCode(""); setSupplierName("");
+      setAddress(""); setDeliverer(""); setEmployee(""); setDescription("");
+      setAttachedCount(0); setDebtDays(""); setPaymentDueDate(""); setManualDueDate(false);
+      setInvoiceForm(""); setInvoiceSeries(""); setInvoiceNumber("");
+      setItems([{ ...items[0], id: `pv-${Date.now()}`, code: "", name: "", stock: "", quantity: 1, unitPrice: 0, amount: 0, vatAmount: 0 }]);
+    } else if (saved !== false && andClose) onClose();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="misa-modal-backdrop" role="dialog" aria-modal="true">
       <div className="misa-purchase-modal-window">
+        <datalist id="misa-purchase-items">{itemCatalog?.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}</datalist>
+        <datalist id="misa-purchase-warehouses">{warehouseCatalog?.map((warehouse) => <option key={warehouse.code} value={warehouse.code}>{warehouse.name}</option>)}</datalist>
         {/* Header with Title & Template Selector matching User Screenshot 1 */}
         <header className="misa-purchase-modal-header" style={{ position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -3136,7 +3293,7 @@ export function PurchaseVoucherModal({
                             overflowY: "auto",
                           }}
                         >
-                          {SAMPLE_SUPPLIERS.map((s) => (
+                          {(supplierCatalog || SAMPLE_SUPPLIERS).map((s) => (
                             <div
                               key={s.code}
                               onClick={() => handleSelectSupplier(s)}
@@ -3304,7 +3461,7 @@ export function PurchaseVoucherModal({
                             type="text"
                             placeholder="DD/MM/YYYY"
                             value={paymentDueDate}
-                            onChange={(e) => setPaymentDueDate(e.target.value)}
+                            onChange={(e) => { setPaymentDueDate(e.target.value); setManualDueDate(true); }}
                             style={{ width: "100%", height: 28, padding: "0 24px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12, boxSizing: "border-box" }}
                           />
                           <Calendar size={13} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
@@ -3372,7 +3529,7 @@ export function PurchaseVoucherModal({
                             overflowY: "auto",
                           }}
                         >
-                          {SAMPLE_SUPPLIERS.map((s) => (
+                          {(supplierCatalog || SAMPLE_SUPPLIERS).map((s) => (
                             <div
                               key={s.code}
                               onClick={() => handleSelectSupplier(s)}
@@ -3589,7 +3746,7 @@ export function PurchaseVoucherModal({
                             overflowY: "auto",
                           }}
                         >
-                          {SAMPLE_SUPPLIERS.map((s) => (
+                          {(supplierCatalog || SAMPLE_SUPPLIERS).map((s) => (
                             <div
                               key={s.code}
                               onClick={() => handleSelectSupplier(s)}
@@ -3685,7 +3842,7 @@ export function PurchaseVoucherModal({
                             type="text"
                             placeholder="DD/MM/YYYY"
                             value={paymentDueDate}
-                            onChange={(e) => setPaymentDueDate(e.target.value)}
+                            onChange={(e) => { setPaymentDueDate(e.target.value); setManualDueDate(true); }}
                             style={{ width: "100%", height: 28, padding: "0 24px 0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12, boxSizing: "border-box" }}
                           />
                           <Calendar size={13} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
@@ -3736,6 +3893,7 @@ export function PurchaseVoucherModal({
                     <input
                       type="text"
                       value={voucherCode}
+                      placeholder="Tự động khi lưu"
                       onChange={(e) => setVoucherCode(e.target.value)}
                       style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, fontWeight: 600, boxSizing: "border-box" }}
                     />
@@ -4091,12 +4249,12 @@ export function PurchaseVoucherModal({
                   {items.map((row, idx) => (
                     <tr key={row.id}>
                       <td style={{ textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
-                      <td><input type="text" value={row.code} onChange={(e) => handleItemChange(idx, "code", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
+                      <td><input type="text" aria-label={`Mã hàng dòng ${idx + 1}`} list="misa-purchase-items" value={row.code} onChange={(e) => handleItemChange(idx, "code", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                       <td><input type="text" value={row.name} onChange={(e) => handleItemChange(idx, "name", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
 
                       {purchaseType === "Mua hàng trong nước nhập kho" && (
                         <>
-                          <td><input type="text" value={row.stock} onChange={(e) => handleItemChange(idx, "stock", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
+                          <td><input type="text" aria-label={`Kho dòng ${idx + 1}`} list="misa-purchase-warehouses" value={row.stock} onChange={(e) => handleItemChange(idx, "stock", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                           {showAccounts && <td><input type="text" value={row.stockAccount} onChange={(e) => handleItemChange(idx, "stockAccount", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>}
                           {showAccounts && (
                             <td>
@@ -4550,6 +4708,8 @@ export function PurchaseVoucherModal({
           </div>
         </div>
 
+        {readOnlyRecord && <div role="status" style={{ background: "#eff6ff", color: "#1d4ed8", padding: "8px 18px", fontSize: 13 }}>Chứng từ đã qua bước lưu nháp; chỉ xem tại đây.</div>}
+        {formError && <div role="alert" style={{ background: "#fef2f2", color: "#b91c1c", padding: "8px 18px", fontSize: 13 }}>{formError}</div>}
         {/* Footer */}
         <footer style={{ height: 46, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -4589,11 +4749,12 @@ export function PurchaseVoucherModal({
 
           <div style={{ display: "flex", gap: 8, position: "relative" }}>
             <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>Hủy</button>
-            <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Lưu</button>
+            <button type="button" className="misa-invoice-btn-cancel" disabled={readOnlyRecord || saving} onClick={() => handleSave(false)}>Lưu</button>
             <div style={{ position: "relative" }}>
               <button
                 type="button"
                 className="misa-invoice-btn-submit"
+                disabled={readOnlyRecord || saving}
                 onClick={() => handleSave(true)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
               >
@@ -4628,7 +4789,7 @@ export function PurchaseVoucherModal({
                     type="button"
                     onClick={() => {
                       setShowSaveDropdown(false);
-                      handleSave(false);
+                      handleSave(false, true);
                     }}
                     style={{
                       width: "100%",

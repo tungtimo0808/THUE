@@ -2,8 +2,12 @@ import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
-import {cashDateValue} from "./cash-date";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { parseReportDate } from "./report-date";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
+import { useSearchParams } from "react-router-dom";
+import "./bank-balance-report.css";
 import {
   ChevronLeft,
   Printer,
@@ -21,22 +25,20 @@ import {
 } from "lucide-react";
 
 export interface BankBalanceStatementRow {
+  id: string;
   bankAccountNo: string;
   bankName: string;
-  openingBalance?: number;
-  debitAmount?: number;
-  creditAmount?: number;
-  closingBalance?: number;
+  currency: string;
+  openingBalance: number;
+  debitAmount: number;
+  creditAmount: number;
+  closingBalance: number;
 }
-
-const DEFAULT_ROWS: BankBalanceStatementRow[] = [
-  {
-    bankAccountNo: "0261198991",
-    bankName: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
-    creditAmount: 10000000,
-    closingBalance: -10000000,
-  },
-];
+type ApiRow = { id: string; bank_account_no: string; bank_name: string; currency: string;
+  opening_balance: string; debit_amount: string; credit_amount: string; closing_balance: string };
+type ApiReport = { rows: ApiRow[]; warnings: string[] };
+type SavedPreset = { id: string; name: string; account_code: string; date_from: string; date_to: string;
+  period_preset: string; search: string };
 
 export interface MisaBankBalanceStatementReportProps {
   onBack: () => void;
@@ -47,6 +49,17 @@ export default function MisaBankBalanceStatementReport({
   onBack,
   notify,
 }: MisaBankBalanceStatementReportProps) {
+  const { token, companyId: sessionCompanyId, companies } = useApiSession();
+  const [searchParams] = useSearchParams();
+  const requestedCompany = searchParams.get("company");
+  const companyId = companies.some((company) => company.id === requestedCompany) ? requestedCompany! : sessionCompanyId;
+  const [rows, setRows] = useState<BankBalanceStatementRow[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [accountOptions, setAccountOptions] = useState<Array<{ code: string; name: string }>>([]);
+  const [presets, setPresets] = useState<SavedPreset[]>([]);
+  const [showPresets, setShowPresets] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [loading, setLoading] = useState(false);
   // Drawer Parameters State matching Image 1
   const [paramError,setParamError]=useState("");
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
@@ -72,14 +85,43 @@ export default function MisaBankBalanceStatementReport({
     setIsParamDrawerOpen(true);
   };
 
-  const handleApplyParams = () => {
-    if(!draftAccount.trim()||!Number.isFinite(cashDateValue(draftFromDate))||!Number.isFinite(cashDateValue(draftToDate))||cashDateValue(draftFromDate)>cashDateValue(draftToDate)){setParamError('Chọn tài khoản và khoảng ngày hợp lệ theo DD/MM/YYYY.');return;}setParamError('');
+  const reportQuery = (account: string, from: string, to: string, search = "") => new URLSearchParams({
+    company_id: companyId, account_code: account, date_from: parseReportDate(from), date_to: parseReportDate(to), ...(search && { search }),
+  });
+  const loadReport = async (account: string, from: string, to: string, apply = false) => {
+    if (!token || !companyId) return false;
+    setLoading(true); setReportError("");
+    try {
+      const result = await request<ApiReport>(`/api/v1/bank/balance-report/summary/?${reportQuery(account, from, to)}`, token);
+      setRows(result.rows.map((row) => ({ id: row.id, bankAccountNo: row.bank_account_no, bankName: row.bank_name,
+        currency: row.currency, openingBalance: Number(row.opening_balance), debitAmount: Number(row.debit_amount),
+        creditAmount: Number(row.credit_amount), closingBalance: Number(row.closing_balance) })));
+      setWarnings(result.warnings || []);
+      if (apply) notify?.("Đã cập nhật Bảng kê số dư ngân hàng.");
+      return true;
+    } catch (caught) {
+      setReportError(caught instanceof Error ? caught.message : "Không thể tải dữ liệu số dư ngân hàng. Vui lòng thử lại.");
+      return false;
+    } finally { setLoading(false); }
+  };
+  useEffect(() => {
+    if (!token || !companyId) return;
+    request<Array<{ code: string; name: string }>>(`/api/v1/bank/balance-report/options/?company_id=${encodeURIComponent(companyId)}`, token)
+      .then(setAccountOptions).catch(() => setAccountOptions([]));
+    void loadReport("112", cashPeriodDates("Tháng này")![0], cashPeriodDates("Tháng này")![1]);
+  }, [token, companyId]);
+  const handleApplyParams = async () => {
+    if (!draftAccount.trim()) { setParamError("Vui lòng chọn tài khoản kế toán."); return; }
+    if (!parseReportDate(draftFromDate) || !parseReportDate(draftToDate)) { setParamError("Vui lòng nhập ngày hợp lệ theo định dạng DD/MM/YYYY."); return; }
+    if (parseReportDate(draftFromDate) > parseReportDate(draftToDate)) { setParamError("Từ ngày không được lớn hơn Đến ngày."); return; }
+    if (!accountOptions.some((option) => option.code === draftAccount)) { setParamError("Tài khoản kế toán không tồn tại hoặc không hợp lệ."); return; }
+    if (!await loadReport(draftAccount, draftFromDate, draftToDate, true)) { setParamError("Không thể tải dữ liệu số dư ngân hàng. Vui lòng thử lại."); return; }
+    setParamError('');
     setReportPeriodPreset(draftPeriodPreset);
     setFromDate(draftFromDate);
     setToDate(draftToDate);
     setSelectedAccount(draftAccount);
     setIsParamDrawerOpen(false);
-    notify?.("Đã cập nhật Bảng kê số dư ngân hàng.");
   };
 
   const handleResetParams = () => {
@@ -99,26 +141,51 @@ export default function MisaBankBalanceStatementReport({
 
   // Filter rows
   const filteredRows = useMemo(() => {
-    if (!searchKeyword.trim()) return DEFAULT_ROWS;
+    if (!searchKeyword.trim()) return rows;
     const kw = searchKeyword.toLowerCase();
-    return DEFAULT_ROWS.filter(
+    return rows.filter(
       (r) =>
         r.bankAccountNo.toLowerCase().includes(kw) ||
         r.bankName.toLowerCase().includes(kw)
     );
-  }, [searchKeyword]);
+  }, [searchKeyword, rows]);
 
-  const totalCredit = useMemo(() => {
-    return filteredRows.reduce((acc, r) => acc + (r.creditAmount || 0), 0);
+  const totalsByCurrency = useMemo(() => {
+    const totals: Record<string, { opening: number; debit: number; credit: number; closing: number }> = {};
+    for (const row of filteredRows) {
+      const total = totals[row.currency] ||= { opening: 0, debit: 0, credit: 0, closing: 0 };
+      total.opening += row.openingBalance; total.debit += row.debitAmount;
+      total.credit += row.creditAmount; total.closing += row.closingBalance;
+    }
+    return Object.entries(totals).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredRows]);
 
-  const totalDebit = useMemo(() => {
-    return filteredRows.reduce((acc, r) => acc + (r.debitAmount || 0), 0);
-  }, [filteredRows]);
-
-  const totalClosing = useMemo(() => {
-    return filteredRows.reduce((acc, r) => acc + (r.closingBalance || 0), 0);
-  }, [filteredRows]);
+  const exportExcel = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`/api/v1/bank/balance-report/export/?${reportQuery(selectedAccount, fromDate, toDate, searchKeyword.trim())}`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error("Xuất báo cáo thất bại. Vui lòng thử lại.");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a"); link.href = url; link.download = "bang-ke-so-du-ngan-hang.xlsx"; link.click(); URL.revokeObjectURL(url);
+    } catch (caught) { setReportError(caught instanceof Error ? caught.message : "Xuất báo cáo thất bại. Vui lòng thử lại."); }
+  };
+  const savePreset = async () => {
+    if (!token) return;
+    try {
+      await request(`/api/v1/bank/balance-report/save/?${reportQuery(selectedAccount, fromDate, toDate)}`, token, {
+        method: "POST", body: JSON.stringify({ period_preset: reportPeriodPreset, search: searchKeyword }),
+      });
+      notify?.("Đã lưu báo cáo thành công."); setReportError("");
+    } catch (caught) { setReportError(caught instanceof Error ? caught.message : "Không lưu được báo cáo."); }
+  };
+  const showSaved = async () => {
+    if (!token) return;
+    try {
+      const result = await request<SavedPreset[]>(`/api/v1/bank/balance-report/presets/?company_id=${encodeURIComponent(companyId)}`, token);
+      setPresets(result); setShowPresets(true); setReportError("");
+    } catch (caught) { setReportError(caught instanceof Error ? caught.message : "Không tải được báo cáo đã lưu."); }
+  };
 
   const formatMoney = (val?: number) => {
     if (val === undefined || val === null) return "";
@@ -131,6 +198,7 @@ export default function MisaBankBalanceStatementReport({
 
   return (
     <div
+      className="bank-balance-report"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -143,6 +211,7 @@ export default function MisaBankBalanceStatementReport({
     >
       {/* 1. Header Bar matching Image 2 */}
       <div
+        className="bank-balance-report-header"
         style={{
           display: "flex",
           alignItems: "center",
@@ -197,7 +266,7 @@ export default function MisaBankBalanceStatementReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={() => void showSaved()}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -215,7 +284,7 @@ export default function MisaBankBalanceStatementReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={() => void savePreset()}
           >
             Lưu báo cáo
           </button>
@@ -241,8 +310,20 @@ export default function MisaBankBalanceStatementReport({
         </div>
       </div>
 
+      {showPresets && <div style={{ padding: "12px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><strong>Báo cáo đã lưu</strong><button onClick={() => setShowPresets(false)}>Đóng</button></div>
+        {!presets.length ? <p>Chưa có báo cáo đã lưu.</p> : presets.map((preset) => <button key={preset.id} style={{ display: "block", marginTop: 6 }} onClick={async () => {
+          const from = preset.date_from.split("-").reverse().join("/");
+          const to = preset.date_to.split("-").reverse().join("/");
+          if (!await loadReport(preset.account_code, from, to)) return;
+          setReportPeriodPreset(preset.period_preset || "Tùy chọn"); setFromDate(from); setToDate(to);
+          setSelectedAccount(preset.account_code); setSearchKeyword(preset.search || ""); setShowPresets(false);
+        }}>{preset.name}</button>)}
+      </div>}
+
       {/* 2. Action Toolbar matching Image 2 */}
       <div
+        className="bank-balance-report-toolbar"
         style={{
           display: "flex",
           alignItems: "center",
@@ -339,7 +420,7 @@ export default function MisaBankBalanceStatementReport({
               padding: 4,
             }}
             title="Nạp lại"
-            onClick={() => notify?.("Đã làm mới dữ liệu báo cáo.")}
+            onClick={() => void loadReport(selectedAccount, fromDate, toDate, true)}
           >
             <RefreshCw size={15} />
           </button>
@@ -403,7 +484,7 @@ export default function MisaBankBalanceStatementReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={() => void exportExcel()}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -420,7 +501,7 @@ export default function MisaBankBalanceStatementReport({
       </div>
 
       {/* 3. Centered Report Title matching Image 2 */}
-      <div style={{ textAlign: "center", padding: "16px 20px 10px 20px" }}>
+      <div className="bank-balance-report-title" style={{ textAlign: "center", padding: "16px 20px 10px 20px" }}>
         <h3
           style={{
             margin: 0,
@@ -443,9 +524,13 @@ export default function MisaBankBalanceStatementReport({
           {periodSubtitle}
         </div>
       </div>
+      {reportError && <p role="alert" style={{ color: "#b91c1c", margin: "4px 20px" }}>{reportError}</p>}
+      {loading && <p style={{ margin: "4px 20px" }}>Đang tải dữ liệu số dư ngân hàng…</p>}
+      {warnings.map((warning) => <p key={warning} role="status" style={{ color: "#92400e", margin: "4px 20px" }}>⚠ {warning}</p>)}
 
       {/* 4. Table Area matching Image 2 & 3 */}
       <div
+        className="bank-balance-report-content"
         style={{
           flex: 1,
           overflow: "auto",
@@ -571,26 +656,18 @@ export default function MisaBankBalanceStatementReport({
                       style={{
                         border: "1px solid #e2e8f0",
                         padding: "7px 12px",
-                        color: "#0284c7",
-                        cursor: "pointer",
+                        color: "#1e293b",
                         fontWeight: 500,
                       }}
-                      onClick={() =>
-                        notify?.(`Xem chi tiết tài khoản ${row.bankAccountNo}`)
-                      }
                     >
-                      {row.bankAccountNo}
+                      {row.bankAccountNo} <small style={{ color: "#64748b" }}>({row.currency})</small>
                     </td>
                     <td
                       style={{
                         border: "1px solid #e2e8f0",
                         padding: "7px 12px",
-                        color: "#0284c7",
-                        cursor: "pointer",
+                        color: "#1e293b",
                       }}
-                      onClick={() =>
-                        notify?.(`Xem ngân hàng ${row.bankName}`)
-                      }
                     >
                       {row.bankName}
                     </td>
@@ -635,8 +712,10 @@ export default function MisaBankBalanceStatementReport({
                 );
               })}
 
+              {!filteredRows.length && <tr><td colSpan={6} style={{ textAlign: "center", padding: 18 }}>Không có dữ liệu phù hợp với điều kiện đã chọn.</td></tr>}
+
               {/* Total Row matching Image 2 & 3 */}
-              <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
+              {totalsByCurrency.map(([currency, total]) => <tr key={currency} style={{ background: "#f8fafc", fontWeight: 700 }}>
                 <td
                   style={{
                     border: "1px solid #e2e8f0",
@@ -645,10 +724,10 @@ export default function MisaBankBalanceStatementReport({
                     color: "#1e293b",
                   }}
                 >
-                  Tổng cộng
+                  Tổng cộng ({currency})
                 </td>
-                <td style={{ border: "1px solid #e2e8f0", padding: "7px 12px" }}></td>
-                <td style={{ border: "1px solid #e2e8f0", padding: "7px 12px" }}></td>
+                  <td style={{ border: "1px solid #e2e8f0", padding: "7px 12px" }}></td>
+                <td style={{ border: "1px solid #e2e8f0", padding: "7px 12px", textAlign: "right" }}>{formatMoney(total.opening)}</td>
                 <td
                   style={{
                     border: "1px solid #e2e8f0",
@@ -657,7 +736,7 @@ export default function MisaBankBalanceStatementReport({
                     fontWeight: 700,
                   }}
                 >
-                  {formatMoney(totalDebit)}
+                  {formatMoney(total.debit)}
                 </td>
                 <td
                   style={{
@@ -667,7 +746,7 @@ export default function MisaBankBalanceStatementReport({
                     fontWeight: 700,
                   }}
                 >
-                  {formatMoney(totalCredit)}
+                  {formatMoney(total.credit)}
                 </td>
                 <td
                   style={{
@@ -675,18 +754,19 @@ export default function MisaBankBalanceStatementReport({
                     padding: "7px 12px",
                     textAlign: "right",
                     fontWeight: 700,
-                    color: totalClosing < 0 ? "#dc2626" : "#1e293b",
+                    color: total.closing < 0 ? "#dc2626" : "#1e293b",
                   }}
                 >
-                  {formatMoney(totalClosing)}
+                  {formatMoney(total.closing)}
                 </td>
-              </tr>
+              </tr>)}
             </tbody>
           </table>
         </div>
 
         {/* Footer Bar matching Image 2 */}
         <div
+          className="bank-balance-report-footer"
           style={{
             display: "flex",
             alignItems: "center",
@@ -696,7 +776,7 @@ export default function MisaBankBalanceStatementReport({
             color: "#475569",
           }}
         >
-          <div>Tổng số: 1</div>
+          <div>Tổng số: {filteredRows.length}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span>Số dòng/trang</span>
@@ -1016,9 +1096,7 @@ export default function MisaBankBalanceStatementReport({
                     outline: "none",
                   }}
                 >
-                  <option value="112">112 - Tiền gửi không kỳ hạn</option>
-                  <option value="1121">1121 - TGNH BIDV</option>
-                  <option value="1122">1122 - TGNH Vietcombank</option>
+                  {accountOptions.map((option) => <option key={option.code} value={option.code}>{option.code} - {option.name}</option>)}
                 </select>
               </div>
             </div>
@@ -1071,7 +1149,8 @@ export default function MisaBankBalanceStatementReport({
                 </button>
                 <button
                   type="button"
-                  onClick={handleApplyParams}
+                  onClick={() => void handleApplyParams()}
+                  disabled={loading}
                   style={{
                     height: 32,
                     padding: "0 20px",

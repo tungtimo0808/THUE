@@ -1,5 +1,6 @@
 import {currentCashDate} from './cash-date';
 import { useState, useMemo } from "react";
+import BankStatementImportModal from "./BankStatementImportModal";
 import {
   X,
   HelpCircle,
@@ -8,8 +9,6 @@ import {
   Pin,
   Landmark,
   ArrowRight,
-  FileSpreadsheet,
-  CheckCircle2,
 } from "lucide-react";
 
 export function formatVND(amount: number): string {
@@ -769,31 +768,49 @@ export function InternalTransferModal({
   onClose,
   onSubmit,
   accounts,
+  initial,
 }: {
   onClose: () => void;
-  accounts?: { value: string; label: string }[];
+  initial?: { id?: string; version?: number; source_account?: string; destination_account?: string; source_amount?: string | number; transfer_date?: string; posting_date?: string; number?: string; description?: string; details?: any } | null;
+  accounts?: { value: string; label: string; currency?: string; glCode?: string; branchId?: string }[];
   onSubmit: (data: {
     sourceAccount: string;
     targetAccount: string;
     amount: number;
     transferDate: string;
+    postingDate?: string;
+    number?: string;
+    outgoingReference?: string;
+    incomingReference?: string;
     reason: string;
+    lineDescription: string;
+    id?: string;
+    version?: number;
   }) => void;
 }) {
-  const [sourceAccount, setSourceAccount] = useState(accounts ? accounts[0]?.value || "" : "1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
-  const [targetAccount, setTargetAccount] = useState(accounts ? accounts[1]?.value || "" : "2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
-  const [amount, setAmount] = useState(50000000);
-  const [transferDate, setTransferDate] = useState(()=>currentCashDate().split("/").reverse().join("-"));
-  const [reason, setReason] = useState("Chuyển tiền nội bộ thanh toán chi phí SXKD");
+  const [sourceAccount, setSourceAccount] = useState(initial ? `BANK:${initial.source_account}` : accounts ? accounts[0]?.value || "" : "1028475929 - Vietcombank Hoàn Kiếm (TK 1121)");
+  const [targetAccount, setTargetAccount] = useState(initial ? `BANK:${initial.destination_account}` : accounts ? accounts.find((account) => account.value !== accounts[0]?.value && account.currency === accounts[0]?.currency && account.branchId === accounts[0]?.branchId)?.value || "" : "2151000849201 - BIDV Hai Bà Trưng (TK 1121)");
+  const [amount, setAmount] = useState(initial ? Number(initial.source_amount || 0) : 50000000);
+  const [transferDate, setTransferDate] = useState(()=>initial?.transfer_date || currentCashDate().split("/").reverse().join("-"));
+  const [postingDate, setPostingDate] = useState(()=>initial?.posting_date || currentCashDate().split("/").reverse().join("-"));
+  const [number, setNumber] = useState(initial?.number || "");
+  const [outgoingReference, setOutgoingReference] = useState(initial?.details?.outgoing_reference || "");
+  const [incomingReference, setIncomingReference] = useState(initial?.details?.incoming_reference || "");
+  const [reason, setReason] = useState(initial?.description || "Chuyển tiền nội bộ");
+  const [lineDescription, setLineDescription] = useState(initial?.details?.lines?.[0]?.description || initial?.description || "Chuyển tiền nội bộ");
+  const [dirty, setDirty] = useState(false);
+  const close = () => { if (!dirty || window.confirm("Bỏ các thay đổi chưa lưu?")) onClose(); };
+  const selectedSource = accounts?.find((account) => account.value === sourceAccount);
+  const selectedTarget = accounts?.find((account) => account.value === targetAccount);
 
   return (
-    <div className="misa-tax-modal-overlay" role="dialog" aria-modal="true">
+    <div className="misa-tax-modal-overlay" role="dialog" aria-modal="true" onChangeCapture={() => setDirty(true)}>
       <div className="misa-tax-modal misa-modal-md">
         <header className="misa-tax-modal-header">
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
-            Lệnh chuyển tiền nội bộ
+            {accounts ? "Chứng từ chuyển tiền nội bộ" : "Lệnh chuyển tiền nội bộ"}
           </h2>
-          <button className="misa-tax-close-btn" type="button" onClick={onClose}>
+          <button className="misa-tax-close-btn" type="button" onClick={close}>
             <X size={18} />
           </button>
         </header>
@@ -803,7 +820,7 @@ export function InternalTransferModal({
             <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#eff6ff", padding: "10px 14px", borderRadius: 6, border: "1px solid #bfdbfe" }}>
               <Landmark size={20} style={{ color: "#2563eb" }} />
               <span style={{ fontSize: 12, color: "#1e40af" }}>
-                Nghiệp vụ chuyển tiền giữa các tài khoản ngân hàng hoặc Rút tiền gửi về nhập quỹ tiền mặt (TK 111 / 112).
+                {accounts ? "Lưu chứng từ ở trạng thái Chưa ghi sổ. Chỉ ghi sổ khi cả bên chuyển và bên nhận đã có căn cứ; phần mềm không gửi lệnh đến ngân hàng." : "Nghiệp vụ chuyển tiền giữa các tài khoản ngân hàng hoặc Rút tiền gửi về nhập quỹ tiền mặt (TK 111 / 112)."}
               </span>
             </div>
 
@@ -813,7 +830,7 @@ export function InternalTransferModal({
               </label>
               <select
                 value={sourceAccount}
-                onChange={(e) => setSourceAccount(e.target.value)}
+                onChange={(e) => { setSourceAccount(e.target.value); if (accounts) { const selected = accounts.find((item) => item.value === e.target.value); setTargetAccount(accounts.find((account) => account.value !== e.target.value && account.currency === selected?.currency && account.branchId === selected?.branchId)?.value || ""); } }}
                 style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }}
               >
                 {accounts ? accounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>) : <>
@@ -824,6 +841,14 @@ export function InternalTransferModal({
               </select>
             </div>
 
+            {accounts && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Số chứng từ
+                <input value={number} onChange={(e) => setNumber(e.target.value)} placeholder="Tự cấp khi để trống" style={{ display: "block", width: "100%", height: 34, marginTop: 4, border: "1px solid #d1d5db", borderRadius: 4, padding: "0 10px" }} />
+              </label>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Ngày hạch toán
+                <input type="date" value={postingDate} onChange={(e) => setPostingDate(e.target.value)} style={{ display: "block", width: "100%", height: 34, marginTop: 4, border: "1px solid #d1d5db", borderRadius: 4, padding: "0 10px" }} />
+              </label>
+            </div>}
             <div style={{ display: "grid", placeItems: "center" }}>
               <ArrowRight size={18} style={{ color: "#00b06b", transform: "rotate(90deg)" }} />
             </div>
@@ -837,7 +862,7 @@ export function InternalTransferModal({
                 onChange={(e) => setTargetAccount(e.target.value)}
                 style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }}
               >
-                {accounts ? accounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>) : <>
+                {accounts ? <><option value="">Chọn tài khoản đến</option>{accounts.filter((account) => account.value !== sourceAccount && account.currency === selectedSource?.currency && account.branchId === selectedSource?.branchId).map((account) => <option key={account.value} value={account.value}>{account.label}</option>)}</> : <>
                   <option value="2151000849201 - BIDV Hai Bà Trưng (TK 1121)">2151000849201 - BIDV Hai Bà Trưng (TK 1121)</option>
                   <option value="1028475929 - Vietcombank Hoàn Kiếm (TK 1121)">1028475929 - Vietcombank Hoàn Kiếm (TK 1121)</option>
                   <option value="1111 - Quỹ tiền mặt">1111 - Quỹ tiền mặt (Rút tiền về quỹ)</option>
@@ -848,7 +873,7 @@ export function InternalTransferModal({
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4, color: "#374151" }}>
-                  Số tiền chuyển (VND)
+                  Số tiền chuyển ({selectedSource?.currency || "VND"})
                 </label>
                 <input
                   type="text"
@@ -870,6 +895,23 @@ export function InternalTransferModal({
               </div>
             </div>
 
+            {accounts && <>
+              <div style={{ fontSize: 12, color: "#475569", background: "#f8fafc", padding: "8px 10px", borderRadius: 4 }}>
+                Hạch toán: Nợ {selectedTarget?.glCode || "—"} ({selectedTarget?.label || "chọn tài khoản đến"}) / Có {selectedSource?.glCode || "—"} ({selectedSource?.label || "chọn tài khoản đi"})
+              </div>
+              <label style={{ fontSize: 12, fontWeight: 600 }}>Diễn giải dòng hạch toán
+                <input value={lineDescription} onChange={(e) => setLineDescription(e.target.value)} style={{ display: "block", width: "100%", height: 34, marginTop: 4, border: "1px solid #d1d5db", borderRadius: 4, padding: "0 10px" }} />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <label style={{ fontSize: 12, fontWeight: 600 }}>Mã giao dịch đi
+                  <input value={outgoingReference} onChange={(e) => setOutgoingReference(e.target.value)} style={{ display: "block", width: "100%", height: 34, marginTop: 4, border: "1px solid #d1d5db", borderRadius: 4, padding: "0 10px" }} />
+                </label>
+                <label style={{ fontSize: 12, fontWeight: 600 }}>Mã giao dịch đến
+                  <input value={incomingReference} onChange={(e) => setIncomingReference(e.target.value)} style={{ display: "block", width: "100%", height: 34, marginTop: 4, border: "1px solid #d1d5db", borderRadius: 4, padding: "0 10px" }} />
+                </label>
+              </div>
+            </>}
+
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4, color: "#374151" }}>
                 Nội dung chuyển tiền
@@ -889,7 +931,7 @@ export function InternalTransferModal({
             Số tiền chuyển: <strong style={{ fontSize: 18, color: "#00b06b" }}>{formatVND(amount)}đ</strong>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button type="button" className="misa-btn-secondary" onClick={onClose} style={{ padding: "0 20px", height: 36, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", fontWeight: 600 }}>
+            <button type="button" className="misa-btn-secondary" onClick={close} style={{ padding: "0 20px", height: 36, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", fontWeight: 600 }}>
               Hủy
             </button>
             <button
@@ -901,12 +943,19 @@ export function InternalTransferModal({
                   targetAccount,
                   amount,
                   transferDate,
+                  postingDate,
+                  number,
+                  outgoingReference,
+                  incomingReference,
                   reason,
+                  lineDescription,
+                  id: initial?.id,
+                  version: initial?.version,
                 })
               }
               style={{ padding: "0 22px", height: 36, borderRadius: 4, background: "#00b06b", color: "#fff", border: "none", fontWeight: 600, boxShadow: "0 2px 4px rgba(0, 176, 107, 0.25)" }}
             >
-              Thực hiện chuyển tiền
+              {accounts ? "Lưu" : "Thực hiện chuyển tiền"}
             </button>
           </div>
         </footer>
@@ -918,96 +967,12 @@ export function InternalTransferModal({
 // ======================================================================
 // 5. NHẬP TỪ EXCEL MODAL (NHẬP CHỨNG TỪ TIỀN GỬI)
 // ======================================================================
-export function ExcelImportModal({
-  onClose,
-  onImportSuccess,
-}: {
+export function ExcelImportModal({ companyId, token, profiles, onClose, onImportSuccess }: {
+  companyId: string;
+  token: string;
+  profiles: { id: string; account_number: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; currency_id: string; currency_code: string }[];
   onClose: () => void;
-  onImportSuccess: (count: number) => void;
+  onImportSuccess: (count: number, reference: string, accountId: string) => void;
 }) {
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-
-  return (
-    <div className="misa-tax-modal-overlay" role="dialog" aria-modal="true">
-      <div className="misa-tax-modal misa-modal-sm">
-        <header className="misa-tax-modal-header">
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
-            Nhập khẩu chứng từ tiền gửi từ Excel
-          </h2>
-          <button className="misa-tax-close-btn" type="button" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </header>
-
-        <div className="misa-tax-modal-body">
-          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 24, textAlign: "center" }}>
-            <div
-              style={{
-                border: "1px solid #cbd5e1",
-                borderRadius: 8,
-                padding: "36px 20px",
-                background: "#f8fafc",
-                cursor: "pointer",
-              }}
-              onClick={() => setSelectedFile("Bang_ke_sao_ke_tien_gui_thang_9_2026.xlsx")}
-            >
-              <FileSpreadsheet size={42} style={{ color: "#00b06b", margin: "0 auto 12px auto" }} />
-              <h4 style={{ margin: "0 0 6px 0", fontSize: 14, color: "#111827" }}>
-                Kéo thả tệp Excel vào đây hoặc <span style={{ color: "#0284c7", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
-              </h4>
-              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>
-                Hỗ trợ định dạng .xlsx, .xls theo mẫu chuẩn Sổ Việt ERP
-              </p>
-            </div>
-
-            {selectedFile && (
-              <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#00b06b", fontSize: 13, fontWeight: 600 }}>
-                <CheckCircle2 size={16} />
-                Đã chọn tệp: {selectedFile} (14 dòng hợp lệ)
-              </div>
-            )}
-
-            <div style={{ marginTop: 16, textAlign: "left" }}>
-              <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", textDecoration: "underline" }}>
-                Tải tệp mẫu Excel chuẩn Sổ Việt ERP (.xlsx)
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <footer className="misa-tax-modal-footer">
-          <div style={{ fontSize: 12, color: "#64748b" }}>
-            {selectedFile ? "Sẵn sàng nhập dữ liệu" : "Chưa chọn tệp"}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button type="button" className="misa-btn-secondary" onClick={onClose} style={{ padding: "0 20px", height: 36, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", fontWeight: 600 }}>
-              Hủy
-            </button>
-            <button
-              type="button"
-              className="misa-btn-primary"
-              disabled={!selectedFile}
-              onClick={() => {
-                onImportSuccess(14);
-                onClose();
-              }}
-              style={{
-                padding: "0 22px",
-                height: 36,
-                borderRadius: 4,
-                background: selectedFile ? "#00b06b" : "#9ca3af",
-                color: "#fff",
-                border: "none",
-                fontWeight: 600,
-                cursor: selectedFile ? "pointer" : "not-allowed",
-                boxShadow: selectedFile ? "0 2px 4px rgba(0, 176, 107, 0.25)" : "none",
-              }}
-            >
-              Thực hiện nhập khẩu
-            </button>
-          </div>
-        </footer>
-      </div>
-    </div>
-  );
+  return <BankStatementImportModal companyId={companyId} token={token} profiles={profiles} onClose={onClose} onImported={onImportSuccess} />;
 }

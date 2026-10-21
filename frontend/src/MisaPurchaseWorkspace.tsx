@@ -76,8 +76,8 @@ import { MisaInventoryItemModal, type InventoryItemData } from "./MisaInventoryI
 import "./misa-cash.css";
 
 export default function MisaPurchaseWorkspace({
-  company: _company = { id: "minh-an", name: "Công ty Cổ phần Minh An" },
-  period: _period = "2026-09",
+  company: _company = { id: "abc", name: "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC" },
+  period: _period = "2026-12",
   tab = "process",
   href,
   notify,
@@ -93,6 +93,8 @@ export default function MisaPurchaseWorkspace({
     suppliers: "/api/v1/master-data/parties/",
     items: "/api/v1/master-data/items/",
     units: "/api/v1/master-data/units-of-measure/",
+    accounts: "/api/v1/general-ledger/accounts/",
+    warehouses: "/api/v1/master-data/warehouses/",
     taxRates: "/api/v1/master-data/tax-rates/",
     orders: "/api/v1/purchases/purchase-orders/",
     contracts: "/api/v1/purchases/purchase-contracts/",
@@ -123,6 +125,7 @@ export default function MisaPurchaseWorkspace({
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [editingVoucher, setEditingVoucher] = useState<any>(null);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showReconciliationModal, setShowReconciliationModal] = useState(false);
@@ -632,8 +635,13 @@ export default function MisaPurchaseWorkspace({
     notify(`Đã lưu Hợp đồng mua ${data.contractCode}!`);
   };
 
-  const handleSaveVoucher = (data: any) => {
-    if (apiConnected) return apiSave((writer) => saveGoodsPurchase(writer, data));
+  const handleSaveVoucher = async (data: any) => {
+    if (apiConnected && token) {
+      const result = await saveGoodsPurchase(createApiWriter(_company.id, (path, init) => request(path, token, init)), data);
+      notify(result.message);
+      reloadApi();
+      return result;
+    }
     setVouchers([
       {
         id: `nk-${Date.now()}`,
@@ -648,6 +656,7 @@ export default function MisaPurchaseWorkspace({
       ...vouchers,
     ]);
     notify(`Đã lập Chứng từ mua hàng ${data.voucherCode}!`);
+    return { record: { id: `nk-${Date.now()}`, number: data.voucherCode } };
   };
 
   const handleSaveReturn = (data: any) => {
@@ -872,9 +881,13 @@ export default function MisaPurchaseWorkspace({
 
       {showVoucherModal && (
         <PurchaseVoucherModal
-          onClose={() => setShowVoucherModal(false)}
+          onClose={() => { setShowVoucherModal(false); setEditingVoucher(null); }}
           onSubmit={handleSaveVoucher}
           onOpenSupplierModal={() => setShowSupplierModal(true)}
+          initialRecord={editingVoucher}
+          supplierCatalog={apiConnected ? (apiRows.suppliers || []).filter((row) => row.status === "ACTIVE").map((row) => ({ id: row.id, code: row.code, name: row.name, address: row.address, contact: row.contact_person, taxCode: row.tax_code, debtDays: row.payment_term_days })) : undefined}
+          itemCatalog={apiConnected ? (apiRows.items || []).filter((row) => row.status === "ACTIVE").map((row) => ({ id: row.id, code: row.code, name: row.name, unit: apiUnitName(apiRows.units, row.base_uom), price: Number(row.purchase_price || 0), stockAccount: apiRows.accounts?.find((account) => account.id === row.inventory_account)?.code })) : undefined}
+          warehouseCatalog={apiConnected ? (apiRows.warehouses || []).filter((row) => row.status === "ACTIVE").map((row) => ({ id: row.id, code: row.code, name: row.name })) : undefined}
         />
       )}
 
@@ -2890,7 +2903,7 @@ export default function MisaPurchaseWorkspace({
                 <tr key={v.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center" }}><input type="checkbox" /></td>
                   <td style={{ padding: "8px 10px" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowVoucherModal(true)}>
+                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => { setEditingVoucher(apiRows.vouchers?.find((row) => row.id === v.id) || null); setShowVoucherModal(true); }}>
                       {v.code}
                     </span>
                   </td>

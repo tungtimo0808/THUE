@@ -41,13 +41,21 @@ services:
       DB_PORT: "5432"
       DB_CONN_MAX_AGE: "0"
       COMMON_REQUIRE_VERIFICATION: "True"
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.locmem.EmailBackend}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@example.local}
+      EMAIL_HOST: ${EMAIL_HOST:-localhost}
+      EMAIL_PORT: ${EMAIL_PORT:-25}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-False}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
     volumes:
       - ./backend:/app
       - /app/venv
     ports:
       - "8080:8080"
     command: >
-      sh -c "python manage.py migrate && python manage.py sync_company_setup && python manage.py runserver 0.0.0.0:8080"
+      sh -c "python manage.py migrate && python manage.py sync_company_setup && python manage.py seed_exercise_data && python manage.py runserver 0.0.0.0:8080"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/docs/', timeout=2)"]
       interval: 5s

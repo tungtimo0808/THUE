@@ -2,6 +2,7 @@ from decimal import Decimal
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field,extend_schema_serializer
 from master_data.payment_methods import method_snapshot, validate_method_selection
+from .receipt_validation import validate_receipt
 from . import models
 
 class FundSerializer(serializers.ModelSerializer):
@@ -29,7 +30,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         if fund.company_id!=company.id or fund.status!="ACTIVE":raise serializers.ValidationError({"fund":"Quỹ không hợp lệ hoặc đã ngừng hoạt động."})
         if currency.id!=fund.currency_id:raise serializers.ValidationError({"currency":"Loại tiền giao dịch phải khớp loại tiền của quỹ."})
         if party and party.company_id!=company.id:raise serializers.ValidationError({"party":"Đối tượng phải thuộc cùng doanh nghiệp."})
-        return attrs
+        return validate_receipt(attrs, self.instance)
     def create(self,validated_data):validated_data["base_amount"]=validated_data["amount"]*validated_data.get("exchange_rate",Decimal("1"));return super().create(validated_data)
     def update(self,instance,validated_data):
         obj=super().update(instance,validated_data);obj.base_amount=obj.amount*obj.exchange_rate;obj.save(update_fields=("base_amount",));return obj

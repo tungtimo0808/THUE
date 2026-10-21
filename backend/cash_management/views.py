@@ -1,12 +1,15 @@
 from decimal import Decimal
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from rest_framework import mixins
+from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet,ReadOnlyModelViewSet
 from . import models,serializers,services
 from .permissions import CashPermission
+from .receipt_validation import RECEIPT_TYPES
 def perms(r):return {"GET":f"{r}.VIEW","POST":f"{r}.CREATE","PUT":f"{r}.EDIT","PATCH":f"{r}.EDIT"}
 class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,GenericViewSet):
     permission_classes=(CashPermission,);filter_backends=(SearchFilter,OrderingFilter);ordering=("-created_at",)
@@ -31,6 +34,29 @@ class FundViewSet(BaseViewSet):
         return Response({"fund":str(fund.id),"currency":fund.currency.code,"total_receipts":income,"total_payments":expense,"current_balance":fund.balance,"transactions":serializers.TransactionSerializer(qs,many=True).data})
 class TransactionViewSet(BaseViewSet):
     queryset=models.CashTransaction.objects.select_related("company","fund","currency","party","created_by","cashier");serializer_class=serializers.TransactionSerializer;iam_permissions=perms("CASH.TRANSACTION");action_permissions={"submit":"CASH.TRANSACTION.SUBMIT","approve":"CASH.TRANSACTION.APPROVE","reject":"CASH.TRANSACTION.REJECT","confirm":"CASH.TRANSACTION.CONFIRM","reverse":"CASH.TRANSACTION.REVERSE","post_gl":"CASH.TRANSACTION.POST"};search_fields=("number","payer_payee","description","source_reference");ordering_fields=("transaction_date","amount","created_at")
+    def perform_create(self, serializer):
+        company = serializer.validated_data["company"]
+        if str(company.pk) != self.request.query_params.get("company_id"):
+            raise ValidationError({"company": "Doanh nghiệp không khớp phạm vi làm việc."})
+        branch_id = self.request.query_params.get("branch_id")
+        if serializer.validated_data.get("business_type") in RECEIPT_TYPES and not branch_id:
+            raise ValidationError({"branch_id": "Vui lòng chọn chi nhánh đang làm việc."})
+        if branch_id and str(serializer.validated_data["fund"].branch_id) != branch_id:
+            raise ValidationError({"fund": "Quỹ không thuộc chi nhánh đang làm việc."})
+        try:
+            with transaction.atomic():
+                super().perform_create(serializer)
+        except IntegrityError as exc:
+            raise ValidationError({"number": "Số phiếu đã tồn tại. Vui lòng tải lại và chọn số khác."}) from exc
+    def perform_update(self, serializer):
+        if "company" in serializer.validated_data and serializer.validated_data["company"].pk != serializer.instance.company_id:
+            raise ValidationError({"company": "Không được chuyển phiếu sang doanh nghiệp khác."})
+        if serializer.instance.business_type in RECEIPT_TYPES:
+            branch_id = self.request.query_params.get("branch_id")
+            fund = serializer.validated_data.get("fund", serializer.instance.fund)
+            if not branch_id or str(fund.branch_id) != branch_id:
+                raise ValidationError({"branch_id": "Chi nhánh không khớp quỹ phiếu thu."})
+        super().perform_update(serializer)
     @action(detail=True,methods=("post",))
     def submit(self,r,pk=None):return Response(self.get_serializer(services.submit(self.get_object(),r)).data)
     @action(detail=True,methods=("post",))

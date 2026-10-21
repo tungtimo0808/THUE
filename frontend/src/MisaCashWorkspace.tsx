@@ -18,7 +18,7 @@ import { useApiSession } from "./ApiSession";
 import { useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   completeTransfer, createApiWriter, insurancePaymentRows, internalTransfers, nextVoucherNumber, salaryPaymentRows, savePayrollPayment, openPayables, openReceivables, postMoneyTransaction,
-  reverseMoneyTransaction, saveCustomerReceipts, saveMoneyVoucher, saveSupplierPayment, toApiDate,
+  reverseMoneyTransaction, saveCashReceiptDraft, saveCustomerReceipts, saveMoneyVoucher, saveSupplierPayment, toApiDate,
 } from "./misa-api-writes";
 import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
 import { request } from "./live-api";
@@ -1744,26 +1744,24 @@ export interface VoucherTypeOption {
 }
 
 export const SAMPLE_BANK_ACCOUNTS = [
-  { account: "1028475929", name: "Vietcombank - CN Hoàn Kiếm (VND)" },
-  { account: "1023847592", name: "Vietcombank - CN Ba Đình (VND)" },
-  { account: "1903482710", name: "Techcombank - Hội sở (VND)" },
-  { account: "2151000129", name: "BIDV - CN Cầu Giấy (VND)" },
-  { account: "0011004123899", name: "Vietcombank - Sở Giao Dịch (VND)" },
+  { account: "123456789", name: "Techcombank - TK VND (123456789)" },
+  { account: "987654321", name: "Techcombank - TK USD (987654321)" },
 ];
 
 export const SAMPLE_BENEFICIARY_ACCOUNTS = [
-  { account: "0021000348291", name: "Vietcombank - CN Thăng Long" },
-  { account: "19028374910012", name: "Techcombank - CN Hai Bà Trưng" },
-  { account: "21510008472910", name: "BIDV - CN Hà Nội" },
-  { account: "123000847291", name: "Vietinbank - CN Đống Đa" },
-  { account: "0451000389102", name: "Vietcombank - CN Thành Công" },
+  { account: "11008480601", name: "Vietcombank - Công ty TNHH Phát Mai Group" },
+  { account: "11008703501", name: "BIDV - Công ty Cổ phần Minh Quân Logistics" },
+  { account: "11009282101", name: "Techcombank - Công ty TNHH Thiết bị Thanh Trúc" },
+  { account: "20046368601", name: "Vietinbank - CTCP Vận tải và Thương mại Vạn Phát" },
 ];
 
 export const SAMPLE_EMPLOYEES = [
-  { code: "NV0005", name: "Hoàng Thiên Bảo", dept: "Phòng Kinh doanh & Dự án" },
-  { code: "NV0001", name: "Nguyễn Thị Mai", dept: "Phòng Kế toán - Tài chính" },
-  { code: "NV0008", name: "Trương Quốc Khánh", dept: "Phòng Marketing" },
-  { code: "NV0012", name: "Đặng Văn Lâm", dept: "Phòng Kỹ thuật & Công nghệ" },
+  { code: "TRUONGTHANHQUAN", name: "Trương Thanh Quân", dept: "Ban Giám đốc" },
+  { code: "NGUYENTHIYEN", name: "Nguyễn Thị Yến", dept: "Phòng Kế toán" },
+  { code: "LEVANHIEU", name: "Lê Văn Hiếu", dept: "Phòng Kế toán" },
+  { code: "TRANVANHUNG", name: "Trần Văn Hùng", dept: "Phòng Kế toán" },
+  { code: "HOANGBACUNG", name: "Hoàng Bá Cung", dept: "Phòng HC Nhân sự" },
+  { code: "LUONGMINHTHANH", name: "Lương Minh Thành", dept: "Phòng Kỹ thuật" },
 ];
 
 export const MISA_RECEIPT_TYPES: VoucherTypeOption[] = [
@@ -1895,6 +1893,15 @@ export const MISA_RECEIPT_TYPES: VoucherTypeOption[] = [
       { code: "DT015", name: "Bảo hiểm Bảo Việt Hà Nội", person: "Lê Thu Hằng", address: "Trần Hưng Đạo, Hoàn Kiếm, Hà Nội" },
       { code: "KH005", name: "Công ty CP Tập đoàn Sơn Hà", person: "Vũ Tuấn Kiệt", address: "KCN Từ Liêm, Bắc Từ Liêm, Hà Nội" },
     ],
+  },
+  {
+    id: "customer_invoice", index: 6, label: "Thu tiền khách hàng theo hóa đơn",
+    shortLabel: "Thu tiền theo hóa đơn", codeLabel: "Mã khách hàng", nameLabel: "Tên khách hàng",
+    personLabel: "Người nộp", addressLabel: "Địa chỉ", defaultPartnerCode: "", defaultPartnerName: "",
+    defaultPerson: "", defaultAddress: "", defaultReason: "Thu tiền khách hàng theo hóa đơn",
+    defaultDebit: "1111", defaultCredit: "131", defaultAmount: 0,
+    hasEmployeeField: false, hasCustomerDebtBtn: true, extraColumns: ["partnerCode", "partnerName"],
+    samplePartners: [],
   },
 ];
 
@@ -2358,6 +2365,14 @@ export const MISA_BANK_PAYMENT_TYPES: VoucherTypeOption[] = [
     ],
   },
   {
+    id: "supplier_invoice", index: 12, label: "Trả tiền nhà cung cấp theo hóa đơn",
+    shortLabel: "Trả tiền theo hóa đơn", codeLabel: "Mã nhà cung cấp", nameLabel: "Tên nhà cung cấp",
+    personLabel: "Người nhận", addressLabel: "Địa chỉ", defaultPartnerCode: "",
+    defaultPartnerName: "", defaultPerson: "", defaultAddress: "", defaultReason: "Trả tiền theo hóa đơn",
+    defaultDebit: "331", defaultCredit: "1121", defaultAmount: 0, hasEmployeeField: false,
+    hasCustomerDebtBtn: false, extraColumns: [], samplePartners: [],
+  },
+  {
     id: "loan_payment",
     index: 2,
     label: "2. Trả các khoản vay",
@@ -2620,6 +2635,7 @@ export function CreateVoucherModal({
   initialTypeIndex = 0,
   suggestedCode,
   existingCodes = [],
+  initialStatement,
   onClose,
   onSave,
 }: {
@@ -2628,12 +2644,76 @@ export function CreateVoucherModal({
   initialTypeIndex?: number;
   suggestedCode?: string;
   existingCodes?: string[];
+  initialStatement?: { account: string; accountNumber: string; date: string; amount: number; description: string; counterparty: string; counterpartyAccount: string; reference: string } | null;
   onClose: () => void;
   onSave: (doc: any) => void | boolean | Promise<void | boolean>;
 }) {
   const [currentCategory, setCurrentCategory] = useState<"cash" | "bank">(voucherCategory);
   const isBank = currentCategory === "bank";
   const isReceipt = kind === "receipt";
+  const { companyId } = useApiSession();
+  const { rows: receiptCatalog } = useMisaApiLists(isReceipt && !isBank ? companyId : "", {
+    funds: "/api/v1/cash/funds/", branches: "/api/v1/organization/branches/", currencies: "/api/v1/master-data/currencies/",
+    customers: "/api/v1/master-data/customers/", parties: "/api/v1/master-data/parties/", employees: "/api/v1/organization/employees/",
+    bankAccounts: "/api/v1/master-data/company-bank-accounts/",
+    receivables: "/api/v1/accounts-receivable/receivables/",
+    accounts: "/api/v1/general-ledger/accounts/",
+  }, message => setToastMessage(message));
+  const { rows: bankPaymentCatalog } = useMisaApiLists(!isReceipt && isBank ? companyId : "", {
+    profiles: "/api/v1/bank/accounts/", bankAccounts: "/api/v1/master-data/company-bank-accounts/",
+    branches: "/api/v1/organization/branches/", parties: "/api/v1/master-data/parties/",
+    partyBankAccounts: "/api/v1/master-data/party-bank-accounts/", banks: "/api/v1/master-data/banks/",
+    employees: "/api/v1/organization/employees/", payables: "/api/v1/accounts-payable/payables/",
+    payableDocuments: "/api/v1/accounts-payable/documents/", supplierInvoices: "/api/v1/accounts-payable/invoices/",
+    goodsPurchases: "/api/v1/purchases/goods-purchases/", purchaseCosts: "/api/v1/purchases/purchase-costs/",
+    accounts: "/api/v1/general-ledger/accounts/",
+  }, message => setToastMessage(message));
+  const [bankProfileId, setBankProfileId] = useState(initialStatement?.account || "");
+  const [bankBranchId, setBankBranchId] = useState("");
+  const [bankExchangeRate, setBankExchangeRate] = useState("1");
+  const [bankBeneficiaryName, setBankBeneficiaryName] = useState(initialStatement?.counterparty || "");
+  const [bankReference, setBankReference] = useState(initialStatement?.reference || "");
+  const [bankFee, setBankFee] = useState(false);
+  const [receiverBankBranch, setReceiverBankBranch] = useState("");
+  const [bankAllocations, setBankAllocations] = useState<Array<{ payable: string; amount: string; discount: string }>>([]);
+  const selectedBankProfile = (bankPaymentCatalog.profiles || []).find(row => row.id === bankProfileId);
+  const selectedCompanyBankAccount = (bankPaymentCatalog.bankAccounts || []).find(row => row.id === selectedBankProfile?.account);
+  const bankCreditCode = selectedBankProfile?.gl_code || (selectedBankProfile?.currency_code === "VND" ? "1121" : "1122");
+  const previousBankCredit = useRef(bankCreditCode);
+  useEffect(() => {
+    if (!bankProfileId && bankPaymentCatalog.profiles?.length) {
+      const first = bankPaymentCatalog.profiles.find(row => (bankPaymentCatalog.bankAccounts || []).some(account =>
+        account.id === row.account && account.status === "ACTIVE" && account.allow_payment));
+      if (first) setBankProfileId(first.id);
+    }
+  }, [bankProfileId, bankPaymentCatalog.profiles, bankPaymentCatalog.bankAccounts]);
+  useEffect(() => {
+    if (selectedBankProfile && selectedCompanyBankAccount) {
+      setBankAccount(selectedBankProfile.account_number || "");
+      setBankName(selectedBankProfile.bank_name || "");
+      setBankBranchId(selectedCompanyBankAccount.branch || (bankPaymentCatalog.branches || [])[0]?.id || "");
+      const oldCredit = previousBankCredit.current;
+      setRows(previous => previous.map(row => row.credit === oldCredit || row.credit === "1121" || row.credit === "1122" || row.credit === "112"
+        ? { ...row, credit: bankCreditCode } : row));
+      previousBankCredit.current = bankCreditCode;
+    }
+  }, [selectedBankProfile, selectedCompanyBankAccount, bankCreditCode, bankPaymentCatalog.branches]);
+  const [fundId, setFundId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [sourceBankAccountId, setSourceBankAccountId] = useState("");
+  const [exchangeRate, setExchangeRate] = useState("1");
+  const [allocations, setAllocations] = useState<Array<{ receivable: string; amount: string }>>([]);
+  const selectedFund = (receiptCatalog.funds || []).find(row => row.id === fundId);
+  const receiptCurrency = (receiptCatalog.currencies || []).find(row => row.id === selectedFund?.currency);
+  const suggestedCashDebit = (receiptCatalog.accounts || []).find(row => row.id === selectedFund?.gl_account)?.code
+    || (receiptCurrency?.code && receiptCurrency.code !== "VND" ? "1112" : "1111");
+  const previousSuggestedDebit = useRef(suggestedCashDebit);
+  useEffect(() => {
+    if (!fundId && receiptCatalog.funds?.length) {
+      const active = receiptCatalog.funds.find(row => row.status === "ACTIVE");
+      if (active) setFundId(active.id);
+    }
+  }, [fundId, receiptCatalog.funds]);
   const voucherTypes = isReceipt
     ? (isBank ? MISA_BANK_RECEIPT_TYPES : MISA_RECEIPT_TYPES)
     : (isBank ? MISA_BANK_PAYMENT_TYPES : MISA_PAYMENT_TYPES);
@@ -2641,6 +2721,18 @@ export function CreateVoucherModal({
   // Defaults: For receipt/payment
   const [selectedTypeIndex, setSelectedTypeIndex] = useState<number>(initialTypeIndex);
   const currentType = voucherTypes[selectedTypeIndex] || voucherTypes[0];
+  const bankDebitFor = (type: VoucherTypeOption) => !isReceipt && isBank && ["supplier", "supplier_invoice", "advance"].includes(type.id)
+    ? (bankPaymentCatalog.accounts || []).find(row => row.status === "ACTIVE" && row.is_postable &&
+        String(row.code).startsWith(type.id === "advance" ? "141" : "331"))?.code || type.defaultDebit
+    : type.defaultDebit;
+  const suggestedBankDebit = bankDebitFor(currentType);
+  const receiptPartnerChoices = !isReceipt && isBank ?
+    currentType.id === "advance" ? (bankPaymentCatalog.employees || []).filter(row => row.status === "ACTIVE").map(row => ({ code: row.employee_code, name: row.full_name, person: row.full_name, address: row.address || "", bankAccount: "", bankName: "" })) :
+    (bankPaymentCatalog.parties || []).filter(row => row.status === "ACTIVE").map(row => ({ code: row.code, name: row.name, person: row.name, address: "", bankAccount: "", bankName: "" })) :
+    !isReceipt || isBank ? currentType.samplePartners :
+    currentType.id === "advance_refund" ? (receiptCatalog.employees || []).filter(row => row.status === "ACTIVE").map(row => ({ code: row.employee_code, name: row.full_name, person: row.full_name, address: row.address || "", bankAccount: "", bankName: "" })) :
+    ["customer", "customer_invoice"].includes(currentType.id) ? (receiptCatalog.customers || []).map(row => ({ code: row.code, name: row.name, person: row.name, address: row.address || "", bankAccount: "", bankName: "" })) :
+    (receiptCatalog.parties || []).map(row => ({ code: row.code, name: row.name, person: row.name, address: row.address || "", bankAccount: "", bankName: "" }));
 
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
@@ -2660,26 +2752,33 @@ export function CreateVoucherModal({
     ? (isReceipt ? "NTTK00001" : "UNC00001")
     : (isReceipt ? "PT00001" : "PC00001");
   const [code, setCode] = useState(suggestedCode || initialCode);
-  const [bankAccount, setBankAccount] = useState("");
+  const [bankAccount, setBankAccount] = useState(initialStatement?.accountNumber || "");
   const [bankName, setBankName] = useState("");
-  const [receiverAccount, setReceiverAccount] = useState("");
+  const [receiverAccount, setReceiverAccount] = useState(initialStatement?.counterpartyAccount || "");
   const [receiverBank, setReceiverBank] = useState("");
   const [partnerCode, setPartnerCode] = useState(currentType.defaultPartnerCode);
-  const [partnerName, setPartnerName] = useState(currentType.defaultPartnerName);
+  const selectedBankParty = (bankPaymentCatalog.parties || []).find(row => row.code === partnerCode);
+  const beneficiaryChoices = (bankPaymentCatalog.partyBankAccounts || []).filter(row =>
+    row.party === selectedBankParty?.id && row.status === "ACTIVE").map(row => ({
+      account: row.account_number,
+      name: `${(bankPaymentCatalog.banks || []).find(bank => bank.id === row.bank)?.name || "Ngân hàng"} - ${row.branch_name || ""}`,
+    }));
+  const [partnerName, setPartnerName] = useState(initialStatement?.counterparty || currentType.defaultPartnerName);
   const [person, setPerson] = useState(currentType.defaultPerson);
   const [address, setAddress] = useState(currentType.defaultAddress);
   const [employee, setEmployee] = useState("");
-  const [reason, setReason] = useState(currentType.defaultReason);
+  const [reason, setReason] = useState(initialStatement?.description || currentType.defaultReason);
   const [originalDocsCount, setOriginalDocsCount] = useState<string>("");
   const [settlementDueDate, setSettlementDueDate] = useState("");
   const [taxYear, setTaxYear] = useState<number>(new Date().getFullYear());
-  const [hachToanDate, setHachToanDate] = useState(currentCashDate);
-  const [voucherDate, setVoucherDate] = useState(currentCashDate);
+  const [hachToanDate, setHachToanDate] = useState(() => initialStatement?.date ? initialStatement.date.split("-").reverse().join("/") : currentCashDate());
+  const [voucherDate, setVoucherDate] = useState(() => initialStatement?.date ? initialStatement.date.split("-").reverse().join("/") : currentCashDate());
   const [showAccount, setShowAccount] = useState(true);
   const [activeTab, setActiveTab] = useState<"accounting" | "tax">("accounting");
   const [batchTaxInvoices, setBatchTaxInvoices] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2692,20 +2791,20 @@ export function CreateVoucherModal({
   }, [onClose]);
 
   const initialDebit = isReceipt
-    ? (isBank ? (currentType.defaultDebit || "1121") : (currentType.defaultDebit || "111"))
-    : (currentType.defaultDebit || "");
+    ? (isBank ? (currentType.defaultDebit || "1121") : suggestedCashDebit)
+    : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
   const initialCredit = !isReceipt
-    ? (isBank ? (currentType.defaultCredit || "1121") : (currentType.defaultCredit || "111"))
+    ? (isBank ? bankCreditCode : (currentType.defaultCredit || "111"))
     : (currentType.defaultCredit || "");
 
   // Rows state in detail table
   const [rows, setRows] = useState<VoucherDetailRow[]>([
     {
       id: "1",
-      description: currentType.defaultReason,
+      description: initialStatement?.description || currentType.defaultReason,
       debit: initialDebit,
       credit: initialCredit,
-      amount: currentType.defaultAmount,
+      amount: initialStatement?.amount || currentType.defaultAmount,
       bankAccount: "",
       bankName: "",
       partnerCode: "",
@@ -2716,6 +2815,21 @@ export function CreateVoucherModal({
       loanDisbursementContract: "",
     },
   ]);
+  useEffect(() => {
+    if (isReceipt && !isBank && receiptCurrency) {
+      const oldSuggestion = previousSuggestedDebit.current;
+      if (oldSuggestion !== suggestedCashDebit) {
+        setRows(previous => previous.map(row => row.debit === "111" || row.debit === oldSuggestion ? { ...row, debit: suggestedCashDebit } : row));
+      }
+      previousSuggestedDebit.current = suggestedCashDebit;
+    }
+  }, [isReceipt, isBank, receiptCurrency, suggestedCashDebit]);
+  useEffect(() => {
+    if (!isReceipt && isBank && suggestedBankDebit) {
+      setRows(previous => previous.map(row => ["331", "141"].includes(row.debit)
+        ? { ...row, debit: suggestedBankDebit } : row));
+    }
+  }, [isReceipt, isBank, suggestedBankDebit]);
 
   // Tax rows state in "Kê khai hóa đơn và hạch toán thuế"
   const [taxRows, setTaxRows] = useState<VoucherTaxRow[]>([
@@ -2772,7 +2886,7 @@ export function CreateVoucherModal({
         prev.map((r) => ({
           ...r,
           debit: isReceipt ? (nextType.defaultDebit || "1121") : (nextType.defaultDebit || r.debit),
-          credit: !isReceipt ? (nextType.defaultCredit || "1121") : nextType.defaultCredit,
+          credit: !isReceipt ? (isBank ? bankCreditCode : (nextType.defaultCredit || "1121")) : nextType.defaultCredit,
         }))
       );
     } else {
@@ -2782,7 +2896,7 @@ export function CreateVoucherModal({
       setRows((prev) =>
         prev.map((r) => ({
           ...r,
-          debit: isReceipt ? "111" : (nextType.defaultDebit || r.debit),
+          debit: isReceipt ? suggestedCashDebit : (nextType.defaultDebit || r.debit),
           credit: !isReceipt ? "111" : nextType.defaultCredit,
         }))
       );
@@ -2805,6 +2919,11 @@ export function CreateVoucherModal({
     setAddress(chosen.defaultAddress);
     setReason(chosen.defaultReason);
     setEmployee("");
+    setEmployeeId("");
+    setSourceBankAccountId("");
+    setAllocations([]);
+    setBankAllocations([]);
+    setBankFee(false);
     setSettlementDueDate(chosen.hasSettlementDueDate ? currentCashDate() : "");
     if (chosen.hasYearField) {
       setTaxYear(2026);
@@ -2812,10 +2931,10 @@ export function CreateVoucherModal({
     setActiveTab("accounting");
     setBatchTaxInvoices(false);
     const debitAccount = isReceipt
-      ? (isBank ? (chosen.defaultDebit || "1121") : (chosen.defaultDebit || "111"))
-      : (chosen.defaultDebit || "");
+      ? (isBank ? (chosen.defaultDebit || "1121") : suggestedCashDebit)
+      : (isBank ? bankDebitFor(chosen) : (chosen.defaultDebit || ""));
     const creditAccount = !isReceipt
-      ? (isBank ? (chosen.defaultCredit || "1121") : (chosen.defaultCredit || "111"))
+      ? (isBank ? bankCreditCode : (chosen.defaultCredit || "111"))
       : (chosen.defaultCredit || "");
     setRows([
       {
@@ -2859,6 +2978,18 @@ export function CreateVoucherModal({
   }, [initialTypeIndex]);
 
   const handleSelectPartner = (p: { code: string; name: string; person: string; address: string }) => {
+    if (!isReceipt && isBank) {
+      setBankBeneficiaryName(p.name);
+      const party = (bankPaymentCatalog.parties || []).find(row => row.code === p.code);
+      const accounts = (bankPaymentCatalog.partyBankAccounts || []).filter(row => row.party === party?.id && row.status === "ACTIVE");
+      const selected = accounts.length === 1 ? accounts[0] : null;
+      setReceiverAccount(selected?.account_number || "");
+      setReceiverBank((bankPaymentCatalog.banks || []).find(row => row.id === selected?.bank)?.name || "");
+      setReceiverBankBranch(selected?.branch_name || "");
+    }
+    if (isReceipt && !isBank && currentType.id === "advance_refund") {
+      setEmployeeId((receiptCatalog.employees || []).find(row => row.employee_code === p.code)?.id || "");
+    }
     setPartnerCode(p.code);
     setPartnerName(p.name);
     setPerson(p.person);
@@ -2894,10 +3025,10 @@ export function CreateVoucherModal({
   // Row operations for accounting table
   const handleAddRow = () => {
     const debitAccount = isReceipt
-      ? (isBank ? (currentType.defaultDebit || "1121") : (currentType.defaultDebit || "111"))
-      : (currentType.defaultDebit || "");
+      ? (isBank ? (currentType.defaultDebit || "1121") : suggestedCashDebit)
+      : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
     const creditAccount = !isReceipt
-      ? (isBank ? (currentType.defaultCredit || "1121") : (currentType.defaultCredit || "111"))
+      ? (isBank ? bankCreditCode : (currentType.defaultCredit || "111"))
       : (currentType.defaultCredit || "");
     setRows((prev) => [
       ...prev,
@@ -2921,10 +3052,10 @@ export function CreateVoucherModal({
 
   const handleDeleteRow = (id: string) => {
     const debitAccount = isReceipt
-      ? (isBank ? "112" : "111")
-      : (currentType.defaultDebit || "");
+      ? (isBank ? "112" : suggestedCashDebit)
+      : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
     const creditAccount = !isReceipt
-      ? (isBank ? "112" : "111")
+      ? (isBank ? "112" : suggestedCashDebit)
       : (currentType.defaultCredit || "");
     if (rows.length <= 1) {
       setRows([
@@ -2951,10 +3082,10 @@ export function CreateVoucherModal({
 
   const handleClearAllRows = () => {
     const debitAccount = isReceipt
-      ? (isBank ? "112" : "111")
-      : (currentType.defaultDebit || "");
+      ? (isBank ? "112" : suggestedCashDebit)
+      : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
     const creditAccount = !isReceipt
-      ? (isBank ? "112" : "111")
+      ? (isBank ? "112" : suggestedCashDebit)
       : (currentType.defaultCredit || "");
     setRows([
       {
@@ -3066,10 +3197,12 @@ export function CreateVoucherModal({
 
   // Handle Save
   const handleSave = async (andNew = false, andPrint = false) => {
+    if (saving) return;
     const formattedIsoDate = voucherDate.includes("/")
       ? voucherDate.split("/").reverse().join("-")
       : voucherDate;
 
+    setSaving(true);
     const saved = await onSave({
       id: crypto.randomUUID(),
       code,
@@ -3079,7 +3212,21 @@ export function CreateVoucherModal({
       description: reason,
       amount: totalAmount,
       kind,
-      status: "posted",
+      voucherCategory: currentCategory,
+      status: (isReceipt && !isBank) || (!isReceipt && isBank) ? "draft" : "posted",
+      receiptType: currentType.id,
+      fundId,
+      bankProfileId,
+      branchId: bankBranchId,
+      employeeId,
+      sourceBankAccountId,
+      exchangeRate: !isReceipt && isBank ? bankExchangeRate : exchangeRate,
+      allocations: !isReceipt && isBank ? bankAllocations : allocations,
+      beneficiaryName: bankBeneficiaryName,
+      receiverBankBranch,
+      bankReference,
+      bankFee,
+      originalDocsCount,
       debit: rows[0]?.debit || currentType.defaultDebit,
       credit: rows[0]?.credit || (isBank ? "112" : currentType.defaultCredit),
       person,
@@ -3098,6 +3245,7 @@ export function CreateVoucherModal({
       postDate: hachToanDate,
       reasonLabel: currentType.label.replace(/^\d+\.\s*/,''),
     });
+    setSaving(false);
     if (saved === false) return;
 
     if (andPrint) {
@@ -3112,10 +3260,10 @@ export function CreateVoucherModal({
       const nextCode = `${prefix}${String(numPart).padStart(5, "0")}`;
       setCode(nextCode);
       const debitAccount = isReceipt
-        ? (isBank ? (currentType.defaultDebit || "1121") : (currentType.defaultDebit || "111"))
-        : (currentType.defaultDebit || "");
+        ? (isBank ? (currentType.defaultDebit || "1121") : suggestedCashDebit)
+        : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
       const creditAccount = !isReceipt
-        ? (isBank ? (currentType.defaultCredit || "1121") : (currentType.defaultCredit || "111"))
+        ? (isBank ? bankCreditCode : (currentType.defaultCredit || "111"))
         : (currentType.defaultCredit || "");
       setRows([
         {
@@ -3336,6 +3484,119 @@ export function CreateVoucherModal({
           </div>
         )}
 
+        {!isReceipt && isBank && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+            <label>Chi nhánh *<select aria-label="Chi nhánh chi tiền gửi" value={bankBranchId} onChange={event => setBankBranchId(event.target.value)}>
+              <option value="">Chọn chi nhánh</option>{(bankPaymentCatalog.branches || []).filter(row => row.status === "ACTIVE" &&
+                (!selectedCompanyBankAccount?.branch || row.id === selectedCompanyBankAccount.branch)).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
+            </select></label>
+            <label>Tài khoản chi *<select aria-label="Tài khoản ngân hàng chi" value={bankProfileId} onChange={event => setBankProfileId(event.target.value)}>
+              <option value="">Chọn tài khoản chi</option>{(bankPaymentCatalog.profiles || []).filter(row => (bankPaymentCatalog.bankAccounts || []).some(account =>
+                account.id === row.account && account.status === "ACTIVE" && account.allow_payment)).map(row =>
+                <option key={row.id} value={row.id}>{row.account_number} · {row.bank_name} · {row.currency_code}</option>)}
+            </select></label>
+            <label>Loại tiền<input aria-label="Loại tiền chi tiền gửi" readOnly value={selectedBankProfile?.currency_code || ""} /></label>
+            <label>Tỷ giá *<input aria-label="Tỷ giá chi tiền gửi" type="number" min="0.00000001" step="any"
+              value={selectedBankProfile?.currency_code === "VND" ? "1" : bankExchangeRate}
+              disabled={selectedBankProfile?.currency_code === "VND"} onChange={event => setBankExchangeRate(event.target.value)} /></label>
+            <span style={{ alignSelf: "end", fontSize: 12, color: "#475569" }}>Tổng quy đổi: {formatVND(totalAmount * Number(selectedBankProfile?.currency_code === "VND" ? 1 : bankExchangeRate || 0))}</span>
+            {(["supplier", "supplier_invoice"].includes(currentType.id)) && <label>Nhà cung cấp *<select aria-label="Nhà cung cấp chi tiền gửi" value={partnerCode} onChange={event => {
+              const party = (bankPaymentCatalog.parties || []).find(row => row.code === event.target.value);
+              const accounts = (bankPaymentCatalog.partyBankAccounts || []).filter(row => row.party === party?.id && row.status === "ACTIVE");
+              const selected = accounts.length === 1 ? accounts[0] : null;
+              setPartnerCode(party?.code || ""); setPartnerName(party?.name || ""); setBankBeneficiaryName(party?.name || "");
+              setReceiverAccount(selected?.account_number || "");
+              setReceiverBank((bankPaymentCatalog.banks || []).find(row => row.id === selected?.bank)?.name || "");
+              setReceiverBankBranch(selected?.branch_name || "");
+              setBankAllocations([]); setRows(previous => previous.map(row => ({ ...row, partnerCode: party?.code || "", partnerName: party?.name || "" })));
+            }}><option value="">Chọn nhà cung cấp</option>{(bankPaymentCatalog.parties || []).filter(row => row.status === "ACTIVE").map(row =>
+              <option key={row.id} value={row.code}>{row.code} · {row.name}</option>)}</select></label>}
+            {currentType.id === "advance" && <label>Nhân viên tạm ứng *<select aria-label="Nhân viên tạm ứng" value={employeeId} onChange={event => {
+              const employee = (bankPaymentCatalog.employees || []).find(row => row.id === event.target.value);
+              setEmployeeId(employee?.id || ""); setPartnerCode(employee?.employee_code || "");
+              setPartnerName(employee?.full_name || ""); setBankBeneficiaryName(employee?.full_name || "");
+            }}><option value="">Chọn nhân viên</option>{(bankPaymentCatalog.employees || []).filter(row => row.status === "ACTIVE").map(row =>
+              <option key={row.id} value={row.id}>{row.employee_code} · {row.full_name}</option>)}</select></label>}
+            <label>Tên thụ hưởng<input aria-label="Tên người thụ hưởng" value={bankBeneficiaryName} onChange={event => setBankBeneficiaryName(event.target.value)} /></label>
+            <label>Chi nhánh ngân hàng nhận<input aria-label="Chi nhánh ngân hàng nhận" value={receiverBankBranch} onChange={event => setReceiverBankBranch(event.target.value)} /></label>
+            <label>Mã giao dịch / Giấy báo Nợ<input aria-label="Mã giao dịch ngân hàng" value={bankReference} onChange={event => setBankReference(event.target.value)} /></label>
+            {currentType.id === "other_expense" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><input type="checkbox" checked={bankFee} onChange={event => setBankFee(event.target.checked)} />Phí ngân hàng tự trích</label>}
+            {currentType.id === "supplier_invoice" && partnerCode && <div style={{ width: "100%" }}><strong>Công nợ còn phải trả</strong>
+              {(bankPaymentCatalog.payables || []).filter(row => row.supplier === (bankPaymentCatalog.parties || []).find(party => party.code === partnerCode)?.id
+                && row.currency === selectedBankProfile?.currency_id && Number(row.balance) > 0).map(debt => {
+                const selected = bankAllocations.find(item => item.payable === debt.id);
+                const source = (bankPaymentCatalog.payableDocuments || []).find(row => row.id === debt.document);
+                const invoice = (bankPaymentCatalog.supplierInvoices || []).find(row => row.id === debt.invoice);
+                const purchase = (bankPaymentCatalog.goodsPurchases || []).find(row => row.id === debt.goods_purchase);
+                const cost = (bankPaymentCatalog.purchaseCosts || []).find(row => row.id === debt.purchase_cost);
+                const label = source?.number || invoice?.invoice_number || purchase?.number || cost?.number || debt.id.slice(0, 8);
+                return <label key={debt.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, margin: "6px 12px 0 0" }}>
+                  <input type="checkbox" checked={Boolean(selected)} onChange={event => {
+                    const next = event.target.checked ? [...bankAllocations, { payable: debt.id, amount: String(debt.balance), discount: "0" }] :
+                      bankAllocations.filter(item => item.payable !== debt.id);
+                    setBankAllocations(next);
+                    setRows(next.map((item, index) => {
+                      const payable = (bankPaymentCatalog.payables || []).find(row => row.id === item.payable);
+                      const source = (bankPaymentCatalog.payableDocuments || []).find(row => row.id === payable?.document);
+                      const debit = (bankPaymentCatalog.accounts || []).find(row => row.id === source?.payable_account)?.code || suggestedBankDebit;
+                      return { ...rows[0], id: String(index + 1), description: reason,
+                        debit, credit: bankCreditCode, amount: Number(item.amount) };
+                    }));
+                  }} />{label} · hạn {debt.due_date || "—"} · còn {formatVND(Number(debt.balance))}
+                  {selected && <><input aria-label={`Số trả ${label}`} type="number" min="0" max={Number(debt.balance)}
+                    value={selected.amount} onChange={event => {
+                      const next = bankAllocations.map(item => item.payable === debt.id ? { ...item, amount: event.target.value } : item);
+                      setBankAllocations(next); setRows(previous => previous.map((row, index) => ({ ...row, amount: Number(next[index]?.amount || 0) })));
+                    }} /><input aria-label={`Chiết khấu ${label}`} type="number" min="0" max={Number(debt.balance)}
+                    value={selected.discount} onChange={event => setBankAllocations(previous => previous.map(item =>
+                      item.payable === debt.id ? { ...item, discount: event.target.value } : item))} /></>}
+                </label>;
+              })}
+            </div>}
+          </div>
+        )}
+        {isReceipt && !isBank && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+            <label>Chi nhánh / Quỹ *<select aria-label="Chi nhánh và quỹ tiền mặt" value={fundId} onChange={event => setFundId(event.target.value)}>
+              <option value="">Chọn quỹ</option>
+              {(receiptCatalog.funds || []).filter(row => row.status === "ACTIVE").map(row => <option key={row.id} value={row.id}>{(receiptCatalog.branches || []).find(branch => branch.id === row.branch)?.name || "Chi nhánh"} · {row.code} · {row.name}</option>)}
+            </select></label>
+            <label>Loại tiền<input aria-label="Loại tiền phiếu thu" readOnly value={receiptCurrency?.code || ""} /></label>
+            <label>Tỷ giá *<input aria-label="Tỷ giá phiếu thu" type="number" min="0.00000001" step="any" value={receiptCurrency?.code === "VND" ? "1" : exchangeRate} disabled={receiptCurrency?.code === "VND"} onChange={event => setExchangeRate(event.target.value)} /></label>
+            <span style={{ alignSelf: "end", fontSize: 12, color: "#475569" }}>Tổng quy đổi: {formatVND(totalAmount * Number(receiptCurrency?.code === "VND" ? 1 : exchangeRate || 0))}</span>
+            {(["customer", "customer_invoice"].includes(currentType.id)) && <label>Khách hàng *<select aria-label="Khách hàng phiếu thu" value={partnerCode} onChange={event => {
+              const customer = (receiptCatalog.customers || []).find(row => row.code === event.target.value);
+              setPartnerCode(customer?.code || ""); setPartnerName(customer?.name || ""); setPerson(customer?.name || ""); setAllocations([]);
+              setRows(previous => previous.map(row => ({ ...row, partnerCode: customer?.code || "", partnerName: customer?.name || "" })));
+            }}><option value="">Chọn khách hàng</option>{(receiptCatalog.customers || []).map(row => <option key={row.id} value={row.code}>{row.code} · {row.name}</option>)}</select></label>}
+            {currentType.id === "advance_refund" && <label>Nhân viên hoàn ứng *<select aria-label="Nhân viên hoàn ứng" value={employeeId} onChange={event => {
+              const employee = (receiptCatalog.employees || []).find(row => row.id === event.target.value);
+              setEmployeeId(employee?.id || ""); setPartnerCode(employee?.employee_code || ""); setPartnerName(employee?.full_name || ""); setPerson(employee?.full_name || "");
+            }}><option value="">Chọn nhân viên</option>{(receiptCatalog.employees || []).filter(row => row.status === "ACTIVE").map(row => <option key={row.id} value={row.id}>{row.employee_code} · {row.full_name}</option>)}</select></label>}
+            {currentType.id === "bank_withdrawal" && <label>Tài khoản ngân hàng nguồn *<select aria-label="Tài khoản ngân hàng nguồn" value={sourceBankAccountId} onChange={event => setSourceBankAccountId(event.target.value)}>
+              <option value="">Chọn tài khoản</option>{(receiptCatalog.bankAccounts || []).filter(row => row.status === "ACTIVE" && row.currency === selectedFund?.currency).map(row => <option key={row.id} value={row.id}>{row.account_number} · {row.account_name}</option>)}
+            </select></label>}
+            {currentType.id === "customer_invoice" && partnerCode && <div style={{ width: "100%" }}><strong>Chứng từ công nợ còn phải thu</strong>
+              {(receiptCatalog.receivables || []).filter(row => row.customer === (receiptCatalog.customers || []).find(customer => customer.code === partnerCode)?.id && row.currency === selectedFund?.currency && Number(row.balance) > 0).map(debt => {
+                const selected = allocations.find(item => item.receivable === debt.id);
+                return <label key={debt.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, margin: "6px 12px 0 0" }}>
+                  <input type="checkbox" checked={Boolean(selected)} onChange={event => {
+                    const next = event.target.checked ? [...allocations, { receivable: debt.id, amount: String(debt.balance) }] : allocations.filter(item => item.receivable !== debt.id);
+                    setAllocations(next);
+                    setRows(next.map((item, index) => { const source = (receiptCatalog.receivables || []).find(row => row.id === item.receivable);
+                      const account = (receiptCatalog.accounts || []).find(row => row.id === source?.account);
+                      return { ...rows[0], id: String(index + 1), description: reason, debit: receiptCurrency?.code === "VND" ? "1111" : "1112", credit: account?.code || "131", amount: Number(item.amount) };
+                    }));
+                  }} />{debt.code || debt.source_document_number} · còn {formatVND(Number(debt.balance))}
+                  {selected && <input aria-label={`Số tiền thu ${debt.code || debt.source_document_number}`} type="number" min="0" max={Number(debt.balance)} value={selected.amount} onChange={event => {
+                    const next = allocations.map(item => item.receivable === debt.id ? { ...item, amount: event.target.value } : item);
+                    setAllocations(next); setRows(previous => previous.map((row, index) => ({ ...row, amount: Number(next[index]?.amount || 0) })));
+                  }} />}
+                </label>;
+              })}
+            </div>}
+          </div>
+        )}
         {/* 2. Body Container */}
         <div className="misa-voucher-body">
           {/* Master Form Section */}
@@ -3354,6 +3615,7 @@ export function CreateVoucherModal({
                           type="text"
                           className="misa-voucher-input"
                           value={bankAccount}
+                          readOnly={!isReceipt && isBank}
                           onChange={(e) => setBankAccount(e.target.value)}
                           placeholder=""
                         />
@@ -3375,7 +3637,14 @@ export function CreateVoucherModal({
                             <ChevronDown size={13} />
                           </button>
                         </div>
-                        {showBankAccountDropdown && <BankAccountChoiceTable rows={SAMPLE_BANK_ACCOUNTS} onSelect={b=>{setBankAccount(b.account);setBankName(b.name);setShowBankAccountDropdown(false);}}/>}
+                        {showBankAccountDropdown && <BankAccountChoiceTable rows={!isReceipt && isBank
+                          ? (bankPaymentCatalog.profiles || []).filter(row => (bankPaymentCatalog.bankAccounts || []).some(account =>
+                              account.id === row.account && account.status === "ACTIVE" && account.allow_payment))
+                            .map(row => ({ account: row.account_number, name: row.bank_name }))
+                          : SAMPLE_BANK_ACCOUNTS} onSelect={b=>{if (!isReceipt && isBank) {
+                            const selected = (bankPaymentCatalog.profiles || []).find(row => row.account_number === b.account);
+                            setBankProfileId(selected?.id || "");
+                          } else {setBankAccount(b.account);setBankName(b.name);}setShowBankAccountDropdown(false);}}/>}
                       </div>
                     </div>
 
@@ -3385,6 +3654,7 @@ export function CreateVoucherModal({
                         type="text"
                         className="misa-voucher-input"
                         value={bankName}
+                        readOnly={!isReceipt && isBank}
                         onChange={(e) => setBankName(e.target.value)}
                         placeholder=""
                       />
@@ -3423,7 +3693,7 @@ export function CreateVoucherModal({
                             </button>
                           </div>
 
-                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
+                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={receiptPartnerChoices} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                         </div>
 
                         {currentType.hasCustomerDebtBtn && (
@@ -3485,7 +3755,12 @@ export function CreateVoucherModal({
                             <ChevronDown size={13} />
                           </button>
                         </div>
-                        {showReceiverDropdown && <BankAccountChoiceTable rows={SAMPLE_BENEFICIARY_ACCOUNTS} onSelect={b=>{setReceiverAccount(b.account);setReceiverBank(b.name);setShowReceiverDropdown(false);}}/>}
+                        {showReceiverDropdown && <BankAccountChoiceTable rows={!isReceipt && isBank ? beneficiaryChoices : SAMPLE_BENEFICIARY_ACCOUNTS}
+                          onSelect={b=>{setReceiverAccount(b.account);if (!isReceipt && isBank) {
+                            const selected = (bankPaymentCatalog.partyBankAccounts || []).find(row => row.party === selectedBankParty?.id && row.account_number === b.account);
+                            setReceiverBank((bankPaymentCatalog.banks || []).find(row => row.id === selected?.bank)?.name || "");
+                            setReceiverBankBranch(selected?.branch_name || "");
+                          } else setReceiverBank(b.name);setShowReceiverDropdown(false);}}/>}
                       </div>
                     </div>
 
@@ -3542,6 +3817,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -3593,6 +3869,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -3655,6 +3932,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -3734,7 +4012,7 @@ export function CreateVoucherModal({
                             </button>
                           </div>
 
-                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
+                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={receiptPartnerChoices} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                         </div>
 
                         {currentType.hasCustomerDebtBtn && (
@@ -3866,6 +4144,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -3976,6 +4255,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -4068,7 +4348,7 @@ export function CreateVoucherModal({
                             </button>
                           </div>
 
-                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={currentType.samplePartners} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
+                          {showPartnerDropdown && <VoucherChoiceTable kind="partner" openSearch={partnerSearch} onSearchClose={()=>{setPartnerSearch(false);setShowPartnerDropdown(false);}} onNew={name=>setQuickDirectory(name||(currentType.codeLabel?.includes("khách")?"Khách hàng":currentType.codeLabel?.includes("nhân")?"Nhân viên":"Nhà cung cấp"))} rows={receiptPartnerChoices} onSelect={p=>{handleSelectPartner(p);if(p.bankAccount)setReceiverAccount(p.bankAccount);if(p.bankName)setReceiverBank(p.bankName);}}/>}
                         </div>
 
                         {currentType.hasCustomerDebtBtn && (
@@ -4122,6 +4402,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -4219,6 +4500,7 @@ export function CreateVoucherModal({
                             <input
                               type="text"
                               className="misa-voucher-input"
+                              aria-label={isReceipt ? "Lý do nộp" : "Nội dung thanh toán"}
                               value={reason}
                               onChange={(e) => {
                                 setReason(e.target.value);
@@ -4961,22 +5243,24 @@ export function CreateVoucherModal({
             <button
               type="button"
               className="misa-voucher-btn-white"
+              disabled={saving}
               onClick={() => handleSave(false, false)}
             >
               Lưu
             </button>
 
-            <button
+            {(!isReceipt || isBank) && <button
               type="button"
               className="misa-voucher-btn-white"
               onClick={() => handleSave(false, true)}
             >
               Lưu và In
-            </button>
+            </button>}
 
             <button
               type="button"
               className="misa-voucher-btn-green"
+              disabled={saving}
               onClick={() => handleSave(true, false)}
             >
               <span>Lưu và Thêm</span>
@@ -7154,6 +7438,8 @@ type ApiCashTransaction = {
   description: string;
   amount: string | number;
   status: string;
+  business_type?: string;
+  receipt_details?: { lines?: Array<{ description: string; debit_code?: string; credit_code?: string; amount: string | number }> };
 };
 
 type ApiCashFund = { id: string; currency: string; status: string; balance: string | number };
@@ -7171,6 +7457,11 @@ function mapCashTransaction(row: ApiCashTransaction) {
     debit: "",
     credit: "",
     status: row.status.toLowerCase(),
+    businessType: row.business_type,
+    rows: (row.receipt_details?.lines || []).map((line, index) => ({ id: `${row.id}-${index}`, description: line.description,
+      debit: line.debit_code || "", credit: line.credit_code || "", amount: Number(line.amount),
+      bankAccount: "", bankName: "", partnerCode: "", partnerName: row.payer_payee || "", employeeCode: "", employeeName: "",
+      loanContract: "", loanDisbursementContract: "" })),
   };
 }
 
@@ -7512,7 +7803,9 @@ export default function MisaCashWorkspace({
   // Handler for saving voucher
   const handleSaveVoucher = async (doc: any) => {
     if (!token || !company?.id) return false;
-    // Saved, posted and journalised by the backend; the list reloads with the new voucher.
+    if (doc.kind === "receipt" && doc.receiptType && doc.voucherCategory !== "bank") {
+      return apiSave((writer) => saveCashReceiptDraft(writer, doc));
+    }
     return apiSave((writer) => saveMoneyVoucher(writer, "cash", doc));
   };
 

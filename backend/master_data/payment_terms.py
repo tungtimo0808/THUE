@@ -1,8 +1,9 @@
 """Payment term catalogue operations and deterministic due-date calculation."""
 import csv
 import io
+import calendar
 from copy import copy
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
@@ -58,7 +59,14 @@ def calculate_payment_dates(term, *, document_date=None, invoice_date=None, deli
     if anchor is None:
         raise ValidationError({"date": f"{term.due_base.lower()}_date is required."})
     discount_until = anchor + timedelta(days=term.discount_days) if term.has_discount else None
-    return {"base_date": anchor, "due_date": anchor + timedelta(days=term.due_days), "discount_until": discount_until,
+    if term.due_mode == "MONTHLY":
+        month_index = anchor.year * 12 + anchor.month - 1 + term.due_after_months
+        year, month_zero = divmod(month_index, 12)
+        month = month_zero + 1
+        due_date = date(year, month, min(term.due_day_of_month, calendar.monthrange(year, month)[1]))
+    else:
+        due_date = anchor + timedelta(days=term.due_days)
+    return {"base_date": anchor, "due_date": due_date, "discount_until": discount_until,
             "discount_eligible": bool(discount_until and actual_payment_date and actual_payment_date <= discount_until)}
 
 
@@ -259,7 +267,7 @@ class PaymentTermViewSet(ModelViewSet):
     @action(detail=False, methods=("get",))
     def export(self, request):
         output = io.StringIO()
-        fields = ("code", "name", "scope", "due_base", "due_days", "has_discount", "discount_days", "discount_rate", "default_purchase", "default_sale", "effective_from", "effective_to", "status")
+        fields = ("code", "name", "scope", "due_base", "due_mode", "due_days", "due_day_of_month", "due_after_months", "has_discount", "discount_days", "discount_rate", "default_purchase", "default_sale", "effective_from", "effective_to", "status")
         writer = csv.writer(output)
         writer.writerow(fields)
         for term in self.filter_queryset(self.get_queryset()):

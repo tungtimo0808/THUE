@@ -67,6 +67,17 @@ class PaymentTermApiTests(TestCase):
         missing = self.client.get(self.detail(first).replace("/?", "/calculate/?"))
         self.assertEqual(missing.status_code, 400)
 
+    def test_monthly_due_day_clamps_to_last_day(self):
+        term = self.create(code="MONTH31", name="Monthly 31", due_mode="MONTHLY",
+                           due_day_of_month=31, due_after_months=1,
+                           has_discount=False, discount_days=None, discount_rate=None)
+        response = self.client.get(self.detail(term).replace("/?", "/calculate/?") + "&document_date=2026-01-10")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["due_date"], date(2026, 2, 28))
+        invalid = self.client.post(self.url, self.payload(code="MONTHBAD", due_mode="MONTHLY",
+            due_day_of_month=32, has_discount=False, discount_days=None, discount_rate=None), format="json")
+        self.assertEqual(invalid.status_code, 400)
+
     def test_copy_version_and_deactivate_default(self):
         first = self.create()
         copied = self.client.post(self.detail(first).replace("/?", "/copy/?"), {"code": "NET45", "name": "Net 45", "due_days": 45}, format="json")

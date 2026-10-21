@@ -271,7 +271,8 @@ def post(purchase, request):
     if purchase.payment_type == "UNPAID":
         Payable.objects.create(company=purchase.company, branch=purchase.branch, supplier=purchase.supplier,
             goods_purchase=purchase, currency=purchase.company.accounting_currency, exchange_rate=1,
-            original_amount=purchase.total_amount, balance=purchase.total_amount)
+            original_amount=purchase.total_amount, balance=purchase.total_amount,
+            due_date=purchase.payment_due_date)
     else:
         payment = Payment.objects.select_for_update().get(pk=purchase.payment_id)
         if payment.status != "CONFIRMED" or payment.amount - payment.allocated_amount < purchase.total_amount:

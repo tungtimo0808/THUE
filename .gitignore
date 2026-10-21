@@ -19,6 +19,7 @@ test_db.sqlite3
 *.sqlite3
 *.sqlite3-journal
 media/
+private_bank_statements/
 
 # Environment
 .env

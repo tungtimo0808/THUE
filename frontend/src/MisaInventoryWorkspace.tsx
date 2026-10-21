@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveItem, saveProductionOrder, toApiDate } from "./misa-api-writes";
+import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveOtherInventoryReceipt, saveItem, saveProductionOrder, toApiDate, toViDate } from "./misa-api-writes";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import {
   Search,
@@ -58,24 +58,28 @@ export type MisaInventoryWorkspaceProps = {
 // SAMPLE DATA
 // ============================================================================
 export const SAMPLE_WAREHOUSES = [
-  { code: "KHO-01", name: "Kho tổng Minh An", address: "Khu CN Đài Tư, Long Biên, Hà Nội" },
-  { code: "KHO-02", name: "Kho Nguyên vật liệu", address: "Phân xưởng sản xuất số 1" },
-  { code: "KHO-03", name: "Kho Thành phẩm", address: "Tổng kho Logistics Đông Hà" },
-  { code: "KHO-04", name: "Kho Hàng hóa thương mại", address: "18 Láng Hạ, Ba Đình, Hà Nội" },
+  { code: "156", name: "Kho hàng hóa", address: "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội" },
+  { code: "152", name: "Kho nguyên liệu", address: "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội" },
+  { code: "153", name: "Kho dụng cụ", address: "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội" },
+  { code: "155", name: "Kho thành phẩm", address: "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội" },
+  { code: "157", name: "Kho hàng gửi đại lý", address: "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội" },
 ];
 
 export const SAMPLE_INVENTORY_ITEMS = [
-  { code: "VT001", name: "Cáp ngầm trung thế 24kV Cu/XLPE/PVC/DSTA", unit: "Mét", group: "Vật tư điện", stock: 2450, minStock: 500, price: 285000 },
-  { code: "VT002", name: "Tủ điện phân phối tổng MSB 630A Schneider", unit: "Bộ", group: "Tủ điện", stock: 12, minStock: 2, price: 45000000 },
-  { code: "VT003", name: "Máy cắt không khí ACB 3P 1600A Fixed", unit: "Cái", group: "Thiết bị đóng cắt", stock: 6, minStock: 2, price: 38000000 },
-  { code: "VT004", name: "Biến dòng đo lường trung thế 24kV 100/5A", unit: "Quả", group: "Khí cụ đo lường", stock: 35, minStock: 10, price: 1450000 },
-  { code: "VT005", name: "Thanh đồng đỏ tiếp địa 30x3mm", unit: "Mét", group: "Vật tư tiếp địa", stock: 480, minStock: 100, price: 175000 },
-  { code: "VT006", name: "Cầu chì trung thế 24kV 50A Efen", unit: "Cái", group: "Thiết bị bảo vệ", stock: 45, minStock: 15, price: 620000 },
+  { code: "DT_IP15", name: "Điện thoại iPhone 15 Pro Max 256GB", unit: "Cái", group: "Hàng hóa", stock: 120, minStock: 20, price: 16200000 },
+  { code: "DT_SS24", name: "Điện thoại Samsung Galaxy S24 Ultra 256GB", unit: "Cái", group: "Hàng hóa", stock: 85, minStock: 15, price: 14700000 },
+  { code: "LT_MBAIR", name: "Máy tính xách tay Macbook Air 13-inch M2", unit: "Cái", group: "Hàng hóa", stock: 45, minStock: 10, price: 12900000 },
+  { code: "LT_HPPAV", name: "Máy tính xách tay HP Pavilion 14 i5", unit: "Cái", group: "Hàng hóa", stock: 60, minStock: 10, price: 7800000 },
+  { code: "LT_DELL", name: "Laptop Dell Ins 15", unit: "Cái", group: "Hàng hóa", stock: 50, minStock: 10, price: 12000000 },
+  { code: "MTB_IPAD10", name: "Máy tính bảng iPad Gen 10 64GB", unit: "Cái", group: "Hàng hóa", stock: 75, minStock: 15, price: 5100000 },
+  { code: "DH_AWSE", name: "Đồng hồ thông minh Apple Watch SE", unit: "Cái", group: "Hàng hóa", stock: 40, minStock: 10, price: 3600000 },
+  { code: "VL_DCD", name: "Dây cáp điện", unit: "Cuộn", group: "Nguyên vật liệu", stock: 200, minStock: 50, price: 1500000 },
+  { code: "GXV-001", name: "Ghế xoay văn phòng", unit: "Cái", group: "Công cụ dụng cụ", stock: 30, minStock: 5, price: 800000 },
 ];
 
 export default function MisaInventoryWorkspace({
-  company: _company = { id: "minh-an", name: "Công ty Cổ phần Minh An" },
-  period: _period = "2026-09",
+  company: _company = { id: "abc", name: "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC" },
+  period: _period = "2026-12",
   tab = "process",
   href,
   notify,
@@ -89,6 +93,8 @@ export default function MisaInventoryWorkspace({
     counts: "/api/v1/inventory/counts/",
     assemblies: "/api/v1/inventory/assemblies/",
     productionOrders: "/api/v1/inventory/production-orders/",
+    accounts: "/api/v1/general-ledger/accounts/",
+    parties: "/api/v1/master-data/parties/",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   const apiStatus = (key: string, id: string, fallback: string) => {
@@ -114,18 +120,20 @@ export default function MisaInventoryWorkspace({
 
   // Modals state
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [editingOtherReceiptId, setEditingOtherReceiptId] = useState("");
+  const [otherReceiptDirty, setOtherReceiptDirty] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setShowReceiptModal(false);
+        if (!showReceiptModal || !otherReceiptDirty || window.confirm("Bỏ các thay đổi chưa lưu?")) setShowReceiptModal(false);
         setShowIssueModal(false);
         setShowTransferModal(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [showReceiptModal, otherReceiptDirty]);
   const [receiptType, setReceiptType] = useState<
     "1. Thành phẩm sản xuất" | "2. Hàng bán bị trả lại" | "3. Khác (NVL thừa, HH thuê gia công, ...)"
   >("1. Thành phẩm sản xuất");
@@ -352,7 +360,7 @@ export default function MisaInventoryWorkspace({
     const pName = isAssemble ? (assemblyProductRows[0]?.itemName || "Thành phẩm lắp ráp") : (disassemblyOutputRows[0]?.itemName || "Thành phẩm tháo dỡ");
     const pQty = isAssemble ? assemblyProductRows.reduce((sum, r) => sum + (r.qty || 0), 0) : disassemblyOutputRows.reduce((sum, r) => sum + (r.qty || 0), 0);
     const pUnit = isAssemble ? (assemblyProductRows[0]?.unit || "Bộ") : (disassemblyOutputRows[0]?.unit || "Bộ");
-    const pAmount = isAssemble ? assemblyProductRows.reduce((sum, r) => sum + (r.amount || 0), 0) : disassemblyOutputRows.reduce((sum, r) => sum + (r.amount || 0), 0);
+    const pAmount = isAssemble ? assemblyProductRows.reduce((sum, r) => sum + (r.amount || 0), 0) : disassemblyGoodRows.reduce((sum, r) => sum + (r.amount || 0), 0);
     const vCode = isAssemble ? (assemblyCode || "LR00001") : (disassemblyCode || "TD00001");
     setAssemblyOrders((prev) => [
       {
@@ -619,7 +627,9 @@ export default function MisaInventoryWorkspace({
         description: row.reason || "", amount: apiNumber(row.total_value), status: row.status || "",
       });
       setReceipts(transactionRows.filter((row) => row.transaction_type === "RECEIPT").map((row) => ({
-        ...common(row), type: row.business_type || "Nhập kho",
+        ...common(row), amount: row.source_module === "INV_OTHER" && row.status !== "POSTED"
+          ? (row.lines || []).reduce((sum: number, line: any) => sum + apiNumber(line.line_value), 0) : apiNumber(row.total_value),
+        type: row.source_module === "INV_OTHER" ? "Nhập kho khác" : row.business_type || "Nhập kho",
         warehouse: row.destination_warehouse_name || "", partner: row.supplier_name || "",
       })));
       setIssues(transactionRows.filter((row) => row.transaction_type === "ISSUE").map((row) => ({
@@ -651,10 +661,56 @@ export default function MisaInventoryWorkspace({
     })));
   }, [apiRows, apiConnected]);
 
+  const openOtherReceipt = (id?: string) => {
+    setOtherReceiptDirty(false);
+    const record = id ? apiRows.transactions?.find((row: any) => row.id === id) : null;
+    setEditingOtherReceiptId(record?.source_module === "INV_OTHER" ? record.id : "");
+    if (record?.source_module === "INV_OTHER") {
+      setReceiptType("3. Khác (NVL thừa, HH thuê gia công, ...)");
+      setReceiptVoucherCode(record.number || "");
+      setReceiptVoucherDate(toViDate(record.document_date || record.transaction_date));
+      setReceiptPostingDate(toViDate(record.transaction_date));
+      setReceiptReason(record.reason || "");
+      setReceiptDeliveryPersonName(record.delivery_person || "");
+      const party = apiRows.parties?.find((row: any) => row.id === record.supplier);
+      setReceiptCustomerCode(party?.code || "");
+      setReceiptCustomerName(party?.name || "");
+      setReceiptRows((record.lines || []).map((line: any) => {
+        const item = apiRows.items?.find((row: any) => row.id === line.item);
+        const uom = apiRows.units?.find((row: any) => row.id === line.uom);
+        const warehouse = apiRows.warehouses?.find((row: any) => row.id === record.destination_warehouse);
+        return { id: line.id, itemCode: item?.code || "", itemName: item?.name || "", warehouse: warehouse?.name || "",
+          debitAcc: apiRows.accounts?.find((row: any) => row.id === line.debit_account)?.code || "",
+          creditAcc: apiRows.accounts?.find((row: any) => row.id === line.credit_account)?.code || "",
+          unit: uom?.name || "", qty: Number(line.quantity), price: Number(line.unit_cost) * Number(line.conversion_factor || 1), amount: Number(line.line_value), prodOrder: "", costObject: "" };
+      }));
+    } else if (!id) {
+      const today = toViDate(toApiDate(new Date().toISOString()));
+      const used = (apiRows.transactions || []).map((row: any) => String(row.number || ""));
+      const next = Math.max(0, ...used.map((code: string) => /^NK\d+$/.test(code) ? Number(code.slice(2)) : 0)) + 1;
+      setReceiptType("3. Khác (NVL thừa, HH thuê gia công, ...)");
+      setReceiptVoucherCode(`NK${String(next).padStart(5, "0")}`);
+      setReceiptVoucherDate(today);
+      setReceiptPostingDate(today);
+      setReceiptReason("Nhập kho khác");
+      setReceiptDeliveryPersonName("");
+      setReceiptCustomerCode("");
+      setReceiptCustomerName("");
+      setReceiptRows([{ id: `row-${Date.now()}`, itemCode: "", itemName: "", warehouse: "", debitAcc: "", creditAcc: "", unit: "", qty: 1, price: 0, amount: 0, prodOrder: "", costObject: "" }]);
+    }
+    setShowReceiptModal(true);
+  };
+
   // Handle Save Receipt
   const handleSaveReceipt = async (data: any) => {
     if (apiConnected) {
-      const saved = await apiSave((writer) => saveInventoryTransaction(writer, "receipt", data));
+      if (editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT") {
+        notify("Chỉ phiếu nháp mới được sửa.");
+        return false;
+      }
+      const saved = await apiSave((writer) => (receiptType.startsWith("3.") || !!editingOtherReceiptId)
+        ? saveOtherInventoryReceipt(writer, { ...data, id: editingOtherReceiptId })
+        : saveInventoryTransaction(writer, "receipt", data));
       if (saved) setShowReceiptModal(false);
       return saved;
     }
@@ -1353,7 +1409,7 @@ export default function MisaInventoryWorkspace({
             {/* Button: Thêm */}
             <button
               type="button"
-              onClick={() => setShowReceiptModal(true)}
+              onClick={() => openOtherReceipt()}
               style={{
                 height: 36,
                 padding: "0 22px",
@@ -1421,7 +1477,7 @@ export default function MisaInventoryWorkspace({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
-              onClick={() => setShowReceiptModal(true)}
+              onClick={() => openOtherReceipt()}
               style={{
                 height: 32,
                 padding: "0 14px",
@@ -1497,7 +1553,7 @@ export default function MisaInventoryWorkspace({
               {receipts
                 .filter((r) => !searchQuery || r.code.toLowerCase().includes(searchQuery.toLowerCase()) || r.partner.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map((row) => (
-                  <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => setShowReceiptModal(true)}>
+                  <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => openOtherReceipt(row.id)}>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
                     <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
@@ -1507,7 +1563,7 @@ export default function MisaInventoryWorkspace({
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("receipts", row.id, row.status)}</span>
+                      <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }} onClick={(event) => event.stopPropagation()}>{apiStatus("transactions", row.id, row.status)}</span>
                     </td>
                   </tr>
                 ))}
@@ -3483,7 +3539,7 @@ export default function MisaInventoryWorkspace({
         {/* MODAL 1: PHIẾU NHẬP KHO CHUẨN MISA */}
         {showReceiptModal && (
           <div className="misa-modal-backdrop" style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.65)", backdropFilter: "blur(3px)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 10 }}>
-            <div className="misa-purchase-modal-window" style={{ background: "#ffffff", borderRadius: 6, width: "99vw", maxWidth: 1480, height: "96vh", maxHeight: "96vh", display: "flex", flexDirection: "column", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)", overflow: "hidden", border: "1px solid #cbd5e1" }}>
+            <div className="misa-purchase-modal-window" onChangeCapture={() => setOtherReceiptDirty(true)} style={{ background: "#ffffff", borderRadius: 6, width: "99vw", maxWidth: 1480, height: "96vh", maxHeight: "96vh", display: "flex", flexDirection: "column", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)", overflow: "hidden", border: "1px solid #cbd5e1" }}>
               
               {/* TOP HEADER BAR */}
               <div style={{ height: 44, background: "#ffffff", borderBottom: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", flexShrink: 0 }}>
@@ -3505,6 +3561,7 @@ export default function MisaInventoryWorkspace({
                   {/* Dropdown: Loại nhập kho */}
                   <MisaDropdownSelect
                     value={receiptType}
+                    disabled={!!editingOtherReceiptId}
                     onChange={(val) => {
                       const newType = val as typeof receiptType;
                       setReceiptType(newType);
@@ -3784,8 +3841,10 @@ export default function MisaInventoryWorkspace({
                                 type="text"
                                 value={receiptCustomerCode}
                                 onChange={(e) => setReceiptCustomerCode(e.target.value)}
+                                list="other-receipt-parties"
                                 style={{ flex: 1, border: "none", padding: "0 6px", fontSize: 12.5, outline: "none" }}
                               />
+                              <datalist id="other-receipt-parties">{(apiRows.parties || []).filter((party: any) => party.status === "ACTIVE").map((party: any) => <option key={party.id} value={party.code}>{party.name}</option>)}</datalist>
                               <button type="button" onClick={() => notify("Thêm đối tượng mới")} style={{ width: 24, border: "none", borderLeft: "1px solid #e2e8f0", background: "#f8fafc", color: "#16a34a", cursor: "pointer", display: "grid", placeItems: "center" }}>
                                 <Plus size={13} />
                               </button>
@@ -4011,9 +4070,12 @@ export default function MisaInventoryWorkspace({
                             type="text"
                             value={row.itemCode}
                             placeholder="Chọn hoặc nhập mã"
+                            list={receiptType.startsWith("3.") && apiConnected ? "other-receipt-items" : undefined}
                             onChange={(e) => {
                               const val = e.target.value;
-                              const matched = SAMPLE_INVENTORY_ITEMS.find((it) => it.code.toLowerCase() === val.toLowerCase());
+                              const matched = receiptType.startsWith("3.") && apiConnected
+                                ? apiRows.items?.find((it: any) => it.code.toLowerCase() === val.toLowerCase() && it.status === "ACTIVE" && it.track_inventory)
+                                : SAMPLE_INVENTORY_ITEMS.find((it) => it.code.toLowerCase() === val.toLowerCase());
                               setReceiptRows((prev) =>
                                 prev.map((r, i) =>
                                   i === idx
@@ -4021,10 +4083,10 @@ export default function MisaInventoryWorkspace({
                                         ...r,
                                         itemCode: val,
                                         itemName: matched ? matched.name : r.itemName,
-                                        unit: matched ? matched.unit : r.unit,
-                                        warehouse: matched ? "Kho Thành phẩm" : r.warehouse,
-                                        price: matched ? matched.price : r.price,
-                                        amount: matched ? r.qty * matched.price : r.amount,
+                                        unit: matched ? (receiptType.startsWith("3.") && apiConnected ? apiUnitName(apiRows.units, (matched as any).base_uom) : (matched as any).unit) : r.unit,
+                                        warehouse: receiptType.startsWith("3.") && apiConnected ? r.warehouse : matched ? "Kho Thành phẩm" : r.warehouse,
+                                        price: receiptType.startsWith("3.") && apiConnected ? r.price : matched ? matched.price : r.price,
+                                        amount: receiptType.startsWith("3.") && apiConnected ? r.amount : matched ? r.qty * matched.price : r.amount,
                                       }
                                     : r
                                 )
@@ -4034,6 +4096,9 @@ export default function MisaInventoryWorkspace({
                             onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
+                          {idx === 0 && receiptType.startsWith("3.") && apiConnected && <datalist id="other-receipt-items">
+                            {(apiRows.items || []).filter((item: any) => item.status === "ACTIVE" && item.track_inventory).map((item: any) => <option key={item.id} value={item.code}>{item.name}</option>)}
+                          </datalist>}
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <input
@@ -4053,12 +4118,12 @@ export default function MisaInventoryWorkspace({
                             value={row.warehouse}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, warehouse: val } : r)));
+                              setReceiptRows((prev) => prev.map((r, i) => receiptType.startsWith("3.") ? { ...r, warehouse: val } : i === idx ? { ...r, warehouse: val } : r));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 2px", fontSize: 12, background: "transparent", outline: "none" }}
                           >
                             <option value="">-- Kho --</option>
-                            {SAMPLE_WAREHOUSES.map((w) => (
+                            {(receiptType.startsWith("3.") && apiConnected ? (apiRows.warehouses || []).filter((w: any) => w.status === "ACTIVE" && w.allow_receipt) : SAMPLE_WAREHOUSES).map((w: any) => (
                               <option key={w.code} value={w.name}>{w.name}</option>
                             ))}
                           </select>
@@ -4069,6 +4134,7 @@ export default function MisaInventoryWorkspace({
                               <input
                                 type="text"
                                 value={row.debitAcc}
+                                list="other-receipt-accounts"
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, debitAcc: val } : r)));
@@ -4077,11 +4143,13 @@ export default function MisaInventoryWorkspace({
                                 onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
+                              {idx === 0 && <datalist id="other-receipt-accounts">{(apiRows.accounts || []).filter((account: any) => account.status === "ACTIVE" && account.is_postable).map((account: any) => <option key={account.id} value={account.code}>{account.name}</option>)}</datalist>}
                             </td>
                             <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                               <input
                                 type="text"
                                 value={row.creditAcc}
+                                list="other-receipt-accounts"
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, creditAcc: val } : r)));
@@ -4206,11 +4274,11 @@ export default function MisaInventoryWorkspace({
                     type="button"
                     onClick={() => {
                       const newId = `row-${Date.now()}`;
-                      const defaultDebit = "155";
+                      const defaultDebit = receiptType.startsWith("3.") ? "" : "155";
                       const defaultCredit = receiptType === "1. Thành phẩm sản xuất" ? "154" : receiptType === "2. Hàng bán bị trả lại" ? "632" : "";
                       setReceiptRows((prev) => [
                         ...prev,
-                        { id: newId, itemCode: "", itemName: "", warehouse: "", debitAcc: defaultDebit, creditAcc: defaultCredit, unit: "", qty: 1, price: 0, amount: 0, prodOrder: "", costObject: "" },
+                        { id: newId, itemCode: "", itemName: "", warehouse: receiptType.startsWith("3.") ? prev[0]?.warehouse || "" : "", debitAcc: defaultDebit, creditAcc: defaultCredit, unit: "", qty: 1, price: 0, amount: 0, prodOrder: "", costObject: "" },
                       ]);
                     }}
                     style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#1e293b" }}
@@ -4228,7 +4296,7 @@ export default function MisaInventoryWorkspace({
                           itemCode: "",
                           itemName: "",
                           warehouse: "",
-                          debitAcc: "155",
+                          debitAcc: receiptType.startsWith("3.") ? "" : "155",
                           creditAcc: receiptType === "1. Thành phẩm sản xuất" ? "154" : receiptType === "2. Hàng bán bị trả lại" ? "632" : "",
                           unit: "",
                           qty: 1,
@@ -4341,7 +4409,7 @@ export default function MisaInventoryWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => setShowReceiptModal(false)}
+                    onClick={() => { if (!otherReceiptDirty || window.confirm("Bỏ các thay đổi chưa lưu?")) setShowReceiptModal(false); }}
                     style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#334155", fontSize: 13, cursor: "pointer" }}
                   >
                     Hủy
@@ -4349,6 +4417,7 @@ export default function MisaInventoryWorkspace({
 
                   <button
                     type="button"
+                    disabled={!!editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT"}
                     onClick={() => {
                       const totalAmt = receiptRows.reduce((sum, r) => sum + (r.amount || 0), 0);
                       const partnerName = receiptDeliveryPersonName || receiptCustomerName || "Đối tác giao hàng";
@@ -4357,6 +4426,8 @@ export default function MisaInventoryWorkspace({
                         lines: receiptRows,
                         partnerCode: receiptCustomerCode,
                         date: receiptVoucherDate,
+                        postingDate: receiptPostingDate,
+                        deliveryPerson: receiptDeliveryPersonName,
                         warehouse: receiptRows[0]?.warehouse || "Kho Thành phẩm",
                         partner: partnerName,
                         description: receiptReason || `Nhập kho theo chứng từ ${receiptVoucherCode}`,
@@ -4369,6 +4440,7 @@ export default function MisaInventoryWorkspace({
                   <div style={{ display: "flex" }}>
                     <button
                       type="button"
+                      disabled={!!editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT"}
                       onClick={() => {
                         const totalAmt = receiptRows.reduce((sum, r) => sum + (r.amount || 0), 0);
                         const partnerName = receiptDeliveryPersonName || receiptCustomerName || "Đối tác giao hàng";
@@ -4377,6 +4449,8 @@ export default function MisaInventoryWorkspace({
                           lines: receiptRows,
                           partnerCode: receiptCustomerCode,
                           date: receiptVoucherDate,
+                          postingDate: receiptPostingDate,
+                          deliveryPerson: receiptDeliveryPersonName,
                           warehouse: receiptRows[0]?.warehouse || "Kho Thành phẩm",
                           partner: partnerName,
                           description: receiptReason || `Nhập kho theo chứng từ ${receiptVoucherCode}`,

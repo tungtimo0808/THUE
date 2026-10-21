@@ -2,6 +2,7 @@
  * Turns the data the original (MISA-style) forms submit into backend API documents.
  * Kept free of React and browser APIs so the same code runs in the UI and in API tests.
  */
+import { parseReportDate } from "./report-date";
 export type Row = Record<string, any>;
 export type FetchJson = (path: string, init?: { method?: string; body?: string }) => Promise<any>;
 
@@ -242,7 +243,7 @@ async function purchaseLines(w: ApiWriter, lines: Row[], warehouseMode: boolean,
 }
 
 /** "Chứng từ mua hàng" (PurchaseVoucherModal). */
-export async function saveGoodsPurchase(w: ApiWriter, d: Row) {
+export async function saveGoodsPurchaseLegacy(w: ApiWriter, d: Row) {
   const supplier = await w.supplier(d.supplierCode);
   const warehouseMode = !/không qua kho/i.test(String(d.purchaseType || ""));
   const { lines, receivingWarehouse } = await purchaseLines(w, d.items, warehouseMode, {
@@ -266,6 +267,65 @@ export async function saveGoodsPurchase(w: ApiWriter, d: Row) {
 }
 
 /** "Chứng từ mua dịch vụ" (PurchaseServiceModal). */
+export async function saveGoodsPurchase(w: ApiWriter, d: Row) {
+  if (/nhập khẩu/i.test(String(d.purchaseType || "")))
+    throw new FormDataError("Phiếu nhập khẩu cần xử lý thuế và chi phí nhập khẩu. Vui lòng chọn mua hàng trong nước nhập kho.");
+  const documentDate = parseReportDate(String(d.docDate || ""));
+  const postingDate = parseReportDate(String(d.postingDate || "").slice(0, 10));
+  if (!documentDate || !postingDate) throw new FormDataError("Vui lòng nhập ngày hợp lệ theo định dạng DD/MM/YYYY.");
+  const supplier = await w.supplier(d.supplierCode);
+  if (d.paymentOption === "paid") throw new FormDataError("Thanh toán ngay cần liên kết chứng từ chi đã xác nhận. Vui lòng chọn Chưa thanh toán để lưu phiếu nhập.");
+  if (d.withInvoice && (!String(d.invoiceNumber || "").trim() || !String(d.invoiceSeries || "").trim() || !parseReportDate(String(d.invoiceDate || ""))))
+    throw new FormDataError("Vui lòng nhập ký hiệu, số và ngày hóa đơn hợp lệ.");
+  const entered = (d.items || []).filter((line: Row) => String(line.code || "").trim());
+  if (!entered.length) throw new FormDataError("Vui lòng chọn ít nhất một hàng hóa cần nhập kho.");
+  const warehouseMode = !/không qua kho/i.test(String(d.purchaseType || ""));
+  const activeWarehouses = warehouseMode ? (await w.list("warehouses")).filter((row) => row.status === "ACTIVE") : [];
+  for (const line of entered) {
+    if (warehouseMode && !String(line.stock || "").trim()) throw new FormDataError("Vui lòng chọn kho nhập cho hàng hóa.");
+    if (warehouseMode && !activeWarehouses.some((row) => String(row.code).toLowerCase() === String(line.stock).trim().toLowerCase()))
+      throw new FormDataError(`Kho ${line.stock} không có trong danh mục kho đang hoạt động.`);
+    if (!Number.isFinite(Number(line.quantity)) || Number(line.quantity) <= 0) throw new FormDataError("Số lượng nhập kho phải lớn hơn 0.");
+    if (!Number.isFinite(Number(line.unitPrice)) || Number(line.unitPrice) <= 0) throw new FormDataError("Đơn giá nhập kho phải lớn hơn 0.");
+    if (!Number.isFinite(Number(line.vatRate || 0)) || Number(line.vatRate || 0) < 0 || Number(line.vatRate || 0) > 100)
+      throw new FormDataError("Thuế suất GTGT phải từ 0% đến 100%.");
+    const item = await w.item(line.code);
+    if (warehouseMode && !item.track_inventory) throw new FormDataError(`Hàng hóa ${item.code} không theo dõi tồn kho.`);
+  }
+  const { lines, receivingWarehouse } = await purchaseLines(w, d.items, warehouseMode, {
+    code: "code", stock: "stock",
+    debit: (line) => warehouseMode ? line.stockAccount || "156" : line.expenseAccount || line.stockAccount || "156",
+    credit: (line) => line.debtAccount || "331",
+  });
+  const dueDate = d.paymentDueDate ? parseReportDate(String(d.paymentDueDate)) : null;
+  if (d.paymentDueDate && !dueDate) throw new FormDataError("Hạn thanh toán không hợp lệ.");
+  const debtDays = d.debtDays === "" || d.debtDays == null ? null : Number(d.debtDays);
+  if (debtDays !== null && (!Number.isInteger(debtDays) || debtDays < 0 || debtDays > 3650))
+    throw new FormDataError("Số ngày được nợ phải là số nguyên từ 0 đến 3650.");
+  const sourceCount = Number(d.attachedCount || 0);
+  if (!Number.isInteger(sourceCount) || sourceCount < 0)
+    throw new FormDataError("Số chứng từ gốc phải là số nguyên không âm.");
+  const body = {
+    branch: (await w.branch()).id, supplier: supplier.id,
+    document_date: documentDate, posting_date: postingDate,
+    purchase_type: warehouseMode ? "WAREHOUSE" : "DIRECT",
+    payment_type: "UNPAID", receiving_warehouse: warehouseMode ? receivingWarehouse : null,
+    delivery_person: String(d.deliverer || ""), supplier_address: String(d.address || ""),
+    contact_person: String(d.employee || ""), source_document_count: sourceCount,
+    debt_days: debtDays,
+    payment_due_date: dueDate,
+    invoice_details: d.withInvoice ? { received: true, template: String(d.invoiceForm || ""),
+      series: String(d.invoiceSeries || ""), number: String(d.invoiceNumber || ""),
+      date: parseReportDate(String(d.invoiceDate || "")) } : { received: false },
+    notes: String(d.description || ""), lines,
+    ...(String(d.voucherCode || "").trim() && d.voucherCode !== "Tự động" ? { number: String(d.voucherCode).trim() } : {}),
+  };
+  const record = d.recordId
+    ? await w.patch(`${PURCHASES}goods-purchases/${d.recordId}/`, { ...body, version: d.version })
+    : await w.post(`${PURCHASES}goods-purchases/`, body);
+  return { record, message: `Lưu chứng từ mua hàng nhập kho ${record.number} thành công. Trạng thái: Chưa ghi sổ.` };
+}
+
 export async function saveServicePurchase(w: ApiWriter, d: Row) {
   const supplier = await w.supplier(d.supplierCode);
   const { lines } = await purchaseLines(w, d.items, false, {
@@ -296,7 +356,7 @@ export async function saveMultiInvoicePurchase(w: ApiWriter, d: Row) {
   const messages: string[] = [];
   const records: Row[] = [];
   for (const [supplierCode, items] of groups) {
-    const saved = await saveGoodsPurchase(w, {
+    const saved = await saveGoodsPurchaseLegacy(w, {
       supplierCode, purchaseType: d.purchaseKind, paymentOption: d.paymentOption,
       docDate: d.docDate, postingDate: d.postDate, description: d.description, deliverer: d.deliverer,
       items: items.map((line) => ({
@@ -690,6 +750,53 @@ export async function nextVoucherNumber(w: ApiWriter, path: string, prefix: stri
 }
 
 /** "Phiếu nhập kho / xuất kho / chuyển kho" (MisaInventoryWorkspace forms). */
+export async function saveOtherInventoryReceipt(w: ApiWriter, d: Row) {
+  const number = String(d.code || "").trim();
+  if (!number) throw new FormDataError("Vui lòng nhập số chứng từ.");
+  const documentDate = parseReportDate(String(d.date || ""));
+  const postingDate = parseReportDate(String(d.postingDate || "").slice(0, 10));
+  if (!documentDate) throw new FormDataError("Vui lòng chọn ngày chứng từ hợp lệ.");
+  if (!postingDate) throw new FormDataError("Vui lòng chọn ngày hạch toán hợp lệ.");
+  const rows: Row[] = d.lines || [];
+  if (!rows.length || rows.every((row) => !String(row.itemCode || "").trim()))
+    throw new FormDataError("Vui lòng thêm ít nhất một vật tư/hàng hóa.");
+  const warehouses = await w.list("warehouses");
+  const warehouseName = String(rows[0]?.warehouse || "").trim();
+  const warehouse = warehouses.find((row) => row.name === warehouseName || row.code === warehouseName);
+  if (!warehouse) throw new FormDataError("Vui lòng chọn kho nhập hợp lệ.");
+  if (warehouse.status !== "ACTIVE" || !warehouse.allow_receipt) throw new FormDataError("Kho nhập không còn hoạt động hoặc không cho phép nhập.");
+  if (rows.some((row) => String(row.warehouse || "").trim() !== warehouseName))
+    throw new FormDataError("Các dòng hàng phải cùng một kho nhập.");
+  const items = await w.list("items");
+  const units = await w.list("units");
+  const accounts = await w.list("accounts");
+  const lines: Row[] = [];
+  for (const [index, row] of rows.entries()) {
+    const item = items.find((value) => value.code === String(row.itemCode || "").trim());
+    if (!item || item.status !== "ACTIVE" || !item.track_inventory) throw new FormDataError(`Dòng ${index + 1}: vật tư/hàng hóa không hợp lệ để nhập kho.`);
+    const uom = units.find((value) => value.name === row.unit || value.code === row.unit || value.symbol === row.unit);
+    if (!uom) throw new FormDataError(`Dòng ${index + 1}: đơn vị tính không hợp lệ.`);
+    const quantity = Number(row.qty);
+    const unitCost = Number(row.price);
+    if (!Number.isFinite(quantity) || quantity <= 0) throw new FormDataError(`Dòng ${index + 1}: số lượng nhập phải lớn hơn 0.`);
+    if (!Number.isFinite(unitCost) || unitCost < 0) throw new FormDataError(`Dòng ${index + 1}: đơn giá nhập không được nhỏ hơn 0.`);
+    const account = (code: unknown) => accounts.find((value) => value.code === String(code || "").trim() && value.status === "ACTIVE" && value.is_postable);
+    const debit = row.debitAcc ? account(row.debitAcc) : null;
+    const credit = row.creditAcc ? account(row.creditAcc) : null;
+    if (row.debitAcc && !debit || row.creditAcc && !credit) throw new FormDataError(`Dòng ${index + 1}: tài khoản hạch toán không hợp lệ.`);
+    lines.push({ line_no: index + 1, item: item.id, uom: uom.id, quantity: String(quantity), unit_cost: String(unitCost), debit_account: debit?.id || null, credit_account: credit?.id || null });
+  }
+  const parties = await w.list("parties");
+  const party = d.partnerCode ? parties.find((row) => row.code === String(d.partnerCode).trim()) : null;
+  if (d.partnerCode && !party) throw new FormDataError("Đối tượng không có trong danh mục.");
+  const path = "/api/v1/inventory/transactions/";
+  const payload = { number, transaction_type: "RECEIPT", source_module: "INV_OTHER", document_date: documentDate,
+    transaction_date: postingDate, delivery_person: String(d.deliveryPerson || ""), reason: String(d.description || ""),
+    destination_warehouse: warehouse.id, supplier: party?.id || null, branch: (await w.branch()).id, lines };
+  const record = d.id ? await w.patch(`${path}${d.id}/`, payload) : await w.post(path, payload);
+  return { record, message: `Đã lưu nháp phiếu nhập kho khác ${record.number}.` };
+}
+
 export async function saveInventoryTransaction(w: ApiWriter, kind: keyof typeof INVENTORY_TYPES, d: Row) {
   const rows = filledLines(d.lines, "itemCode", "qty");
   const first = rows[0];
@@ -923,15 +1030,18 @@ export async function saveAssetCount(w: ApiWriter, assetType: "FIXED_ASSET" | "T
  * "Ghi sổ" on a cash or bank voucher: walk it through submit → approve → confirm (cash) / post (bank).
  * Stops where the backend requires another person (e.g. the cashier must not be the preparer).
  */
-export async function postMoneyTransaction(w: ApiWriter, module: "cash" | "bank", id: string) {
+export async function postMoneyTransaction(w: ApiWriter, module: "cash" | "bank", id: string, branchId?: string) {
   const path = `/api/v1/${module}/transactions/`;
   const finalStep = module === "cash" ? "confirm" : "post";
-  let record = await w.get(`${path}${id}/`);
+  let record = await w.get(`${path}${id}/${branchId ? `?branch_id=${encodeURIComponent(branchId)}` : ""}`);
   for (let guard = 0; guard < 4 && record.status !== "POSTED"; guard += 1) {
     const step = ["DRAFT", "REJECTED", "REVISION_REQUIRED"].includes(record.status) ? "submit"
       : record.status === "PENDING_APPROVAL" ? "approve" : record.status === "APPROVED" ? finalStep : "";
     if (!step) throw new FormDataError(`Chứng từ ${record.number} đang ở trạng thái ${record.status}, không ghi sổ được.`);
-    record = await w.action(path, id, step, { version: record.version });
+    record = await w.action(path, id, step, {
+      version: record.version,
+      ...(module === "bank" && record.payment_details?.branch ? { branch: record.payment_details.branch } : {}),
+    });
   }
   return record;
 }
@@ -941,6 +1051,116 @@ export async function postMoneyTransaction(w: ApiWriter, module: "cash" | "bank"
  * receipt voucher so the customer's debt is credited; every other voucher saves the money document, takes it
  * through gửi → duyệt → ghi sổ, then has the backend post its accounting rows to the ledger.
  */
+/** UC-CASH-01: save a receipt as DRAFT; posting is a separate operation. */
+export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
+  const kinds: Record<string, string> = {
+    customer: "CUSTOMER_ADVANCE", customer_invoice: "CUSTOMER_INVOICE",
+    advance_refund: "EMPLOYEE_RETURN", bank_withdrawal: "BANK_WITHDRAWAL", other_receipt: "OTHER_RECEIPT",
+  };
+  const businessType = kinds[String(d.receiptType || "")];
+  if (!businessType) throw new FormDataError("Vui lòng chọn loại thu tiền hợp lệ.");
+  const funds = await w.list("/api/v1/cash/funds/");
+  const fund = funds.find(row => row.id === d.fundId && row.status === "ACTIVE");
+  if (!fund) throw new FormDataError("Vui lòng chọn quỹ tiền mặt đang sử dụng.");
+  const currency = (await w.list("currencies")).find(row => row.id === fund.currency);
+  if (!currency) throw new FormDataError("Không tìm thấy loại tiền của quỹ.");
+  const rate = num(d.exchangeRate ?? 1);
+  if (rate <= 0 || (currency.code === "VND" && rate !== 1)) throw new FormDataError("Tỷ giá không hợp lệ.");
+  const partyText = String(d.partnerCode || d.partner || "").trim().toLowerCase();
+  const parties = partyText ? await w.list(businessType.startsWith("CUSTOMER") ? "customers" : "parties") : [];
+  const party = parties.find(row => String(row.code).toLowerCase() === partyText || String(row.name).toLowerCase() === partyText);
+  if (businessType.startsWith("CUSTOMER") && !party) throw new FormDataError("Vui lòng chọn khách hàng trong danh mục.");
+  const employee = businessType === "EMPLOYEE_RETURN"
+    ? (await w.list("/api/v1/organization/employees/")).find(row => row.id === d.employeeId)
+    : undefined;
+  if (businessType === "EMPLOYEE_RETURN" && !employee) throw new FormDataError("Vui lòng chọn nhân viên hoàn ứng.");
+  const bank = businessType === "BANK_WITHDRAWAL"
+    ? (await w.list("/api/v1/master-data/company-bank-accounts/")).find(row => row.id === d.sourceBankAccountId)
+    : undefined;
+  if (businessType === "BANK_WITHDRAWAL" && !bank) throw new FormDataError("Vui lòng chọn tài khoản ngân hàng nguồn.");
+  const rawLines = Array.isArray(d.rows) ? d.rows : [];
+  if (!rawLines.length) throw new FormDataError("Phiếu thu cần ít nhất một dòng hạch toán.");
+  const lines = [];
+  for (const [index, row] of rawLines.entries()) {
+    if (!String(row.description || "").trim()) throw new FormDataError(`Dòng ${index + 1}: vui lòng nhập diễn giải.`);
+    if (num(row.amount) <= 0) throw new FormDataError(`Dòng ${index + 1}: số tiền phải lớn hơn 0.`);
+    const debit = await w.account(row.debit, `TK Nợ dòng ${index + 1}`);
+    const credit = await w.account(row.credit, `TK Có dòng ${index + 1}`);
+    lines.push({ description: String(row.description).trim(), debit_account: debit.id, debit_code: debit.code,
+      credit_account: credit.id, credit_code: credit.code, amount: String(num(row.amount)), dimensions: row.dimensions || {} });
+  }
+  const amount = lines.reduce((sum, row) => sum + num(row.amount), 0);
+  const allocations = Array.isArray(d.allocations) ? d.allocations : [];
+  if (businessType === "CUSTOMER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn chứng từ công nợ cần thu.");
+  const date = toApiDate(d.date);
+  const record = await w.post(`/api/v1/cash/transactions/?branch_id=${encodeURIComponent(fund.branch)}`, {
+    fund: fund.id, number: String(d.code || "").trim(), transaction_type: "RECEIPT",
+    business_type: businessType, transaction_date: date, party: party?.id || null,
+    payer_payee: String(d.person || party?.name || employee?.full_name || "").trim(),
+    currency: fund.currency, exchange_rate: String(rate), amount: String(amount),
+    description: String(d.description || "").trim(), attachments: d.attachedFiles || [],
+    receipt_details: { posting_date: toApiDate(d.postDate || d.date), payer_address: String(d.address || ""),
+      original_documents: String(d.originalDocsCount || ""), employee: employee?.id || null,
+      bank_account: bank?.id || null, lines, allocations },
+  });
+  return { record, message: `Đã lưu phiếu thu ${record.number} — Chưa ghi sổ.` };
+}
+
+/** UC-BANK-02: save a bank payment without posting bank or payable balances. */
+export async function saveBankPaymentDraft(w: ApiWriter, d: Row) {
+  const kinds: Record<string, string> = {
+    supplier: "SUPPLIER_ADVANCE", supplier_invoice: "SUPPLIER_INVOICE",
+    advance: "EMPLOYEE_ADVANCE", other_expense: "OTHER_PAYMENT",
+  };
+  const businessType = kinds[String(d.receiptType || "")];
+  if (!businessType) throw new FormDataError("Vui lòng chọn loại chi tiền gửi hợp lệ.");
+  const profile = (await w.list("/api/v1/bank/accounts/")).find(row => row.id === d.bankProfileId);
+  if (!profile || profile.account === undefined) throw new FormDataError("Vui lòng chọn tài khoản ngân hàng chi.");
+  const account = (await w.list("/api/v1/master-data/company-bank-accounts/")).find(row => row.id === profile.account);
+  if (!account || account.status !== "ACTIVE" || !account.allow_payment)
+    throw new FormDataError("Tài khoản ngân hàng không còn cho phép chi.");
+  if (!d.branchId || (account.branch && account.branch !== d.branchId))
+    throw new FormDataError("Vui lòng chọn chi nhánh khớp tài khoản chi.");
+  const rate = num(d.exchangeRate ?? 1);
+  if (rate <= 0 || (profile.currency_code === "VND" && rate !== 1)) throw new FormDataError("Tỷ giá không hợp lệ.");
+  const partyText = String(d.partnerCode || d.partner || "").trim().toLowerCase();
+  const party = partyText ? (await w.list("parties")).find(row =>
+    String(row.code).toLowerCase() === partyText || String(row.name).toLowerCase() === partyText) : undefined;
+  if (businessType.startsWith("SUPPLIER") && !party) throw new FormDataError("Vui lòng chọn nhà cung cấp trong danh mục.");
+  const employee = businessType === "EMPLOYEE_ADVANCE"
+    ? (await w.list("/api/v1/organization/employees/")).find(row => row.id === d.employeeId) : undefined;
+  if (businessType === "EMPLOYEE_ADVANCE" && !employee) throw new FormDataError("Vui lòng chọn nhân viên tạm ứng.");
+  const rows = Array.isArray(d.rows) ? d.rows : [];
+  if (!rows.length) throw new FormDataError("Cần ít nhất một dòng hạch toán.");
+  const lines = [];
+  for (const [index, row] of rows.entries()) {
+    if (!String(row.description || "").trim()) throw new FormDataError(`Dòng ${index + 1}: vui lòng nhập diễn giải.`);
+    if (num(row.amount) <= 0) throw new FormDataError(`Dòng ${index + 1}: số tiền phải lớn hơn 0.`);
+    const debit = await w.account(row.debit, `TK Nợ dòng ${index + 1}`);
+    const credit = await w.account(row.credit, `TK Có dòng ${index + 1}`);
+    lines.push({ description: String(row.description).trim(), debit_account: debit.id, debit_code: debit.code,
+      credit_account: credit.id, credit_code: credit.code, amount: String(num(row.amount)), dimensions: row.dimensions || {} });
+  }
+  const amount = lines.reduce((sum, row) => sum + num(row.amount), 0);
+  const allocations = Array.isArray(d.allocations) ? d.allocations : [];
+  if (businessType === "SUPPLIER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn công nợ cần trả.");
+  const record = await w.post(`/api/v1/bank/transactions/?branch_id=${encodeURIComponent(String(d.branchId || ""))}`, {
+    account: profile.id, number: String(d.code || "").trim(), transaction_type: "PAYMENT",
+    business_type: businessType, transaction_date: toApiDate(d.date), value_date: toApiDate(d.postDate || d.date),
+    party: party?.id || null, counterparty_name: String(d.beneficiaryName || d.partner || employee?.full_name ||
+      (d.bankFee ? profile.bank_name : "")).trim(),
+    counterparty_account: String(d.receiverAccount || "").trim(), currency: profile.currency_id,
+    exchange_rate: String(rate), amount: String(amount), description: String(d.description || "").trim(),
+    bank_reference: String(d.bankReference || "").trim(),
+    payment_details: { posting_date: toApiDate(d.postDate || d.date), branch: d.branchId,
+      employee: employee?.id || null, payer_address: String(d.address || ""),
+      beneficiary_name: String(d.beneficiaryName || "").trim(), beneficiary_account: String(d.receiverAccount || "").trim(),
+      beneficiary_bank: String(d.receiverBank || "").trim(), beneficiary_bank_branch: String(d.receiverBankBranch || "").trim(),
+      bank_fee: Boolean(d.bankFee), lines, allocations, attachments: d.attachedFiles || [] },
+  });
+  return { record, message: `Đã lưu chứng từ chi tiền gửi ${record.number} — Chưa ghi sổ.` };
+}
+
 export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d: Row) {
   const receipt = d.kind === "receipt";
   const rows = (d.rows || []).filter((row: Row) => num(row.amount) > 0);
@@ -1015,8 +1235,11 @@ export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d:
 }
 
 /** "Bỏ ghi" a posted cash or bank voucher (the backend requires a reason). */
-export async function reverseMoneyTransaction(w: ApiWriter, module: "cash" | "bank", id: string, reason = "Bỏ ghi từ danh sách chứng từ") {
-  return w.action(`/api/v1/${module}/transactions/`, id, "reverse", { reason });
+export async function reverseMoneyTransaction(w: ApiWriter, module: "cash" | "bank", id: string, reason = "Bỏ ghi từ danh sách chứng từ", branchId?: string) {
+  const path = `/api/v1/${module}/transactions/`;
+  const record = await w.get(`${path}${id}/${branchId ? `?branch_id=${encodeURIComponent(branchId)}` : ""}`);
+  return w.action(path, id, "reverse", { reason,
+    ...(module === "bank" && record.payment_details?.branch ? { branch: record.payment_details.branch } : {}) });
 }
 
 /** Complete an internal transfer: cash dispatches then receives; bank confirms in one step. */
