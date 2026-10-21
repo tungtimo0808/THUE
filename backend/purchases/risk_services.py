@@ -90,7 +90,7 @@ def assess_supplier_risk(
 
     # 1. Check Legal & Tax Code (EX02, EX03, EX04, BR11, BR22)
     tax_code = (supplier.tax_code or "").strip()
-    tax_status = "ACTIVE"
+    tax_status = "UNVERIFIED"
     tax_code_status_verified = False
 
     if not tax_code:
@@ -149,7 +149,7 @@ def assess_supplier_risk(
             total_score += 10
 
         # External Tax source lookup (BR11, BR22, AF02, EX05)
-        if simulate_external_failure:
+        if simulate_external_failure or external_tax_status is None:
             # AF02, EX05: External source unavailable
             tax_status = "UNVERIFIED"
             tax_code_status_verified = False

@@ -77,6 +77,7 @@ import MisaInvoiceWorkspace from './MisaInvoiceWorkspace';
 import MisaCashWorkspace from "./MisaCashWorkspace";
 import MisaBankWorkspace from "./MisaBankWorkspace";
 import MisaPurchaseWorkspace from "./MisaPurchaseWorkspace";
+import MisaSupplierRiskWorkspace from "./MisaSupplierRiskWorkspace";
 import MisaSalesWorkspace from "./MisaSalesWorkspace";
 import MisaInventoryWorkspace from "./MisaInventoryWorkspace";
 import MisaToolsWorkspace from "./MisaToolsWorkspace";
@@ -267,7 +268,7 @@ function ReferenceWorkspace() {
     apiCompanies.find((c) => c.id === apiCompanyId) ||
     apiCompanies[0];
   const company = matchedApiCompany || companies[0];
-  const period = ["2026-09", "2026-08", "2026"].includes(
+  const period = ["2026-12", "2026-09", "2026-08", "2026"].includes(
     params.get("period") || "",
   )
     ? params.get("period")!
@@ -279,7 +280,7 @@ function ReferenceWorkspace() {
   const periodLabel = period === "2026-09" ? "K9.2026" : period === "2026-08" ? "K8.2026" : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
   const scoped = items.filter(
-    (t) => t.company === company.id && t.date.startsWith(period),
+    (t) => t.company === company.id && (period === "2026" ? t.date.startsWith("2026") : t.date.startsWith(period)),
   );
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -1183,6 +1184,8 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === 'invoices' && ['process','meinvoice','error-guide'].includes(tab) ? (
           <MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice}/>
+        ) : moduleId === "purchases" && tab === "invoice-processing" && childTab === "supplier-risk" ? (
+          <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />
         ) : moduleId === "purchases" && tab === "invoice-processing" ? (
           <IncomingInvoiceWorkspace notify={setNotice} />
         ) : moduleId === "purchases" ? (

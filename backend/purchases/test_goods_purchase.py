@@ -83,6 +83,46 @@ class GoodsPurchaseTests(TestCase):
         self.assertEqual(reposted.status_code, 200, reposted.data)
         self.assertEqual(StockBalance.objects.get(item=self.item, warehouse=self.warehouse).quantity, Decimal("2"))
 
+    def test_receipt_draft_invoice_terms_and_posting(self):
+        payload = self.payload()
+        payload.update(number="NK-INV-TEST", supplier_address="12 Nguyen Trai", source_document_count=2,
+            debt_days=30, invoice_details={"received": True, "template": "1", "series": "AA/26E",
+                "number": "123", "date": "2026-10-06"})
+        created = self.client.post(self.url, payload, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(created.data["number"], "NK-INV-TEST")
+        self.assertEqual(created.data["invoice_details"]["number"], "123")
+        self.assertEqual(created.data["payment_due_date"], "2026-11-05")
+        self.assertFalse(StockBalance.objects.exists())
+        self.assertFalse(JournalEntry.objects.exists())
+        self.assertFalse(Payable.objects.exists())
+        duplicate = self.client.post(self.url, payload, format="json")
+        self.assertEqual(duplicate.status_code, 400)
+        detail = f"/api/v1/purchases/goods-purchases/{created.data['id']}/?company_id={self.company.pk}"
+        submitted = self.client.post(detail.replace("/?", "/submit/?"), {"version": 1}, format="json")
+        self.assertEqual(submitted.status_code, 200, submitted.data)
+        posted = self.client.post(detail.replace("/?", "/post/?"), {"version": 2}, format="json")
+        self.assertEqual(posted.status_code, 200, posted.data)
+        self.assertEqual(StockBalance.objects.get(item=self.item, warehouse=self.warehouse).quantity, Decimal("2"))
+        self.assertEqual(Payable.objects.get(goods_purchase_id=created.data["id"]).due_date, date(2026, 11, 5))
+
+    def test_receipt_rejects_invalid_stock_and_invoice_data(self):
+        no_stock_item = Item.objects.create(company=self.company, base_uom=self.uom, code="NO-STOCK", name="No stock",
+            item_type="GOODS", status="ACTIVE", allow_purchase=True, track_inventory=False)
+        payload = self.payload()
+        payload["lines"][0]["item"] = str(no_stock_item.pk)
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 400)
+        payload = self.payload()
+        payload["lines"][0]["unit_price"] = "0"
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 400)
+        payload = self.payload()
+        payload["invoice_details"] = {"received": True, "series": "AA", "date": "2026-10-06"}
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(GoodsPurchase.objects.exists())
+
     def test_deductible_input_vat_is_posted_to_1331(self):
         from master_data.models import TaxRate
         rate = TaxRate.objects.create(company=self.company, code="VAT10", tax_type="VAT", rate_percent=Decimal("10"),
@@ -151,7 +191,7 @@ class GoodsPurchaseTests(TestCase):
     def test_immediate_payment_requires_confirmed_sufficient_payment(self):
         payment = Payment.objects.create(company=self.company, supplier=self.supplier,
             currency=self.company.accounting_currency, payment_date=self.day,
-            amount=Decimal("180"), external_type="BANK", external_reference="PAY-1", created_by=self.actor)
+            amount=Decimal("180"), external_type="BANK", external_reference="PAY-1", status="CONFIRMED", created_by=self.actor)
         payload = self.payload(kind="DIRECT")
         payload.update(payment_type="IMMEDIATE", payment=str(payment.pk))
         detail, draft = self.create_and_approve(payload)

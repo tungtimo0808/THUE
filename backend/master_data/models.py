@@ -181,6 +181,9 @@ class PaymentTerm(models.Model):
     code = models.CharField(max_length=30)
     name = models.CharField(max_length=150)
     due_days = models.PositiveIntegerField(default=0)
+    due_mode = models.CharField(max_length=10, choices=(("DAYS", "Days"), ("MONTHLY", "Monthly")), default="DAYS")
+    due_day_of_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    due_after_months = models.PositiveSmallIntegerField(default=0)
     discount_days = models.PositiveIntegerField(null=True, blank=True)
     discount_rate = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     status = models.CharField(max_length=20, choices=CatalogStatus.choices, default=CatalogStatus.ACTIVE)
@@ -219,10 +222,15 @@ class PaymentTerm(models.Model):
             errors["due_base"] = "Due-date base is required."
         if self.due_days is None or self.due_days < 0:
             errors["due_days"] = "Credit days must be nonnegative."
+        if self.due_mode == "MONTHLY":
+            if not self.due_day_of_month or not 1 <= self.due_day_of_month <= 31:
+                errors["due_day_of_month"] = "Monthly due day must be between 1 and 31."
+        elif self.due_mode != "DAYS":
+            errors["due_mode"] = "Invalid due-date mode."
         if self.has_discount:
             if self.discount_days is None or self.discount_days < 0:
                 errors["discount_days"] = "Discount days must be nonnegative."
-            elif self.due_days is not None and self.discount_days > self.due_days:
+            elif self.due_mode == "DAYS" and self.due_days is not None and self.discount_days > self.due_days:
                 errors["discount_days"] = "Discount days cannot exceed credit days."
             if self.discount_rate is None or not 0 <= self.discount_rate <= 100:
                 errors["discount_rate"] = "Discount rate must be between 0 and 100."

@@ -188,6 +188,13 @@ REST_FRAMEWORK = {
 
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.locmem.EmailBackend')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@example.local')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '25'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
 COMMON_REQUIRE_VERIFICATION = os.getenv('COMMON_REQUIRE_VERIFICATION', 'True') == 'True'
 COMMON_VERIFICATION_MINUTES = int(os.getenv('COMMON_VERIFICATION_MINUTES', '5'))
 COMMON_OTP_RESEND_SECONDS = int(os.getenv('COMMON_OTP_RESEND_SECONDS', '60'))

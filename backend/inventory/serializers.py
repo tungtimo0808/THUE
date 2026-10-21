@@ -98,6 +98,8 @@ class TransactionSerializer(serializers.ModelSerializer):
         source = attrs.get("source_warehouse", instance.source_warehouse if instance else None)
         destination = attrs.get("destination_warehouse", instance.destination_warehouse if instance else None)
         kind = attrs.get("transaction_type", instance.transaction_type if instance else None)
+        if instance and instance.source_module == "INV_OTHER" and attrs.get("source_module", "INV_OTHER") != "INV_OTHER":
+            raise serializers.ValidationError({"source_module": "Không thể đổi loại phiếu nhập kho khác."})
         if source and source.company_id != company.id or destination and destination.company_id != company.id:
             raise serializers.ValidationError("Kho phải thuộc cùng doanh nghiệp.")
         if kind in {"RECEIPT", "RETURN", "ADJUSTMENT_IN"} and not destination:
@@ -119,6 +121,30 @@ class TransactionSerializer(serializers.ModelSerializer):
         if kind != "TRANSFER" and any(row and row.warehouse_type == "TRANSIT" for row in (source, destination)):
             raise serializers.ValidationError("Kho trung chuyển chỉ dùng cho giao dịch chuyển kho.")
         transaction_date = attrs.get("transaction_date", instance.transaction_date if instance else None)
+        if attrs.get("source_module", getattr(instance, "source_module", "")) == "INV_OTHER":
+            party = attrs.get("supplier", getattr(instance, "supplier", None))
+            if party and (party.company_id != company.id or party.status != "ACTIVE"):
+                raise serializers.ValidationError({"supplier": "Đối tượng không hợp lệ."})
+            if kind != "RECEIPT":
+                raise serializers.ValidationError({"transaction_type": "Nhập kho khác phải là phiếu nhập."})
+            number = (attrs.get("number", getattr(instance, "number", "")) or "").strip()
+            if not number:
+                raise serializers.ValidationError({"number": "Vui lòng nhập số chứng từ."})
+            if models.InventoryTransaction.objects.filter(company=company, number=number).exclude(pk=instance.pk if instance else None).exists():
+                raise serializers.ValidationError({"number": "Số chứng từ đã tồn tại. Vui lòng nhập số khác."})
+            if not attrs.get("document_date", getattr(instance, "document_date", None)):
+                raise serializers.ValidationError({"document_date": "Vui lòng chọn ngày chứng từ."})
+            if not transaction_date:
+                raise serializers.ValidationError({"transaction_date": "Vui lòng chọn ngày hạch toán."})
+            if "lines" in attrs and not attrs["lines"]:
+                raise serializers.ValidationError({"lines": "Vui lòng thêm ít nhất một vật tư/hàng hóa."})
+            for index, line in enumerate(attrs.get("lines", []), start=1):
+                if line["item"].status != "ACTIVE":
+                    raise serializers.ValidationError({"lines": f"Dòng {index}: vật tư/hàng hóa không còn hoạt động."})
+                for field in ("debit_account", "credit_account"):
+                    account = line.get(field)
+                    if account and (account.company_id != company.id or account.status != "ACTIVE" or not account.is_postable):
+                        raise serializers.ValidationError({"lines": f"Dòng {index}: tài khoản hạch toán không hợp lệ."})
         for warehouse in (source, destination):
             if warehouse and transaction_date and ((warehouse.start_date and transaction_date < warehouse.start_date) or (warehouse.end_date and transaction_date > warehouse.end_date)):
                 raise serializers.ValidationError("Ngày giao dịch nằm ngoài thời gian sử dụng kho.")
@@ -138,7 +164,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"reason": "Điều chỉnh tồn kho bắt buộc có lý do."})
         return attrs
 
-    def _prepare_line(self, company, raw):
+    def _prepare_line(self, company, raw, source_module=""):
         item, uom = raw["item"], raw["uom"]
         if item.company_id != company.id or uom.company_id != company.id or not item.track_inventory:
             raise serializers.ValidationError({"lines": "Hàng hóa hoặc đơn vị tính không hợp lệ."})
@@ -155,6 +181,8 @@ class TransactionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"lines": f"Thiếu quy đổi đơn vị cho hàng {item.code}."})
         raw["conversion_factor"] = factor
         raw["base_quantity"] = raw["quantity"] * factor
+        if source_module == "INV_OTHER":
+            raw["unit_cost"] = raw.get("unit_cost", Decimal("0")) / factor
         raw["line_value"] = raw["base_quantity"] * raw.get("unit_cost", Decimal("0"))
         for field in ("location", "destination_location"):
             location = raw.get(field)
@@ -172,7 +200,10 @@ class TransactionSerializer(serializers.ModelSerializer):
         lines = validated_data.pop("lines")
         obj = models.InventoryTransaction.objects.create(**validated_data)
         for raw in lines:
-            models.InventoryTransactionLine.objects.create(transaction=obj, **self._prepare_line(obj.company, raw))
+            models.InventoryTransactionLine.objects.create(transaction=obj, **self._prepare_line(obj.company, raw, obj.source_module))
+        if obj.source_module == "INV_OTHER":
+            obj.total_value = sum((line.line_value for line in obj.lines.all()), Decimal("0"))
+            obj.save(update_fields=("total_value", "updated_at"))
         return obj
 
     @transaction.atomic
@@ -182,7 +213,10 @@ class TransactionSerializer(serializers.ModelSerializer):
         if lines is not None:
             instance.lines.all().delete()
             for raw in lines:
-                models.InventoryTransactionLine.objects.create(transaction=instance, **self._prepare_line(instance.company, raw))
+                models.InventoryTransactionLine.objects.create(transaction=instance, **self._prepare_line(instance.company, raw, instance.source_module))
+            if instance.source_module == "INV_OTHER":
+                instance.total_value = sum((line.line_value for line in instance.lines.all()), Decimal("0"))
+                instance.save(update_fields=("total_value", "updated_at"))
         return instance
 
 

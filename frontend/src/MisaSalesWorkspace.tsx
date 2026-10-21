@@ -69,8 +69,8 @@ type MisaSalesWorkspaceProps = {
 };
 
 export default function MisaSalesWorkspace({
-  company: _company = { id: "minh-an", name: "Công ty Cổ phần Minh An" },
-  period: _period = "2026-09",
+  company: _company = { id: "abc", name: "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC" },
+  period: _period = "2026-12",
   tab = "process",
   href,
   notify,

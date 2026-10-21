@@ -19,7 +19,7 @@ import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import {
   completeTransfer, createApiWriter, internalTransfers, openPayables, postMoneyTransaction, reverseMoneyTransaction,
-  insurancePaymentRows, salaryPaymentRows, saveCreditContract, saveLoanAgreement, savePayrollPayment, saveSupplierPayment, saveMoneyVoucher, nextVoucherNumber, toApiDate,
+  insurancePaymentRows, salaryPaymentRows, saveBankPaymentDraft, saveCreditContract, saveLoanAgreement, savePayrollPayment, saveSupplierPayment, saveMoneyVoucher, nextVoucherNumber, toApiDate,
 } from "./misa-api-writes";
 import { useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
@@ -77,8 +77,8 @@ import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 import {matchesTransactionPeriod} from './transaction-period';
 
-type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; bankAccount?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
-type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; currency_code: string; balance: string | number };
+type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; bankAccount?:string;branchId?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
+type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; gl_account_id?: string; gl_code?: string; currency_code: string; balance: string | number };
 
 type ApiBankTransaction = {
   id: string;
@@ -92,13 +92,18 @@ type ApiBankTransaction = {
   status: string;
   bank_reference?: string;
   counterparty_account?: string;
+  source_account_number?: string;
+  source_bank_name?: string;
+  currency_code?: string;
+  payment_details?: { posting_date?: string; branch?: string; beneficiary_name?: string; beneficiary_account?: string;
+    beneficiary_bank?: string; lines?: Array<{ description: string; debit_code: string; credit_code: string; amount: string | number }> };
 };
 
 function mapBankTransaction(row: ApiBankTransaction): BankTransaction {
   const date = (value?: string | null) => value ? value.slice(0, 10).split("-").reverse().join("/") : "";
   return {
     id: row.id,
-    dateHachToan: date(row.transaction_date),
+    dateHachToan: date(row.payment_details?.posting_date || row.transaction_date),
     dateChungTu: date(row.value_date || row.transaction_date),
     code: row.number,
     description: row.description || "",
@@ -106,7 +111,17 @@ function mapBankTransaction(row: ApiBankTransaction): BankTransaction {
     partner: row.counterparty_name || "",
     kind: ["RECEIPT", "INTEREST", "OTHER_IN"].includes(row.transaction_type) ? "receipt" : "payment",
     status: row.status.toLowerCase(),
-    bankAccount: row.counterparty_account || "",
+    bankAccount: row.source_account_number || "",
+    branchId: row.payment_details?.branch,
+    bankName: row.source_bank_name || "",
+    beneficiaryAccount: row.payment_details?.beneficiary_account || row.counterparty_account || "",
+    beneficiaryBank: row.payment_details?.beneficiary_bank || "",
+    rows: row.payment_details?.lines?.map((line,index) => ({
+      id: String(index + 1), description: line.description, debit: line.debit_code,
+      credit: line.credit_code, amount: Number(line.amount),
+      bankAccount: "", bankName: "", partnerCode: "", partnerName: "",
+      employeeCode: "", employeeName: "", loanContract: "", loanDisbursementContract: "",
+    })),
     items: [],
   };
 }
@@ -144,10 +159,13 @@ export default function MisaBankWorkspace({
   const [showInsuranceModal, setShowInsuranceModal] = useState(false);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [editingTransfer, setEditingTransfer] = useState<Record<string, any> | null>(null);
+  const [bankTransferRecords, setBankTransferRecords] = useState<Record<string, any>[]>([]);
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [bankImportKind,setBankImportKind]=useState<"receipt"|"payment"|null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [showCreateVoucher, setShowCreateVoucher] = useState<"receipt" | "payment" | null>(null);
+  const [statementVoucherSource, setStatementVoucherSource] = useState<{ account: string; accountNumber: string; date: string; amount: number; description: string; counterparty: string; counterpartyAccount: string; reference: string } | null>(null);
   const [createVoucherTypeIndex, setCreateVoucherTypeIndex] = useState(0);
   const [showBankReceiptSubmenu, setShowBankReceiptSubmenu] = useState(false);
   const [showBankPaymentSubmenu, setShowBankPaymentSubmenu] = useState(false);
@@ -176,9 +194,9 @@ export default function MisaBankWorkspace({
   };
 
   // Filter state
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(bankParams.get("voucherCode") || "");
   const [filterType, setFilterType] = useState("all");
-  const [filterPeriod,setFilterPeriod]=useState('ytd');
+  const [filterPeriod,setFilterPeriod]=useState(bankParams.get("voucher") ? 'all' : 'ytd');
   const [bankFilter,setBankFilter]=useState<CashFilter>(defaultCashFilter);
   const [bankFilterOpen,setBankFilterOpen]=useState(false);
   const [bankPage,setBankPage]=useState(1);
@@ -227,6 +245,7 @@ export default function MisaBankWorkspace({
   useEffect(() => {
     if (!token || !company.id) {
       setTransactions([]);
+      setBankTransferRecords([]);
       setBankAccounts([]);
       setBankProfiles([]);
       setBankBalance(0);
@@ -234,6 +253,7 @@ export default function MisaBankWorkspace({
     }
     let active = true;
     setTransactions([]);
+    setBankTransferRecords([]);
     setBankAccounts([]);
     setBankProfiles([]);
     setBankBalance(0);
@@ -260,11 +280,14 @@ export default function MisaBankWorkspace({
         // Internal transfers are listed with the vouchers so they can be reviewed after saving.
         internalTransfers(createApiWriter(company.id, (apiPath, init) => request(apiPath, token, init)), "bank").then((transfers) => {
           if (!active) return;
+          setBankTransferRecords(transfers);
           const date = (value?: string | null) => value ? value.slice(0, 10).split("-").reverse().join("/") : "";
           setTransactions((rows) => [...rows.filter((row) => !String(row.id).startsWith("transfer:")), ...transfers.map((row) => ({
-            id: `transfer:${row.id}`, dateHachToan: date(row.transfer_date), dateChungTu: date(row.transfer_date), code: row.number,
+            id: `transfer:${row.id}`, dateHachToan: date(row.posting_date || row.transfer_date), dateChungTu: date(row.transfer_date), code: row.number,
             description: row.description || "Chuyển tiền nội bộ", amount: Number(row.source_amount ?? row.amount),
-            partner: "Nội bộ", kind: "payment" as const, status: String(row.status || "").toLowerCase(), bankAccount: "", items: [],
+            partner: `${row.source_account_number || ""} → ${row.destination_account_number || ""}`, kind: "transfer" as const,
+            status: row.status === "CONFIRMED" ? "posted" : row.status === "CANCELLED" ? "cancelled" : row.status === "REVERSED" ? "reversed" : "draft",
+            bankAccount: row.source_account_number || "", debit: row.destination_gl_code || "", credit: row.source_gl_code || "", items: [],
           }) as BankTransaction)]);
         }).catch(() => undefined);
       })
@@ -275,12 +298,12 @@ export default function MisaBankWorkspace({
   }, [token, company.id, notify, bankApiRevision]);
 
   const [bankRowMenu,setBankRowMenu]=useState<string|null>(null);
-  const [selectedRowId, setSelectedRowId] = useState("unc-028");
+  const [selectedRowId, setSelectedRowId] = useState(bankParams.get("voucher") || "unc-028");
   const [bankCheckedIds,setBankCheckedIds]=useState<string[]>([]);
   const [bankDeletePending,setBankDeletePending]=useState(false);
   const [bankDeletedRows,setBankDeletedRows]=useState<BankTransaction[]>([]);
 
-  const bankLedger=useMemo(()=>cashLedger(transactions.map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),0),[transactions]);
+  const bankLedger=useMemo(()=>cashLedger(transactions.filter(transaction=>transaction.kind!=="transfer").map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),0),[transactions]);
   const totalPayment = bankLedger.payment;
 
   const totalReceipt = bankLedger.receipt;
@@ -327,12 +350,12 @@ export default function MisaBankWorkspace({
       if (transfers.length) setBankApiRevision((value) => value + 1);
       const updated: ApiBankTransaction[] = [];
       for (const transaction of selected.filter((row) => !String(row.id).startsWith("transfer:"))) {
-        updated.push(action === "post" ? await postMoneyTransaction(writer, "bank", transaction.id) : await reverseMoneyTransaction(writer, "bank", transaction.id));
+        updated.push(action === "post" ? await postMoneyTransaction(writer, "bank", transaction.id, transaction.branchId) : await reverseMoneyTransaction(writer, "bank", transaction.id, undefined, transaction.branchId));
       }
       const byId = new Map(updated.map((row) => [row.id, mapBankTransaction(row)]));
       setTransactions((previous) => previous.map((row) => byId.get(row.id) || row));
       setBankCheckedIds([]);
-      notify(`Đã ${action === "post" ? "ghi sổ" : "đảo giao dịch"} ${updated.length} chứng từ.`);
+      notify(`Đã ${action === "post" ? "ghi sổ" : "đảo giao dịch"} ${updated.length + transfers.length} chứng từ.`);
       try {
         const profiles = await request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
           `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}`, token,
@@ -586,16 +609,33 @@ export default function MisaBankWorkspace({
         const targetProfile = bankProfiles.find((profile) => profile.id === destination);
         if (!sourceProfile || !targetProfile || source === destination) throw new Error("Chọn hai tài khoản ngân hàng khác nhau trong danh mục.");
         if (sourceProfile.currency_id !== targetProfile.currency_id) throw new Error("Hai tài khoản phải cùng loại tiền.");
+        if (sourceProfile.currency_code !== "VND") throw new Error("Chuyển ngoại tệ cần chính sách định giá riêng; hiện chỉ hỗ trợ VND.");
+        if (sourceProfile.branch_id !== targetProfile.branch_id) throw new Error("Hai tài khoản phải cùng chi nhánh hạch toán.");
         if (!(Number(data.amount) > 0)) throw new Error("Số tiền chuyển phải lớn hơn 0.");
+        if (!String(data.reason || "").trim()) throw new Error("Vui lòng nhập lý do chuyển.");
+        if (!String(data.lineDescription || "").trim()) throw new Error("Vui lòng nhập diễn giải dòng hạch toán.");
+        if (!parseReportDate(String(data.transferDate || "")) || !parseReportDate(String(data.postingDate || ""))) throw new Error("Ngày chứng từ hoặc ngày hạch toán không hợp lệ.");
         const writer = createApiWriter(company.id, (path, init) => request(path, token, init));
-        const record = await writer.post("/api/v1/bank/transfers/", {
-          number: await nextVoucherNumber(writer, "/api/v1/bank/transfers/", "CK"),
+        const path = "/api/v1/bank/transfers/";
+        const record = await (data.id ? writer.patch(`${path}${data.id}/`, {
+          version: data.version,
+          number: String(data.number || "").trim(),
           source_account: source, destination_account: destination,
-          transfer_date: toApiDate(data.transferDate), source_amount: String(data.amount),
+          transfer_date: data.transferDate, posting_date: data.postingDate, source_amount: String(data.amount),
+          destination_amount: String(data.amount), exchange_rate: "1", description: data.reason,
+          details: { branch: sourceProfile.branch_id, outgoing_reference: data.outgoingReference || "", incoming_reference: data.incomingReference || "",
+            lines: [{ description: data.lineDescription, debit_account: targetProfile.gl_account_id, credit_account: sourceProfile.gl_account_id, amount: String(data.amount) }] },
+        }) : writer.post(path, {
+          number: String(data.number || "").trim() || await nextVoucherNumber(writer, path, "CK"),
+          source_account: source, destination_account: destination,
+          transfer_date: toApiDate(data.transferDate), posting_date: toApiDate(data.postingDate), source_amount: String(data.amount),
           destination_amount: String(data.amount), exchange_rate: "1",
-          description: data.reason || "Chuyển tiền nội bộ",
-        });
+          description: data.reason,
+          details: { branch: sourceProfile.branch_id, outgoing_reference: data.outgoingReference || "", incoming_reference: data.incomingReference || "",
+            lines: [{ description: data.lineDescription, debit_account: targetProfile.gl_account_id, credit_account: sourceProfile.gl_account_id, amount: String(data.amount) }] },
+        }));
         setShowTransferModal(false);
+        setEditingTransfer(null);
         setBankApiRevision((value) => value + 1);
         notify(`Đã lưu lệnh chuyển ${record.number}; lệnh hiện trong danh sách chứng từ.`);
       } catch (error) {
@@ -706,7 +746,7 @@ export default function MisaBankWorkspace({
 
       {showTransferModal && (
         <InternalTransferModal
-          accounts={token ? bankProfiles.map((profile) => ({ value: `BANK:${profile.id}`, label: `${profile.account_number} - ${profile.bank_name}` })) : undefined}
+          accounts={token ? bankProfiles.map((profile) => ({ value: `BANK:${profile.id}`, label: `${profile.account_number} - ${profile.bank_name}${profile.bank_branch ? ` (${profile.bank_branch})` : ""} · ${profile.branch_name || "Đơn vị chung"} · ${profile.currency_code} · ${profile.gl_code || "?"}`, currency: profile.currency_code, glCode: profile.gl_code, branchId: profile.branch_id })) : undefined}
           onClose={() => setShowTransferModal(false)}
           onSubmit={handleInternalTransfer}
         />
@@ -714,9 +754,13 @@ export default function MisaBankWorkspace({
 
       {showExcelModal && (
         <ExcelImportModal
+          companyId={company.id}
+          token={token}
+          profiles={bankProfiles}
           onClose={() => setShowExcelModal(false)}
-          onImportSuccess={(cnt) => {
-            notify(`Đã nhập khẩu thành công ${cnt} chứng từ tiền gửi từ tệp Excel!`);
+          onImportSuccess={(cnt, reference) => {
+            notify(`Đã nhập ${cnt} giao dịch sao kê (${reference}); chưa tạo chứng từ hoặc ghi sổ.`);
+            setBankApiRevision((value) => value + 1);
           }}
         />
       )}
@@ -749,14 +793,18 @@ export default function MisaBankWorkspace({
         <CreateVoucherModal
           kind={showCreateVoucher}
           voucherCategory="bank"
+          initialStatement={statementVoucherSource}
           existingCodes={transactions.map(row=>row.code)}
           suggestedCode={nextCashCode(showCreateVoucher,transactions.map(row=>row.code),"bank")}
           initialTypeIndex={createVoucherTypeIndex}
           onClose={() => {
             setShowCreateVoucher(null);
+            setStatementVoucherSource(null);
             setCreateVoucherTypeIndex(0);
           }}
-          onSave={(doc) => token ? apiSaveBank((writer) => saveMoneyVoucher(writer, "bank", doc)) : Promise.resolve(false)}
+          onSave={(doc) => token ? apiSaveBank((writer) => doc.kind === "payment" &&
+            ["supplier", "supplier_invoice", "advance", "other_expense"].includes(doc.receiptType)
+            ? saveBankPaymentDraft(writer, doc) : saveMoneyVoucher(writer, "bank", doc)) : Promise.resolve(false)}
         />
       )}
 
@@ -800,7 +848,7 @@ export default function MisaBankWorkspace({
   if(tab==='reports')return <MisaReportCenterWorkspace key={bankParams.get('report')||'bank'} initialCategory="bank" initialReport={bankParams.get('report')} embedded notify={notify}/>;
   if(tab==='cashflow')return <MisaCashForecastWorkspace companyId={company.id} openingKind="bank" entries={transactions.map(row=>({date:row.dateHachToan,kind:row.kind,amount:row.amount,code:row.code,status:row.status}))}/>;
   if(tab==='advance-settlement')return <><MisaPaymentWorkflow variant="settlement" notify={notify}><AdvanceSettlementTab notify={notify} onOpenCreateReceipt={()=>setShowCreateVoucher('receipt')}/></MisaPaymentWorkflow>{renderModals()}</>;
-  if (tab === 'reconciliation') return <MisaBankReconciliation companyId={company.id} transactions={transactions} notify={notify}/>;
+  if (tab === 'reconciliation') return <><MisaBankReconciliation companyId={company.id} transactions={transactions} notify={notify} onCreateVoucher={(kind, line) => { setStatementVoucherSource(line); setShowCreateVoucher(kind); }} onOpenVoucher={(id, code) => { setSelectedRowId(id); setSearchQuery(code); setFilterPeriod('all'); navigate(href('/bank/transactions', { voucher: id, voucherCode: code })); }}/>{renderModals()}</>;
   if (tab === 'payment-requests') return <><MisaPaymentWorkflow notify={notify}><PaymentRequestsTab notify={notify} onOpenCreatePayment={()=>setShowCreateVoucher('payment')}/></MisaPaymentWorkflow>{renderModals()}</>;
 
   // --------------------------------------------------------------------
@@ -1631,6 +1679,10 @@ export default function MisaBankWorkspace({
                       </div>
                     )}
                   </div>
+                  <button type="button" onClick={() => { setActiveToolbarMenu(null); setShowTransferModal(true); }}
+                    style={{ textAlign: "left", padding: "10px 18px", border: "none", background: "transparent", fontSize: 13.5, color: "#1e293b", cursor: "pointer", width: "100%", fontFamily: "inherit" }}>
+                    Chuyển tiền nội bộ
+                  </button>
                   <button
                     type="button"
                     style={{
@@ -1649,7 +1701,8 @@ export default function MisaBankWorkspace({
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     onClick={() => {
                       setActiveToolbarMenu(null);
-                      setShowSupplierModal(true);
+                      setCreateVoucherTypeIndex(MISA_BANK_PAYMENT_TYPES.findIndex(type => type.id === "supplier_invoice"));
+                      setShowCreateVoucher("payment");
                     }}
                   >
                     Trả tiền theo hóa đơn
@@ -2299,7 +2352,8 @@ export default function MisaBankWorkspace({
                     type="button"
                     onClick={() => {
                       setActiveFlowchartMenu(null);
-                      setShowSupplierModal(true);
+                      setCreateVoucherTypeIndex(MISA_BANK_PAYMENT_TYPES.findIndex(type => type.id === "supplier_invoice"));
+                      setShowCreateVoucher("payment");
                     }}
                   >
                     Trả tiền theo hóa đơn

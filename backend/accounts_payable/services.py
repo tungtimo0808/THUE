@@ -871,7 +871,8 @@ def auto_recognize_payable_from_purchase(purchase_obj, request=None, due_date=No
     if not due_date:
         term = payment_term or getattr(purchase_obj, "payment_term", None) or getattr(supp, "payment_term", None)
         if term and hasattr(term, "due_days"):
-            due_date = d_date + timedelta(days=term.due_days)
+            from master_data.payment_terms import calculate_payment_dates
+            due_date = calculate_payment_dates(term, document_date=d_date)["due_date"]
         else:
             due_date = d_date
 

@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from audit_log.models import AuditLog
+from general_ledger.models import Account, AccountBalance, AccountingPeriod, ChartOfAccounts, JournalEntry
 from master_data.models import Currency, Item, ItemCategory, UnitOfMeasure, Warehouse
 from organization.models import Branch, Company
 from .models import InventoryTransaction, StockBalance, StockMovement
@@ -66,6 +67,63 @@ class InventoryApiTests(TestCase):
         self.assertEqual(posted.status_code, 200, posted.data)
         self.client.force_authenticate(self.maker)
         return transaction_id
+
+    def test_other_receipt_draft_edit_atomic_post_and_duplicate(self):
+        chart = ChartOfAccounts.objects.create(company=self.company, code="TT99", name="Chart", effective_from=self.today)
+        debit = Account.objects.create(company=self.company, chart_of_accounts=chart, code="156", name="Hàng hóa")
+        credit = Account.objects.create(company=self.company, chart_of_accounts=chart, code="338", name="Phải trả khác")
+        period = AccountingPeriod.objects.create(company=self.company, code="P1", fiscal_year=self.today.year,
+            period_number=self.today.month, start_date=self.today.replace(day=1), end_date=self.today)
+        payload = {
+            "company": str(self.company.id), "number": "NK-OTHER-1", "transaction_type": "RECEIPT",
+            "source_module": "INV_OTHER", "document_date": str(self.today), "transaction_date": str(self.today),
+            "destination_warehouse": str(self.destination.id), "reason": "Nhập vật tư trả lại",
+            "lines": [{"line_no": 1, "item": str(self.item.id), "uom": str(self.uom.id),
+                       "quantity": "2", "unit_cost": "100", "debit_account": str(debit.id), "credit_account": str(credit.id)}],
+        }
+        created = self.client.post(f"/api/v1/inventory/transactions/{self.query}", payload, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(Decimal(created.data["total_value"]), Decimal("200"))
+        pk = created.data["id"]
+        self.assertFalse(StockBalance.objects.filter(warehouse=self.destination, item=self.item).exists())
+        self.assertFalse(JournalEntry.objects.filter(source_event_id=f"INV.OTHER:{pk}").exists())
+        duplicate = self.client.post(f"/api/v1/inventory/transactions/{self.query}", payload, format="json")
+        self.assertEqual(duplicate.status_code, 400, duplicate.data)
+        edited = self.client.patch(f"/api/v1/inventory/transactions/{pk}/{self.query}",
+            {"lines": [{**payload["lines"][0], "quantity": "3"}]}, format="json")
+        self.assertEqual(edited.status_code, 200, edited.data)
+        self.assertEqual(Decimal(edited.data["total_value"]), Decimal("300"))
+        submitted = self.client.post(f"/api/v1/inventory/transactions/{pk}/submit/{self.query}", {}, format="json")
+        self.assertEqual(submitted.status_code, 200, submitted.data)
+        self.client.force_authenticate(self.approver)
+        approved = self.client.post(f"/api/v1/inventory/transactions/{pk}/approve/{self.query}", {"comment": "OK"}, format="json")
+        self.assertEqual(approved.status_code, 200, approved.data)
+        period.status = "CLOSED"
+        period.save(update_fields=("status",))
+        blocked = self.client.post(f"/api/v1/inventory/transactions/{pk}/post/{self.query}", {}, format="json")
+        self.assertEqual(blocked.status_code, 400, blocked.data)
+        self.assertFalse(StockBalance.objects.filter(warehouse=self.destination, item=self.item).exists())
+        period.status = "OPEN"
+        period.save(update_fields=("status",))
+        debit.requires_party = True
+        debit.save(update_fields=("requires_party",))
+        failed_gl = self.client.post(f"/api/v1/inventory/transactions/{pk}/post/{self.query}", {}, format="json")
+        self.assertEqual(failed_gl.status_code, 400, failed_gl.data)
+        self.assertFalse(StockBalance.objects.filter(warehouse=self.destination, item=self.item).exists())
+        self.assertFalse(JournalEntry.objects.filter(source_event_id=f"INV.OTHER:{pk}").exists())
+        debit.requires_party = False
+        debit.save(update_fields=("requires_party",))
+        posted = self.client.post(f"/api/v1/inventory/transactions/{pk}/post/{self.query}", {}, format="json")
+        self.assertEqual(posted.status_code, 200, posted.data)
+        self.assertEqual(posted.data["gl_status"], "POSTED")
+        self.assertEqual(StockBalance.objects.get(warehouse=self.destination, item=self.item).quantity, Decimal("3"))
+        self.assertEqual(StockBalance.objects.get(warehouse=self.destination, item=self.item).inventory_value, Decimal("300"))
+        journal = JournalEntry.objects.get(source_event_id=f"INV.OTHER:{pk}")
+        self.assertEqual(journal.status, "POSTED")
+        self.assertEqual(journal.total_debit, Decimal("300"))
+        self.assertEqual(AccountBalance.objects.get(period=period, account=debit).period_debit, Decimal("300"))
+        again = self.client.post(f"/api/v1/inventory/transactions/{pk}/post/{self.query}", {}, format="json")
+        self.assertEqual(again.status_code, 400, again.data)
 
     def test_receipt_issue_transfer_history_and_gl(self):
         receipt_id = self.create_and_post("NK-001", "RECEIPT", 10, destination=self.source, cost="50")

@@ -7,6 +7,7 @@ from approval_workflows.submission import configured_snapshot
 from approval_workflows.execution import approval_progress
 from common_services.document_lock_services import assert_not_locked
 from . import models
+from .payment_validation import PAYMENT_TYPES, validate_payment
 def actor(r):
     if hasattr(r, "user") and hasattr(r.user, "iam_account"):
         return r.user.iam_account
@@ -44,6 +45,8 @@ def decide(tx,r,approved):
 def post(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);account=models.AccountProfile.objects.select_for_update().get(pk=tx.account_id)
     if tx.status!="APPROVED" or tx.balance_applied:raise ValidationError("Giao dịch chưa duyệt hoặc đã cập nhật số dư.")
+    if tx.business_type in PAYMENT_TYPES:
+        return _post_payment_draft(tx,account,r)
     assert_not_locked(tx.company,"BC" if incoming(tx) else "BN",tx.transaction_date)
     available=account.balance+account.overdraft_limit
     if not incoming(tx) and not account.allow_overdraft and account.balance<tx.amount or not incoming(tx) and account.allow_overdraft and available<tx.amount:raise ValidationError("Số dư khả dụng không đủ.")
@@ -62,10 +65,112 @@ def post(tx,r):
             obj=Payment.objects.create(company=tx.company,supplier=tx.party,currency=tx.currency,payment_date=tx.transaction_date,amount=tx.amount,external_type="BANK",external_reference=str(tx.id),created_by=actor(r));allocate(obj,proxy);tx.source_reference=str(obj.id)
         tx.save(update_fields=("source_reference",))
     audit(r,tx,"POST",after={"balance":str(account.balance)});return tx
+
+
+def _post_payment_draft(tx, account, request):
+    """Post the bank balance, GL journal and supplier debt in one database transaction."""
+    from datetime import date
+    from types import SimpleNamespace
+    from uuid import NAMESPACE_URL, uuid5
+
+    from accounts_payable import models as ap_models
+    from accounts_payable.services import allocate, update_payable_status
+    from general_ledger.models import Account
+    from general_ledger.money_journal import journalize
+    from organization.models import Branch
+
+    validate_payment({}, tx)
+    if tx.currency_id != tx.company.accounting_currency_id:
+        raise ValidationError("Ghi sổ ngoại tệ cần xử lý tỷ giá xuất tiền và chênh lệch tại UC-GL-05.")
+    if not tx.account.account.branch_id and not tx.payment_details.get("branch"):
+        raise ValidationError("Chứng từ thiếu chi nhánh hạch toán.")
+    branch_id = tx.payment_details.get("branch") or tx.account.account.branch_id
+    branch = Branch.objects.filter(pk=branch_id,company=tx.company,status="ACTIVE").first()
+    if not branch:
+        raise ValidationError("Chi nhánh hạch toán không hợp lệ.")
+    posting_date = date.fromisoformat(tx.payment_details["posting_date"])
+    assert_not_locked(tx.company,"BN",posting_date)
+    available = account.balance + (account.overdraft_limit if account.allow_overdraft else Decimal("0"))
+    if available < tx.amount:
+        raise ValidationError("Số dư khả dụng không đủ để ghi sổ chứng từ chi tiền gửi.")
+    lines = tx.payment_details["lines"]
+    journal_lines = [{"account": line["debit_account"], "amount": line["amount"],
+                      "description": line["description"],
+                      "dimensions": {**(line.get("dimensions") or {}),
+                                     **({"employee_id":tx.payment_details["employee"]} if tx.business_type=="EMPLOYEE_ADVANCE" else {})}}
+                     for line in lines]
+    entry = journalize(tx,request,module="BANK",money_account=account.account.gl_account,incoming=False,
+                       branch=branch,counterpart_name=tx.counterparty_name,lines=journal_lines,
+                       money_dimensions={"bank_account_id":str(account.account_id)},posting_date=posting_date)
+    allocations = tx.payment_details.get("allocations") or []
+    payment = None
+    if tx.business_type in {"SUPPLIER_ADVANCE","SUPPLIER_INVOICE"}:
+        if ap_models.Payment.objects.filter(external_type="BANK",external_reference=str(tx.id)).exists():
+            raise ValidationError("Khoản chi đã có chứng từ thanh toán công nợ.")
+        payment = ap_models.Payment.objects.create(
+            company=tx.company,branch_id=branch_id,number=tx.number,payment_source="DIRECT",
+            supplier=tx.party,currency=tx.currency,exchange_rate=tx.exchange_rate,payment_date=posting_date,
+            amount=tx.amount,payment_method="BANK_TRANSFER",payment_content=tx.description,
+            recipient_name=tx.counterparty_name,company_bank_account=account.account,
+            beneficiary_name=tx.payment_details.get("beneficiary_name",""),
+            beneficiary_account_number=tx.payment_details.get("beneficiary_account",""),
+            beneficiary_bank_name=tx.payment_details.get("beneficiary_bank",""),
+            bank_transaction_code=tx.bank_reference,external_type="BANK",external_reference=str(tx.id),
+            journal_entry=entry,status="CONFIRMED",posted_at=timezone.now(),posted_by=actor(request),
+            created_by=actor(request),
+        )
+        if allocations:
+            proxy=SimpleNamespace(user=request.user,data={"allocations":[
+                {"payable":item["payable"],"amount":item["amount"]} for item in allocations
+            ]},META=request.META,headers=request.headers,method=request.method,path=request.path)
+            allocate(payment,proxy)
+    discounts=[(item,Decimal(str(item.get("discount") or "0"))) for item in allocations]
+    discounts=[(item,value) for item,value in discounts if value>0]
+    if discounts:
+        discount_account=Account.objects.filter(company=tx.company,code__startswith="515",status="ACTIVE",is_postable=True).order_by("code").first()
+        if not discount_account:
+            raise ValidationError("Chưa có tài khoản doanh thu tài chính 515 chi tiết để hạch toán chiết khấu.")
+        discount_total=sum((value for _,value in discounts),Decimal("0"))
+        discount_tx=SimpleNamespace(
+            id=uuid5(NAMESPACE_URL,f"BANK-DISCOUNT:{tx.id}"),company=tx.company,currency=tx.currency,
+            transaction_date=tx.transaction_date,description=f"Chiết khấu thanh toán {tx.number}",
+            amount=discount_total,exchange_rate=tx.exchange_rate,party=tx.party,number=f"{tx.number}-CK"[:80],
+        )
+        discount_lines=[]
+        for item,value in discounts:
+            payable=ap_models.Payable.objects.select_for_update().get(pk=item["payable"])
+            if value>payable.balance:
+                raise ValidationError("Chiết khấu vượt công nợ còn lại sau thanh toán.")
+            payable_account_id=payable.document.payable_account_id if payable.document_id else lines[0]["debit_account"]
+            discount_lines.append({"account":payable_account_id,"amount":str(value),"description":f"Chiết khấu {tx.number}"})
+            ap_models.PayableAdjustment.objects.create(company=tx.company,payable=payable,
+                adjustment_date=posting_date,amount=-value,reason=f"Chiết khấu thanh toán {tx.number}",
+                posting_reference=f"{tx.number}-CK",status="POSTED",created_by=actor(request))
+            payable.adjustment_amount-=value
+            payable.balance-=value
+            update_payable_status(payable)
+        journalize(discount_tx,request,module="BANK",money_account=discount_account,incoming=False,
+                   branch=branch,counterpart_name=tx.counterparty_name,
+                   lines=discount_lines,posting_date=posting_date)
+    account.balance-=tx.amount
+    account.save(update_fields=("balance","updated_at"))
+    tx.balance_applied=True
+    tx.status="POSTED"
+    tx.posted_at=timezone.now()
+    tx.gl_status="POSTED"
+    tx.gl_reference=entry.number
+    tx.source_module="AP" if payment else ""
+    tx.source_reference=str(payment.id) if payment else ""
+    tx.save(update_fields=("balance_applied","status","posted_at","gl_status","gl_reference",
+                           "source_module","source_reference","updated_at"))
+    audit(request,tx,"POST",after={"balance":str(account.balance),"gl_reference":entry.number})
+    return tx
 @transaction.atomic
 def reverse(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);reason=r.data.get("reason","").strip()
     if tx.status!="POSTED" or not reason or tx.source_reference:raise ValidationError("Giao dịch không thể đảo; cần lý do và xử lý liên kết AR/AP trước.")
+    if tx.reconciliations.filter(cancelled_at__isnull=True).exists():raise ValidationError("Chứng từ đã ghép sao kê; hãy hủy ghép trước khi đảo.")
+    if models.BankReconciliationItem.objects.filter(transaction=tx).exists():raise ValidationError("Chứng từ thuộc kỳ đối chiếu đã xác nhận; không thể đảo.")
     account=models.AccountProfile.objects.select_for_update().get(pk=tx.account_id);new=account.balance-tx.amount if incoming(tx) else account.balance+tx.amount
     if new<0 and not account.allow_overdraft:raise ValidationError("Đảo giao dịch sẽ làm số dư âm.")
     account.balance=new;account.save(update_fields=("balance","updated_at"));tx.status="REVERSED";tx.save(update_fields=("status","updated_at"));audit(r,tx,"REVERSE",after={"balance":str(new)},reason=reason);return tx
@@ -82,16 +187,67 @@ def post_gl(tx,r):
 def confirm_transfer(o,r):
     o=models.BankTransfer.objects.select_for_update().get(pk=o.pk)
     if o.status!="DRAFT":raise ValidationError("Điều chuyển đã xử lý.")
+    from .transfer_validation import validate_transfer
+    from general_ledger.models import AccountingPeriod, JournalEntry, JournalLine
+    from general_ledger.services import post as post_journal
+    validate_transfer({},o)
+    period=AccountingPeriod.objects.filter(company=o.company,start_date__lte=o.posting_date,end_date__gte=o.posting_date,status="OPEN").first()
+    if not period:raise ValidationError({"posting_date":"Không có kỳ kế toán đang mở cho ngày hạch toán."})
+    assert_not_locked(o.company,"BN",o.posting_date)
     s=models.AccountProfile.objects.select_for_update().get(pk=o.source_account_id);d=models.AccountProfile.objects.select_for_update().get(pk=o.destination_account_id)
     if s.balance+(s.overdraft_limit if s.allow_overdraft else 0)<o.source_amount:raise ValidationError("Số dư nguồn không đủ.")
-    s.balance-=o.source_amount;d.balance+=o.destination_amount;s.save(update_fields=("balance","updated_at"));d.save(update_fields=("balance","updated_at"));o.status="CONFIRMED";o.confirmed_by=actor(r);o.save(update_fields=("status","confirmed_by"));audit(r,o,"TRANSFER",after={"status":o.status});return o
+    now=timezone.now();entry=JournalEntry.objects.create(company=o.company,branch=s.account.branch,period=period,
+        number=f"GL-{o.number}",entry_type="SUBLEDGER",posting_date=o.posting_date,document_date=o.transfer_date,
+        description=o.description,source_module="BANK",source_event_id=f"BANK_TRANSFER:{o.pk}",
+        source_entity_type="BankTransfer",source_entity_id=o.pk,status="APPROVED",
+        workflow_snapshot={"allow_creator_posting":True},total_debit=o.source_amount,total_credit=o.source_amount,
+        created_by=actor(r),approved_by=actor(r),approved_at=now)
+    for index,line in enumerate(o.details["lines"]):
+        amount=Decimal(str(line["amount"]));common={"entry":entry,"currency":s.account.currency,
+            "foreign_amount":amount,"exchange_rate":Decimal("1"),"description":line["description"]}
+        JournalLine.objects.create(line_no=index*2+1,account=d.account.gl_account,debit=amount,
+            dimensions={"bank_account_id":str(d.account_id)},**common)
+        JournalLine.objects.create(line_no=index*2+2,account=s.account.gl_account,credit=amount,
+            dimensions={"bank_account_id":str(s.account_id)},**common)
+    post_journal(entry,r)
+    s.balance-=o.source_amount;d.balance+=o.destination_amount;s.save(update_fields=("balance","updated_at"));d.save(update_fields=("balance","updated_at"))
+    o.status="CONFIRMED";o.confirmed_by=actor(r);o.posted_at=now;o.gl_reference=entry.number
+    o.save(update_fields=("status","confirmed_by","posted_at","gl_reference"))
+    audit(r,o,"TRANSFER",after={"status":o.status,"source_balance":str(s.balance),"destination_balance":str(d.balance),"gl_reference":entry.number})
+    return o
+
 @transaction.atomic
-def reconcile(line,tx,amount,note,r):
-    line=models.StatementLine.objects.select_for_update().get(pk=line.pk);tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);amount=Decimal(str(amount))
-    if line.match_status=="MATCHED" or line.statement.account_id!=tx.account_id:raise ValidationError("Dòng sao kê đã khớp hoặc không cùng tài khoản.")
-    expected_direction="CREDIT" if incoming(tx) else "DEBIT"
-    if line.direction!=expected_direction:raise ValidationError("Chiều giao dịch không khớp.")
-    variance=line.amount-amount;status="MATCHED" if variance==0 and amount==tx.amount else "VARIANCE";obj=models.Reconciliation.objects.create(company=tx.company,statement_line=line,transaction=tx,matched_amount=amount,variance=variance,status=status,note=note,created_by=actor(r));line.match_status="MATCHED" if status=="MATCHED" else "VARIANCE";line.save(update_fields=("match_status",));audit(r,obj,"RECONCILE",after={"status":status,"variance":str(variance)});return obj
+def cancel_transfer(o,r):
+    o=models.BankTransfer.objects.select_for_update().get(pk=o.pk)
+    if o.status!="DRAFT":raise ValidationError("Chỉ chứng từ chưa ghi sổ mới được hủy.")
+    before={"status":o.status,"version":o.version}
+    o.status="CANCELLED";o.cancelled_at=timezone.now();o.version+=1
+    o.save(update_fields=("status","cancelled_at","version","updated_at"))
+    audit(r,o,"CANCEL",before,{"status":o.status,"version":o.version},r.data.get("reason", ""))
+    return o
+
+@transaction.atomic
+def reverse_transfer(o,r):
+    o=models.BankTransfer.objects.select_for_update().get(pk=o.pk)
+    if o.status!="CONFIRMED":raise ValidationError("Chỉ chứng từ đã ghi sổ mới được bỏ ghi.")
+    reason=str(r.data.get("reason") or "").strip()
+    if not reason:raise ValidationError({"reason":"Vui lòng nhập lý do bỏ ghi."})
+    from general_ledger.models import JournalEntry
+    from general_ledger.services import reverse as reverse_journal
+    entry=JournalEntry.objects.select_for_update().filter(source_event_id=f"BANK_TRANSFER:{o.pk}",status="POSTED").first()
+    if not entry:raise ValidationError("Không tìm thấy bút toán đã ghi sổ của chứng từ chuyển tiền.")
+    assert_not_locked(o.company,"BN",o.posting_date)
+    s=models.AccountProfile.objects.select_for_update().get(pk=o.source_account_id)
+    d=models.AccountProfile.objects.select_for_update().get(pk=o.destination_account_id)
+    if d.balance+(d.overdraft_limit if d.allow_overdraft else 0)<o.destination_amount:
+        raise ValidationError("Số dư tài khoản nhận không đủ để bỏ ghi; hãy kiểm tra các giao dịch phát sinh sau.")
+    reversal=reverse_journal(entry,r)
+    s.balance+=o.source_amount;d.balance-=o.destination_amount
+    s.save(update_fields=("balance","updated_at"));d.save(update_fields=("balance","updated_at"))
+    o.status="REVERSED";o.reversed_at=timezone.now();o.version+=1
+    o.save(update_fields=("status","reversed_at","version","updated_at"))
+    audit(r,o,"UNPOST",{"status":"CONFIRMED"},{"status":o.status,"reversal":reversal.number},reason)
+    return o
 @transaction.atomic
 def send_integration(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);key=r.data.get("idempotency_key","").strip()

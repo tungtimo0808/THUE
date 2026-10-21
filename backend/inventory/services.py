@@ -183,6 +183,27 @@ def post(obj, request):
         raise ValidationError("Giao dịch chưa duyệt hoặc đã cập nhật tồn kho.")
     if _period_is_closed(obj):
         raise ValidationError("Không được ghi nhận giao dịch vào kỳ tồn kho đã đóng.")
+    other_period = None
+    if obj.source_module == "INV_OTHER":
+        from general_ledger.models import AccountingPeriod
+        other_period = AccountingPeriod.objects.filter(
+            company=obj.company, start_date__lte=obj.transaction_date,
+            end_date__gte=obj.transaction_date, status="OPEN",
+        ).first()
+        if not other_period:
+            raise ValidationError("Ngày hạch toán thuộc kỳ kế toán đã khóa hoặc chưa mở.")
+        if not obj.lines.exists():
+            raise ValidationError("Vui lòng thêm ít nhất một vật tư/hàng hóa.")
+        for line in obj.lines.select_related("item", "debit_account", "credit_account"):
+            if line.item.status != "ACTIVE" or not line.item.track_inventory:
+                raise ValidationError(f"Vật tư/hàng hóa {line.item.code} không hợp lệ để nhập kho.")
+            if not line.debit_account_id or not line.credit_account_id:
+                raise ValidationError(f"Dòng {line.line_no}: vui lòng chọn đầy đủ Tài khoản Nợ và Tài khoản Có.")
+            if line.debit_account_id == line.credit_account_id:
+                raise ValidationError(f"Dòng {line.line_no}: Tài khoản Nợ và Có phải khác nhau.")
+            for account in (line.debit_account, line.credit_account):
+                if account.company_id != obj.company_id or account.status != "ACTIVE" or not account.is_postable:
+                    raise ValidationError(f"Dòng {line.line_no}: tài khoản hạch toán không hợp lệ.")
     kind = obj.transaction_type
     source, destination = obj.source_warehouse, obj.destination_warehouse
     if source and (source.status != "ACTIVE" and not (source.status == "INACTIVE" and kind == "ADJUSTMENT_OUT") or (kind == "TRANSFER" and not source.allow_transfer) or (kind != "TRANSFER" and not source.allow_issue)):
@@ -229,11 +250,42 @@ def post(obj, request):
         if warning:
             warnings.append(warning)
     obj.inventory_applied = True
+    if obj.source_module == "INV_OTHER" and total:
+        from general_ledger.models import JournalEntry, JournalLine
+        from general_ledger.services import post as post_journal
+        journal = JournalEntry.objects.create(
+            company=obj.company, branch=obj.branch, period=other_period,
+            number=f"{obj.number}-GL", entry_type="SUBLEDGER",
+            posting_date=obj.transaction_date, document_date=obj.document_date,
+            description=obj.reason or f"Nhập kho khác {obj.number}", source_module="INV",
+            source_event_id=f"INV.OTHER:{obj.pk}", source_entity_type="InventoryTransaction",
+            source_entity_id=obj.pk, status="APPROVED", total_debit=total, total_credit=total,
+            workflow_snapshot={"allow_creator_posting": True},
+            created_by=actor(request), approved_by=actor(request), approved_at=timezone.now(),
+        )
+        line_no = 0
+        for line in obj.lines.select_related("debit_account", "credit_account"):
+            if not line.line_value:
+                continue
+            line_no += 1
+            JournalLine.objects.create(entry=journal, line_no=line_no, account=line.debit_account,
+                debit=line.line_value, currency=obj.company.accounting_currency,
+                party=obj.supplier, warehouse=obj.destination_warehouse)
+            line_no += 1
+            JournalLine.objects.create(entry=journal, line_no=line_no, account=line.credit_account,
+                credit=line.line_value, currency=obj.company.accounting_currency,
+                party=obj.supplier, warehouse=obj.destination_warehouse)
+        post_journal(journal, request)
+        obj.journal_entry = journal
+        obj.gl_reference = journal.number
+        obj.gl_status = "POSTED"
+    elif obj.source_module == "INV_OTHER":
+        obj.gl_status = "NOT_REQUIRED"
     obj.total_value = total
     obj.warnings = warnings
     obj.status = "POSTED"
     obj.posted_at = timezone.now()
-    obj.save(update_fields=("inventory_applied", "total_value", "warnings", "status", "posted_at", "updated_at"))
+    obj.save(update_fields=("inventory_applied", "total_value", "warnings", "status", "posted_at", "journal_entry", "gl_reference", "gl_status", "updated_at"))
     audit(request, obj, "POST", after={"total_value": str(total), "warnings": warnings})
     return obj
 

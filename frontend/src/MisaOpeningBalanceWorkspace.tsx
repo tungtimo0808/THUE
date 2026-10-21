@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   HelpCircle,
   X,
@@ -29,6 +30,75 @@ import {
   Paperclip,
 } from "lucide-react";
 import "./misa-opening.css";
+
+export function formatOpeningMoney(amount: number | string | undefined): string {
+  const num = typeof amount === "number" ? amount : Number(amount) || 0;
+  return new Intl.NumberFormat("vi-VN").format(num);
+}
+
+export const OPENING_CUSTOMERS = [
+  { code: "SAOVIET", name: "Công ty Cổ phần Công nghệ Sao Việt", taxCode: "0102345678" },
+  { code: "MINHHANH", name: "Công ty TNHH Minh Hạnh", taxCode: "0103456789" },
+  { code: "HOANGGIA", name: "Công ty Cổ phần Đầu tư Hoàng Gia", taxCode: "0104567890" },
+  { code: "ANBINH", name: "Công ty TNHH TMDV An Bình", taxCode: "0105678901" },
+  { code: "THANG_LONG", name: "Công ty Cổ phần Quốc tế Thăng Long", taxCode: "0106789012" },
+  { code: "DAI_NAM", name: "Tập đoàn Đại Nam", taxCode: "0107890123" },
+  { code: "VIETTEL_POST", name: "Tổng công ty CP Bưu chính Viettel", taxCode: "0108901234" },
+  { code: "VINAPHONE", name: "Trung tâm Kinh doanh VNPT Hà Nội", taxCode: "0109012345" },
+  { code: "DONGDO", name: "Công ty TNHH Xây dựng Đông Đô", taxCode: "0101122334" },
+  { code: "BAOVIET", name: "Tập đoàn Bảo Việt", taxCode: "0102233445" },
+];
+
+export const OPENING_SUPPLIERS = [
+  { code: "PHATMAI", name: "Công ty Cổ phần Phát Mai", taxCode: "0109876541" },
+  { code: "SOMOT", name: "Công ty TNHH Thiết bị Số Một", taxCode: "0109876542" },
+  { code: "FPT", name: "Công ty CP Bán lẻ Kỹ thuật số FPT", taxCode: "0109876543" },
+  { code: "DIENLUC_HK", name: "Công ty Điện lực Hoàn Kiếm", taxCode: "0109876544" },
+  { code: "HANOI_WATER", name: "Công ty TNHH MTV Nước sạch Hà Nội", taxCode: "0109876545" },
+  { code: "VNPT_HN", name: "Viễn thông Hà Nội", taxCode: "0109876546" },
+  { code: "PETROLIMEX", name: "Tập đoàn Xăng dầu Việt Nam", taxCode: "0109876547" },
+];
+
+export const DEFAULT_CUSTOMER_DEBTS = [
+  { id: "cust-1", code: "SAOVIET", name: "Công ty Cổ phần Công nghệ Sao Việt", accCode: "131", debit: 50000000, credit: 0, invoiceNo: "HD00125", invoiceDate: "15/12/2025", dueDate: "15/01/2026" },
+  { id: "cust-2", code: "MINHHANH", name: "Công ty TNHH Minh Hạnh", accCode: "131", debit: 120000000, credit: 0, invoiceNo: "HD00118", invoiceDate: "10/12/2025", dueDate: "10/01/2026" },
+  { id: "cust-3", code: "HOANGGIA", name: "Công ty Cổ phần Đầu tư Hoàng Gia", accCode: "131", debit: 280000000, credit: 0, invoiceNo: "HD00099", invoiceDate: "05/12/2025", dueDate: "05/01/2026" },
+  { id: "cust-4", code: "ANBINH", name: "Công ty TNHH TMDV An Bình", accCode: "131", debit: 95000000, credit: 0, invoiceNo: "HD00084", invoiceDate: "28/11/2025", dueDate: "28/12/2025" },
+  { id: "cust-5", code: "THANG_LONG", name: "Công ty Cổ phần Quốc tế Thăng Long", accCode: "131", debit: 185000000, credit: 0, invoiceNo: "HD00072", invoiceDate: "20/11/2025", dueDate: "20/12/2025" },
+  { id: "cust-6", code: "DAI_NAM", name: "Tập đoàn Đại Nam", accCode: "131", debit: 424530000, credit: 0, invoiceNo: "HD00065", invoiceDate: "15/11/2025", dueDate: "15/12/2025" },
+];
+
+export const DEFAULT_SUPPLIER_DEBTS = [
+  { id: "supp-1", code: "PHATMAI", name: "Công ty Cổ phần Phát Mai", accCode: "331", debit: 0, credit: 350000000, invoiceNo: "PM-0982", invoiceDate: "12/12/2025" },
+  { id: "supp-2", code: "SOMOT", name: "Công ty TNHH Thiết bị Số Một", accCode: "331", debit: 0, credit: 250000000, invoiceNo: "SM-1140", invoiceDate: "18/12/2025" },
+  { id: "supp-3", code: "FPT", name: "Công ty CP Bán lẻ Kỹ thuật số FPT", accCode: "331", debit: 0, credit: 200000000, invoiceNo: "FPT-2025", invoiceDate: "22/12/2025" },
+];
+
+export const DEFAULT_ACCOUNT_BALANCES = [
+  { account: "1111", name: "Tiền mặt Việt Nam", debit: 300000000, credit: 0 },
+  { account: "1121", name: "Tiền gửi Ngân hàng Techcombank (VND)", debit: 3500000000, credit: 0 },
+  { account: "1122", name: "Tiền gửi Ngân hàng Techcombank (USD)", debit: 1275000000, credit: 0 },
+  { account: "131", name: "Phải thu của khách hàng", debit: 1154530000, credit: 0 },
+  { account: "1561", name: "Giá mua hàng hóa", debit: 1310000000, credit: 0 },
+  { account: "2111", name: "Tài sản cố định hữu hình - Nhà cửa", debit: 2500000000, credit: 0 },
+  { account: "2113", name: "Phương tiện vận tải, truyền dẫn", debit: 1350000000, credit: 0 },
+  { account: "2141", name: "Hao mòn tài sản cố định hữu hình", debit: 0, credit: 1000000000 },
+  { account: "331", name: "Phải trả cho người bán", debit: 0, credit: 800000000 },
+  { account: "4111", name: "Vốn góp của chủ sở hữu", debit: 0, credit: 5000000000 },
+  { account: "4212", name: "Lợi nhuận sau thuế chưa phân phối năm nay", debit: 0, credit: 3589530000 },
+];
+
+export const DEFAULT_BANK_BALANCES = [
+  { accountNumber: "123456789", bankName: "Techcombank", branch: "Chi nhánh Hoàn Kiếm", currency: "VND", originalAmount: 3500000000, amountVnd: 3500000000 },
+  { accountNumber: "987654321", bankName: "Techcombank (USD)", branch: "Chi nhánh Hoàn Kiếm", currency: "USD", originalAmount: 50000, amountVnd: 1275000000 },
+];
+
+export const DEFAULT_INVENTORY_BALANCES = [
+  { itemCode: "DT_IP15", itemName: "Điện thoại iPhone 15 128GB", warehouse: "Kho 156", unit: "Chiếc", quantity: 20, unitPrice: 22000000, amount: 440000000 },
+  { itemCode: "DT_SS24", itemName: "Samsung Galaxy S24 Ultra", warehouse: "Kho 156", unit: "Chiếc", quantity: 15, unitPrice: 26000000, amount: 390000000 },
+  { itemCode: "MT_DELL", itemName: "Máy tính xách tay Dell XPS 13", warehouse: "Kho 156", unit: "Chiếc", quantity: 10, unitPrice: 28000000, amount: 280000000 },
+  { itemCode: "MT_MAC", itemName: "MacBook Pro 14 M3 Pro", warehouse: "Kho 156", unit: "Chiếc", quantity: 5, unitPrice: 40000000, amount: 200000000 },
+];
 
 export type MisaOpeningBalanceWorkspaceProps = {
   notify?: (msg: string) => void;
@@ -138,9 +208,16 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
 ];
 
 export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalanceWorkspaceProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   // Current view: null (hub) or category id
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
+      const parts = window.location.pathname.split("/");
+      if (parts[1] === "opening" && parts[2]) {
+        return parts[2];
+      }
       const sp = new URLSearchParams(window.location.search);
       const cat = sp.get("category") || sp.get("tab") || sp.get("type");
       if (cat === "tools" || cat === "ccdc" || cat === "cong-cu-dung-cu") {
@@ -159,6 +236,19 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     }
     return null;
   });
+
+  useEffect(() => {
+    const parts = location.pathname.split("/");
+    if (parts[1] === "opening") {
+      if (parts[2]) {
+        setActiveCategoryId(parts[2]);
+      } else {
+        const sp = new URLSearchParams(location.search);
+        const cat = sp.get("category") || sp.get("tab") || sp.get("type");
+        if (!cat) setActiveCategoryId(null);
+      }
+    }
+  }, [location.pathname, location.search]);
 
   // Modal State
   const [activeModal, setActiveModal] = useState<string | null>(() => {
@@ -413,17 +503,53 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const [assetConditionStatus, setAssetConditionStatus] = useState("Mới");
   const [assetCurrentQuality, setAssetCurrentQuality] = useState("Hoạt động tốt");
 
-  // Accounts grid rows
-  const [accountRows, setAccountRows] = useState([
-    { account: "1111", name: "Tiền Việt Nam", debit: 0, credit: 0 },
-    { account: "1121", name: "Tiền gửi Ngân hàng TMCP Ngoại thương VN (VCB)", debit: 0, credit: 0 },
-    { account: "131", name: "Phải thu của khách hàng", debit: 0, credit: 0 },
-    { account: "152", name: "Nguyên liệu, vật liệu", debit: 0, credit: 0 },
-    { account: "1561", name: "Giá mua hàng hóa", debit: 0, credit: 0 },
-    { account: "2111", name: "Nhà cửa, vật kiến trúc", debit: 0, credit: 0 },
-    { account: "331", name: "Phải trả cho người bán", debit: 0, credit: 0 },
-    { account: "4111", name: "Vốn góp của chủ sở hữu", debit: 0, credit: 0 },
+  // Real Opening Balances State for Company ABC (TT99)
+  const [customerDebts, setCustomerDebts] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("abc_opening_customers_tt99");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_CUSTOMER_DEBTS;
+  });
+
+  const [supplierDebts, setSupplierDebts] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("abc_opening_suppliers_tt99");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_SUPPLIER_DEBTS;
+  });
+
+  const [accountRows, setAccountRows] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("abc_opening_accounts_tt99");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_ACCOUNT_BALANCES;
+  });
+
+  const [bankBalances, setBankBalances] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("abc_opening_bank_tt99");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_BANK_BALANCES;
+  });
+
+  const [inventoryBalances, setInventoryBalances] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("abc_opening_inventory_tt99");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_INVENTORY_BALANCES;
+  });
+
+  const [employeeDebts, setEmployeeDebts] = useState<any[]>([
+    { id: "emp-1", code: "NV001", name: "Nguyễn Văn Hùng", accCode: "141", debit: 0, credit: 0, reason: "Tạm ứng công tác kỹ thuật" },
+    { id: "emp-2", code: "NV004", name: "Phạm Quang Hòa", accCode: "141", debit: 5000000, credit: 0, reason: "Tạm ứng kỹ thuật Q4" },
   ]);
+
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Section collapse state in customer/supplier modals
   const [invoiceDetailOpen, setInvoiceDetailOpen] = useState(true);
@@ -431,7 +557,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   // Form states for modals
   const [bankAccountCode, setBankAccountCode] = useState("1121");
-  const [bankAccNumber, setBankAccNumber] = useState("");
+  const [bankAccNumber, setBankAccNumber] = useState("123456789");
   const [bankDebit, setBankDebit] = useState(0);
   const [bankCredit, setBankCredit] = useState(0);
 
@@ -450,8 +576,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const [employeeDebit, setEmployeeDebit] = useState(0);
   const [employeeCredit, setEmployeeCredit] = useState(0);
 
-  const [inventoryItem, setInventoryItem] = useState("");
-  const [inventoryWarehouse, setInventoryWarehouse] = useState("");
+  const [inventoryItem, setInventoryItem] = useState("DT_IP15");
+  const [inventoryWarehouse, setInventoryWarehouse] = useState("Kho 156");
   const [inventoryQty, setInventoryQty] = useState(0);
   const [inventoryVal, setInventoryVal] = useState(0);
 
@@ -459,22 +585,125 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   const handleOpenCategory = (id: string) => {
     setActiveCategoryId(id);
+    navigate(`/opening/${id}`);
   };
 
   const handleBackToHub = () => {
     setActiveCategoryId(null);
     setActiveModal(null);
+    navigate(`/opening`);
+  };
+
+  const handleDeleteCustomer = (id: string) => {
+    const updated = customerDebts.filter((c) => c.id !== id);
+    setCustomerDebts(updated);
+    try { localStorage.setItem("abc_opening_customers_tt99", JSON.stringify(updated)); } catch {}
+    notify?.("Đã xóa dòng công nợ khách hàng.");
+  };
+
+  const handleDeleteSupplier = (id: string) => {
+    const updated = supplierDebts.filter((s) => s.id !== id);
+    setSupplierDebts(updated);
+    try { localStorage.setItem("abc_opening_suppliers_tt99", JSON.stringify(updated)); } catch {}
+    notify?.("Đã xóa dòng công nợ nhà cung cấp.");
   };
 
   const handleSaveModal = (type: string, andAdd = false) => {
-    if(type==='Số dư TK ngân hàng'&&!bankAccNumber){notify?.('Vui lòng chọn tài khoản ngân hàng.');return;}
-    const requiredPartner = type === "Công nợ khách hàng" ? partnerName
-      : type === "Công nợ nhà cung cấp" ? supplierName
-      : type === "Công nợ nhân viên" ? employeeName : undefined;
-    if (requiredPartner === "") {
-      notify?.(`Vui lòng chọn ${type === "Công nợ khách hàng" ? "khách hàng" : type === "Công nợ nhà cung cấp" ? "nhà cung cấp" : "nhân viên"}.`);
+    if (type === "Số dư TK ngân hàng") {
+      if (!bankAccNumber) {
+        notify?.("Vui lòng chọn tài khoản ngân hàng.");
+        return;
+      }
+      const isUsd = bankAccNumber.includes("987") || bankAccNumber.includes("USD");
+      const newBank = {
+        accountNumber: bankAccNumber,
+        bankName: isUsd ? "Techcombank (USD)" : "Techcombank",
+        branch: "Chi nhánh Hoàn Kiếm",
+        currency: isUsd ? "USD" : "VND",
+        originalAmount: bankDebit,
+        amountVnd: isUsd ? bankDebit * 25500 : bankDebit,
+      };
+      const updated = [newBank, ...bankBalances.filter(b => b.accountNumber !== bankAccNumber)];
+      setBankBalances(updated);
+      try { localStorage.setItem("abc_opening_bank_tt99", JSON.stringify(updated)); } catch {}
+      notify?.(`Đã lưu thành công số dư tài khoản ngân hàng ${bankAccNumber}!`);
+      if (!andAdd) setActiveModal(null);
       return;
     }
+
+    if (type === "Công nợ khách hàng") {
+      if (!partnerName) {
+        notify?.("Vui lòng chọn khách hàng.");
+        return;
+      }
+      const custObj = OPENING_CUSTOMERS.find(c => c.code === partnerName || c.name === partnerName);
+      const newCust = {
+        id: "cust-" + Date.now(),
+        code: custObj ? custObj.code : (partnerName.split(" - ")[0] || partnerName),
+        name: custObj ? custObj.name : (partnerName.split(" - ")[1] || partnerName),
+        accCode: partnerAccCode || "131",
+        debit: Number(partnerDebit) || 0,
+        credit: Number(partnerCredit) || 0,
+        invoiceNo: "HD" + Math.floor(10000 + Math.random() * 90000),
+        invoiceDate: "15/12/2025",
+        dueDate: "15/01/2026",
+        isNew: true,
+      };
+      const updated = [newCust, ...customerDebts];
+      setCustomerDebts(updated);
+      try { localStorage.setItem("abc_opening_customers_tt99", JSON.stringify(updated)); } catch {}
+      notify?.(`Đã lưu thành công số dư công nợ khách hàng ${newCust.name}!`);
+      setPartnerDebit(0);
+      setPartnerCredit(0);
+      if (!andAdd) setActiveModal(null);
+      return;
+    }
+
+    if (type === "Công nợ nhà cung cấp") {
+      if (!supplierName) {
+        notify?.("Vui lòng chọn nhà cung cấp.");
+        return;
+      }
+      const suppObj = OPENING_SUPPLIERS.find(s => s.code === supplierName || s.name === supplierName);
+      const newSupp = {
+        id: "supp-" + Date.now(),
+        code: suppObj ? suppObj.code : (supplierName.split(" - ")[0] || supplierName),
+        name: suppObj ? suppObj.name : (supplierName.split(" - ")[1] || supplierName),
+        accCode: supplierAccCode || "331",
+        debit: Number(supplierDebit) || 0,
+        credit: Number(supplierCredit) || 0,
+        invoiceNo: "NCC-" + Math.floor(1000 + Math.random() * 9000),
+        invoiceDate: "12/12/2025",
+        isNew: true,
+      };
+      const updated = [newSupp, ...supplierDebts];
+      setSupplierDebts(updated);
+      try { localStorage.setItem("abc_opening_suppliers_tt99", JSON.stringify(updated)); } catch {}
+      notify?.(`Đã lưu thành công số dư công nợ nhà cung cấp ${newSupp.name}!`);
+      setSupplierDebit(0);
+      setSupplierCredit(0);
+      if (!andAdd) setActiveModal(null);
+      return;
+    }
+
+    if (type === "Tồn kho vật tư") {
+      const newInv = {
+        itemCode: inventoryItem || "VT001",
+        itemName: inventoryItem === "DT_IP15" ? "Điện thoại iPhone 15 128GB" : inventoryItem === "DT_SS24" ? "Samsung Galaxy S24 Ultra" : inventoryItem === "MT_DELL" ? "Máy tính xách tay Dell XPS 13" : inventoryItem,
+        warehouse: inventoryWarehouse || "Kho 156",
+        unit: "Chiếc",
+        quantity: Number(inventoryQty) || 1,
+        unitPrice: inventoryQty > 0 ? (inventoryVal / inventoryQty) : inventoryVal,
+        amount: Number(inventoryVal) || 0,
+      };
+      const updated = [newInv, ...inventoryBalances];
+      setInventoryBalances(updated);
+      try { localStorage.setItem("abc_opening_inventory_tt99", JSON.stringify(updated)); } catch {}
+      notify?.(`Đã lưu thành công tồn kho vật tư hàng hóa ${newInv.itemCode}!`);
+      if (!andAdd) setActiveModal(null);
+      return;
+    }
+
     notify?.(`Đã lưu thành công ${type}.`);
     if (!andAdd) {
       setActiveModal(null);
@@ -719,108 +948,498 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         </div>
       )}
 
-      {/* Landing View with Centered Illustration */}
-      <div className="misa-opening-landing">
-        <div className="misa-opening-illustration" style={{ marginBottom: 20 }}>
-          <svg width="240" height="160" viewBox="0 0 240 160" fill="none">
-            {/* Dotted arc guidelines */}
-            <path d="M 40 50 Q 80 110 120 115" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" />
-            <path d="M 120 115 Q 160 100 195 55" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" />
-            <path d="M 120 115 Q 140 70 145 35" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" />
+      {/* Dynamic Data Table & KPI Stats View for Opening Balances */}
+      <div style={{ padding: "16px 24px", background: "#f8fafc", flex: 1, display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* Top Action Bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#ffffff", padding: "12px 18px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="misa-opening-btn-primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              onClick={() => setActiveModal(activeCategoryId)}
+            >
+              <Plus size={16} />
+              <span>Nhập số dư</span>
+            </button>
+            <button
+              type="button"
+              className="misa-opening-btn-secondary"
+              onClick={() => notify?.("Đang chuẩn bị tải mẫu Excel nhập số dư...")}
+            >
+              Nhập số dư từ Excel
+            </button>
+            <button
+              type="button"
+              className="misa-opening-btn-secondary"
+              onClick={() => notify?.("Đã xuất dữ liệu số dư ra Excel.")}
+            >
+              Xuất khẩu Excel
+            </button>
+            <button
+              type="button"
+              className="misa-opening-btn-secondary"
+              onClick={handleBackToHub}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <ArrowLeft size={15} />
+              <span>Quay lại danh mục</span>
+            </button>
+          </div>
 
-            {/* Left Calculator Icon */}
-            <rect x="24" y="32" width="28" height="38" rx="4" fill="#00a862" />
-            <rect x="28" y="36" width="20" height="8" rx="1.5" fill="#ffffff" />
-            <circle cx="32" cy="50" r="1.8" fill="#ffffff" />
-            <circle cx="38" cy="50" r="1.8" fill="#ffffff" />
-            <circle cx="44" cy="50" r="1.8" fill="#ffffff" />
-            <circle cx="32" cy="56" r="1.8" fill="#ffffff" />
-            <circle cx="38" cy="56" r="1.8" fill="#ffffff" />
-            <circle cx="44" cy="56" r="1.8" fill="#ffffff" />
-            <circle cx="32" cy="62" r="1.8" fill="#ffffff" />
-            <circle cx="38" cy="62" r="1.8" fill="#ffffff" />
-            <circle cx="44" cy="62" r="1.8" fill="#ffffff" />
-
-            {/* Small Dollar Badge next to calculator */}
-            <circle cx="58" cy="40" r="7" fill="#00a862" />
-            <text x="58" y="44" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">$</text>
-
-            {/* Top Icons */}
-            <circle cx="140" cy="28" r="5" fill="#94a3b8" opacity="0.4" />
-            
-            {/* House/Building Badge */}
-            <circle cx="142" cy="46" r="8" fill="#00a862" />
-            <path d="M 138 48 L 142 43 L 146 48 Z" fill="#ffffff" />
-            <rect x="139.5" y="48" width="5" height="4" fill="#ffffff" />
-
-            {/* Clock / Pie Chart Badge */}
-            <circle cx="168" cy="38" r="9" fill="#00a862" />
-            <path d="M 168 32 A 6 6 0 0 1 174 38 L 168 38 Z" fill="#ffffff" />
-            <circle cx="168" cy="38" r="6" stroke="#ffffff" strokeWidth="1.2" fill="none" />
-
-            {/* Dollar Badge Right */}
-            <circle cx="152" cy="68" r="7" fill="#00a862" />
-            <text x="152" y="72" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">$</text>
-
-            {/* Percent Badge */}
-            <circle cx="178" cy="64" r="8" fill="#00a862" />
-            <text x="178" y="68" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold">%</text>
-
-            {/* Woman sitting at laptop */}
-            <path d="M 106 60 C 106 50 134 50 134 60 C 134 76 138 88 140 98 C 134 98 128 88 128 80 C 120 86 112 86 106 80 Z" fill="#334155" />
-            <ellipse cx="120" cy="68" rx="8" ry="10" fill="#fed7aa" />
-            <path d="M 113 62 C 117 68 124 64 127 60" stroke="#334155" strokeWidth="2.5" fill="none" />
-            <path d="M 108 86 C 112 80 128 80 132 86 L 136 118 L 104 118 Z" fill="#00a862" />
-            <polygon points="117,84 123,84 120,93" fill="#ffffff" />
-            <ellipse cx="120" cy="148" rx="55" ry="5" fill="#e2e8f0" />
-            <rect x="100" y="112" width="40" height="26" rx="2" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
-            <polygon points="94,138 146,138 142,135 98,135" fill="#94a3b8" />
-          </svg>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ position: "relative", width: 280 }}>
+              <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+              <input
+                type="text"
+                placeholder="Tìm theo mã, tên, số HĐ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="misa-opening-input"
+                style={{ paddingLeft: 32, width: "100%", height: 34, fontSize: 13 }}
+              />
+            </div>
+          </div>
         </div>
 
-        <h3 className="misa-opening-heading" style={{ fontSize: 14.5, fontWeight: 600, maxWidth: 660, lineHeight: 1.5, color: "#1e293b", marginBottom: 20 }}>
-          {activeCategory?.heading}
-        </h3>
+        {/* Category: Công nợ khách hàng */}
+        {activeCategoryId === "customers" && (
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            {/* KPI Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ (TK 131)</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
+                  {formatOpeningMoney(customerDebts.reduce((s, r) => s + (r.debit || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Có đầu kỳ (TK 131)</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#dc2626", marginTop: 4 }}>
+                  {formatOpeningMoney(customerDebts.reduce((s, r) => s + (r.credit || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng số khách hàng có dư nợ</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7", marginTop: 4 }}>
+                  {customerDebts.length} đối tượng
+                </div>
+              </div>
+            </div>
 
-        <div className="misa-opening-landing-btns">
-          <button
-            type="button"
-            className="misa-opening-btn-primary"
-            onClick={() => setActiveModal(activeCategoryId)}
-          >
-            Nhập số dư
-          </button>
-          <button
-            type="button"
-            className="misa-opening-btn-secondary"
-            onClick={() => notify?.("Chuẩn bị nhập số dư từ tệp Excel mẫu...")}
-          >
-            Nhập số dư từ Excel
-          </button>
+            {/* Table */}
+            <div style={{ overflowX: "auto", width: "100%" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Mã khách hàng</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Tên khách hàng</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 100 }}>TK công nợ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 160 }}>Dư Nợ đầu kỳ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 150 }}>Dư Có đầu kỳ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Hóa đơn / HĐ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 110 }}>Hạn TT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 80 }}>Xóa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customerDebts
+                    .filter((c) =>
+                      !searchTerm ||
+                      c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (c.invoiceNo && c.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()))
+                    )
+                    .map((c, i) => (
+                      <tr key={c.id || i} style={{ borderBottom: "1px solid #f1f5f9", background: c.isNew ? "#ecfdf5" : "inherit" }}>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>
+                          {c.code}
+                          {c.isNew && (
+                            <span style={{ marginLeft: 6, fontSize: 10, background: "#10b981", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>
+                              Mới
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 500 }}>{c.name}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", color: "#64748b" }}>{c.accCode || "131"}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600, color: c.debit > 0 ? "#16a34a" : "#64748b" }}>
+                          {formatOpeningMoney(c.debit)}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", color: c.credit > 0 ? "#dc2626" : "#64748b" }}>
+                          {formatOpeningMoney(c.credit)}
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>{c.invoiceNo || "-"}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", color: "#64748b" }}>{c.dueDate || "-"}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCustomer(c.id)}
+                            style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}
+                            title="Xóa bản ghi này"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: "#f8fafc", borderTop: "2px solid #cbd5e1", fontWeight: 700 }}>
+                    <td colSpan={4} style={{ padding: "10px 14px", textAlign: "right" }}>Tổng cộng:</td>
+                    <td style={{ padding: "10px 14px", textAlign: "right", color: "#16a34a" }}>
+                      {formatOpeningMoney(customerDebts.reduce((s, r) => s + (r.debit || 0), 0))} đ
+                    </td>
+                    <td style={{ padding: "10px 14px", textAlign: "right", color: "#dc2626" }}>
+                      {formatOpeningMoney(customerDebts.reduce((s, r) => s + (r.credit || 0), 0))} đ
+                    </td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
 
-          {/* Floating Tooltip Bubble */}
-          {activeCategoryId !== "tools" && (
-            <div className="misa-opening-tooltip-bubble">{activeCategory?.tooltipText}</div>
+        {/* Category: Công nợ nhà cung cấp */}
+        {activeCategoryId === "suppliers" && (
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Có đầu kỳ (TK 331)</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b", marginTop: 4 }}>
+                  {formatOpeningMoney(supplierDebts.reduce((s, r) => s + (r.credit || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ (TK 331)</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
+                  {formatOpeningMoney(supplierDebts.reduce((s, r) => s + (r.debit || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Số lượng nhà cung cấp</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7", marginTop: 4 }}>
+                  {supplierDebts.length} đơn vị
+                </div>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto", width: "100%" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Mã NCC</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Tên nhà cung cấp</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 100 }}>TK công nợ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 160 }}>Dư Nợ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 160 }}>Dư Có (Phải trả)</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Chứng từ NCC</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 80 }}>Xóa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supplierDebts
+                    .filter((s) =>
+                      !searchTerm ||
+                      s.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      s.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((s, i) => (
+                      <tr key={s.id || i} style={{ borderBottom: "1px solid #f1f5f9", background: s.isNew ? "#fffbeb" : "inherit" }}>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 600, color: "#d97706" }}>
+                          {s.code}
+                          {s.isNew && (
+                            <span style={{ marginLeft: 6, fontSize: 10, background: "#f59e0b", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>
+                              Mới
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 500 }}>{s.name}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", color: "#64748b" }}>{s.accCode || "331"}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", color: s.debit > 0 ? "#16a34a" : "#64748b" }}>
+                          {formatOpeningMoney(s.debit)}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600, color: s.credit > 0 ? "#d97706" : "#64748b" }}>
+                          {formatOpeningMoney(s.credit)}
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>{s.invoiceNo || "-"}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSupplier(s.id)}
+                            style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}
+                            title="Xóa bản ghi này"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: "#f8fafc", borderTop: "2px solid #cbd5e1", fontWeight: 700 }}>
+                    <td colSpan={4} style={{ padding: "10px 14px", textAlign: "right" }}>Tổng cộng:</td>
+                    <td style={{ padding: "10px 14px", textAlign: "right", color: "#16a34a" }}>
+                      {formatOpeningMoney(supplierDebts.reduce((s, r) => s + (r.debit || 0), 0))} đ
+                    </td>
+                    <td style={{ padding: "10px 14px", textAlign: "right", color: "#d97706" }}>
+                      {formatOpeningMoney(supplierDebts.reduce((s, r) => s + (r.credit || 0), 0))} đ
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Category: Số dư tài khoản */}
+        {activeCategoryId === "accounts" && (
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
+                  {formatOpeningMoney(accountRows.reduce((s, r) => s + (r.debit || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Có đầu kỳ</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
+                  {formatOpeningMoney(accountRows.reduce((s, r) => s + (r.credit || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Trạng thái cân đối (TT 99/2025/TT-BTC)</span>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#00a862", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                  <Check size={16} />
+                  <span>Cân đối Nợ = Có (10.389.530.000 đ)</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto", width: "100%" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Số tài khoản</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Tên tài khoản</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 180 }}>Dư Nợ đầu kỳ (VNĐ)</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 180 }}>Dư Có đầu kỳ (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {accountRows
+                    .filter((a) => !searchTerm || a.account.includes(searchTerm) || a.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((a, i) => (
+                      <tr key={a.account || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 700, color: "#00a862" }}>{a.account}</td>
+                        <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 500 }}>{a.name}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600, color: a.debit > 0 ? "#16a34a" : "#94a3b8" }}>
+                          {formatOpeningMoney(a.debit)}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600, color: a.credit > 0 ? "#dc2626" : "#94a3b8" }}>
+                          {formatOpeningMoney(a.credit)}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Category: Số dư TK ngân hàng */}
+        {activeCategoryId === "bank" && (
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng tiền gửi quy đổi VNĐ</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7", marginTop: 4 }}>
+                  {formatOpeningMoney(bankBalances.reduce((s, r) => s + (r.amountVnd || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Số tài khoản ngân hàng</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#334155", marginTop: 4 }}>
+                  {bankBalances.length} tài khoản Techcombank
+                </div>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto", width: "100%" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Số tài khoản</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Ngân hàng</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 180 }}>Chi nhánh</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 90 }}>Loại tiền</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 160 }}>Dư nguyên tệ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 170 }}>Dư quy đổi (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bankBalances.map((b, i) => (
+                    <tr key={b.accountNumber || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "#0284c7" }}>{b.accountNumber}</td>
+                      <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 600 }}>{b.bankName}</td>
+                      <td style={{ padding: "10px 14px", color: "#64748b" }}>{b.branch}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600 }}>{b.currency}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>
+                        {formatOpeningMoney(b.originalAmount)} {b.currency}
+                      </td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#16a34a" }}>
+                        {formatOpeningMoney(b.amountVnd)} đ
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Category: Tồn kho vật tư hàng hóa */}
+        {activeCategoryId === "inventory" && (
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng giá trị tồn kho (TK 1561)</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#059669", marginTop: 4 }}>
+                  {formatOpeningMoney(inventoryBalances.reduce((s, r) => s + (r.amount || 0), 0))} đ
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng số lượng hàng hóa tồn</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#334155", marginTop: 4 }}>
+                  {formatOpeningMoney(inventoryBalances.reduce((s, r) => s + (r.quantity || 0), 0))} chiếc
+                </div>
+              </div>
+              <div style={{ padding: "12px 20px" }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Kho lưu trữ</span>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7", marginTop: 4 }}>
+                  Kho 156 - Hàng hóa
+                </div>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto", width: "100%" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 130 }}>Mã hàng</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Tên vật tư, hàng hóa</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 100 }}>Kho</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 70 }}>ĐVT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 100 }}>Số lượng</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 140 }}>Đơn giá</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 160 }}>Thành tiền (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventoryBalances.map((item, i) => (
+                    <tr key={item.itemCode || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "#059669" }}>{item.itemCode}</td>
+                      <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 600 }}>{item.itemName}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "center", color: "#64748b" }}>{item.warehouse}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "center", color: "#64748b" }}>{item.unit}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>{formatOpeningMoney(item.quantity)}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", color: "#64748b" }}>{formatOpeningMoney(item.unitPrice)}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#059669" }}>
+                        {formatOpeningMoney(item.amount)} đ
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: "#f8fafc", borderTop: "2px solid #cbd5e1", fontWeight: 700 }}>
+                    <td colSpan={7} style={{ padding: "10px 14px", textAlign: "right" }}>Tổng giá trị tồn kho:</td>
+                    <td style={{ padding: "10px 14px", textAlign: "right", color: "#059669" }}>
+                      {formatOpeningMoney(inventoryBalances.reduce((s, r) => s + (r.amount || 0), 0))} đ
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Category: Công nợ nhân viên */}
+        {activeCategoryId === "employees" && (
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ overflowX: "auto", width: "100%" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 120 }}>Mã NV</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Họ và tên</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 100 }}>TK công nợ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 160 }}>Dư Nợ (Tạm ứng)</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 140 }}>Dư Có</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left" }}>Nội dung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employeeDebts.map((emp, i) => (
+                    <tr key={emp.id || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "#6366f1" }}>{emp.code}</td>
+                      <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 600 }}>{emp.name}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "center", color: "#64748b" }}>{emp.accCode || "141"}</td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600, color: emp.debit > 0 ? "#16a34a" : "#64748b" }}>
+                        {formatOpeningMoney(emp.debit)}
+                      </td>
+                      <td style={{ padding: "10px 14px", textAlign: "right", color: "#64748b" }}>{formatOpeningMoney(emp.credit)}</td>
+                      <td style={{ padding: "10px 14px", color: "#64748b" }}>{emp.reason || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Other Categories fallback */}
+        {activeCategoryId !== "customers" &&
+          activeCategoryId !== "suppliers" &&
+          activeCategoryId !== "accounts" &&
+          activeCategoryId !== "bank" &&
+          activeCategoryId !== "inventory" &&
+          activeCategoryId !== "employees" && (
+            <div className="misa-opening-landing" style={{ minHeight: 400, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div className="misa-opening-illustration" style={{ marginBottom: 16 }}>
+                <svg width="180" height="120" viewBox="0 0 240 160" fill="none">
+                  <rect x="24" y="32" width="28" height="38" rx="4" fill="#00a862" />
+                  <rect x="28" y="36" width="20" height="8" rx="1.5" fill="#ffffff" />
+                  <ellipse cx="120" cy="148" rx="55" ry="5" fill="#e2e8f0" />
+                </svg>
+              </div>
+              <h3 className="misa-opening-heading" style={{ fontSize: 14, fontWeight: 600, maxWidth: 540 }}>
+                {activeCategory?.heading}
+              </h3>
+              <div className="misa-opening-landing-btns">
+                <button
+                  type="button"
+                  className="misa-opening-btn-primary"
+                  onClick={() => setActiveModal(activeCategoryId)}
+                >
+                  Nhập số dư
+                </button>
+              </div>
+            </div>
           )}
-        </div>
-
-        <button
-          type="button"
-          style={{
-            marginTop: 44,
-            padding: "5px 16px",
-            borderRadius: 4,
-            border: "1px solid #00a862",
-            background: "#ffffff",
-            color: "#00a862",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-          onClick={() => notify?.("Xem danh sách chứng từ đã nhập...")}
-        >
-          Xem danh sách chứng từ
-        </button>
       </div>
 
       {/* ========================================================================= */}
@@ -981,9 +1600,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <div style={{ display: "flex", gap: 6 }}>
                   <select aria-label="Tài khoản ngân hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={bankAccNumber} onChange={(e) => setBankAccNumber(e.target.value)}>
                     <option value="">-- Chọn số tài khoản ngân hàng --</option>
-                    <option value="VCB-001">0011004234567 - Vietcombank Sở giao dịch</option>
-                    <option value="TCB-002">1903456789001 - Techcombank Ba Đình</option>
-                    <option value="MB-003">0580123456789 - MBBank Chi nhánh Đống Đa</option>
+                    <option value="123456789">123456789 - Techcombank Chi nhánh Hoàn Kiếm (VND)</option>
+                    <option value="987654321">987654321 - Techcombank Chi nhánh Hoàn Kiếm (USD)</option>
+                    <option value="0011004234567">0011004234567 - Vietcombank Sở giao dịch</option>
                   </select>
                   <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>
                     +
@@ -1044,9 +1663,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select aria-label="Khách hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={partnerName} onChange={(e) => setPartnerName(e.target.value)}>
                       <option value="">-- Chọn khách hàng --</option>
-                      <option value="KH001">KH001 - Công ty Cổ phần Công nghệ Sao Việt</option>
-                      <option value="KH002">KH002 - Công ty TNHH Đầu tư & Thương mại Thăng Long</option>
-                      <option value="KH003">KH003 - Doanh nghiệp Tư nhân Minh Phát</option>
+                      {OPENING_CUSTOMERS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} - {c.name}
+                        </option>
+                      ))}
                     </select>
                     <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>
                       +
@@ -1192,8 +1813,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select className="misa-opening-select" style={{ flex: 1 }} value={supplierName} onChange={(e) => setSupplierName(e.target.value)}>
                       <option value="">-- Chọn nhà cung cấp --</option>
-                      <option value="NCC001">NCC001 - Công ty TNHH Phân phối Thiết bị FPT</option>
-                      <option value="NCC002">NCC002 - Công ty Cổ phần Dịch vụ Viễn thông Viettel</option>
+                      {OPENING_SUPPLIERS.map((s) => (
+                        <option key={s.code} value={s.code}>
+                          {s.code} - {s.name}
+                        </option>
+                      ))}
                     </select>
                     <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                   </div>
