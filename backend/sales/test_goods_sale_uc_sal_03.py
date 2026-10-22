@@ -333,6 +333,22 @@ class GoodsSaleUcSal03Tests(TestCase):
         self.assertEqual(line.unit_cost, Decimal("6000000.0000"))
         self.assertEqual(line.cogs_amount, Decimal("30000000.0000"))
 
+    def test_separate_issue_sale_posts_without_reducing_stock_or_duplicate_cogs(self):
+        payload = self.build_payload(inventory_handling=GoodsSale.InventoryHandling.SEPARATE_ISSUE)
+        payload["lines"][0].pop("warehouse", None)
+        created = self.client.post(self.base_url, payload, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        pk = created.data["id"]
+        detail = f"/api/v1/sales/goods-sales/{pk}/?company_id={self.company.pk}"
+        self.assertEqual(self.client.post(detail.replace("/?", "/submit/?"), {}, format="json").status_code, 200)
+        self.assertEqual(self.client.post(detail.replace("/?", "/approve/?"), {"comment": "OK"}, format="json").status_code, 200)
+        posted = self.client.post(detail.replace("/?", "/post/?"), {}, format="json")
+        self.assertEqual(posted.status_code, 200, posted.data)
+        self.assertEqual(posted.data["inventory_handling"], "SEPARATE_ISSUE")
+        self.assertIsNone(posted.data["inventory_transaction"])
+        self.assertFalse(posted.data["inventory_created"])
+        self.assertEqual(StockBalance.objects.get(company=self.company, warehouse=self.warehouse, item=self.item_goods).quantity, Decimal("50"))
+
     def test_03_reject_service_item_and_invalid_data(self):
         """BR-SAL-03-02: Only GOODS items allowed; services and invalid quantities rejected."""
         # 1. Attempt to sell a SERVICE item

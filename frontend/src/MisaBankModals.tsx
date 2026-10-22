@@ -769,9 +769,11 @@ export function InternalTransferModal({
   onSubmit,
   accounts,
   initial,
+  readOnly = false,
 }: {
   onClose: () => void;
-  initial?: { id?: string; version?: number; source_account?: string; destination_account?: string; source_amount?: string | number; transfer_date?: string; posting_date?: string; number?: string; description?: string; details?: any } | null;
+  readOnly?: boolean;
+  initial?: { id?: string; version?: number; status?: string; posted_at?: string; source_account?: string; destination_account?: string; source_amount?: string | number; transfer_date?: string; posting_date?: string; number?: string; description?: string; details?: any } | null;
   accounts?: { value: string; label: string; currency?: string; glCode?: string; branchId?: string }[];
   onSubmit: (data: {
     sourceAccount: string;
@@ -816,6 +818,8 @@ export function InternalTransferModal({
         </header>
 
         <div className="misa-tax-modal-body">
+          {readOnly && <div style={{marginBottom: 10, fontWeight: 600}}>Trạng thái: {initial?.status === "CONFIRMED" ? "Đã ghi sổ" : initial?.status === "REVERSED" ? "Đã bỏ ghi sổ" : initial?.status === "CANCELLED" ? "Đã hủy" : "Chưa ghi sổ"}{initial?.posted_at ? ` · Ghi sổ lúc ${new Date(initial.posted_at).toLocaleString("vi-VN")}` : ""}</div>}
+          <fieldset disabled={readOnly} style={{border: 0, padding: 0, margin: 0, minWidth: 0}}>
           <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#eff6ff", padding: "10px 14px", borderRadius: 6, border: "1px solid #bfdbfe" }}>
               <Landmark size={20} style={{ color: "#2563eb" }} />
@@ -924,6 +928,7 @@ export function InternalTransferModal({
               />
             </div>
           </div>
+          </fieldset>
         </div>
 
         <footer className="misa-tax-modal-footer">
@@ -932,9 +937,9 @@ export function InternalTransferModal({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button type="button" className="misa-btn-secondary" onClick={close} style={{ padding: "0 20px", height: 36, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", fontWeight: 600 }}>
-              Hủy
+              {readOnly ? "Đóng" : "Hủy"}
             </button>
-            <button
+            {!readOnly && <button
               type="button"
               className="misa-btn-primary"
               onClick={() =>
@@ -956,7 +961,7 @@ export function InternalTransferModal({
               style={{ padding: "0 22px", height: 36, borderRadius: 4, background: "#00b06b", color: "#fff", border: "none", fontWeight: 600, boxShadow: "0 2px 4px rgba(0, 176, 107, 0.25)" }}
             >
               {accounts ? "Lưu" : "Thực hiện chuyển tiền"}
-            </button>
+            </button>}
           </div>
         </footer>
       </div>

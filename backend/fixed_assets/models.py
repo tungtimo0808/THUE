@@ -37,6 +37,7 @@ class TransactionType(models.TextChoices):
     VALUE_DECREASE = "VALUE_DECREASE", "Giảm nguyên giá"
     DISPOSAL = "DISPOSAL", "Ghi giảm/Thanh lý"
     LIFE_CHANGE = "LIFE_CHANGE", "Điều chỉnh số kỳ khấu hao/phân bổ"
+    REVALUATION = "REVALUATION", "Đánh giá lại TSCĐ"
     REVERSAL = "REVERSAL", "Đảo giao dịch"
 
 
@@ -133,6 +134,8 @@ class AssetRecord(models.Model):
     method = models.CharField(max_length=30, choices=DepreciationMethod.choices, default=DepreciationMethod.STRAIGHT_LINE)
     useful_life_periods = models.PositiveIntegerField(default=1)
     periods_processed = models.PositiveIntegerField(default=0)
+    # UC-FA-06 BR19: monthly depreciation tracked for tax purposes when it differs from the accounting one.
+    tax_monthly_depreciation = models.DecimalField(max_digits=24, decimal_places=4, null=True, blank=True)
     branch = models.ForeignKey("organization.Branch", on_delete=models.PROTECT, related_name="assets")
     department = models.ForeignKey("organization.Department", on_delete=models.PROTECT, null=True, blank=True, related_name="assets")
     custodian = models.ForeignKey("organization.Employee", on_delete=models.PROTECT, null=True, blank=True, related_name="assets_in_custody")
@@ -305,3 +308,108 @@ class AssetCountLine(models.Model):
     class Meta:
         db_table = "fa_asset_count_line"
         constraints = [models.CheckConstraint(condition=Q(actual_quantity__gte=0), name="ck_fa_count_actual_nonnegative")]
+
+
+class RevaluationReason(models.TextChoices):
+    UPGRADE = "UPGRADE", "Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản"
+    STATE_DECISION = "STATE_DECISION", "Đánh giá lại theo quyết định của cơ quan nhà nước"
+    RESTRUCTURE = "RESTRUCTURE", "Đánh giá lại khi chia tách, hợp nhất, sáp nhập doanh nghiệp"
+    CONVERSION = "CONVERSION", "Đánh giá lại khi chuyển đổi loại hình doanh nghiệp"
+    OTHER = "OTHER", "Lý do khác"
+
+
+class RevaluationStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Chưa ghi sổ"
+    POSTED = "POSTED", "Đã ghi sổ"
+    REVERSED = "REVERSED", "Đã bỏ ghi sổ"
+
+
+class AssetRevaluation(models.Model):
+    """UC-FA-06: one revaluation/upgrade document covering one or more fixed assets."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT, related_name="asset_revaluations")
+    branch = models.ForeignKey("organization.Branch", on_delete=models.PROTECT, null=True, blank=True, related_name="asset_revaluations")
+    number = models.CharField(max_length=80)
+    record_number = models.CharField(max_length=80, blank=True)
+    record_date = models.DateField(null=True, blank=True)
+    reason = models.CharField(max_length=30, choices=RevaluationReason.choices)
+    effective_date = models.DateField()
+    document_date = models.DateField()
+    posting_date = models.DateField()
+    conclusion = models.TextField(blank=True)
+    references = models.JSONField(default=list, blank=True)
+    # AF29/BR25: the cost increase was already booked by the source document (e.g. Nợ 211/Có 241).
+    cost_booked_at_source = models.BooleanField(default=False)
+    source_reference = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=20, choices=RevaluationStatus.choices, default=RevaluationStatus.DRAFT)
+    idempotency_key = models.CharField(max_length=150, null=True, blank=True, unique=True)
+    journal_entry = models.ForeignKey("general_ledger.JournalEntry", on_delete=models.PROTECT, null=True, blank=True, related_name="asset_revaluations")
+    attachments = models.JSONField(default=list, blank=True)
+    reversal_reason = models.CharField(max_length=500, blank=True)
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="asset_revaluations_created")
+    posted_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, null=True, blank=True, related_name="asset_revaluations_posted")
+    posted_at = models.DateTimeField(null=True, blank=True)
+    reversed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "fa_revaluation"
+        ordering = ("-posting_date", "-created_at")
+        constraints = [models.UniqueConstraint(fields=("company", "number"), name="uq_fa_revaluation_number")]
+
+
+class RevaluationMember(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    revaluation = models.ForeignKey(AssetRevaluation, on_delete=models.CASCADE, related_name="members")
+    line_no = models.PositiveIntegerField()
+    full_name = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, blank=True)
+    representing = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "fa_revaluation_member"
+        ordering = ("line_no",)
+
+
+class RevaluationLine(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    revaluation = models.ForeignKey(AssetRevaluation, on_delete=models.CASCADE, related_name="lines")
+    line_no = models.PositiveIntegerField()
+    asset = models.ForeignKey(AssetRecord, on_delete=models.PROTECT, related_name="revaluation_lines")
+    before_original_cost = models.DecimalField(max_digits=24, decimal_places=4)
+    after_original_cost = models.DecimalField(max_digits=24, decimal_places=4)
+    before_remaining_periods = models.PositiveIntegerField()
+    after_remaining_periods = models.PositiveIntegerField()
+    before_accumulated_depreciation = models.DecimalField(max_digits=24, decimal_places=4)
+    after_accumulated_depreciation = models.DecimalField(max_digits=24, decimal_places=4)
+    before_depreciable_value = models.DecimalField(max_digits=24, decimal_places=4)
+    after_depreciable_value = models.DecimalField(max_digits=24, decimal_places=4)
+    monthly_depreciation_after = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    tax_monthly_depreciation_after = models.DecimalField(max_digits=24, decimal_places=4, null=True, blank=True)
+    expense_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    revaluation_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    before_snapshot = models.JSONField(default=dict, blank=True)
+    asset_transaction = models.ForeignKey(AssetTransaction, on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+
+    class Meta:
+        db_table = "fa_revaluation_line"
+        ordering = ("line_no",)
+        constraints = [models.UniqueConstraint(fields=("revaluation", "asset"), name="uq_fa_revaluation_asset")]
+
+
+class RevaluationEntry(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    revaluation = models.ForeignKey(AssetRevaluation, on_delete=models.CASCADE, related_name="entries")
+    line_no = models.PositiveIntegerField()
+    description = models.CharField(max_length=500, blank=True)
+    debit_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, related_name="+")
+    credit_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, related_name="+")
+    amount = models.DecimalField(max_digits=24, decimal_places=4)
+    party = models.ForeignKey("master_data.Party", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    expense_item = models.ForeignKey("master_data.ExpenseItem", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    department = models.ForeignKey("organization.Department", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+
+    class Meta:
+        db_table = "fa_revaluation_entry"
+        ordering = ("line_no",)

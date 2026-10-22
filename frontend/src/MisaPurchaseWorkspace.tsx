@@ -904,6 +904,10 @@ export default function MisaPurchaseWorkspace({
           onClose={() => setShowDiscountModal(false)}
           onSubmit={handleSaveDiscount}
           onOpenSupplierModal={() => setShowSupplierModal(true)}
+          purchaseSources={(apiRows.vouchers || []).filter((row) => row.purchase_type === "WAREHOUSE")}
+          sourceCatalog={{ suppliers: apiRows.suppliers || [], items: apiRows.items || [],
+            warehouses: apiRows.warehouses || [], accounts: apiRows.accounts || [],
+            units: apiRows.units || [], taxRates: apiRows.taxRates || [] }}
         />
       )}
 

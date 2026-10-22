@@ -160,6 +160,7 @@ export default function MisaBankWorkspace({
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<Record<string, any> | null>(null);
+  const [viewingTransfer, setViewingTransfer] = useState(false);
   const [bankTransferRecords, setBankTransferRecords] = useState<Record<string, any>[]>([]);
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [bankImportKind,setBankImportKind]=useState<"receipt"|"payment"|null>(null);
@@ -339,14 +340,56 @@ export default function MisaBankWorkspace({
 
   const checkedBankRows=filteredTransactions.filter(transaction=>bankCheckedIds.includes(transaction.id));
   const toggleBankChecked=(id:string)=>setBankCheckedIds(previous=>previous.includes(id)?previous.filter(value=>value!==id):[...previous,id]);
+  const editBankTransfer = (id: string) => {
+    const record = bankTransferRecords.find((item) => String(item.id) === id);
+    if (!record || record.status !== "DRAFT") { notify("Chỉ có thể sửa lệnh chuyển tiền chưa ghi sổ."); return; }
+    setEditingTransfer(record);
+    setViewingTransfer(false);
+    setShowTransferModal(true);
+    setBankRowMenu(null);
+  };
+  const viewBankTransfer = (id: string) => {
+    const record = bankTransferRecords.find((item) => String(item.id) === id);
+    if (!record) { notify("Không tải được chứng từ chuyển tiền."); return; }
+    setEditingTransfer(record);
+    setViewingTransfer(true);
+    setShowTransferModal(true);
+  };
+  const cancelBankTransfer = async (id: string) => {
+    if (!token || !company.id) return;
+    try {
+      const writer = createApiWriter(company.id, (path, init) => request(path, token, init));
+      await writer.action("/api/v1/bank/transfers/", id, "cancel", {});
+      setBankApiRevision((value) => value + 1);
+      notify("Đã hủy lệnh chuyển tiền chưa ghi sổ.");
+    } catch (error) { notify(error instanceof Error ? error.message : "Không hủy được lệnh chuyển tiền."); }
+    setBankRowMenu(null);
+  };
   const setBankPosting = async (status: BankTransaction["status"], selected = checkedBankRows) => {
     if (!token || !company.id || selected.length === 0) return;
     const action = status === "posted" ? "post" : "reverse";
     try {
       const writer = createApiWriter(company.id, (path, init) => request(path, token, init));
       const transfers = selected.filter((row) => String(row.id).startsWith("transfer:"));
-      if (transfers.length && action !== "post") throw new Error("Lệnh chuyển tiền nội bộ đã thực hiện không bỏ ghi được từ danh sách.");
-      for (const row of transfers) await completeTransfer(writer, "bank", String(row.id).slice("transfer:".length));
+      if (transfers.some((row) => row.status !== (action === "post" ? "draft" : "posted"))) {
+        throw new Error(action === "post" ? "Chỉ ghi sổ lệnh chuyển tiền chưa ghi sổ." : "Chỉ bỏ ghi sổ lệnh chuyển tiền đã ghi sổ.");
+      }
+      let reversalReason = "";
+      let reversalPeriod: any = null;
+      let reversalDate = "";
+      if (transfers.length && action === "reverse") {
+        const entered = window.prompt("Nhập lý do bỏ ghi sổ lệnh chuyển tiền:");
+        if (entered === null) return;
+        reversalReason = entered.trim();
+        if (!reversalReason) throw new Error("Vui lòng nhập lý do bỏ ghi sổ.");
+        reversalDate = parseReportDate(currentCashDate());
+        reversalPeriod = await writer.glPeriod(reversalDate);
+      }
+      for (const row of transfers) {
+        const id = String(row.id).slice("transfer:".length);
+        if (action === "post") await completeTransfer(writer, "bank", id);
+        else await writer.action("/api/v1/bank/transfers/", id, "reverse", {reason: reversalReason, period: reversalPeriod.id, posting_date: reversalDate});
+      }
       if (transfers.length) setBankApiRevision((value) => value + 1);
       const updated: ApiBankTransaction[] = [];
       for (const transaction of selected.filter((row) => !String(row.id).startsWith("transfer:"))) {
@@ -621,7 +664,7 @@ export default function MisaBankWorkspace({
           version: data.version,
           number: String(data.number || "").trim(),
           source_account: source, destination_account: destination,
-          transfer_date: data.transferDate, posting_date: data.postingDate, source_amount: String(data.amount),
+          transfer_date: toApiDate(data.transferDate), posting_date: toApiDate(data.postingDate), source_amount: String(data.amount),
           destination_amount: String(data.amount), exchange_rate: "1", description: data.reason,
           details: { branch: sourceProfile.branch_id, outgoing_reference: data.outgoingReference || "", incoming_reference: data.incomingReference || "",
             lines: [{ description: data.lineDescription, debit_account: targetProfile.gl_account_id, credit_account: sourceProfile.gl_account_id, amount: String(data.amount) }] },
@@ -746,8 +789,10 @@ export default function MisaBankWorkspace({
 
       {showTransferModal && (
         <InternalTransferModal
+          initial={editingTransfer || undefined}
+          readOnly={viewingTransfer}
           accounts={token ? bankProfiles.map((profile) => ({ value: `BANK:${profile.id}`, label: `${profile.account_number} - ${profile.bank_name}${profile.bank_branch ? ` (${profile.bank_branch})` : ""} · ${profile.branch_name || "Đơn vị chung"} · ${profile.currency_code} · ${profile.gl_code || "?"}`, currency: profile.currency_code, glCode: profile.gl_code, branchId: profile.branch_id })) : undefined}
-          onClose={() => setShowTransferModal(false)}
+          onClose={() => {setShowTransferModal(false);setEditingTransfer(null);setViewingTransfer(false);}}
           onSubmit={handleInternalTransfer}
         />
       )}
@@ -1826,6 +1871,7 @@ export default function MisaBankWorkspace({
                         style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (tx.kind === "transfer") { viewBankTransfer(String(tx.id).slice(9)); return; }
                           setSelectedVoucher({
                             code: tx.code,
                             date: parseReportDate(tx.dateChungTu),
@@ -1857,6 +1903,7 @@ export default function MisaBankWorkspace({
                         style={{ color: "#0284c7", cursor: "pointer", marginRight: 6 }}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (tx.kind === "transfer") { viewBankTransfer(String(tx.id).slice(9)); return; }
                           setSelectedVoucher({
                             code: tx.code,
                             date: parseReportDate(tx.dateChungTu),
@@ -1877,7 +1924,15 @@ export default function MisaBankWorkspace({
                         Xem
                       </span>
                       <button aria-label={`Chức năng chứng từ ${tx.code}`} aria-expanded={bankRowMenu===tx.id} onClick={event=>{event.stopPropagation();setBankRowMenu(previous=>previous===tx.id?null:tx.id);}} style={{border:0,background:'transparent',color:'#0284c7',cursor:'pointer'}}><ChevronDown size={13}/></button>
-                      {bankRowMenu===tx.id&&<div role="menu" aria-label={`Chức năng ${tx.code}`}><button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting(tx.status==='posted'?'draft':'posted',[tx]);setBankRowMenu(null);}}>{tx.status==='posted'?'Đảo giao dịch':'Ghi sổ'}</button><button role="menuitem" onClick={event=>{event.stopPropagation();setBankRowMenu(null);}}>Đóng</button></div>}
+                      {bankRowMenu===tx.id&&<div role="menu" aria-label={`Chức năng ${tx.code}`}>
+                        {tx.kind==='transfer' ? <>
+                          {tx.status==='draft'&&<button role="menuitem" onClick={event=>{event.stopPropagation();editBankTransfer(String(tx.id).slice(9));}}>Sửa</button>}
+                          {tx.status==='draft'&&<button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting('posted',[tx]);setBankRowMenu(null);}}>Ghi sổ</button>}
+                          {tx.status==='draft'&&<button role="menuitem" onClick={event=>{event.stopPropagation();void cancelBankTransfer(String(tx.id).slice(9));}}>Hủy</button>}
+                          {tx.status==='posted'&&<button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting('draft',[tx]);setBankRowMenu(null);}}>Bỏ ghi sổ</button>}
+                        </> : <button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting(tx.status==='posted'?'draft':'posted',[tx]);setBankRowMenu(null);}}>{tx.status==='posted'?'Đảo giao dịch':'Ghi sổ'}</button>}
+                        <button role="menuitem" onClick={event=>{event.stopPropagation();setBankRowMenu(null);}}>Đóng</button>
+                      </div>}
                     </td>,<td>{tx.partnerCode||""}</td>,<td>{tx.beneficiaryAccount||""}</td>,<td>{tx.beneficiaryBank||""}</td>,<td>{tx.address||""}</td>,<td>{tx.employee||""}</td>,<td>{tx.bankName||""}</td>,<td>{tx.combinedInvoices||""}</td>,<td>{tx.settled||""}</td>,<td>{tx.extended1||""}</td>,<td>{tx.extended2||""}</td>,<td>{tx.extended3||""}</td>,<td>{tx.extended4||""}</td>,<td>{tx.extended5||""}</td>,<td>{tx.extended6||""}</td>,<td>{tx.extended7||""}</td>,<td>{tx.extended8||""}</td>,<td>{tx.extended9||""}</td>,<td>{tx.extended10||""}</td>,<td>{tx.createdBy||""}</td>,<td>{tx.createdAt||""}</td>,<td>{tx.updatedBy||""}</td>,<td>{tx.updatedAt||""}</td>];const cell=cells[column.id-2];return cloneElement(cell,{key:column.id,style:{...cell.props.style,width:column.width,minWidth:column.width}});})}
                   </tr>
                 );

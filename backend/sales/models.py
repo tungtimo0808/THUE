@@ -506,6 +506,7 @@ class GoodsSale(SalesDocument):
     class InventoryHandling(models.TextChoices):
         ATTACH_ISSUE = "ATTACH_ISSUE", "Lập phiếu xuất kho kèm theo"
         LINK_EXISTING = "LINK_EXISTING", "Liên kết phiếu xuất kho đã có"
+        SEPARATE_ISSUE = "SEPARATE_ISSUE", "Lập phiếu xuất kho sau"
         NO_INVENTORY = "NO_INVENTORY", "Không quản lý kho"
 
     posting_date = models.DateField()

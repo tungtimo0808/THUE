@@ -685,6 +685,9 @@ class PurchaseDiscount(PurchaseDocument):
     payable_paid_before = models.DecimalField(max_digits=24, decimal_places=4, default=0)
     payable_netted_before = models.DecimalField(max_digits=24, decimal_places=4, default=0)
     posted_at = models.DateTimeField(null=True, blank=True)
+    reduce_stock_value = models.BooleanField(default=False)
+    inventory_adjustment = models.ForeignKey("inventory.InventoryTransaction", on_delete=models.PROTECT,
+        null=True, blank=True, related_name="purchase_value_discounts")
 
     class Meta:
         db_table = "pur_purchase_discount"

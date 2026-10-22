@@ -27,6 +27,7 @@ class TransactionType(models.TextChoices):
 
 
 class ValuationMethod(models.TextChoices):
+    PERIODIC_AVERAGE = "PERIODIC_AVERAGE", "Bình quân gia quyền cuối kỳ"
     MOVING_AVERAGE = "MOVING_AVERAGE", "Bình quân liên hoàn"
     FIFO = "FIFO", "Nhập trước xuất trước"
     SPECIFIC = "SPECIFIC", "Đích danh"
@@ -134,6 +135,7 @@ class InventoryTransaction(models.Model):
     source_reference = models.CharField(max_length=100, blank=True)
     idempotency_key = models.CharField(max_length=150, null=True, blank=True, unique=True)
     reason = models.CharField(max_length=500, blank=True)
+    document_metadata = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=30, choices=TransactionStatus.choices, default=TransactionStatus.DRAFT)
     workflow_snapshot = models.JSONField(default=dict, blank=True)
     inventory_applied = models.BooleanField(default=False)
@@ -173,6 +175,9 @@ class InventoryTransactionLine(models.Model):
     transaction = models.ForeignKey(InventoryTransaction, on_delete=models.CASCADE, related_name="lines")
     line_no = models.PositiveIntegerField()
     item = models.ForeignKey("master_data.Item", on_delete=models.PROTECT)
+    source_warehouse = models.ForeignKey("master_data.Warehouse", on_delete=models.PROTECT, null=True, blank=True, related_name="inventory_issue_lines")
+    destination_warehouse = models.ForeignKey("master_data.Warehouse", on_delete=models.PROTECT, null=True, blank=True, related_name="inventory_transfer_in_lines")
+    sale_line = models.ForeignKey("sales.GoodsSaleLine", on_delete=models.PROTECT, null=True, blank=True, related_name="separate_issue_lines")
     uom = models.ForeignKey("master_data.UnitOfMeasure", on_delete=models.PROTECT)
     debit_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="inventory_receipt_debits")
     credit_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="inventory_receipt_credits")
@@ -185,6 +190,8 @@ class InventoryTransactionLine(models.Model):
     base_quantity = models.DecimalField(max_digits=22, decimal_places=6, default=0)
     unit_cost = models.DecimalField(max_digits=26, decimal_places=10, default=0)
     line_value = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    costing_status = models.CharField(max_length=12, choices=(("PENDING", "Chưa tính giá"),
+        ("COMPLETED", "Đã tính giá")), blank=True, default="")
     notes = models.CharField(max_length=500, blank=True)
 
     class Meta:
@@ -266,6 +273,36 @@ class StockCountLine(models.Model):
 
     class Meta:
         db_table = "inv_stock_count_line"
+
+
+class CountResolution(models.Model):
+    """A separately approved treatment of part of one confirmed count variance."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT)
+    count_line = models.ForeignKey(StockCountLine, on_delete=models.PROTECT, related_name="resolutions")
+    reason_code = models.CharField(max_length=32)
+    explanation = models.TextField()
+    method = models.CharField(max_length=20, choices=(("INCREASE", "Tăng tồn"), ("DECREASE", "Giảm tồn"), ("WAIT", "Chờ xử lý")))
+    quantity = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    proposed_unit_cost = models.DecimalField(max_digits=26, decimal_places=10, default=0)
+    valuation_basis = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=(("DRAFT", "Nháp"), ("PENDING", "Chờ duyệt"),
+        ("NEEDS_INFO", "Cần bổ sung"), ("APPROVED", "Đã duyệt"), ("REJECTED", "Từ chối"),
+        ("COMPLETED", "Đã xử lý")), default="DRAFT")
+    decision_note = models.TextField(blank=True)
+    adjustment_transaction = models.OneToOneField(InventoryTransaction, on_delete=models.PROTECT,
+        null=True, blank=True, related_name="count_resolution")
+    created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="count_resolutions_created")
+    approved_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="count_resolutions_approved")
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "inv_count_resolution"
 
 
 class AssemblyOrder(models.Model):

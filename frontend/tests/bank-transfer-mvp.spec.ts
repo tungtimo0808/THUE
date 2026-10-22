@@ -11,11 +11,19 @@ test("existing bank transfer form saves a draft and posts from the voucher list"
     const url = new URL(route.request().url());
     const path = url.pathname;
     if (path === "/api/v1/bank/transfers/" && route.request().method() === "POST") {
-      transfer = { ...route.request().postDataJSON(), id: "transfer-1", status: "DRAFT" };
+      transfer = { ...route.request().postDataJSON(), id: "transfer-1", version: 1, status: "DRAFT", source_account_number: "19000001", destination_account_number: "19000002" };
       await route.fulfill({ status: 201, json: transfer }); return;
+    }
+    if (path === "/api/v1/bank/transfers/transfer-1/" && route.request().method() === "PATCH") {
+      transfer = { ...transfer, ...route.request().postDataJSON(), version: 2 };
+      await route.fulfill({ json: transfer }); return;
     }
     if (path === "/api/v1/bank/transfers/transfer-1/confirm/" && route.request().method() === "POST") {
       transfer = { ...transfer, status: "CONFIRMED" };
+      await route.fulfill({ json: transfer }); return;
+    }
+    if (path === "/api/v1/bank/transfers/transfer-1/reverse/" && route.request().method() === "POST") {
+      transfer = { ...transfer, status: "REVERSED" };
       await route.fulfill({ json: transfer }); return;
     }
     if (path === "/api/v1/bank/transfers/transfer-1/") { await route.fulfill({ json: transfer }); return; }
@@ -27,6 +35,7 @@ test("existing bank transfer form saves a draft and posts from the voucher list"
       ],
       "/api/v1/bank/transactions/": [],
       "/api/v1/bank/transfers/": transfer ? [transfer] : [],
+      "/api/v1/general-ledger/periods/": [{id: "open-period", start_date: "2026-01-01", end_date: "2026-12-31", status: "OPEN"}],
     };
     await route.fulfill({ json: { results: data[path] || [] } });
   });
@@ -42,6 +51,19 @@ test("existing bank transfer form saves a draft and posts from the voucher list"
   expect(transfer?.details?.lines[0].debit_account).toBe(gl);
   await expect(page.getByText(transfer!.number).first()).toBeVisible();
   await page.getByRole("button", { name: `Chức năng chứng từ ${transfer!.number}` }).click();
+  await page.getByRole("menuitem", { name: "Sửa" }).click();
+  await dialog.getByRole("textbox").last().fill("Nội dung sửa");
+  await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
+  await expect.poll(() => transfer?.version).toBe(2);
+  await expect(page.getByText(transfer!.number).first()).toBeVisible();
+  await page.getByRole("button", { name: `Chức năng chứng từ ${transfer!.number}` }).click();
   await page.getByRole("menuitem", { name: "Ghi sổ" }).click();
   await expect.poll(() => transfer?.status).toBe("CONFIRMED");
+  page.once("dialog", dialog => dialog.accept("Sửa sai chứng từ"));
+  await page.getByRole("button", { name: `Chức năng chứng từ ${transfer!.number}` }).click();
+  await page.getByRole("menuitem", { name: "Bỏ ghi sổ" }).click();
+  await expect.poll(() => transfer?.status).toBe("REVERSED");
+  await page.getByText(transfer!.number, {exact: true}).first().click();
+  await expect(page.getByRole("dialog").getByText("Đã bỏ ghi sổ")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", {name: "Lưu", exact: true})).toHaveCount(0);
 });

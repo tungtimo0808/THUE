@@ -280,7 +280,7 @@ def calculate_and_validate_sale_lines(company, lines_data, payment_type, invento
 
         cogs_acc = None
         inv_acc = None
-        if inventory_handling == models.GoodsSale.InventoryHandling.ATTACH_ISSUE:
+        if inventory_handling in {models.GoodsSale.InventoryHandling.ATTACH_ISSUE, models.GoodsSale.InventoryHandling.SEPARATE_ISSUE}:
             cogs_acc_id = raw.get("cogs_account") or raw.get("cogs_account_id") or getattr(item, "cogs_account_id", None)
             cogs_acc = Account.objects.filter(pk=cogs_acc_id, company=company).first() if cogs_acc_id else defaults["cogs_account"]
             inv_acc_id = raw.get("inventory_account") or raw.get("inventory_account_id") or getattr(item, "inventory_account_id", None)
@@ -969,6 +969,10 @@ def post_goods_sale(request, sale):
 def unpost_goods_sale(request, sale, reason=""):
     """Unpost GoodsSale: reverses journal entries, receivable, and inventory movements."""
     sale = models.GoodsSale.objects.select_for_update().get(pk=sale.pk)
+    if sale.inventory_handling == models.GoodsSale.InventoryHandling.SEPARATE_ISSUE:
+        from inventory.models import InventoryTransactionLine
+        if InventoryTransactionLine.objects.filter(sale_line__sale=sale, transaction__status="POSTED").exists():
+            raise ValidationError("Chứng từ đã có phiếu xuất kho riêng được ghi sổ; hãy xử lý phiếu xuất trước khi bỏ ghi sổ.")
     if sale.status != models.DocumentStatus.POSTED:
         raise ValidationError("Chỉ chứng từ Đã ghi sổ mới có thể thực hiện bỏ ghi sổ.")
 

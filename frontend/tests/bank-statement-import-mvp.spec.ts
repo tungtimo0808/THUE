@@ -18,7 +18,8 @@ test("bank reconciliation imports selected Excel statement rows without vouchers
       await route.fulfill({ json: { rows: [
         { source_row: 2, status: "VALID", reason: "", transaction_date: today, direction: "CREDIT", amount: "100", description: "Khách chuyển", reference: "REF-1" },
         { source_row: 3, status: "ERROR", reason: "Thiếu ngày", transaction_date: "", direction: "DEBIT", amount: "20", description: "Dòng lỗi", reference: "" },
-      ], counts: { VALID: 1, ERROR: 1, DUPLICATE: 0, SUSPECT: 0 }, total_receipts: "100", total_payments: "0", calculated_closing: null, balance_difference: null } }); return;
+        { source_row: 4, status: "SUSPECT", reason: "Có giao dịch tương tự", transaction_date: today, direction: "CREDIT", amount: "100", description: "Khách chuyển", reference: "", existing: { number: "IMP-OLD", transaction_date: today, direction: "CREDIT", amount: "100", description: "Khách chuyển", reference: "OLD", account_number: "123456789" } },
+      ], counts: { VALID: 1, ERROR: 1, DUPLICATE: 0, SUSPECT: 1 }, total_receipts: "200", total_payments: "0", calculated_closing: null, balance_difference: null } }); return;
     }
     if (path.endsWith("/import-file/") && route.request().method() === "POST") {
       imported = route.request().postData()?.includes("selected_rows") || false;
@@ -36,6 +37,7 @@ test("bank reconciliation imports selected Excel statement rows without vouchers
     ["Ngày giao dịch", "Nội dung", "Thu", "Chi", "Mã giao dịch"],
     [today, "Khách chuyển", 100, 0, "REF-1"],
     ["", "Dòng lỗi", 0, 20, ""],
+    [today, "Khách chuyển", 100, 0, ""],
   ]), "Sao ke");
   const buffer = XLSX.write(book, { type: "buffer", bookType: "xlsx" });
   await page.goto("/bank/reconciliation");
@@ -47,10 +49,15 @@ test("bank reconciliation imports selected Excel statement rows without vouchers
   await dialog.getByLabel("Đến ngày").fill(today);
   await dialog.locator('input[type="file"]').setInputFiles({ name: "statement.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer });
   await dialog.getByRole("button", { name: "Kiểm tra dữ liệu" }).click();
-  await expect.poll(() => previewPayload?.rows?.length).toBe(2);
+  await expect.poll(() => previewPayload?.rows?.length).toBe(3);
   expect(previewPayload?.rows[0].direction).toBe("CREDIT");
-  await expect(dialog.getByText("1 hợp lệ · 1 lỗi")).toBeVisible();
+  await expect(dialog.getByText("1 hợp lệ · 1 lỗi · 0 trùng · 1 nghi trùng")).toBeVisible();
   await expect(dialog.getByRole("checkbox", { name: "Chọn dòng 3" })).toBeDisabled();
+  await dialog.getByRole("checkbox", { name: "Chọn dòng 4" }).check();
+  await expect(dialog.getByRole("button", { name: "Import 2 dòng" })).toBeDisabled();
+  await dialog.getByRole("checkbox", { name: "Xác nhận dòng 4 là giao dịch khác" }).check();
+  await expect(dialog.getByRole("button", { name: "Import 2 dòng" })).toBeEnabled();
+  await dialog.getByRole("checkbox", { name: "Chọn dòng 4" }).uncheck();
   await dialog.getByRole("button", { name: "Import 1 dòng" }).click();
   await expect(dialog.getByText(/chưa tạo chứng từ, bút toán/)).toBeVisible();
   await dialog.getByRole("button", { name: "Xác nhận import" }).click();

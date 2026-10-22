@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { saveAssetCount, saveAssetMovement, saveDepreciation, saveFixedAsset } from "./misa-api-writes";
+import { errorText, REVALUATION_REASON_CODES, reverseRevaluation, saveAssetCount, saveAssetMovement, saveDepreciation, saveFixedAsset, saveRevaluation, toViDate } from "./misa-api-writes";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
+import { ATTACHMENT_MAX_SIZE, ATTACHMENT_PATTERN, escapeHtml, openPrintFrame, VoucherAttachments } from "./VoucherAttachments";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import {
   Car,
@@ -220,6 +223,10 @@ export default function MisaAssetsWorkspace({
     transactions: "/api/v1/fixed-assets/transactions/",
     calculations: "/api/v1/fixed-assets/calculations/",
     assetCounts: "/api/v1/fixed-assets/counts/?asset_type=FIXED_ASSET",
+    revaluations: "/api/v1/fixed-assets/revaluations/",
+    accounts: "/api/v1/general-ledger/accounts/",
+    parties: "/api/v1/master-data/parties/",
+    departments: "/api/v1/organization/departments/",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   // Navigation helper
@@ -255,11 +262,6 @@ export default function MisaAssetsWorkspace({
     const movement = (types: string[]) => (apiRows.transactions || []).filter((row) => types.includes(row.transaction_type));
     const assetOf = (row: any) => apiRows.assets?.find((asset) => asset.id === row.asset);
     if (apiRows.transactions) {
-      setRevalVouchers(movement(["VALUE_INCREASE", "VALUE_DECREASE"]).map((row) => ({
-        id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
-        assetName: row.asset_name || "", reason: row.reason || "",
-        diffAmount: (row.transaction_type === "VALUE_DECREASE" ? -1 : 1) * apiNumber(row.amount), status: row.status,
-      })));
       setTransferVouchers(movement(["TRANSFER"]).map((row) => ({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
         assetName: row.asset_name || "", fromDept: row.before_snapshot?.department_name || "",
@@ -271,6 +273,12 @@ export default function MisaAssetsWorkspace({
         originalCost: apiNumber(assetOf(row)?.original_cost), remainingValue: apiNumber(row.amount), status: row.status,
       })));
     }
+    if (apiRows.revaluations) setRevalVouchers(apiRows.revaluations.map((row) => ({
+      id: row.id, voucherNo: row.number, date: apiDate(row.posting_date),
+      assetCode: (row.lines || []).map((line: any) => line.asset_code).join(", "),
+      assetName: (row.lines || []).map((line: any) => line.asset_name).join(", "),
+      reason: row.reason_label || "", diffAmount: apiNumber(row.totals?.remaining_value), status: row.status_label || row.status,
+    })));
     if (apiRows.assetCounts) setStocktakeVouchers(apiRows.assetCounts.map((row) => {
       const lines = row.lines || [];
       const matched = lines.filter((line: any) => apiNumber(line.actual_quantity) === apiNumber(line.book_quantity)).length;
@@ -381,6 +389,261 @@ export default function MisaAssetsWorkspace({
       status: "Đã ghi sổ",
     }
   ]);
+  // UC-FA-06: API document being edited, eligible assets, references, attachments and the dirty check (AF26).
+  const { token: apiToken } = useApiSession();
+  const [editingRevalId, setEditingRevalId] = useState("");
+  const [revalRecord, setRevalRecord] = useState<any>(null);
+  const [revalCandidates, setRevalCandidates] = useState<any[]>([]);
+  const [revalReferences, setRevalReferences] = useState<string[]>([]);
+  const [revalReferenceDraft, setRevalReferenceDraft] = useState<string | null>(null);
+  const [revalCostBookedAtSource, setRevalCostBookedAtSource] = useState(false);
+  const [revalSourceReference, setRevalSourceReference] = useState("");
+  const [revalFiles, setRevalFiles] = useState<File[]>([]);
+  const [revalAttachments, setRevalAttachments] = useState<any[]>([]);
+  const [revalIdempotencyKey, setRevalIdempotencyKey] = useState("");
+  const [revalSnapshot, setRevalSnapshot] = useState("");
+  const [showRevalPrintMenu, setShowRevalPrintMenu] = useState(false);
+  const [revalPrintTemplate, setRevalPrintTemplate] = useState("RECORD");
+  const revalFormState = JSON.stringify([revalVoucherNo, revalDate, revalPostingDate, revalVoucherDate, revalReason, revalReportNo,
+    revalConclusion, revalMembers.map((member) => [member.name, member.title, member.rep]),
+    revalRows.map((row) => [row.assetCode, row.origAfter, row.monthsAfter, row.deprAfter, row.valAfter, row.monthlyDeprAfter, row.monthlyDeprLawAfter, row.costAccount, row.revalAccount]),
+    revalAccountingRows.map((row) => [row.desc, row.debitAccount, row.creditAccount, row.amount, row.objectCode, row.costItem, row.dept]),
+    revalReferences, revalCostBookedAtSource, revalSourceReference, revalFiles.map((file) => file.name)]);
+  useEffect(() => {
+    if (showRevalModal) setRevalSnapshot(revalFormState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRevalModal]);
+  // Steps 16-17: eligible assets and their values at the effective date (record date, otherwise posting date).
+  const isoFromVi = (value: string) => {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(String(value || "").trim());
+    return match ? `${match[3]}-${match[2]}-${match[1]}` : "";
+  };
+  const revalEffectiveDate = isoFromVi(revalDate) || isoFromVi(revalPostingDate);
+  useEffect(() => {
+    if (!showRevalModal || !apiConnected || !apiToken || !revalEffectiveDate) return;
+    let active = true;
+    request<any[]>(`/api/v1/fixed-assets/revaluations/candidates/?company_id=${encodeURIComponent(_company.id)}&date=${revalEffectiveDate}`, apiToken)
+      .then((rows) => { if (active) setRevalCandidates(rows); })
+      .catch((error) => notify(`Không tải được danh sách tài sản: ${errorText(error)}`));
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRevalModal, apiConnected, apiToken, revalEffectiveDate]);
+  const revalReasonCode = REVALUATION_REASON_CODES[revalReason] || "";
+  const revalReadOnly = Boolean(revalRecord && revalRecord.status !== "DRAFT");
+  const emptyRevalRow = () => ({
+    id: Date.now() + Math.round(Math.random() * 1e6), assetCode: "", assetName: "", dept: "",
+    origBefore: 0, origAfter: 0, origDiff: 0, monthsBefore: 0, monthsAfter: 0, monthsDiff: 0,
+    deprBefore: 0, deprAfter: 0, deprDiff: 0, costAccount: "", valBefore: 0, valAfter: 0, valDiff: 0,
+    revalAccount: "", monthlyDeprAfter: 0, monthlyDeprLawAfter: 0,
+  });
+  /** Step 28 / section 4.7: straight-line amount for a full month after the adjustment. */
+  const suggestRevalMonthly = (row: { valAfter: number; deprAfter: number; monthsAfter: number }) =>
+    row.monthsAfter > 0 ? Math.round((row.valAfter - row.deprAfter) / row.monthsAfter) : 0;
+  const updateRevalRow = (index: number, patch: Partial<ReturnType<typeof emptyRevalRow>>) => setRevalRows((rows) => rows.map((row, i) => {
+    if (i !== index) return row;
+    const next = { ...row, ...patch };
+    // AF13: with a new cost the depreciable value follows unless it was set apart (keeps the salvage value).
+    if ("origAfter" in patch && !("valAfter" in patch) && row.valAfter === row.origAfter - (row.origBefore - row.valBefore)) {
+      next.valAfter = next.origAfter - (row.origBefore - row.valBefore);
+    }
+    next.origDiff = next.origAfter - next.origBefore;
+    next.monthsDiff = next.monthsAfter - next.monthsBefore;
+    next.deprDiff = next.deprAfter - next.deprBefore;
+    next.valDiff = next.valAfter - next.valBefore;
+    if (["origAfter", "monthsAfter", "deprAfter", "valAfter"].some((key) => key in patch)) {
+      const suggested = suggestRevalMonthly(next);
+      // AF18: the tax amount follows only while the user has not set it apart.
+      if (row.monthlyDeprLawAfter === row.monthlyDeprAfter) next.monthlyDeprLawAfter = suggested;
+      next.monthlyDeprAfter = suggested;
+    }
+    return next;
+  }));
+  const selectRevalAsset = (index: number, code: string) => {
+    const asset = revalCandidates.find((row) => row.code === code);
+    if (!asset) { updateRevalRow(index, { assetCode: code }); return; }
+    const monthly = Number(asset.monthly_depreciation || 0);
+    setRevalRows((rows) => rows.map((row, i) => i !== index ? row : {
+      ...row, assetCode: asset.code, assetName: asset.name, dept: asset.department_name || "",
+      origBefore: Number(asset.original_cost), origAfter: Number(asset.original_cost), origDiff: 0,
+      monthsBefore: Number(asset.remaining_periods), monthsAfter: Number(asset.remaining_periods), monthsDiff: 0,
+      deprBefore: Number(asset.accumulated_depreciation), deprAfter: Number(asset.accumulated_depreciation), deprDiff: 0,
+      valBefore: Number(asset.depreciable_value), valAfter: Number(asset.depreciable_value), valDiff: 0,
+      // BR23/BR24: no default revaluation (412) or expense account; the user picks them for the case at hand.
+      costAccount: "", revalAccount: "", monthlyDeprAfter: monthly,
+      monthlyDeprLawAfter: asset.tax_monthly_depreciation !== null && asset.tax_monthly_depreciation !== undefined ? Number(asset.tax_monthly_depreciation) : monthly,
+    }));
+  };
+  /** Steps 34-35: proposed entries from the value differences and the reason; the user may change them. */
+  const proposeRevalEntries = () => {
+    const proposals: typeof revalAccountingRows = [];
+    const revaluationAccount = (row: ReturnType<typeof emptyRevalRow>) =>
+      row.revalAccount || (["STATE_DECISION", "CONVERSION"].includes(revalReasonCode) ? "412" : "");
+    for (const row of revalRows.filter((entry) => entry.assetCode)) {
+      const asset = revalCandidates.find((entry) => entry.code === row.assetCode) || {};
+      const assetAccount = asset.asset_account_code || "211";
+      const accumulatedAccount = asset.accumulated_account_code || "214";
+      const cost = row.origAfter - row.origBefore;
+      const depreciation = row.deprAfter - row.deprBefore;
+      if (cost && !revalCostBookedAtSource) {
+        // BR20: an upgrade is capitalised from TK 241, not through TK 412.
+        const counterpart = revalReasonCode === "UPGRADE" ? "241" : revaluationAccount(row);
+        proposals.push({ id: Date.now() + proposals.length, desc: `${cost > 0 ? "Tăng" : "Giảm"} nguyên giá ${row.assetCode} theo ${revalVoucherNo}`,
+          debitAccount: cost > 0 ? assetAccount : counterpart, creditAccount: cost > 0 ? counterpart : assetAccount,
+          amount: Math.abs(cost), objectCode: "", objectName: "", costItem: "", dept: row.dept });
+      }
+      if (depreciation) {
+        const counterpart = revaluationAccount(row) || row.costAccount;
+        proposals.push({ id: Date.now() + proposals.length, desc: `${depreciation > 0 ? "Tăng" : "Giảm"} hao mòn lũy kế ${row.assetCode} theo ${revalVoucherNo}`,
+          debitAccount: depreciation > 0 ? counterpart : accumulatedAccount, creditAccount: depreciation > 0 ? accumulatedAccount : counterpart,
+          amount: Math.abs(depreciation), objectCode: "", objectName: "", costItem: "", dept: row.dept });
+      }
+    }
+    setRevalAccountingRows(proposals);
+    // AF30: a change of life or depreciation basis only needs no entry.
+    if (!proposals.length) notify("Điều chỉnh không phát sinh bút toán (chỉ thay đổi thời gian sử dụng hoặc cơ sở khấu hao).");
+  };
+  const openNewReval = () => {
+    setEditingRevalId(""); setRevalRecord(null); setRevalReportNo(""); setRevalConclusion(""); setRevalMembers([]);
+    setRevalReason("Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản"); setRevalTab("adjust");
+    const today = toViDate(new Date().toISOString().slice(0, 10));
+    setRevalDate(today); setRevalPostingDate(today); setRevalVoucherDate(today);
+    setRevalRows([emptyRevalRow()]); setRevalAccountingRows(apiConnected ? [] : revalAccountingRows);
+    setRevalReferences([]); setRevalReferenceDraft(null); setRevalCostBookedAtSource(false); setRevalSourceReference("");
+    setRevalFiles([]); setRevalAttachments([]); setShowRevalPrintMenu(false);
+    setRevalIdempotencyKey(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+    // BR04: the next number of the ĐGL series; the backend still rejects a duplicate (EF02).
+    const highest = (apiRows.revaluations || []).map((row: any) => String(row.number || "")).filter((number: string) => /^ĐGL\d+$/.test(number))
+      .reduce((max: number, number: string) => Math.max(max, Number(number.slice(3))), 0);
+    setRevalVoucherNo(`ĐGL${String(highest + 1).padStart(5, "0")}`);
+    setShowRevalModal(true);
+  };
+  const openRevalRecord = (id: string) => {
+    const record = (apiRows.revaluations || []).find((row: any) => row.id === id);
+    if (!record) return;
+    setEditingRevalId(record.id); setRevalRecord(record); setRevalTab("adjust"); setShowRevalPrintMenu(false);
+    setRevalVoucherNo(record.number || ""); setRevalReportNo(record.record_number || "");
+    setRevalDate(record.record_date ? toViDate(record.record_date) : ""); setRevalPostingDate(toViDate(record.posting_date));
+    setRevalVoucherDate(toViDate(record.document_date)); setRevalConclusion(record.conclusion || "");
+    setRevalReason(Object.entries(REVALUATION_REASON_CODES).find(([, code]) => code === record.reason)?.[0] || "Lý do khác");
+    setRevalMembers((record.members || []).map((member: any, index: number) => ({ id: index + 1, name: member.full_name, title: member.title, rep: member.representing })));
+    setRevalRows((record.lines || []).map((line: any, index: number) => ({
+      id: index + 1, assetCode: line.asset_code, assetName: line.asset_name, dept: line.department_name || "",
+      origBefore: Number(line.before_original_cost), origAfter: Number(line.after_original_cost),
+      origDiff: Number(line.after_original_cost) - Number(line.before_original_cost),
+      monthsBefore: Number(line.before_remaining_periods), monthsAfter: Number(line.after_remaining_periods),
+      monthsDiff: Number(line.after_remaining_periods) - Number(line.before_remaining_periods),
+      deprBefore: Number(line.before_accumulated_depreciation), deprAfter: Number(line.after_accumulated_depreciation),
+      deprDiff: Number(line.after_accumulated_depreciation) - Number(line.before_accumulated_depreciation),
+      costAccount: line.expense_account_code || "", valBefore: Number(line.before_depreciable_value), valAfter: Number(line.after_depreciable_value),
+      valDiff: Number(line.after_depreciable_value) - Number(line.before_depreciable_value), revalAccount: line.revaluation_account_code || "",
+      monthlyDeprAfter: Number(line.monthly_depreciation_after), monthlyDeprLawAfter: Number(line.tax_monthly_depreciation_after ?? line.monthly_depreciation_after),
+    })));
+    setRevalAccountingRows((record.entries || []).map((entry: any, index: number) => ({
+      id: index + 1, desc: entry.description, debitAccount: entry.debit_account_code, creditAccount: entry.credit_account_code,
+      amount: Number(entry.amount), objectCode: entry.party_code || "", objectName: entry.party_name || "", costItem: entry.expense_item_code || "", dept: entry.department_name || "",
+    })));
+    setRevalReferences(record.references || []); setRevalReferenceDraft(null);
+    setRevalCostBookedAtSource(Boolean(record.cost_booked_at_source)); setRevalSourceReference(record.source_reference || "");
+    setRevalFiles([]); setRevalAttachments(record.attachments || []); setRevalIdempotencyKey("");
+    setShowRevalModal(true);
+  };
+  const closeRevalModal = () => {
+    if (revalFormState !== revalSnapshot && !window.confirm("Bỏ các thay đổi chưa lưu?")) return;
+    setShowRevalModal(false); setShowRevalPrintMenu(false); setRevalFiles([]);
+  };
+  /** AF25: the valuation record or the accounting voucher, printed from the saved data. */
+  const printRevaluation = (record: any, template: string) => {
+    const cell = "border:1px solid #000;padding:4px 6px";
+    const money = (value: unknown) => Number(value || 0).toLocaleString("vi-VN");
+    const [year, month, day] = String(record.record_date || record.document_date || "").split("-");
+    const head = `<table><tr><td><strong>${escapeHtml(_company.name)}</strong></td><td class="center" style="width:240px"><strong>${template === "RECORD" ? "Mẫu số 04 - TSCĐ" : ""}</strong></td></tr></table>`;
+    const body = template === "RECORD"
+      ? `<div class="center"><h1>BIÊN BẢN ĐÁNH GIÁ LẠI TÀI SẢN CỐ ĐỊNH</h1><div class="muted">Ngày ${escapeHtml(day)} tháng ${escapeHtml(month)} năm ${escapeHtml(year)}</div>
+<div>Số: <strong>${escapeHtml(record.record_number || record.number)}</strong> &nbsp; Chứng từ: ${escapeHtml(record.number)}</div></div>
+<p>- Lý do: ${escapeHtml(record.reason_label)}</p>
+<p>- Hội đồng đánh giá gồm:</p><ul>${(record.members || []).map((member: any) => `<li>${escapeHtml(member.full_name)} – ${escapeHtml(member.title)} – Đại diện ${escapeHtml(member.representing)}</li>`).join("") || "<li>(Không có)</li>"}</ul>
+<table><thead><tr><th style="${cell}">Mã TSCĐ</th><th style="${cell}">Tên TSCĐ</th><th style="${cell}">Nguyên giá trước</th><th style="${cell}">Nguyên giá sau</th><th style="${cell}">Hao mòn trước</th><th style="${cell}">Hao mòn sau</th><th style="${cell}">GTCL trước</th><th style="${cell}">GTCL sau</th><th style="${cell}">Tháng còn lại sau</th></tr></thead><tbody>
+${(record.lines || []).map((line: any) => `<tr><td style="${cell}">${escapeHtml(line.asset_code)}</td><td style="${cell}">${escapeHtml(line.asset_name)}</td>
+<td style="${cell}" class="num">${money(line.before_original_cost)}</td><td style="${cell}" class="num">${money(line.after_original_cost)}</td>
+<td style="${cell}" class="num">${money(line.before_accumulated_depreciation)}</td><td style="${cell}" class="num">${money(line.after_accumulated_depreciation)}</td>
+<td style="${cell}" class="num">${money(Number(line.before_original_cost) - Number(line.before_accumulated_depreciation))}</td>
+<td style="${cell}" class="num">${money(Number(line.after_original_cost) - Number(line.after_accumulated_depreciation))}</td>
+<td style="${cell}" class="num">${escapeHtml(line.after_remaining_periods)}</td></tr>`).join("")}</tbody></table>
+<p>- Kết luận: ${escapeHtml(record.conclusion)}</p>
+<table style="margin-top:24px"><tr class="center"><td class="center"><strong>Kế toán trưởng</strong><br><span class="muted">(Ký, họ tên)</span></td><td class="center"><strong>Chủ tịch hội đồng</strong><br><span class="muted">(Ký, họ tên)</span></td></tr></table>`
+      : `<div class="center"><h1>CHỨNG TỪ KẾ TOÁN</h1><div>Số: <strong>${escapeHtml(record.number)}</strong> &nbsp; Ngày hạch toán: ${escapeHtml(toViDate(record.posting_date))}</div></div>
+<p>- Nội dung: Đánh giá lại tài sản cố định – ${escapeHtml(record.reason_label)}</p>
+<table><thead><tr><th style="${cell}">Diễn giải</th><th style="${cell}">TK Nợ</th><th style="${cell}">TK Có</th><th style="${cell}">Số tiền</th></tr></thead><tbody>
+${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHtml(entry.description)}</td><td style="${cell}" class="center">${escapeHtml(entry.debit_account_code)}</td><td style="${cell}" class="center">${escapeHtml(entry.credit_account_code)}</td><td style="${cell}" class="num">${money(entry.amount)}</td></tr>`).join("") || `<tr><td style="${cell}" colspan="4">Không phát sinh bút toán</td></tr>`}
+</tbody></table>
+<table style="margin-top:24px"><tr class="center"><td class="center"><strong>Người lập</strong><br><span class="muted">(Ký, họ tên)</span></td><td class="center"><strong>Kế toán trưởng</strong><br><span class="muted">(Ký, họ tên)</span></td></tr></table>`;
+    openPrintFrame(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.number)}</title>
+<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}.num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>${head}${body}</body></html>`,
+      `In ${record.number}`, () => notify("Trình duyệt chặn lệnh in. Vui lòng thử lại."));
+  };
+  const handleSaveReval = async (printTemplate?: string) => {
+    setShowRevalPrintMenu(false);
+    let outcome: { record?: any; posted?: boolean; uploaded?: number } | null = null;
+    const saved = await apiSave(async (writer) => {
+      const result = await saveRevaluation(writer, {
+        id: editingRevalId, status: revalRecord?.status, number: revalVoucherNo, recordNumber: revalReportNo, recordDate: revalDate,
+        reason: revalReason, documentDate: revalVoucherDate, postingDate: revalPostingDate, conclusion: revalConclusion,
+        references: revalReferences, costBookedAtSource: revalCostBookedAtSource, sourceReference: revalSourceReference,
+        idempotencyKey: revalIdempotencyKey, members: revalMembers, rows: revalRows, entries: revalAccountingRows, files: revalFiles,
+      });
+      outcome = result;
+      return result;
+    });
+    const result = outcome as { record?: any; posted?: boolean; uploaded?: number } | null;
+    if (result?.record) { setRevalRecord(result.record); setEditingRevalId(result.record.id); setRevalAttachments(result.record.attachments || []); }
+    if (result?.uploaded) setRevalFiles((files) => files.slice(result.uploaded));
+    if (saved && result?.posted) {
+      if (printTemplate) printRevaluation(result.record, printTemplate);
+      setShowRevalModal(false); setRevalView("table"); setRevalFiles([]);
+      return;
+    }
+    // Saved but not posted: the draft stays open so the user can correct it and press Cất again.
+    if (saved) setRevalSnapshot(revalFormState);
+  };
+  const unpostReval = async () => {
+    const reason = window.prompt("Lý do bỏ ghi sổ chứng từ đánh giá lại");
+    if (reason === null) return;
+    let updated: any = null;
+    const done = await apiSave(async (writer) => {
+      const result = await reverseRevaluation(writer, editingRevalId, reason);
+      updated = result.record;
+      return result;
+    });
+    if (done && updated) setRevalRecord(updated);
+  };
+  const addRevalFiles = (list: FileList | null) => {
+    const files = Array.from(list || []);
+    const refused = files.filter((file) => file.size > ATTACHMENT_MAX_SIZE || !ATTACHMENT_PATTERN.test(file.name));
+    if (refused.length) notify(`Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB. (${refused.map((file) => file.name).join(", ")})`);
+    const accepted = files.filter((file) => !refused.includes(file));
+    if (accepted.length) setRevalFiles((current) => [...current, ...accepted]);
+  };
+  const downloadRevalAttachment = async (entry: any) => {
+    try {
+      const response = await fetch(`/api/v1/fixed-assets/revaluations/${editingRevalId}/attachments/${entry.id}/?company_id=${encodeURIComponent(_company.id)}`,
+        { headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {} });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url; link.download = entry.name; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      notify(`Không tải được tệp ${entry.name}: ${errorText(error)}`);
+    }
+  };
+  const removeRevalAttachment = async (entry: any) => {
+    if (!window.confirm(`Xóa tệp đính kèm ${entry.name}?`)) return;
+    await apiSave(async (writer) => {
+      const record = await writer.action("/api/v1/fixed-assets/revaluations/", editingRevalId, `attachments/${entry.id}/remove`);
+      setRevalAttachments(record.attachments || []);
+      return { message: `Đã xóa tệp đính kèm ${entry.name}.` };
+    });
+  };
 
   // Transfer state (Ảnh 4 mới: ĐCTS00001)
   const [transferVoucherNo, setTransferVoucherNo] = useState("ĐCTS00001");
@@ -752,7 +1015,7 @@ export default function MisaAssetsWorkspace({
     } else if (action === "select-period") {
       setShowDeprModal(true);
     } else if (action === "reval") {
-      setShowRevalModal(true);
+      openNewReval();
     } else if (action === "transfer") {
       setShowTransferModal(true);
     } else if (action === "decrease") {
@@ -3316,6 +3579,10 @@ export default function MisaAssetsWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <RotateCcw size={16} style={{ color: "#475569" }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Đánh giá lại tài sản cố định {revalVoucherNo}</span>
+                {apiConnected && <span data-testid="reval-status" style={{ padding: "3px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600,
+                  background: revalRecord?.status === "POSTED" ? "#dcfce7" : "#f1f5f9", color: revalRecord?.status === "POSTED" ? "#15803d" : "#475569" }}>
+                  {revalRecord ? revalRecord.status_label : "Chứng từ mới"}
+                </span>}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button type="button" onClick={() => notify("Tùy biến mẫu chứng từ đánh giá lại")} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Tùy biến">
@@ -3324,7 +3591,7 @@ export default function MisaAssetsWorkspace({
                 <button type="button" onClick={() => notify("Hướng dẫn: Đánh giá lại tài sản cố định")} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Trợ giúp">
                   <HelpCircle size={17} />
                 </button>
-                <button type="button" onClick={() => setShowRevalModal(false)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Đóng">
+                <button type="button" onClick={apiConnected ? closeRevalModal : () => setShowRevalModal(false)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }} title="Đóng">
                   <X size={17} />
                 </button>
               </div>
@@ -3342,6 +3609,8 @@ export default function MisaAssetsWorkspace({
                       <input
                         type="text"
                         value={revalReportNo}
+                        aria-label="Biên bản số"
+                        disabled={revalReadOnly}
                         onChange={(e) => setRevalReportNo(e.target.value)}
                         placeholder=""
                         style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
@@ -3353,6 +3622,8 @@ export default function MisaAssetsWorkspace({
                         <input
                           type="text"
                           value={revalDate}
+                        aria-label="Ngày biên bản"
+                        disabled={revalReadOnly}
                           onChange={(e) => setRevalDate(e.target.value)}
                           style={{ width: "100%", height: 28, padding: "0 26px 0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                         />
@@ -3365,6 +3636,8 @@ export default function MisaAssetsWorkspace({
                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Lý do</label>
                     <select
                       value={revalReason}
+                      aria-label="Lý do"
+                      disabled={revalReadOnly}
                       onChange={(e) => setRevalReason(e.target.value)}
                       style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", color: "#1e293b" }}
                     >
@@ -3377,9 +3650,44 @@ export default function MisaAssetsWorkspace({
                   </div>
 
                   <div>
-                    <span onClick={() => notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500 }}>
+                    <span onClick={() => apiConnected ? !revalReadOnly && setRevalReferenceDraft("") : notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500 }}>
                       Tham chiếu <span style={{ color: "#00a862", textDecoration: "none" }}>...</span>
                     </span>
+                    {/* AF23: decisions, acceptance records or source vouchers referred to by the document. */}
+                    {apiConnected && (revalReferences.length > 0 || revalReferenceDraft !== null) && (
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
+                        {revalReferences.map((reference, index) => (
+                          <span key={`${reference}-${index}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 10, background: "#ecfdf5", fontSize: 11.5, color: "#065f46" }}>
+                            {reference}
+                            {!revalReadOnly && <button type="button" title={`Bỏ tham chiếu ${reference}`} onClick={() => setRevalReferences(revalReferences.filter((_, i) => i !== index))}
+                              style={{ border: "none", background: "none", padding: 0, color: "#ef4444", cursor: "pointer", display: "grid" }}><X size={11} /></button>}
+                          </span>
+                        ))}
+                        {revalReferenceDraft !== null && (
+                          <input aria-label="Hồ sơ tham chiếu" autoFocus placeholder="Số quyết định / biên bản nghiệm thu, nhấn Enter" value={revalReferenceDraft}
+                            onChange={(e) => setRevalReferenceDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && revalReferenceDraft.trim()) { setRevalReferences([...revalReferences, revalReferenceDraft.trim()]); setRevalReferenceDraft(null); }
+                              if (e.key === "Escape") setRevalReferenceDraft(null);
+                            }}
+                            style={{ height: 24, minWidth: 260, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }} />
+                        )}
+                      </div>
+                    )}
+                    {/* AF29: the upgrade cost was already capitalised by its source voucher (e.g. Nợ 211 / Có 241). */}
+                    {apiConnected && revalReasonCode === "UPGRADE" && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 12, color: "#334155" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                          <input type="checkbox" checked={revalCostBookedAtSource} disabled={revalReadOnly} onChange={(e) => setRevalCostBookedAtSource(e.target.checked)} />
+                          Chi phí nâng cấp đã hạch toán tại chứng từ nguồn
+                        </label>
+                        {revalCostBookedAtSource && (
+                          <input aria-label="Số chứng từ nguồn" placeholder="Số chứng từ nguồn" value={revalSourceReference} disabled={revalReadOnly}
+                            onChange={(e) => setRevalSourceReference(e.target.value)}
+                            style={{ height: 24, width: 160, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3391,6 +3699,8 @@ export default function MisaAssetsWorkspace({
                       <input
                         type="text"
                         value={revalPostingDate}
+                        aria-label="Ngày hạch toán"
+                        disabled={revalReadOnly}
                         onChange={(e) => setRevalPostingDate(e.target.value)}
                         style={{ width: "100%", height: 28, padding: "0 26px 0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                       />
@@ -3403,6 +3713,8 @@ export default function MisaAssetsWorkspace({
                       <input
                         type="text"
                         value={revalVoucherDate}
+                        aria-label="Ngày chứng từ"
+                        disabled={revalReadOnly}
                         onChange={(e) => setRevalVoucherDate(e.target.value)}
                         style={{ width: "100%", height: 28, padding: "0 26px 0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                       />
@@ -3414,6 +3726,8 @@ export default function MisaAssetsWorkspace({
                     <input
                       type="text"
                       value={revalVoucherNo}
+                        aria-label="Số chứng từ"
+                        disabled={revalReadOnly}
                       onChange={(e) => setRevalVoucherNo(e.target.value)}
                       style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                     />
@@ -3423,8 +3737,9 @@ export default function MisaAssetsWorkspace({
                 {/* Right Total Box */}
                 <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: 2 }}>
                   <span style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>Tổng tiền</span>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>
-                    {revalRows.reduce((s, r) => s + (r.valDiff || 0), 0).toLocaleString("vi-VN")}
+                  {/* Step 33: value differences only (cost and accumulated depreciation); months are not money. */}
+                  <span data-testid="reval-total" title="Chênh lệch giá trị còn lại = Chênh lệch nguyên giá - Chênh lệch hao mòn lũy kế" style={{ fontSize: 28, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>
+                    {revalRows.reduce((s, r) => s + (r.origDiff || 0) - (r.deprDiff || 0), 0).toLocaleString("vi-VN")}
                   </span>
                 </div>
               </div>
@@ -3459,6 +3774,7 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="text"
                                   value={m.name}
+                                  aria-label={`Họ và tên thành viên ${idx + 1}`}
                                   onChange={(e) => {
                                     const updated = [...revalMembers];
                                     updated[idx].name = e.target.value;
@@ -3472,6 +3788,7 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="text"
                                   value={m.title}
+                                  aria-label={`Chức danh thành viên ${idx + 1}`}
                                   onChange={(e) => {
                                     const updated = [...revalMembers];
                                     updated[idx].title = e.target.value;
@@ -3485,6 +3802,7 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="text"
                                   value={m.rep}
+                                  aria-label={`Đại diện thành viên ${idx + 1}`}
                                   onChange={(e) => {
                                     const updated = [...revalMembers];
                                     updated[idx].rep = e.target.value;
@@ -3554,7 +3872,10 @@ export default function MisaAssetsWorkspace({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRevalTab("accounting")}
+                    onClick={() => {
+                      setRevalTab("accounting");
+                      if (apiConnected && !revalReadOnly && !revalAccountingRows.length) proposeRevalEntries();
+                    }}
                     style={{
                       padding: "6px 2px",
                       border: "none",
@@ -3617,7 +3938,18 @@ export default function MisaAssetsWorkspace({
                               <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
                                 <select
                                   value={row.assetCode}
+                                  aria-label={`Mã tài sản dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
+                                    if (apiConnected) {
+                                      // EF14: one line per asset.
+                                      if (e.target.value && revalRows.some((other, i) => i !== idx && other.assetCode === e.target.value)) {
+                                        notify(`Tài sản ${e.target.value} đã được chọn trong chứng từ.`);
+                                        return;
+                                      }
+                                      selectRevalAsset(idx, e.target.value);
+                                      return;
+                                    }
                                     const selected = assetsList.find(a => a.code === e.target.value);
                                     const updated = [...revalRows];
                                     updated[idx].assetCode = e.target.value;
@@ -3647,9 +3979,13 @@ export default function MisaAssetsWorkspace({
                                   style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, fontSize: 12, outline: "none", background: "transparent" }}
                                 >
                                   <option value=""></option>
-                                  {assetsList.map(a => (
-                                    <option key={a.code} value={a.code}>{a.code} - {a.name.slice(0, 22)}...</option>
-                                  ))}
+                                  {apiConnected
+                                    ? [...revalCandidates, ...(row.assetCode && !revalCandidates.some((a) => a.code === row.assetCode) ? [{ code: row.assetCode, name: row.assetName }] : [])].map((a: any) => (
+                                        <option key={a.code} value={a.code} disabled={Boolean(a.blocked)} title={a.blocked || undefined}>{a.code} - {String(a.name).slice(0, 22)}{a.blocked ? " (đã ghi sổ kỳ sau)" : ""}</option>
+                                      ))
+                                    : assetsList.map(a => (
+                                        <option key={a.code} value={a.code}>{a.code} - {a.name.slice(0, 22)}...</option>
+                                      ))}
                                 </select>
                               </td>
                               <td style={{ padding: "4px 8px", borderRight: "1px dotted #cbd5e1", color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.assetName}</td>
@@ -3663,7 +3999,10 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="number"
                                   value={row.origAfter || ""}
+                                  aria-label={`Nguyên giá sau điều chỉnh dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
+                                    if (apiConnected) { updateRevalRow(idx, { origAfter: Number(e.target.value) }); return; }
                                     const val = Number(e.target.value);
                                     const updated = [...revalRows];
                                     updated[idx].origAfter = val;
@@ -3686,7 +4025,10 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="number"
                                   value={row.monthsAfter || ""}
+                                  aria-label={`Thời gian còn lại sau điều chỉnh dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
+                                    if (apiConnected) { updateRevalRow(idx, { monthsAfter: Number(e.target.value) }); return; }
                                     const m = Number(e.target.value);
                                     const updated = [...revalRows];
                                     updated[idx].monthsAfter = m;
@@ -3709,7 +4051,10 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="number"
                                   value={row.deprAfter || ""}
+                                  aria-label={`Hao mòn lũy kế sau điều chỉnh dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
+                                    if (apiConnected) { updateRevalRow(idx, { deprAfter: Number(e.target.value) }); return; }
                                     const d = Number(e.target.value);
                                     const updated = [...revalRows];
                                     updated[idx].deprAfter = d;
@@ -3727,6 +4072,9 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="text"
                                   value={row.costAccount}
+                                  aria-label={`TK chi phí dòng ${idx + 1}`}
+                                  list={apiConnected ? "reval-accounts" : undefined}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
                                     updated[idx].costAccount = e.target.value;
@@ -3745,7 +4093,10 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="number"
                                   value={row.valAfter || ""}
+                                  aria-label={`Giá trị tính khấu hao sau điều chỉnh dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
+                                    if (apiConnected) { updateRevalRow(idx, { valAfter: Number(e.target.value) }); return; }
                                     const v = Number(e.target.value);
                                     const updated = [...revalRows];
                                     updated[idx].valAfter = v;
@@ -3763,6 +4114,9 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="text"
                                   value={row.revalAccount}
+                                  aria-label={`TK đánh giá lại dòng ${idx + 1}`}
+                                  list={apiConnected ? "reval-accounts" : undefined}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
                                     updated[idx].revalAccount = e.target.value;
@@ -3778,6 +4132,8 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="number"
                                   value={row.monthlyDeprAfter || ""}
+                                  aria-label={`GTKH tháng sau điều chỉnh dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
                                     updated[idx].monthlyDeprAfter = Number(e.target.value);
@@ -3792,6 +4148,8 @@ export default function MisaAssetsWorkspace({
                                 <input
                                   type="number"
                                   value={row.monthlyDeprLawAfter || ""}
+                                  aria-label={`GTKH tháng theo luật dòng ${idx + 1}`}
+                                  disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
                                     updated[idx].monthlyDeprLawAfter = Number(e.target.value);
@@ -3918,6 +4276,8 @@ export default function MisaAssetsWorkspace({
                               <input
                                 type="text"
                                 value={acc.desc}
+                                aria-label={`Diễn giải bút toán ${idx + 1}`}
+                                                                disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
                                   updated[idx].desc = e.target.value;
@@ -3930,6 +4290,9 @@ export default function MisaAssetsWorkspace({
                               <input
                                 type="text"
                                 value={acc.debitAccount}
+                                aria-label={`TK Nợ bút toán ${idx + 1}`}
+                                list={apiConnected ? "reval-accounts" : undefined}
+                                disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
                                   updated[idx].debitAccount = e.target.value;
@@ -3942,6 +4305,9 @@ export default function MisaAssetsWorkspace({
                               <input
                                 type="text"
                                 value={acc.creditAccount}
+                                aria-label={`TK Có bút toán ${idx + 1}`}
+                                list={apiConnected ? "reval-accounts" : undefined}
+                                disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
                                   updated[idx].creditAccount = e.target.value;
@@ -3954,6 +4320,8 @@ export default function MisaAssetsWorkspace({
                               <input
                                 type="number"
                                 value={acc.amount || ""}
+                                aria-label={`Số tiền bút toán ${idx + 1}`}
+                                disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
                                   updated[idx].amount = Number(e.target.value);
@@ -3966,9 +4334,13 @@ export default function MisaAssetsWorkspace({
                               <input
                                 type="text"
                                 value={acc.objectCode}
+                                aria-label={`Mã đối tượng bút toán ${idx + 1}`}
+                                list={apiConnected ? "reval-parties" : undefined}
+                                disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
                                   updated[idx].objectCode = e.target.value;
+                                  updated[idx].objectName = (apiRows.parties || []).find((party: any) => party.code === e.target.value)?.name || "";
                                   setRevalAccountingRows(updated);
                                 }}
                                 style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
@@ -3979,6 +4351,9 @@ export default function MisaAssetsWorkspace({
                               <input
                                 type="text"
                                 value={acc.costItem}
+                                aria-label={`Khoản mục CP bút toán ${idx + 1}`}
+                                list={undefined}
+                                disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
                                   updated[idx].costItem = e.target.value;
@@ -3987,7 +4362,16 @@ export default function MisaAssetsWorkspace({
                                 style={{ width: "100%", height: 26, padding: "0 4px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", boxSizing: "border-box" }}
                               />
                             </td>
-                            <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{acc.dept}</td>
+                            <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>
+                              {apiConnected ? (
+                                <select aria-label={`Đơn vị sử dụng bút toán ${idx + 1}`} value={acc.dept} disabled={revalReadOnly}
+                                  onChange={(e) => setRevalAccountingRows(revalAccountingRows.map((row, i) => i === idx ? { ...row, dept: e.target.value } : row))}
+                                  style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, background: "#ffffff" }}>
+                                  <option value=""></option>
+                                  {(apiRows.departments || []).map((department: any) => <option key={department.id} value={department.name}>{department.name}</option>)}
+                                </select>
+                              ) : acc.dept}
+                            </td>
                             <td style={{ textAlign: "center", padding: "4px" }}>
                               <button
                                 type="button"
@@ -4015,12 +4399,31 @@ export default function MisaAssetsWorkspace({
                   </div>
                 )}
 
+                {apiConnected && <>
+                  <datalist id="reval-accounts">
+                    {(apiRows.accounts || []).filter((account: any) => account.status === "ACTIVE" && account.is_postable).map((account: any) => <option key={account.id} value={account.code}>{account.name}</option>)}
+                  </datalist>
+                  <datalist id="reval-parties">
+                    {(apiRows.parties || []).filter((party: any) => party.status === "ACTIVE").map((party: any) => <option key={party.id} value={party.code}>{party.name}</option>)}
+                  </datalist>
+                </>}
                 {/* Table Actions */}
                 <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  {apiConnected && revalTab === "accounting" && !revalReadOnly && (
+                    <button type="button" onClick={proposeRevalEntries}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid #00a862", borderRadius: 4, background: "#f0fdf4", fontSize: 12, fontWeight: 600, color: "#047857", cursor: "pointer" }}>
+                      Đề xuất định khoản
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
-                      if (revalTab === "adjust") {
+                      if (revalTab === "adjust" && apiConnected) {
+                        setRevalRows([...revalRows, emptyRevalRow()]);
+                      } else if (revalTab === "accounting" && apiConnected) {
+                        setRevalAccountingRows([...revalAccountingRows, { id: Date.now(), desc: `Đánh giá lại tài sản cố định ${revalVoucherNo}`,
+                          debitAccount: "", creditAccount: "", amount: 0, objectCode: "", objectName: "", costItem: "", dept: "" }]);
+                      } else if (revalTab === "adjust") {
                         setRevalRows([...revalRows, {
                           id: Date.now(),
                           assetCode: "",
@@ -4104,6 +4507,8 @@ export default function MisaAssetsWorkspace({
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 3 }}>Kết luận</label>
                   <textarea
                     value={revalConclusion}
+                    aria-label="Kết luận"
+                    disabled={revalReadOnly}
                     onChange={(e) => setRevalConclusion(e.target.value)}
                     placeholder=""
                     rows={2}
@@ -4112,7 +4517,11 @@ export default function MisaAssetsWorkspace({
                 </div>
 
                 {/* Attachment File Box */}
-                <div>
+                {apiConnected ? (
+                  <VoucherAttachments inputId="reval-attachment-input" files={revalFiles} attachments={revalAttachments} readOnly={revalReadOnly}
+                    onAdd={addRevalFiles} onRemoveFile={(index) => setRevalFiles((files) => files.filter((_, i) => i !== index))}
+                    onDownload={downloadRevalAttachment} onRemove={removeRevalAttachment} />
+                ) : <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 5 }}>
                     <Paperclip size={13} style={{ color: "#64748b" }} />
                     <span>Đính kèm</span>
@@ -4124,7 +4533,7 @@ export default function MisaAssetsWorkspace({
                       <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
                     </div>
                   </div>
-                </div>
+                </div>}
               </div>
             </div>
 
@@ -4132,11 +4541,23 @@ export default function MisaAssetsWorkspace({
             <div style={{ height: 46, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 18px", gap: 8 }}>
               <button
                 type="button"
-                onClick={() => setShowRevalModal(false)}
+                onClick={apiConnected ? closeRevalModal : () => setShowRevalModal(false)}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer" }}
               >
                 Hủy
               </button>
+              {apiConnected && revalRecord?.status === "POSTED" && (
+                <>
+                  <button type="button" onClick={unpostReval}
+                    style={{ height: 32, padding: "0 16px", border: "1px solid #fca5a5", borderRadius: 4, background: "#fff1f2", fontSize: 12.5, color: "#b91c1c", cursor: "pointer" }}>
+                    Bỏ ghi sổ
+                  </button>
+                  <button type="button" onClick={() => printRevaluation(revalRecord, revalPrintTemplate)}
+                    style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#1e293b", cursor: "pointer" }}>
+                    In
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -4152,8 +4573,7 @@ export default function MisaAssetsWorkspace({
                     status: "Đã ghi sổ",
                   };
                   if (apiConnected) {
-                    void apiSave((writer) => saveAssetMovement(writer, "revaluation", { voucherNo: revalVoucherNo, date: revalDate, reason: revalReason, rows: revalRows }))
-                      .then((saved) => { if (saved) { setShowRevalModal(false); setRevalView("table"); } });
+                    void handleSaveReval();
                     return;
                   }
                   setRevalVouchers((prev) => {
@@ -4165,8 +4585,9 @@ export default function MisaAssetsWorkspace({
                   setRevalView("table");
                   notify(`Đã lưu chứng từ đánh giá lại tài sản cố định ${revalVoucherNo} thành công!`);
                 }}
+                disabled={apiConnected && revalReadOnly}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
-              >Lưu</button>
+              >{apiConnected ? "Cất" : "Lưu"}</button>
               <button
                 type="button"
                 onClick={() => {
@@ -4182,8 +4603,7 @@ export default function MisaAssetsWorkspace({
                     status: "Đã ghi sổ",
                   };
                   if (apiConnected) {
-                    void apiSave((writer) => saveAssetMovement(writer, "revaluation", { voucherNo: revalVoucherNo, date: revalDate, reason: revalReason, rows: revalRows }))
-                      .then((saved) => { if (saved) { setShowRevalModal(false); setRevalView("table"); } });
+                    void handleSaveReval(revalPrintTemplate);
                     return;
                   }
                   setRevalVouchers((prev) => {
@@ -4195,11 +4615,34 @@ export default function MisaAssetsWorkspace({
                   setRevalView("table");
                   notify(`Đã lưu và chuẩn bị in biên bản đánh giá lại ${revalVoucherNo}!`);
                 }}
+                disabled={apiConnected && revalReadOnly}
                 style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Lưu và In</span>
-                <ChevronDown size={14} />
+                <span>{apiConnected ? "Cất và In" : "Lưu và In"}</span>
               </button>
+              {apiConnected && (
+                <div style={{ position: "relative" }}>
+                  <button type="button" aria-label="Chọn mẫu in đánh giá lại" onClick={() => setShowRevalPrintMenu((open) => !open)}
+                    style={{ height: 32, padding: "0 8px", background: "#00a862", border: "none", borderRadius: 4, color: "#ffffff", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                    <ChevronDown size={14} />
+                  </button>
+                  {showRevalPrintMenu && (
+                    <div role="menu" aria-label="Mẫu in đánh giá lại" style={{ position: "absolute", right: 0, bottom: 38, minWidth: 280, background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, boxShadow: "0 10px 25px rgba(15,23,42,0.18)", padding: 4, zIndex: 5 }}>
+                      {[["RECORD", "Biên bản đánh giá lại TSCĐ (Mẫu số 04 - TSCĐ)"], ["VOUCHER", "Chứng từ kế toán (bút toán đánh giá lại)"]].map(([id, label]) => (
+                        <button key={id} type="button" role="menuitem"
+                          onClick={() => {
+                            setRevalPrintTemplate(id);
+                            setShowRevalPrintMenu(false);
+                            if (revalRecord?.status === "POSTED") printRevaluation(revalRecord, id); else void handleSaveReval(id);
+                          }}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", border: "none", borderRadius: 3, background: id === revalPrintTemplate ? "#ecfdf5" : "transparent", fontSize: 12.5, cursor: "pointer" }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -6472,7 +6915,7 @@ export default function MisaAssetsWorkspace({
               </button>
               <button
                 type="button"
-                onClick={() => setShowRevalModal(true)}
+                onClick={openNewReval}
                 style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
@@ -6499,7 +6942,7 @@ export default function MisaAssetsWorkspace({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
-              onClick={() => setShowRevalModal(true)}
+              onClick={openNewReval}
               style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
@@ -6555,6 +6998,7 @@ export default function MisaAssetsWorkspace({
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
                   <td
                     onClick={() => {
+                      if (apiConnected && (v as any).id) { openRevalRecord((v as any).id); return; }
                       setRevalVoucherNo(v.voucherNo);
                       setShowRevalModal(true);
                     }}
@@ -6571,11 +7015,7 @@ export default function MisaAssetsWorkspace({
                   </td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
-                      {(() => {
-                        const record = apiConnected ? apiRows.transactions?.find((row) => row.id === (v as any).id) : undefined;
-                        return record ? <MisaApiDocumentStatus path="/api/v1/fixed-assets/transactions/" record={record}
-                          companyId={_company.id} notify={notify} onChanged={reloadApi} /> : v.status;
-                      })()}
+                      {v.status}
                     </span>
                   </td>
                 </tr>

@@ -154,7 +154,7 @@ class StatementViewSet(Base):
             filename=statement.raw_file.get("file_name") or "statement.xlsx")
 class StatementLineViewSet(mixins.ListModelMixin,mixins.RetrieveModelMixin,GenericViewSet):
     permission_classes=(BankPermission,)
-    queryset=models.StatementLine.objects.select_related("statement__company","statement__account__account","currency","updated_by").prefetch_related(Prefetch("reconciliations",queryset=models.Reconciliation.objects.filter(cancelled_at__isnull=True).select_related("transaction"),to_attr="active_reconciliations"))
+    queryset=models.StatementLine.objects.select_related("statement__company","statement__account__account","statement__created_by","currency","updated_by").prefetch_related(Prefetch("reconciliations",queryset=models.Reconciliation.objects.filter(cancelled_at__isnull=True).select_related("transaction"),to_attr="active_reconciliations"))
     serializer_class=serializers.StatementLineManagementSerializer
     iam_permissions={"GET":"BANK.STATEMENT.VIEW","PATCH":"BANK.STATEMENT.EDIT"}
     action_permissions={"remove":"BANK.STATEMENT.EDIT","export":"BANK.STATEMENT.VIEW"}
@@ -174,7 +174,7 @@ class StatementLineViewSet(mixins.ListModelMixin,mixins.RetrieveModelMixin,Gener
         if p.get("source"):qs=qs.filter(statement__source=p["source"])
         if p.get("search"):
             word=p["search"]
-            qs=qs.filter(Q(external_id__icontains=word)|Q(reference__icontains=word)|Q(description__icontains=word)|Q(counterparty__icontains=word))
+            qs=qs.filter(Q(external_id__icontains=word)|Q(reference__icontains=word)|Q(description__icontains=word)|Q(counterparty__icontains=word)|Q(raw_data__counterparty_account__icontains=word))
         return qs.order_by("-transaction_date","-id")
     def _check_period(self,line):
         if reconciliation.period_confirmed(line):

@@ -111,7 +111,8 @@ export async function request<T>(path: string, token?: string, options?: Request
       fetch(path, {
         ...options,
         headers: {
-          "Content-Type": "application/json",
+          // A FormData body sets its own multipart boundary.
+          ...(options?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
           ...options?.headers,
           ...(access ? { Authorization: `Bearer ${access}` } : {}),
         },
@@ -139,7 +140,9 @@ export async function request<T>(path: string, token?: string, options?: Request
     if (response.status === 401) {
       throw new ApiError("Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.", 401);
     }
-    const detail = body && typeof body === "object"
+    const detail = Array.isArray(body)
+      ? body.map(String).join(" ")
+      : body && typeof body === "object"
       ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : (typeof value === "object" ? JSON.stringify(value) : String(value))}`).join("; ")
       : `Yêu cầu thất bại (HTTP ${response.status}).`;
     throw new ApiError(detail, response.status);

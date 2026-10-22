@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission
 
 from iam.permissions import has_effective_permission
+from master_data.models import Warehouse
 from organization.models import Company
 
 
@@ -25,6 +26,20 @@ class InventoryPermission(BasePermission):
         code = code or getattr(view, "iam_permissions", {}).get(request.method)
         if not code:
             return False
+        if getattr(view, "action", None) in ("summary", "summary_options", "multi_warehouse_summary", "movement_detail", "detail_ledger", "alerts"):
+            return any(
+                has_effective_permission(request.user.iam_account, company, code,
+                                         warehouse_id=warehouse.pk, branch_id=warehouse.branch_id)
+                for warehouse in Warehouse.objects.filter(company=company).only("id", "branch_id")
+            )
+        if view.__class__.__name__ == "ValuationViewSet" and getattr(view, "action", None) in ("options", "create", "list", "retrieve"):
+            if warehouse_id := request.data.get("warehouse"):
+                warehouse = Warehouse.objects.filter(company=company, pk=warehouse_id).first()
+                return bool(warehouse and has_effective_permission(request.user.iam_account, company, code,
+                    warehouse_id=warehouse.pk, branch_id=warehouse.branch_id))
+            return any(has_effective_permission(request.user.iam_account, company, code,
+                       warehouse_id=row.pk, branch_id=row.branch_id)
+                       for row in Warehouse.objects.filter(company=company).only("id", "branch_id"))
         warehouse_ids = [
             value for value in (
                 request.query_params.get("warehouse_id"), request.data.get("warehouse"),
