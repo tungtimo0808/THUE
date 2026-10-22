@@ -57,6 +57,10 @@ export default function LiveCommonHub() {
     let active = true;
     request<Page<AIInteraction> | AIInteraction[]>(`/api/v1/common/ai/?company_id=${encodeURIComponent(companyId)}`, token)
       .then(value => { if (active) setInteractions(Array.isArray(value) ? value : value.results); })
+      .catch(() =>
+        request<Page<AIInteraction> | AIInteraction[]>(`/api/v1/common/ai-conversations/?company_id=${encodeURIComponent(companyId)}`, token)
+          .then(value => { if (active) setInteractions(Array.isArray(value) ? value : value.results); })
+      )
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Không tải được lịch sử AI."); });
     return () => { active = false; };
   }, [token, companyId, tab]);

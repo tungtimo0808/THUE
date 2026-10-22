@@ -431,3 +431,83 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
     permission_classes=(BankPermission,);serializer_class=serializers.ApprovalSerializer;queryset=models.ApprovalDecision.objects.select_related("company","transaction","actor");iam_permissions={"GET":"BANK.APPROVAL.VIEW"}
     def get_queryset(self):
         c=self.request.query_params.get("company_id");return self.queryset.filter(company_id=c) if c else self.queryset.none()
+
+
+class BankRuleViewSet(GenericViewSet):
+    """API quản lý Quy tắc tự động hạch toán ngân hàng điện tử lưu trữ trực tiếp trong PostgreSQL."""
+    permission_classes = ()
+
+    def _resolve_company(self, request):
+        from organization.models import Company
+        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
+        if cid:
+            comp = Company.objects.filter(pk=cid).first()
+            if comp:
+                return comp
+        return Company.objects.first()
+
+    def list(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"rules": [], "results": []})
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
+        config = dict(setting.configuration or {})
+        rules = config.get("bank_electronic_rules")
+        if rules is None:
+            rules = [
+                {
+                    "id": "rule-abc-01",
+                    "name": "Thu tiền khách hàng chuyển khoản thanh toán hóa đơn (TK 131)",
+                    "documentKind": "Thu tiền gửi",
+                    "reason": "Thu nợ khách hàng theo hóa đơn",
+                    "debit": "1121",
+                    "credit": "131",
+                    "partnerCode": "THANHHA",
+                    "partnerName": "Công ty TNHH Thanh Hà",
+                    "automatic": True,
+                    "active": True,
+                    "conditions": [
+                        {"id": "c1", "join": "Và", "field": "Tài khoản giao dịch", "operator": "Bằng", "value": "123456789"},
+                        {"id": "c2", "join": "Và", "field": "Nội dung giao dịch", "operator": "Chứa", "value": "THANH TOAN HD"},
+                    ],
+                    "statistics": [],
+                },
+                {
+                    "id": "rule-abc-02",
+                    "name": "Hạch toán phí dịch vụ chuyển tiền ngân hàng Techcombank (TK 6425)",
+                    "documentKind": "Chi tiền gửi",
+                    "reason": "Chi phí dịch vụ ngân hàng",
+                    "debit": "6425",
+                    "credit": "1121",
+                    "partnerCode": "TCB",
+                    "partnerName": "Ngân hàng TMCP Kỹ thương Việt Nam (Techcombank)",
+                    "automatic": True,
+                    "active": True,
+                    "conditions": [
+                        {"id": "c3", "join": "Và", "field": "Tài khoản giao dịch", "operator": "Bằng", "value": "123456789"},
+                        {"id": "c4", "join": "Và", "field": "Nội dung giao dịch", "operator": "Chứa", "value": "PHI DICH VU"},
+                    ],
+                    "statistics": [],
+                },
+            ]
+        return Response({"rules": rules, "results": rules})
+
+    def create(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
+        with transaction.atomic():
+            setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
+            config = dict(setting.configuration or {})
+            existing = list(config.get("bank_electronic_rules") or [])
+            if isinstance(request.data.get("rules"), list):
+                existing = request.data["rules"]
+            elif isinstance(request.data.get("rule"), dict):
+                rule = request.data["rule"]
+                existing = [r for r in existing if r.get("id") != rule.get("id")] + [rule]
+            config["bank_electronic_rules"] = existing
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        return Response({"rules": existing, "results": existing})

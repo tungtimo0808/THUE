@@ -545,13 +545,97 @@ TT133_ACCOUNTS: List[Dict[str, Any]] = [
 ]
 
 
-def get_template_accounts(regime: str = "TT200", scope: str = "FULL") -> List[Dict[str, Any]]:
-    """Lấy danh sách tài khoản theo mẫu chế độ kế toán và phạm vi (FULL / ESSENTIAL)."""
-    regime_upper = (regime or "TT200").upper()
-    if regime_upper in ("TT133", "133"):
+# =====================================================================
+# THÔNG TƯ 99/2025/TT-BTC (Chế độ kế toán Doanh nghiệp mới nhất)
+# =====================================================================
+
+TT99_ACCOUNTS: List[Dict[str, Any]] = [
+    *TT200_ACCOUNTS,
+    # Bổ sung đầy đủ các tài khoản cấp 1 và cấp 2 theo Thông tư 99/2025/TT-BTC
+    {"code": "1113", "name": "Vàng tiền tệ", "name_en": "Monetary gold", "parent_code": "111", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1123", "name": "Vàng tiền tệ gửi ngân hàng", "name_en": "Monetary gold in bank", "parent_code": "112", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1211", "name": "Cổ phiếu", "name_en": "Trading equities", "parent_code": "121", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1212", "name": "Trái phiếu", "name_en": "Trading bonds", "parent_code": "121", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1281", "name": "Tiền gửi có kỳ hạn", "name_en": "Term deposits", "parent_code": "128", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1282", "name": "Trái phiếu nắm giữ đến ngày đáo hạn", "name_en": "Held-to-maturity bonds", "parent_code": "128", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1283", "name": "Cho vay", "name_en": "Loans receivable", "parent_code": "128", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1361", "name": "Vốn kinh doanh ở các đơn vị trực thuộc", "name_en": "Capital in dependent units", "parent_code": "136", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1368", "name": "Phải thu nội bộ khác", "name_en": "Other internal receivables", "parent_code": "136", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1381", "name": "Tài sản thiếu chờ xử lý", "name_en": "Shortage of assets awaiting resolution", "parent_code": "138", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1385", "name": "Phải thu về cổ phần hóa", "name_en": "Equitization receivables", "parent_code": "138", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1388", "name": "Phải thu khác", "name_en": "Other miscellaneous receivables", "parent_code": "138", "account_type": "ASSET", "normal_balance": "BOTH", "is_postable": True, "is_essential": True},
+    {"code": "1531", "name": "Công cụ, dụng cụ", "name_en": "Tools and supplies", "parent_code": "153", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "1532", "name": "Bao bì luân chuyển", "name_en": "Reusable packaging", "parent_code": "153", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1533", "name": "Đồ dùng cho thuê", "name_en": "Tools for rent", "parent_code": "153", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "1534", "name": "Thiết bị, phụ tùng thay thế", "name_en": "Spare parts and equipment", "parent_code": "153", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "2114", "name": "Thiết bị, dụng cụ quản lý", "name_en": "Management equipment", "parent_code": "211", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "212", "name": "Tài sản cố định thuê tài chính", "name_en": "Finance lease fixed assets", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "213", "name": "Tài sản cố định vô hình", "name_en": "Intangible fixed assets", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "2131", "name": "Quyền sử dụng đất", "name_en": "Land use rights", "parent_code": "213", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "2135", "name": "Chương trình phần mềm", "name_en": "Computer software", "parent_code": "213", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "2141", "name": "Hao mòn TSCĐ hữu hình", "name_en": "Accumulated depreciation of tangible FA", "parent_code": "214", "account_type": "ASSET", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "2142", "name": "Hao mòn TSCĐ thuê tài chính", "name_en": "Accumulated depreciation of leased FA", "parent_code": "214", "account_type": "ASSET", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "2143", "name": "Hao mòn TSCĐ vô hình", "name_en": "Accumulated amortization of intangible FA", "parent_code": "214", "account_type": "ASSET", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "217", "name": "Bất động sản đầu tư", "name_en": "Investment properties", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "221", "name": "Đầu tư vào công ty con", "name_en": "Investment in subsidiaries", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "222", "name": "Đầu tư vào công ty liên doanh, liên kết", "name_en": "Investment in associates and joint ventures", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "228", "name": "Đầu tư khác", "name_en": "Other long-term investments", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "229", "name": "Dự phòng tổn thất tài sản", "name_en": "Provision for asset impairment", "parent_code": None, "account_type": "ASSET", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "243", "name": "Tài sản thuế thu nhập hoãn lại", "name_en": "Deferred tax assets", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "244", "name": "Cầm cố, thế chấp, ký quỹ, ký cược", "name_en": "Pledges, mortgages, collateral and deposits", "parent_code": None, "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+    {"code": "33311", "name": "Thuế GTGT đầu ra", "name_en": "Output VAT", "parent_code": "3331", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "33312", "name": "Thuế GTGT hàng nhập khẩu", "name_en": "Import VAT", "parent_code": "3331", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3332", "name": "Thuế tiêu thụ đặc biệt", "name_en": "Special consumption tax", "parent_code": "333", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "3333", "name": "Thuế xuất, nhập khẩu", "name_en": "Import and export duties", "parent_code": "333", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3338", "name": "Thuế bảo vệ môi trường và các loại thuế khác", "name_en": "Other taxes", "parent_code": "333", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "3339", "name": "Phí, lệ phí và các khoản phải nộp khác", "name_en": "Fees, charges and other statutory payables", "parent_code": "333", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3341", "name": "Phải trả công nhân viên", "name_en": "Payables to staff", "parent_code": "334", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "335", "name": "Chi phí phải trả", "name_en": "Accrued expenses", "parent_code": None, "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3381", "name": "Tài sản thừa chờ giải quyết", "name_en": "Surplus assets awaiting resolution", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "3382", "name": "Kinh phí công đoàn", "name_en": "Trade union fees", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3383", "name": "Bảo hiểm xã hội", "name_en": "Social insurance", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3384", "name": "Bảo hiểm y tế", "name_en": "Health insurance", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3386", "name": "Bảo hiểm thất nghiệp", "name_en": "Unemployment insurance", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3387", "name": "Doanh thu chưa thực hiện", "name_en": "Unearned revenue", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "3388", "name": "Phải trả, phải nộp khác", "name_en": "Other payables", "parent_code": "338", "account_type": "LIABILITY", "normal_balance": "BOTH", "is_postable": True, "is_essential": True},
+    {"code": "3411", "name": "Các khoản đi vay", "name_en": "Borrowings", "parent_code": "341", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "3412", "name": "Nợ thuê tài chính", "name_en": "Finance lease liabilities", "parent_code": "341", "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "352", "name": "Dự phòng phải trả", "name_en": "Provisions for payables", "parent_code": None, "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "353", "name": "Quỹ khen thưởng, phúc lợi", "name_en": "Bonus and welfare fund", "parent_code": None, "account_type": "LIABILITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "4111", "name": "Vốn góp của chủ sở hữu", "name_en": "Contributed capital", "parent_code": "411", "account_type": "EQUITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "4112", "name": "Thặng dư vốn cổ phần", "name_en": "Share premium", "parent_code": "411", "account_type": "EQUITY", "normal_balance": "BOTH", "is_postable": True, "is_essential": False},
+    {"code": "413", "name": "Chênh lệch tỷ giá hối đoái", "name_en": "Foreign exchange differences", "parent_code": None, "account_type": "EQUITY", "normal_balance": "BOTH", "is_postable": True, "is_essential": False},
+    {"code": "414", "name": "Quỹ đầu tư phát triển", "name_en": "Investment and development fund", "parent_code": None, "account_type": "EQUITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "418", "name": "Các quỹ khác thuộc vốn chủ sở hữu", "name_en": "Other equity funds", "parent_code": None, "account_type": "EQUITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": False},
+    {"code": "441", "name": "Nguồn vốn đầu tư xây dựng cơ bản", "name_en": "Capital construction investment fund", "parent_code": None, "account_type": "EQUITY", "normal_balance": "CREDIT", "is_postable": True, "is_essential": True},
+    {"code": "5211", "name": "Chiết khấu thương mại", "name_en": "Trade discounts", "parent_code": "521", "account_type": "REVENUE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "5212", "name": "Hàng bán bị trả lại", "name_en": "Sales returns", "parent_code": "521", "account_type": "REVENUE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "5213", "name": "Giảm giá hàng bán", "name_en": "Sales allowances", "parent_code": "521", "account_type": "REVENUE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6411", "name": "Chi phí nhân viên bán hàng", "name_en": "Sales staff expenses", "parent_code": "641", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6412", "name": "Chi phí vật liệu, bao bì", "name_en": "Sales materials and packaging", "parent_code": "641", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6413", "name": "Chi phí dụng cụ, đồ dùng", "name_en": "Sales tools and supplies", "parent_code": "641", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6414", "name": "Chi phí khấu hao TSCĐ bán hàng", "name_en": "Sales FA depreciation", "parent_code": "641", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6417", "name": "Chi phí dịch vụ mua ngoài (bán hàng)", "name_en": "Sales outsourced services", "parent_code": "641", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6418", "name": "Chi phí bằng tiền khác (bán hàng)", "name_en": "Other cash selling expenses", "parent_code": "641", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6423", "name": "Chi phí đồ dùng văn phòng", "name_en": "Office supplies expenses", "parent_code": "642", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6424", "name": "Chi phí khấu hao TSCĐ quản lý", "name_en": "Admin FA depreciation", "parent_code": "642", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6425", "name": "Thuế, phí và lệ phí", "name_en": "Taxes, fees and charges", "parent_code": "642", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6427", "name": "Chi phí dịch vụ mua ngoài (QLDN)", "name_en": "Admin outsourced services", "parent_code": "642", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "6428", "name": "Chi phí bằng tiền khác (QLDN)", "name_en": "Other cash admin expenses", "parent_code": "642", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "8211", "name": "Chi phí thuế TNDN hiện hành", "name_en": "Current corporate income tax expense", "parent_code": "821", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": True},
+    {"code": "8212", "name": "Chi phí thuế TNDN hoãn lại", "name_en": "Deferred corporate income tax expense", "parent_code": "821", "account_type": "EXPENSE", "normal_balance": "DEBIT", "is_postable": True, "is_essential": False},
+]
+
+
+def get_template_accounts(regime: str = "TT99", scope: str = "FULL") -> List[Dict[str, Any]]:
+    """Lấy danh sách tài khoản theo mẫu chế độ kế toán (TT99, TT200, TT133) và phạm vi (FULL / ESSENTIAL)."""
+    regime_upper = (regime or "TT99").upper()
+    if regime_upper in ("TT133", "CIRCULAR_133", "133"):
         accounts = TT133_ACCOUNTS
-    else:
+    elif regime_upper in ("TT200", "CIRCULAR_200", "200"):
         accounts = TT200_ACCOUNTS
+    else:
+        accounts = TT99_ACCOUNTS
 
     if scope and scope.upper() == "ESSENTIAL":
         return [acc for acc in accounts if acc.get("is_essential", False)]

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   Search,
@@ -33,7 +34,7 @@ export interface CashFlowItem {
   section?: "business" | "investing" | "financing" | "summary";
 }
 
-// Complete Full Catalogue of B03 - DN (PP trực tiếp) matching Circular 200 & MISA AMIS Screenshot
+// Complete Full Catalogue of B03 - DN (PP trực tiếp) matching Circular 99/2025/TT-BTC
 const BASE_CASH_FLOW_DATA: CashFlowItem[] = [
   // I. Lưu chuyển tiền từ hoạt động kinh doanh
   {
@@ -379,6 +380,41 @@ export default function MisaCashFlowDirectReport({
 
   // Saved reports modal
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
+  const [rows, setRows] = useState<CashFlowItem[]>(BASE_CASH_FLOW_DATA);
+
+  const loadReportFromBackend = useCallback(async () => {
+    try {
+      const cid = getSelectedCompanyId();
+      const query = cid ? `?company_id=${cid}` : "";
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
+      if (res && res.b03_direct) {
+        const b03 = res.b03_direct;
+        const hasActivity = Object.values(b03).some(
+          (v: any) => Number(v?.currentPeriod || 0) !== 0 || Number(v?.previousPeriod || 0) !== 0
+        );
+        if (hasActivity) {
+          setRows(
+            BASE_CASH_FLOW_DATA.map((item) => {
+              if (!item.code) return item;
+              const entry = b03[item.code];
+              if (!entry) return item;
+              return {
+                ...item,
+                currentPeriod: Number(entry.currentPeriod ?? item.currentPeriod ?? 0),
+                previousPeriod: Number(entry.previousPeriod ?? item.previousPeriod ?? 0),
+              };
+            })
+          );
+        }
+      }
+    } catch {
+      // Fallback to BASE_CASH_FLOW_DATA
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReportFromBackend();
+  }, [loadReportFromBackend]);
 
   const handleOpenDrawer = () => {
     setDraftPeriod(period);
@@ -396,7 +432,8 @@ export default function MisaCashFlowDirectReport({
     setFetchFromSaved(draftFetchFromSaved);
     setHideZero(draftHideZero);
     setIsParamDrawerOpen(false);
-    notify?.("Đã cập nhật tham số Báo cáo lưu chuyển tiền tệ.");
+    void loadReportFromBackend();
+    notify?.("Đã cập nhật Báo cáo lưu chuyển tiền tệ (TT99) từ Sổ Cái Backend.");
   };
 
   const handleResetParams = () => {
@@ -425,7 +462,7 @@ export default function MisaCashFlowDirectReport({
 
   // Filter rows based on search keyword and hideZero checkbox
   const filteredRows = useMemo(() => {
-    return BASE_CASH_FLOW_DATA.filter((row) => {
+    return rows.filter((row) => {
       // Header rows always show unless search hides them
       if (row.isHeader) {
         if (!searchKeyword.trim()) return true;
@@ -450,7 +487,7 @@ export default function MisaCashFlowDirectReport({
 
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [rows, hideZero, searchKeyword]);
 
   return (
     <div
@@ -669,7 +706,10 @@ export default function MisaCashFlowDirectReport({
               cursor: "pointer",
             }}
             title="Làm mới"
-            onClick={() => notify?.("Đã làm mới dữ liệu báo cáo lưu chuyển tiền tệ.")}
+            onClick={() => {
+              void loadReportFromBackend();
+              notify?.("Đã làm mới dữ liệu Báo cáo lưu chuyển tiền tệ (TT99) từ Sổ Cái Backend.");
+            }}
           >
             <RotateCw size={14} />
           </button>
@@ -865,6 +905,9 @@ export default function MisaCashFlowDirectReport({
             >
               BÁO CÁO LƯU CHUYỂN TIỀN TỆ
             </h1>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+              (Mẫu số B03 - DN ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)
+            </div>
             <div
               style={{
                 fontSize: 13,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import {
   Search,
@@ -34,7 +35,45 @@ import {
 import { formatVND } from "./MisaPurchaseModals";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
-  previewPrepaidAllocation, saveAssetCount, saveAssetMovement, saveDepreciation, savePrepaidAllocation, savePrepaidDecrease, savePrepaidExpense, saveToolAsset,
+  calculateAllocationVoucherUc12,
+  cancelPrepaidDecreaseUc14,
+  cancelToolDecreaseUc14,
+  cancelToolStocktakeUc15,
+  cancelToolTransferUc13,
+  exportAllocationExcelUc12,
+  exportToolRegisterUc16,
+  exportToolStocktakeExcelUc15,
+  fetchAllocationReferenceVouchersUc12,
+  fetchDecreaseReferenceVouchersUc14,
+  fetchDefaultAllocationPeriodUc11,
+  fetchDisposablePrepaidExpensesUc14,
+  fetchDisposableToolsUc14,
+  fetchInUseToolsForStocktakeUc15,
+  fetchToolDetailTraceUc16,
+  fetchToolRegisterUc16,
+  fetchToolReportCatalogUc16,
+  fetchToolSourceVouchers,
+  fetchTransferableToolsUc13,
+  generateToolReportUc16,
+  importPrepaidExpensesExcel,
+  previewPrepaidAllocation,
+  resolveToolStocktakeUc15,
+  saveAllocationVoucherUc12,
+  saveAssetMovement,
+  saveDepreciation,
+  savePrepaidAllocation,
+  savePrepaidDecrease,
+  savePrepaidDecreaseUc14,
+  savePrepaidExpense,
+  saveToolAsset,
+  saveToolAssetBatch,
+  saveToolDecreaseUc14,
+  saveToolStocktakeUc15,
+  saveToolTransferUc13,
+  setupAllocationPeriodUc11,
+  unpostAllocationVoucherUc12,
+  validateAllocationVoucherUc11,
+  validateToolStocktakeDateUc15,
 } from "./misa-api-writes";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 
@@ -62,7 +101,7 @@ export const SAMPLE_TOOLS_DATA = [
     remainingAmount: 2100000,
     allocationMonths: 18,
     remainingMonths: 7,
-    costAccount: "6422",
+    costAccount: "6423",
     startDate: "01/02/2024",
   },
   {
@@ -76,7 +115,7 @@ export const SAMPLE_TOOLS_DATA = [
     remainingAmount: 3780000,
     allocationMonths: 24,
     remainingMonths: 14,
-    costAccount: "6422",
+    costAccount: "6423",
     startDate: "01/04/2024",
   },
   {
@@ -90,21 +129,21 @@ export const SAMPLE_TOOLS_DATA = [
     remainingAmount: 9600000,
     allocationMonths: 36,
     remainingMonths: 28,
-    costAccount: "6422",
+    costAccount: "6423",
     startDate: "01/05/2024",
   },
   {
     code: "TD001",
     name: "Tủ đựng tài liệu",
     category: "Nội thất văn phòng",
-    dept: "Phòng Giám đốc",
+    dept: "Ban Giám đốc",
     qty: 1,
     originalCost: 9600000,
     allocatedAmount: 3200000,
     remainingAmount: 6400000,
     allocationMonths: 24,
     remainingMonths: 17,
-    costAccount: "6422",
+    costAccount: "6423",
     startDate: "01/06/2024",
   },
   {
@@ -118,7 +157,7 @@ export const SAMPLE_TOOLS_DATA = [
     remainingAmount: 4200000,
     allocationMonths: 12,
     remainingMonths: 6,
-    costAccount: "6422",
+    costAccount: "6423",
     startDate: "01/07/2024",
   },
   {
@@ -132,8 +171,22 @@ export const SAMPLE_TOOLS_DATA = [
     remainingAmount: 12400000,
     allocationMonths: 36,
     remainingMonths: 31,
-    costAccount: "6422",
+    costAccount: "6413",
     startDate: "01/08/2024",
+  },
+  {
+    code: "MI001",
+    name: "Máy in Canon imageCLASS MF275dw",
+    category: "Thiết bị văn phòng",
+    dept: "Phòng Kế toán",
+    qty: 1,
+    originalCost: 6000000,
+    allocatedAmount: 333333,
+    remainingAmount: 5666667,
+    allocationMonths: 18,
+    remainingMonths: 17,
+    costAccount: "6423",
+    startDate: "12/12/2026",
   },
 ];
 
@@ -602,6 +655,7 @@ export default function MisaToolsWorkspace({
   href,
   notify,
 }: MisaToolsWorkspaceProps) {
+  const navigate = useNavigate();
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
     assets: "/api/v1/fixed-assets/assets/", transactions: "/api/v1/fixed-assets/transactions/",
     calculations: "/api/v1/fixed-assets/calculations/",
@@ -623,7 +677,7 @@ export default function MisaToolsWorkspace({
   // Navigation helper
   const navigateTo = (targetTab: string) => {
     if (href) {
-      window.location.href = href(`/tools/${targetTab}`);
+      navigate(href(`/tools/${targetTab}`));
     }
   };
 
@@ -717,6 +771,8 @@ export default function MisaToolsWorkspace({
     "Bảng tính phân bổ chi phí trả trước",
   ]);
   const [selectedReportForPreview, setSelectedReportForPreview] = useState<string | null>(null);
+  const [uc16RegisterRows, setUc16RegisterRows] = useState<Array<any> | null>(null);
+  const [uc16ReportData, setUc16ReportData] = useState<Record<string, any> | null>(null);
 
   // =========================================================================
   // STATE CHO PHÂN BỔ CHI PHÍ CCDC (Ảnh user cung cấp)
@@ -734,6 +790,13 @@ export default function MisaToolsWorkspace({
   const [allocationVoucherTab, setAllocationVoucherTab] = useState<"identify" | "allocation" | "accounting">("identify");
   const [allocationFilterPeriod, setAllocationFilterPeriod] = useState("Năm 2026");
   const [allocationSearch, setAllocationSearch] = useState("");
+  const [toolAllocIdentifyRows, setToolAllocIdentifyRows] = useState<Array<Record<string, any>>>([]);
+  const [toolAllocDetailRows, setToolAllocDetailRows] = useState<Array<Record<string, any>>>([]);
+  const [toolAllocAccountingRows, setToolAllocAccountingRows] = useState<Array<Record<string, any>>>([]);
+  const [toolAllocTotalAmount, setToolAllocTotalAmount] = useState<number>(0);
+  const [toolAllocEmptyWarning, setToolAllocEmptyWarning] = useState<string>("");
+  const [toolAllocReferences, setToolAllocReferences] = useState<Array<{ voucherNo: string; voucherDate: string; voucherType?: string; description: string; amount: number }>>([]);
+  const [toolAllocAttachments, setToolAllocAttachments] = useState<Array<{ file_name: string; file_size: number }>>([]);
 
   // =========================================================================
   // STATE CHO ĐIỀU CHỈNH CÔNG CỤ DỤNG CỤ (Ảnh 1 & 2 của user)
@@ -801,7 +864,18 @@ export default function MisaToolsWorkspace({
     },
   ]);
 
-  const totalTransferCurrentQty = transferRows.reduce((s, r) => s + (r.currentQty || 0), 0);
+  // BR33: Tổng Số lượng đang dùng được tính duy nhất theo từng cặp (Mã CCDC, Từ đơn vị)
+  const totalTransferCurrentQty = (() => {
+    const seen = new Set<string>();
+    let sum = 0;
+    for (const r of transferRows) {
+      const key = `${r.code || ""}::${r.fromDept || ""}`;
+      if (r.code && seen.has(key)) continue;
+      if (r.code) seen.add(key);
+      sum += r.currentQty || 0;
+    }
+    return sum;
+  })();
   const totalTransferQty = transferRows.reduce((s, r) => s + (r.transferQty || 0), 0);
 
   // =========================================================================
@@ -827,41 +901,210 @@ export default function MisaToolsWorkspace({
     },
   ]);
 
-  const totalDecreaseCurrentQty = decreaseRows.reduce((s, r) => s + (r.currentQty || 0), 0);
+  // BR10: Tổng Số lượng đang dùng được tính duy nhất theo từng cặp (Mã CCDC, Đơn vị sử dụng)
+  const totalDecreaseCurrentQty = (() => {
+    const seen = new Set<string>();
+    let sum = 0;
+    for (const r of decreaseRows) {
+      const key = `${r.code || ""}::${r.dept || ""}`;
+      if (r.code && seen.has(key)) continue;
+      if (r.code) seen.add(key);
+      sum += r.currentQty || 0;
+    }
+    return sum;
+  })();
   const totalDecreaseQty = decreaseRows.reduce((s, r) => s + (r.decreaseQty || 0), 0);
   const totalDecreaseRemainingValue = decreaseRows.reduce((s, r) => s + (r.remainingValue || 0), 0);
+  const handleAllocationAttachmentUpload = (
+    files: FileList | null,
+    target: "CCDC" | "PREPAID"
+  ) => {
+    if (!files || files.length === 0) return;
+    const allowedExts = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png", ".csv", ".txt", ".zip"];
+    const maxBytes = 5 * 1024 * 1024;
+    const validFiles: Array<{ file_name: string; file_size: number }> = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const ext = f.name.includes(".") ? "." + f.name.split(".").pop()!.toLowerCase() : "";
+      if (!f.name || f.size > maxBytes || (ext && !allowedExts.includes(ext))) {
+        notify("Tệp đính kèm không hợp lệ hoặc vượt dung lượng cho phép.");
+        return;
+      }
+      validFiles.push({ file_name: f.name, file_size: f.size });
+    }
+    if (target === "CCDC") {
+      setToolAllocAttachments((prev) => [...prev, ...validFiles]);
+    } else {
+      setPrepaidAllocAttachments((prev) => [...prev, ...validFiles]);
+    }
+    notify(`Đã đính kèm ${validFiles.length} tệp hợp lệ.`);
+  };
+
+  const handleRecalculateToolAllocationPeriod = (nextMonth: number, nextYear: number) => {
+    setAllocationMonth(nextMonth);
+    setAllocationYear(nextYear);
+    if (!nextMonth || nextMonth < 1 || nextMonth > 12 || !nextYear || nextYear < 1900 || nextYear > 2100) {
+      notify("Kỳ phân bổ không hợp lệ. Vui lòng chọn lại Tháng và Năm.");
+      return;
+    }
+    const mStr = String(nextMonth).padStart(2, "0");
+    const daysInMonth = new Date(nextYear, nextMonth, 0).getDate();
+    const dateStr = `${String(daysInMonth).padStart(2, "0")}/${mStr}/${nextYear}`;
+    setAllocationPostingDate(dateStr);
+    setAllocationVoucherDate(dateStr);
+    setAllocationReason(`Phân bổ chi phí CCDC tháng ${nextMonth} năm ${nextYear}`);
+    if (apiConnected) {
+      void apiSave(async (writer) => {
+        const res = await calculateAllocationVoucherUc12(writer, {
+          allocationType: "CCDC",
+          month: nextMonth,
+          year: nextYear,
+          voucherNo: allocationVoucherNo,
+        });
+        setToolAllocIdentifyRows(res.identify_rows || []);
+        setToolAllocDetailRows(res.allocation_rows || []);
+        setToolAllocAccountingRows(res.accounting_rows || []);
+        setToolAllocTotalAmount(Number(res.total_amount || 0));
+        setToolAllocEmptyWarning(res.empty_period_warning || "");
+        if (res.posting_date) setAllocationPostingDate(res.posting_date);
+        if (res.voucher_date) setAllocationVoucherDate(res.voucher_date);
+        if (res.description) setAllocationReason(res.description);
+        return { message: res.message || "" };
+      });
+    }
+  };
+
+  const handleRecalculatePrepaidAllocationPeriod = (nextMonth: number, nextYear: number) => {
+    setPrepaidAllocMonth(nextMonth);
+    setPrepaidAllocYear(nextYear);
+    if (!nextMonth || nextMonth < 1 || nextMonth > 12 || !nextYear || nextYear < 1900 || nextYear > 2100) {
+      notify("Kỳ phân bổ không hợp lệ. Vui lòng chọn lại Tháng và Năm.");
+      return;
+    }
+    const mStr = String(nextMonth).padStart(2, "0");
+    const daysInMonth = new Date(nextYear, nextMonth, 0).getDate();
+    const dateStr = `${String(daysInMonth).padStart(2, "0")}/${mStr}/${nextYear}`;
+    setPrepaidAllocPostingDate(dateStr);
+    setPrepaidAllocVoucherDate(dateStr);
+    setPrepaidAllocReason(`Phân bổ chi phí trả trước tháng ${nextMonth} năm ${nextYear}`);
+    if (apiConnected) {
+      void apiSave(async (writer) => {
+        const res = await calculateAllocationVoucherUc12(writer, {
+          allocationType: "PREPAID",
+          month: nextMonth,
+          year: nextYear,
+          voucherNo: prepaidAllocVoucherNo,
+        });
+        setPrepaidAllocIdentifyRows(res.identify_rows || []);
+        setPrepaidAllocDetailRows(res.allocation_rows || []);
+        setPrepaidAllocAccountingRows(res.accounting_rows || []);
+        setPrepaidAllocTotalAmount(Number(res.total_amount || 0));
+        setPrepaidAllocEmptyWarning(res.empty_period_warning || "");
+        if (res.posting_date) setPrepaidAllocPostingDate(res.posting_date);
+        if (res.voucher_date) setPrepaidAllocVoucherDate(res.voucher_date);
+        if (res.description) setPrepaidAllocReason(res.description);
+        return { message: res.message || "" };
+      });
+    }
+  };
+
   const handleSaveToolAllocation = async (print = false) => {
-    const saved = await apiSave((writer) => {
-      if ((apiRows.calculations || []).some((row) => row.number === allocationVoucherNo)) throw new Error("Chứng từ phân bổ đã lưu chỉ xem được ở form này.");
-      return saveDepreciation(writer, {
-      year: allocationYear, month: allocationMonth, voucherNo: allocationVoucherNo,
-      }, "ALLOCATION");
+    if (!allocationMonth || allocationMonth < 1 || allocationMonth > 12 || !allocationYear || allocationYear < 1900 || allocationYear > 2100) {
+      notify("Tháng hoặc năm phân bổ không hợp lệ.");
+      return;
+    }
+    if (!allocationReason.trim()) {
+      notify("Vui lòng nhập diễn giải chứng từ.");
+      return;
+    }
+    if (!allocationPostingDate.trim()) {
+      notify("Vui lòng nhập ngày hạch toán hợp lệ.");
+      return;
+    }
+    if (!allocationVoucherDate.trim()) {
+      notify("Vui lòng nhập ngày chứng từ hợp lệ.");
+      return;
+    }
+    if (!allocationVoucherNo.trim()) {
+      notify("Vui lòng nhập số chứng từ.");
+      return;
+    }
+    const saved = await apiSave(async (writer) => {
+      if ((apiRows.calculations || []).some((row) => row.number === allocationVoucherNo)) {
+        throw new Error("Số chứng từ đã tồn tại. Vui lòng nhập số khác.");
+      }
+      try {
+        return await saveAllocationVoucherUc12(writer, {
+          allocationType: "CCDC",
+          month: allocationMonth,
+          year: allocationYear,
+          voucherNo: allocationVoucherNo,
+          postingDate: allocationPostingDate,
+          voucherDate: allocationVoucherDate,
+          reason: allocationReason,
+          references: toolAllocReferences.map((r) => ({
+            voucher_no: r.voucherNo,
+            voucher_date: r.voucherDate,
+            description: r.description,
+            amount: r.amount,
+          })),
+          attachments: toolAllocAttachments,
+          identifyRows: toolAllocIdentifyRows,
+          allocationRows: toolAllocDetailRows,
+          accountingRows: toolAllocAccountingRows,
+          printAfterSave: print,
+        });
+      } catch {
+        return await saveDepreciation(writer, {
+          year: allocationYear, month: allocationMonth, voucherNo: allocationVoucherNo,
+        }, "ALLOCATION");
+      }
     });
     if (saved) {
       setShowAllocationVoucherModal(false);
+      setAllocationViewMode("list");
       if (print) window.print();
     }
   };
-  const handleSaveToolMovement = async (kind: "transfer" | "disposal") => {
-    const rows = kind === "transfer" ? transferRows.map((row) => ({
-      assetCode: row.code, toDept: row.toDept, requestedQty: row.transferQty,
-    })) : decreaseRows.map((row) => ({ assetCode: row.code, requestedQty: row.decreaseQty }));
-    const saved = await apiSave(async (writer) => {
-      if ((apiRows.transactions || []).some((row) => row.number === (kind === "transfer" ? transferVoucherNo : decreaseVoucherNo))) throw new Error("Chứng từ đã lưu chỉ xem được ở form này.");
-      const assets = await writer.list("assets");
-      for (const row of rows.filter((item) => item.assetCode)) {
-        const asset = assets.find((item) => item.code === row.assetCode && item.asset_type === "TOOL");
-        if (!asset) throw new Error(`CCDC ${row.assetCode} chưa có trong danh mục.`);
+  const handleSaveToolMovement = async (kind: "transfer" | "disposal", print = false) => {
+    if (kind === "transfer") {
+      const saved = await apiSave(async (writer) => {
+        if ((apiRows.transactions || []).some((row) => row.number === transferVoucherNo)) {
+          throw new Error("Chứng từ đã lưu chỉ xem được ở form này.");
+        }
+        return await saveToolTransferUc13(writer, {
+          voucherNo: transferVoucherNo,
+          voucherDate: transferVoucherDate,
+          deliverer: transferDeliverer,
+          receiver: transferReceiver,
+          reason: transferReason,
+          rows: transferRows,
+          printAfterSave: print,
+        });
+      });
+      if (saved) {
+        setShowTransferModal(false);
+        setTransferViewMode("list");
+        if (print) window.print();
       }
-      return saveAssetMovement(writer, kind, {
-        rows, voucherNo: kind === "transfer" ? transferVoucherNo : decreaseVoucherNo,
-        date: kind === "transfer" ? transferVoucherDate : decreaseVoucherDate,
-        reason: kind === "transfer" ? transferReason : decreaseReason,
+      return;
+    }
+    const saved = await apiSave(async (writer) => {
+      if ((apiRows.transactions || []).some((row) => row.number === decreaseVoucherNo)) {
+        throw new Error("Số chứng từ đã tồn tại.");
+      }
+      return await saveToolDecreaseUc14(writer, {
+        voucherNo: decreaseVoucherNo,
+        voucherDate: decreaseVoucherDate,
+        reason: decreaseReason,
+        rows: decreaseRows,
+        printOnSave: print,
       });
     });
     if (saved) {
-      if (kind === "transfer") setShowTransferModal(false);
-      else setShowDecreaseModal(false);
+      setShowDecreaseModal(false);
+      setDecreaseViewMode("list");
+      if (print) window.print();
     }
   };
   const handleSaveToolAdjustment = async () => {
@@ -973,8 +1216,17 @@ export default function MisaToolsWorkspace({
   const [singleStopAlloc, setSingleStopAlloc] = useState(false);
   const [singleActiveTab, setSingleActiveTab] = useState<"dept" | "alloc" | "desc" | "origin">("dept");
   const [singleDeptRows, setSingleDeptRows] = useState([
-    { id: "dept-1", code: "", name: "", qty: 0 },
+    { id: "dept-1", code: "PKT", name: "Phòng Kỹ thuật", qty: 1 },
   ]);
+  const [singleAllocRows, setSingleAllocRows] = useState([
+    { id: "alloc-1", targetCode: "PKT", targetName: "Phòng Kỹ thuật", rate: 100, costAccount: "6423", costItem: "", statCode: "" },
+  ]);
+  const [singleDetailedDesc, setSingleDetailedDesc] = useState("");
+  const [singleSourceVoucherNo, setSingleSourceVoucherNo] = useState("");
+  const [singleSourceGlPosted, setSingleSourceGlPosted] = useState(true);
+  const [singleOriginRows, setSingleOriginRows] = useState<Array<{
+    id: string; voucherNo: string; voucherDate: string; type: string; qty: number; price: number; amount: number;
+  }>>([]);
 
   // =========================================================================
   // STATE CHO FORM 2: GHI TĂNG CCDC HÀNG LOẠT (BATCH - Ảnh 4 & 5)
@@ -1014,45 +1266,55 @@ export default function MisaToolsWorkspace({
   ]);
   const [batchActiveTab, setBatchActiveTab] = useState<"dept" | "alloc">("dept");
   const [batchDeptRows, setBatchDeptRows] = useState([
-    { id: "bdept-1", code: "", name: "", qty: 0 },
+    { id: "bdept-1", code: "PKT", name: "Phòng Kỹ thuật", qty: 1 },
+  ]);
+  const [batchAllocRows, setBatchAllocRows] = useState([
+    { id: "balloc-1", targetCode: "PKT", targetName: "Phòng Kỹ thuật", rate: 100, costAccount: "6423", costItem: "", statCode: "" },
   ]);
   const handleSaveSingleTool = async () => {
     const saved = await apiSave((writer) => saveToolAsset(writer, {
-      code: singleToolCode, name: singleToolName, category: singleCategory || singleGroup,
-      quantity: singleQty, originalCost: singleAmount || singlePrice * singleQty,
-      allocationMonths: singleAllocMonths, startDate: singleVoucherDate,
-      voucherNo: singleVoucherNo, reason: singleReason,
+      code: singleToolCode,
+      name: singleToolName,
+      category: singleCategory || singleGroup,
+      group: singleGroup || singleCategory,
+      unit: singleUnit || "Cái",
+      quantity: singleQty,
+      unitPrice: singlePrice,
+      originalCost: singleAmount || singlePrice * singleQty,
+      allocationMonths: singleAllocMonths,
+      periodicAllocationAmount: singleMonthlyAlloc || undefined,
+      waitingAccount: singleWaitingAcc || "242",
+      stopAllocation: singleStopAlloc,
+      startDate: singleVoucherDate,
+      voucherNo: singleVoucherNo,
+      reason: singleReason,
+      detailedDescription: singleDetailedDesc || singleReason,
+      sourceType: singleSourceType.includes("ghi giảm") ? "FA_DISPOSAL" : "STOCK_ISSUE",
+      sourceVoucherNo: singleSourceVoucherNo,
+      sourceGlPosted: singleSourceGlPosted,
+      departmentAllocations: singleDeptRows,
+      allocations: singleAllocRows,
+      origins: singleOriginRows,
+      useUc10Endpoint: true,
     }));
     if (saved) setShowSingleAddModal(false);
   };
   const handleSaveBatchTools = async () => {
     const filled = batchRows.filter((row) => row.code.trim() || row.name.trim());
     const saved = await apiSave(async (writer) => {
-      if (!filled.length) throw new Error("Nhập ít nhất một công cụ dụng cụ.");
-      const codes = new Set<string>();
-      for (const row of filled) {
-        if (!row.code.trim() || !row.name.trim() || !(row.qty > 0) || !((row.amount || row.price * row.qty) > 0)) throw new Error("Mỗi dòng cần mã, tên, số lượng và nguyên giá hợp lệ.");
-        if (codes.has(row.code.trim())) throw new Error(`Mã CCDC ${row.code} bị lặp trong danh sách.`);
-        codes.add(row.code.trim());
-      }
-      const existing = await writer.list("assets");
-      if (filled.some((row) => existing.some((asset) => asset.code === row.code.trim()))) throw new Error("Có mã CCDC đã tồn tại trên hệ thống.");
-      let completed = 0;
-      for (const row of filled) {
-        try {
-          await saveToolAsset(writer, {
-            code: row.code, name: row.name, category: row.category || row.group,
-            quantity: row.qty, originalCost: row.amount || row.price * row.qty,
-            allocationMonths: 1, startDate: row.date,
-            voucherNo: row.voucherNo, reason: row.reason,
-          });
-          completed += 1;
-        } catch (error) {
-          reloadApi();
-          throw new Error(`Đã lưu ${completed}/${filled.length} CCDC. Dòng ${row.code}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-      }
-      return { message: `Đã lưu ${filled.length} CCDC và chứng từ ghi tăng dưới dạng dự thảo.` };
+      if (!filled.length) throw new Error("Vui lòng nhập đầy đủ thông tin cho các dòng CCDC ghi tăng.");
+      return await saveToolAssetBatch(writer, {
+        sourceType: batchSourceType.includes("ghi giảm") ? "FA_DISPOSAL" : "STOCK_ISSUE",
+        items: filled.map((row) => ({
+          ...row,
+          departmentAllocations: batchDeptRows.filter((r) => r.code || r.name).length
+            ? batchDeptRows.map((r, idx) => (idx === 0 && batchDeptRows.length === 1 ? { ...r, qty: row.qty || r.qty } : r))
+            : [{ code: "PKT", name: "Phòng Kỹ thuật", qty: row.qty || 1 }],
+          allocations: batchAllocRows.filter((r) => r.costAccount || r.targetCode || r.targetName).length
+            ? batchAllocRows
+            : [{ targetCode: "PKT", targetName: "Phòng Kỹ thuật", rate: 100, costAccount: "6423", costItem: "", statCode: "" }],
+        })),
+      });
     });
     if (saved) setShowBatchAddModal(false);
   };
@@ -1083,6 +1345,9 @@ export default function MisaToolsWorkspace({
   const [form1Rows, setForm1Rows] = useState([
     { id: "f1-1", targetCode: "", targetName: "", rate: 0, costAccount: "", costItem: "", statCode: "" },
   ]);
+  const [form1SourceDocs, setForm1SourceDocs] = useState<Array<{
+    id: string; voucherNo: string; voucherDate: string; description: string; amount: number;
+  }>>([]);
 
   // Form 2: Thêm chi phí trả trước đầu kỳ (Ảnh 2)
   const [form2Code, setForm2Code] = useState("CPTT006");
@@ -1120,6 +1385,13 @@ export default function MisaToolsWorkspace({
   const [prepaidAllocTab, setPrepaidAllocTab] = useState<"identify" | "allocation" | "accounting">("identify");
   const [prepaidAllocFilterPeriod, setPrepaidAllocFilterPeriod] = useState("Năm 2026");
   const [prepaidAllocSearch, setPrepaidAllocSearch] = useState("");
+  const [prepaidAllocIdentifyRows, setPrepaidAllocIdentifyRows] = useState<Array<Record<string, any>>>([]);
+  const [prepaidAllocDetailRows, setPrepaidAllocDetailRows] = useState<Array<Record<string, any>>>([]);
+  const [prepaidAllocAccountingRows, setPrepaidAllocAccountingRows] = useState<Array<Record<string, any>>>([]);
+  const [prepaidAllocTotalAmount, setPrepaidAllocTotalAmount] = useState<number>(0);
+  const [prepaidAllocEmptyWarning, setPrepaidAllocEmptyWarning] = useState<string>("");
+  const [prepaidAllocReferences, setPrepaidAllocReferences] = useState<Array<{ voucherNo: string; voucherDate: string; voucherType?: string; description: string; amount: number }>>([]);
+  const [prepaidAllocAttachments, setPrepaidAllocAttachments] = useState<Array<{ file_name: string; file_size: number }>>([]);
   const [prepaidAllocVouchers, setPrepaidAllocVouchers] = useState([
     {
       voucherNo: "PBCP00001",
@@ -1163,6 +1435,128 @@ export default function MisaToolsWorkspace({
     },
   ]);
 
+  // Synchronized UI Modals for UC-FA-12..16 (Reference Vouchers, Detail Trace, Stocktake Resolution, Report Visibility)
+  const [showRefVoucherModal, setShowRefVoucherModal] = useState(false);
+  const [refVoucherContext, setRefVoucherContext] = useState<"ALLOC_CCDC" | "ALLOC_PREPAID" | "DEC_CCDC" | "DEC_PREPAID">("ALLOC_CCDC");
+  const [refVoucherSearch, setRefVoucherSearch] = useState("");
+  const [refVoucherSelectedNos, setRefVoucherSelectedNos] = useState<string[]>([]);
+  const [refVoucherList, setRefVoucherList] = useState<Array<{ voucherNo: string; voucherDate: string; voucherType?: string; description: string; amount: number }>>([
+    { voucherNo: "GTCC00001", voucherDate: "01/02/2026", voucherType: "Ghi tăng CCDC", description: "Ghi tăng Máy in Canon LBP2900", amount: 5400000 },
+    { voucherNo: "GTCC00002", voucherDate: "01/04/2026", voucherType: "Ghi tăng CCDC", description: "Ghi tăng Tủ sắt văn phòng 4 cánh", amount: 6480000 },
+    { voucherNo: "BBKK00001", voucherDate: "30/09/2026", voucherType: "Kiểm kê CCDC", description: "Biên bản kiểm kê CCDC định kỳ Quý 3/2026", amount: 0 },
+  ]);
+  const [showToolDetailTraceModal, setShowToolDetailTraceModal] = useState(false);
+  const [selectedToolTrace, setSelectedToolTrace] = useState<any>(null);
+  const [showStocktakeResolveModal, setShowStocktakeResolveModal] = useState(false);
+  const [selectedStocktakeForResolve, setSelectedStocktakeForResolve] = useState<string>("");
+  const [stocktakeResolveAction, setStocktakeResolveAction] = useState<"VERIFY_CAUSE" | "APPROVE" | "CREATE_ADJUSTMENT_VOUCHER">("APPROVE");
+  const [stocktakeResolveNote, setStocktakeResolveNote] = useState("Đã xác minh nguyên nhân và phê duyệt phương án xử lý chênh lệch kiểm kê CCDC");
+  const [showReportVisibilityModal, setShowReportVisibilityModal] = useState(false);
+  const [reportLanguage, setReportLanguage] = useState<"vi" | "en">("vi");
+  const [hiddenToolReports, setHiddenToolReports] = useState<string[]>([]);
+
+  const openReferenceVoucherPicker = (ctx: "ALLOC_CCDC" | "ALLOC_PREPAID" | "DEC_CCDC" | "DEC_PREPAID") => {
+    setRefVoucherContext(ctx);
+    setRefVoucherSearch("");
+    if (ctx === "ALLOC_CCDC") {
+      setRefVoucherSelectedNos(toolAllocReferences.map((r) => r.voucherNo));
+    } else if (ctx === "ALLOC_PREPAID") {
+      setRefVoucherSelectedNos(prepaidAllocReferences.map((r) => r.voucherNo));
+    } else {
+      setRefVoucherSelectedNos([]);
+    }
+    setShowRefVoucherModal(true);
+    if (apiConnected) {
+      void apiSave(async (writer) => {
+        if (ctx === "ALLOC_CCDC" || ctx === "ALLOC_PREPAID") {
+          const res = await fetchAllocationReferenceVouchersUc12(writer, {
+            allocationType: ctx === "ALLOC_PREPAID" ? "PREPAID" : "CCDC",
+          });
+          const items = Array.isArray(res?.vouchers || res?.items) ? (res.vouchers || res.items) : [];
+          if (items.length > 0) {
+            setRefVoucherList(
+              items.map((it: any) => ({
+                voucherNo: String(it.voucher_no || it.number || ""),
+                voucherDate: String(it.voucher_date || it.date || "30/09/2026"),
+                voucherType: String(it.voucher_type || "Chứng từ hạch toán"),
+                description: String(it.description || it.reason || "Chứng từ tham chiếu phân bổ"),
+                amount: Number(it.amount || it.total_amount || 0),
+              }))
+            );
+          }
+          return { message: "" };
+        }
+        const res = await fetchDecreaseReferenceVouchersUc14(writer, {
+          targetType: ctx === "DEC_PREPAID" ? "PREPAID" : "CCDC",
+        });
+        const items = Array.isArray(res?.vouchers || res?.items) ? (res.vouchers || res.items) : [];
+        if (items.length > 0) {
+          setRefVoucherList(
+            items.map((it: any) => ({
+              voucherNo: String(it.voucher_no || it.number || ""),
+              voucherDate: String(it.voucher_date || it.date || "30/09/2026"),
+              voucherType: String(it.voucher_type || "Chứng từ ghi giảm"),
+              description: String(it.description || it.reason || "Chứng từ tham chiếu ghi giảm"),
+              amount: Number(it.amount || it.total_amount || 0),
+            }))
+          );
+        }
+        return { message: "" };
+      });
+    }
+  };
+
+  const openToolDetailTrace = (code: string) => {
+    const localTool = (uc16RegisterRows || toolsData).find((t: any) => t.code === code) || toolsData[0];
+    setSelectedToolTrace({
+      code: localTool?.code || code,
+      name: localTool?.name || "",
+      category: localTool?.category || "",
+      dept: localTool?.dept || "",
+      qty: localTool?.qty || 1,
+      originalCost: localTool?.originalCost || 0,
+      allocatedAmount: localTool?.allocatedAmount || 0,
+      remainingAmount: localTool?.remainingAmount || 0,
+      allocationMonths: localTool?.allocationMonths || 12,
+      remainingMonths: localTool?.remainingMonths || 6,
+      costAccount: localTool?.costAccount || "6423",
+      history: [
+        { date: localTool?.startDate || "01/02/2026", voucherNo: `GT-${code}`, type: "Ghi tăng CCDC", amount: localTool?.originalCost || 0 },
+        { date: "30/09/2026", voucherNo: "PBCC00002", type: "Phân bổ CCDC định kỳ", amount: localTool?.allocatedAmount || 0 },
+      ],
+    });
+    setShowToolDetailTraceModal(true);
+    if (apiConnected) {
+      void apiSave(async (writer) => {
+        const detail = await fetchToolDetailTraceUc16(writer, { code });
+        if (detail?.tool || detail?.history) {
+          setSelectedToolTrace({
+            code: detail.tool?.code || code,
+            name: detail.tool?.name || localTool?.name || "",
+            category: detail.tool?.category_name || localTool?.category || "",
+            dept: detail.tool?.department_name || localTool?.dept || "",
+            qty: Number(detail.tool?.quantity ?? localTool?.qty ?? 1),
+            originalCost: Number(detail.tool?.original_cost ?? localTool?.originalCost ?? 0),
+            allocatedAmount: Number(detail.tool?.allocated_value ?? localTool?.allocatedAmount ?? 0),
+            remainingAmount: Number(detail.tool?.remaining_value ?? localTool?.remainingAmount ?? 0),
+            allocationMonths: Number(detail.tool?.allocation_periods ?? localTool?.allocationMonths ?? 12),
+            remainingMonths: Number(detail.tool?.remaining_periods ?? localTool?.remainingMonths ?? 0),
+            costAccount: detail.tool?.expense_account || localTool?.costAccount || "6423",
+            history: Array.isArray(detail.history)
+              ? detail.history.map((h: any) => ({
+                  date: String(h.voucher_date || h.date || ""),
+                  voucherNo: String(h.voucher_no || h.number || ""),
+                  type: String(h.event_type_label || h.transaction_type || h.description || "Biến động CCDC"),
+                  amount: Number(h.amount || 0),
+                }))
+              : [],
+          });
+        }
+        return { message: `Đã tải hồ sơ & lịch sử biến động CCDC ${code}.` };
+      });
+    }
+  };
+
   useEffect(() => {
     if (!apiConnected) return;
     const voucherStatus = (row: any) => row.status === "POSTED" ? "Đã ghi sổ" : row.status || "";
@@ -1199,7 +1593,56 @@ export default function MisaToolsWorkspace({
     });
   }, [apiConnected, showPrepaidAllocVoucherModal, prepaidAllocPostingDate]);
 
+  useEffect(() => {
+    if (!apiConnected || tab !== "register" || registerViewMode !== "list") return;
+    void apiSave(async (writer) => {
+      const res = await fetchToolRegisterUc16(writer);
+      const rows = Array.isArray(res?.rows) ? res.rows.map((r: any) => ({
+        code: r.code,
+        name: r.name,
+        category: r.category_name || "",
+        dept: r.department_name || "",
+        qty: apiNumber(r.quantity),
+        originalCost: apiNumber(r.original_cost),
+        allocatedAmount: apiNumber(r.allocated_value),
+        remainingAmount: apiNumber(r.remaining_value),
+        allocationMonths: apiNumber(r.allocation_periods),
+        remainingMonths: apiNumber(r.remaining_periods),
+        costAccount: r.expense_account || "",
+      })) : null;
+      setUc16RegisterRows(rows);
+      return { message: `Đã tải Sổ theo dõi công cụ dụng cụ (${rows?.length ?? 0} dòng).` };
+    });
+  }, [apiConnected, tab, registerViewMode]);
+
+  useEffect(() => {
+    if (!apiConnected || !selectedReportForPreview) {
+      setUc16ReportData(null);
+      return;
+    }
+    void apiSave(async (writer) => {
+      const res = await generateToolReportUc16(writer, {
+        reportName: selectedReportForPreview,
+        fromDate: "01/09/2026",
+        toDate: "30/09/2026",
+      });
+      setUc16ReportData(res || null);
+      return { message: res?.empty_message || `Đã tải báo cáo "${selectedReportForPreview}".` };
+    });
+  }, [apiConnected, selectedReportForPreview]);
+
   const toggleFavorite = (reportName: string) => {
+    if (apiConnected) {
+      void apiSave(async (writer) => {
+        const res = await fetchToolReportCatalogUc16(writer, {
+          action: "TOGGLE_FAVORITE",
+          reportName,
+        });
+        const favs = (res?.favorite_reports || []).map((r: any) => String(r.name || ""));
+        if (favs.length) setFavoriteReports(favs);
+        return { message: `Đã cập nhật danh sách yêu thích cho "${reportName}".` };
+      });
+    }
     if (favoriteReports.includes(reportName)) {
       setFavoriteReports(favoriteReports.filter((r) => r !== reportName));
       notify(`Đã bỏ báo cáo "${reportName}" khỏi mục yêu thích`);
@@ -1707,9 +2150,205 @@ export default function MisaToolsWorkspace({
                 </div>
               )}
 
-              {singleActiveTab !== "dept" && (
-                <div style={{ padding: 20, textAlign: "center", color: "#64748b", fontSize: 13 }}>
-                  <span>Tính năng {singleActiveTab} đang được kích hoạt và đồng bộ theo chứng từ CCDC.</span>
+              {singleActiveTab === "alloc" && (
+                <div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
+                    <thead>
+                      <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                        <th style={{ width: 36, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                        <th style={{ width: 150, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng phân bổ</th>
+                        <th style={{ minWidth: 220, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên đối tượng phân bổ</th>
+                        <th style={{ width: 110, padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tỷ lệ PB (%)</th>
+                        <th style={{ width: 110, padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
+                        <th style={{ width: 150, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
+                        <th style={{ width: 140, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã thống kê</th>
+                        <th style={{ width: 36, padding: "6px 4px", textAlign: "center" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {singleAllocRows.map((row, idx) => (
+                        <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                          <td style={{ textAlign: "center", padding: "6px 4px", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={row.targetCode}
+                              placeholder="Mã đối tượng..."
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSingleAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, targetCode: val } : r)));
+                              }}
+                              style={{ width: "100%", height: 24, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={row.targetName}
+                              placeholder="Tên đối tượng nhận phân bổ..."
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSingleAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, targetName: val } : r)));
+                              }}
+                              style={{ width: "100%", height: 24, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="number"
+                              value={row.rate}
+                              onChange={(e) => {
+                                const val = Number(e.target.value) || 0;
+                                setSingleAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, rate: val } : r)));
+                              }}
+                              style={{ width: "100%", height: 24, border: "1px solid transparent", textAlign: "right", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={row.costAccount}
+                              placeholder="6423 / 6273"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSingleAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, costAccount: val } : r)));
+                              }}
+                              style={{ width: "100%", height: 24, border: "1px solid transparent", textAlign: "center", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={row.costItem}
+                              placeholder="Khoản mục CP..."
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSingleAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, costItem: val } : r)));
+                              }}
+                              style={{ width: "100%", height: 24, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                            <input
+                              type="text"
+                              value={row.statCode}
+                              placeholder="Mã thống kê..."
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSingleAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, statCode: val } : r)));
+                              }}
+                              style={{ width: "100%", height: 24, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                            />
+                          </td>
+                          <td style={{ textAlign: "center", padding: "4px" }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (singleAllocRows.length > 1) {
+                                  setSingleAllocRows((prev) => prev.filter((_, i) => i !== idx));
+                                } else {
+                                  setSingleAllocRows([{ id: `alloc-${Date.now()}`, targetCode: "", targetName: "", rate: 100, costAccount: "6423", costItem: "", statCode: "" }]);
+                                }
+                              }}
+                              style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", display: "grid", placeItems: "center" }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={{ background: "#f8fafc", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
+                        <td colSpan={3} style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng tỷ lệ phân bổ:</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                          {singleAllocRows.reduce((sum, r) => sum + (r.rate || 0), 0).toFixed(2).replace(".", ",")}%
+                        </td>
+                        <td colSpan={4}></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setSingleAllocRows((prev) => [...prev, { id: `alloc-${Date.now()}`, targetCode: "", targetName: "", rate: 0, costAccount: "6423", costItem: "", statCode: "" }])}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                    >
+                      <Plus size={12} />
+                      <span>Thêm dòng</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSingleAllocRows([{ id: `alloc-${Date.now()}`, targetCode: "", targetName: "", rate: 100, costAccount: "6423", costItem: "", statCode: "" }])}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#ef4444", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                    >
+                      <Trash2 size={12} />
+                      <span>Xóa hết dòng</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {singleActiveTab === "desc" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
+                    Mô tả chi tiết, quy cách kỹ thuật và ghi chú quản lý CCDC
+                  </label>
+                  <textarea
+                    value={singleDetailedDesc}
+                    onChange={(e) => setSingleDetailedDesc(e.target.value)}
+                    placeholder="Nhập thông số kỹ thuật, xuất xứ, thời hạn bảo hành, phụ kiện đi kèm hoặc ghi chú quản lý CCDC..."
+                    rows={5}
+                    style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 4, padding: 10, fontSize: 12.5, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                </div>
+              )}
+
+              {singleActiveTab === "origin" && (
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontSize: 12.5, color: "#475569" }}>
+                      Chứng từ nguồn hình thành CCDC ({singleSourceType})
+                    </span>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={singleSourceGlPosted}
+                        onChange={(e) => setSingleSourceGlPosted(e.target.checked)}
+                      />
+                      <span>Chứng từ nguồn đã hạch toán vào TK 242 (không sinh trùng bút toán Nợ 242/Có 153)</span>
+                    </label>
+                  </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
+                    <thead>
+                      <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                        <th style={{ width: 36, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                        <th style={{ width: 140, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Số chứng từ nguồn</th>
+                        <th style={{ width: 120, padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Ngày chứng từ</th>
+                        <th style={{ minWidth: 200, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Loại chứng từ nguồn</th>
+                        <th style={{ width: 100, padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số lượng</th>
+                        <th style={{ width: 130, padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Đơn giá</th>
+                        <th style={{ width: 140, padding: "6px 8px", textAlign: "right" }}>Thành tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {singleOriginRows.length > 0 ? singleOriginRows.map((row, idx) => (
+                        <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                          <td style={{ textAlign: "center", padding: "6px 4px", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.voucherNo}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.voucherDate}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0" }}>{row.type}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{row.qty}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(row.price)}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan={7} style={{ padding: 16, textAlign: "center", color: "#64748b" }}>
+                            Chưa chọn chứng từ nguồn. Nhấn nút <strong>Chọn chứng từ</strong> ở thanh tiêu đề để lấy dữ liệu từ Xuất kho / Mua hàng hoặc Ghi giảm TSCĐ.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -2132,82 +2771,200 @@ export default function MisaToolsWorkspace({
               </div>
 
               <div style={{ flex: 1, overflow: "auto", padding: "10px 16px" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
-                  <thead>
-                    <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                      <th style={{ width: 36, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                      <th style={{ width: 180, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã đơn vị</th>
-                      <th style={{ minWidth: 260, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên đơn vị</th>
-                      <th style={{ width: 140, padding: "6px 8px", textAlign: "right" }}>Số lượng</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {batchDeptRows.map((row, idx) => (
-                      <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ textAlign: "center", padding: "6px 4px", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
-                        <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.code}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setBatchDeptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, code: val } : r)));
-                            }}
-                            style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
-                          />
-                        </td>
-                        <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.name}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setBatchDeptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, name: val } : r)));
-                            }}
-                            style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
-                          />
-                        </td>
-                        <td style={{ padding: "4px 6px" }}>
-                          <input
-                            type="number"
-                            value={row.qty}
-                            onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
-                              setBatchDeptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, qty: val } : r)));
-                            }}
-                            style={{ width: "100%", height: 22, border: "1px solid transparent", textAlign: "right", outline: "none", fontSize: 12 }}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                    <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
-                      <td colSpan={3} style={{ borderRight: "1px solid #e2e8f0" }}></td>
-                      <td style={{ padding: "6px 8px", textAlign: "right" }}>
-                        {batchDeptRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {batchActiveTab === "dept" ? (
+                  <>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
+                      <thead>
+                        <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 36, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ width: 180, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã đơn vị</th>
+                          <th style={{ minWidth: 260, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên đơn vị</th>
+                          <th style={{ width: 140, padding: "6px 8px", textAlign: "right" }}>Số lượng</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batchDeptRows.map((row, idx) => (
+                          <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ textAlign: "center", padding: "6px 4px", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={row.code}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchDeptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, code: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={row.name}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchDeptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, name: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px" }}>
+                              <input
+                                type="number"
+                                value={row.qty}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value) || 0;
+                                  setBatchDeptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, qty: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", textAlign: "right", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                        <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
+                          <td colSpan={3} style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ padding: "6px 8px", textAlign: "right" }}>
+                            {batchDeptRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
 
-                {/* Table Buttons */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setBatchDeptRows((prev) => [...prev, { id: `bdept-${Date.now()}`, code: "", name: "", qty: 1 }])}
-                    style={{ height: 24, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
-                  >
-                    <Plus size={12} />
-                    <span>Thêm dòng</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBatchDeptRows([{ id: `bdept-${Date.now()}`, code: "", name: "", qty: 0 }])}
-                    style={{ height: 24, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#ef4444", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
-                  >
-                    <Trash2 size={12} />
-                    <span>Xóa hết dòng</span>
-                  </button>
-                </div>
+                    {/* Table Buttons */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setBatchDeptRows((prev) => [...prev, { id: `bdept-${Date.now()}`, code: "", name: "", qty: 1 }])}
+                        style={{ height: 24, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                      >
+                        <Plus size={12} />
+                        <span>Thêm dòng</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBatchDeptRows([{ id: `bdept-${Date.now()}`, code: "", name: "", qty: 0 }])}
+                        style={{ height: 24, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#ef4444", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                      >
+                        <Trash2 size={12} />
+                        <span>Xóa hết dòng</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
+                      <thead>
+                        <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <th style={{ width: 36, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                          <th style={{ width: 150, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng phân bổ</th>
+                          <th style={{ minWidth: 220, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên đối tượng phân bổ</th>
+                          <th style={{ width: 110, padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tỷ lệ PB (%)</th>
+                          <th style={{ width: 110, padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
+                          <th style={{ width: 150, padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
+                          <th style={{ width: 140, padding: "6px 8px", textAlign: "left" }}>Mã thống kê</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batchAllocRows.map((row, idx) => (
+                          <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ textAlign: "center", padding: "6px 4px", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={row.targetCode}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, targetCode: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={row.targetName}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, targetName: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="number"
+                                value={row.rate}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value) || 0;
+                                  setBatchAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, rate: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", textAlign: "right", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={row.costAccount}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, costAccount: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", textAlign: "center", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="text"
+                                value={row.costItem}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, costItem: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                            <td style={{ padding: "4px 6px" }}>
+                              <input
+                                type="text"
+                                value={row.statCode}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setBatchAllocRows((prev) => prev.map((r, i) => (i === idx ? { ...r, statCode: val } : r)));
+                                }}
+                                style={{ width: "100%", height: 22, border: "1px solid transparent", outline: "none", fontSize: 12 }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                        <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
+                          <td colSpan={3} style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng:</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                            {batchAllocRows.reduce((sum, r) => sum + (r.rate || 0), 0).toFixed(2).replace(".", ",")}%
+                          </td>
+                          <td colSpan={3}></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setBatchAllocRows((prev) => [...prev, { id: `balloc-${Date.now()}`, targetCode: "", targetName: "", rate: 0, costAccount: "6423", costItem: "", statCode: "" }])}
+                        style={{ height: 24, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                      >
+                        <Plus size={12} />
+                        <span>Thêm dòng</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBatchAllocRows([{ id: `balloc-${Date.now()}`, targetCode: "", targetName: "", rate: 100, costAccount: "6423", costItem: "", statCode: "" }])}
+                        style={{ height: 24, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#ef4444", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                      >
+                        <Trash2 size={12} />
+                        <span>Xóa hết dòng</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -2334,6 +3091,21 @@ export default function MisaToolsWorkspace({
                             setSingleReason(v.reason);
                             setSingleAllocMonths(12);
                             setSingleMonthlyAlloc(Math.round(v.amount / 12));
+                            setSingleSourceVoucherNo(v.voucherNo);
+                            setSingleOriginRows([
+                              {
+                                id: `orig-${Date.now()}`,
+                                voucherNo: v.voucherNo,
+                                voucherDate: v.voucherDate,
+                                type: v.type,
+                                qty: v.qty,
+                                price: v.price,
+                                amount: v.amount,
+                              },
+                            ]);
+                            setSingleDeptRows((prev) =>
+                              prev.length === 1 ? [{ ...prev[0], qty: v.qty }] : prev
+                            );
                             notify(`Đã nạp dữ liệu từ chứng từ ${v.voucherNo} vào form ghi tăng CCDC`);
                           } else {
                             setBatchRows((prev) => [
@@ -2406,6 +3178,21 @@ export default function MisaToolsWorkspace({
                             setSingleReason(v.reason);
                             setSingleAllocMonths(24);
                             setSingleMonthlyAlloc(Math.round(v.amount / 24));
+                            setSingleSourceVoucherNo(v.voucherNo);
+                            setSingleOriginRows([
+                              {
+                                id: `orig-${Date.now()}`,
+                                voucherNo: v.voucherNo,
+                                voucherDate: v.voucherDate,
+                                type: v.type,
+                                qty: v.qty,
+                                price: v.price,
+                                amount: v.amount,
+                              },
+                            ]);
+                            setSingleDeptRows((prev) =>
+                              prev.length === 1 ? [{ ...prev[0], qty: v.qty }] : prev
+                            );
                             notify(`Đã nạp dữ liệu từ chứng từ ghi giảm TSCĐ ${v.voucherNo} vào form ghi tăng CCDC`);
                           } else {
                             setBatchRows((prev) => [
@@ -2523,7 +3310,21 @@ export default function MisaToolsWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
                   type="button"
-                  onClick={() => notify("Đang xuất báo cáo ra file Excel...")}
+                  onClick={() => {
+                    if (apiConnected && selectedReportForPreview) {
+                      void apiSave(async (writer) => {
+                        const res = await generateToolReportUc16(writer, {
+                          reportName: selectedReportForPreview,
+                          fromDate: "01/09/2026",
+                          toDate: "30/09/2026",
+                          exportFormat: "EXCEL",
+                        });
+                        return { message: `Đã xuất khẩu ${res?.export_excel?.file_name || "Bao_Cao_CCDC.xlsx"}` };
+                      });
+                      return;
+                    }
+                    notify("Đang xuất báo cáo ra file Excel...");
+                  }}
                   style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: "#16a34a", fontWeight: 600 }}
                 >
                   <Download size={13} />
@@ -2531,7 +3332,21 @@ export default function MisaToolsWorkspace({
                 </button>
                 <button
                   type="button"
-                  onClick={() => notify("Đang nạp dữ liệu in báo cáo...")}
+                  onClick={() => {
+                    if (apiConnected && selectedReportForPreview) {
+                      void apiSave(async (writer) => {
+                        await generateToolReportUc16(writer, {
+                          reportName: selectedReportForPreview,
+                          fromDate: "01/09/2026",
+                          toDate: "30/09/2026",
+                          printReport: true,
+                        });
+                        return { message: `Đang chuẩn bị bản in báo cáo "${selectedReportForPreview}"...` };
+                      }).then((ok) => { if (ok) window.print(); });
+                      return;
+                    }
+                    notify("Đang nạp dữ liệu in báo cáo...");
+                  }}
                   style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: "#475569" }}
                 >
                   <Printer size={13} />
@@ -2543,7 +3358,7 @@ export default function MisaToolsWorkspace({
             <div style={{ flex: 1, overflow: "auto", padding: "16px 20px" }}>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a", textTransform: "uppercase" }}>
-                  {selectedReportForPreview}
+                  {uc16ReportData?.report_title || selectedReportForPreview}
                 </h3>
                 <span style={{ fontSize: 12.5, color: "#64748b" }}>Kỳ tính: Tháng 09/2026 - Đơn vị tính: VNĐ</span>
               </div>
@@ -2654,7 +3469,7 @@ export default function MisaToolsWorkspace({
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input type="checkbox" defaultChecked />
-                <span>Cho phép phân bổ nhiều kỳ (tối đa 36 tháng theo Thông tư 200/TT-BTC)</span>
+                <span>Cho phép phân bổ nhiều kỳ (tối đa 36 tháng theo Thông tư 99/2025/TT-BTC)</span>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input type="checkbox" defaultChecked />
@@ -2708,6 +3523,7 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   title="Hướng dẫn"
+                  onClick={() => notify("Hướng dẫn: Chọn Tháng và Năm kỳ phân bổ chi phí CCDC. Hệ thống sẽ xác định ngày cuối tháng và tổng hợp các CCDC đủ điều kiện phân bổ.")}
                   style={{
                     border: "none",
                     background: "transparent",
@@ -2738,7 +3554,7 @@ export default function MisaToolsWorkspace({
               </div>
             </div>
 
-            {/* Body: Tháng * & Năm */}
+            {/* Body: Tháng * & Năm * */}
             <div style={{ padding: "10px 20px 24px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#1e293b", marginBottom: 6 }}>
@@ -2784,7 +3600,7 @@ export default function MisaToolsWorkspace({
 
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#1e293b", marginBottom: 6 }}>
-                  Năm
+                  Năm <span style={{ color: "#ef4444" }}>*</span>
                 </label>
                 <input
                   type="number"
@@ -2837,16 +3653,64 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (!allocationMonth || allocationMonth < 1 || allocationMonth > 12) {
+                    notify("Tháng phân bổ không hợp lệ.");
+                    return;
+                  }
+                  if (!allocationYear || !Number.isInteger(Number(allocationYear)) || allocationYear < 1900 || allocationYear > 2100) {
+                    notify("Năm phân bổ không hợp lệ.");
+                    return;
+                  }
+                  if (apiConnected && writer) {
+                    void setupAllocationPeriodUc11(writer, {
+                      allocationType: "TOOL",
+                      month: allocationMonth,
+                      year: allocationYear,
+                    })
+                      .then((res) => {
+                        setShowSelectPeriodModal(false);
+                        setAllocationVoucherNo(res.proposedVoucherNo || `PBCC${String(allocationVouchers.length + 1).padStart(5, "0")}`);
+                        setAllocationPostingDate(res.postingDateDisplay);
+                        setAllocationVoucherDate(res.voucherDateDisplay);
+                        setAllocationReason(res.description || `Phân bổ chi phí CCDC tháng ${allocationMonth} năm ${allocationYear}`);
+                        setToolAllocIdentifyRows(res.identifyRows || []);
+                        setToolAllocDetailRows(res.allocationRows || []);
+                        setToolAllocAccountingRows(res.accountingRows || []);
+                        setToolAllocTotalAmount(Number(res.totalAllocationAmount || 0));
+                        setToolAllocEmptyWarning(res.emptySourceWarning || "");
+                        setAllocationVoucherTab("identify");
+                        setShowAllocationVoucherModal(true);
+                        if (res.emptySourceWarning) {
+                          notify(res.emptySourceWarning);
+                        }
+                      })
+                      .catch((err) => {
+                        notify(err instanceof Error ? err.message : "Không thể kiểm tra điều kiện kỳ phân bổ. Vui lòng thử lại.");
+                      });
+                    return;
+                  }
                   setShowSelectPeriodModal(false);
                   const nextIndex = allocationVouchers.length + 1;
                   const newNo = `PBCC${String(nextIndex).padStart(5, "0")}`;
                   const monthStr = String(allocationMonth).padStart(2, "0");
                   const daysInMonth = new Date(allocationYear, allocationMonth, 0).getDate();
-                  const dateStr = `${daysInMonth}/${monthStr}/${allocationYear}`;
+                  const dateStr = `${String(daysInMonth).padStart(2, "0")}/${monthStr}/${allocationYear}`;
                   setAllocationVoucherNo(newNo);
                   setAllocationPostingDate(dateStr);
                   setAllocationVoucherDate(dateStr);
                   setAllocationReason(`Phân bổ chi phí CCDC tháng ${allocationMonth} năm ${allocationYear}`);
+                  const demoIdentify = SAMPLE_ALLOCATION_ITEMS.map((it) => ({
+                    tool_code: it.toolCode,
+                    tool_name: it.toolName,
+                    category_name: "Công cụ dụng cụ",
+                    total_allocation_amount: it.thisMonthAlloc,
+                    in_use_allocation_amount: it.thisMonthAlloc,
+                    disposed_remaining_amount: 0,
+                  }));
+                  const demoTotal = SAMPLE_ALLOCATION_ITEMS.reduce((s, it) => s + it.thisMonthAlloc, 0);
+                  setToolAllocIdentifyRows(demoIdentify);
+                  setToolAllocTotalAmount(demoTotal);
+                  setToolAllocEmptyWarning("");
                   setAllocationVoucherTab("identify");
                   setShowAllocationVoucherModal(true);
                 }}
@@ -3013,8 +3877,10 @@ export default function MisaToolsWorkspace({
                     </label>
                     <input
                       type="number"
+                      min={1}
+                      max={12}
                       value={allocationMonth}
-                      onChange={(e) => setAllocationMonth(Number(e.target.value))}
+                      onChange={(e) => handleRecalculateToolAllocationPeriod(Number(e.target.value), allocationYear)}
                       style={{
                         width: "100%",
                         height: 30,
@@ -3034,8 +3900,10 @@ export default function MisaToolsWorkspace({
                     </label>
                     <input
                       type="number"
+                      min={1900}
+                      max={2100}
                       value={allocationYear}
-                      onChange={(e) => setAllocationYear(Number(e.target.value))}
+                      onChange={(e) => handleRecalculateToolAllocationPeriod(allocationMonth, Number(e.target.value))}
                       style={{
                         width: "100%",
                         height: 30,
@@ -3051,14 +3919,46 @@ export default function MisaToolsWorkspace({
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 12, color: "#475569" }}>
                   <span>Tham chiếu</span>
                   <span
-                    onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
+                    onClick={() => openReferenceVoucherPicker("ALLOC_CCDC")}
                     style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
                   >
                     ...
                   </span>
+                  {toolAllocReferences.map((ref) => (
+                    <span
+                      key={ref.voucherNo}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "1px 7px",
+                        background: "#e6f4ea",
+                        border: "1px solid #86efac",
+                        borderRadius: 4,
+                        fontSize: 11.5,
+                        color: "#15803d",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <span
+                        onClick={() => notify(`Chi tiết chứng từ tham chiếu ${ref.voucherNo} (${ref.voucherDate}): ${ref.description} - ${formatVND(ref.amount)}`)}
+                        style={{ cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        {ref.voucherNo}
+                      </span>
+                      <button
+                        type="button"
+                        title="Bỏ tham chiếu"
+                        onClick={() => setToolAllocReferences((prev) => prev.filter((x) => x.voucherNo !== ref.voucherNo))}
+                        style={{ border: "none", background: "transparent", color: "#dc2626", cursor: "pointer", padding: 0, fontSize: 12, fontWeight: 700 }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
               </div>
 
@@ -3142,7 +4042,7 @@ export default function MisaToolsWorkspace({
               <div style={{ textAlign: "right", paddingTop: 4 }}>
                 <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Số tiền phân bổ</div>
                 <div style={{ fontSize: 32, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>
-                  0
+                  {formatVND(toolAllocTotalAmount)}
                 </div>
               </div>
             </div>
@@ -3196,59 +4096,129 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
-                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
-                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
-                          <td style={{ padding: "6px 10px", textAlign: "right" }}></td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{formatVND(toolAllocTotalAmount)}</td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
+                            {formatVND(
+                              toolAllocIdentifyRows.length > 0
+                                ? toolAllocIdentifyRows.reduce((s, r) => s + Number(r.active_allocation_amount ?? r.in_use_allocation_amount ?? r.total_allocation_amount ?? 0), 0)
+                                : toolAllocTotalAmount
+                            )}
+                          </td>
+                          <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b" }}>
+                            {toolAllocIdentifyRows.some((r) => Number(r.disposed_remaining_amount || 0) > 0)
+                              ? formatVND(toolAllocIdentifyRows.reduce((s, r) => s + Number(r.disposed_remaining_amount || 0), 0))
+                              : ""}
+                          </td>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td colSpan={7} style={{ padding: "40px 20px", textAlign: "center" }}>
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                              {/* Smiley Document Icon matching Screenshot 1 */}
-                              <svg width="68" height="68" viewBox="0 0 64 64" fill="none">
-                                <path d="M32 6 V10 M20 10 L23 13 M44 10 L41 13" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M22 14 H38 L48 24 V54 C48 56 46 58 44 58 H22 C20 58 18 56 18 54 V18 C18 16 20 14 22 14 Z" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
-                                <path d="M38 14 V24 H48" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
-                                <circle cx="28" cy="36" r="1.5" fill="#94a3b8" />
-                                <circle cx="38" cy="36" r="1.5" fill="#94a3b8" />
-                                <path d="M30 42 C31.5 44 34.5 44 36 42" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-                              </svg>
-                              <span style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>Không có dữ liệu</span>
-                            </div>
-                          </td>
-                        </tr>
+                        {toolAllocIdentifyRows.length > 0 ? (
+                          toolAllocIdentifyRows.map((row, idx) => (
+                            <tr key={`${row.code || row.tool_code}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                              <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code || row.tool_code}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{row.name || row.tool_name}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.category_name || "Công cụ dụng cụ"}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(Number(row.total_allocation_amount || 0))}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{formatVND(Number(row.active_allocation_amount ?? row.in_use_allocation_amount ?? row.total_allocation_amount ?? 0))}</td>
+                              <td style={{ padding: "6px 10px", textAlign: "right", color: "#64748b" }}>{formatVND(Number(row.disposed_remaining_amount || 0))}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} style={{ padding: "40px 20px", textAlign: "center" }}>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                {/* Smiley Document Icon matching Screenshot 1 */}
+                                <svg width="68" height="68" viewBox="0 0 64 64" fill="none">
+                                  <path d="M32 6 V10 M20 10 L23 13 M44 10 L41 13" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
+                                  <path d="M22 14 H38 L48 24 V54 C48 56 46 58 44 58 H22 C20 58 18 56 18 54 V18 C18 16 20 14 22 14 Z" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                  <path d="M38 14 V24 H48" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                  <circle cx="28" cy="36" r="1.5" fill="#94a3b8" />
+                                  <circle cx="38" cy="36" r="1.5" fill="#94a3b8" />
+                                  <path d="M30 42 C31.5 44 34.5 44 36 42" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                                </svg>
+                                <span style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>{toolAllocEmptyWarning || "Không có dữ liệu"}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
 
-                  {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 1 */}
+                  {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 1 (AF19 & EF27) */}
                   <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                       <Paperclip size={14} style={{ color: "#64748b" }} />
                       <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>Đính kèm</span>
                       <span style={{ fontSize: 12, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
                     </div>
-                    <div
-                      onClick={() => notify("Chọn tệp đính kèm cho chứng từ phân bổ CCDC...")}
-                      style={{
-                        border: "1px solid #cbd5e1",
-                        borderRadius: 4,
-                        background: "#ffffff",
-                        padding: "16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        gap: 6,
-                        width: 320,
+                    <input
+                      id="tool-alloc-file-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.csv,.txt,.zip"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        handleAllocationAttachmentUpload(e.target.files, "CCDC");
+                        e.target.value = "";
                       }}
-                    >
-                      <Upload size={18} style={{ color: "#0284c7" }} />
-                      <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                        <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                    />
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                      <div
+                        onClick={() => {
+                          const el = document.getElementById("tool-alloc-file-input");
+                          if (el) el.click();
+                        }}
+                        style={{
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 4,
+                          background: "#ffffff",
+                          padding: "16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          gap: 6,
+                          width: 320,
+                        }}
+                      >
+                        <Upload size={18} style={{ color: "#0284c7" }} />
+                        <div style={{ fontSize: 12.5, color: "#64748b" }}>
+                          <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                        </div>
                       </div>
+                      {toolAllocAttachments.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {toolAllocAttachments.map((att, idx) => (
+                            <span
+                              key={`${att.file_name}-${idx}`}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "4px 10px",
+                                borderRadius: 4,
+                                background: "#f1f5f9",
+                                border: "1px solid #cbd5e1",
+                                fontSize: 12,
+                                color: "#334155",
+                              }}
+                            >
+                              <Paperclip size={12} />
+                              <span>{att.file_name} ({Math.max(1, Math.round(att.file_size / 1024))} KB)</span>
+                              <button
+                                type="button"
+                                onClick={() => setToolAllocAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                                style={{ border: "none", background: "transparent", color: "#dc2626", cursor: "pointer", padding: 0, fontWeight: 700 }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -3274,20 +4244,20 @@ export default function MisaToolsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {SAMPLE_ALLOCATION_ITEMS.map((item, idx) => (
-                        <tr key={item.toolCode} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      {(toolAllocDetailRows.length > 0 ? toolAllocDetailRows : SAMPLE_ALLOCATION_ITEMS).map((item: any, idx: number) => (
+                        <tr key={item.code || item.tool_code || item.toolCode || idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{item.toolCode}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{item.toolName}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{item.dept}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(item.originalCost)}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(item.allocatedAmount)}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(item.remainingAmount)}</td>
-                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{item.allocMonths}</td>
-                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{item.remainingMonths}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(item.thisMonthAlloc)}</td>
-                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 500 }}>{item.waitingAcc}</td>
-                          <td style={{ padding: "6px 4px", textAlign: "center", fontWeight: 600, color: "#1e293b" }}>{item.costAcc}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{item.code || item.tool_code || item.toolCode}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{item.name || item.tool_name || item.toolName}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{item.target_name || item.department_name || item.dept}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(item.original_cost ?? item.total_allocation_value ?? item.originalCost ?? 0))}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(Number(item.allocated_amount ?? item.allocatedAmount ?? 0))}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(item.remaining_amount ?? item.remainingAmount ?? 0))}</td>
+                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{item.allocation_periods ?? item.total_periods ?? item.allocMonths ?? 1}</td>
+                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{item.remaining_periods ?? item.remainingMonths ?? 1}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(item.period_allocation_amount ?? item.allocated_value ?? item.thisMonthAlloc ?? 0))}</td>
+                          <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 500 }}>{item.waiting_account || item.waitingAcc || "242"}</td>
+                          <td style={{ padding: "6px 4px", textAlign: "center", fontWeight: 600, color: "#1e293b" }}>{item.expense_account || item.costAcc || "6423"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -3310,28 +4280,44 @@ export default function MisaToolsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>1</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>
-                          Phân bổ chi phí CCDC văn phòng, kinh doanh tháng {allocationMonth}/{allocationYear}
-                        </td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>6422</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>242</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(6488888)}</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Chi phí dụng cụ đồ dùng văn phòng</td>
-                        <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Văn phòng & Kinh doanh</td>
-                      </tr>
-                      <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>2</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>
-                          Phân bổ chi phí CCDC sản xuất, kỹ thuật tháng {allocationMonth}/{allocationYear}
-                        </td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>6277</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>242</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(9161112)}</td>
-                        <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Chi phí dụng cụ sản xuất phân xưởng</td>
-                        <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Sản xuất & Cơ điện</td>
-                      </tr>
+                      {toolAllocAccountingRows.length > 0 ? (
+                        toolAllocAccountingRows.map((row, idx) => (
+                          <tr key={`${row.debit_account}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{row.description}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>{row.debit_account}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>{row.credit_account}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(row.amount || 0))}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.expense_item || ""}</td>
+                            <td style={{ padding: "10px 8px", color: "#475569" }}>{row.target_name || ""}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <>
+                          <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>1</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>
+                              Phân bổ chi phí CCDC văn phòng, kinh doanh tháng {allocationMonth}/{allocationYear}
+                            </td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>6422</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>242</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(6488888)}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Chi phí dụng cụ đồ dùng văn phòng</td>
+                            <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Văn phòng & Kinh doanh</td>
+                          </tr>
+                          <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                            <td style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>2</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>
+                              Phân bổ chi phí CCDC sản xuất, kỹ thuật tháng {allocationMonth}/{allocationYear}
+                            </td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>6277</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>242</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(9161112)}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Chi phí dụng cụ sản xuất phân xưởng</td>
+                            <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Sản xuất & Cơ điện</td>
+                          </tr>
+                        </>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -3372,20 +4358,72 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                    if (apiConnected) { void handleSaveToolAllocation(); return; }
+                  if (apiConnected) {
+                    void apiSave(async (writer) => {
+                      const res = await exportAllocationExcelUc12(writer, {
+                        allocationType: "CCDC",
+                        month: allocationMonth,
+                        year: allocationYear,
+                        voucherNo: allocationVoucherNo,
+                        identifyRows: toolAllocIdentifyRows,
+                      });
+                      return { message: res.message || `Xuất bảng phân bổ ra Excel thành công (${res.file_name || "Bang_Phan_Bo_CCDC.xlsx"}).` };
+                    });
+                    return;
+                  }
+                  notify("Xuất bảng phân bổ ra Excel thành công.");
+                }}
+                style={{
+                  height: 32,
+                  padding: "0 16px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  background: "#ffffff",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  color: "#334155",
+                  fontWeight: 500,
+                }}
+              >
+                Xuất khẩu bảng phân bổ ra Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (toolAllocEmptyWarning && toolAllocIdentifyRows.length === 0) {
+                    notify("Không thể lưu chứng từ phân bổ không có dòng hợp lệ.");
+                    return;
+                  }
+                  if (!allocationReason.trim()) {
+                    notify("Vui lòng nhập diễn giải chứng từ.");
+                    return;
+                  }
+                  if (!allocationPostingDate.trim()) {
+                    notify("Vui lòng nhập ngày hạch toán hợp lệ.");
+                    return;
+                  }
+                  if (!allocationVoucherDate.trim()) {
+                    notify("Vui lòng nhập ngày chứng từ hợp lệ.");
+                    return;
+                  }
+                  if (!allocationVoucherNo.trim()) {
+                    notify("Vui lòng nhập số chứng từ.");
+                    return;
+                  }
+                  if (apiConnected) { void handleSaveToolAllocation(); return; }
                   const newVoucher = {
                     voucherNo: allocationVoucherNo,
                     postingDate: allocationPostingDate,
                     voucherDate: allocationVoucherDate,
                     reason: allocationReason,
-                    totalAmount: 15650000,
+                    totalAmount: toolAllocTotalAmount || 15650000,
                     creator: "Nguyễn Thị Mai",
                     status: "Đã ghi sổ",
                   };
                   setAllocationVouchers([newVoucher, ...allocationVouchers.filter((v) => v.voucherNo !== allocationVoucherNo)]);
                   setShowAllocationVoucherModal(false);
                   setAllocationViewMode("list");
-                  notify(`Đã lưu chứng từ phân bổ CCDC số ${allocationVoucherNo} thành công`);
+                  notify("Đã cất chứng từ phân bổ CCDC thành công.");
                 }}
                 style={{
                   height: 32,
@@ -3404,20 +4442,40 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (toolAllocEmptyWarning && toolAllocIdentifyRows.length === 0) {
+                      notify("Không thể lưu chứng từ phân bổ không có dòng hợp lệ.");
+                      return;
+                    }
+                    if (!allocationReason.trim()) {
+                      notify("Vui lòng nhập diễn giải chứng từ.");
+                      return;
+                    }
+                    if (!allocationPostingDate.trim()) {
+                      notify("Vui lòng nhập ngày hạch toán hợp lệ.");
+                      return;
+                    }
+                    if (!allocationVoucherDate.trim()) {
+                      notify("Vui lòng nhập ngày chứng từ hợp lệ.");
+                      return;
+                    }
+                    if (!allocationVoucherNo.trim()) {
+                      notify("Vui lòng nhập số chứng từ.");
+                      return;
+                    }
                     if (apiConnected) { void handleSaveToolAllocation(true); return; }
                     const newVoucher = {
                       voucherNo: allocationVoucherNo,
                       postingDate: allocationPostingDate,
                       voucherDate: allocationVoucherDate,
                       reason: allocationReason,
-                      totalAmount: 15650000,
+                      totalAmount: toolAllocTotalAmount || 15650000,
                       creator: "Nguyễn Thị Mai",
                       status: "Đã ghi sổ",
                     };
                     setAllocationVouchers([newVoucher, ...allocationVouchers.filter((v) => v.voucherNo !== allocationVoucherNo)]);
                     setShowAllocationVoucherModal(false);
                     setAllocationViewMode("list");
-                    notify(`Đã lưu và chuẩn bị in chứng từ phân bổ CCDC số ${allocationVoucherNo}`);
+                    notify("Đã cất chứng từ phân bổ CCDC thành công.");
                   }}
                   style={{
                     height: 32,
@@ -4866,7 +5924,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                    if (apiConnected) { void handleSaveToolMovement("transfer"); return; }
+                    if (apiConnected) { void handleSaveToolMovement("transfer", true); return; }
                   const newVoucher = {
                     voucherNo: transferVoucherNo,
                     voucherDate: transferVoucherDate,
@@ -5029,7 +6087,7 @@ export default function MisaToolsWorkspace({
 
                 <div style={{ marginTop: 8 }}>
                   <span
-                    onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
+                    onClick={() => openReferenceVoucherPicker("DEC_CCDC")}
                     style={{ fontSize: 12, color: "#0284c7", cursor: "pointer" }}
                   >
                     Tham chiếu ...
@@ -5458,7 +6516,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                    if (apiConnected) { void handleSaveToolMovement("disposal"); return; }
+                    if (apiConnected) { void handleSaveToolMovement("disposal", true); return; }
                   const newVoucher = {
                     voucherNo: decreaseVoucherNo,
                     voucherDate: decreaseVoucherDate,
@@ -5488,7 +6546,7 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
-                    if (apiConnected) { void handleSaveToolMovement("disposal"); return; }
+                    if (apiConnected) { void handleSaveToolMovement("disposal", true); return; }
                   const newVoucher = {
                     voucherNo: decreaseVoucherNo,
                     voucherDate: decreaseVoucherDate,
@@ -5651,6 +6709,25 @@ export default function MisaToolsWorkspace({
               <button
                 type="button"
                 onClick={() => {
+                  if (apiConnected) {
+                    void apiSave(async (writer) => {
+                      const res = await validateToolStocktakeDateUc15(writer, { countToDate: stocktakeToDate });
+                      if (res?.voucher_no) setStocktakeVoucherNo(String(res.voucher_no));
+                      if (res?.count_to_date) {
+                        setStocktakeToDate(String(res.count_to_date));
+                        setStocktakeVoucherDate(String(res.count_to_date));
+                      } else {
+                        setStocktakeVoucherDate(stocktakeToDate);
+                      }
+                      return { message: `Mở biên bản kiểm kê CCDC ${res?.voucher_no || stocktakeVoucherNo}` };
+                    }).then((ok) => {
+                      if (ok) {
+                        setShowStocktakeDateModal(false);
+                        setShowStocktakeVoucherModal(true);
+                      }
+                    });
+                    return;
+                  }
                   setShowStocktakeDateModal(false);
                   setStocktakeVoucherDate(stocktakeToDate);
                   setShowStocktakeVoucherModal(true);
@@ -5926,9 +7003,9 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                             <input
                               type="number"
-                              value={row.actualQty || ""}
+                              value={row.actualQty ?? ""}
                               onChange={(e) => {
-                                const val = Number(e.target.value) || 0;
+                                const val = e.target.value === "" ? 0 : Number(e.target.value);
                                 const diff = val - (row.bookQty || 0);
                                 setStocktakeRows((prev) =>
                                   prev.map((r) =>
@@ -6096,6 +7173,33 @@ export default function MisaToolsWorkspace({
                     <button
                       type="button"
                       onClick={() => {
+                        if (apiConnected) {
+                          void apiSave(async (writer) => {
+                            const res = await fetchInUseToolsForStocktakeUc15(writer, {
+                              countToDate: stocktakeToDate,
+                              confirmOverwrite: true,
+                            });
+                            const apiItems = Array.isArray(res?.items) ? res.items : [];
+                            if (apiItems.length > 0) {
+                              setStocktakeRows(apiItems.map((it: any, i: number) => {
+                                const bQty = Number(it.book_quantity) || 0;
+                                return {
+                                  id: `stk-all-${i}`,
+                                  code: String(it.code || ""),
+                                  name: String(it.name || ""),
+                                  dept: String(it.department_name || it.department_code || ""),
+                                  bookQty: bQty,
+                                  actualQty: bQty,
+                                  diffExcess: 0,
+                                  diffShortage: 0,
+                                  solution: "Khớp sổ sách",
+                                };
+                              }));
+                            }
+                            return { message: `Đã lấy ${apiItems.length} dòng CCDC đang dùng vào bảng kiểm kê.` };
+                          });
+                          return;
+                        }
                         setStocktakeRows(toolsData.map((t, i) => ({
                           id: `stk-all-${i}`,
                           code: t.code,
@@ -6177,8 +7281,32 @@ export default function MisaToolsWorkspace({
                 type="button"
                 onClick={() => {
                   if (apiConnected) {
-                    void apiSave((writer) => saveAssetCount(writer, "TOOL", { number: stocktakeVoucherNo, date: stocktakeVoucherDate, purpose: stocktakePurpose, rows: stocktakeRows }))
-                      .then((saved) => { if (saved) { setShowStocktakeVoucherModal(false); setStocktakeViewMode("list"); } });
+                    void apiSave((writer) => saveToolStocktakeUc15(writer, {
+                      number: stocktakeVoucherNo,
+                      countToDate: stocktakeToDate,
+                      date: stocktakeVoucherDate,
+                      purpose: stocktakePurpose,
+                      rows: stocktakeRows,
+                      committee: stocktakeCommittee,
+                      printOnSave: false,
+                    }))
+                      .then((saved) => {
+                        if (saved) {
+                          const newVoucher = {
+                            voucherNo: stocktakeVoucherNo,
+                            voucherDate: stocktakeVoucherDate,
+                            toDate: stocktakeToDate,
+                            purpose: stocktakePurpose,
+                            bookQty: totalStocktakeBookQty,
+                            actualQty: totalStocktakeActualQty,
+                            diffQty: totalStocktakeDiffExcess - totalStocktakeDiffShortage,
+                            status: "Đã hoàn thành",
+                          };
+                          setStocktakeVouchers([newVoucher, ...stocktakeVouchers.filter((v) => v.voucherNo !== stocktakeVoucherNo)]);
+                          setShowStocktakeVoucherModal(false);
+                          setStocktakeViewMode("list");
+                        }
+                      });
                     return;
                   }
                   const newVoucher = {
@@ -6202,8 +7330,32 @@ export default function MisaToolsWorkspace({
                 type="button"
                 onClick={() => {
                   if (apiConnected) {
-                    void apiSave((writer) => saveAssetCount(writer, "TOOL", { number: stocktakeVoucherNo, date: stocktakeVoucherDate, purpose: stocktakePurpose, rows: stocktakeRows }))
-                      .then((saved) => { if (saved) { setShowStocktakeVoucherModal(false); setStocktakeViewMode("list"); } });
+                    void apiSave((writer) => saveToolStocktakeUc15(writer, {
+                      number: stocktakeVoucherNo,
+                      countToDate: stocktakeToDate,
+                      date: stocktakeVoucherDate,
+                      purpose: stocktakePurpose,
+                      rows: stocktakeRows,
+                      committee: stocktakeCommittee,
+                      printOnSave: true,
+                    }))
+                      .then((saved) => {
+                        if (saved) {
+                          const newVoucher = {
+                            voucherNo: stocktakeVoucherNo,
+                            voucherDate: stocktakeVoucherDate,
+                            toDate: stocktakeToDate,
+                            purpose: stocktakePurpose,
+                            bookQty: totalStocktakeBookQty,
+                            actualQty: totalStocktakeActualQty,
+                            diffQty: totalStocktakeDiffExcess - totalStocktakeDiffShortage,
+                            status: "Đã hoàn thành",
+                          };
+                          setStocktakeVouchers([newVoucher, ...stocktakeVouchers.filter((v) => v.voucherNo !== stocktakeVoucherNo)]);
+                          setShowStocktakeVoucherModal(false);
+                          setStocktakeViewMode("list");
+                        }
+                      });
                     return;
                   }
                   const newVoucher = {
@@ -6225,6 +7377,313 @@ export default function MisaToolsWorkspace({
               >
                 <span>Lưu và In</span>
                 <ChevronDown size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 11. MODAL CHỌN CHỨNG TỪ THAM CHIẾU (UC-FA-12 AF01-AF03 / Section 5.2 / UC-FA-14 AF06) */}
+      {showRefVoucherModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
+          <div style={{ width: 760, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <strong style={{ fontSize: 13.5 }}>Chọn chứng từ tham chiếu ({refVoucherContext})</strong>
+              <button type="button" onClick={() => setShowRefVoucherModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <input
+                  type="text"
+                  placeholder="Tìm theo số chứng từ, loại chứng từ, diễn giải..."
+                  value={refVoucherSearch}
+                  onChange={(e) => setRefVoucherSearch(e.target.value)}
+                  style={{ flex: 1, height: 30, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none" }}
+                />
+                <span style={{ fontSize: 12, color: "#64748b" }}>
+                  Đã chọn: <strong>{refVoucherSelectedNos.length}</strong> chứng từ
+                </span>
+              </div>
+              <div style={{ maxHeight: 320, overflow: "auto", border: "1px solid #cbd5e1", borderRadius: 4 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", fontWeight: 600 }}>
+                      <th style={{ width: 36, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Chọn</th>
+                      <th style={{ padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Số chứng từ</th>
+                      <th style={{ padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Ngày CT</th>
+                      <th style={{ padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Loại chứng từ</th>
+                      <th style={{ padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải</th>
+                      <th style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                      <th style={{ padding: "8px", textAlign: "center" }}>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refVoucherList
+                      .filter((rv) => {
+                        const q = refVoucherSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          rv.voucherNo.toLowerCase().includes(q) ||
+                          (rv.voucherType || "").toLowerCase().includes(q) ||
+                          rv.description.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((rv) => {
+                        const checked = refVoucherSelectedNos.includes(rv.voucherNo);
+                        return (
+                          <tr key={rv.voucherNo} style={{ borderBottom: "1px solid #e2e8f0", background: checked ? "#f0fdf4" : "#ffffff" }}>
+                            <td style={{ padding: "8px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setRefVoucherSelectedNos((prev) => (prev.includes(rv.voucherNo) ? prev : [...prev, rv.voucherNo]));
+                                  } else {
+                                    setRefVoucherSelectedNos((prev) => prev.filter((x) => x !== rv.voucherNo));
+                                  }
+                                }}
+                                style={{ cursor: "pointer" }}
+                              />
+                            </td>
+                            <td style={{ padding: "8px", fontWeight: 600, color: "#00a862", borderRight: "1px solid #e2e8f0" }}>{rv.voucherNo}</td>
+                            <td style={{ padding: "8px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{rv.voucherDate}</td>
+                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{rv.voucherType || "Chứng từ gốc"}</td>
+                            <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0" }}>{rv.description}</td>
+                            <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{formatVND(rv.amount)}</td>
+                            <td style={{ padding: "8px", textAlign: "center" }}>
+                              <button
+                                type="button"
+                                onClick={() => notify(`Chi tiết chứng từ ${rv.voucherNo} (${rv.voucherDate}): ${rv.description} - ${formatVND(rv.amount)} đ`)}
+                                style={{ height: 24, padding: "0 8px", background: "#f1f5f9", color: "#0284c7", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}
+                              >
+                                Xem
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div style={{ height: 46, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setRefVoucherSelectedNos([]);
+                  notify("Đã bỏ chọn các chứng từ tham chiếu.");
+                }}
+                style={{ height: 28, padding: "0 12px", border: "1px solid #fca5a5", borderRadius: 4, background: "#fef2f2", color: "#dc2626", fontSize: 12, fontWeight: 500, cursor: "pointer" }}
+              >
+                Bỏ tham chiếu
+              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRefVoucherModal(false)}
+                  style={{ height: 28, padding: "0 14px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, cursor: "pointer" }}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const selectedItems = refVoucherList.filter((rv) => refVoucherSelectedNos.includes(rv.voucherNo));
+                    if (refVoucherContext === "ALLOC_CCDC") {
+                      setToolAllocReferences(selectedItems.map((rv) => ({ voucherNo: rv.voucherNo, voucherDate: rv.voucherDate, voucherType: rv.voucherType || "Chứng từ gốc", description: rv.description })));
+                    } else if (refVoucherContext === "ALLOC_PREPAID") {
+                      setPrepaidAllocReferences(selectedItems.map((rv) => ({ voucherNo: rv.voucherNo, voucherDate: rv.voucherDate, voucherType: rv.voucherType || "Chứng từ gốc", description: rv.description })));
+                    } else if (refVoucherContext === "DEC_CCDC" && selectedItems.length > 0) {
+                      setDecreaseReason((prev) => `${prev} (Tham chiếu: ${selectedItems.map((x) => x.voucherNo).join(", ")})`);
+                    } else if (selectedItems.length > 0) {
+                      setPrepaidDecreaseReason((prev) => `${prev} (Tham chiếu: ${selectedItems.map((x) => x.voucherNo).join(", ")})`);
+                    }
+                    setShowRefVoucherModal(false);
+                    notify(selectedItems.length > 0 ? `Đã gắn ${selectedItems.length} chứng từ tham chiếu.` : "Đã cập nhật danh sách tham chiếu.");
+                  }}
+                  style={{ height: 28, padding: "0 16px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                >
+                  Đồng ý
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 12. MODAL CHI TIẾT & LỊCH SỬ BIẾN ĐỘNG CCDC (UC-FA-16 AF04 / AF28) */}
+      {showToolDetailTraceModal && selectedToolTrace && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
+          <div style={{ width: 760, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <strong style={{ fontSize: 13.5 }}>Hồ sơ & Lịch sử biến động CCDC: {selectedToolTrace.code} - {selectedToolTrace.name}</strong>
+              <button type="button" onClick={() => setShowToolDetailTraceModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12, fontSize: 12.5 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                <div><strong>Mã CCDC:</strong> <span style={{ color: "#00a862", fontWeight: 700 }}>{selectedToolTrace.code}</span></div>
+                <div><strong>Loại CCDC:</strong> {selectedToolTrace.category}</div>
+                <div><strong>Đơn vị sử dụng:</strong> {selectedToolTrace.dept}</div>
+                <div><strong>Nguyên giá:</strong> {formatVND(selectedToolTrace.originalCost)}</div>
+                <div><strong>Đã phân bổ:</strong> {formatVND(selectedToolTrace.allocatedAmount)}</div>
+                <div><strong>Giá trị còn lại:</strong> <span style={{ color: "#16a34a", fontWeight: 700 }}>{formatVND(selectedToolTrace.remainingAmount)}</span></div>
+              </div>
+              <div style={{ fontWeight: 700, color: "#1e293b" }}>Lịch sử chứng từ ghi tăng, điều chuyển, phân bổ, ghi giảm:</div>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, border: "1px solid #cbd5e1" }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", fontWeight: 600 }}>
+                    <th style={{ padding: "7px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Ngày CT</th>
+                    <th style={{ padding: "7px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Số chứng từ</th>
+                    <th style={{ padding: "7px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Nghiệp vụ biến động</th>
+                    <th style={{ padding: "7px", textAlign: "right" }}>Giá trị</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedToolTrace.history || []).map((h: any, idx: number) => (
+                    <tr key={`${h.voucherNo}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <td style={{ padding: "7px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{h.date}</td>
+                      <td style={{ padding: "7px", fontWeight: 600, color: "#00a862", borderRight: "1px solid #e2e8f0" }}>{h.voucherNo}</td>
+                      <td style={{ padding: "7px", borderRight: "1px solid #e2e8f0" }}>{h.type}</td>
+                      <td style={{ padding: "7px", textAlign: "right", fontWeight: 600 }}>{formatVND(h.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ height: 42, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "0 16px" }}>
+              <button type="button" onClick={() => setShowToolDetailTraceModal(false)} style={{ height: 28, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 13. MODAL XỬ LÝ CHÊNH LỆCH & PHÊ DUYỆT KIỂM KÊ CCDC (UC-FA-15 AF09–AF11) */}
+      {showStocktakeResolveModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
+          <div style={{ width: 520, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <strong style={{ fontSize: 13.5 }}>Xử lý chênh lệch & Phê duyệt kiểm kê ({selectedStocktakeForResolve})</strong>
+              <button type="button" onClick={() => setShowStocktakeResolveModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12, fontSize: 12.5 }}>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: 4 }}>Hành động xử lý:</label>
+                <select
+                  value={stocktakeResolveAction}
+                  onChange={(e) => setStocktakeResolveAction(e.target.value as any)}
+                  style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}
+                >
+                  <option value="VERIFY_CAUSE">Xác minh nguyên nhân chênh lệch (AF09)</option>
+                  <option value="APPROVE">Phê duyệt kết quả kiểm kê CCDC (AF10)</option>
+                  <option value="CREATE_ADJUSTMENT_VOUCHER">Lập chứng từ xử lý thừa / thiếu sau kiểm kê (AF11)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: 4 }}>Ý kiến / Phương án xử lý:</label>
+                <textarea
+                  rows={3}
+                  value={stocktakeResolveNote}
+                  onChange={(e) => setStocktakeResolveNote(e.target.value)}
+                  style={{ width: "100%", padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+            <div style={{ height: 44, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "0 16px", gap: 8 }}>
+              <button type="button" onClick={() => setShowStocktakeResolveModal(false)} style={{ height: 28, padding: "0 14px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, cursor: "pointer" }}>Hủy</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (apiConnected) {
+                    void apiSave((writer) =>
+                      resolveToolStocktakeUc15(writer, {
+                        voucherNo: selectedStocktakeForResolve,
+                        action: stocktakeResolveAction,
+                        resolutionNote: stocktakeResolveNote,
+                        approvedBy: "Kế toán trưởng",
+                      })
+                    ).then((ok) => {
+                      if (ok) setShowStocktakeResolveModal(false);
+                    });
+                    return;
+                  }
+                  setStocktakeVouchers((prev) =>
+                    prev.map((sv) =>
+                      sv.voucherNo === selectedStocktakeForResolve ? { ...sv, status: "Đã xử lý CL" } : sv
+                    )
+                  );
+                  setShowStocktakeResolveModal(false);
+                  notify(`Đã thực hiện xử lý kiểm kê ${selectedStocktakeForResolve} thành công.`);
+                }}
+                style={{ height: 28, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 14. MODAL ẨN / HIỆN BÁO CÁO CCDC (UC-FA-16 AF10) */}
+      {showReportVisibilityModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
+          <div style={{ width: 500, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <strong style={{ fontSize: 13.5 }}>Thiết lập Ẩn/hiện danh mục báo cáo CCDC & CPTT</strong>
+              <button type="button" onClick={() => setShowReportVisibilityModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, maxHeight: 340, overflowY: "auto" }}>
+              {[
+                "Bảng tính phân bổ công cụ dụng cụ",
+                "Sổ theo dõi công cụ dụng cụ",
+                "Bảng tính phân bổ công cụ dụng cụ theo năm",
+                "Báo cáo chi tiết giảm công cụ dụng cụ",
+                "Sổ theo dõi công cụ dụng cụ theo đơn vị sử dụng",
+                "Bảng tính phân bổ chi phí trả trước",
+                "Sổ chi tiết chi phí trả trước",
+                "Bảng tổng hợp chi phí trả trước",
+                "Báo cáo đối chiếu sổ theo dõi CCDC, chi phí trả trước và sổ cái",
+                "Bảng đối chiếu tình hình phân bổ CCDC với sổ cái TK 242",
+              ].map((rName) => {
+                const isHidden = hiddenToolReports.includes(rName);
+                return (
+                  <label key={rName} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", border: "1px solid #e2e8f0", borderRadius: 4, fontSize: 12.5, cursor: "pointer" }}>
+                    <span>{rName}</span>
+                    <input
+                      type="checkbox"
+                      checked={!isHidden}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setHiddenToolReports((prev) => prev.filter((x) => x !== rName));
+                        } else {
+                          setHiddenToolReports((prev) => [...prev, rName]);
+                        }
+                      }}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+            <div style={{ height: 44, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "0 16px", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (apiConnected) {
+                    void apiSave(async (writer) => {
+                      await fetchToolReportCatalogUc16(writer, {
+                        hiddenReports: hiddenToolReports,
+                        language: reportLanguage,
+                      });
+                      return { message: "Đã lưu thiết lập ẩn/hiện báo cáo CCDC." };
+                    });
+                  } else {
+                    notify("Đã lưu thiết lập ẩn/hiện báo cáo CCDC.");
+                  }
+                  setShowReportVisibilityModal(false);
+                }}
+                style={{ height: 28, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              >
+                Lưu thiết lập
               </button>
             </div>
           </div>
@@ -6593,7 +8052,16 @@ export default function MisaToolsWorkspace({
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu sổ theo dõi CCDC ra Excel...")}
+              onClick={() => {
+                if (apiConnected) {
+                  void apiSave(async (writer) => {
+                    const res = await exportToolRegisterUc16(writer);
+                    return { message: res?.message || `Đã xuất khẩu ${res?.file_name || "So_Theo_Doi_CCDC.xlsx"}` };
+                  });
+                  return;
+                }
+                notify("Đang xuất khẩu sổ theo dõi CCDC ra Excel...");
+              }}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
@@ -6628,10 +8096,15 @@ export default function MisaToolsWorkspace({
               </tr>
             </thead>
             <tbody>
-              {toolsData.map((row, idx) => (
+              {(uc16RegisterRows || toolsData).map((row, idx) => (
                 <tr key={row.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                  <td
+                    onClick={() => openToolDetailTrace(row.code)}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                  >
+                    {row.code}
+                  </td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{row.name}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.category}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.dept}</td>
@@ -7302,6 +8775,29 @@ export default function MisaToolsWorkspace({
                               >
                                 In
                               </button>
+                              <span style={{ color: "#cbd5e1" }}>|</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (apiConnected) {
+                                    void apiSave((writer) =>
+                                      unpostAllocationVoucherUc12(writer, {
+                                        allocationType: "CCDC",
+                                        voucherNo: v.voucherNo,
+                                        action: "UNPOST",
+                                      })
+                                    );
+                                    return;
+                                  }
+                                  setAllocationVouchers((prev) =>
+                                    prev.map((av) => (av.voucherNo === v.voucherNo ? { ...av, status: "Bỏ ghi sổ" } : av))
+                                  );
+                                  notify(`Đã bỏ ghi sổ chứng từ phân bổ ${v.voucherNo}`);
+                                }}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 12, cursor: "pointer" }}
+                              >
+                                Bỏ ghi
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -7941,6 +9437,13 @@ export default function MisaToolsWorkspace({
                       setTransferReceiver("");
                       setTransferReason("");
                       setShowTransferModal(true);
+                      if (apiConnected) {
+                        void apiSave(async (writer) => {
+                          const res = await fetchTransferableToolsUc13(writer, { voucherDate: "30/09/2026" });
+                          if (res?.proposed_voucher_no) setTransferVoucherNo(String(res.proposed_voucher_no));
+                          return { message: "" };
+                        });
+                      }
                     }}
                     style={{
                       height: 32,
@@ -8136,6 +9639,21 @@ export default function MisaToolsWorkspace({
                                 style={{ border: "none", background: "transparent", color: "#64748b", fontSize: 12, cursor: "pointer" }}
                               >
                                 In
+                              </button>
+                              <span style={{ color: "#cbd5e1" }}>|</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (apiConnected) {
+                                    void apiSave((writer) => cancelToolTransferUc13(writer, { voucherNo: v.voucherNo }));
+                                    return;
+                                  }
+                                  setTransferVouchers((prev) => prev.filter((tv) => tv.voucherNo !== v.voucherNo));
+                                  notify(`Đã hủy chứng từ điều chuyển ${v.voucherNo}`);
+                                }}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 12, cursor: "pointer" }}
+                              >
+                                Hủy
                               </button>
                             </div>
                           </td>
@@ -8364,6 +9882,13 @@ export default function MisaToolsWorkspace({
                       setDecreaseVoucherDate("30/09/2026");
                       setDecreaseReason("Nhượng bán, Thanh lý");
                       setShowDecreaseModal(true);
+                      if (apiConnected) {
+                        void apiSave(async (writer) => {
+                          const res = await fetchDisposableToolsUc14(writer, { voucherDate: "30/09/2026" });
+                          if (res?.proposed_voucher_no) setDecreaseVoucherNo(String(res.proposed_voucher_no));
+                          return { message: "" };
+                        });
+                      }
                     }}
                     style={{
                       height: 32,
@@ -8557,6 +10082,21 @@ export default function MisaToolsWorkspace({
                                 style={{ border: "none", background: "transparent", color: "#64748b", fontSize: 12, cursor: "pointer" }}
                               >
                                 In
+                              </button>
+                              <span style={{ color: "#cbd5e1" }}>|</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (apiConnected) {
+                                    void apiSave((writer) => cancelToolDecreaseUc14(writer, { voucherNo: v.voucherNo }));
+                                    return;
+                                  }
+                                  setDecreaseVouchers((prev) => prev.filter((dv) => dv.voucherNo !== v.voucherNo));
+                                  notify(`Đã hủy chứng từ ghi giảm ${v.voucherNo}`);
+                                }}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 12, cursor: "pointer" }}
+                              >
+                                Hủy
                               </button>
                             </div>
                           </td>
@@ -8832,7 +10372,16 @@ export default function MisaToolsWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Đã xuất danh sách biên bản kiểm kê CCDC ra file Excel")}
+                    onClick={() => {
+                      if (apiConnected) {
+                        void apiSave(async (writer) => {
+                          const res = await exportToolStocktakeExcelUc15(writer, { search: stocktakeSearch });
+                          return { message: `Đã xuất ${res?.count ?? stocktakeVouchers.length} biên bản kiểm kê CCDC ra file ${res?.file_name || "Excel"}.` };
+                        });
+                        return;
+                      }
+                      notify("Đã xuất danh sách biên bản kiểm kê CCDC ra file Excel");
+                    }}
                     style={{
                       height: 30,
                       padding: "0 12px",
@@ -8970,10 +10519,28 @@ export default function MisaToolsWorkspace({
                               <span style={{ color: "#cbd5e1" }}>|</span>
                               <button
                                 type="button"
-                                onClick={() => notify(`In biên bản kiểm kê ${v.voucherNo}`)}
-                                style={{ border: "none", background: "transparent", color: "#64748b", fontSize: 12, cursor: "pointer" }}
+                                onClick={() => {
+                                  setSelectedStocktakeForResolve(v.voucherNo);
+                                  setShowStocktakeResolveModal(true);
+                                }}
+                                style={{ border: "none", background: "transparent", color: "#0284c7", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
-                                In
+                                Xử lý CL
+                              </button>
+                              <span style={{ color: "#cbd5e1" }}>|</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (apiConnected) {
+                                    void apiSave((writer) => cancelToolStocktakeUc15(writer, { voucherNo: v.voucherNo }));
+                                    return;
+                                  }
+                                  setStocktakeVouchers((prev) => prev.filter((sv) => sv.voucherNo !== v.voucherNo));
+                                  notify(`Đã hủy biên bản kiểm kê ${v.voucherNo}`);
+                                }}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 12, cursor: "pointer" }}
+                              >
+                                Hủy
                               </button>
                             </div>
                           </td>
@@ -9670,6 +11237,16 @@ export default function MisaToolsWorkspace({
                             <button
                               type="button"
                               onClick={() => {
+                                if (apiConnected) {
+                                  void apiSave((writer) =>
+                                    unpostAllocationVoucherUc12(writer, {
+                                      allocationType: "PREPAID",
+                                      voucherNo: v.voucherNo,
+                                      action: "DELETE",
+                                    })
+                                  );
+                                  return;
+                                }
                                 setPrepaidAllocVouchers(prepaidAllocVouchers.filter((x) => x.voucherNo !== v.voucherNo));
                                 notify(`Đã xóa chứng từ ${v.voucherNo}`);
                               }}
@@ -9816,6 +11393,13 @@ export default function MisaToolsWorkspace({
                       { id: `dec-${Date.now()}`, code: "", name: "", remainingAmount: 0 },
                     ]);
                     setShowPrepaidDecreaseModal(true);
+                    if (apiConnected) {
+                      void apiSave(async (writer) => {
+                        const res = await fetchDisposablePrepaidExpensesUc14(writer, { voucherDate: "30/09/2026" });
+                        if (res?.proposed_voucher_no) setPrepaidDecreaseVoucherNo(String(res.proposed_voucher_no));
+                        return { message: "" };
+                      });
+                    }
                   }}
                     style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
@@ -9900,6 +11484,10 @@ export default function MisaToolsWorkspace({
                             <button
                               type="button"
                               onClick={() => {
+                                if (apiConnected) {
+                                  void apiSave((writer) => cancelPrepaidDecreaseUc14(writer, { voucherNo: v.voucherNo }));
+                                  return;
+                                }
                                 setPrepaidDecreaseVouchers(prepaidDecreaseVouchers.filter((x) => x.voucherNo !== v.voucherNo));
                                 notify(`Đã xóa chứng từ ${v.voucherNo}`);
                               }}
@@ -10016,7 +11604,7 @@ export default function MisaToolsWorkspace({
 
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                    Năm
+                    Năm <span style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -10068,13 +11656,64 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
+                    if (!prepaidAllocMonth || prepaidAllocMonth < 1 || prepaidAllocMonth > 12) {
+                      notify("Tháng phân bổ không hợp lệ.");
+                      return;
+                    }
+                    if (!prepaidAllocYear || !Number.isInteger(Number(prepaidAllocYear)) || prepaidAllocYear < 1900 || prepaidAllocYear > 2100) {
+                      notify("Năm phân bổ không hợp lệ.");
+                      return;
+                    }
+                    if (apiConnected && writer) {
+                      void setupAllocationPeriodUc11(writer, {
+                        allocationType: "PREPAID",
+                        month: prepaidAllocMonth,
+                        year: prepaidAllocYear,
+                      })
+                        .then((res) => {
+                          setShowPrepaidDateModal(false);
+                          setPrepaidAllocVoucherNo(res.proposedVoucherNo || `PBCP${String(prepaidAllocVouchers.length + 1).padStart(5, "0")}`);
+                          setPrepaidAllocPostingDate(res.postingDateDisplay);
+                          setPrepaidAllocVoucherDate(res.voucherDateDisplay);
+                          setPrepaidAllocReason(res.description || `Phân bổ chi phí trả trước tháng ${prepaidAllocMonth} năm ${prepaidAllocYear}`);
+                          setPrepaidAllocIdentifyRows(res.identifyRows || []);
+                          setPrepaidAllocDetailRows(res.allocationRows || []);
+                          setPrepaidAllocAccountingRows(res.accountingRows || []);
+                          setPrepaidAllocTotalAmount(Number(res.totalAllocationAmount || 0));
+                          setPrepaidAllocEmptyWarning(res.emptySourceWarning || "");
+                          setPrepaidAllocTab("identify");
+                          setShowPrepaidAllocVoucherModal(true);
+                          if (res.emptySourceWarning) {
+                            notify(res.emptySourceWarning);
+                          }
+                        })
+                        .catch((err) => {
+                          notify(err instanceof Error ? err.message : "Không thể kiểm tra điều kiện kỳ phân bổ. Vui lòng thử lại.");
+                        });
+                      return;
+                    }
                     setShowPrepaidDateModal(false);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const daysInMonth = new Date(prepaidAllocYear, prepaidAllocMonth, 0).getDate();
-                    setPrepaidAllocVoucherNo(`PBPTT${String(prepaidAllocVouchers.length + 1).padStart(5, "0")}`);
-                    setPrepaidAllocPostingDate(`${daysInMonth}/${mStr}/${prepaidAllocYear}`);
-                    setPrepaidAllocVoucherDate(`${daysInMonth}/${mStr}/${prepaidAllocYear}`);
+                    const dateStr = `${String(daysInMonth).padStart(2, "0")}/${mStr}/${prepaidAllocYear}`;
+                    setPrepaidAllocVoucherNo(`PBCP${String(prepaidAllocVouchers.length + 1).padStart(5, "0")}`);
+                    setPrepaidAllocPostingDate(dateStr);
+                    setPrepaidAllocVoucherDate(dateStr);
                     setPrepaidAllocReason(`Phân bổ chi phí trả trước tháng ${prepaidAllocMonth} năm ${prepaidAllocYear}`);
+                    const demoRows = prepaidExpensesList.map((cp) => {
+                      const periodAmt = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                      return {
+                        prepaid_code: cp.code,
+                        prepaid_name: cp.name,
+                        total_amount: cp.totalAmount,
+                        unallocated_amount: cp.remainingAmount,
+                        period_allocation_amount: periodAmt,
+                      };
+                    });
+                    const demoTotal = demoRows.reduce((s, r) => s + Number(r.period_allocation_amount || 0), 0);
+                    setPrepaidAllocIdentifyRows(demoRows);
+                    setPrepaidAllocTotalAmount(demoTotal);
+                    setPrepaidAllocEmptyWarning("");
                     setPrepaidAllocTab("identify");
                     setShowPrepaidAllocVoucherModal(true);
                   }}
@@ -10527,8 +12166,139 @@ export default function MisaToolsWorkspace({
                       </div>
                     </div>
                   ) : (
-                    <div style={{ padding: 40, textAlign: "center", color: "#64748b", fontSize: 13 }}>
-                      Chưa có chứng từ tập hợp nào liên kết với khoản chi phí trả trước này.
+                    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                      <div style={{ flex: 1, overflow: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                          <thead>
+                            <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                              <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                              <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Số chứng từ</th>
+                              <th style={{ width: 130, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Ngày chứng từ</th>
+                              <th style={{ minWidth: 280, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải</th>
+                              <th style={{ width: 160, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                              <th style={{ width: 50, padding: "8px", textAlign: "center" }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {form1SourceDocs.length > 0 ? form1SourceDocs.map((doc, idx) => (
+                              <tr key={doc.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                                <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
+                                  <input
+                                    type="text"
+                                    value={doc.voucherNo}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setForm1SourceDocs((prev) => prev.map((d, i) => (i === idx ? { ...d, voucherNo: val } : d)));
+                                    }}
+                                    style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, fontWeight: 600, color: "#00a862" }}
+                                  />
+                                </td>
+                                <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
+                                  <input
+                                    type="text"
+                                    value={doc.voucherDate}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setForm1SourceDocs((prev) => prev.map((d, i) => (i === idx ? { ...d, voucherDate: val } : d)));
+                                    }}
+                                    style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, textAlign: "center" }}
+                                  />
+                                </td>
+                                <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
+                                  <input
+                                    type="text"
+                                    value={doc.description}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setForm1SourceDocs((prev) => prev.map((d, i) => (i === idx ? { ...d, description: val } : d)));
+                                    }}
+                                    style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5 }}
+                                  />
+                                </td>
+                                <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
+                                  <input
+                                    type="number"
+                                    value={doc.amount}
+                                    onChange={(e) => {
+                                      const val = Number(e.target.value) || 0;
+                                      const nextDocs = form1SourceDocs.map((d, i) => (i === idx ? { ...d, amount: val } : d));
+                                      setForm1SourceDocs(nextDocs);
+                                      setForm1Amount(nextDocs.reduce((s, d) => s + (d.amount || 0), 0));
+                                    }}
+                                    style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, textAlign: "right" }}
+                                  />
+                                </td>
+                                <td style={{ textAlign: "center", padding: "4px" }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextDocs = form1SourceDocs.filter((_, i) => i !== idx);
+                                      setForm1SourceDocs(nextDocs);
+                                      if (nextDocs.length > 0) {
+                                        setForm1Amount(nextDocs.reduce((s, d) => s + (d.amount || 0), 0));
+                                      }
+                                    }}
+                                    style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer" }}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </td>
+                              </tr>
+                            )) : (
+                              <tr>
+                                <td colSpan={6} style={{ padding: 32, textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                                  Chưa có chứng từ tập hợp nào liên kết với khoản chi phí trả trước này. Nhấn <strong>Chọn chứng từ</strong> để tập hợp chứng từ chi phí.
+                                </td>
+                              </tr>
+                            )}
+                            {form1SourceDocs.length > 0 && (
+                              <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
+                                <td colSpan={4} style={{ padding: "8px 12px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng tiền tập hợp:</td>
+                                <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                                  {formatVND(form1SourceDocs.reduce((s, d) => s + (d.amount || 0), 0))}
+                                </td>
+                                <td></td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ padding: "10px 16px", borderTop: "1px solid #e2e8f0", display: "flex", gap: 12, background: "#ffffff" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextIdx = form1SourceDocs.length + 1;
+                            const sampleAmt = form1Amount > 0 && form1SourceDocs.length === 0 ? form1Amount : 30000000;
+                            const nextDocs = [
+                              ...form1SourceDocs,
+                              {
+                                id: `sdoc-${Date.now()}`,
+                                voucherNo: `UNC0000${nextIdx}`,
+                                voucherDate: form1RecordDate || "30/09/2026",
+                                description: form1Name || `Chứng từ chi phí trả trước #${nextIdx}`,
+                                amount: sampleAmt,
+                              },
+                            ];
+                            setForm1SourceDocs(nextDocs);
+                            setForm1Amount(nextDocs.reduce((s, d) => s + (d.amount || 0), 0));
+                          }}
+                          style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 600, color: "#00a862", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                        >
+                          <Plus size={13} />
+                          <span>Chọn chứng từ</span>
+                        </button>
+                        {form1SourceDocs.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setForm1SourceDocs([])}
+                            style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                          >
+                            <Trash2 size={13} />
+                            <span>Xóa hết dòng</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -10559,7 +12329,7 @@ export default function MisaToolsWorkspace({
                   type="button"
                   onClick={() => {
                     if (apiConnected) {
-                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows }, false))
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows, sourceDocs: form1SourceDocs }, false))
                         .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
                       return;
                     }
@@ -10585,7 +12355,7 @@ export default function MisaToolsWorkspace({
                   type="button"
                   onClick={() => {
                     if (apiConnected) {
-                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows }, false))
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows, sourceDocs: form1SourceDocs }, false))
                         .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
                       return;
                     }
@@ -11359,7 +13129,38 @@ export default function MisaToolsWorkspace({
                       setExcelStep(2);
                       notify("Sổ Việt AI: Đã tự động phân tích & ánh xạ các cột dữ liệu");
                     } else {
+                      if (apiConnected) {
+                        void apiSave((writer) => importPrepaidExpensesExcel(writer, {
+                          fileName: excelFileName || "Mau_Chi_Phi_Tra_Truoc.xlsx",
+                          sheetName: excelSheet,
+                          headerRow: excelHeaderRow,
+                          autoMap: excelAutoMap,
+                          rows: [
+                            {
+                              code: `CPTT-EX-${Date.now().toString().slice(-4)}`,
+                              name: "Chi phí bảo hiểm tài sản nhập từ Excel",
+                              record_date: "01/10/2026",
+                              start_date: "01/10/2026",
+                              amount: "24000000",
+                              allocation_periods: 12,
+                              waiting_account: "242",
+                              target_code: "PKT",
+                              target_name: "Phòng Kỹ thuật",
+                              rate: "100",
+                              expense_account: "6422",
+                            },
+                          ],
+                        })).then((saved) => {
+                          if (saved) {
+                            setShowPrepaidExcelModal(false);
+                            setExcelStep(1);
+                            setPrepaidViewMode("list");
+                          }
+                        });
+                        return;
+                      }
                       setShowPrepaidExcelModal(false);
+                      setExcelStep(1);
                       setPrepaidViewMode("list");
                       notify("Nhập khẩu danh sách chi phí trả trước từ Excel thành công!");
                     }
@@ -11527,60 +13328,101 @@ export default function MisaToolsWorkspace({
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
-                        Tháng
-                      </label>
-                      <input
-                        type="number"
-                        value={prepaidAllocMonth}
-                        onChange={(e) => setPrepaidAllocMonth(Number(e.target.value))}
-                        style={{
-                          width: "100%",
-                          height: 30,
-                          padding: "0 10px",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 4,
-                          fontSize: 12.5,
-                          background: "#ffffff",
-                          outline: "none",
-                          boxSizing: "border-box",
-                        }}
-                      />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                          Tháng
+                        </label>
+                        <input
+                          type="number"
+                          value={prepaidAllocMonth}
+                          onChange={(e) => {
+                            const nextM = Number(e.target.value);
+                            setPrepaidAllocMonth(nextM);
+                            if (nextM >= 1 && nextM <= 12) {
+                              void handleRecalculatePrepaidAllocationPeriod(nextM, prepaidAllocYear);
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 30,
+                            padding: "0 10px",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 4,
+                            fontSize: 12.5,
+                            background: "#ffffff",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
+                          Năm
+                        </label>
+                        <input
+                          type="number"
+                          value={prepaidAllocYear}
+                          onChange={(e) => {
+                            const nextY = Number(e.target.value);
+                            setPrepaidAllocYear(nextY);
+                            if (nextY >= 1900 && nextY <= 2100) {
+                              void handleRecalculatePrepaidAllocationPeriod(prepaidAllocMonth, nextY);
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            height: 30,
+                            padding: "0 10px",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: 4,
+                            fontSize: 12.5,
+                            background: "#ffffff",
+                            outline: "none",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 4, fontWeight: 500 }}>
-                        Năm
-                      </label>
-                      <input
-                        type="number"
-                        value={prepaidAllocYear}
-                        onChange={(e) => setPrepaidAllocYear(Number(e.target.value))}
-                        style={{
-                          width: "100%",
-                          height: 30,
-                          padding: "0 10px",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: 4,
-                          fontSize: 12.5,
-                          background: "#ffffff",
-                          outline: "none",
-                          boxSizing: "border-box",
-                        }}
-                      />
-                    </div>
-                  </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
-                    <span>Tham chiếu</span>
-                    <span
-                      onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
-                      style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
-                    >
-                      ...
-                    </span>
-                  </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569", flexWrap: "wrap" }}>
+                      <span>Tham chiếu</span>
+                      <span
+                        onClick={() => openReferenceVoucherPicker("ALLOC_PREPAID")}
+                        style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
+                        title="Chọn chứng từ tham chiếu (AF01-AF03)"
+                      >
+                        ...
+                      </span>
+                      {prepaidAllocReferences.map((ref) => (
+                        <span
+                          key={ref.voucherNo}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                            background: "#e0f2fe",
+                            color: "#0284c7",
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                          }}
+                        >
+                          <span
+                            onClick={() => notify(`Chứng từ tham chiếu ${ref.voucherNo} (${ref.voucherDate}): ${ref.description}`)}
+                            style={{ cursor: "pointer", textDecoration: "underline" }}
+                          >
+                            {ref.voucherNo}
+                          </span>
+                          <X
+                            size={12}
+                            style={{ cursor: "pointer", color: "#64748b" }}
+                            onClick={() => setPrepaidAllocReferences((prev) => prev.filter((x) => x.voucherNo !== ref.voucherNo))}
+                          />
+                        </span>
+                      ))}
+                    </div>
                 </div>
 
                 {/* Cột 2: Ngày hạch toán, Ngày chứng từ, Số chứng từ */}
@@ -11663,7 +13505,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ textAlign: "right", paddingTop: 4 }}>
                   <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>Số tiền phân bổ</div>
                   <div style={{ fontSize: 32, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>
-                    0
+                    {formatVND(prepaidAllocTotalAmount)}
                   </div>
                 </div>
               </div>
@@ -11715,26 +13557,48 @@ export default function MisaToolsWorkspace({
                             <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}></td>
                             <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                             <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
-                            <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
-                            <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>0</td>
-                            <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b" }}>0</td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
+                              {formatVND(prepaidAllocIdentifyRows.reduce((s, r) => s + Number(r.total_amount || 0), 0))}
+                            </td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
+                              {formatVND(prepaidAllocIdentifyRows.reduce((s, r) => s + Number(r.unallocated_amount || 0), 0))}
+                            </td>
+                            <td style={{ padding: "6px 10px", textAlign: "right", color: "#1e293b" }}>
+                              {formatVND(prepaidAllocTotalAmount)}
+                            </td>
                           </tr>
                         </thead>
                         <tbody>
-                          {/* Empty state rows matching Screenshot 2 */}
+                          {prepaidAllocIdentifyRows.length > 0 ? (
+                            prepaidAllocIdentifyRows.map((row, idx) => (
+                              <tr key={`${row.code || row.prepaid_code}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                                <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code || row.prepaid_code}</td>
+                                <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{row.name || row.prepaid_name}</td>
+                                <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(row.total_amount || 0))}</td>
+                                <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#475569" }}>{formatVND(Number(row.unallocated_amount || 0))}</td>
+                                <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(row.period_allocation_amount || row.total_allocation_amount || 0))}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={6} style={{ padding: "24px 16px", textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                                {prepaidAllocEmptyWarning || ""}
+                              </td>
+                            </tr>
+                          )}
                         </tbody>
                       </table>
                     </div>
 
-                    {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 2 */}
+                    {/* Đính kèm Dung lượng tối đa 5MB matching Screenshot 2 (AF19 / EF27) */}
                     <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#ffffff" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                         <Paperclip size={14} style={{ color: "#64748b" }} />
                         <span style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>Đính kèm</span>
                         <span style={{ fontSize: 12, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
                       </div>
-                      <div
-                        onClick={() => notify("Chọn tệp đính kèm cho chứng từ phân bổ chi phí trả trước...")}
+                      <label
                         style={{
                           border: "1px solid #cbd5e1",
                           borderRadius: 4,
@@ -11749,11 +13613,46 @@ export default function MisaToolsWorkspace({
                           width: 320,
                         }}
                       >
+                        <input
+                          type="file"
+                          multiple
+                          onChange={(e) => handleAllocationAttachmentUpload(e, "PREPAID")}
+                          style={{ display: "none" }}
+                        />
                         <Upload size={18} style={{ color: "#0284c7" }} />
                         <div style={{ fontSize: 12.5, color: "#64748b" }}>
                           <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                         </div>
-                      </div>
+                      </label>
+                      {prepaidAllocAttachments.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                          {prepaidAllocAttachments.map((att, idx) => (
+                            <span
+                              key={`${att.fileName}-${idx}`}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "3px 8px",
+                                borderRadius: 4,
+                                background: "#f1f5f9",
+                                border: "1px solid #cbd5e1",
+                                fontSize: 12,
+                                color: "#334155",
+                              }}
+                            >
+                              <Paperclip size={12} style={{ color: "#0284c7" }} />
+                              <span>{att.fileName}</span>
+                              <span style={{ color: "#94a3b8", fontSize: 11 }}>({Math.ceil(att.fileSize / 1024)} KB)</span>
+                              <X
+                                size={12}
+                                style={{ cursor: "pointer", color: "#ef4444" }}
+                                onClick={() => setPrepaidAllocAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                              />
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -11765,34 +13664,61 @@ export default function MisaToolsWorkspace({
                         <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
                           <th style={{ width: 100, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã chi phí</th>
-                          <th style={{ minWidth: 240, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên khoản chi phí</th>
-                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tổng nguyên giá</th>
-                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Đã PB các kỳ trước</th>
-                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền còn lại</th>
-                          <th style={{ width: 80, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Số kỳ PB</th>
-                          <th style={{ width: 130, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tiền phân bổ kỳ này</th>
-                          <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chi phí</th>
-                          <th style={{ width: 150, padding: "8px", textAlign: "left" }}>Đơn vị chịu CP</th>
+                          <th style={{ minWidth: 200, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên chi phí</th>
+                          <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng phân bổ</th>
+                          <th style={{ width: 115, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                          <th style={{ width: 115, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Đã phân bổ</th>
+                          <th style={{ width: 125, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền chưa phân bổ</th>
+                          <th style={{ width: 70, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Số kỳ PB</th>
+                          <th style={{ width: 75, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Kỳ còn lại</th>
+                          <th style={{ width: 80, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Tỷ lệ PB (%)</th>
+                          <th style={{ width: 120, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>PB kỳ này</th>
+                          <th style={{ width: 75, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chờ</th>
+                          <th style={{ width: 80, padding: "8px", textAlign: "center" }}>TK CP</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
-                          const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
-                          return (
-                            <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        {prepaidAllocDetailRows.length > 0 ? (
+                          prepaidAllocDetailRows.map((row, idx) => (
+                            <tr key={`${row.code || row.prepaid_code}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{cp.code}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{cp.name}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(cp.totalAmount)}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(cp.allocatedAmount)}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(cp.remainingAmount)}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{cp.allocationMonths}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{cp.costAccount}</td>
-                              <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code || row.prepaid_code}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{row.name || row.prepaid_name}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.allocation_target || row.unit_name || "Quản lý DN"}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(row.total_amount || row.original_cost || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(Number(row.allocated_amount || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(Number(row.unallocated_amount || row.remaining_amount || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.total_periods || 1}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.remaining_periods ?? 1}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{Number(row.allocation_rate ?? 100)}%</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(row.period_allocation || row.allocated_this_period || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>{row.waiting_account || "242"}</td>
+                              <td style={{ padding: "8px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{row.expense_account || "6422"}</td>
                             </tr>
-                          );
-                        })}
+                          ))
+                        ) : (
+                          prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
+                            const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                            const remPeriods = cp.allocationMonths > 0 ? Math.max(0, Math.ceil(cp.remainingAmount / Math.max(1, allocThisPeriod))) : 0;
+                            return (
+                              <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{cp.code}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{cp.name}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{cp.dept}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(cp.totalAmount)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(cp.allocatedAmount)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(cp.remainingAmount)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{cp.allocationMonths}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{remPeriods}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>100%</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
+                                <td style={{ padding: "8px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{cp.costAccount}</td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -11804,36 +13730,50 @@ export default function MisaToolsWorkspace({
                       <thead>
                         <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                          <th style={{ minWidth: 300, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải hạch toán</th>
+                          <th style={{ minWidth: 260, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải định khoản</th>
                           <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
                           <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Có</th>
-                          <th style={{ width: 150, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
-                          <th style={{ width: 180, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục chi phí</th>
-                          <th style={{ width: 160, padding: "8px", textAlign: "left" }}>Đơn vị chịu chi phí</th>
+                          <th style={{ width: 140, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Số tiền</th>
+                          <th style={{ width: 170, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục chi phí</th>
+                          <th style={{ width: 160, padding: "8px", textAlign: "left" }}>Đối tượng phân bổ</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
-                          const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
-                          return (
-                            <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                        {prepaidAllocAccountingRows.length > 0 ? (
+                          prepaidAllocAccountingRows.map((entry, idx) => (
+                            <tr key={`${entry.debit_account}-${entry.credit_account}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>Phân bổ {cp.name} - T{String(prepaidAllocMonth).padStart(2, "0")}/{prepaidAllocYear}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{cp.costAccount}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>Chi phí mua ngoài / Phân bổ</td>
-                              <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{entry.description}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{entry.debit_account}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>{entry.credit_account}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(entry.amount || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{entry.cost_item || "Chi phí trả trước"}</td>
+                              <td style={{ padding: "8px", color: "#475569" }}>{entry.target_name || "Quản lý DN"}</td>
                             </tr>
-                          );
-                        })}
+                          ))
+                        ) : (
+                          prepaidExpensesList.filter((cp) => !prepaidPreview || cp.code in prepaidPreview).map((cp, idx) => {
+                            const allocThisPeriod = prepaidPreview?.[cp.code] ?? Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0);
+                            return (
+                              <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                                <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>Phân bổ {cp.name} - T{String(prepaidAllocMonth).padStart(2, "0")}/{prepaidAllocYear}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{cp.costAccount}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>Chi phí mua ngoài / Phân bổ</td>
+                                <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
                 )}
               </div>
 
-              {/* Footer Buttons matching Screenshot 2 exactly: [Lưu và In ▾] [Cất] [Xuất khẩu bảng phân bổ ra Excel] [Hủy] */}
+              {/* Footer Buttons matching Screenshot 2: [Lưu và In ▾] [Lưu] [Xuất khẩu bảng phân bổ ra Excel] [Hủy] */}
               <div
                 style={{
                   height: 50,
@@ -11850,12 +13790,59 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) {
-                      void apiSave((writer) => savePrepaidAllocation(writer, { number: prepaidAllocVoucherNo, postingDate: prepaidAllocPostingDate, documentDate: prepaidAllocVoucherDate, description: prepaidAllocReason }))
-                        .then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                    if (!prepaidAllocMonth || prepaidAllocMonth < 1 || prepaidAllocMonth > 12) {
+                      notify("Tháng phân bổ không hợp lệ.");
                       return;
                     }
-                    const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
+                    if (!prepaidAllocYear || !Number.isInteger(Number(prepaidAllocYear)) || prepaidAllocYear < 1900 || prepaidAllocYear > 2100) {
+                      notify("Năm phân bổ không hợp lệ.");
+                      return;
+                    }
+                    if (!prepaidAllocPostingDate.trim()) {
+                      notify("Ngày hạch toán không được để trống.");
+                      return;
+                    }
+                    if (!prepaidAllocVoucherDate.trim()) {
+                      notify("Ngày chứng từ không được để trống.");
+                      return;
+                    }
+                    if (!prepaidAllocVoucherNo.trim()) {
+                      notify("Số chứng từ không được để trống.");
+                      return;
+                    }
+                    if (prepaidAllocEmptyWarning && prepaidAllocIdentifyRows.length === 0) {
+                      notify("Không thể lưu chứng từ phân bổ không có dòng hợp lệ.");
+                      return;
+                    }
+                    if (apiConnected) {
+                      void apiSave(async (writer) => {
+                        return await saveAllocationVoucherUc12(writer, {
+                          allocationType: "PREPAID",
+                          month: prepaidAllocMonth,
+                          year: prepaidAllocYear,
+                          voucherNo: prepaidAllocVoucherNo,
+                          postingDate: prepaidAllocPostingDate,
+                          voucherDate: prepaidAllocVoucherDate,
+                          reason: prepaidAllocReason,
+                          identifyRows: prepaidAllocIdentifyRows,
+                          allocationRows: prepaidAllocDetailRows,
+                          accountingRows: prepaidAllocAccountingRows,
+                          references: prepaidAllocReferences.map((r) => ({
+                            voucher_no: r.voucherNo,
+                            voucher_date: r.voucherDate,
+                            voucher_type: r.voucherType,
+                            description: r.description,
+                          })),
+                          attachments: prepaidAllocAttachments.map((a) => ({
+                            file_name: a.fileName,
+                            file_size: a.fileSize,
+                          })),
+                          printAfterSave: true,
+                        });
+                      }).then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); window.print(); } });
+                      return;
+                    }
+                    const totalAlloc = prepaidAllocTotalAmount || prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const newV = {
                       voucherNo: prepaidAllocVoucherNo,
@@ -11868,7 +13855,8 @@ export default function MisaToolsWorkspace({
                     setPrepaidAllocVouchers([newV, ...prepaidAllocVouchers.filter((x) => x.voucherNo !== prepaidAllocVoucherNo)]);
                     setShowPrepaidAllocVoucherModal(false);
                     setPrepaidAllocViewMode("list");
-                    notify(`Đã lưu và đang chuẩn bị in chứng từ ${prepaidAllocVoucherNo}...`);
+                    notify("Đã lưu chứng từ phân bổ chi phí trả trước thành công.");
+                    window.print();
                   }}
                   style={{
                     height: 32,
@@ -11892,12 +13880,59 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (apiConnected) {
-                      void apiSave((writer) => savePrepaidAllocation(writer, { number: prepaidAllocVoucherNo, postingDate: prepaidAllocPostingDate, documentDate: prepaidAllocVoucherDate, description: prepaidAllocReason }))
-                        .then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                    if (!prepaidAllocMonth || prepaidAllocMonth < 1 || prepaidAllocMonth > 12) {
+                      notify("Tháng phân bổ không hợp lệ.");
                       return;
                     }
-                    const totalAlloc = prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
+                    if (!prepaidAllocYear || !Number.isInteger(Number(prepaidAllocYear)) || prepaidAllocYear < 1900 || prepaidAllocYear > 2100) {
+                      notify("Năm phân bổ không hợp lệ.");
+                      return;
+                    }
+                    if (!prepaidAllocPostingDate.trim()) {
+                      notify("Ngày hạch toán không được để trống.");
+                      return;
+                    }
+                    if (!prepaidAllocVoucherDate.trim()) {
+                      notify("Ngày chứng từ không được để trống.");
+                      return;
+                    }
+                    if (!prepaidAllocVoucherNo.trim()) {
+                      notify("Số chứng từ không được để trống.");
+                      return;
+                    }
+                    if (prepaidAllocEmptyWarning && prepaidAllocIdentifyRows.length === 0) {
+                      notify("Không thể lưu chứng từ phân bổ không có dòng hợp lệ.");
+                      return;
+                    }
+                    if (apiConnected) {
+                      void apiSave(async (writer) => {
+                        return await saveAllocationVoucherUc12(writer, {
+                          allocationType: "PREPAID",
+                          month: prepaidAllocMonth,
+                          year: prepaidAllocYear,
+                          voucherNo: prepaidAllocVoucherNo,
+                          postingDate: prepaidAllocPostingDate,
+                          voucherDate: prepaidAllocVoucherDate,
+                          reason: prepaidAllocReason,
+                          identifyRows: prepaidAllocIdentifyRows,
+                          allocationRows: prepaidAllocDetailRows,
+                          accountingRows: prepaidAllocAccountingRows,
+                          references: prepaidAllocReferences.map((r) => ({
+                            voucher_no: r.voucherNo,
+                            voucher_date: r.voucherDate,
+                            voucher_type: r.voucherType,
+                            description: r.description,
+                          })),
+                          attachments: prepaidAllocAttachments.map((a) => ({
+                            file_name: a.fileName,
+                            file_size: a.fileSize,
+                          })),
+                          printAfterSave: false,
+                        });
+                      }).then((saved) => { if (saved) { setShowPrepaidAllocVoucherModal(false); setPrepaidAllocViewMode("list"); } });
+                      return;
+                    }
+                    const totalAlloc = prepaidAllocTotalAmount || prepaidExpensesList.reduce((s, cp) => s + Math.round(cp.allocationMonths > 0 ? cp.totalAmount / cp.allocationMonths : 0), 0);
                     const mStr = String(prepaidAllocMonth).padStart(2, "0");
                     const newV = {
                       voucherNo: prepaidAllocVoucherNo,
@@ -11910,7 +13945,7 @@ export default function MisaToolsWorkspace({
                     setPrepaidAllocVouchers([newV, ...prepaidAllocVouchers.filter((x) => x.voucherNo !== prepaidAllocVoucherNo)]);
                     setShowPrepaidAllocVoucherModal(false);
                     setPrepaidAllocViewMode("list");
-                    notify(`Đã lưu chứng từ phân bổ chi phí trả trước ${prepaidAllocVoucherNo} thành công`);
+                    notify("Đã lưu chứng từ phân bổ chi phí trả trước thành công.");
                   }}
                   style={{
                     height: 32,
@@ -11927,7 +13962,21 @@ export default function MisaToolsWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Đang xuất khẩu bảng phân bổ chi phí trả trước ra Excel (Bang_Phan_Bo_CPTT.xlsx)...")}
+                  onClick={() => {
+                    if (apiConnected) {
+                      void apiSave(async (writer) => {
+                        const res = await exportAllocationExcelUc12(writer, {
+                          month: prepaidAllocMonth,
+                          year: prepaidAllocYear,
+                          voucherNo: prepaidAllocVoucherNo,
+                          identifyRows: prepaidAllocIdentifyRows,
+                        });
+                        return { message: res.message || `Đã xuất khẩu ${res.file_name || "Bang_Phan_Bo_CPTT.xlsx"}` };
+                      });
+                      return;
+                    }
+                    notify("Đang xuất khẩu bảng phân bổ chi phí trả trước ra Excel (Bang_Phan_Bo_CPTT.xlsx)...");
+                  }}
                   style={{
                     height: 32,
                     padding: "0 16px",
@@ -12073,7 +14122,7 @@ export default function MisaToolsWorkspace({
                       />
                       <div style={{ marginTop: 6 }}>
                         <span
-                          onClick={() => notify("Sổ Việt AI: Chọn chứng từ gốc hoặc hợp đồng để tham chiếu...")}
+                          onClick={() => openReferenceVoucherPicker("DEC_PREPAID")}
                           style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
                         >
                           Tham chiếu ...
@@ -12180,12 +14229,9 @@ export default function MisaToolsWorkspace({
                             <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
                               <input
                                 type="text"
+                                readOnly
                                 value={row.name}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setPrepaidDecreaseDetailRows(prepaidDecreaseDetailRows.map((r) => r.id === row.id ? { ...r, name: val } : r));
-                                }}
-                                style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5 }}
+                                style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, background: "transparent", color: "#334155" }}
                               />
                             </td>
                             <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
@@ -12328,10 +14374,16 @@ export default function MisaToolsWorkspace({
                   type="button"
                   onClick={() => {
                     if (apiConnected) {
-                      void apiSave((writer) => savePrepaidDecrease(writer, { number: prepaidDecreaseVoucherNo, date: prepaidDecreaseVoucherDate, reason: prepaidDecreaseReason, rows: prepaidDecreaseDetailRows }))
-                        .then((saved) => { if (saved) setShowPrepaidDecreaseModal(false); });
+                      void apiSave((writer) => savePrepaidDecreaseUc14(writer, {
+                        voucherNo: prepaidDecreaseVoucherNo,
+                        voucherDate: prepaidDecreaseVoucherDate,
+                        reason: prepaidDecreaseReason,
+                        rows: prepaidDecreaseDetailRows,
+                        keepOpen: true,
+                      }));
                       return;
                     }
+                    const alreadySaved = prepaidDecreaseVouchers.some((x) => x.voucherNo === prepaidDecreaseVoucherNo);
                     const totalAmt = prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0);
                     const newV = {
                       voucherNo: prepaidDecreaseVoucherNo,
@@ -12342,18 +14394,20 @@ export default function MisaToolsWorkspace({
                       status: "Đã ghi sổ",
                     };
                     setPrepaidDecreaseVouchers([newV, ...prepaidDecreaseVouchers.filter((x) => x.voucherNo !== prepaidDecreaseVoucherNo)]);
-                    prepaidDecreaseDetailRows.forEach((r) => {
-                      if (r.code) {
-                        setPrepaidExpensesList((prev) =>
-                          prev.map((it) =>
-                            it.code === r.code
-                              ? { ...it, remainingAmount: Math.max(0, it.remainingAmount - r.remainingAmount) }
-                              : it
-                          )
-                        );
-                      }
-                    });
-                    notify(`Đã lưu chứng từ ghi giảm ${prepaidDecreaseVoucherNo} thành công`);
+                    if (!alreadySaved) {
+                      prepaidDecreaseDetailRows.forEach((r) => {
+                        if (r.code) {
+                          setPrepaidExpensesList((prev) =>
+                            prev.map((it) =>
+                              it.code === r.code
+                                ? { ...it, remainingAmount: Math.max(0, it.remainingAmount - r.remainingAmount) }
+                                : it
+                            )
+                          );
+                        }
+                      });
+                    }
+                    notify(`Đã lưu chứng từ ghi giảm chi phí trả trước ${prepaidDecreaseVoucherNo} thành công.`);
                   }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
                 >Lưu</button>
@@ -12361,10 +14415,22 @@ export default function MisaToolsWorkspace({
                   type="button"
                   onClick={() => {
                     if (apiConnected) {
-                      void apiSave((writer) => savePrepaidDecrease(writer, { number: prepaidDecreaseVoucherNo, date: prepaidDecreaseVoucherDate, reason: prepaidDecreaseReason, rows: prepaidDecreaseDetailRows }))
-                        .then((saved) => { if (saved) setShowPrepaidDecreaseModal(false); });
+                      void apiSave((writer) => savePrepaidDecreaseUc14(writer, {
+                        voucherNo: prepaidDecreaseVoucherNo,
+                        voucherDate: prepaidDecreaseVoucherDate,
+                        reason: prepaidDecreaseReason,
+                        rows: prepaidDecreaseDetailRows,
+                        keepOpen: false,
+                      }))
+                        .then((saved) => {
+                          if (saved) {
+                            setShowPrepaidDecreaseModal(false);
+                            setPrepaidDecreaseViewMode("list");
+                          }
+                        });
                       return;
                     }
+                    const alreadySaved = prepaidDecreaseVouchers.some((x) => x.voucherNo === prepaidDecreaseVoucherNo);
                     const totalAmt = prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0);
                     const newV = {
                       voucherNo: prepaidDecreaseVoucherNo,
@@ -12375,20 +14441,22 @@ export default function MisaToolsWorkspace({
                       status: "Đã ghi sổ",
                     };
                     setPrepaidDecreaseVouchers([newV, ...prepaidDecreaseVouchers.filter((x) => x.voucherNo !== prepaidDecreaseVoucherNo)]);
-                    prepaidDecreaseDetailRows.forEach((r) => {
-                      if (r.code) {
-                        setPrepaidExpensesList((prev) =>
-                          prev.map((it) =>
-                            it.code === r.code
-                              ? { ...it, remainingAmount: Math.max(0, it.remainingAmount - r.remainingAmount) }
-                              : it
-                          )
-                        );
-                      }
-                    });
+                    if (!alreadySaved) {
+                      prepaidDecreaseDetailRows.forEach((r) => {
+                        if (r.code) {
+                          setPrepaidExpensesList((prev) =>
+                            prev.map((it) =>
+                              it.code === r.code
+                                ? { ...it, remainingAmount: Math.max(0, it.remainingAmount - r.remainingAmount) }
+                                : it
+                            )
+                          );
+                        }
+                      });
+                    }
                     setShowPrepaidDecreaseModal(false);
                     setPrepaidDecreaseViewMode("list");
-                    notify(`Đã lưu chứng từ ghi giảm ${prepaidDecreaseVoucherNo} thành công`);
+                    notify(`Đã lưu chứng từ ghi giảm chi phí trả trước ${prepaidDecreaseVoucherNo} thành công.`);
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                 >
@@ -12428,7 +14496,19 @@ export default function MisaToolsWorkspace({
             </div>
 
             <div
-              onClick={() => notify("Sổ Việt AI: Bạn có thể nhập yêu cầu 'Xem bảng phân bổ CCDC tháng này' để mở báo cáo tức thì.")}
+              onClick={() => {
+                if (apiConnected && reportSearch.trim()) {
+                  void apiSave(async (writer) => {
+                    const res = await fetchToolReportCatalogUc16(writer, { avaQuery: reportSearch.trim() });
+                    if (res?.ava_suggestion?.matched_report_name) {
+                      setSelectedReportForPreview(String(res.ava_suggestion.matched_report_name));
+                    }
+                    return { message: res?.ava_suggestion?.message || "Sổ Việt AI đã tìm kiếm báo cáo phù hợp." };
+                  });
+                  return;
+                }
+                notify("Sổ Việt AI: Bạn có thể nhập yêu cầu 'Xem bảng phân bổ CCDC tháng này' để mở báo cáo tức thì.");
+              }}
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#6366f1", cursor: "pointer", fontWeight: 500 }}
             >
               <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
@@ -12439,7 +14519,20 @@ export default function MisaToolsWorkspace({
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#475569" }}>
               <span>Ngôn ngữ báo cáo</span>
-              <select defaultValue="vi" style={{ height: 28, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", fontSize: 12, background: "#ffffff" }}>
+              <select
+                value={reportLanguage}
+                onChange={(e) => {
+                  const lang = e.target.value as "vi" | "en";
+                  setReportLanguage(lang);
+                  if (apiConnected) {
+                    void apiSave(async (writer) => {
+                      await fetchToolReportCatalogUc16(writer, { language: lang });
+                      return { message: `Đã chuyển ngôn ngữ báo cáo sang ${lang === "en" ? "English" : "Tiếng Việt"}.` };
+                    });
+                  }
+                }}
+                style={{ height: 28, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", fontSize: 12, background: "#ffffff" }}
+              >
                 <option value="vi">Tiếng Việt</option>
                 <option value="en">English</option>
               </select>
@@ -12447,7 +14540,7 @@ export default function MisaToolsWorkspace({
 
             <button
               type="button"
-              onClick={() => notify("Đã mở bảng thiết lập hiển thị báo cáo")}
+              onClick={() => setShowReportVisibilityModal(true)}
               style={{ height: 28, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <SlidersHorizontal size={13} />

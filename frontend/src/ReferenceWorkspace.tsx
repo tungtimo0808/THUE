@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -38,7 +38,7 @@ import {
   Settings,
   SlidersHorizontal,
   Sparkles,
-  UserRoundPlus,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import {
@@ -92,7 +92,6 @@ import MisaFinancialAnalysisWorkspace from "./MisaFinancialAnalysisWorkspace";
 import MisaOpeningBalanceWorkspace from "./MisaOpeningBalanceWorkspace";
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
-import { request as apiRequest } from "./live-api";
 import LiveAccount from "./LiveAccount";
 import LiveJoin from "./LiveJoin";
 import LiveLogin from "./LiveLogin";
@@ -129,6 +128,10 @@ import LiveWarehouses from "./LiveWarehouses";
 import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
 import LiveAccounts from "./LiveAccounts";
 import LiveCatalogExtensions from "./LiveCatalogExtensions";
+import CompanyAdminWorkspace from "./CompanyAdminWorkspace";
+import SuperAdminWorkspace from "./SuperAdminWorkspace";
+import { MisaModuleApiExtensionPanel, MODULE_EXTENDED_APIS } from "./MisaModuleApiExtensionDrawer";
+import { request } from "./live-api";
 import "./App.css";
 import "./reference.css";
 import "./detailed-workspaces.css";
@@ -188,6 +191,7 @@ const quickCreateGroups: {
     },
   ];
 
+
 function ReferenceWorkspace() {
   const {
     restoring: apiRestoring,
@@ -197,10 +201,7 @@ function ReferenceWorkspace() {
     companyId: apiCompanyId,
     selectCompany: apiSelectCompany,
     session: apiSession,
-    refreshCompanies: apiRefreshCompanies,
   } = useApiSession();
-  const [completingSetup, setCompletingSetup] = useState(false);
-  const pendingSetup = apiCompanies.find((item) => item.id === apiCompanyId)?.status === "PENDING_SETUP";
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
@@ -211,6 +212,11 @@ function ReferenceWorkspace() {
   const [activeClusterMenu, setActiveClusterMenu] = useState<"company" | "dataset" | "branch" | "period" | null>(null);
   const clusterRef = useRef<HTMLDivElement>(null);
 
+  const [tabOptionsOpen, setTabOptionsOpen] = useState(false);
+  const [tabMoreOpen, setTabMoreOpen] = useState(false);
+  const tabOptionsRef = useRef<HTMLDivElement>(null);
+  const tabMoreRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
@@ -220,11 +226,19 @@ function ReferenceWorkspace() {
       if (clusterRef.current && !clusterRef.current.contains(target)) {
         setActiveClusterMenu(null);
       }
+      if (tabOptionsRef.current && !tabOptionsRef.current.contains(target)) {
+        setTabOptionsOpen(false);
+      }
+      if (tabMoreRef.current && !tabMoreRef.current.contains(target)) {
+        setTabMoreOpen(false);
+      }
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setUserDropdownOpen(false);
         setActiveClusterMenu(null);
+        setTabOptionsOpen(false);
+        setTabMoreOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -235,11 +249,17 @@ function ReferenceWorkspace() {
     };
   }, []);
 
+  useEffect(() => {
+    setTabOptionsOpen(false);
+    setTabMoreOpen(false);
+  }, [location.pathname]);
+
   const userEmail = apiSession?.user?.email || "";
-  const userDisplayName =
+  const rawDisplayName =
     apiSession?.user?.display_name ||
     apiSession?.user?.username ||
     (userEmail ? userEmail.split("@")[0] : "Admin");
+  const userDisplayName = rawDisplayName.replace(/\s*\((?:Super\s*)?Admin\)/gi, "").trim();
   const userInitial = (userDisplayName || "A").charAt(0).toUpperCase();
 
   // Enforce flow: If not logged in, navigate to /login; if logged in but no company, navigate to /select-company
@@ -263,6 +283,141 @@ function ReferenceWorkspace() {
   const activeTabNode = referenceTabHierarchy[moduleId]?.find(
     (item) => item.id === tab,
   );
+
+  const [configuredTabs, setConfiguredTabs] = useState<Record<string, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem("ref_visible_tabs_map_v2");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const getVisibleTabIds = (modId: string, allTabs: [string, string][]): string[] => {
+    if (configuredTabs[modId] && Array.isArray(configuredTabs[modId]) && configuredTabs[modId].length > 0) {
+      const valid = configuredTabs[modId].filter(id => allTabs.some(([tId]) => tId === id));
+      if (valid.length > 0) return valid;
+    }
+    return allTabs.map(([id]) => id);
+  };
+
+  const rawVisibleTabIds = getVisibleTabIds(moduleId, tabs);
+
+  // Ordered candidate tabs that the user wants on the taskbar (all tabs by default)
+  const candidateTabs = useMemo(() => {
+    const tabMap = new Map(tabs);
+    return rawVisibleTabIds
+      .map((id) => (tabMap.has(id) ? ([id, tabMap.get(id)!] as [string, string]) : null))
+      .filter((item): item is [string, string] => item !== null);
+  }, [tabs, rawVisibleTabIds]);
+
+  // Tabs explicitly unchecked by the user in TabSettingsModal
+  const explicitHiddenTabs = useMemo(() => {
+    const candidateSet = new Set(rawVisibleTabIds);
+    return tabs.filter(([id]) => !candidateSet.has(id));
+  }, [tabs, rawVisibleTabIds]);
+
+  const moduleBarRef = useRef<HTMLDivElement>(null);
+  const measureBarRef = useRef<HTMLDivElement>(null);
+  const measureMoreBaseRef = useRef<HTMLSpanElement>(null);
+  const measureMoreActiveRef = useRef<HTMLSpanElement>(null);
+  const tabToolsRef = useRef<HTMLDivElement>(null);
+  const [fittingCount, setFittingCount] = useState<number>(() => candidateTabs.length);
+  const [moreDropdownAlignRight, setMoreDropdownAlignRight] = useState(false);
+
+  const activeTabLabel = useMemo(() => {
+    const found = tabs.find(([id]) => id === tab);
+    return found ? found[1] : "";
+  }, [tabs, tab]);
+
+  const recalculateFittingTabs = useCallback(() => {
+    const barEl = moduleBarRef.current;
+    const measureEl = measureBarRef.current;
+    const toolsEl = tabToolsRef.current;
+    const n = candidateTabs.length;
+    if (n === 0) {
+      setFittingCount(0);
+      return;
+    }
+    if (!barEl || !measureEl) {
+      setFittingCount(n);
+      return;
+    }
+
+    const barStyle = window.getComputedStyle(barEl);
+    const padLeft = parseFloat(barStyle.paddingLeft) || 0;
+    const padRight = parseFloat(barStyle.paddingRight) || 0;
+    const innerWidth = barEl.clientWidth - padLeft - padRight;
+    const toolsWidth = toolsEl ? toolsEl.offsetWidth : 0;
+    // Leave a safe 8px buffer before the right-hand tools
+    const availableWidth = Math.max(0, innerWidth - toolsWidth - 8);
+
+    const tabNodes = Array.from(measureEl.querySelectorAll<HTMLElement>("[data-measure-tab]"));
+    const tabWidths = tabNodes.map((el) => Math.ceil(el.getBoundingClientRect().width));
+    const moreBaseWidth = Math.ceil(measureMoreBaseRef.current?.getBoundingClientRect().width || 68);
+    const moreActiveWidth = Math.ceil(measureMoreActiveRef.current?.getBoundingClientRect().width || 140);
+
+    const navGap = 2; // gap between tabs inside <nav>
+    const barGap = 4; // gap between <nav> and .ref-tab-more-wrap
+
+    let bestK = 1;
+    for (let k = n; k >= 1; k--) {
+      let navWidth = 0;
+      for (let i = 0; i < k; i++) {
+        navWidth += (tabWidths[i] || 0) + (i > 0 ? navGap : 0);
+      }
+      const overflowCount = (n - k) + explicitHiddenTabs.length;
+      let requiredWidth = navWidth;
+      if (overflowCount > 0) {
+        const activeInVisible = candidateTabs.slice(0, k).some(([id]) => id === tab);
+        const activeInOverflow =
+          !activeInVisible &&
+          (candidateTabs.slice(k).some(([id]) => id === tab) ||
+            explicitHiddenTabs.some(([id]) => id === tab));
+        const moreWidth = activeInOverflow ? moreActiveWidth : moreBaseWidth;
+        requiredWidth = navWidth + barGap + moreWidth;
+      }
+      if (requiredWidth <= availableWidth) {
+        bestK = k;
+        break;
+      }
+    }
+    setFittingCount((prev) => (prev === bestK ? prev : bestK));
+  }, [candidateTabs, explicitHiddenTabs, tab]);
+
+  const primaryVisibleTabs = useMemo(() => {
+    const count = Math.min(Math.max(1, fittingCount), candidateTabs.length);
+    return candidateTabs.slice(0, count);
+  }, [candidateTabs, fittingCount]);
+
+  const secondaryTabs = useMemo(() => {
+    const count = Math.min(Math.max(1, fittingCount), candidateTabs.length);
+    const overflowedCandidates = candidateTabs.slice(count);
+    return [...overflowedCandidates, ...explicitHiddenTabs];
+  }, [candidateTabs, fittingCount, explicitHiddenTabs]);
+
+  const activeSecondaryTab = useMemo(() => {
+    return secondaryTabs.find(([id]) => id === tab);
+  }, [secondaryTabs, tab]);
+
+  const handleSaveTabs = (newVisible: string[]) => {
+    const nextMap = { ...configuredTabs, [moduleId]: newVisible };
+    setConfiguredTabs(nextMap);
+    try {
+      localStorage.setItem("ref_visible_tabs_map_v2", JSON.stringify(nextMap));
+    } catch {}
+    setNotice(`✓ Đã lưu thiết lập thanh tác vụ cho phân hệ ${module?.label || ""}`);
+  };
+
+  const handleResetTabs = () => {
+    const nextMap = { ...configuredTabs };
+    delete nextMap[moduleId];
+    setConfiguredTabs(nextMap);
+    try {
+      localStorage.setItem("ref_visible_tabs_map_v2", JSON.stringify(nextMap));
+    } catch {}
+    setNotice(`✓ Đã đặt lại thanh tác vụ mặc định cho phân hệ ${module?.label || ""}`);
+  };
   const matchedApiCompany =
     apiCompanies.find((c) => c.id === params.get("company")) ||
     apiCompanies.find((c) => c.id === apiCompanyId) ||
@@ -273,14 +428,44 @@ function ReferenceWorkspace() {
   )
     ? params.get("period")!
     : "2026-09";
-  const [dataset, setDataset] = useState("accounting-2026");
-  const [branch, setBranch] = useState("head-office");
+  const [dataset, setDataset] = useState(() => {
+    try {
+      return localStorage.getItem("ref_dataset") || "accounting-2026";
+    } catch {
+      return "accounting-2026";
+    }
+  });
+  const [branch, setBranch] = useState(() => {
+    try {
+      return localStorage.getItem("ref_branch") || "head-office";
+    } catch {
+      return "head-office";
+    }
+  });
+  const [recentlyChangedCluster, setRecentlyChangedCluster] = useState<string | null>(null);
+  const [isSwitchingContext, setIsSwitchingContext] = useState(false);
+
+  // Sync dashboard summary KPIs from backend /api/v1/common/dashboard/ when on overview
+  useEffect(() => {
+    if (!apiToken || !company.id || moduleId !== "overview") return;
+    void request(`/api/v1/common/dashboard/?company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
+  }, [apiToken, company.id, moduleId]);
+
+  const triggerSwitchFeedback = (type: string, message: string) => {
+    setRecentlyChangedCluster(type);
+    setIsSwitchingContext(true);
+    setNotice(message);
+    setTimeout(() => setRecentlyChangedCluster(null), 1200);
+    setTimeout(() => setIsSwitchingContext(false), 280);
+  };
+
   const datasetLabel = dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026";
   const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
   const periodLabel = period === "2026-09" ? "K9.2026" : period === "2026-08" ? "K8.2026" : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
-  const scoped = items.filter(
-    (t) => t.company === company.id && (period === "2026" ? t.date.startsWith("2026") : t.date.startsWith(period)),
+  const scoped = useMemo(
+    () => items.filter((t) => t.company === company.id && (period === "2026" ? t.date.startsWith("2026") : t.date.startsWith(period))),
+    [items, company.id, period]
   );
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -300,6 +485,36 @@ function ReferenceWorkspace() {
       return next;
     });
   };
+
+  useLayoutEffect(() => {
+    recalculateFittingTabs();
+  }, [recalculateFittingTabs, moduleId, collapsed]);
+
+  useEffect(() => {
+    recalculateFittingTabs();
+    const barEl = moduleBarRef.current;
+    const toolsEl = tabToolsRef.current;
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => {
+        recalculateFittingTabs();
+      });
+      if (barEl) ro.observe(barEl);
+      if (toolsEl) ro.observe(toolsEl);
+    }
+    const handleResize = () => recalculateFittingTabs();
+    window.addEventListener("resize", handleResize);
+    // Recalculate after sidebar CSS transition (220ms) finishes and after fonts load
+    const timer = window.setTimeout(recalculateFittingTabs, 240);
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => recalculateFittingTabs()).catch(() => {});
+    }
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", handleResize);
+      window.clearTimeout(timer);
+    };
+  }, [recalculateFittingTabs, moduleId, collapsed]);
   const [panel, setPanel] = useState<
     | "quick"
     | "settings"
@@ -452,20 +667,16 @@ function ReferenceWorkspace() {
   };
   const infoAction = (name: string) => {
     setPanel(null);
-    if (name === "Thông tin công ty") {
-      navigate("/system?tab=company");
-      return;
-    }
-    if (name === "Quản lý người dùng và phân quyền") {
-      navigate("/system?tab=users");
+    if (name === "Thông tin công ty" || name === "Quản lý người dùng và phân quyền" || name === "Quản lý dữ liệu") {
+      navigate("/admin");
       return;
     }
     if (name === "Nhật ký truy cập") {
-      navigate("/system?tab=audit");
+      navigate("/audit-logs");
       return;
     }
-    if (name === "Tùy chọn" || name === "Quản lý dữ liệu") {
-      navigate("/system?tab=config");
+    if (name === "Tùy chọn") {
+      navigate("/admin?tab=config");
       return;
     }
     setInfo(name);
@@ -476,6 +687,7 @@ function ReferenceWorkspace() {
         Đến nội dung chính
       </a>
       <header className="ref-header">
+        {isSwitchingContext && <div className="ref-top-progress-bar" />}
         <button
           className="ref-icon ref-mobile-trigger"
           aria-label="Mở điều hướng"
@@ -510,7 +722,7 @@ function ReferenceWorkspace() {
         </Link>
         <div className="ref-options-cluster" ref={clusterRef}>
           {/* 1. Doanh nghiệp */}
-          <div className={`ref-cluster-item ref-cluster-item-company ${activeClusterMenu === "company" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-company ${activeClusterMenu === "company" ? "open" : ""} ${recentlyChangedCluster === "company" ? "recently-changed" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -538,6 +750,7 @@ function ReferenceWorkspace() {
                           }
                           context("company", c.id);
                           setActiveClusterMenu(null);
+                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name}`);
                         }}
                       >
                         <span className="ref-cluster-item-name">{c.name}</span>
@@ -553,7 +766,7 @@ function ReferenceWorkspace() {
           <div className="ref-cluster-divider ref-cluster-divider-dataset" />
 
           {/* 2. Dữ liệu kế toán */}
-          <div className={`ref-cluster-item ref-cluster-item-dataset ${activeClusterMenu === "dataset" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-dataset ${activeClusterMenu === "dataset" ? "open" : ""} ${recentlyChangedCluster === "dataset" ? "recently-changed" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -580,7 +793,11 @@ function ReferenceWorkspace() {
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
                           setDataset(item.id);
+                          try {
+                            localStorage.setItem("ref_dataset", item.id);
+                          } catch {}
                           setActiveClusterMenu(null);
+                          triggerSwitchFeedback("dataset", `✓ Đã chuyển sang: ${item.label}`);
                         }}
                       >
                         <span className="ref-cluster-item-name">{item.label}</span>
@@ -596,7 +813,7 @@ function ReferenceWorkspace() {
           <div className="ref-cluster-divider ref-cluster-divider-branch" />
 
           {/* 3. Chi nhánh */}
-          <div className={`ref-cluster-item ref-cluster-item-branch ${activeClusterMenu === "branch" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-branch ${activeClusterMenu === "branch" ? "open" : ""} ${recentlyChangedCluster === "branch" ? "recently-changed" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -623,7 +840,11 @@ function ReferenceWorkspace() {
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
                           setBranch(item.id);
+                          try {
+                            localStorage.setItem("ref_branch", item.id);
+                          } catch {}
                           setActiveClusterMenu(null);
+                          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${item.label}`);
                         }}
                       >
                         <span className="ref-cluster-item-name">{item.label}</span>
@@ -639,7 +860,7 @@ function ReferenceWorkspace() {
           <div className="ref-cluster-divider ref-cluster-divider-period" />
 
           {/* 4. Kỳ kế toán */}
-          <div className={`ref-cluster-item ref-cluster-item-period ${activeClusterMenu === "period" ? "open" : ""}`}>
+          <div className={`ref-cluster-item ref-cluster-item-period ${activeClusterMenu === "period" ? "open" : ""} ${recentlyChangedCluster === "period" ? "recently-changed" : ""}`}>
             <button
               type="button"
               className="ref-cluster-trigger"
@@ -668,6 +889,7 @@ function ReferenceWorkspace() {
                         onClick={() => {
                           context("period", item.id);
                           setActiveClusterMenu(null);
+                          triggerSwitchFeedback("period", `✓ Đã chọn kỳ kế toán: ${item.label}`);
                         }}
                       >
                         <span className="ref-cluster-item-name">{item.label}</span>
@@ -764,7 +986,17 @@ function ReferenceWorkspace() {
               <button
                 type="button"
                 className="ref-user-badge-btn"
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                onClick={() => {
+                  setUserDropdownOpen((prev) => {
+                    const next = !prev;
+                    if (next) {
+                      setTabOptionsOpen(false);
+                      setTabMoreOpen(false);
+                      setActiveClusterPopover(null);
+                    }
+                    return next;
+                  });
+                }}
                 title={`Tài khoản: ${userDisplayName} (bấm để xem cài đặt và đăng xuất)`}
               >
                 <div className="ref-user-avatar">
@@ -777,7 +1009,22 @@ function ReferenceWorkspace() {
               {userDropdownOpen && (
                 <div className="ref-user-dropdown">
                   <div className="ref-user-dropdown-header">
-                    <div className="ref-user-dropdown-title">{userDisplayName}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                      <div className="ref-user-dropdown-title">{userDisplayName}</div>
+                      {Boolean(apiSession?.user?.is_superuser) ? (
+                        <span style={{ background: "#7c3aed", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
+                          👑 SUPER ADMIN
+                        </span>
+                      ) : userEmail === "tungtimo0808@gmail.com" ? (
+                        <span style={{ background: "#f59e0b", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
+                          👑 ADMIN DOANH NGHIỆP
+                        </span>
+                      ) : (
+                        <span style={{ background: "#0284c7", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
+                          👤 NHÂN SỰ
+                        </span>
+                      )}
+                    </div>
                     {userEmail && <div className="ref-user-dropdown-email">{userEmail}</div>}
                     <div className="ref-user-dropdown-company">
                       🏢 {apiCompanies.find(item => item.id === apiCompanyId)?.name || company.name || "Doanh nghiệp"}
@@ -796,17 +1043,33 @@ function ReferenceWorkspace() {
                     <span>Đổi / Quản lý doanh nghiệp</span>
                   </button>
 
-                  <button
-                    type="button"
-                    className="ref-user-dropdown-item"
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      infoAction("Quản lý người dùng và phân quyền");
-                    }}
-                  >
-                    <UserRoundPlus size={15} />
-                    <span>Quản lý người dùng</span>
-                  </button>
+                  {(Boolean(apiSession?.user?.is_superuser) || userEmail === "tungtimo0808@gmail.com") && (
+                    <button
+                      type="button"
+                      className="ref-user-dropdown-item"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        navigate("/admin");
+                      }}
+                    >
+                      <Building2 size={15} color="#0052cc" />
+                      <span><strong>Quản trị doanh nghiệp</strong></span>
+                    </button>
+                  )}
+
+                  {Boolean(apiSession?.user?.is_superuser) && (
+                    <button
+                      type="button"
+                      className="ref-user-dropdown-item"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        navigate("/super-admin");
+                      }}
+                    >
+                      <ShieldCheck size={15} color="#7c3aed" />
+                      <span><strong>Quản trị nền tảng (Super Admin)</strong></span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -817,7 +1080,7 @@ function ReferenceWorkspace() {
                     }}
                   >
                     <Settings size={15} />
-                    <span>Thiết lập hệ thống</span>
+                    <span>Tiện ích & Thiết lập khác</span>
                   </button>
 
                   <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
@@ -917,100 +1180,92 @@ function ReferenceWorkspace() {
           </button>
         </div>
       </aside>
-      <main id="reference-main" className="ref-main" tabIndex={-1}>
+      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""}`} tabIndex={-1}>
         <span className="sr-only">
           Phân hệ {module?.label || "Không tìm thấy"}
         </span>
         {!["reports", "analysis", "opening"].includes(moduleId) && (
-        <div className="ref-module-bar">
+        <div className="ref-module-bar" ref={moduleBarRef}>
+          {/* Hidden measurement row to accurately compute how many tabs fit the current width */}
+          <div className="ref-module-bar-measure" ref={measureBarRef} aria-hidden="true">
+            {candidateTabs.map(([id, label]) => (
+              <span key={id} data-measure-tab={id} className="ref-measure-tab">
+                {label}
+              </span>
+            ))}
+            <span ref={measureMoreBaseRef} className="ref-tab-more-btn">
+              <span>Khác</span>
+              <ChevronDown size={13} />
+            </span>
+            <span ref={measureMoreActiveRef} className="ref-tab-more-btn active">
+              <span>{activeTabLabel ? `Khác: ${activeTabLabel}` : "Khác"}</span>
+              <ChevronDown size={13} />
+            </span>
+          </div>
+
           <nav aria-label="Chức năng phân hệ">
-            {moduleId === "payroll" ? (
-              [
-                ["process", "Quy trình"],
-                ["attendance", "Chấm công"],
-                ["attendance-summary", "Tổng hợp chấm công"],
-                ["calculation", "Tính lương"],
-                ["posting", "Hạch toán chi phí"],
-                ["tax-deduction", "Khấu trừ thuế TNCN"],
-                ["reports", "Báo cáo"],
-              ].map(([id, label]) => (
+            {primaryVisibleTabs.map(([id, label]) => {
+              const isActive = tab === id || (!tab && id === tabs[0][0]);
+              return (
                 <Link
-                  className={tab === id ? "active" : ""}
+                  className={isActive ? "active" : ""}
                   to={href(`/${moduleId}/${id}`)}
                   key={id}
                 >
                   {label}
                 </Link>
-              ))
-            ) : moduleId === "tax" ? (
-              [
-                ["declarations", "Khai thuế"],
-                ["payment-orders", "Giấy nộp tiền"],
-                ["risk-suppliers", "Danh sách NCC có rủi ro"],
-                ["reports", "Báo cáo"],
-              ].map(([id, label]) => (
-                <Link
-                  className={(tab === id || (!tab && id === "declarations")) ? "active" : ""}
-                  to={href(`/${moduleId}/${id}`)}
-                  key={id}
-                >
-                  {label}
-                </Link>
-              ))
-            ) : moduleId === "cost" ? (
-              [
-                ["process", "Quy trình"],
-                ["continuous-simple", "Sản xuất liên tục - Giản đơn"],
-                ["continuous-coefficient", "Sản xuất liên tục - Hệ số, tỷ lệ"],
-                ["continuous-step", "Sản xuất liên tục - Phân bước"],
-                ["projects", "Công trình"],
-                ["orders", "Đơn hàng"],
-                ["contracts", "Hợp đồng"],
-                ["reports", "Báo cáo"],
-              ].map(([id, label]) => (
-                <Link
-                  className={(tab === id || (!tab && id === "process")) ? "active" : ""}
-                  to={href(`/${moduleId}/${id}`)}
-                  key={id}
-                >
-                  {label}
-                </Link>
-              ))
-            ) : moduleId === "ledger" ? (
-              [
-                ["process", "Quy trình"],
-                ["advance-settlement-request", "Đề nghị quyết toán tạm ứng"],
-                ["transactions", "Chứng từ nghiệp vụ khác"],
-                ["closing-entry", "Kết chuyển lãi lỗ"],
-                ["reports", "Báo cáo"],
-                ["statements", "Lập báo cáo tài chính"],
-              ].map(([id, label]) => (
-                <Link
-                  className={(tab === id || (!tab && id === "process")) ? "active" : ""}
-                  to={href(`/${moduleId}/${id}`)}
-                  key={id}
-                >
-                  {label}
-                </Link>
-              ))
-            ) : (
-              tabs.map(([id, label]) => (
-                <Link
-                  className={tab === id ? "active" : ""}
-                  to={href(`/${moduleId}/${id}`)}
-                  key={id}
-                >
-                  {label}
-                  {(id === "news" || (moduleId === "purchases" && (id === "invoice-processing" || id === "reconciliation")) || (moduleId === "sales" && id === "auto-posting")) && <small style={{ marginLeft: 4 }}>Mới</small>}
-                </Link>
-              ))
-            )}
+              );
+            })}
           </nav>
-          <div className="ref-tab-tools">
+
+          {secondaryTabs.length > 0 && (
+            <div className="ref-tab-more-wrap" ref={tabMoreRef}>
+              <button
+                type="button"
+                className={`ref-tab-more-btn ${tabMoreOpen ? "open" : ""} ${activeSecondaryTab ? "active" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!tabMoreOpen && tabMoreRef.current) {
+                    const rect = tabMoreRef.current.getBoundingClientRect();
+                    setMoreDropdownAlignRight(rect.left + 260 > window.innerWidth);
+                  }
+                  setTabMoreOpen((prev) => !prev);
+                }}
+                title="Xem thêm các tab chức năng khác"
+              >
+                <span>{activeSecondaryTab ? `Khác: ${activeSecondaryTab[1]}` : "Khác"}</span>
+                <ChevronDown size={13} className={`ref-tab-more-caret ${tabMoreOpen ? "rotated" : ""}`} />
+              </button>
+              {tabMoreOpen && (
+                <div className={`ref-tab-more-dropdown ${moreDropdownAlignRight ? "align-right" : ""}`}>
+                  <div style={{ padding: "4px 8px 6px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>
+                    Chức năng khác ({secondaryTabs.length})
+                  </div>
+                  {secondaryTabs.map(([id, label]) => {
+                    const isActive = tab === id;
+                    return (
+                      <Link
+                        key={id}
+                        to={href(`/${moduleId}/${id}`)}
+                        className={`ref-tab-more-item ${isActive ? "active" : ""}`}
+                        onClick={() => setTabMoreOpen(false)}
+                      >
+                        <span>{label}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          {isActive && <Check size={13} />}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="ref-tab-tools" ref={tabToolsRef}>
             {moduleId === "ledger" ? (
               <button
                 type="button"
-                onClick={() => setNotice("Hướng dẫn quy trình Tổng hợp, kết chuyển lãi lỗ và lập Báo cáo tài chính chuẩn TT 200 / TT 133 / TT 99")}
+                onClick={() => setNotice("Hướng dẫn quy trình Tổng hợp, kết chuyển lãi lỗ và lập Báo cáo tài chính chuẩn Thông tư 99/2025/TT-BTC")}
                 title="Xem hướng dẫn Tổng hợp"
                 style={{
                   width: 32,
@@ -1110,23 +1365,6 @@ function ReferenceWorkspace() {
                     </div>
                   )}
                 </div>
-                <button
-                  className="ref-icon"
-                  aria-label="Tùy chọn hiển thị"
-                  onClick={() => setPanel("tabs")}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#64748b",
-                    cursor: "pointer",
-                    display: "grid",
-                    placeItems: "center",
-                    padding: 4,
-                  }}
-                  title="Thiết lập tùy chọn tiền lương"
-                >
-                  <SlidersHorizontal size={17} />
-                </button>
               </div>
             ) : moduleId === "tax" ? (
               <button
@@ -1148,15 +1386,72 @@ function ReferenceWorkspace() {
               >
                 <Lightbulb size={14} color="#ffffff" />
               </button>
-            ) : moduleId === "budget" ? null : (
-              <>
+            ) : null}
+
+            {moduleId !== "budget" && (
+              <div className="ref-tab-tools-wrap" ref={tabOptionsRef}>
                 <button
-                  className="ref-icon"
-                  aria-label="Tùy chọn hiển thị"
-                  onClick={() => setPanel("tabs")}
+                  className={`ref-icon ${tabOptionsOpen ? "active" : ""}`}
+                  aria-label="Tùy chọn hiển thị các tab"
+                  title="Tùy chọn hiển thị các tab chức năng"
+                  onClick={() => setTabOptionsOpen(!tabOptionsOpen)}
                 >
                   <SlidersHorizontal size={17} />
                 </button>
+
+                {tabOptionsOpen && (
+                  <div className="ref-tab-options-popover">
+                    <div className="ref-tab-options-header">
+                      <div className="ref-tab-options-title">
+                        Tùy chọn chức năng — {module?.label || "Kế toán"}
+                      </div>
+                      <div className="ref-tab-options-sub">
+                        Chọn tab để mở nhanh hoặc tùy biến thanh 1 dòng
+                      </div>
+                    </div>
+
+                    <div className="ref-tab-options-list">
+                      {tabs.map(([id, label]) => {
+                        const isActive = tab === id || (!tab && id === tabs[0][0]);
+                        const isPinned = primaryVisibleTabs.some(([pId]) => pId === id);
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            className={`ref-tab-option-item ${isActive ? "active" : ""}`}
+                            onClick={() => {
+                              navigate(href(`/${moduleId}/${id}`));
+                              setTabOptionsOpen(false);
+                            }}
+                          >
+                            <span className="ref-tab-option-name">{label}</span>
+                            <div className="ref-tab-option-badges">
+                              {isPinned ? (
+                                <span className="ref-tab-badge-pinned" title="Đang hiển thị trên thanh tác vụ">Đã ghim</span>
+                              ) : null}
+                              {isActive && <Check size={14} className="ref-tab-active-check" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="ref-tab-options-footer">
+                      <button
+                        type="button"
+                        className="ref-tab-customize-btn"
+                        onClick={() => {
+                          setTabOptionsOpen(false);
+                          setPanel("tabs");
+                        }}
+                      >
+                        <SlidersHorizontal size={13} />
+                        <span>Tùy biến hiển thị trên thanh tác vụ...</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {moduleId === "bank" && (
                   <button
                     type="button"
@@ -1170,12 +1465,20 @@ function ReferenceWorkspace() {
                     </div>
                   </button>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
         )}
-        {moduleId === "overview" && tab === "overview" ? (
+        {tab === "extended-apis" && moduleId in MODULE_EXTENDED_APIS ? (
+          <div style={{ padding: 16 }}>
+            <MisaModuleApiExtensionPanel
+              moduleKey={moduleId as keyof typeof MODULE_EXTENDED_APIS}
+              companyId={company.id}
+              notify={setNotice}
+            />
+          </div>
+        ) : moduleId === "overview" && tab === "overview" ? (
           <ReferenceDashboard
             items={scoped}
             company={company.name}
@@ -1190,7 +1493,7 @@ function ReferenceWorkspace() {
           <IncomingInvoiceWorkspace notify={setNotice} />
         ) : moduleId === "purchases" ? (
           <MisaPurchaseWorkspace
-            key={`purchases-${company.id}-${period}-${tab}`}
+            key={`purchases-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1205,7 +1508,7 @@ function ReferenceWorkspace() {
           <MisaOpeningBalanceWorkspace notify={setNotice} />
         ) : moduleId === "cash" ? (
           <MisaCashWorkspace
-            key={`cash-${company.id}-${period}-${tab}`}
+            key={`cash-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1214,7 +1517,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "bank" ? (
           <MisaBankWorkspace
-            key={`bank-${company.id}-${period}-${tab}`}
+            key={`bank-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1223,7 +1526,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "sales" ? (
           <MisaSalesWorkspace
-            key={`sales-${company.id}-${period}-${tab}`}
+            key={`sales-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1232,7 +1535,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "inventory" ? (
           <MisaInventoryWorkspace
-            key={`inventory-${company.id}-${period}-${tab}`}
+            key={`inventory-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1241,7 +1544,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "tools" ? (
           <MisaToolsWorkspace
-            key={`tools-${company.id}-${period}-${tab}`}
+            key={`tools-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1250,7 +1553,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "assets" ? (
           <MisaAssetsWorkspace
-            key={`assets-${company.id}-${period}-${tab}`}
+            key={`assets-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1259,7 +1562,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "payroll" ? (
           <MisaPayrollWorkspace
-            key={`payroll-${company.id}-${period}-${tab}`}
+            key={`payroll-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab}
@@ -1268,7 +1571,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "cost" ? (
           <MisaCostWorkspace
-            key={`cost-${company.id}-${period}-${tab}`}
+            key={`cost-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab || "process"}
@@ -1277,7 +1580,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "ledger" ? (
           <MisaLedgerWorkspace
-            key={`ledger-${company.id}-${period}-${tab}`}
+            key={`ledger-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab || "process"}
@@ -1286,7 +1589,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "budget" ? (
           <MisaBudgetWorkspace
-            key={`budget-${company.id}-${period}-${tab}`}
+            key={`budget-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab || "charts"}
@@ -1304,7 +1607,7 @@ function ReferenceWorkspace() {
             moduleId,
           ) ? (
           <ReferenceTransactions
-            key={`${moduleId}-${company.id}-${period}-${tab}`}
+            key={`${moduleId}-${company.id}-${period}`}
             moduleId={moduleId}
             items={scoped}
             create={create}
@@ -1314,7 +1617,7 @@ function ReferenceWorkspace() {
           />
         ) : moduleId === "tax" ? (
           <MisaTaxWorkspace
-            key={`tax-${company.id}-${period}-${tab}`}
+            key={`tax-${company.id}-${period}`}
             company={company}
             period={period}
             tab={tab || "declarations"}
@@ -1376,6 +1679,9 @@ function ReferenceWorkspace() {
         <TabSettingsModal
           moduleName={module?.label || "Kế toán"}
           tabs={tabs}
+          visibleTabIds={rawVisibleTabIds}
+          onSave={handleSaveTabs}
+          onResetDefault={handleResetTabs}
           onClose={() => setPanel(null)}
         />
       )}
@@ -1722,6 +2028,8 @@ function ReferenceWorkspace() {
 }
 function AppRoute() {
   const location = useLocation();
+  if (location.pathname === "/admin" || location.pathname === "/company-admin") return <CompanyAdminWorkspace />;
+  if (location.pathname === "/super-admin" || location.pathname === "/platform-admin") return <SuperAdminWorkspace />;
   if (location.pathname === "/account") return <LiveAccount />;
   if (location.pathname === "/join") return <LiveJoin />;
   if (location.pathname === "/login" || location.pathname === "/login/") return <LiveLogin />;

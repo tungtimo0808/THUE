@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import { nextVoucherNumber, saveAssemblyOrder, saveInventoryTransaction, saveOtherInventoryReceipt, saveItem, saveProductionOrder, toApiDate, toViDate } from "./misa-api-writes";
@@ -84,6 +85,7 @@ export default function MisaInventoryWorkspace({
   href,
   notify,
 }: MisaInventoryWorkspaceProps) {
+  const navigate = useNavigate();
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
     items: "/api/v1/master-data/items/",
     warehouses: "/api/v1/master-data/warehouses/",
@@ -105,7 +107,7 @@ export default function MisaInventoryWorkspace({
   // Navigation helper
   const navigateTo = (targetTab: string) => {
     if (href) {
-      window.location.href = href(`/inventory/${targetTab}`);
+      navigate(href(`/inventory/${targetTab}`));
     }
   };
 

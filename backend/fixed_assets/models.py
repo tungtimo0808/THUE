@@ -1,3 +1,4 @@
+from decimal import Decimal
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -13,8 +14,19 @@ class AssetType(models.TextChoices):
 class AssetStatus(models.TextChoices):
     DRAFT = "DRAFT", "Nháp"
     ACTIVE = "ACTIVE", "Đang sử dụng"
-    SUSPENDED = "SUSPENDED", "Tạm ngừng"
+    SUSPENDED = "SUSPENDED", "Ngừng sử dụng"
     DISPOSED = "DISPOSED", "Đã ghi giảm"
+
+
+class UsefulLifeUnit(models.TextChoices):
+    YEAR = "YEAR", "Năm"
+    MONTH = "MONTH", "Tháng"
+
+
+class AccountingReconciliationStatus(models.TextChoices):
+    UNRECONCILED = "UNRECONCILED", "Chưa đối chiếu hạch toán"
+    RECONCILED = "RECONCILED", "Đã đối chiếu"
+    DISCREPANCY = "DISCREPANCY", "Có chênh lệch"
 
 
 class TransactionStatus(models.TextChoices):
@@ -136,11 +148,39 @@ class AssetRecord(models.Model):
     branch = models.ForeignKey("organization.Branch", on_delete=models.PROTECT, related_name="assets")
     department = models.ForeignKey("organization.Department", on_delete=models.PROTECT, null=True, blank=True, related_name="assets")
     custodian = models.ForeignKey("organization.Employee", on_delete=models.PROTECT, null=True, blank=True, related_name="assets_in_custody")
+    acquisition_voucher_no = models.CharField(max_length=80, blank=True, default="")
+    is_depreciable = models.BooleanField(default=True)
+    asset_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="fixed_assets_cost")
+    accumulated_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="fixed_assets_accumulated")
+    depreciable_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    useful_life_value = models.DecimalField(max_digits=12, decimal_places=2, default=1)
+    useful_life_unit = models.CharField(max_length=10, choices=UsefulLifeUnit.choices, default=UsefulLifeUnit.YEAR)
+    monthly_depreciation_rate = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+    annual_depreciation_rate = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+    monthly_depreciation_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    annual_depreciation_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    cit_cap_enabled = models.BooleanField(default=False)
+    cit_depreciable_cap = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    cit_monthly_cap = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    allocations = models.JSONField(default=list, blank=True)
+    origins = models.JSONField(default=list, blank=True)
+    components = models.JSONField(default=list, blank=True)
+    accessories = models.JSONField(default=list, blank=True)
+    country_of_origin = models.CharField(max_length=120, blank=True, default="")
+    manufacture_year = models.PositiveIntegerField(null=True, blank=True)
+    accounting_reconciliation_status = models.CharField(
+        max_length=25, choices=AccountingReconciliationStatus.choices, default=AccountingReconciliationStatus.UNRECONCILED
+    )
     source_module = models.CharField(max_length=20, blank=True)
     source_reference = models.CharField(max_length=100, blank=True)
     status = models.CharField(max_length=20, choices=AssetStatus.choices, default=AssetStatus.DRAFT)
     disposed_at = models.DateField(null=True, blank=True)
+    version = models.PositiveIntegerField(default=1)
+    last_update_reason = models.CharField(max_length=500, blank=True, default="")
     created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, related_name="assets_created")
+    updated_by = models.ForeignKey(
+        "iam.UserAccount", on_delete=models.PROTECT, null=True, blank=True, related_name="assets_updated"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -151,7 +191,7 @@ class AssetRecord(models.Model):
             models.UniqueConstraint(fields=("company", "code"), name="uq_fa_asset_code"),
             models.CheckConstraint(condition=Q(quantity__gt=0), name="ck_fa_asset_quantity_positive"),
             models.CheckConstraint(condition=Q(original_cost__gte=0, salvage_value__gte=0, accumulated_depreciation__gte=0, allocated_value__gte=0), name="ck_fa_asset_values_nonnegative"),
-            models.CheckConstraint(condition=Q(useful_life_periods__gt=0), name="ck_fa_asset_life_positive"),
+            models.CheckConstraint(condition=Q(useful_life_periods__gt=0) | Q(is_depreciable=False), name="ck_fa_asset_life_positive"),
         ]
 
     @property
@@ -160,7 +200,16 @@ class AssetRecord(models.Model):
 
     @property
     def remaining_value(self):
-        return self.original_cost - self.processed_value
+        base_rem = self.original_cost - self.processed_value
+        if self.asset_type == AssetType.TOOL and isinstance(self.accessories, list) and self.accessories:
+            meta = self.accessories[0] if isinstance(self.accessories[0], dict) else {}
+            disp_val = meta.get("disposed_unallocated_value")
+            if disp_val is not None:
+                try:
+                    return max(Decimal("0"), base_rem - Decimal(str(disp_val)))
+                except Exception:
+                    pass
+        return base_rem
 
     def clean(self):
         errors = {}
@@ -234,10 +283,42 @@ class CalculationRun(models.Model):
     period_code = models.CharField(max_length=30)
     period_start = models.DateField()
     period_end = models.DateField()
-    status = models.CharField(max_length=20, choices=(("DRAFT", "Nháp"), ("CALCULATED", "Đã tính"), ("POSTED", "Đã ghi nhận"), ("CANCELLED", "Đã hủy")), default="DRAFT")
+    # UC-FA-03: Thông tin chứng từ và kỳ tính khấu hao
+    period_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    period_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    voucher_date = models.DateField(null=True, blank=True)
+    posting_date = models.DateField(null=True, blank=True)
+    description = models.CharField(max_length=500, blank=True, default="")
+    reference = models.CharField(max_length=255, blank=True, default="")
+    status = models.CharField(
+        max_length=20,
+        choices=(
+            ("DRAFT", "Chưa ghi sổ"),
+            ("CALCULATED", "Chưa ghi sổ"),
+            ("POSTED", "Đã ghi sổ"),
+            ("CANCELLED", "Đã hủy"),
+        ),
+        default="DRAFT",
+    )
     total_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    total_deductible_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    total_non_deductible_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    allocations_snapshot = models.JSONField(default=list, blank=True)
+    accounting_entries = models.JSONField(default=list, blank=True)
+    attachments = models.JSONField(default=list, blank=True)
+    gl_entry_id = models.UUIDField(null=True, blank=True)
+    idempotency_key = models.CharField(max_length=150, null=True, blank=True, unique=True)
     created_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT)
+    posted_by = models.ForeignKey(
+        "iam.UserAccount",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="calculation_runs_posted",
+    )
+    posted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "fa_calculation_run"
@@ -251,6 +332,20 @@ class CalculationLine(models.Model):
     opening_value = models.DecimalField(max_digits=24, decimal_places=4)
     amount = models.DecimalField(max_digits=24, decimal_places=4)
     closing_value = models.DecimalField(max_digits=24, decimal_places=4)
+    # UC-FA-03: Cơ sở tính KH, phân loại thuế TNDN, phân bổ và hạch toán chi tiết từng tài sản
+    original_cost = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    depreciable_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    opening_accumulated_depreciation = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    closing_accumulated_depreciation = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    deductible_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    non_deductible_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)
+    eligible_days = models.PositiveSmallIntegerField(default=30)
+    total_days_in_period = models.PositiveSmallIntegerField(default=30)
+    department_name = models.CharField(max_length=255, blank=True, default="")
+    category_name = models.CharField(max_length=255, blank=True, default="")
+    allocations = models.JSONField(default=list, blank=True)
+    accounting_lines = models.JSONField(default=list, blank=True)
+    asset_version = models.PositiveIntegerField(default=1)
     transaction = models.OneToOneField(AssetTransaction, on_delete=models.PROTECT, null=True, blank=True, related_name="calculation_line")
 
     class Meta:

@@ -33,7 +33,7 @@ export const referenceNav = [
   { id: "payroll", label: "Tiền lương", icon: CircleDollarSign },
   { id: "tax", label: "Thuế", icon: TicketPercent },
   { id: "cost", label: "Giá thành", icon: Tags },
-  { id: "insurance", label: "Kết nối bảo hiểm", icon: ShieldCheck, badge: "Mới" },
+  { id: "insurance", label: "Kết nối bảo hiểm", icon: ShieldCheck },
   { id: "ledger", label: "Tổng hợp", icon: BookOpen },
   { id: "budget", label: "Ngân sách", icon: NotebookPen },
   { id: "reports", label: "Báo cáo", icon: ChartNoAxesCombined },
@@ -199,12 +199,14 @@ const previousReferenceTabs: Record<string, [string, string][]> = {
     ["favorites", "Đã ghim"],
     ["recent", "Gần đây"],
     ["templates", "Mẫu của tôi"],
+    ["extended-apis", "Nghiệp vụ mở rộng"],
   ],
   directory: [
     ["partners", "Đối tượng"],
     ["items", "Hàng hóa, dịch vụ"],
     ["organization", "Tổ chức"],
     ["accounting", "Danh mục kế toán"],
+    ["extended-apis", "Nghiệp vụ mở rộng"],
   ],
   opening: [
     ["accounts", "Số dư tài khoản"],
@@ -249,6 +251,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("advance-settlement", "Đề nghị quyết toán tạm ứng"),
     node("inventory", "Kiểm kê"),
     node("cashflow", "Dự báo dòng tiền"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   bank: [
@@ -261,6 +264,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("ebanking", "Ngân hàng điện tử"),
     node("loans", "Khế ước cho vay"),
     node("borrowings", "Khế ước đi vay"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   purchases: [
@@ -280,6 +284,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("inventory-items", "Hàng hóa, dịch vụ"),
     node("reconciliation", "Đối chiếu công nợ"),
     node("suppliers", "Nhà cung cấp"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   sales: [
@@ -298,6 +303,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("reconciliation", "Đối chiếu công nợ"),
     node("inventory-items", "Hàng hóa, dịch vụ"),
     node("customers", "Khách hàng"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
   ],
   invoices: [
     node('process','Quy trình'),
@@ -328,6 +334,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("stocktake", "Kiểm kê"),
     node("reports", "Báo cáo", undefined, { configurable: true }),
     node("items", "Hàng hóa, dịch vụ", undefined, { configurable: true }),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
   ],
   tools: [
     node("process", "Quy trình"),
@@ -370,6 +377,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("transfer", "Điều chuyển"),
     node("decrease", "Ghi giảm"),
     node("stocktake", "Kiểm kê"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   payroll: [
@@ -385,6 +393,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("declarations", "Khai thuế"),
     node("payment-orders", "Giấy nộp tiền"),
     node("risk-suppliers", "Danh sách NCC có rủi ro"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   cost: [
@@ -408,6 +417,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("transactions", "Chứng từ nghiệp vụ khác"),
     node("closing-entry", "Kết chuyển lãi lỗ"),
     node("statements", "Lập báo cáo tài chính"),
+    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   budget: [

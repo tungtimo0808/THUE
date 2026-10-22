@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { apiClient } from "./apiClient";
 import {
   ChevronLeft,
   ChevronDown,
@@ -302,9 +303,29 @@ export default function MisaInterimCashFlowIndirectReport({
     };
   };
 
+  const [rowsData, setRowsData] = useState<InterimCashFlowIndirectItem[]>(FULL_B03A_GT_DATA);
+
+  useEffect(() => {
+    apiClient
+      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
+      .then((res) => {
+        if (res?.b03_indirect) {
+          setRowsData(
+            FULL_B03A_GT_DATA.map((r) => {
+              const m = r.code ? res.b03_indirect[r.code] : null;
+              return m
+                ? { ...r, quarterCurrent: Number(m.current || 0), quarterPrevious: Number(m.previous || 0) }
+                : r;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+  }, [year, period, fromDate, toDate]);
+
   // Filter rows for B03a-DN-GT
   const filteredB03aRows = useMemo(() => {
-    return FULL_B03A_GT_DATA.filter((row) => {
+    return rowsData.filter((row) => {
       if (row.isHeader || row.noNumbers) {
         if (!searchKeyword.trim()) return true;
       }
@@ -322,7 +343,7 @@ export default function MisaInterimCashFlowIndirectReport({
       }
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [rowsData, hideZero, searchKeyword]);
 
   return (
     <div

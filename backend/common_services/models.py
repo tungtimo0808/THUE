@@ -623,6 +623,8 @@ class FiscalPeriod(models.Model):
 
 
 class AccountingRegime(models.TextChoices):
+    CIRCULAR_99 = "CIRCULAR_99", "Thông tư 99/2025/TT-BTC (Chế độ kế toán Doanh nghiệp)"
+    TT99 = "TT99", "Thông tư 99/2025/TT-BTC"
     CIRCULAR_200 = "CIRCULAR_200", "Thông tư 200/2014/TT-BTC (Doanh nghiệp lớn)"
     CIRCULAR_133 = "CIRCULAR_133", "Thông tư 133/2016/TT-BTC (Doanh nghiệp vừa và nhỏ)"
     CIRCULAR_88 = "CIRCULAR_88", "Thông tư 88/2021/TT-BTC (Hộ kinh doanh / một người)"

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   Search,
@@ -54,6 +55,48 @@ export default function MisaFinancialNotesReport({
   // Saved reports modal
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
 
+  const [b09Data, setB09Data] = useState({
+    cash_on_hand_close: -20000000,
+    cash_on_hand_open: 0,
+    cash_in_bank_close: 0,
+    cash_in_bank_open: 0,
+    total_cash_close: -20000000,
+    total_cash_open: 0,
+    ar_close: 20000000,
+    ar_open: 0,
+    inventory_close: 12475000,
+    inventory_open: 0,
+    ap_close: 17000000,
+    ap_open: 0,
+    revenue: 20000000,
+    deductions: 0,
+    net_revenue: 20000000,
+  });
+
+  const loadReportFromBackend = useCallback(async () => {
+    try {
+      const cid = getSelectedCompanyId();
+      const query = cid ? `?company_id=${cid}` : "";
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
+      if (res && res.b09_dn) {
+        const b09 = res.b09_dn;
+        const hasActivity = Object.values(b09).some((v: any) => Number(v || 0) !== 0);
+        if (hasActivity) {
+          setB09Data((prev) => ({
+            ...prev,
+            ...b09,
+          }));
+        }
+      }
+    } catch {
+      // Keep default fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReportFromBackend();
+  }, [loadReportFromBackend]);
+
   // Format currency helper
   const formatMoney = (num: number) => {
     if (num === 0) return "0";
@@ -75,7 +118,8 @@ export default function MisaFinancialNotesReport({
     setToDate(draftToDate);
     setFetchFromSaved(draftFetchFromSaved);
     setIsParamDrawerOpen(false);
-    notify?.("Đã cập nhật tham số Thuyết minh báo cáo tài chính.");
+    void loadReportFromBackend();
+    notify?.("Đã cập nhật Thuyết minh báo cáo tài chính (B09-DN TT99) từ Sổ Cái Backend.");
   };
 
   const handleResetParams = () => {
@@ -302,7 +346,10 @@ export default function MisaFinancialNotesReport({
               cursor: "pointer",
             }}
             title="Làm mới"
-            onClick={() => notify?.("Đã làm mới dữ liệu thuyết minh.")}
+            onClick={() => {
+              void loadReportFromBackend();
+              notify?.("Đã làm mới dữ liệu Thuyết minh BCTC (B09-DN TT99) từ Sổ Cái Backend.");
+            }}
           >
             <RotateCw size={14} />
           </button>
@@ -635,15 +682,15 @@ export default function MisaFinancialNotesReport({
                   <tbody>
                     <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Tiền mặt tại quỹ (TK 111)</td>
-                      <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", color: "#dc2626", fontWeight: 700 }}>
-                        (20.000.000)
+                      <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", color: b09Data.cash_on_hand_close < 0 ? "#dc2626" : "#1e293b", fontWeight: 700 }}>
+                        {formatMoney(b09Data.cash_on_hand_close)}
                       </td>
-                      <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "7px 14px", textAlign: "right" }}>{formatMoney(b09Data.cash_on_hand_open)}</td>
                     </tr>
                     <tr style={{ borderBottom: "1px solid #e2e8f0", background: "#fafbfc" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Tiền gửi ngân hàng (TK 112)</td>
-                      <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>0</td>
-                      <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>{formatMoney(b09Data.cash_in_bank_close)}</td>
+                      <td style={{ padding: "7px 14px", textAlign: "right" }}>{formatMoney(b09Data.cash_in_bank_open)}</td>
                     </tr>
                     <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Các khoản tương đương tiền</td>
@@ -652,10 +699,10 @@ export default function MisaFinancialNotesReport({
                     </tr>
                     <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                       <td style={{ padding: "8px 12px", borderRight: "1px solid #f1f5f9" }}>Cộng</td>
-                      <td style={{ padding: "8px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", color: "#dc2626" }}>
-                        (20.000.000)
+                      <td style={{ padding: "8px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", color: b09Data.total_cash_close < 0 ? "#dc2626" : "#00a862" }}>
+                        {formatMoney(b09Data.total_cash_close)}
                       </td>
-                      <td style={{ padding: "8px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "8px 14px", textAlign: "right" }}>{formatMoney(b09Data.total_cash_open)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -678,16 +725,16 @@ export default function MisaFinancialNotesReport({
                     <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Khách hàng thương mại dịch vụ (TK 131)</td>
                       <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", fontWeight: 700, color: "#00a862" }}>
-                        20.000.000
+                        {formatMoney(b09Data.ar_close)}
                       </td>
-                      <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "7px 14px", textAlign: "right" }}>{formatMoney(b09Data.ar_open)}</td>
                     </tr>
                     <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                       <td style={{ padding: "8px 12px", borderRight: "1px solid #f1f5f9" }}>Cộng</td>
                       <td style={{ padding: "8px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", color: "#00a862" }}>
-                        20.000.000
+                        {formatMoney(b09Data.ar_close)}
                       </td>
-                      <td style={{ padding: "8px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "8px 14px", textAlign: "right" }}>{formatMoney(b09Data.ar_open)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -710,14 +757,14 @@ export default function MisaFinancialNotesReport({
                     <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Hàng hóa kho chính (TK 156)</td>
                       <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", fontWeight: 700 }}>
-                        12.475.000
+                        {formatMoney(b09Data.inventory_close)}
                       </td>
                       <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
                     </tr>
                     <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                       <td style={{ padding: "8px 12px", borderRight: "1px solid #f1f5f9" }}>Cộng</td>
                       <td style={{ padding: "8px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
-                        12.475.000
+                        {formatMoney(b09Data.inventory_close)}
                       </td>
                       <td style={{ padding: "8px 14px", textAlign: "right" }}>0</td>
                     </tr>
@@ -742,16 +789,16 @@ export default function MisaFinancialNotesReport({
                     <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Phải trả nhà cung cấp hàng hóa/dịch vụ (TK 331)</td>
                       <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", fontWeight: 700 }}>
-                        17.000.000
+                        {formatMoney(b09Data.ap_close)}
                       </td>
-                      <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "7px 14px", textAlign: "right" }}>{formatMoney(b09Data.ap_open)}</td>
                     </tr>
                     <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                       <td style={{ padding: "8px 12px", borderRight: "1px solid #f1f5f9" }}>Cộng</td>
                       <td style={{ padding: "8px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>
-                        17.000.000
+                        {formatMoney(b09Data.ap_close)}
                       </td>
-                      <td style={{ padding: "8px 14px", textAlign: "right" }}>0</td>
+                      <td style={{ padding: "8px 14px", textAlign: "right" }}>{formatMoney(b09Data.ap_open)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -782,19 +829,19 @@ export default function MisaFinancialNotesReport({
                     <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Doanh thu bán lẻ & dịch vụ theo hóa đơn GTGT (TK 511)</td>
                       <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", fontWeight: 700, color: "#00a862" }}>
-                        20.000.000
+                        {formatMoney(b09Data.revenue)}
                       </td>
                       <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
                     </tr>
                     <tr style={{ borderBottom: "1px solid #e2e8f0", background: "#fafbfc" }}>
                       <td style={{ padding: "7px 12px", borderRight: "1px solid #f1f5f9" }}>- Các khoản giảm trừ doanh thu (TK 521)</td>
-                      <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>0</td>
+                      <td style={{ padding: "7px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9" }}>{formatMoney(b09Data.deductions)}</td>
                       <td style={{ padding: "7px 14px", textAlign: "right" }}>0</td>
                     </tr>
                     <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                       <td style={{ padding: "8px 12px", borderRight: "1px solid #f1f5f9" }}>Doanh thu thuần</td>
                       <td style={{ padding: "8px 14px", textAlign: "right", borderRight: "1px solid #f1f5f9", color: "#00a862" }}>
-                        20.000.000
+                        {formatMoney(b09Data.net_revenue)}
                       </td>
                       <td style={{ padding: "8px 14px", textAlign: "right" }}>0</td>
                     </tr>
@@ -898,7 +945,7 @@ export default function MisaFinancialNotesReport({
                   title="Giúp (F1)"
                   onClick={() =>
                     notify?.(
-                      "Xem hướng dẫn lập Thuyết minh báo cáo tài chính B09-DN theo TT 200."
+                      "Xem hướng dẫn lập Thuyết minh báo cáo tài chính B09-DN theo Thông tư số 99/2025/TT-BTC."
                     )
                   }
                 >

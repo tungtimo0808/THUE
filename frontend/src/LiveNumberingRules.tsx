@@ -65,8 +65,31 @@ export default function LiveNumberingRules() {
   }
   async function showPreview() {
     setBusy(true); setError("");
-    try { const value = await request<unknown>(`${base}/preview/?company_id=${companyId}`, token, { method: "POST", body: JSON.stringify({ company: companyId, pattern, prefix, suffix, start_number: startNumber, padding_length: padding, increment_by: increment, reset_cycle: resetCycle, numbering_mode: numberingMode }) }); setPreview(JSON.stringify(value, null, 2)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Không xem trước được số chứng từ."); }
+    try {
+      const value = await request<unknown>(`${base}/preview/?company_id=${companyId}`, token, {
+        method: "POST",
+        body: JSON.stringify({ company: companyId, pattern, prefix, suffix, start_number: startNumber, padding_length: padding, increment_by: increment, reset_cycle: resetCycle, numbering_mode: numberingMode }),
+      });
+      setPreview(JSON.stringify(value, null, 2));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Không xem trước được số chứng từ."); }
+    finally { setBusy(false); }
+  }
+  async function generateNextNumber(rule: Rule) {
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const generated = await request<{ document_number?: string }>("/api/v1/common/numbering/generate/", token, {
+        method: "POST",
+        body: JSON.stringify({ company: companyId, document_type: rule.document_type, rule_id: rule.id }),
+      });
+      if (generated?.document_number) {
+        await request("/api/v1/common/numbering/validate-manual/", token, {
+          method: "POST",
+          body: JSON.stringify({ company: companyId, document_type: rule.document_type, document_number: generated.document_number }),
+        }).catch(() => {});
+      }
+      setMessage(`Đã cấp số thử nghiệm: ${generated?.document_number || rule.prefix}`);
+      setReload(value => value + 1);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Không cấp được số chứng từ."); }
     finally { setBusy(false); }
   }
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -82,7 +105,7 @@ export default function LiveNumberingRules() {
   return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">SYS-13</p><h1>Đánh số chứng từ</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); open(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>{error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}
-      <button type="button" onClick={() => open("create")}>Tạo quy tắc</button><ul className="account-request-list">{rules.map(rule => <li key={rule.id}><div><strong>{rule.code} · {rule.name}</strong><span>{rule.document_type_code} · v{rule.version} · {rule.status} · {rule.pattern}</span></div><div className="account-actions"><button type="button" onClick={() => open(null, rule)}>Chi tiết</button><button type="button" onClick={() => open("copy", rule)}>Sao chép</button>{rule.status === "DRAFT" && <><button type="button" onClick={() => open("edit", rule)}>Sửa</button><button type="button" onClick={() => open("activate", rule)}>Kích hoạt</button><button type="button" onClick={() => run(() => request(`${base}/${rule.id}/?company_id=${companyId}`, token, { method: "DELETE" }), "Đã xóa bản nháp.")}>Xóa nháp</button></>}{rule.status === "ACTIVE" && <><button type="button" onClick={() => open("deactivate", rule)}>Ngừng</button><button type="button" onClick={() => run(() => request(`${base}/${rule.id}/new-version/?company_id=${companyId}`, token, { method: "POST", body: "{}" }), "Đã tạo phiên bản mới.")}>Phiên bản mới</button></>}</div></li>)}</ul>
+      <button type="button" onClick={() => open("create")}>Tạo quy tắc</button><ul className="account-request-list">{rules.map(rule => <li key={rule.id}><div><strong>{rule.code} · {rule.name}</strong><span>{rule.document_type_code} · v{rule.version} · {rule.status} · {rule.pattern}</span></div><div className="account-actions"><button type="button" onClick={() => open(null, rule)}>Chi tiết</button><button type="button" onClick={() => generateNextNumber(rule)}>Cấp số</button><button type="button" onClick={() => open("copy", rule)}>Sao chép</button>{rule.status === "DRAFT" && <><button type="button" onClick={() => open("edit", rule)}>Sửa</button><button type="button" onClick={() => open("activate", rule)}>Kích hoạt</button><button type="button" onClick={() => run(() => request(`${base}/${rule.id}/?company_id=${companyId}`, token, { method: "DELETE" }), "Đã xóa bản nháp.")}>Xóa nháp</button></>}{rule.status === "ACTIVE" && <><button type="button" onClick={() => open("deactivate", rule)}>Ngừng</button><button type="button" onClick={() => run(() => request(`${base}/${rule.id}/new-version/?company_id=${companyId}`, token, { method: "POST", body: "{}" }), "Đã tạo phiên bản mới.")}>Phiên bản mới</button></>}</div></li>)}</ul>
       {selected && !mode && <section className="account-change-email"><h2>{selected.code}</h2><p>{selected.pattern} · {selected.prefix} · bắt đầu {selected.start_number}, tăng {selected.increment_by}</p><h3>Bộ đếm</h3><ul>{counters.map(item => <li key={item.id}>{item.scope_key} · {item.period_key} · {item.current_number}</li>)}</ul></section>}
       {mode && <form className="account-change-email" onSubmit={save}><h2>{mode === "create" ? "Tạo quy tắc" : mode === "edit" ? "Sửa quy tắc" : mode === "copy" ? "Sao chép quy tắc" : mode === "activate" ? "Kích hoạt quy tắc" : "Ngừng quy tắc"}</h2>
         {["create", "edit", "copy"].includes(mode) && <><label>Mã quy tắc<input value={code} onChange={event => setCode(event.target.value)} required disabled={mode === "edit"} /></label><label>Tên quy tắc<input value={name} onChange={event => setName(event.target.value)} required /></label><label>Loại chứng từ<select value={docId} onChange={event => setDocId(event.target.value)} required disabled={mode === "edit"}><option value="">Chọn loại chứng từ</option>{documents.map(item => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></label></>}

@@ -29,6 +29,7 @@ import {
   Info,
   Paperclip,
 } from "lucide-react";
+import { request } from "./live-api";
 import "./misa-opening.css";
 
 export function formatOpeningMoney(amount: number | string | undefined): string {
@@ -37,67 +38,109 @@ export function formatOpeningMoney(amount: number | string | undefined): string 
 }
 
 export const OPENING_CUSTOMERS = [
-  { code: "SAOVIET", name: "Công ty Cổ phần Công nghệ Sao Việt", taxCode: "0102345678" },
-  { code: "MINHHANH", name: "Công ty TNHH Minh Hạnh", taxCode: "0103456789" },
-  { code: "HOANGGIA", name: "Công ty Cổ phần Đầu tư Hoàng Gia", taxCode: "0104567890" },
-  { code: "ANBINH", name: "Công ty TNHH TMDV An Bình", taxCode: "0105678901" },
-  { code: "THANG_LONG", name: "Công ty Cổ phần Quốc tế Thăng Long", taxCode: "0106789012" },
-  { code: "DAI_NAM", name: "Tập đoàn Đại Nam", taxCode: "0107890123" },
-  { code: "VIETTEL_POST", name: "Tổng công ty CP Bưu chính Viettel", taxCode: "0108901234" },
-  { code: "VINAPHONE", name: "Trung tâm Kinh doanh VNPT Hà Nội", taxCode: "0109012345" },
-  { code: "DONGDO", name: "Công ty TNHH Xây dựng Đông Đô", taxCode: "0101122334" },
-  { code: "BAOVIET", name: "Tập đoàn Bảo Việt", taxCode: "0102233445" },
+  { code: "THANHHA", name: "Công ty TNHH Thanh Hà", taxCode: "110085253" },
+  { code: "NHATMINH", name: "CTCP Nội thất Nhật Minh", taxCode: "801382946" },
+  { code: "MINHHANH", name: "Công ty TNHH Kinh doanh Minh Hạnh", taxCode: "110086627" },
+  { code: "ANHTUAN", name: "Công ty TNHH Công nghệ số Anh Tuấn", taxCode: "110094515" },
+  { code: "CAUGIAY", name: "CTCP Thương mại Cầu Giấy", taxCode: "100408152" },
+  { code: "HIEPPHAT", name: "Công ty TNHH Giải pháp Hiệp Phát", taxCode: "110101949" },
+  { code: "BAOKIM", name: "Công ty TNHH Đầu tư Bảo Kim", taxCode: "110086049" },
+  { code: "THUANPHAT", name: "Công ty TNHH Thương mại Thuận Phát", taxCode: "601238247" },
+  { code: "DUYVINH", name: "Công ty TNHH Xây dựng Duy Vinh", taxCode: "700865055" },
+  { code: "KIENQUAN", name: "CTCP Đầu tư Kiến Quân Việt Nam", taxCode: "107527141" },
+  { code: "VIETHUNG", name: "Công ty TNHH Việt Hùng", taxCode: "102020196" },
+  { code: "THAIBINH", name: "Công ty TNHH Thái Bình", taxCode: "0108804440" },
+  { code: "HOANGLONG", name: "Công ty CP Hoàng Long computer", taxCode: "0105509988" },
+  { code: "PHANMINH", name: "Công ty TNHH Phan Minh", taxCode: "0109905550" },
 ];
 
 export const OPENING_SUPPLIERS = [
-  { code: "PHATMAI", name: "Công ty Cổ phần Phát Mai", taxCode: "0109876541" },
-  { code: "SOMOT", name: "Công ty TNHH Thiết bị Số Một", taxCode: "0109876542" },
-  { code: "FPT", name: "Công ty CP Bán lẻ Kỹ thuật số FPT", taxCode: "0109876543" },
-  { code: "DIENLUC_HK", name: "Công ty Điện lực Hoàn Kiếm", taxCode: "0109876544" },
-  { code: "HANOI_WATER", name: "Công ty TNHH MTV Nước sạch Hà Nội", taxCode: "0109876545" },
-  { code: "VNPT_HN", name: "Viễn thông Hà Nội", taxCode: "0109876546" },
-  { code: "PETROLIMEX", name: "Tập đoàn Xăng dầu Việt Nam", taxCode: "0109876547" },
+  { code: "PHATMAI", name: "Công ty TNHH Phát Mai Group", taxCode: "110084806" },
+  { code: "MINHQUAN", name: "Công ty Cổ phần Minh Quân Logistics", taxCode: "110087035" },
+  { code: "THANHTRU", name: "Công ty TNHH Thiết bị Thanh Trúc", taxCode: "110092821" },
+  { code: "MAISON", name: "CTCP Tư vấn và Dịch vụ Bất động sản Maison", taxCode: "106639438" },
+  { code: "VANPHO", name: "CTCP Vận tải và Thương mại Vạn Phát", taxCode: "200463686" },
+  { code: "MEDIAZ", name: "Công ty TNHH Truyền thông AZ Việt Nam", taxCode: "402155162" },
+  { code: "LOCATIO", name: "Công ty TNHH Dịch vụ Logistics Việt Hưng", taxCode: "101353160" },
+  { code: "VIETGIA", name: "Công ty Cổ phần Công nghệ Việt Gia", taxCode: "101217009" },
+  { code: "CONGNGHE", name: "Công ty TNHH Phát triển Công nghệ KTS", taxCode: "100366488" },
+  { code: "ANLOC", name: "Công ty TNHH Thương mại Máy tính An Lộc", taxCode: "101468933" },
+  { code: "TANCANG", name: "Công ty cổ phần đại lý giao nhận vận tải xếp dỡ tân cảng", taxCode: "304875444" },
+  { code: "QUOCTE", name: "Công ty cổ phần đầu tư thương mại và dịch vụ quốc tế", taxCode: "100110052" },
+  { code: "THANHDAT", name: "Công ty TNHH Thành Đạt", taxCode: "0101234567" },
+  { code: "ANTAM", name: "CÔNG TY CỔ PHẦN VĂN PHÒNG PHẨM AN TÂM", taxCode: "2004687684" },
+  { code: "BINHPHAT", name: "CTCP THƯƠNG MẠI BÌNH PHÁT", taxCode: "200433686" },
+  { code: "GIANGMY", name: "CÔNG TY CỔ PHẦN ĐẦU TƯ GIANG MỸ", taxCode: "225946138" },
 ];
 
 export const DEFAULT_CUSTOMER_DEBTS = [
-  { id: "cust-1", code: "SAOVIET", name: "Công ty Cổ phần Công nghệ Sao Việt", accCode: "131", debit: 50000000, credit: 0, invoiceNo: "HD00125", invoiceDate: "15/12/2025", dueDate: "15/01/2026" },
-  { id: "cust-2", code: "MINHHANH", name: "Công ty TNHH Minh Hạnh", accCode: "131", debit: 120000000, credit: 0, invoiceNo: "HD00118", invoiceDate: "10/12/2025", dueDate: "10/01/2026" },
-  { id: "cust-3", code: "HOANGGIA", name: "Công ty Cổ phần Đầu tư Hoàng Gia", accCode: "131", debit: 280000000, credit: 0, invoiceNo: "HD00099", invoiceDate: "05/12/2025", dueDate: "05/01/2026" },
-  { id: "cust-4", code: "ANBINH", name: "Công ty TNHH TMDV An Bình", accCode: "131", debit: 95000000, credit: 0, invoiceNo: "HD00084", invoiceDate: "28/11/2025", dueDate: "28/12/2025" },
-  { id: "cust-5", code: "THANG_LONG", name: "Công ty Cổ phần Quốc tế Thăng Long", accCode: "131", debit: 185000000, credit: 0, invoiceNo: "HD00072", invoiceDate: "20/11/2025", dueDate: "20/12/2025" },
-  { id: "cust-6", code: "DAI_NAM", name: "Tập đoàn Đại Nam", accCode: "131", debit: 424530000, credit: 0, invoiceNo: "HD00065", invoiceDate: "15/11/2025", dueDate: "15/12/2025" },
+  { id: "cust-1", code: "THANHHA", name: "Công ty TNHH Thanh Hà", accCode: "131", debit: 50000000, credit: 0, invoiceNo: "HD00125", invoiceDate: "15/12/2025", dueDate: "15/01/2026" },
+  { id: "cust-2", code: "NHATMINH", name: "CTCP Nội thất Nhật Minh", accCode: "131", debit: 0, credit: 15000000, invoiceNo: "HD00118", invoiceDate: "10/12/2025", dueDate: "10/01/2026" },
+  { id: "cust-3", code: "MINHHANH", name: "Công ty TNHH Kinh doanh Minh Hạnh", accCode: "131", debit: 60000000, credit: 0, invoiceNo: "HD00099", invoiceDate: "05/12/2025", dueDate: "05/01/2026" },
+  { id: "cust-4", code: "ANHTUAN", name: "Công ty TNHH Công nghệ số Anh Tuấn", accCode: "131", debit: 32500000, credit: 0, invoiceNo: "HD00084", invoiceDate: "28/11/2025", dueDate: "28/12/2025" },
 ];
 
 export const DEFAULT_SUPPLIER_DEBTS = [
-  { id: "supp-1", code: "PHATMAI", name: "Công ty Cổ phần Phát Mai", accCode: "331", debit: 0, credit: 350000000, invoiceNo: "PM-0982", invoiceDate: "12/12/2025" },
-  { id: "supp-2", code: "SOMOT", name: "Công ty TNHH Thiết bị Số Một", accCode: "331", debit: 0, credit: 250000000, invoiceNo: "SM-1140", invoiceDate: "18/12/2025" },
-  { id: "supp-3", code: "FPT", name: "Công ty CP Bán lẻ Kỹ thuật số FPT", accCode: "331", debit: 0, credit: 200000000, invoiceNo: "FPT-2025", invoiceDate: "22/12/2025" },
+  { id: "supp-1", code: "PHATMAI", name: "Công ty TNHH Phát Mai Group", accCode: "331", debit: 0, credit: 80000000, invoiceNo: "PM-0982", invoiceDate: "12/12/2025" },
+  { id: "supp-2", code: "MINHQUAN", name: "Công ty Cổ phần Minh Quân Logistics", accCode: "331", debit: 15000000, credit: 0, invoiceNo: "MQ-1140", invoiceDate: "18/12/2025" },
+  { id: "supp-3", code: "THANHTRU", name: "Công ty TNHH Thiết bị Thanh Trúc", accCode: "331", debit: 0, credit: 25000000, invoiceNo: "TT-2025", invoiceDate: "22/12/2025" },
+  { id: "supp-4", code: "MAISON", name: "CTCP Tư vấn và Dịch vụ Bất động sản Maison", accCode: "331", debit: 12000000, credit: 0, invoiceNo: "MS-2025", invoiceDate: "25/12/2025" },
 ];
 
 export const DEFAULT_ACCOUNT_BALANCES = [
-  { account: "1111", name: "Tiền mặt Việt Nam", debit: 300000000, credit: 0 },
-  { account: "1121", name: "Tiền gửi Ngân hàng Techcombank (VND)", debit: 3500000000, credit: 0 },
-  { account: "1122", name: "Tiền gửi Ngân hàng Techcombank (USD)", debit: 1275000000, credit: 0 },
-  { account: "131", name: "Phải thu của khách hàng", debit: 1154530000, credit: 0 },
-  { account: "1561", name: "Giá mua hàng hóa", debit: 1310000000, credit: 0 },
-  { account: "2111", name: "Tài sản cố định hữu hình - Nhà cửa", debit: 2500000000, credit: 0 },
-  { account: "2113", name: "Phương tiện vận tải, truyền dẫn", debit: 1350000000, credit: 0 },
-  { account: "2141", name: "Hao mòn tài sản cố định hữu hình", debit: 0, credit: 1000000000 },
-  { account: "331", name: "Phải trả cho người bán", debit: 0, credit: 800000000 },
-  { account: "4111", name: "Vốn góp của chủ sở hữu", debit: 0, credit: 5000000000 },
-  { account: "4212", name: "Lợi nhuận sau thuế chưa phân phối năm nay", debit: 0, credit: 3589530000 },
+  { account: "1111", name: "Tiền mặt Việt Nam", debit: 500000000, credit: 0 },
+  { account: "1121", name: "Tiền gửi Ngân hàng Techcombank (VND)", debit: 3255000000, credit: 0 },
+  { account: "1122", name: "Tiền gửi Ngân hàng Techcombank (USD)", debit: 3816750000, credit: 0 },
+  { account: "131", name: "Phải thu của khách hàng", debit: 142500000, credit: 15000000 },
+  { account: "1331", name: "Thuế GTGT được khấu trừ của hàng hóa, dịch vụ", debit: 12000000, credit: 0 },
+  { account: "141", name: "Tạm ứng", debit: 12000000, credit: 0 },
+  { account: "152", name: "Nguyên liệu, vật liệu", debit: 36000000, credit: 0 },
+  { account: "1531", name: "Công cụ, dụng cụ", debit: 14000000, credit: 0 },
+  { account: "1561", name: "Giá mua hàng hóa", debit: 1158000000, credit: 0 },
+  { account: "2111", name: "Tài sản cố định hữu hình - Máy móc, thiết bị", debit: 513600000, credit: 0 },
+  { account: "2113", name: "Phương tiện vận tải, truyền dẫn", debit: 816000000, credit: 0 },
+  { account: "213", name: "Tài sản cố định vô hình", debit: 48000000, credit: 0 },
+  { account: "2141", name: "Hao mòn tài sản cố định hữu hình", debit: 0, credit: 354400000 },
+  { account: "2143", name: "Hao mòn tài sản cố định vô hình", debit: 0, credit: 9000000 },
+  { account: "221", name: "Đầu tư vào công ty con", debit: 150000000, credit: 0 },
+  { account: "222", name: "Đầu tư vào công ty liên doanh, liên kết", debit: 120000000, credit: 0 },
+  { account: "241", name: "Xây dựng cơ bản dở dang", debit: 100000000, credit: 0 },
+  { account: "242", name: "Chi phí trả trước", debit: 38480000, credit: 0 },
+  { account: "331", name: "Phải trả cho người bán", debit: 27000000, credit: 105000000 },
+  { account: "3331", name: "Thuế GTGT phải nộp", debit: 0, credit: 5000000 },
+  { account: "334", name: "Phải trả người lao động", debit: 0, credit: 45000000 },
+  { account: "338", name: "Phải trả, phải nộp khác", debit: 0, credit: 5000000 },
+  { account: "341", name: "Vay và nợ thuê tài chính", debit: 0, credit: 2500000000 },
+  { account: "4111", name: "Vốn góp của chủ sở hữu", debit: 0, credit: 7685930000 },
+  { account: "4212", name: "Lợi nhuận sau thuế chưa phân phối năm trước", debit: 0, credit: 25000000 },
+  { account: "441", name: "Quỹ đầu tư phát triển", debit: 0, credit: 10000000 },
 ];
 
 export const DEFAULT_BANK_BALANCES = [
-  { accountNumber: "123456789", bankName: "Techcombank", branch: "Chi nhánh Hoàn Kiếm", currency: "VND", originalAmount: 3500000000, amountVnd: 3500000000 },
-  { accountNumber: "987654321", bankName: "Techcombank (USD)", branch: "Chi nhánh Hoàn Kiếm", currency: "USD", originalAmount: 50000, amountVnd: 1275000000 },
+  { accountNumber: "123456789", bankName: "Techcombank", branch: "Chi nhánh Hà Nội", currency: "VND", originalAmount: 3255000000, amountVnd: 3255000000 },
+  { accountNumber: "987654321", bankName: "Techcombank (USD)", branch: "Chi nhánh Hà Nội", currency: "USD", originalAmount: 150000, amountVnd: 3816750000 },
 ];
 
 export const DEFAULT_INVENTORY_BALANCES = [
-  { itemCode: "DT_IP15", itemName: "Điện thoại iPhone 15 128GB", warehouse: "Kho 156", unit: "Chiếc", quantity: 20, unitPrice: 22000000, amount: 440000000 },
-  { itemCode: "DT_SS24", itemName: "Samsung Galaxy S24 Ultra", warehouse: "Kho 156", unit: "Chiếc", quantity: 15, unitPrice: 26000000, amount: 390000000 },
-  { itemCode: "MT_DELL", itemName: "Máy tính xách tay Dell XPS 13", warehouse: "Kho 156", unit: "Chiếc", quantity: 10, unitPrice: 28000000, amount: 280000000 },
-  { itemCode: "MT_MAC", itemName: "MacBook Pro 14 M3 Pro", warehouse: "Kho 156", unit: "Chiếc", quantity: 5, unitPrice: 40000000, amount: 200000000 },
+  { itemCode: "DT_IP15", itemName: "Điện thoại iPhone 15 Pro Max 256GB", warehouse: "Kho 156", unit: "Cái", quantity: 10, unitPrice: 16200000, amount: 162000000 },
+  { itemCode: "DT_SS24", itemName: "Điện thoại Samsung Galaxy S24 Ultra 256GB", warehouse: "Kho 156", unit: "Cái", quantity: 12, unitPrice: 14700000, amount: 176400000 },
+  { itemCode: "LT_MBAIR", itemName: "Máy tính xách tay Macbook Air 13-inch M2", warehouse: "Kho 156", unit: "Cái", quantity: 8, unitPrice: 12900000, amount: 103200000 },
+  { itemCode: "LT_HPPAV", itemName: "Máy tính xách tay HP Pavilion 14 i5", warehouse: "Kho 156", unit: "Cái", quantity: 15, unitPrice: 7800000, amount: 117000000 },
+  { itemCode: "MTB_IPAD10", itemName: "Máy tính bảng iPad Gen 10 64GB", warehouse: "Kho 156", unit: "Cái", quantity: 20, unitPrice: 5100000, amount: 102000000 },
+  { itemCode: "DH_AWSE", itemName: "Đồng hồ thông minh Apple Watch SE", warehouse: "Kho 156", unit: "Cái", quantity: 25, unitPrice: 3600000, amount: 90000000 },
+  { itemCode: "DH_SSGW6", itemName: "Đồng hồ thông minh Samsung Galaxy Watch 6", warehouse: "Kho 156", unit: "Cái", quantity: 18, unitPrice: 3120000, amount: 56160000 },
+  { itemCode: "TN_APSPRO2", itemName: "Tai nghe AirPods Pro 2", warehouse: "Kho 156", unit: "Bộ", quantity: 40, unitPrice: 2880000, amount: 115200000 },
+  { itemCode: "TN_SSGWEB", itemName: "Tai nghe Samsung Galaxy Buds FE", warehouse: "Kho 156", unit: "Bộ", quantity: 22, unitPrice: 1020000, amount: 22440000 },
+  { itemCode: "MCG_PS5", itemName: "Máy chơi game PlayStation 5 Slim", warehouse: "Kho 156", unit: "Cái", quantity: 10, unitPrice: 6300000, amount: 63000000 },
+  { itemCode: "LOA_JBL", itemName: "Loa Bluetooth JBL Flip 6", warehouse: "Kho 156", unit: "Cái", quantity: 40, unitPrice: 1380000, amount: 55200000 },
+  { itemCode: "SDP_ANKER", itemName: "Sạc dự phòng Anker PowerCore 20000mAh", warehouse: "Kho 156", unit: "Cái", quantity: 50, unitPrice: 210000, amount: 10500000 },
+  { itemCode: "MH_LGMQ2", itemName: "Màn hình máy tính LG 27-inch 4K", warehouse: "Kho 156", unit: "Cái", quantity: 15, unitPrice: 5700000, amount: 85500000 },
+  { itemCode: "VL_DCD", itemName: "Dây cáp điện", warehouse: "Kho 152", unit: "Cuộn", quantity: 20, unitPrice: 1500000, amount: 30000000 },
+  { itemCode: "VL_KDN", itemName: "Keo dán đa năng", warehouse: "Kho 152", unit: "Lọ", quantity: 50, unitPrice: 20000, amount: 1000000 },
+  { itemCode: "VL_VCN", itemName: "Vải lau công nghiệp", warehouse: "Kho 152", unit: "Kg", quantity: 100, unitPrice: 50000, amount: 5000000 },
+  { itemCode: "GXV-001", itemName: "Ghế xoay văn phòng", warehouse: "Kho 153", unit: "Cái", quantity: 5, unitPrice: 800000, amount: 4000000 },
+  { itemCode: "MHTL-001", itemName: "Máy hủy tài liệu", warehouse: "Kho 153", unit: "Cái", quantity: 2, unitPrice: 2500000, amount: 5000000 },
+  { itemCode: "BLV-001", itemName: "Bàn làm việc", warehouse: "Kho 153", unit: "Cái", quantity: 2, unitPrice: 2500000, amount: 5000000 },
 ];
 
 export type MisaOpeningBalanceWorkspaceProps = {
@@ -506,7 +549,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   // Real Opening Balances State for Company ABC (TT99)
   const [customerDebts, setCustomerDebts] = useState<any[]>(() => {
     try {
-      const saved = localStorage.getItem("abc_opening_customers_tt99");
+      const saved = localStorage.getItem("abc_opening_customers_tt99_v2");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_CUSTOMER_DEBTS;
@@ -514,7 +557,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   const [supplierDebts, setSupplierDebts] = useState<any[]>(() => {
     try {
-      const saved = localStorage.getItem("abc_opening_suppliers_tt99");
+      const saved = localStorage.getItem("abc_opening_suppliers_tt99_v2");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_SUPPLIER_DEBTS;
@@ -522,7 +565,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   const [accountRows, setAccountRows] = useState<any[]>(() => {
     try {
-      const saved = localStorage.getItem("abc_opening_accounts_tt99");
+      const saved = localStorage.getItem("abc_opening_accounts_tt99_v2");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_ACCOUNT_BALANCES;
@@ -530,7 +573,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   const [bankBalances, setBankBalances] = useState<any[]>(() => {
     try {
-      const saved = localStorage.getItem("abc_opening_bank_tt99");
+      const saved = localStorage.getItem("abc_opening_bank_tt99_v2");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_BANK_BALANCES;
@@ -538,16 +581,63 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   const [inventoryBalances, setInventoryBalances] = useState<any[]>(() => {
     try {
-      const saved = localStorage.getItem("abc_opening_inventory_tt99");
+      const saved = localStorage.getItem("abc_opening_inventory_tt99_v2");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_INVENTORY_BALANCES;
   });
 
   const [employeeDebts, setEmployeeDebts] = useState<any[]>([
-    { id: "emp-1", code: "NV001", name: "Nguyễn Văn Hùng", accCode: "141", debit: 0, credit: 0, reason: "Tạm ứng công tác kỹ thuật" },
-    { id: "emp-2", code: "NV004", name: "Phạm Quang Hòa", accCode: "141", debit: 5000000, credit: 0, reason: "Tạm ứng kỹ thuật Q4" },
+    { id: "emp-1", code: "HOANGBACUNG", name: "Hoàng Bá Cung", accCode: "141", debit: 12000000, credit: 0, reason: "Tạm ứng đầu kỳ Phòng Hành chính - Nhân sự" },
+    { id: "emp-2", code: "PHAMQUANGHOA", name: "Phạm Quang Hòa", accCode: "141", debit: 5000000, credit: 0, reason: "Tạm ứng công tác kỹ thuật (PC 181 ngày 09/12)" },
   ]);
+
+  const syncOpeningBalancesToBackend = (payload: Record<string, any>) => {
+    void request("/api/v1/general-ledger/opening-balances/", undefined, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    request<any>("/api/v1/general-ledger/opening-balances/")
+      .then((res) => {
+        if (!mounted || !res) return;
+        if (Array.isArray(res.accounts) && res.accounts.length > 0) {
+          setAccountRows(res.accounts);
+          try { localStorage.setItem("abc_opening_accounts_tt99_v2", JSON.stringify(res.accounts)); } catch {}
+        }
+        if (Array.isArray(res.bank) && res.bank.length > 0) {
+          setBankBalances(res.bank);
+        }
+        if (Array.isArray(res.customers) && res.customers.length > 0) {
+          setCustomerDebts(res.customers);
+        }
+        if (Array.isArray(res.suppliers) && res.suppliers.length > 0) {
+          setSupplierDebts(res.suppliers);
+        }
+        if (Array.isArray(res.employees) && res.employees.length > 0) {
+          setEmployeeDebts(res.employees);
+        }
+        if (Array.isArray(res.inventory) && res.inventory.length > 0) {
+          setInventoryBalances(res.inventory);
+        }
+        if (!res.customers || !res.suppliers || !res.bank || !res.inventory) {
+          syncOpeningBalancesToBackend({
+            bank: res.bank || DEFAULT_BANK_BALANCES,
+            customers: res.customers || DEFAULT_CUSTOMER_DEBTS,
+            suppliers: res.suppliers || DEFAULT_SUPPLIER_DEBTS,
+            employees: res.employees || employeeDebts,
+            inventory: res.inventory || DEFAULT_INVENTORY_BALANCES,
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -597,18 +687,28 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const handleDeleteCustomer = (id: string) => {
     const updated = customerDebts.filter((c) => c.id !== id);
     setCustomerDebts(updated);
-    try { localStorage.setItem("abc_opening_customers_tt99", JSON.stringify(updated)); } catch {}
-    notify?.("Đã xóa dòng công nợ khách hàng.");
+    try { localStorage.setItem("abc_opening_customers_tt99_v2", JSON.stringify(updated)); } catch {}
+    syncOpeningBalancesToBackend({ customers: updated });
+    notify?.("Đã xóa dòng công nợ khách hàng và cập nhật lên CSDL.");
   };
 
   const handleDeleteSupplier = (id: string) => {
     const updated = supplierDebts.filter((s) => s.id !== id);
     setSupplierDebts(updated);
-    try { localStorage.setItem("abc_opening_suppliers_tt99", JSON.stringify(updated)); } catch {}
-    notify?.("Đã xóa dòng công nợ nhà cung cấp.");
+    try { localStorage.setItem("abc_opening_suppliers_tt99_v2", JSON.stringify(updated)); } catch {}
+    syncOpeningBalancesToBackend({ suppliers: updated });
+    notify?.("Đã xóa dòng công nợ nhà cung cấp và cập nhật lên CSDL.");
   };
 
   const handleSaveModal = (type: string, andAdd = false) => {
+    if (type === "Số dư tài khoản") {
+      try { localStorage.setItem("abc_opening_accounts_tt99_v2", JSON.stringify(accountRows)); } catch {}
+      syncOpeningBalancesToBackend({ accounts: accountRows });
+      notify?.("Đã lưu và đồng bộ Số dư tài khoản đầu kỳ xuống Sổ Cái (PostgreSQL)!");
+      if (!andAdd) setActiveModal(null);
+      return;
+    }
+
     if (type === "Số dư TK ngân hàng") {
       if (!bankAccNumber) {
         notify?.("Vui lòng chọn tài khoản ngân hàng.");
@@ -618,14 +718,15 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       const newBank = {
         accountNumber: bankAccNumber,
         bankName: isUsd ? "Techcombank (USD)" : "Techcombank",
-        branch: "Chi nhánh Hoàn Kiếm",
+        branch: "Chi nhánh Hà Nội",
         currency: isUsd ? "USD" : "VND",
         originalAmount: bankDebit,
-        amountVnd: isUsd ? bankDebit * 25500 : bankDebit,
+        amountVnd: isUsd ? bankDebit * 25445 : bankDebit,
       };
       const updated = [newBank, ...bankBalances.filter(b => b.accountNumber !== bankAccNumber)];
       setBankBalances(updated);
-      try { localStorage.setItem("abc_opening_bank_tt99", JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem("abc_opening_bank_tt99_v2", JSON.stringify(updated)); } catch {}
+      syncOpeningBalancesToBackend({ bank: updated });
       notify?.(`Đã lưu thành công số dư tài khoản ngân hàng ${bankAccNumber}!`);
       if (!andAdd) setActiveModal(null);
       return;
@@ -651,7 +752,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       };
       const updated = [newCust, ...customerDebts];
       setCustomerDebts(updated);
-      try { localStorage.setItem("abc_opening_customers_tt99", JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem("abc_opening_customers_tt99_v2", JSON.stringify(updated)); } catch {}
+      syncOpeningBalancesToBackend({ customers: updated });
       notify?.(`Đã lưu thành công số dư công nợ khách hàng ${newCust.name}!`);
       setPartnerDebit(0);
       setPartnerCredit(0);
@@ -678,7 +780,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       };
       const updated = [newSupp, ...supplierDebts];
       setSupplierDebts(updated);
-      try { localStorage.setItem("abc_opening_suppliers_tt99", JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem("abc_opening_suppliers_tt99_v2", JSON.stringify(updated)); } catch {}
+      syncOpeningBalancesToBackend({ suppliers: updated });
       notify?.(`Đã lưu thành công số dư công nợ nhà cung cấp ${newSupp.name}!`);
       setSupplierDebit(0);
       setSupplierCredit(0);
@@ -689,22 +792,24 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     if (type === "Tồn kho vật tư") {
       const newInv = {
         itemCode: inventoryItem || "VT001",
-        itemName: inventoryItem === "DT_IP15" ? "Điện thoại iPhone 15 128GB" : inventoryItem === "DT_SS24" ? "Samsung Galaxy S24 Ultra" : inventoryItem === "MT_DELL" ? "Máy tính xách tay Dell XPS 13" : inventoryItem,
+        itemName: inventoryItem === "DT_IP15" ? "Điện thoại iPhone 15 Pro Max 256GB" : inventoryItem === "DT_SS24" ? "Điện thoại Samsung Galaxy S24 Ultra 256GB" : inventoryItem === "MT_DELL" ? "Máy tính xách tay Dell XPS 13" : inventoryItem,
         warehouse: inventoryWarehouse || "Kho 156",
-        unit: "Chiếc",
+        unit: "Cái",
         quantity: Number(inventoryQty) || 1,
         unitPrice: inventoryQty > 0 ? (inventoryVal / inventoryQty) : inventoryVal,
         amount: Number(inventoryVal) || 0,
       };
       const updated = [newInv, ...inventoryBalances];
       setInventoryBalances(updated);
-      try { localStorage.setItem("abc_opening_inventory_tt99", JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem("abc_opening_inventory_tt99_v2", JSON.stringify(updated)); } catch {}
+      syncOpeningBalancesToBackend({ inventory: updated });
       notify?.(`Đã lưu thành công tồn kho vật tư hàng hóa ${newInv.itemCode}!`);
       if (!andAdd) setActiveModal(null);
       return;
     }
 
-    notify?.(`Đã lưu thành công ${type}.`);
+    syncOpeningBalancesToBackend({ category: activeCategoryId || type, items: { savedAt: new Date().toISOString(), type } });
+    notify?.(`Đã lưu thành công ${type} vào CSDL.`);
     if (!andAdd) {
       setActiveModal(null);
     }

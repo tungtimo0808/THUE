@@ -1,5 +1,13 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 from .organization_assignment_views import OrganizationAssignmentViewSet
+from .platform_views import (
+    PlatformCompanyViewSet,
+    PlatformStatsView,
+    PlatformUserViewSet,
+    seed_standard_roles_view,
+    assign_member_role_view,
+)
 
 from .views import (
     CompanyMembershipViewSet,
@@ -27,6 +35,8 @@ from .views import (
 )
 
 router = DefaultRouter()
+router.register("platform/companies", PlatformCompanyViewSet, basename="platform-company")
+router.register("platform/users", PlatformUserViewSet, basename="platform-user")
 router.register("users", UserAccountViewSet, basename="iam-user")
 router.register("user-locks", UserLockRecordViewSet, basename="user-lock")
 router.register("membership-terminations", MembershipTerminationRecordViewSet, basename="membership-termination")
@@ -51,4 +61,9 @@ router.register("role-assignments", UserRoleAssignmentViewSet, basename="role-as
 router.register("permission-overrides", UserPermissionOverrideViewSet, basename="permission-override")
 router.register("effective-permissions", EffectivePermissionViewSet, basename="effective-permission")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("platform/stats/", PlatformStatsView.as_view(), name="platform-stats"),
+    path("roles/seed-standard/", seed_standard_roles_view, name="seed-standard-roles"),
+    path("members/assign-role/", assign_member_role_view, name="assign-member-role"),
+] + router.urls
+

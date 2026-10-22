@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import {
   HelpCircle,
   X,
@@ -371,6 +373,11 @@ export default function MisaBudgetWorkspace({
   const [selectedUnit, setSelectedUnit] = useState<string>("Tung");
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [lastUpdated, setLastUpdated] = useState<string>("11:05");
+  const { token } = useApiSession();
+  useEffect(() => {
+    if (!token || !company?.id) return;
+    void request<any>(`/api/v1/general-ledger/budgets/?company_id=${encodeURIComponent(company.id)}`, token).catch(() => {});
+  }, [token, company?.id]);
 
   // Tab 2 Planning View State
   const [planningViewMode, setPlanningViewMode] = useState<"landing" | "list" | "editor">("landing");

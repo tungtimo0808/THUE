@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { apiClient } from "./apiClient";
 import {
   ChevronLeft,
   ChevronDown,
@@ -346,9 +347,35 @@ export default function MisaInterimBusinessResultReport({
     };
   };
 
+  const [rowsData, setRowsData] = useState<InterimIncomeItem[]>(FULL_B02A_DATA);
+
+  useEffect(() => {
+    apiClient
+      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
+      .then((res) => {
+        if (res?.b02_dn) {
+          setRowsData(
+            FULL_B02A_DATA.map((r) => {
+              const m = res.b02_dn[r.code];
+              return m
+                ? {
+                    ...r,
+                    quarterCurrent: Number(m.current || 0),
+                    quarterPrevious: Number(m.previous || 0),
+                    accumCurrent: Number(m.current || 0),
+                    accumPrevious: Number(m.previous || 0),
+                  }
+                : r;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+  }, [year, period, fromDate, toDate]);
+
   // Filter rows for B02a-DN
   const filteredB02aRows = useMemo(() => {
-    return FULL_B02A_DATA.filter((row) => {
+    return rowsData.filter((row) => {
       if (hideZero) {
         if (!row.quarterCurrent && !row.accumCurrent) {
           return false;
@@ -364,7 +391,7 @@ export default function MisaInterimBusinessResultReport({
       }
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [rowsData, hideZero, searchKeyword]);
 
   return (
     <div

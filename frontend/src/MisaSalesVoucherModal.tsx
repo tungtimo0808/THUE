@@ -456,7 +456,7 @@ export function SaleVoucherModal({
   };
 
   const handleAIAssistProfile = () => {
-    notify("Sổ Việt AI: Đã kiểm tra hồ sơ, áp dụng chính sách giảm thuế và định khoản chuẩn theo Thông tư 200/133!");
+    notify("Sổ Việt AI: Đã kiểm tra hồ sơ, áp dụng chính sách giảm thuế và định khoản chuẩn theo Thông tư 99/2025/TT-BTC!");
   };
 
   const handleSave = async (andPrint = false) => {

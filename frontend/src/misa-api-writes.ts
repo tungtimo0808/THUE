@@ -849,9 +849,10 @@ export async function saveProductionOrder(w: ApiWriter, d: Row) {
 const FIXED_ASSETS = "/api/v1/fixed-assets/";
 
 async function assetCategory(w: ApiWriter, name: unknown, accounts: { cost: unknown; depreciation: unknown; expense: unknown }) {
-  const wanted = String(name || "").trim() || "Tài sản cố định khác";
+  const wanted = String(name || "").trim();
+  if (!wanted) throw new FormDataError("Vui lòng chọn loại tài sản hợp lệ.");
   const rows = await w.list("assetCategories");
-  const found = rows.find((row) => [row.code, row.name].some((value) => String(value).toLowerCase() === wanted.toLowerCase()));
+  const found = rows.find((row) => [row.id, row.code, row.name].some((value) => String(value || "").toLowerCase() === wanted.toLowerCase()));
   if (found) return found;
   return w.post(`${FIXED_ASSETS}categories/`, {
     code: unitCode(wanted).slice(0, 20), name: wanted, asset_type: "FIXED_ASSET", default_method: "STRAIGHT_LINE",
@@ -861,42 +862,336 @@ async function assetCategory(w: ApiWriter, name: unknown, accounts: { cost: unkn
   });
 }
 
-/** "Ghi tăng TSCĐ" (acquire = true) and "Khai báo TSCĐ đầu kỳ" (acquire = false). */
-export async function saveFixedAsset(w: ApiWriter, d: Row, acquire: boolean) {
-  if (!String(d.name || "").trim()) throw new FormDataError("Vui lòng nhập Tên tài sản cố định!");
-  const cost = num(d.originalCost);
-  if (cost <= 0) throw new FormDataError("Nguyên giá phải lớn hơn 0.");
-  const category = await assetCategory(w, d.category, { cost: d.costAccount, depreciation: d.deprAccount, expense: d.expenseAccount });
-  const date = toApiDate(d.startDate);
-  const assets = await w.list("assets");
-  const code = String(d.code || "").trim() || `TSCD${String(assets.length + 1).padStart(5, "0")}`;
-  if (assets.some((row) => row.code === code)) throw new FormDataError(`Mã tài sản ${code} đã tồn tại.`);
-  const asset = await w.post(`${FIXED_ASSETS}assets/`, {
-    code, name: String(d.name).trim(), asset_type: "FIXED_ASSET", category: category.id, branch: (await w.branch()).id,
-    acquisition_date: date, in_service_date: date, original_cost: String(cost), method: "STRAIGHT_LINE",
-    useful_life_periods: Math.round((num(d.years) || 5) * 12), source_module: acquire ? "FA" : "OPENING",
+async function resolveOrEnsureDepartment(w: ApiWriter, deptInput: unknown) {
+  const wanted = String(deptInput || "").trim();
+  if (!wanted) throw new FormDataError("Vui lòng chọn đơn vị sử dụng hợp lệ.");
+  const depts = await w.list("/api/v1/organization/departments/");
+  const found = depts.find((row) => [row.id, row.code, row.name].some((val) => String(val || "").toLowerCase() === wanted.toLowerCase()));
+  if (found) return found;
+  const branch = await w.branch();
+  const baseCode = unitCode(wanted).slice(0, 20) || "PB";
+  const code = depts.some((row) => String(row.code).toUpperCase() === baseCode) ? `${baseCode}${depts.length + 1}` : baseCode;
+  const created = await w.post("/api/v1/organization/departments/", {
+    branch: branch.id, code, name: wanted, status: "ACTIVE",
   });
-  if (!acquire) {
-    const note = num(d.depreciatedAmount) > 0 ? " Hao mòn lũy kế đầu kỳ cần nhập qua số dư đầu kỳ tài khoản 214." : "";
-    return { record: asset, message: `Đã khai báo TSCĐ ${code} - ${asset.name}.${note}` };
-  }
-  const result = await createAndPost(w, `${FIXED_ASSETS}transactions/`, {
-    number: await nextVoucherNumber(w, `${FIXED_ASSETS}transactions/`, "GTTS", d.voucherNo),
-    transaction_type: "ACQUISITION", transaction_date: date, asset: asset.id, amount: String(cost),
-    reason: `Ghi tăng ${code} - ${asset.name}`,
-  });
-  return { ...result, message: describeResult(`chứng từ ghi tăng ${code}`, result) };
+  w.invalidate();
+  return created;
 }
 
-/** Store a CCDC record and its acquisition transaction using the existing fixed-assets API. */
+/** AF04: "Thêm loại tài sản" từ nút (+) trên form Ghi tăng TSCĐ. */
+export async function saveFixedAssetCategory(w: ApiWriter, d: Row) {
+  const code = String(d.code || "").trim();
+  const name = String(d.name || "").trim();
+  if (!code || !name) throw new FormDataError("Vui lòng nhập mã và tên loại tài sản.");
+  const assetAcc = d.assetAccount ? (await w.account(d.assetAccount, "TK nguyên giá")).id : null;
+  const deprAcc = d.deprAccount ? (await w.account(d.deprAccount, "TK khấu hao")).id : null;
+  const expAcc = d.expenseAccount ? (await w.account(d.expenseAccount, "TK chi phí")).id : null;
+  const record = await w.post(`${FIXED_ASSETS}categories/`, {
+    code,
+    name,
+    asset_type: "FIXED_ASSET",
+    default_method: String(d.defaultMethod || "STRAIGHT_LINE"),
+    default_periods: Math.max(1, Math.round(num(d.defaultPeriods) || 60)),
+    asset_account: assetAcc,
+    accumulated_account: deprAcc,
+    expense_account: expAcc,
+    is_active: true,
+  });
+  w.invalidate();
+  return { record, message: `Đã thêm loại tài sản ${record.code} - ${record.name}.` };
+}
+
+/** UC-FA-01: "Ghi tăng TSCĐ" (acquire = true) and AF18 "Khai báo TSCĐ đầu kỳ" (acquire = false). */
+export async function saveFixedAsset(w: ApiWriter, d: Row, acquire: boolean) {
+  const voucherNo = String(d.voucherNo || "").trim();
+  if (!voucherNo) throw new FormDataError("Vui lòng nhập số chứng từ ghi tăng.");
+  const acqDateRaw = String(d.voucherDate || d.startDate || "").trim();
+  if (!acqDateRaw) throw new FormDataError("Vui lòng nhập Ngày ghi tăng hợp lệ theo định dạng DD/MM/YYYY.");
+  const code = String(d.code || "").trim();
+  if (!code) throw new FormDataError("Vui lòng nhập mã tài sản.");
+  const name = String(d.name || "").trim();
+  if (!name) throw new FormDataError("Vui lòng nhập tên tài sản cố định.");
+  const cost = num(d.originalCost);
+  if (cost <= 0) throw new FormDataError("Nguyên giá tài sản phải lớn hơn 0 và có căn cứ hợp lệ.");
+
+  const noDepr = Boolean(d.noDepr);
+  const firstAllocAcc = Array.isArray(d.allocations) && d.allocations[0]?.expenseAccount ? d.allocations[0].expenseAccount : d.expenseAccount;
+  const category = await assetCategory(w, d.category, {
+    cost: d.costAccount || "211",
+    depreciation: d.deprAccount || "214",
+    expense: firstAllocAcc || "642",
+  });
+  const department = await resolveOrEnsureDepartment(w, d.dept);
+  const branch = await w.branch();
+
+  const rawAllocations = Array.isArray(d.allocations) ? d.allocations : [];
+  const allocations = [];
+  if (!noDepr) {
+    for (const row of rawAllocations) {
+      const rowDept = await resolveOrEnsureDepartment(w, row.dept || d.dept);
+      const expAcc = await w.account(row.expenseAccount, "TK chi phí");
+      allocations.push({
+        department_id: rowDept.id,
+        department_name: rowDept.name,
+        rate: String(num(row.rate)),
+        expense_account: expAcc.code,
+        expense_item: String(row.expenseItem || "").trim(),
+        cost_center: String(row.costCenter || "").trim(),
+      });
+    }
+  }
+
+  const origins = (Array.isArray(d.origins) ? d.origins : [])
+    .filter((row: Row) => String(row.documentNumber || "").trim() || num(row.amount) > 0)
+    .map((row: Row) => ({
+      origin_type: String(row.originType || "Mua sắm mới trong nước").trim(),
+      document_number: String(row.documentNumber || "").trim(),
+      document_date: String(row.documentDate || acqDateRaw).trim(),
+      amount: String(num(row.amount)),
+      partner_code: String(row.partnerCode || "").trim(),
+      partner_name: String(row.partnerName || "").trim(),
+      source_document_id: String(row.sourceDocumentId || "").trim(),
+      allow_multiple_assets: Boolean(row.allowMultipleAssets),
+    }));
+
+  const components = (Array.isArray(d.components) ? d.components : [])
+    .filter((row: Row) => String(row.name || "").trim())
+    .map((row: Row) => ({
+      name: String(row.name).trim(),
+      unit: String(row.unit || "").trim(),
+      quantity: String(num(row.quantity) || 1),
+      value: String(num(row.value) || 0),
+    }));
+
+  const accessories = (Array.isArray(d.accessories) ? d.accessories : [])
+    .filter((row: Row) => String(row.name || "").trim())
+    .map((row: Row) => ({
+      name: String(row.name).trim(),
+      unit: String(row.unit || "").trim(),
+      quantity: String(num(row.quantity) || 1),
+      value: String(num(row.value) || 0),
+    }));
+
+  const assetAccObj = await w.account(d.costAccount, "TK nguyên giá");
+  const deprAccObj = !noDepr ? await w.account(d.deprAccount, "TK khấu hao") : null;
+
+  const payload: Row = {
+    voucher_no: voucherNo,
+    acquisition_date: acqDateRaw,
+    category: category.id,
+    code,
+    department: department.id,
+    branch: branch.id,
+    name,
+    no_depreciation: noDepr,
+    asset_account: assetAccObj.code,
+    accumulated_account: deprAccObj ? deprAccObj.code : "",
+    original_cost: String(cost),
+    depreciable_amount: String(noDepr ? 0 : num(d.deprCostValue || cost)),
+    accumulated_depreciation: String(num(d.depreciatedAmount || 0)),
+    useful_life_value: String(noDepr ? 0 : num(d.useDuration ?? d.years)),
+    useful_life_unit: /tháng|month/i.test(String(d.useDurationUnit || "")) ? "MONTH" : "YEAR",
+    in_service_date: String(d.deprStartDate || d.startDate || acqDateRaw).trim(),
+    monthly_depreciation_rate: d.rateMonth !== undefined ? String(num(d.rateMonth)) : undefined,
+    annual_depreciation_rate: d.rateYear !== undefined ? String(num(d.rateYear)) : undefined,
+    monthly_depreciation_amount: d.deprMonthValue !== undefined ? String(num(d.deprMonthValue)) : undefined,
+    annual_depreciation_amount: d.deprYearValue !== undefined ? String(num(d.deprYearValue)) : undefined,
+    cit_cap_enabled: Boolean(d.limitTaxLaw),
+    cit_depreciable_cap: String(num(d.taxLawValue || 0)),
+    cit_monthly_cap: String(num(d.taxLawMonthValue || 0)),
+    allocations,
+    origins,
+    origin_variance_reason: String(d.originVarianceReason || "").trim(),
+    components,
+    accessories,
+    country_of_origin: String(d.countryOfOrigin || "").trim(),
+    manufacture_year: d.manufactureYear ? Number(d.manufactureYear) : null,
+    source_module: acquire ? "FA" : "OPENING",
+    allow_prior_depreciation: !acquire || Boolean(d.allowPriorDepreciation),
+  };
+
+  const result = await w.post(`${FIXED_ASSETS}assets/acquire/`, payload);
+  w.invalidate();
+  return {
+    record: result.asset,
+    transaction: result.transaction,
+    message: acquire
+      ? (result.message || "Ghi tăng tài sản cố định thành công.")
+      : `Đã khai báo TSCĐ đầu kỳ ${code} - ${name} thành công.`,
+  };
+}
+
+/** UC-FA-02: "Cập nhật thông tin tài sản" (không tạo tài sản/chứng từ mới, giữ nguyên số liệu kế toán). */
+export async function updateFixedAssetInfo(w: ApiWriter, d: Row) {
+  let assetId = String(d.id || "").trim();
+  if (!assetId) {
+    const code = String(d.code || "").trim();
+    const assets = await w.list("assets");
+    const found = assets.find((row) => String(row.code || "") === code);
+    if (!found) throw new FormDataError("Không tìm thấy thông tin tài sản cố định.");
+    assetId = String(found.id);
+  }
+
+  const components = Array.isArray(d.components)
+    ? d.components
+        .filter((row: Row) => String(row.name || "").trim())
+        .map((row: Row) => ({
+          name: String(row.name).trim(),
+          unit: String(row.unit || "").trim(),
+          quantity: String(num(row.quantity) || 1),
+          value: String(num(row.value) || 0),
+        }))
+    : undefined;
+
+  const accessories = Array.isArray(d.accessories)
+    ? d.accessories
+        .filter((row: Row) => String(row.name || "").trim())
+        .map((row: Row) => ({
+          name: String(row.name).trim(),
+          unit: String(row.unit || "").trim(),
+          quantity: String(num(row.quantity) || 1),
+          value: String(num(row.value) || 0),
+        }))
+    : undefined;
+
+  const origins = Array.isArray(d.origins)
+    ? d.origins
+        .filter((row: Row) => String(row.documentNo || row.documentNumber || row.document_number || "").trim() || num(row.amount) > 0)
+        .map((row: Row) => ({
+          origin_type: String(row.sourceType || row.originType || row.origin_type || "Mua sắm mới trong nước").trim(),
+          document_number: String(row.documentNo || row.documentNumber || row.document_number || "").trim(),
+          document_date: String(row.documentDate || row.document_date || "").trim(),
+          amount: String(num(row.amount)),
+          partner_name: String(row.supplier || row.partnerName || row.partner_name || "").trim(),
+        }))
+    : undefined;
+
+  const payload: Row = {
+    name: d.name !== undefined ? String(d.name) : undefined,
+    country_of_origin: d.countryOfOrigin !== undefined ? String(d.countryOfOrigin) : undefined,
+    manufacture_year: d.manufactureYear !== undefined && String(d.manufactureYear).trim() !== "" ? d.manufactureYear : null,
+    serial_number: d.serialNumber !== undefined ? String(d.serialNumber) : undefined,
+    description: d.description !== undefined ? String(d.description) : undefined,
+    ...(components !== undefined ? { components } : {}),
+    ...(accessories !== undefined ? { accessories } : {}),
+    ...(origins !== undefined ? { origins } : {}),
+    update_reason: String(d.updateReason || "").trim(),
+    ...(d.version !== undefined ? { version: d.version } : {}),
+    ...(d.expectedStatus ? { expected_status: d.expectedStatus } : {}),
+  };
+
+  const result = await w.action(`${FIXED_ASSETS}assets/`, assetId, "update-info", payload);
+  w.invalidate();
+  return {
+    record: result.asset,
+    changes: result.changes,
+    noChanges: Boolean(result.no_changes),
+    message: result.message || "Cập nhật thông tin tài sản thành công.",
+  };
+}
+
+/** UC-FA-02: Lấy chi tiết tài sản + lịch sử giao dịch + Audit Log thay đổi thông tin. */
+export async function fetchFixedAssetHistory(w: ApiWriter, assetId: string) {
+  return await w.get(`${FIXED_ASSETS}assets/${encodeURIComponent(assetId)}/history/`);
+}
+
+/** UC-FA-02: Đối chiếu hạch toán TSCĐ với chứng từ nguồn và Sổ cái. */
+export async function reconcileFixedAssetAccounting(w: ApiWriter, assetIdOrCode: string) {
+  let assetId = String(assetIdOrCode || "").trim();
+  if (!assetId) throw new FormDataError("Không tìm thấy mã tài sản để đối chiếu.");
+  if (!assetId.includes("-")) {
+    const assets = await w.list("assets");
+    const found = assets.find((row) => String(row.code || "") === assetId);
+    if (!found) throw new FormDataError(`Không tìm thấy hồ sơ TSCĐ ${assetId} trên hệ thống.`);
+    assetId = String(found.id);
+  }
+  const resp = await w.action(`${FIXED_ASSETS}assets/`, assetId, "reconcile", {});
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã đối chiếu dữ liệu hạch toán TSCĐ với Sổ cái."),
+  };
+}
+
+/** UC-FA-10: Lấy danh sách chứng từ nguồn đủ điều kiện ghi tăng CCDC (Xuất kho/Mua hàng & Ghi giảm TSCĐ chuyển sang CCDC). */
+export async function fetchToolSourceVouchers(w: ApiWriter, sourceType?: string) {
+  const qs = sourceType ? `&source_type=${encodeURIComponent(sourceType)}` : "";
+  return await w.get(`${FIXED_ASSETS}assets/tool-source-vouchers/?_=${Date.now()}${qs}`);
+}
+
+/** UC-FA-10 (Main Flow A): Ghi tăng một CCDC qua endpoint /api/v1/fixed-assets/assets/acquire-tool/ (với fallback tương thích). */
 export async function saveToolAsset(w: ApiWriter, d: Row) {
   const code = String(d.code || "").trim();
   const name = String(d.name || "").trim();
   const cost = num(d.originalCost);
   const quantity = num(d.quantity) || 1;
   const periods = Math.round(num(d.allocationMonths) || 1);
-  if (!code || !name) throw new FormDataError("Nhập mã và tên công cụ dụng cụ.");
-  if (!(cost > 0) || !(quantity > 0) || !(periods > 0)) throw new FormDataError("Nguyên giá, số lượng và số kỳ phân bổ phải lớn hơn 0.");
+  const unitPrice = d.unitPrice !== undefined ? num(d.unitPrice) : (quantity > 0 ? cost / quantity : cost);
+  const allowZeroCost = Boolean(d.allowZeroCost) || String(d.sourceType || "").includes("TSCĐ") || String(d.sourceType || "") === "FA_DISPOSAL";
+
+  if (!code) throw new FormDataError("Mã CCDC không hợp lệ hoặc đã tồn tại.");
+  if (!name) throw new FormDataError("Vui lòng nhập tên công cụ dụng cụ.");
+  if (!(quantity > 0)) throw new FormDataError("Số lượng ghi tăng phải lớn hơn 0.");
+  if ((!allowZeroCost && !(cost > 0)) || cost < 0) {
+    throw new FormDataError("Đơn giá hoặc thành tiền CCDC không hợp lệ. Vui lòng kiểm tra lại.");
+  }
+  if (!(periods > 0)) throw new FormDataError("Số kỳ phân bổ phải là số nguyên lớn hơn 0.");
+
+  // If UC-FA-10 structured departmentAllocations or allocations are provided, use the dedicated UC-FA-10 endpoint
+  const deptRows = Array.isArray(d.departmentAllocations)
+    ? d.departmentAllocations.filter((r: Row) => String(r.code || r.department_code || r.name || r.department_name || "").trim())
+    : [];
+  const allocRows = Array.isArray(d.allocations)
+    ? d.allocations.filter((r: Row) => String(r.targetCode || r.target_code || r.targetName || r.target_name || r.costAccount || r.expense_account || "").trim())
+    : [];
+
+  if (deptRows.length > 0 || allocRows.length > 0 || d.useUc10Endpoint) {
+    const resp = await w.post(`${FIXED_ASSETS}assets/acquire-tool/`, {
+      voucher_no: String(d.voucherNo || "").trim() || undefined,
+      acquisition_date: String(d.startDate || d.acquisitionDate || "").trim(),
+      start_allocation_date: String(d.startAllocationDate || d.startDate || "").trim() || undefined,
+      code,
+      name,
+      category_name: String(d.category || "Công cụ dụng cụ").trim(),
+      group_name: String(d.group || d.category || "Công cụ dụng cụ").trim(),
+      reason: String(d.reason || `Ghi tăng CCDC ${code}`),
+      unit: String(d.unit || "Cái").trim(),
+      quantity: String(quantity),
+      unit_price: String(unitPrice),
+      original_cost: String(cost),
+      useful_life_periods: periods,
+      periodic_allocation_amount: d.periodicAllocationAmount !== undefined ? String(num(d.periodicAllocationAmount)) : undefined,
+      waiting_account: String(d.waitingAccount || "242").trim(),
+      suspend_allocation: Boolean(d.stopAllocation ?? d.suspendAllocation ?? false),
+      suspend_reason: String(d.suspendReason || "Tạm dừng phân bổ theo thiết lập ban đầu"),
+      source_type: String(d.sourceType || "STOCK_ISSUE"),
+      source_voucher_no: String(d.sourceVoucherNo || ""),
+      source_voucher_date: String(d.sourceVoucherDate || d.startDate || ""),
+      source_gl_posted: d.sourceGlPosted !== undefined ? Boolean(d.sourceGlPosted) : true,
+      credit_account: String(d.creditAccount || "153"),
+      detailed_description: String(d.detailedDescription || d.reason || ""),
+      technical_specs: d.technicalSpecs || {},
+      origins: Array.isArray(d.origins) ? d.origins : undefined,
+      department_allocations: deptRows.map((r: Row) => ({
+        code: String(r.code || r.department_code || "").trim(),
+        name: String(r.name || r.department_name || "").trim(),
+        quantity: String(num(r.qty ?? r.quantity)),
+      })),
+      allocations: allocRows.map((r: Row) => ({
+        target_code: String(r.targetCode || r.target_code || "").trim(),
+        target_name: String(r.targetName || r.target_name || "").trim(),
+        rate: String(num(r.rate)),
+        expense_account: String(r.costAccount || r.expense_account || "6422").trim(),
+        cost_item: String(r.costItem || r.cost_item || "").trim(),
+        stats_code: String(r.statCode || r.stats_code || "").trim(),
+      })),
+    });
+    return {
+      record: resp.asset || resp,
+      transaction: resp.transaction,
+      message: resp.message || "Đã ghi tăng công cụ dụng cụ thành công.",
+    };
+  }
+
   if ((await w.list("assets")).some((row) => row.code === code)) throw new FormDataError(`Mã CCDC ${code} đã tồn tại.`);
   const categories = await w.list("assetCategories");
   const categoryName = String(d.category || "Công cụ dụng cụ").trim();
@@ -929,8 +1224,143 @@ export async function saveToolAsset(w: ApiWriter, d: Row) {
   return { record: result.record, message: `Đã lưu CCDC ${code}. ${describeResult("chứng từ ghi tăng", result)}` };
 }
 
+/** UC-FA-10 (AF01): Ghi tăng CCDC hàng loạt qua endpoint /api/v1/fixed-assets/assets/acquire-tools-batch/. */
+export async function saveToolAssetBatch(w: ApiWriter, d: Row) {
+  const items = Array.isArray(d.items) ? d.items : [];
+  if (!items.length) {
+    throw new FormDataError("Vui lòng nhập đầy đủ thông tin cho các dòng CCDC ghi tăng.");
+  }
+  const resp = await w.post(`${FIXED_ASSETS}assets/acquire-tools-batch/`, {
+    source_type: String(d.sourceType || "STOCK_ISSUE"),
+    items: items.map((item: Row) => ({
+      code: String(item.code || "").trim(),
+      name: String(item.name || "").trim(),
+      category_name: String(item.category || item.group || "Công cụ dụng cụ").trim(),
+      group_name: String(item.group || item.category || "Công cụ dụng cụ").trim(),
+      reason: String(item.reason || "").trim(),
+      unit: String(item.unit || "Cái").trim(),
+      quantity: String(num(item.qty ?? item.quantity) || 1),
+      unit_price: String(num(item.price ?? item.unitPrice)),
+      original_cost: String(num(item.amount ?? item.originalCost) || (num(item.price) * num(item.qty))),
+      acquisition_date: String(item.date || item.acquisitionDate || "").trim(),
+      voucher_no: String(item.voucherNo || "").trim(),
+      useful_life_periods: Math.round(num(item.allocMonths ?? item.usefulLifePeriods) || 12),
+      waiting_account: String(item.waitingAccount || "242").trim(),
+      department_allocations: Array.isArray(item.departmentAllocations)
+        ? item.departmentAllocations.map((r: Row) => ({
+            code: String(r.code || "").trim(),
+            name: String(r.name || "").trim(),
+            quantity: String(num(r.qty ?? r.quantity)),
+          }))
+        : [],
+      allocations: Array.isArray(item.allocations)
+        ? item.allocations.map((r: Row) => ({
+            target_code: String(r.targetCode || r.target_code || "").trim(),
+            target_name: String(r.targetName || r.target_name || "").trim(),
+            rate: String(num(r.rate)),
+            expense_account: String(r.costAccount || r.expense_account || "6422").trim(),
+            cost_item: String(r.costItem || r.cost_item || "").trim(),
+            stats_code: String(r.statCode || r.stats_code || "").trim(),
+          }))
+        : [],
+    })),
+  });
+  return {
+    record: resp,
+    message: resp.message || `Đã ghi tăng hàng loạt thành công ${resp.count || items.length} CCDC.`,
+  };
+}
+
+/** UC-FA-03: Preview depreciation calculation for a given month/year. */
+export async function previewDepreciationPeriod(w: ApiWriter, d: Row) {
+  const year = Number(d.year);
+  const month = Number(d.month);
+  if (!year || !month || month < 1 || month > 12) {
+    throw new FormDataError("Kỳ tính khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+  }
+  const resp = await w.post(`${FIXED_ASSETS}calculations/preview/`, {
+    month,
+    year,
+    prorate_by_days: Boolean(d.prorateByDays ?? d.prorate_by_days ?? false),
+  });
+  return { record: resp, message: `Đã tải dữ liệu tính khấu hao kỳ ${String(month).padStart(2, "0")}/${year}.` };
+}
+
+/** UC-FA-03: Save & optionally post a Fixed Asset Depreciation Calculation Voucher. */
+export async function saveDepreciationVoucher(w: ApiWriter, d: Row) {
+  const year = Number(d.year);
+  const month = Number(d.month);
+  if (!year || !month || month < 1 || month > 12) {
+    throw new FormDataError("Kỳ tính khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+  }
+  const voucherNo = String(d.voucherNo || d.voucher_no || "").trim();
+  if (!voucherNo) {
+    throw new FormDataError("Vui lòng nhập số chứng từ tính khấu hao.");
+  }
+  const resp = await w.post(`${FIXED_ASSETS}calculations/save-voucher/`, {
+    month,
+    year,
+    voucher_no: voucherNo,
+    voucher_date: d.voucherDate ? isoDate(d.voucherDate) : undefined,
+    posting_date: d.postingDate ? isoDate(d.postingDate) : undefined,
+    description: d.reason || d.description || `Khấu hao TSCĐ tháng ${String(month).padStart(2, "0")} năm ${year}`,
+    reference: d.reference || "",
+    prorate_by_days: Boolean(d.prorateByDays ?? d.prorate_by_days ?? false),
+    post_now: d.postNow !== undefined ? Boolean(d.postNow) : true,
+    recalculate: Boolean(d.recalculate ?? false),
+    idempotency_key: d.idempotencyKey || undefined,
+    lines: Array.isArray(d.lines) ? d.lines : undefined,
+    allocations: Array.isArray(d.allocations) ? d.allocations : undefined,
+    accounting_entries: Array.isArray(d.accountingEntries) ? d.accountingEntries : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : undefined,
+  });
+  return {
+    record: resp.run || resp,
+    message: resp.message || `Đã lưu chứng từ tính khấu hao ${voucherNo} thành công!`,
+  };
+}
+
+/** UC-FA-04: Post (Ghi sổ) an unposted (CALCULATED) depreciation voucher. */
+export async function postDepreciationVoucher(w: ApiWriter, id: string, payload: Row = {}) {
+  const resp = await w.action(`${FIXED_ASSETS}calculations/`, id, "post", payload);
+  return {
+    record: resp,
+    message: resp.message || "Ghi sổ chứng từ khấu hao thành công.",
+  };
+}
+
+/** UC-FA-03 AF14: Unpost (Bỏ ghi sổ) a posted depreciation voucher. */
+export async function unpostDepreciationVoucher(w: ApiWriter, id: string, reason = "Bỏ ghi sổ chứng từ tính khấu hao") {
+  const resp = await w.action(`${FIXED_ASSETS}calculations/`, id, "unpost", { reason });
+  return {
+    record: resp,
+    message: resp.message || `Đã bỏ ghi sổ chứng từ tính khấu hao ${resp.number || ""}.`,
+  };
+}
+
+/** UC-FA-03 Section 5: Cancel an unposted depreciation voucher. */
+export async function cancelDepreciationVoucher(w: ApiWriter, id: string, reason = "Hủy chứng từ tính khấu hao") {
+  const resp = await w.action(`${FIXED_ASSETS}calculations/`, id, "cancel", { reason });
+  return {
+    record: resp,
+    message: resp.message || `Đã hủy chứng từ tính khấu hao ${resp.number || ""}.`,
+  };
+}
+
+/** UC-FA-03 / UC-FA-04: Xuất khẩu bảng phân bổ chi phí khấu hao TSCĐ. */
+export async function exportDepreciationAllocation(w: ApiWriter, id: string) {
+  const resp = await w.get(`${FIXED_ASSETS}calculations/${encodeURIComponent(id)}/export-allocation/?_=${Date.now()}`);
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã xuất bảng phân bổ khấu hao TSCĐ."),
+  };
+}
+
 /** "Tính khấu hao TSCĐ" for a month: opens the FA period if needed, calculates, then posts. */
 export async function saveDepreciation(w: ApiWriter, d: Row, calculationType: "DEPRECIATION" | "ALLOCATION" = "DEPRECIATION") {
+  if (calculationType === "DEPRECIATION") {
+    return saveDepreciationVoucher(w, d);
+  }
   const year = Number(d.year);
   const month = Number(d.month);
   if (!year || !month) throw new FormDataError("Chọn kỳ tính khấu hao.");
@@ -943,20 +1373,201 @@ export async function saveDepreciation(w: ApiWriter, d: Row, calculationType: "D
   }
   const path = `${FIXED_ASSETS}calculations/`;
   let record = await w.post(path, {
-    number: await nextVoucherNumber(w, path, calculationType === "ALLOCATION" ? "PBCC" : "KH", d.voucherNo), calculation_type: calculationType,
+    number: await nextVoucherNumber(w, path, "PBCC", d.voucherNo), calculation_type: calculationType,
     period_code: code, period_start: start, period_end: end,
   });
   record = await w.action(path, record.id, "calculate", { version: record.version });
   try {
     record = await w.action(path, record.id, "post", { version: record.version });
   } catch (error) {
-    return { record, message: `Đã tính ${calculationType === "ALLOCATION" ? "phân bổ CCDC" : "khấu hao"} kỳ ${code} (${record.number}), chưa ghi sổ: ${errorText(error)}` };
+    return { record, message: `Đã tính phân bổ CCDC kỳ ${code} (${record.number}), chưa ghi sổ: ${errorText(error)}` };
   }
-  return { record, message: `Đã tính và ghi sổ ${calculationType === "ALLOCATION" ? "phân bổ CCDC" : "khấu hao"} kỳ ${code} (${record.number}).` };
+  return { record, message: `Đã tính và ghi sổ phân bổ CCDC kỳ ${code} (${record.number}).` };
+}
+
+/** UC-FA-05: Điều chuyển tài sản cố định nội bộ (1..N tài sản, đầy đủ thông tin bàn giao & tập hợp chi phí). */
+export async function saveFixedAssetTransfer(w: ApiWriter, d: Row) {
+  const rows = (d.rows || d.lines || []).filter((row: Row) => String(row.assetCode || row.asset_code || row.asset_id || "").trim());
+  if (!rows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần điều chuyển.");
+  }
+  const assets = await w.list("assets");
+  const departments = await w.list("/api/v1/organization/departments/");
+  const lines = rows.map((row: Row) => {
+    const codeStr = String(row.assetCode || row.asset_code || "").trim();
+    const asset = assets.find((item) => item.code === codeStr || String(item.id) === String(row.asset_id || ""));
+    const toDeptStr = String(row.toDept || row.to_department || "").trim();
+    const targetDept = departments.find((dept) => [dept.code, dept.name, String(dept.id)].includes(toDeptStr));
+    return {
+      asset_id: asset?.id || row.asset_id || "",
+      asset_code: codeStr,
+      from_department: String(row.fromDept || row.from_department || ""),
+      to_department: targetDept ? targetDept.id : toDeptStr,
+      sales_contract: String(row.contract || row.sales_contract || "").trim(),
+      sales_order: String(row.order || row.sales_order || "").trim(),
+      project: String(row.project || "").trim(),
+      expense_item: String(row.costItem || row.expense_item || "").trim(),
+      cost_object: String(row.costObj || row.cost_object || "").trim(),
+    };
+  });
+
+  const payload: Row = {
+    company: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    transaction_date: toApiDate(d.date || d.transaction_date),
+    deliverer: String(d.deliverer || d.sender || "").trim(),
+    receiver: String(d.receiver || "").trim(),
+    reason: String(d.reason || "").trim(),
+    reference: String(d.reference || "").trim(),
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    lines,
+  };
+  const record = await w.post(`${FIXED_ASSETS}transactions/transfer/`, payload);
+  return {
+    record,
+    message: String(record?.message || "Điều chuyển tài sản cố định thành công."),
+  };
+}
+
+/** UC-FA-06: Đánh giá lại tài sản cố định (nâng cấp / đánh giá lại theo quyết định / điều chỉnh giá trị & thời gian sử dụng còn lại). */
+export async function saveFixedAssetRevaluation(w: ApiWriter, d: Row) {
+  const rows = (d.rows || d.items || d.lines || []).filter((row: Row) =>
+    String(row.assetCode || row.asset_code || row.asset_id || "").trim()
+  );
+  if (!rows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần đánh giá lại.");
+  }
+  const assets = await w.list("assets");
+  const items = rows.map((row: Row) => {
+    const codeStr = String(row.assetCode || row.asset_code || "").trim();
+    const asset = assets.find((item) => item.code === codeStr || String(item.id) === String(row.asset_id || ""));
+    return {
+      asset_id: asset?.id || row.asset_id || "",
+      asset_code: codeStr,
+      orig_after: String(num(row.origAfter ?? row.orig_after ?? row.origBefore ?? 0)),
+      depr_after: String(num(row.deprAfter ?? row.depr_after ?? row.deprBefore ?? 0)),
+      months_after: Math.round(num(row.monthsAfter ?? row.months_after ?? row.monthsBefore ?? 0)),
+      val_after: String(num(row.valAfter ?? row.val_after ?? (num(row.origAfter) - num(row.deprAfter)))),
+      monthly_depr_after: String(num(row.monthlyDeprAfter ?? row.monthly_depr_after ?? 0)),
+      monthly_depr_law_after: String(num(row.monthlyDeprLawAfter ?? row.monthly_depr_law_after ?? row.monthlyDeprAfter ?? 0)),
+      cost_account: String(row.costAcc || row.cost_account || "6424").trim(),
+      reval_account: String(row.revalAcc || row.reval_account || "").trim(),
+      skip_months_before_check: true,
+    };
+  });
+
+  const members = (d.members || [])
+    .filter((m: Row) => String(m.name || "").trim() || String(m.title || "").trim() || String(m.representation || "").trim())
+    .map((m: Row) => ({
+      name: String(m.name || "").trim(),
+      title: String(m.title || "").trim(),
+      representation: String(m.representation || "").trim(),
+    }));
+
+  const accountingEntries = (d.accountingRows || d.accounting_entries || [])
+    .filter((ae: Row) => num(ae.amount) > 0 && (String(ae.debitAcc || ae.debit_account || "").trim() || String(ae.creditAcc || ae.credit_account || "").trim()))
+    .map((ae: Row) => ({
+      description: String(ae.description || d.reason || "").trim(),
+      debit_account: String(ae.debitAcc || ae.debit_account || "").trim(),
+      credit_account: String(ae.creditAcc || ae.credit_account || "").trim(),
+      amount: String(num(ae.amount)),
+      object_code: String(ae.objCode || ae.object_code || "").trim(),
+      object_name: String(ae.objName || ae.object_name || "").trim(),
+      cost_item: String(ae.costItem || ae.cost_item || "").trim(),
+    }));
+
+  const payload: Row = {
+    company: w.companyId,
+    report_no: String(d.reportNo || d.report_no || "").trim(),
+    report_date: toApiDate(d.reportDate || d.report_date || d.date),
+    posting_date: toApiDate(d.postingDate || d.posting_date || d.date),
+    voucher_date: toApiDate(d.voucherDate || d.voucher_date || d.date),
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "").trim(),
+    conclusion: String(d.conclusion || "").trim(),
+    reference: String(d.reference || "").trim(),
+    members,
+    items,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    ...(accountingEntries.length ? { accounting_entries: accountingEntries } : {}),
+  };
+
+  const record = await w.post(`${FIXED_ASSETS}transactions/revaluate/`, payload);
+  return {
+    record,
+    message: String(record?.message || "Đánh giá lại tài sản cố định thành công."),
+  };
+}
+
+/**
+ * UC-FA-07 – Ghi giảm tài sản cố định:
+ * Calls POST /api/v1/fixed-assets/transactions/dispose/ to atomically validate and save
+ * the fixed asset disposal voucher across all 8 business reasons, post General Ledger entries,
+ * transition asset status to DISPOSED, stop depreciation, and record audit logs.
+ */
+export async function saveFixedAssetDisposal(w: ApiWriter, d: Row) {
+  const filledRows = (d.rows || d.items || []).filter((r: Row) =>
+    String(r.assetCode || r.asset_code || r.asset_id || "").trim()
+  );
+  if (!filledRows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần ghi giảm.");
+  }
+
+  const assets = await w.list("assets");
+  const rowsPayload = filledRows.map((row: Row) => {
+    const code = String(row.assetCode || row.asset_code || "").trim();
+    const asset = assets.find(
+      (item) => String(item.code || "").trim().toLowerCase() === code.toLowerCase()
+    );
+    return {
+      asset_id: asset?.id || row.asset_id || undefined,
+      asset_code: code,
+      asset_account: String(row.costAcc || row.asset_account || "2112").trim(),
+      accumulated_account: String(row.accumulatedAcc || row.accumulated_account || "2141").trim(),
+      disposal_account: String(row.handlingAcc || row.disposal_account || "811").trim(),
+    };
+  });
+
+  const accountingEntries = (d.accountingRows || d.accounting_entries || [])
+    .filter((ae: Row) => num(ae.amount) > 0 && (String(ae.debitAcc || ae.debit_account || "").trim() || String(ae.creditAcc || ae.credit_account || "").trim()))
+    .map((ae: Row) => ({
+      asset_code: String(ae.assetCode || ae.asset_code || "").trim(),
+      description: String(ae.description || d.reason || "").trim(),
+      debit_account: String(ae.debitAcc || ae.debit_account || "").trim(),
+      credit_account: String(ae.creditAcc || ae.credit_account || "").trim(),
+      amount: String(num(ae.amount)),
+    }));
+
+  const payload: Row = {
+    company: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "").trim(),
+    posting_date: toApiDate(d.postingDate || d.posting_date || d.date),
+    voucher_date: toApiDate(d.voucherDate || d.voucher_date || d.date),
+    reference: String(d.reference || "").trim(),
+    rows: rowsPayload,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    ...(accountingEntries.length ? { accounting_entries: accountingEntries } : {}),
+  };
+
+  const record = await w.post(`${FIXED_ASSETS}transactions/dispose/`, payload);
+  return {
+    record,
+    message: String(record?.message || "Ghi giảm tài sản cố định thành công."),
+  };
 }
 
 /** Đánh giá lại / Điều chuyển / Ghi giảm TSCĐ: one asset transaction per filled row. */
 export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "transfer" | "disposal" | "lifeChange", d: Row) {
+  if (kind === "transfer" && (d.deliverer || d.receiver || d.sender)) {
+    return saveFixedAssetTransfer(w, d);
+  }
+  if (kind === "revaluation") {
+    return saveFixedAssetRevaluation(w, d);
+  }
+  if (kind === "disposal") {
+    return saveFixedAssetDisposal(w, d);
+  }
   const rows = (d.rows || []).filter((row: Row) => String(row.assetCode || "").trim());
   if (!rows.length) throw new FormDataError("Chọn ít nhất một tài sản.");
   const assets = await w.list("assets");
@@ -1001,27 +1612,727 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
   return { message: messages.join(" ") };
 }
 
-/** "Kiểm kê TSCĐ / CCDC": records book vs counted quantity per asset. */
+/** UC-FA-08: "Kiểm kê TSCĐ / CCDC" – Lập và lưu biên bản kiểm kê tài sản cố định, đối chiếu sổ kế toán và thực tế. */
 export async function saveAssetCount(w: ApiWriter, assetType: "FIXED_ASSET" | "TOOL", d: Row) {
   const assets = (await w.list("assets")).filter((row) => row.asset_type === assetType);
-  const rows = (d.rows || []).filter((row: Row) => String(row.assetCode || row.code || "").trim());
-  if (!rows.length) throw new FormDataError("Chọn ít nhất một tài sản để kiểm kê.");
+  const rows = (d.rows || d.lines || []).filter((row: Row) =>
+    Boolean(row.isSurplus || row.is_surplus || String(row.assetCode || row.asset_code || row.code || row.assetName || row.asset_name || "").trim())
+  );
+  if (!rows.length) throw new FormDataError("Chưa có tài sản trong bảng kiểm kê.");
   const path = `${FIXED_ASSETS}counts/`;
   const lines = rows.map((row: Row) => {
-    const code = String(row.assetCode || row.code).trim();
-    const asset = assets.find((item) => item.code === code);
-    if (!asset) throw new FormDataError(`${assetType === "TOOL" ? "CCDC" : "TSCĐ"} ${code} chưa có trên hệ thống.`);
-    const actual = row.actualQty !== undefined ? num(row.actualQty) : row.exists === false ? 0 : num(asset.quantity);
+    const isSurplus = Boolean(row.isSurplus ?? row.is_surplus);
+    if (isSurplus) {
+      return {
+        is_surplus: true,
+        temp_code: String(row.assetCode || row.temp_code || "").trim(),
+        asset_name: String(row.assetName || row.asset_name || "").trim(),
+        actual_department_name: String(row.actualDept || row.actual_department_name || row.dept || "").trim(),
+        identification_info: String(row.identificationInfo || row.identification_info || row.note || "").trim(),
+        current_quality: String(row.currentQuality || row.current_quality || "Bình thường").trim(),
+        recommendation: String(row.recommendation || row.solution || "Xác minh nguồn gốc để ghi tăng").trim(),
+        note: String(row.note || "").trim(),
+      };
+    }
+    const code = String(row.assetCode || row.asset_code || row.code || "").trim();
+    const asset = assets.find((item) => String(item.code || "").toLowerCase() === code.toLowerCase());
+    if (!asset) throw new FormDataError(`Tài sản ${code} không hợp lệ.`);
+    const existenceStatus = String(
+      row.existenceStatus || row.existence_status || (row.exists === null ? "UNCOUNTED" : row.exists === false ? "MISSING" : "EXISTS")
+    ).toUpperCase();
+    const actual = row.actualQty !== undefined ? num(row.actualQty) : existenceStatus === "EXISTS" ? num(asset.quantity) : 0;
     return {
-      asset: asset.id, actual_quantity: String(actual), condition: String(row.currentQuality || ""),
-      recommendation: String(row.recommendation || row.solution || ""), note: String(row.note || ""),
+      asset: asset.id,
+      asset_code: asset.code,
+      existence_status: existenceStatus,
+      exists: existenceStatus === "UNCOUNTED" ? null : existenceStatus === "EXISTS",
+      actual_quantity: String(actual),
+      actual_department_name: String(row.actualDept || row.actual_department_name || row.dept || "").trim(),
+      condition: String(row.currentQuality || row.condition || ""),
+      current_quality: String(row.currentQuality || row.current_quality || row.condition || ""),
+      recommendation: String(row.recommendation || row.solution || ""),
+      resolution_voucher_no: String(row.resolutionVoucherNo || row.resolution_voucher_no || ""),
+      note: String(row.note || ""),
     };
   });
+  const members = Array.isArray(d.members)
+    ? d.members
+        .filter((m: Row) => String(m.name || "").trim() || String(m.position || "").trim() || String(m.represent || "").trim())
+        .map((m: Row) => ({
+          name: String(m.name || "").trim(),
+          position: String(m.position || "").trim(),
+          represent: String(m.represent || "").trim(),
+          role: String(m.role || "Thành viên").trim(),
+        }))
+    : undefined;
+  const voucherNo = await nextVoucherNumber(w, path, assetType === "TOOL" ? "BBKK" : "KKTS", d.voucherNo || d.number);
   const record = await w.post(path, {
-    asset_type: assetType, number: await nextVoucherNumber(w, path, assetType === "TOOL" ? "BBKK" : "KKTS", d.number),
-    count_date: toApiDate(d.date), purpose: String(d.purpose || ""), conclusion: String(d.conclusion || ""), lines,
+    company: w.companyId,
+    asset_type: assetType,
+    number: voucherNo,
+    voucher_no: voucherNo,
+    count_date: toApiDate(d.auditDate || d.count_date || d.date),
+    report_datetime: String(d.reportDatetime || d.report_datetime || d.date || ""),
+    purpose: String(d.purpose || ""),
+    conclusion: String(d.conclusion || ""),
+    reference: String(d.reference || ""),
+    recommendations_processed: Boolean(d.recommendationsProcessed ?? d.recommendations_processed ?? false),
+    scope: d.scope || undefined,
+    ...(members ? { members } : {}),
+    ...(Array.isArray(d.attachments) ? { attachments: d.attachments } : {}),
+    lines,
   });
-  return { record, message: `Đã lưu biên bản kiểm kê ${record.number} (${lines.length} tài sản).` };
+  return {
+    record,
+    message: String(record?.message || "Lưu biên bản kiểm kê tài sản cố định thành công."),
+  };
+}
+
+/** UC-FA-08: Tải danh sách tài sản trên sổ kế toán theo phạm vi và ngày kiểm kê. */
+export async function loadBookAssetsForStocktakeUc08(w: ApiWriter, params: Row = {}) {
+  const qs = new URLSearchParams();
+  if (params.assetType || params.asset_type) qs.set("asset_type", String(params.assetType || params.asset_type));
+  if (params.countDate || params.count_date) qs.set("count_date", toApiDate(params.countDate || params.count_date));
+  if (params.departmentName || params.department_name) qs.set("department_name", String(params.departmentName || params.department_name));
+  if (params.categoryName || params.category_name) qs.set("category_name", String(params.categoryName || params.category_name));
+  qs.set("_", String(Date.now()));
+  const resp = await w.get(`${FIXED_ASSETS}counts/load-book-assets/?${qs.toString()}`);
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã lấy danh sách TSCĐ từ sổ kế toán."),
+  };
+}
+
+/** UC-FA-08: Cập nhật chứng từ kiểm kê TSCĐ đã lập (POST /api/v1/fixed-assets/counts/<id>/update-stocktake/). */
+export async function updateStocktakeVoucherUc08(w: ApiWriter, countId: string, d: Row = {}) {
+  const resp = await w.action(`${FIXED_ASSETS}counts/`, countId, "update-stocktake", {
+    count_date: d.auditDate || d.count_date ? toApiDate(d.auditDate || d.count_date) : undefined,
+    report_datetime: d.reportDatetime || d.report_datetime || undefined,
+    purpose: d.purpose !== undefined ? String(d.purpose) : undefined,
+    conclusion: d.conclusion !== undefined ? String(d.conclusion) : undefined,
+    recommendations_processed:
+      d.recommendationsProcessed !== undefined || d.recommendations_processed !== undefined
+        ? Boolean(d.recommendationsProcessed ?? d.recommendations_processed)
+        : undefined,
+    members: Array.isArray(d.members) ? d.members : undefined,
+    lines: Array.isArray(d.lines) ? d.lines : undefined,
+  });
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã cập nhật chứng từ kiểm kê TSCĐ."),
+  };
+}
+
+/** UC-FA-09 Main Flow A: Xem sổ tài sản cố định theo ngày xem số liệu (as_of_date) và điều kiện lọc. */
+export async function fetchFixedAssetRegister(w: ApiWriter, params: Row = {}) {
+  const path = `${FIXED_ASSETS}assets/register/`;
+  const record = await w.post(path, {
+    company: w.companyId,
+    company_id: w.companyId,
+    as_of_date: params.asOfDate || params.as_of_date || undefined,
+    search: params.search || undefined,
+    department_name: params.departmentName || params.department_name || undefined,
+    category_name: params.categoryName || params.category_name || undefined,
+    include_disposed: Boolean(params.includeDisposed ?? params.include_disposed ?? false),
+    page: Number(params.page || 1),
+    page_size: Number(params.pageSize || params.page_size || 50),
+    export_excel: Boolean(params.exportExcel ?? params.export_excel ?? false),
+  });
+  return { record, message: "" };
+}
+
+/** UC-FA-09 Main Flow B: Lập và xem báo cáo tài sản cố định / báo cáo đối chiếu. */
+export async function fetchFixedAssetReport(w: ApiWriter, params: Row = {}) {
+  const path = `${FIXED_ASSETS}assets/reports/`;
+  const record = await w.post(path, {
+    company: w.companyId,
+    company_id: w.companyId,
+    report_code: params.reportCode || params.report_code || params.reportId || "ASSET_REGISTER",
+    from_date: params.fromDate || params.from_date || undefined,
+    to_date: params.toDate || params.to_date || undefined,
+    year: params.year || undefined,
+    department_name: params.departmentName || params.department_name || undefined,
+    category_name: params.categoryName || params.category_name || undefined,
+    asset_code: params.assetCode || params.asset_code || undefined,
+    account_code: params.accountCode || params.account_code || undefined,
+    only_differences: Boolean(params.onlyDifferences ?? params.only_differences ?? false),
+    exclude_disposed_in_period: Boolean(params.excludeDisposedInPeriod ?? params.exclude_disposed_in_period ?? false),
+    lang: params.lang || "vi",
+  });
+  return { record, message: "" };
+}
+
+/** UC-FA-09 Main Flow B (AF10, AF12, AF13, AF14): Danh mục báo cáo, tìm kiếm AVA và tùy chọn ẩn/hiện báo cáo. */
+export async function fetchFixedAssetReportCatalog(w: ApiWriter, params: Row = {}) {
+  const path = `${FIXED_ASSETS}assets/report-catalog/`;
+  const record = await w.post(path, {
+    company: w.companyId,
+    company_id: w.companyId,
+    search: params.search || undefined,
+    ava_query: params.avaQuery || params.ava_query || undefined,
+    lang: params.lang || "vi",
+    hidden_report_codes: Array.isArray(params.hiddenReportCodes) ? params.hiddenReportCodes : undefined,
+    include_hidden: Boolean(params.includeHidden ?? params.include_hidden ?? false),
+  });
+  return { record, message: "" };
+}
+
+/** UC-FA-11 (Step 4, BR06): Lấy kỳ phân bổ mặc định đề xuất theo kỳ làm việc của doanh nghiệp. */
+export async function fetchDefaultAllocationPeriodUc11(
+  w: ApiWriter,
+  allocationType: "TOOL" | "PREPAID" = "TOOL",
+) {
+  return await w.get(
+    `${FIXED_ASSETS}calculations/default-allocation-period/?allocation_type=${encodeURIComponent(allocationType)}&_=${Date.now()}`,
+  );
+}
+
+/** UC-FA-11 (Main Flow A & B, Steps 7–11): Thiết lập kỳ phân bổ CCDC hoặc chi phí trả trước (chưa ghi sổ GL). */
+export async function setupAllocationPeriodUc11(w: ApiWriter, d: Row) {
+  const rawMonth = d.month ?? d.period_month;
+  const rawYear = d.year ?? d.period_year;
+  if (rawMonth === undefined || rawMonth === null || String(rawMonth).trim() === "") {
+    throw new FormDataError("Vui lòng chọn tháng phân bổ.");
+  }
+  const monthNum = Number(rawMonth);
+  if (!Number.isInteger(monthNum) || monthNum < 1 || monthNum > 12) {
+    throw new FormDataError("Tháng phân bổ phải có giá trị từ 1 đến 12.");
+  }
+  if (rawYear === undefined || rawYear === null || String(rawYear).trim() === "") {
+    throw new FormDataError("Vui lòng nhập năm phân bổ.");
+  }
+  const yearNum = Number(rawYear);
+  if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 2100) {
+    throw new FormDataError("Năm phân bổ không hợp lệ.");
+  }
+
+  const record = await w.post(`${FIXED_ASSETS}calculations/setup-allocation-period/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "TOOL").toUpperCase(),
+    month: monthNum,
+    year: yearNum,
+    ai_assisted: Boolean(d.aiAssisted ?? d.ai_assisted ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  return {
+    record,
+    message: String(record?.message || ""),
+  };
+}
+
+/** UC-FA-11 (AF17, EF18, EF19, BR27, BR34, BR35): Kiểm tra lại thông tin kỳ, ngày và số chứng từ trước khi lưu/ghi sổ. */
+export async function validateAllocationVoucherUc11(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}calculations/validate-allocation-voucher/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "TOOL").toUpperCase(),
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    posting_date: String(d.postingDate || d.posting_date || "").trim(),
+    voucher_date: String(d.voucherDate || d.voucher_date || "").trim(),
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    description: String(d.description || "").trim(),
+  });
+  return {
+    record,
+    message: "",
+  };
+}
+
+/** UC-FA-12 (Main Flow A & B): Tính / tính lại phân bổ chi phí CCDC hoặc chi phí trả trước theo kỳ (chưa ghi sổ GL). */
+export async function calculateAllocationVoucherUc12(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/calculate-allocation/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "TOOL").toUpperCase(),
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim() || undefined,
+    description: String(d.description || "").trim() || undefined,
+    reference: String(d.reference || "").trim() || undefined,
+    item_ids: Array.isArray(d.itemIds) ? d.itemIds : undefined,
+    identify_rows_override: Array.isArray(d.identifyRowsOverride) ? d.identifyRowsOverride : undefined,
+    allocation_rows_override: Array.isArray(d.allocationRowsOverride) ? d.allocationRowsOverride : undefined,
+    accounting_rows_override: Array.isArray(d.accountingRowsOverride) ? d.accountingRowsOverride : undefined,
+  });
+  return {
+    record,
+    message: String(record?.message || ""),
+  };
+}
+
+/** UC-FA-12 (Main Flow A & B): Cất / Cất và In chứng từ phân bổ chi phí CCDC hoặc chi phí trả trước (ghi sổ GL & cập nhật lũy kế). */
+export async function saveAllocationVoucherUc12(w: ApiWriter, d: Row) {
+  const allocType = String(d.allocationType || d.allocation_type || "TOOL").toUpperCase();
+  const record = await w.post(`${FIXED_ASSETS}assets/save-allocation-voucher/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: allocType,
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    voucher_no: String(d.voucherNo ?? d.voucher_no ?? "").trim(),
+    posting_date: String(d.postingDate ?? d.posting_date ?? "").trim(),
+    voucher_date: String(d.voucherDate ?? d.voucher_date ?? "").trim(),
+    description: String(d.description ?? d.reason ?? "").trim(),
+    reference: String(d.reference ?? "").trim(),
+    selected_vouchers: Array.isArray(d.selectedVouchers) ? d.selectedVouchers : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    item_ids: Array.isArray(d.itemIds) ? d.itemIds : undefined,
+    identify_rows_override: Array.isArray(d.identifyRowsOverride) ? d.identifyRowsOverride : undefined,
+    allocation_rows_override: Array.isArray(d.allocationRowsOverride) ? d.allocationRowsOverride : undefined,
+    accounting_rows_override: Array.isArray(d.accountingRowsOverride) ? d.accountingRowsOverride : undefined,
+    print_on_save: Boolean(d.printOnSave ?? d.print_on_save ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(
+      record?.message ||
+        (allocType === "TOOL"
+          ? "Đã cất chứng từ phân bổ CCDC thành công."
+          : "Đã lưu chứng từ phân bổ chi phí trả trước thành công."),
+    ),
+  };
+}
+
+/** UC-FA-12 (AF22, BR36): Bỏ ghi sổ / hủy chứng từ phân bổ CCDC hoặc chi phí trả trước. */
+export async function unpostAllocationVoucherUc12(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/unpost-allocation-voucher/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim() || undefined,
+    run_id: d.runId || d.run_id || undefined,
+    reason: String(d.reason || "Bỏ ghi sổ chứng từ phân bổ").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã bỏ ghi sổ chứng từ phân bổ."),
+  };
+}
+
+/** UC-FA-12 (AF18, EF33, BR38): Xuất bảng phân bổ ra Excel (không tự động ghi sổ). */
+export async function exportAllocationExcelUc12(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/export-allocation-excel/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "PREPAID").toUpperCase(),
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    item_ids: Array.isArray(d.itemIds) ? d.itemIds : undefined,
+  });
+  return {
+    record,
+    message: String(record?.message || "Xuất bảng phân bổ ra Excel thành công."),
+  };
+}
+
+/** UC-FA-12 (AF01–AF03, BR26–BR29): Tìm kiếm chứng từ tham chiếu cho chứng từ phân bổ. */
+export async function fetchAllocationReferenceVouchersUc12(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/allocation-reference-vouchers/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_type: d.voucherType || d.voucher_type || "ALL",
+    from_date: d.fromDate || d.from_date || undefined,
+    to_date: d.toDate || d.to_date || undefined,
+    keyword: d.keyword || d.search || undefined,
+    selected_vouchers: Array.isArray(d.selectedVouchers) ? d.selectedVouchers : undefined,
+  });
+}
+
+/** UC-FA-13 (Steps 5, 10–11): Lấy số biên bản đề xuất tiếp theo, ngày mặc định và danh sách CCDC khả dụng để điều chuyển. */
+export async function fetchTransferableToolsUc13(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/transferable-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    transfer_date: d.transferDate || d.transfer_date || d.date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/** UC-FA-13 (Main Flow Steps 19–31): Lưu / Cất và In biên bản điều chuyển CCDC giữa các đơn vị. */
+export async function saveToolTransferUc13(w: ApiWriter, d: Row) {
+  const lines = (Array.isArray(d.lines) ? d.lines : Array.isArray(d.rows) ? d.rows : []).map((r: Row) => ({
+    asset_id: r.assetId || r.asset_id || undefined,
+    code: String(r.code || r.toolCode || r.assetCode || "").trim(),
+    from_department: String(r.fromDept || r.from_department || "").trim(),
+    to_department: String(r.toDept || r.to_department || "").trim(),
+    transfer_quantity: r.transferQty ?? r.transfer_quantity ?? r.quantity ?? 0,
+    statistical_code: String(r.statCode || r.statistical_code || "").trim(),
+    sales_contract: String(r.contract || r.sales_contract || "").trim(),
+    purchase_order: String(r.order || r.purchase_order || "").trim(),
+  }));
+
+  const record = await w.post(`${FIXED_ASSETS}assets/transfer-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo ?? d.voucher_no ?? "").trim(),
+    transfer_date: String(d.transferDate ?? d.date ?? d.voucherDate ?? "").trim(),
+    deliverer: String(d.deliverer ?? "").trim(),
+    receiver: String(d.receiver ?? "").trim(),
+    reason: String(d.reason ?? "").trim(),
+    reference: String(d.reference ?? "").trim(),
+    references: Array.isArray(d.references) ? d.references : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    lines,
+    print_on_save: Boolean(d.printOnSave ?? d.print_on_save ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu chứng từ điều chuyển CCDC ${record?.voucher_no || ""} thành công.`),
+  };
+}
+
+/** UC-FA-13 (AF24, EF29, BR36): Hủy biên bản điều chuyển CCDC. */
+export async function cancelToolTransferUc13(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-tool-transfer/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    transaction_id: d.transactionId || d.transaction_id || undefined,
+    reason: String(d.reason || "Hủy biên bản điều chuyển CCDC").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã hủy biên bản điều chuyển CCDC thành công."),
+  };
+}
+
+/** UC-FA-14 (Main Flow A, Steps 5 & 8): Lấy số chứng từ đề xuất và danh sách CCDC khả dụng để ghi giảm. */
+export async function fetchDisposableToolsUc14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/disposable-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_date: d.voucherDate || d.voucher_date || d.date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/** UC-FA-14 (Main Flow A, Steps 19–31): Lưu / Cất và In chứng từ ghi giảm CCDC. */
+export async function saveToolDecreaseUc14(w: ApiWriter, d: Row) {
+  const lines = (Array.isArray(d.lines) ? d.lines : Array.isArray(d.rows) ? d.rows : []).map((r: Row) => ({
+    asset_id: r.assetId || r.asset_id || undefined,
+    code: String(r.code || r.toolCode || r.assetCode || "").trim(),
+    department: String(r.dept || r.department || r.departmentCode || "").trim() || undefined,
+    decrease_quantity: r.decreaseQty ?? r.decrease_quantity ?? r.requestedQty ?? r.quantity ?? 0,
+    decrease_remaining_value:
+      r.remainingValue !== undefined && r.remainingValue !== "" && r.remainingValue !== null
+        ? r.remainingValue
+        : r.decrease_remaining_value,
+    adjustment_basis: r.adjustmentBasis || r.adjustment_basis || (r.manualValueChanged ? "Điều chỉnh theo số liệu thực tế" : undefined),
+    allow_manual_value_override: Boolean(r.allowManualValueOverride ?? r.allow_manual_value_override ?? r.manualValueChanged ?? false),
+  }));
+
+  const record = await w.post(`${FIXED_ASSETS}assets/decrease-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo ?? d.voucher_no ?? "").trim(),
+    voucher_date: String(d.voucherDate ?? d.date ?? d.voucher_date ?? "").trim(),
+    reason: String(d.reason ?? "Nhượng bán, Thanh lý").trim(),
+    reference: String(d.reference ?? "").trim(),
+    references: Array.isArray(d.references) ? d.references : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    accounting_treatment: d.accountingTreatment || d.accounting_treatment || undefined,
+    lines,
+    print_on_save: Boolean(d.printOnSave ?? d.print_on_save ?? d.printAfterSave ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu chứng từ ghi giảm CCDC ${record?.voucher_no || ""} thành công.`),
+  };
+}
+
+/** UC-FA-14 (AF25, EF36, BR40): Hủy chứng từ ghi giảm CCDC và hoàn nguyên số lượng, giá trị còn lại. */
+export async function cancelToolDecreaseUc14(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-tool-decrease/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "Hủy chứng từ ghi giảm CCDC").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã hủy chứng từ ghi giảm CCDC thành công."),
+  };
+}
+
+/** UC-FA-14 (Main Flow B, Steps 6 & 9): Lấy số chứng từ đề xuất và danh sách CPTT khả dụng để ghi giảm. */
+export async function fetchDisposablePrepaidExpensesUc14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/disposable-prepaid-expenses/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_date: d.voucherDate || d.voucher_date || d.date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/** UC-FA-14 (Main Flow B, Steps 15–26): Lưu (Cất / Cất và Đóng) chứng từ ghi giảm chi phí trả trước. */
+export async function savePrepaidDecreaseUc14(w: ApiWriter, d: Row) {
+  const lines = (Array.isArray(d.lines) ? d.lines : Array.isArray(d.rows) ? d.rows : []).map((r: Row) => ({
+    prepaid_id: r.prepaidId || r.prepaid_id || undefined,
+    code: String(r.code || r.prepaidCode || "").trim(),
+    decrease_amount: r.decreaseAmount ?? r.decrease_amount ?? r.remainingAmount ?? r.amount ?? 0,
+  }));
+
+  const record = await w.post(`${FIXED_ASSETS}assets/decrease-prepaid-expenses/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo ?? d.number ?? d.voucher_no ?? "").trim(),
+    voucher_date: String(d.voucherDate ?? d.date ?? d.voucher_date ?? "").trim(),
+    reason: String(d.reason ?? "").trim(),
+    reference: String(d.reference ?? "").trim(),
+    references: Array.isArray(d.references) ? d.references : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    accounting_treatment: d.accountingTreatment || d.accounting_treatment || undefined,
+    lines,
+    keep_open: Boolean(d.keepOpen ?? d.keep_open ?? false),
+    allow_idempotent_voucher_resave: Boolean(d.allowIdempotentVoucherResave ?? d.allow_idempotent_voucher_resave ?? true),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu chứng từ ghi giảm chi phí trả trước ${record?.voucher_no || ""} thành công.`),
+  };
+}
+
+/** UC-FA-14 (AF25, EF36, BR40): Hủy chứng từ ghi giảm chi phí trả trước. */
+export async function cancelPrepaidDecreaseUc14(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-prepaid-decrease/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "Hủy chứng từ ghi giảm chi phí trả trước").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã hủy chứng từ ghi giảm chi phí trả trước thành công."),
+  };
+}
+
+/** UC-FA-14 (AF01–AF02, EF30): Tìm kiếm chứng từ tham chiếu cho chứng từ ghi giảm CCDC / CPTT. */
+export async function fetchDecreaseReferenceVouchersUc14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/decrease-reference-vouchers/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_type: d.voucherType || d.voucher_type || "ALL",
+    from_date: d.fromDate || d.from_date || undefined,
+    to_date: d.toDate || d.to_date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/* ───────────────────────── UC-FA-15: Kiểm kê CCDC ───────────────────────── */
+
+/** UC-FA-15 (Steps 4–8, EF01–EF05): Kiểm tra ngày kiểm kê đến ngày và lấy số biên bản BBKK00001 đề xuất. */
+export async function validateToolStocktakeDateUc15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/validate-tool-stocktake-date/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    count_to_date: d.countToDate || d.count_to_date || d.toDate || d.date ? toApiDate(d.countToDate || d.count_to_date || d.toDate || d.date) : "",
+    require_explicit_date: true,
+  });
+}
+
+/** UC-FA-15 (Steps 11–13, AF04–AF06, EF17–EF21, BR05, BR06, BR10, BR11, BR35): Lấy toàn bộ CCDC đang dùng tại ngày kiểm kê. */
+export async function fetchInUseToolsForStocktakeUc15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-stocktake-items/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    count_to_date: d.countToDate || d.count_to_date || d.toDate || d.date ? toApiDate(d.countToDate || d.count_to_date || d.toDate || d.date) : undefined,
+    previous_count_to_date: d.previousCountToDate ? toApiDate(d.previousCountToDate) : undefined,
+    confirm_date_change_reload: Boolean(d.confirmDateChangeReload),
+    existing_rows: Array.isArray(d.existingRows) ? d.existingRows : undefined,
+    confirm_overwrite: Boolean(d.confirmOverwrite),
+    merge_existing: Boolean(d.mergeExisting),
+    department: d.department || undefined,
+    search: d.search || undefined,
+  });
+}
+
+/** UC-FA-15 (Steps 14–33, AF07–AF19, EF01–EF32, BR01–BR36): Lưu / Cất hoặc Cất và In biên bản kiểm kê CCDC. */
+export async function saveToolStocktakeUc15(w: ApiWriter, d: Row) {
+  const rows = Array.isArray(d.rows) ? d.rows : Array.isArray(d.lines) ? d.lines : [];
+  const validRows = rows.filter((r: Row) => String(r.code || r.asset_code || r.asset || r.asset_id || "").trim() !== "");
+  if (!validRows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một CCDC cần kiểm kê.");
+  }
+  const committee = Array.isArray(d.committee) ? d.committee : [];
+  const payload = {
+    _uc15: true,
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.number || d.voucher_no || "").trim(),
+    count_to_date: toApiDate(d.countToDate || d.toDate || d.date || d.count_to_date),
+    purpose: String(d.purpose || "").trim(),
+    conclusion: String(d.conclusion || "").trim(),
+    print_on_save: Boolean(d.printOnSave || d.print_on_save || d.print),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+    lines: validRows.map((r: Row) => ({
+      asset_id: r.asset_id || r.assetId || r.asset || undefined,
+      code: String(r.code || r.asset_code || "").trim(),
+      department_id: r.department_id || r.departmentId || undefined,
+      department_code: String(r.department_code || r.deptCode || r.dept || "").trim(),
+      department_name: String(r.department_name || r.dept || "").trim(),
+      expected_book_quantity: r.expectedBookQty !== undefined ? String(r.expectedBookQty) : undefined,
+      actual_quantity: r.actualQty !== undefined && r.actualQty !== "" && r.actualQty !== null
+        ? String(r.actualQty)
+        : (r.actual_quantity !== undefined && r.actual_quantity !== "" && r.actual_quantity !== null ? String(r.actual_quantity) : null),
+      counted_confirmed: r.countedConfirmed !== undefined ? Boolean(r.countedConfirmed) : true,
+      solution: String(r.solution || r.recommendation || "").trim(),
+      verification_note: r.verificationNote || r.verification_note || undefined,
+    })),
+    committee: committee.map((m: Row) => ({
+      name: String(m.name || m.full_name || "").trim(),
+      title: String(m.title || m.position || "").trim(),
+      department: String(m.dept || m.department || "").trim(),
+      role: String(m.role || "").trim(),
+    })),
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+  };
+  const record = await w.post(`${FIXED_ASSETS}assets/save-tool-stocktake/`, payload);
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu biên bản kiểm kê CCDC ${record?.voucher_no || payload.voucher_no} thành công.`),
+  };
+}
+
+/** UC-FA-15 (AF20–AF23, EF27, EF33–EF34, BR23–BR29, BR37): Xác minh, phê duyệt và xử lý chênh lệch sau kiểm kê CCDC. */
+export async function resolveToolStocktakeUc15(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/resolve-tool-stocktake/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    action: String(d.action || "RESOLVE").trim(),
+    code: d.code || undefined,
+    department_code: d.departmentCode || d.dept || undefined,
+    verification_note: d.verificationNote || d.verification_note || undefined,
+    solution: d.solution || undefined,
+    approved: Boolean(d.approved),
+    auto_create_voucher: Boolean(d.autoCreateVoucher),
+    resolution_voucher_no: d.resolutionVoucherNo || undefined,
+  });
+  w.invalidate();
+  return { record, message: "Đã cập nhật tình trạng xử lý chênh lệch kiểm kê CCDC." };
+}
+
+/** UC-FA-15 (EF35, BR40): Hủy biên bản kiểm kê CCDC. */
+export async function cancelToolStocktakeUc15(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-tool-stocktake/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "Hủy biên bản kiểm kê CCDC").trim(),
+  });
+  w.invalidate();
+  return { record, message: String(record?.message || "Đã hủy biên bản kiểm kê CCDC thành công.") };
+}
+
+/** UC-FA-15 (AF24–AF27, BR39): Xuất Excel danh sách biên bản kiểm kê CCDC. */
+export async function exportToolStocktakeExcelUc15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/export-tool-stocktake-excel/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    search: d.search || undefined,
+    status: d.status || undefined,
+  });
+}
+
+/* ───────────────────────── UC-FA-16: Xem sổ và báo cáo CCDC ───────────────────────── */
+
+/** UC-FA-16 (Main Flow A, Steps 1–9, AF01–AF05, BR01–BR16): Lấy dữ liệu Sổ theo dõi công cụ dụng cụ (12 cột chuẩn). */
+export async function fetchToolRegisterUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-register-uc16/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    as_of_date: d.asOfDate || d.as_of_date || d.toDate || d.date ? toApiDate(d.asOfDate || d.as_of_date || d.toDate || d.date) : undefined,
+    search: d.search || d.keyword || undefined,
+    department: d.department || d.department_id || undefined,
+    category: d.category || d.category_id || undefined,
+    status: d.status || undefined,
+    include_disposed: Boolean(d.includeDisposed ?? d.include_disposed ?? false),
+    split_by_department: Boolean(d.splitByDepartment ?? d.split_by_department ?? false),
+    page: d.page || 1,
+    page_size: d.pageSize || d.page_size || 20,
+  });
+}
+
+/** UC-FA-16 (Main Flow A, Steps 10–12, AF06–AF07, EF20–EF21, BR34, BR40): Xuất khẩu Sổ theo dõi CCDC ra Excel. */
+export async function exportToolRegisterUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/export-tool-register/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    as_of_date: d.asOfDate || d.as_of_date || d.toDate || d.date ? toApiDate(d.asOfDate || d.as_of_date || d.toDate || d.date) : undefined,
+    search: d.search || d.keyword || undefined,
+    department: d.department || d.department_id || undefined,
+    category: d.category || d.category_id || undefined,
+    status: d.status || undefined,
+    include_disposed: Boolean(d.includeDisposed ?? d.include_disposed ?? false),
+    split_by_department: Boolean(d.splitByDepartment ?? d.split_by_department ?? false),
+    export_excel: true,
+    export_format: "EXCEL",
+  });
+}
+
+/** UC-FA-16 (AF04, AF28, EF18, EF19, BR37): Xem chi tiết & lịch sử biến động CCDC hoặc truy vết chứng từ nguồn. */
+export async function fetchToolDetailTraceUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-detail-trace/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    tool_id: d.toolId || d.tool_id || d.id || undefined,
+    tool_code: d.toolCode || d.tool_code || d.code || undefined,
+    voucher_no: d.voucherNo || d.voucher_no || undefined,
+  });
+}
+
+/** UC-FA-16 (Main Flow B, Steps 1–4, AF08–AF10, AF17–AF21, EF02, EF17, EF24, EF25, BR30–BR33): Lấy danh mục báo cáo CCDC, Yêu thích, Ẩn/hiện, Ngôn ngữ và Tìm kiếm AVA. */
+export async function fetchToolReportCatalogUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-report-catalog/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    search: d.search || d.q || undefined,
+    ava_query: d.avaQuery || d.ava_query || undefined,
+    lang: d.lang || d.language || undefined,
+    toggle_favorite: d.toggleFavorite || d.toggle_favorite || d.reportName || d.report_name || undefined,
+    favorite_report_codes: Array.isArray(d.favoriteReportCodes) ? d.favoriteReportCodes : undefined,
+    hidden_report_codes: Array.isArray(d.hiddenReportCodes || d.hiddenReports || d.hidden_reports)
+      ? (d.hiddenReportCodes || d.hiddenReports || d.hidden_reports)
+      : undefined,
+    include_hidden: Boolean(d.includeHidden ?? d.include_hidden ?? false),
+  });
+}
+
+/** UC-FA-16 (Main Flow B, Steps 5–14, AF11–AF16, AF22–AF28, EF04–EF16, EF20–EF27, BR17–BR40): Tổng hợp, Xem trước, Xuất Excel và In báo cáo CCDC / CPTT / Đối chiếu TK 242. */
+export async function generateToolReportUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-reports/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    report_code: d.reportCode || d.report_code || d.reportId || d.reportName || d.report_name || "TOOL_ALLOCATION_SHEET",
+    period_type: d.periodType || d.period_type || undefined,
+    month: d.month !== undefined ? Number(d.month) : undefined,
+    quarter: d.quarter !== undefined ? Number(d.quarter) : undefined,
+    year: d.year !== undefined ? Number(d.year) : undefined,
+    from_date: d.fromDate || d.from_date ? toApiDate(d.fromDate || d.from_date) : undefined,
+    to_date: d.toDate || d.to_date ? toApiDate(d.toDate || d.to_date) : undefined,
+    department: d.department || d.department_id || undefined,
+    category: d.category || d.category_id || undefined,
+    tool_code: d.toolCode || d.tool_code || undefined,
+    status: d.status || undefined,
+    waiting_account: d.waitingAccount || d.waiting_account || undefined,
+    lang: d.lang || d.language || undefined,
+    export_excel: Boolean(d.exportExcel ?? d.export_excel ?? (String(d.exportFormat || "").toUpperCase() === "EXCEL")),
+    print_report: Boolean(d.printReport ?? d.print_report ?? false),
+  });
 }
 
 /* ───────────────────────── Tiền mặt / Ngân hàng ───────────────────────── */
@@ -1507,35 +2818,82 @@ export async function saveAssemblyOrder(w: ApiWriter, d: Row) {
 
 const PREPAID = "/api/v1/general-ledger/";
 
-/** "Thêm chi phí trả trước" (opening = false) and "… đầu kỳ" (opening = true). */
+/** UC-FA-10 (Main Flow B & AF02): "Thêm chi phí trả trước" (opening = false) và "Chi phí trả trước đầu kỳ" (opening = true). */
 export async function savePrepaidExpense(w: ApiWriter, d: Row, opening: boolean) {
   const code = String(d.code || "").trim();
-  if (!code || !String(d.name || "").trim()) throw new FormDataError("Cần nhập mã và tên chi phí trả trước.");
+  const name = String(d.name || "").trim();
+  if (!code) throw new FormDataError("Mã chi phí trả trước không hợp lệ hoặc đã tồn tại.");
+  if (!name) throw new FormDataError("Vui lòng nhập tên chi phí trả trước.");
   const amount = num(d.amount);
   const periods = Math.round(num(d.allocMonths));
-  if (amount <= 0 || periods <= 0) throw new FormDataError("Số tiền và số kỳ phân bổ phải lớn hơn 0.");
-  const targets = (d.rows || []).filter((row: Row) => String(row.costAccount || "").trim());
-  if (!targets.length) throw new FormDataError("Cần ít nhất một dòng TK chi phí nhận phân bổ.");
+  if (!(amount > 0)) throw new FormDataError("Số tiền chi phí trả trước phải lớn hơn 0.");
+  if (!(periods > 0)) throw new FormDataError("Số kỳ phân bổ phải là số nguyên lớn hơn 0.");
+
+  const rawRows = Array.isArray(d.rows) ? d.rows : [];
+  const targets = rawRows.filter((row: Row) => String(row.costAccount || row.targetCode || row.targetName || "").trim());
+  if (!targets.length) {
+    throw new FormDataError("Vui lòng khai báo đầy đủ thông tin thiết lập phân bổ.");
+  }
   const rates = targets.map((row: Row) => num(row.rate));
-  // A single line without a rate takes the whole amount.
   if (targets.length === 1 && !rates[0]) rates[0] = 100;
   if (Math.abs(rates.reduce((total: number, rate: number) => total + rate, 0) - 100) > 0.0001) {
-    throw new FormDataError("Tổng tỷ lệ phân bổ các dòng phải bằng 100%.");
+    throw new FormDataError("Tổng tỷ lệ phân bổ phải bằng 100%.");
   }
+
   const remainingPeriods = Math.round(num(d.remainingMonths));
-  const record = await w.post(`${PREPAID}prepaid-expenses/`, {
-    code, name: String(d.name).trim(), record_date: toApiDate(d.recordDate), start_date: toApiDate(d.startDate || d.recordDate),
-    amount: String(amount), allocation_periods: periods,
-    prepaid_account: (await w.account(d.waitingAcc || "242", "TK chờ phân bổ")).id,
-    is_opening: opening, stop_allocation: Boolean(d.stopAlloc),
-    opening_allocated_amount: opening ? String(num(d.allocatedAmount)) : "0",
-    opening_allocated_periods: opening ? Math.max(periods - remainingPeriods, 0) : 0,
-    targets: await Promise.all(targets.map(async (row: Row, index: number) => ({
-      expense_account: (await w.account(row.costAccount, "TK chi phí")).id, rate: String(rates[index]),
-      description: String(row.targetName || row.costItem || ""),
-    }))),
+  const allocatedAmount = num(d.allocatedAmount);
+  const remainingAmount = d.remainingAmount !== undefined ? num(d.remainingAmount) : Math.max(0, amount - allocatedAmount);
+  const periodicAmount = d.monthlyAlloc !== undefined && num(d.monthlyAlloc) > 0
+    ? num(d.monthlyAlloc)
+    : Math.round(amount / periods);
+
+  const resp = await w.post(`${FIXED_ASSETS}assets/prepaid-expenses/`, {
+    is_opening: opening,
+    code,
+    name,
+    record_date: String(d.recordDate || "").trim(),
+    start_date: String(d.startDate || d.recordDate || "").trim(),
+    amount: String(amount),
+    allocation_periods: periods,
+    periodic_allocation_amount: String(periodicAmount),
+    remaining_periods: opening ? remainingPeriods : undefined,
+    allocated_amount: opening ? String(allocatedAmount) : undefined,
+    remaining_amount: opening ? String(remainingAmount) : undefined,
+    waiting_account: String(d.waitingAcc || "242").trim(),
+    suspend_allocation: Boolean(d.stopAlloc),
+    suspend_reason: String(d.suspendReason || "Tạm dừng phân bổ theo thiết lập"),
+    references: Array.isArray(d.references) ? d.references : [],
+    source_documents: Array.isArray(d.sourceDocs) ? d.sourceDocs : [],
+    allocations: targets.map((row: Row, index: number) => ({
+      target_code: String(row.targetCode || "").trim(),
+      target_name: String(row.targetName || "").trim(),
+      rate: String(rates[index]),
+      expense_account: String(row.costAccount || "6422").trim(),
+      cost_item: String(row.costItem || "").trim(),
+      stats_code: String(row.statCode || "").trim(),
+    })),
   });
-  return { record, message: `Đã lưu chi phí trả trước ${code}.` };
+
+  return {
+    record: resp.prepaid_expense || resp,
+    message: resp.message || (opening ? "Đã lưu chi phí trả trước đầu kỳ thành công." : "Đã lưu chi phí trả trước thành công."),
+  };
+}
+
+/** UC-FA-10 (AF18, EF38): Nhập chi phí trả trước từ Excel. */
+export async function importPrepaidExpensesExcel(w: ApiWriter, d: Row) {
+  const resp = await w.post(`${FIXED_ASSETS}assets/prepaid-expenses/import-excel/`, {
+    file_name: String(d.fileName || "Mau_Chi_Phi_Tra_Truoc.xlsx").trim(),
+    sheet_name: String(d.sheetName || "Sheet1").trim(),
+    header_row: Number(d.headerRow || 1),
+    auto_map_ai: Boolean(d.autoMap ?? true),
+    columns: Array.isArray(d.columns) ? d.columns : undefined,
+    rows: Array.isArray(d.rows) ? d.rows : [],
+  });
+  return {
+    record: resp,
+    message: resp.message || `Đã nhập khẩu thành công ${resp.imported_count || 0} khoản chi phí trả trước từ Excel.`,
+  };
 }
 
 /** Items the allocation of that posting date would book (the "Phân bổ" tab). */
@@ -1552,8 +2910,17 @@ export async function savePrepaidAllocation(w: ApiWriter, d: Row) {
   return { record, message: `Đã ghi sổ phân bổ chi phí trả trước ${record.number}: ${num(record.total_amount).toLocaleString("vi-VN")}đ.` };
 }
 
-/** "Ghi giảm chi phí trả trước": the remainder of each chosen item goes to expense. */
+/** "Ghi giảm chi phí trả trước" (UC-FA-14 Main Flow B): ghi giảm toàn bộ hoặc một phần giá trị chưa phân bổ của CPTT. */
 export async function savePrepaidDecrease(w: ApiWriter, d: Row) {
+  try {
+    return await savePrepaidDecreaseUc14(w, d);
+  } catch (err) {
+    if (err instanceof FormDataError) throw err;
+    const msg = errorText(err);
+    if (msg && !msg.includes("404") && !msg.includes("Not Found")) {
+      throw new FormDataError(msg);
+    }
+  }
   const codes = (d.rows || []).map((row: Row) => String(row.code || "").trim()).filter(Boolean);
   if (!codes.length) throw new FormDataError("Chọn ít nhất một khoản chi phí trả trước cần ghi giảm.");
   const items = await w.list(`${PREPAID}prepaid-expenses/`);
@@ -1565,7 +2932,7 @@ export async function savePrepaidDecrease(w: ApiWriter, d: Row) {
   const record = await w.post(`${PREPAID}prepaid-decreases/`, {
     number: String(d.number || ""), document_date: toApiDate(d.date), reason: String(d.reason || ""), lines,
   });
-  return { record, message: `Đã ghi sổ ghi giảm chi phí trả trước ${record.number}: ${num(record.total_amount).toLocaleString("vi-VN")}đ.` };
+  return { record, message: `Đã lưu chứng từ ghi giảm chi phí trả trước ${record.number} thành công.` };
 }
 
 /** "Hóa đơn điều chỉnh": an ADJUSTMENT tax invoice against the original output invoice the form searched for. */

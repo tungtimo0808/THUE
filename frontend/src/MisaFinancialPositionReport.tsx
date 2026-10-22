@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   Search,
@@ -29,7 +30,7 @@ export interface BalanceSheetItem {
   isClickable?: boolean;
 }
 
-// Complete Full Catalogue of B01 - DN matching User Input & Standard Vietnam Accounting Circular 200
+// Complete Full Catalogue of B01 - DN matching Standard Vietnam Accounting Circular 99/2025/TT-BTC
 const FULL_B01_DATA: BalanceSheetItem[] = [
   // A. TÀI SẢN NGẮN HẠN
   { name: "A. TÀI SẢN NGẮN HẠN", code: "100", closing: 24475000, level: 0, isBold: true },
@@ -224,23 +225,53 @@ export default function MisaFinancialPositionReport({
 
   // Selected report templates
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set(["B01-DN"]));
+  const [rows, setRows] = useState<BalanceSheetItem[]>(FULL_B01_DATA);
+
+  const loadReportFromBackend = useCallback(async () => {
+    try {
+      const cid = getSelectedCompanyId();
+      const query = cid ? `?company_id=${cid}` : "";
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
+      if (res && res.b01_dn) {
+        const b01 = res.b01_dn;
+        setRows(
+          FULL_B01_DATA.map((item) => {
+            const entry = b01[item.code];
+            if (!entry) return item;
+            return {
+              ...item,
+              closing: entry.closing !== undefined ? Number(entry.closing) : item.closing,
+              opening: entry.opening !== undefined ? Number(entry.opening) : item.opening,
+            };
+          })
+        );
+      }
+    } catch {
+      // Fallback to FULL_B01_DATA
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReportFromBackend();
+  }, [loadReportFromBackend]);
 
   // Filtered rows
   const filteredRows = useMemo(() => {
-    let list = FULL_B01_DATA;
+    let list = rows;
     if (hideZeroRows) {
-      list = list.filter((r) => r.closing !== undefined && r.closing !== 0);
+      list = list.filter((r) => (r.closing !== undefined && r.closing !== 0) || (r.opening !== undefined && r.opening !== 0));
     }
     if (searchKeyword.trim()) {
       const kw = searchKeyword.toLowerCase();
       list = list.filter((r) => r.name.toLowerCase().includes(kw) || r.code.includes(kw));
     }
     return list;
-  }, [hideZeroRows, searchKeyword]);
+  }, [rows, hideZeroRows, searchKeyword]);
 
   const handleApplyParams = () => {
     setIsParamDrawerOpen(false);
-    notify?.("Đã nạp số liệu Báo cáo tình hình tài chính theo tham số năm 2026.");
+    void loadReportFromBackend();
+    notify?.("Đã nạp số liệu Báo cáo tình hình tài chính (TT99) từ Sổ Cái Backend.");
   };
 
   const handleResetParams = () => {
@@ -436,7 +467,10 @@ export default function MisaFinancialPositionReport({
             type="button"
             style={{ width: 30, height: 30, border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}
             title="Làm mới"
-            onClick={() => notify?.("Đã làm mới dữ liệu báo cáo.")}
+            onClick={() => {
+              void loadReportFromBackend();
+              notify?.("Đã làm mới dữ liệu Báo cáo tình hình tài chính từ Sổ Cái Backend.");
+            }}
           >
             <RotateCw size={14} />
           </button>
@@ -532,6 +566,9 @@ export default function MisaFinancialPositionReport({
           <h1 style={{ margin: "0 0 4px 0", fontSize: 15, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.2px" }}>
             BÁO CÁO TÌNH HÌNH TÀI CHÍNH
           </h1>
+          <div style={{ fontSize: 12, color: "#64748b", marginBottom: 2 }}>
+            (Mẫu số B01 - DN ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)
+          </div>
           <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>
             Tại ngày 31 tháng 12 năm 2026
           </div>

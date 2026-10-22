@@ -20,5 +20,6 @@ router.register("closing-rules", views.ClosingRuleViewSet, basename="gl-closing-
 router.register("closing-runs", views.ClosingRunViewSet, basename="gl-closing-run")
 router.register("reconciliations", views.ReconciliationViewSet, basename="gl-reconciliation")
 router.register("approvals", views.ApprovalViewSet, basename="gl-approval")
+router.register("opening-balances", views.OpeningBalanceViewSet, basename="gl-opening-balance")
 
 urlpatterns = router.urls

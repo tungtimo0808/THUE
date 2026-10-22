@@ -1,4 +1,5 @@
-import {useState} from 'react';
+import {useState,useEffect} from 'react';
+import {apiClient,getSelectedCompanyId} from './apiClient';
 import {countCash} from './cash-operations';
 import {currentCashDate,cashDateValue} from './cash-date';
 import './cash-enhancements.css';
@@ -11,13 +12,14 @@ function loadDocs(key:string):InventoryDoc[]{try{const value:unknown=JSON.parse(
 export default function MisaCashInventoryWorkspace({bookBalance,companyId='minh-an',onLegacy,onBack}:{bookBalance:number;companyId?:string;onLegacy?:()=>void;onBack?:()=>void}){
  const storageKey=`soviet:cash-inventory:${companyId}`;
  const[docs,setDocs]=useState(()=>loadDocs(storageKey)),[view,setView]=useState<'list'|'cutoff'|'form'|'print'>('list'),[cutoff,setCutoff]=useState(currentCashDate),[error,setError]=useState('');
+ useEffect(()=>{const cid=getSelectedCompanyId()||companyId;void apiClient.get(`/api/v1/cash/denomination-counts/?company_id=${encodeURIComponent(String(cid))}`).then((res:any)=>{if(res&&Array.isArray(res.docs)&&res.docs.length>0){setDocs(res.docs);try{localStorage.setItem(storageKey,JSON.stringify(res.docs));}catch{}}}).catch(()=>{});},[companyId,storageKey]);
  const createDoc=():InventoryDoc=>({id:crypto.randomUUID(),code:'KKQ'+String(Math.max(0,...docs.map(doc=>Number(doc.code.replace(/^KKQ/,''))||0))+1).padStart(5,'0'),date:currentCashDate(),cutoff,time:new Date().toLocaleTimeString('vi-VN'),currency:'VND',purpose:`Kiểm kê tiền mặt tại quỹ đến ngày ${cutoff}`,reference:'',members:[],counts:denominations.map(denomination=>({denomination,quantity:0,note:`Loại mệnh giá ${denomination}`})),bookBalance,reason:'',conclusion:'',resolved:false,files:[]});
  const[draft,setDraft]=useState<InventoryDoc>(createDoc);
  const[extraDenomination,setExtraDenomination]=useState(1000);
  const actual=countCash(draft.counts),difference=draft.bookBalance-actual;
  const update=(key:keyof InventoryDoc,value:InventoryDoc[keyof InventoryDoc])=>setDraft(old=>({...old,[key]:value}));
  const attach=(files:FileList|null)=>{if(!files)return;const selected=[...files];if(selected.some(file=>file.size>5*1024*1024)){setError('Mỗi tệp đính kèm không được vượt quá 5MB.');return;}setError('');update('files',[...draft.files,...selected.map(file=>file.name)]);};
- const save=(print=false)=>{if(!draft.purpose.trim()||!Number.isFinite(cashDateValue(draft.date))||!Number.isFinite(cashDateValue(draft.cutoff))){setError('Nhập mục đích và ngày hợp lệ theo DD/MM/YYYY.');return;}const next=[...docs.filter(doc=>doc.id!==draft.id),draft];try{localStorage.setItem(storageKey,JSON.stringify(next));}catch{setError('Không thể lưu biên bản vào trình duyệt.');return;}setDocs(next);setError('');setView(print?'print':'list');};
+ const save=(print=false)=>{if(!draft.purpose.trim()||!Number.isFinite(cashDateValue(draft.date))||!Number.isFinite(cashDateValue(draft.cutoff))){setError('Nhập mục đích và ngày hợp lệ theo DD/MM/YYYY.');return;}const next=[...docs.filter(doc=>doc.id!==draft.id),draft];try{localStorage.setItem(storageKey,JSON.stringify(next));}catch{setError('Không thể lưu biên bản vào trình duyệt.');return;}const cid=getSelectedCompanyId()||companyId;void apiClient.post('/api/v1/cash/denomination-counts/',{company_id:cid,docs:next}).catch(()=>{});setDocs(next);setError('');setView(print?'print':'list');};
  const field=(label:string,key:'purpose'|'date'|'cutoff'|'time'|'reference'|'code')=><label>{label}<input aria-label={label} value={draft[key]} onChange={e=>update(key,e.target.value)} readOnly={view==='print'}/></label>;
  return <section className="ce-form">
   <div className="ce-toolbar">{onBack&&<button onClick={onBack}>Danh sách báo cáo</button>}{onLegacy&&<button onClick={onLegacy}>Biên bản hiện có</button>}{view!=='list'&&<button onClick={()=>{setView('list');setError('');}}>Danh sách kiểm kê</button>}</div>

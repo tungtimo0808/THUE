@@ -1276,7 +1276,7 @@ export default function MisaPurchaseWorkspace({
                   key={idx}
                   onClick={() => {
                     if (href) {
-                      window.location.href = href(`/purchases/${row.tabTarget}`);
+                      navigate(href(`/purchases/${row.tabTarget}`));
                     } else {
                       row.modal();
                     }
@@ -1444,7 +1444,7 @@ export default function MisaPurchaseWorkspace({
                   key={idx}
                   onClick={() => {
                     if (href) {
-                      window.location.href = href(`/purchases/${row.tabTarget}`);
+                      navigate(href(`/purchases/${row.tabTarget}`));
                     } else {
                       row.modal();
                     }
@@ -1611,7 +1611,7 @@ export default function MisaPurchaseWorkspace({
                   key={idx}
                   onClick={() => {
                     if (href) {
-                      window.location.href = href(`/purchases/${row.tabTarget}`);
+                      navigate(href(`/purchases/${row.tabTarget}`));
                     } else {
                       row.modal();
                     }
@@ -4985,7 +4985,7 @@ export default function MisaPurchaseWorkspace({
               }}
               onClick={() => {
                 if (href) {
-                  window.location.href = href("/purchases/invoices");
+                  navigate(href("/purchases/invoices"));
                 } else {
                   setShowReceiveInvoiceModal(true);
                 }

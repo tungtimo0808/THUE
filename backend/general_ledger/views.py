@@ -88,6 +88,7 @@ class AccountViewSet(AccountMasterViewSet):
         "history": "MD.ACCOUNT.VIEW",
         "change_status": "MD.ACCOUNT.EDIT",
         "init_from_template": "MD.ACCOUNT.CREATE",
+        "convert_tt99": "MD.ACCOUNT.VIEW",
         "export_csv": "MD.ACCOUNT.EXPORT",
         "import_csv": "MD.ACCOUNT.IMPORT",
     }
@@ -236,7 +237,7 @@ class AccountViewSet(AccountMasterViewSet):
 
     @action(detail=False, methods=["POST"], url_path="init-from-template")
     def init_from_template(self, request):
-        """Khởi tạo hệ thống tài khoản từ mẫu Thông tư 200 hoặc Thông tư 133 (Main Flow 2.1)."""
+        """Khởi tạo hệ thống tài khoản từ mẫu Thông tư 99, Thông tư 200 hoặc Thông tư 133 (Main Flow 2.1)."""
         company_id = (
             request.query_params.get("company_id")
             or request.data.get("company_id")
@@ -245,7 +246,7 @@ class AccountViewSet(AccountMasterViewSet):
         if not company_id:
             return Response({"detail": "Vui lòng chỉ định company_id."}, status=status.HTTP_400_BAD_REQUEST)
         company = get_object_or_404(Company, pk=company_id)
-        regime = request.data.get("regime", "TT200")
+        regime = request.data.get("regime", "TT99")
         scope = request.data.get("scope", "FULL")
         chart_code = request.data.get("chart_code")
         chart_name = request.data.get("chart_name")
@@ -263,6 +264,20 @@ class AccountViewSet(AccountMasterViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(result, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["GET", "POST"], url_path="convert-tt99")
+    def convert_tt99(self, request):
+        """Chuyển đổi và chuẩn hóa hệ thống tài khoản sang Thông tư 99/2025/TT-BTC."""
+        company_id = (
+            request.query_params.get("company_id")
+            or request.data.get("company_id")
+            or request.data.get("company")
+        )
+        company = Company.objects.filter(pk=company_id).first() if company_id else Company.objects.first()
+        if not company:
+            return Response({"detail": "Vui lòng chỉ định company_id hợp lệ."}, status=status.HTTP_400_BAD_REQUEST)
+        result = account_services.convert_chart_of_accounts_to_tt99(company=company, user=request.user)
+        return Response(result, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["GET"], url_path="export-csv")
     def export_csv(self, request):
@@ -595,3 +610,173 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         company = self.request.query_params.get("company_id")
         return self.queryset.filter(company_id=company) if company else self.queryset.none()
+
+
+class OpeningBalanceViewSet(GenericViewSet):
+    """
+    API quản lý và đồng bộ Số dư đầu kỳ theo Thông tư 99/2025/TT-BTC trực tiếp vào PostgreSQL
+    (kết hợp CoreCompanySetting.configuration và bút toán đầu kỳ OPEN-2026-001 trên Sổ Cái).
+    """
+    permission_classes = ()
+
+    def _resolve_company(self, request):
+        company_id = (
+            request.query_params.get("company_id")
+            or request.data.get("company_id")
+            or request.data.get("company")
+        )
+        if company_id:
+            comp = Company.objects.filter(pk=company_id).first()
+            if comp:
+                return comp
+        return Company.objects.first()
+
+    def _build_gl_accounts(self, company):
+        opening_entry = (
+            models.JournalEntry.objects.filter(company=company, entry_type="OPENING")
+            .prefetch_related("lines__account")
+            .first()
+        )
+        if not opening_entry:
+            return []
+        grouped = {}
+        for line in opening_entry.lines.all():
+            code = line.account.code
+            if code not in grouped:
+                grouped[code] = {
+                    "account": code,
+                    "name": line.account.name,
+                    "debit": 0,
+                    "credit": 0,
+                }
+            grouped[code]["debit"] += int(line.debit or 0)
+            grouped[code]["credit"] += int(line.credit or 0)
+        return sorted(grouped.values(), key=lambda x: x["account"])
+
+    def list(self, request):
+        from common_services.models import CoreCompanySetting
+
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=status.HTTP_400_BAD_REQUEST)
+
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
+        config = dict(setting.configuration or {})
+        saved = dict(config.get("opening_balances_tt99") or {})
+
+        gl_accounts = self._build_gl_accounts(company)
+        accounts = saved.get("accounts") or gl_accounts
+
+        total_debit = sum(int(r.get("debit") or 0) for r in accounts)
+        total_credit = sum(int(r.get("credit") or 0) for r in accounts)
+
+        categories_dict = {
+            "accounts": accounts,
+            "bank": saved.get("bank"),
+            "customers": saved.get("customers"),
+            "suppliers": saved.get("suppliers"),
+            "employees": saved.get("employees"),
+            "inventory": saved.get("inventory"),
+            "tools": saved.get("tools"),
+            "assets": saved.get("assets"),
+            "prepaid": saved.get("prepaid"),
+            "wip": saved.get("wip"),
+        }
+
+        opening_entry = models.JournalEntry.objects.filter(company=company, entry_type="OPENING").first()
+
+        return Response({
+            "company_id": str(company.id),
+            "accounting_regime": "TT99",
+            "gl_entry_number": opening_entry.number if opening_entry else "OPEN-2026-001",
+            **categories_dict,
+            "categories": categories_dict,
+            "total_debit": total_debit,
+            "total_credit": total_credit,
+            "balanced": total_debit == total_credit,
+        })
+
+    def create(self, request):
+        from common_services.models import CoreCompanySetting
+        from django.db import transaction
+        from master_data.models import Currency
+
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
+            config = dict(setting.configuration or {})
+            saved = dict(config.get("opening_balances_tt99") or {})
+
+            category = request.data.get("category")
+            if category and ("items" in request.data or "rows" in request.data):
+                saved[category] = request.data.get("items") if "items" in request.data else request.data.get("rows")
+
+            incoming_cats = request.data.get("categories") if isinstance(request.data.get("categories"), dict) else {}
+            for key in ("accounts", "bank", "customers", "suppliers", "employees", "inventory", "tools", "assets", "prepaid", "wip"):
+                if key in request.data and request.data[key] is not None:
+                    saved[key] = request.data[key]
+                elif key in incoming_cats and incoming_cats[key] is not None:
+                    saved[key] = incoming_cats[key]
+
+            # Nếu cập nhật danh sách số dư tài khoản (accounts), đồng bộ xuống JournalEntry OPEN-2026-001
+            acc_payload = request.data.get("accounts") or incoming_cats.get("accounts") or (saved.get("accounts") if category == "accounts" else None)
+            if isinstance(acc_payload, list):
+                acc_rows = acc_payload
+                opening_entry = models.JournalEntry.objects.filter(company=company, entry_type="OPENING").first()
+                vnd = Currency.objects.filter(code="VND").first() or company.accounting_currency
+                if opening_entry and vnd:
+                    new_lines = []
+                    total_d = Decimal("0")
+                    total_c = Decimal("0")
+                    line_no = 1
+                    for r in acc_rows:
+                        code = str(r.get("account") or r.get("code") or "").strip()
+                        d = Decimal(str(r.get("debit") or 0))
+                        c = Decimal(str(r.get("credit") or 0))
+                        if not code or (d == 0 and c == 0):
+                            continue
+                        acc_obj = models.Account.objects.filter(company=company, code=code).first()
+                        if not acc_obj:
+                            continue
+                        if d > 0 and c > 0:
+                            new_lines.append((line_no, acc_obj, d, Decimal("0"), r.get("name") or acc_obj.name))
+                            line_no += 1
+                            new_lines.append((line_no, acc_obj, Decimal("0"), c, r.get("name") or acc_obj.name))
+                            line_no += 1
+                            total_d += d
+                            total_c += c
+                        elif d > 0:
+                            new_lines.append((line_no, acc_obj, d, Decimal("0"), r.get("name") or acc_obj.name))
+                            line_no += 1
+                            total_d += d
+                        elif c > 0:
+                            new_lines.append((line_no, acc_obj, Decimal("0"), c, r.get("name") or acc_obj.name))
+                            line_no += 1
+                            total_c += c
+
+                    if new_lines and total_d == total_c:
+                        opening_entry.lines.all().delete()
+                        for lno, acc_obj, d_val, c_val, desc in new_lines:
+                            models.JournalLine.objects.create(
+                                entry=opening_entry,
+                                line_no=lno,
+                                account=acc_obj,
+                                description=f"Số dư đầu kỳ {acc_obj.code} - {desc}",
+                                currency=vnd,
+                                exchange_rate=Decimal("1"),
+                                foreign_amount=d_val if d_val > 0 else c_val,
+                                debit=d_val,
+                                credit=c_val,
+                            )
+                        opening_entry.total_debit = total_d
+                        opening_entry.total_credit = total_c
+                        opening_entry.save(update_fields=["total_debit", "total_credit", "updated_at"])
+
+            config["opening_balances_tt99"] = saved
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+
+        return self.list(request)

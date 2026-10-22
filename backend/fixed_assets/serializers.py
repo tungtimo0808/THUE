@@ -5,6 +5,10 @@ from . import models
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    asset_account_code = serializers.CharField(source="asset_account.code", read_only=True, default="")
+    accumulated_account_code = serializers.CharField(source="accumulated_account.code", read_only=True, default="")
+    expense_account_code = serializers.CharField(source="expense_account.code", read_only=True, default="")
+
     class Meta:
         model = models.AssetCategory
         fields = "__all__"
@@ -32,13 +36,22 @@ class AssetSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source="branch.name", read_only=True)
     department_name = serializers.CharField(source="department.name", read_only=True, default="")
     custodian_name = serializers.CharField(source="custodian.full_name", read_only=True, default="")
+    asset_account_code = serializers.CharField(source="asset_account.code", read_only=True, default="")
+    accumulated_account_code = serializers.CharField(source="accumulated_account.code", read_only=True, default="")
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    accounting_reconciliation_status_display = serializers.CharField(
+        source="get_accounting_reconciliation_status_display", read_only=True
+    )
+    created_by_name = serializers.CharField(source="created_by.username", read_only=True, default="")
+    updated_by_name = serializers.CharField(source="updated_by.username", read_only=True, default="")
 
     class Meta:
         model = models.AssetRecord
         fields = "__all__"
         read_only_fields = (
             "id", "accumulated_depreciation", "allocated_value", "periods_processed",
-            "status", "disposed_at", "created_by", "created_at", "updated_at",
+            "status", "disposed_at", "version", "last_update_reason",
+            "created_by", "updated_by", "created_at", "updated_at",
         )
 
     def validate(self, attrs):
@@ -70,10 +83,89 @@ class AssetSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     asset_code = serializers.CharField(source="asset.code", read_only=True)
     asset_name = serializers.CharField(source="asset.name", read_only=True)
+    department_name = serializers.CharField(source="asset.department.name", read_only=True, default="")
+    asset_status = serializers.CharField(source="asset.status", read_only=True)
+    asset_status_display = serializers.CharField(source="asset.get_status_display", read_only=True)
+    accounting_reconciliation_status = serializers.CharField(
+        source="asset.accounting_reconciliation_status", read_only=True
+    )
+    accounting_reconciliation_status_display = serializers.CharField(
+        source="asset.get_accounting_reconciliation_status_display", read_only=True
+    )
     target_category_name = serializers.CharField(source="target_category.name", read_only=True, default="")
     target_branch_name = serializers.CharField(source="target_branch.name", read_only=True, default="")
     target_department_name = serializers.CharField(source="target_department.name", read_only=True, default="")
     target_custodian_name = serializers.CharField(source="target_custodian.full_name", read_only=True, default="")
+    voucher_no = serializers.SerializerMethodField()
+    from_department_id = serializers.SerializerMethodField()
+    from_department_name = serializers.SerializerMethodField()
+    to_department_name = serializers.SerializerMethodField()
+    deliverer = serializers.SerializerMethodField()
+    receiver = serializers.SerializerMethodField()
+    reference = serializers.SerializerMethodField()
+    sales_contract = serializers.SerializerMethodField()
+    sales_order = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
+    expense_item = serializers.SerializerMethodField()
+    cost_object = serializers.SerializerMethodField()
+    attachments = serializers.SerializerMethodField()
+
+    def get_voucher_no(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("voucher_no") or obj.source_reference or obj.number)
+
+    def get_from_department_id(self, obj):
+        before = obj.before_snapshot if isinstance(obj.before_snapshot, dict) else {}
+        return str(before.get("from_department_id") or before.get("department") or "")
+
+    def get_from_department_name(self, obj):
+        before = obj.before_snapshot if isinstance(obj.before_snapshot, dict) else {}
+        return str(
+            before.get("from_department_name")
+            or (obj.asset.department.name if obj.asset and obj.asset.department else "")
+        )
+
+    def get_to_department_name(self, obj):
+        if obj.target_department_id and obj.target_department:
+            return obj.target_department.name
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("to_department_name") or "")
+
+    def get_deliverer(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("deliverer") or "")
+
+    def get_receiver(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("receiver") or "")
+
+    def get_reference(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("reference") or obj.source_reference or "")
+
+    def get_sales_contract(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("sales_contract") or "")
+
+    def get_sales_order(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("sales_order") or "")
+
+    def get_project(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("project") or "")
+
+    def get_expense_item(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("expense_item") or "")
+
+    def get_cost_object(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return str(after.get("cost_object") or "")
+
+    def get_attachments(self, obj):
+        after = obj.after_snapshot if isinstance(obj.after_snapshot, dict) else {}
+        return after.get("attachments") or []
 
     class Meta:
         model = models.AssetTransaction
@@ -125,6 +217,9 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class CalculationLineSerializer(serializers.ModelSerializer):
+    asset_code = serializers.CharField(source="asset.code", read_only=True)
+    asset_name = serializers.CharField(source="asset.name", read_only=True)
+
     class Meta:
         model = models.CalculationLine
         fields = "__all__"
@@ -133,15 +228,24 @@ class CalculationLineSerializer(serializers.ModelSerializer):
 
 class CalculationRunSerializer(serializers.ModelSerializer):
     lines = CalculationLineSerializer(many=True, read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    created_by_name = serializers.CharField(source="created_by.username", read_only=True, default="")
+    posted_by_name = serializers.CharField(source="posted_by.username", read_only=True, default="")
 
     class Meta:
         model = models.CalculationRun
         fields = "__all__"
-        read_only_fields = ("id", "status", "total_amount", "created_by", "created_at")
+        read_only_fields = (
+            "id", "status", "total_amount", "total_deductible_amount",
+            "total_non_deductible_amount", "created_by", "posted_by",
+            "posted_at", "created_at", "updated_at",
+        )
 
     def validate(self, attrs):
-        if attrs["period_end"] < attrs["period_start"]:
-            raise serializers.ValidationError({"period_end": "Kỳ tính không hợp lệ."})
+        p_start = attrs.get("period_start", getattr(self.instance, "period_start", None))
+        p_end = attrs.get("period_end", getattr(self.instance, "period_end", None))
+        if p_start and p_end and p_end < p_start:
+            raise serializers.ValidationError({"period_end": "Vui lòng chọn kỳ tính khấu hao hợp lệ."})
         return attrs
 
 

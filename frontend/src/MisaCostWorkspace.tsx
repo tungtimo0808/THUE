@@ -243,7 +243,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
     headerTitle: "Các bước tính giá thành sản xuất liên tục - Giản đơn",
     videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "TÍNH GIÁ THÀNH GIẢN ĐƠN",
-    videoSubtitle: "THÔNG TƯ 200",
+    videoSubtitle: "THÔNG TƯ 99",
     videoBg: "linear-gradient(135deg, #09203f 0%, #537895 100%)",
     hasUtilitiesBottom: true,
     row1: [
@@ -265,7 +265,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
     headerTitle: "Các bước tính giá thành sản xuất liên tục - Hệ số tỷ lệ",
     videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "TÍNH GIÁ THÀNH HỆ SỐ - TỶ LỆ",
-    videoSubtitle: "THÔNG TƯ 200",
+    videoSubtitle: "THÔNG TƯ 99",
     videoBg: "linear-gradient(135deg, #09203f 0%, #537895 100%)",
     hasUtilitiesBottom: true,
     row1: [
@@ -311,7 +311,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
     headerTitle: "Các bước tính giá thành - Công trình",
     videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "CÔNG TRÌNH VỤ VIỆC - DỊCH VỤ",
-    videoSubtitle: "THÔNG TƯ 200",
+    videoSubtitle: "THÔNG TƯ 99",
     videoBg: "linear-gradient(135deg, #09203f 0%, #1e3a8a 50%, #0369a1 100%)",
     hasUtilitiesBottom: true,
     row1: [
@@ -333,7 +333,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
     headerTitle: "Các bước tính giá thành - Đơn hàng",
     videoTopLabel: "[Sổ Việt ERP] Hướng dẫn Tính giá thành",
     videoMainTitle: "ĐƠN ĐẶT HÀNG",
-    videoSubtitle: "THÔNG TƯ 200",
+    videoSubtitle: "THÔNG TƯ 99",
     videoBg: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
     hasUtilitiesBottom: false,
     row1: [
@@ -355,7 +355,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
     headerTitle: "Các bước tính giá thành - Hợp đồng",
     videoTopLabel: "[Sổ Việt ERP] Hướng dẫn Tính giá thành",
     videoMainTitle: "HỢP ĐỒNG",
-    videoSubtitle: "THÔNG TƯ 200",
+    videoSubtitle: "THÔNG TƯ 99",
     videoBg: "linear-gradient(135deg, #09203f 0%, #1e3a8a 100%)",
     hasUtilitiesBottom: false,
     row1: [

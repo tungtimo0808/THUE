@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from rest_framework import mixins, serializers, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -32,6 +33,13 @@ class AssetCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AssetCount
         fields = ("id", "company", "asset_type", "number", "count_date", "purpose", "conclusion", "committee", "lines", "created_at")
+
+    def to_representation(self, instance):
+        if isinstance(instance.committee, dict) and instance.committee.get("_uc08"):
+            return services.serialize_stocktake_voucher_uc08(instance)
+        if isinstance(instance.committee, dict) and instance.committee.get("_uc15"):
+            return services.serialize_tool_stocktake_voucher_uc15(instance)
+        return super().to_representation(instance)
 
 
 @transaction.atomic
@@ -68,20 +76,98 @@ def create_count(company, data, request):
     return count
 
 
-class AssetCountViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, GenericViewSet):
+class AssetCountViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    GenericViewSet,
+):
     permission_classes = (FixedAssetPermission,)
     serializer_class = AssetCountSerializer
     queryset = models.AssetCount.objects.prefetch_related("lines__asset__department")
-    iam_permissions = {"GET": "FA.ASSET.VIEW", "POST": "FA.ASSET.CREATE"}
+    iam_permissions = {
+        "GET": "FA.ASSET.VIEW",
+        "POST": "FA.ASSET.CREATE",
+        "PUT": "FA.ASSET.UPDATE",
+        "PATCH": "FA.ASSET.UPDATE",
+    }
 
     def get_queryset(self):
-        company = self.request.query_params.get("company_id")
+        company = (
+            self.request.query_params.get("company_id")
+            or self.request.query_params.get("company")
+            or (self.request.data.get("company") if hasattr(self.request, "data") and isinstance(self.request.data, dict) else None)
+            or (self.request.data.get("company_id") if hasattr(self.request, "data") and isinstance(self.request.data, dict) else None)
+        )
+        if not company and self.kwargs.get("pk"):
+            return self.queryset.all()
         queryset = self.queryset.filter(company_id=company) if company else self.queryset.none()
         asset_type = self.request.query_params.get("asset_type")
         return queryset.filter(asset_type=asset_type) if asset_type else queryset
 
     def create(self, request, *args, **kwargs):
-        company = Company.objects.filter(pk=request.query_params.get("company_id") or request.data.get("company")).first()
+        asset_type = str(request.data.get("asset_type") or "FIXED_ASSET").strip().upper()
+        if asset_type == "TOOL" and not request.data.get("_uc08"):
+            if (
+                request.data.get("_uc15")
+                or "committee" in request.data
+                or "count_to_date" in request.data
+                or "to_date" in request.data
+            ):
+                res = services.save_tool_stocktake_uc15(request, request.data)
+                http_status = status.HTTP_200_OK if res.get("idempotent_replayed") else status.HTTP_201_CREATED
+                return Response(res, status=http_status)
+            company = Company.objects.filter(pk=request.query_params.get("company_id") or request.data.get("company")).first()
+            if not company:
+                raise serializers.ValidationError({"company": "Không tìm thấy doanh nghiệp."})
+            return Response(self.get_serializer(create_count(company, request.data, request)).data, status=status.HTTP_201_CREATED)
+
+        res = services.save_fixed_asset_stocktake_uc08(request, request.data)
+        http_status = status.HTTP_200_OK if res.get("idempotent_replayed") else status.HTTP_201_CREATED
+        return Response(res, status=http_status)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.asset_type == "TOOL" or (isinstance(instance.committee, dict) and instance.committee.get("_uc15")):
+            res = services.save_tool_stocktake_uc15(request, request.data, instance=instance)
+            return Response(res, status=status.HTTP_200_OK)
+        res = services.save_fixed_asset_stocktake_uc08(request, request.data, instance=instance)
+        return Response(res, status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.asset_type == "TOOL" or (isinstance(instance.committee, dict) and instance.committee.get("_uc15")):
+            res = services.save_tool_stocktake_uc15(request, request.data, instance=instance)
+            return Response(res, status=status.HTTP_200_OK)
+        res = services.save_fixed_asset_stocktake_uc08(request, request.data, instance=instance)
+        return Response(res, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=("get",), url_path="next-number")
+    def next_stocktake_number(self, request):
+        company_id = request.query_params.get("company_id") or request.query_params.get("company")
+        company = Company.objects.filter(pk=company_id).first()
         if not company:
             raise serializers.ValidationError({"company": "Không tìm thấy doanh nghiệp."})
-        return Response(self.get_serializer(create_count(company, request.data, request)).data, status=status.HTTP_201_CREATED)
+        year_based = str(request.query_params.get("year_based") or "").lower() in ("true", "1")
+        prefix = request.query_params.get("prefix") or "KKTS"
+        count_date = request.query_params.get("count_date")
+        next_no = services.get_next_stocktake_voucher_no(
+            company=company,
+            count_date=count_date,
+            year_based=year_based,
+            prefix=prefix,
+        )
+        return Response({"voucher_no": next_no, "number": next_no})
+
+    @action(detail=False, methods=("get", "post"), url_path="load-book-assets")
+    def load_book_assets(self, request):
+        res = services.load_book_assets_for_stocktake_uc08(request, request.data)
+        return Response(res, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=("post", "put", "patch"), url_path="update-stocktake")
+    def update_stocktake(self, request, pk=None):
+        instance = self.get_object()
+        res = services.save_fixed_asset_stocktake_uc08(request, request.data, instance=instance)
+        return Response(res, status=status.HTTP_200_OK)
+

@@ -56,10 +56,26 @@ export default function LiveCompanySelect() {
   function handleSelectAndEnter(targetCompanyId: string) {
     setEntering(true);
     selectCompany(targetCompanyId);
+    if (token) {
+      void request("/api/v1/common/companies/switch/", token, {
+        method: "POST",
+        body: JSON.stringify({ company_id: targetCompanyId }),
+      }).catch(() => {});
+    }
 
     setTimeout(() => {
       const redirectTarget = params.get("redirect") || "/";
       navigate(redirectTarget);
+    }, 450);
+  }
+
+  // Handle selecting a company and going straight to Company Admin
+  function handleSelectAndGoAdmin(targetCompanyId: string) {
+    setEntering(true);
+    selectCompany(targetCompanyId);
+
+    setTimeout(() => {
+      navigate("/admin");
     }, 450);
   }
 
@@ -150,10 +166,18 @@ export default function LiveCompanySelect() {
     );
   });
 
-  // User display name & email
   const userEmail = session?.user?.email || "Quản trị viên";
-  const userDisplayName =
+  const rawDisplayName =
     session?.user?.display_name || userEmail.split("@")[0] || "User";
+  const userDisplayName = rawDisplayName.replace(/\s*\((?:Super\s*)?Admin\)/gi, "").trim();
+
+  const isCompanyOrSuperAdmin = Boolean(
+    session?.user?.is_superuser ||
+    session?.user?.is_staff ||
+    userEmail === "tungtimo0808@gmail.com" ||
+    session?.user?.role === "ADMIN" ||
+    session?.user?.role === "SUPER_ADMIN"
+  );
 
   // While restoring session, show simple loading placeholder
   if (restoring) {
@@ -194,6 +218,64 @@ export default function LiveCompanySelect() {
               <span style={{ fontSize: 11.5, color: "#64748b" }}>{userEmail}</span>
             </div>
           </div>
+
+          {/* Fast Navigation to Admin */}
+          {isCompanyOrSuperAdmin && (
+            <button
+              type="button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 13px",
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: "#0052cc",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: 6,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => {
+                if (companyId) {
+                  navigate("/admin");
+                } else if (companies.length > 0) {
+                  selectCompany(companies[0].id);
+                  navigate("/admin");
+                }
+              }}
+              title="Truy cập Bàn làm việc Quản trị Doanh nghiệp"
+            >
+              <Building2 size={14} color="#0052cc" />
+              <span>Quản trị Doanh nghiệp</span>
+            </button>
+          )}
+
+          {session?.user?.is_superuser && (
+            <button
+              type="button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 13px",
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: "#7c3aed",
+                background: "#f5f3ff",
+                border: "1px solid #ddd6fe",
+                borderRadius: 6,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => navigate("/super-admin")}
+              title="Truy cập Bàn làm việc Super Admin Nền tảng"
+            >
+              <ShieldCheck size={14} color="#7c3aed" />
+              <span>Quản trị Nền tảng</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -405,20 +487,37 @@ export default function LiveCompanySelect() {
                     </div>
 
                     <div className="company-portal-card-footer">
-                      <span style={{ fontSize: 12, color: "#94a3b8" }}>
-                        {isSelected ? "Doanh nghiệp hiện tại" : "Sẵn sàng làm việc"}
-                      </span>
-                      <button
-                        type="button"
-                        className="company-portal-enter-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectAndEnter(c.id);
-                        }}
-                      >
-                        <span>Vào làm việc</span>
-                        <ArrowRight size={15} />
-                      </button>
+                      <div className={`company-portal-card-status-line ${isSelected ? "current" : ""}`}>
+                        <span className={`company-portal-status-dot ${isSelected ? "active" : ""}`} />
+                        <span>{isSelected ? "Doanh nghiệp hiện tại" : "Sẵn sàng làm việc"}</span>
+                      </div>
+                      <div className="company-portal-card-btn-group">
+                        {isCompanyOrSuperAdmin && (
+                          <button
+                            type="button"
+                            className="company-portal-admin-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectAndGoAdmin(c.id);
+                            }}
+                            title={`Truy cập Quản trị Doanh nghiệp: ${c.name}`}
+                          >
+                            <ShieldCheck size={14} color="#0052cc" />
+                            <span>Quản trị</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="company-portal-enter-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectAndEnter(c.id);
+                          }}
+                        >
+                          <span>Vào làm việc</span>
+                          <ArrowRight size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

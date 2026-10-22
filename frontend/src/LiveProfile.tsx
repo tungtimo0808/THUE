@@ -14,6 +14,7 @@ export default function LiveProfile() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [emailToken, setEmailToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -53,6 +54,20 @@ export default function LiveProfile() {
     finally { setBusy(false); }
   }
 
+  async function confirmEmailChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!emailToken.trim()) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      await request("/api/v1/common/profile/confirm-email/", token, {
+        method: "POST", body: JSON.stringify({ token: emailToken.trim(), code: emailToken.trim() }),
+      });
+      setEmailToken("");
+      setMessage("Đã xác nhận địa chỉ email mới.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Không xác nhận được email."); }
+    finally { setBusy(false); }
+  }
+
   return <main className="account-page"><section className="account-card account-wide">
     <Link to="/login">← Phiên làm việc</Link>
     <p className="account-eyebrow">COM-06 / COM-07</p>
@@ -73,6 +88,11 @@ export default function LiveProfile() {
           <label>Mật khẩu mới<input type="password" value={next} onChange={event => setNext(event.target.value)} autoComplete="new-password" minLength={8} required /></label>
           <label>Xác nhận mật khẩu mới<input type="password" value={confirm} onChange={event => setConfirm(event.target.value)} autoComplete="new-password" minLength={8} required /></label>
           <button type="submit" disabled={busy}>Đổi mật khẩu</button>
+        </form>
+        <form className="account-change-email" onSubmit={confirmEmailChange}>
+          <h2>Xác nhận đổi Email</h2>
+          <label>Mã xác nhận email mới<input value={emailToken} onChange={event => setEmailToken(event.target.value)} placeholder="Nhập mã xác thực email" required /></label>
+          <button type="submit" disabled={busy}>Xác nhận Email</button>
         </form>
         <button type="button" className="account-text-button" onClick={signOut}>Đăng xuất</button>
       </>}

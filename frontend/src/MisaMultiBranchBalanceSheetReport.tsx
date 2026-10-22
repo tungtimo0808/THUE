@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   Printer,
@@ -383,6 +384,37 @@ export default function MisaMultiBranchBalanceSheetReport({
     code: string;
     amount: number;
   } | null>(null);
+  const [rows, setRows] = useState<BalanceSheetRow[]>(DEFAULT_ROWS);
+
+  const loadReportFromBackend = useCallback(async () => {
+    try {
+      const cid = getSelectedCompanyId();
+      const query = cid ? `?company_id=${cid}` : "";
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
+      if (res && res.b01_dn) {
+        const b01 = res.b01_dn;
+        setRows(
+          DEFAULT_ROWS.map((row) => {
+            if (!row.code) return row;
+            const lookupKey = row.code === "136" && row.target.includes("Phải thu ngắn hạn khác") ? "136_alt" : row.code;
+            const entry = b01[lookupKey] || b01[row.code];
+            if (!entry) return row;
+            return {
+              ...row,
+              closeAmount: entry.closing !== undefined && entry.closing !== 0 ? Number(entry.closing) : row.closeAmount,
+              openAmount: entry.opening !== undefined && entry.opening !== 0 ? Number(entry.opening) : row.openAmount,
+            };
+          })
+        );
+      }
+    } catch {
+      // Fallback to DEFAULT_ROWS
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReportFromBackend();
+  }, [loadReportFromBackend]);
 
   const handleOpenDrawer = () => {
     setDraftPeriod(period);
@@ -396,7 +428,8 @@ export default function MisaMultiBranchBalanceSheetReport({
     setFromDate(draftFromDate);
     setToDate(draftToDate);
     setIsParamDrawerOpen(false);
-    notify?.("Đã tải lại Bảng cân đối kế toán theo nhiều chi nhánh với tham số mới.");
+    void loadReportFromBackend();
+    notify?.("Đã tải lại Báo cáo tình hình tài chính theo nhiều chi nhánh (TT99) từ Sổ Cái Backend.");
   };
 
   const handleResetParams = () => {
@@ -423,7 +456,7 @@ export default function MisaMultiBranchBalanceSheetReport({
 
   // Filter rows
   const filteredRows = useMemo(() => {
-    return DEFAULT_ROWS.filter((row) => {
+    return rows.filter((row) => {
       if (searchKeyword.trim()) {
         const kw = searchKeyword.toLowerCase();
         return (
@@ -433,7 +466,7 @@ export default function MisaMultiBranchBalanceSheetReport({
       }
       return true;
     });
-  }, [searchKeyword]);
+  }, [rows, searchKeyword]);
 
   return (
     <div
@@ -577,7 +610,10 @@ export default function MisaMultiBranchBalanceSheetReport({
             cursor: "pointer",
           }}
           title="Nạp lại"
-          onClick={() => notify?.("Đã làm mới dữ liệu báo cáo.")}
+          onClick={() => {
+            void loadReportFromBackend();
+            notify?.("Đã làm mới dữ liệu báo cáo (TT99) từ Sổ Cái Backend.");
+          }}
         >
           <RefreshCw size={15} />
         </button>

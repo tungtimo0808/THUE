@@ -183,7 +183,7 @@ class CompanyUserSerializer(serializers.ModelSerializer):
     def _assignments(self, obj):
         cache = self.context.setdefault("_membership_assignments", {})
         if obj.pk not in cache:
-            cache[obj.pk] = list(effective_assignments(obj.user, obj.company))
+            cache[obj.pk] = list(effective_assignments(obj.user, obj.company, skip_sync=True))
         return cache[obj.pk]
 
     def get_role_assignments(self, obj) -> list[dict]:
@@ -195,15 +195,27 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         ]
 
     def get_effective_permissions(self, obj) -> list[str]:
-        return sorted(set().union(*(assignment_permission_codes(a) for a in self._assignments(obj))))
+        cache = self.context.setdefault("_role_perm_codes", {})
+        res = set()
+        for a in self._assignments(obj):
+            if a.role_id not in cache:
+                cache[a.role_id] = assignment_permission_codes(a)
+            res.update(cache[a.role_id])
+        return sorted(res)
 
     def _can_view_security(self, obj):
         request = self.context.get("request")
-        return bool(request and (request.user.is_superuser or has_effective_permission(
-            request.user.iam_account, obj.company, "SYS.USER.VIEW_SECURITY",
-            branch_id=obj.employee.branch_id if obj.employee_id else None,
-            department_id=obj.employee.department_id if obj.employee_id else None,
-        )))
+        if not request:
+            return False
+        if request.user.is_superuser:
+            return True
+        cached_sec = self.context.get("_can_view_sec")
+        if cached_sec is None:
+            cached_sec = has_effective_permission(
+                request.user.iam_account, obj.company, "SYS.USER.VIEW_SECURITY"
+            )
+            self.context["_can_view_sec"] = cached_sec
+        return cached_sec
 
     def get_account_status(self, obj) -> str | None:
         if not self._can_view_security(obj):

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
@@ -75,6 +76,7 @@ export default function MisaSalesWorkspace({
   href,
   notify,
 }: MisaSalesWorkspaceProps) {
+  const navigate = useNavigate();
   const { token } = useApiSession();
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
     customers: "/api/v1/master-data/customers/",
@@ -750,7 +752,7 @@ export default function MisaSalesWorkspace({
 
   const navigateTo = (targetTab: string) => {
     if (href) {
-      window.location.href = href(`/sales/${targetTab}`);
+      navigate(href(`/sales/${targetTab}`));
     }
   };
 
@@ -5374,7 +5376,7 @@ export default function MisaSalesWorkspace({
               }}
               onClick={() => {
                 if (href) {
-                  window.location.href = href("/sales/customers");
+                  navigate(href("/sales/customers"));
                 }
               }}
             >

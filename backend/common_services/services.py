@@ -422,6 +422,15 @@ def login(data, request):
         }
         for item in memberships
     ]
+    if user.is_superuser and not companies:
+        all_comps = Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at")
+        companies = [
+            {
+                "id": str(c.id), "code": c.code, "name": c.name, "status": c.status,
+            }
+            for c in all_comps
+        ]
+
     active_companies = [item for item in companies if item["status"] == "ACTIVE"]
     pending_setup_companies = [item for item in companies if item["status"] == CompanyStatus.PENDING_SETUP]
 
@@ -438,6 +447,9 @@ def login(data, request):
     else:
         target_screen = "COMPANY_SETUP_OR_JOIN"
 
+    if user.is_superuser:
+        target_screen = "SUPER_ADMIN"
+
     # BR-COM-LOGIN-19: Ghi nhận sự kiện đăng nhập thành công
     LoginLog.objects.create(user=account, username_or_email=login_value, login_result="SUCCESS", ip_address=_client_ip(request))
     _security_event("LOGIN_SUCCESS", request, user, detail={"session_id": str(session.id)})
@@ -449,13 +461,16 @@ def login(data, request):
         "user": {
             "id": str(account.id),
             "display_name": account.display_name,
+            "username": user.username,
             "email": user.email,
+            "is_superuser": bool(user.is_superuser),
+            "is_staff": bool(user.is_staff),
         },
         "companies": companies,
         "current_company": selected_company,
         "target_screen": target_screen,
-        "requires_company_selection": len(active_companies) > 1 and not pending_setup_companies,
-        "requires_company_setup": not active_companies or bool(pending_setup_companies),
+        "requires_company_selection": len(active_companies) > 1 and not pending_setup_companies and not user.is_superuser,
+        "requires_company_setup": (not active_companies or bool(pending_setup_companies)) and not user.is_superuser,
         "setup_company": pending_setup_companies[0] if pending_setup_companies else None,
     }
 

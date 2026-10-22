@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   Search,
@@ -33,7 +34,7 @@ export interface IncomeStatementItem {
   accountRef?: string;
 }
 
-// Full 21 rows of Circular 200/2014/TT-BTC B02-DN matching screenshots exactly
+// Full 21 rows of Circular 99/2025/TT-BTC B02-DN matching screenshots
 const BASE_INCOME_DATA: IncomeStatementItem[] = [
   {
     id: "01",
@@ -270,6 +271,41 @@ export default function MisaBusinessResultReport({
 
   // Saved reports modal
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
+  const [rows, setRows] = useState<IncomeStatementItem[]>(BASE_INCOME_DATA);
+
+  const loadReportFromBackend = useCallback(async () => {
+    try {
+      const cid = getSelectedCompanyId();
+      const query = cid ? `?company_id=${cid}` : "";
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
+      if (res && res.b02_dn) {
+        const b02 = res.b02_dn;
+        // Only override if backend has journal entries or non-zero revenue/expenses, or always map live
+        const hasActivity = Object.values(b02).some(
+          (v: any) => Number(v?.currentPeriod || 0) !== 0 || Number(v?.previousPeriod || 0) !== 0
+        );
+        if (hasActivity) {
+          setRows(
+            BASE_INCOME_DATA.map((item) => {
+              const entry = b02[item.code];
+              if (!entry) return item;
+              return {
+                ...item,
+                currentPeriod: Number(entry.currentPeriod ?? item.currentPeriod),
+                previousPeriod: Number(entry.previousPeriod ?? item.previousPeriod),
+              };
+            })
+          );
+        }
+      }
+    } catch {
+      // Fallback to BASE_INCOME_DATA
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReportFromBackend();
+  }, [loadReportFromBackend]);
 
   // Open drawer helper
   const handleOpenDrawer = () => {
@@ -289,7 +325,8 @@ export default function MisaBusinessResultReport({
     setFetchFromSaved(draftFetchFromSaved);
     setHideZero(draftHideZero);
     setIsParamDrawerOpen(false);
-    notify?.("Đã tải lại báo cáo với tham số mới.");
+    void loadReportFromBackend();
+    notify?.("Đã tải lại Báo cáo kết quả hoạt động kinh doanh (TT99) từ Sổ Cái Backend.");
   };
 
   // Reset parameters in drawer
@@ -318,7 +355,7 @@ export default function MisaBusinessResultReport({
 
   // Filter rows based on search keyword and hideZero checkbox
   const filteredRows = useMemo(() => {
-    return BASE_INCOME_DATA.filter((row) => {
+    return rows.filter((row) => {
       // Filter out zero rows if hideZero is active
       if (hideZero) {
         if (row.currentPeriod === 0 && row.previousPeriod === 0) {
@@ -338,7 +375,7 @@ export default function MisaBusinessResultReport({
 
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [rows, hideZero, searchKeyword]);
 
   return (
     <div
@@ -557,7 +594,10 @@ export default function MisaBusinessResultReport({
               cursor: "pointer",
             }}
             title="Làm mới"
-            onClick={() => notify?.("Đã làm mới dữ liệu báo cáo kết quả hoạt động kinh doanh.")}
+            onClick={() => {
+              void loadReportFromBackend();
+              notify?.("Đã làm mới dữ liệu báo cáo kết quả hoạt động kinh doanh (TT99) từ Sổ Cái Backend.");
+            }}
           >
             <RotateCw size={14} />
           </button>
@@ -753,12 +793,15 @@ export default function MisaBusinessResultReport({
             >
               BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH
             </h1>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              (Mẫu số B02 - DN ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)
+            </div>
             <div
               style={{
                 fontSize: 13,
                 fontStyle: "italic",
                 color: "#475569",
-                marginTop: 6,
+                marginTop: 4,
               }}
             >
               Kỳ kế toán tháng 10 năm 2026

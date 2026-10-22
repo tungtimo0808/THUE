@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { apiClient } from "./apiClient";
 import {
   ChevronLeft,
   ChevronDown,
@@ -152,9 +153,29 @@ export default function MisaInterimCashFlowDirectReport({
     };
   };
 
+  const [rowsData, setRowsData] = useState<InterimCashFlowItem[]>(FULL_B03A_DATA);
+
+  useEffect(() => {
+    apiClient
+      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
+      .then((res) => {
+        if (res?.b03_direct) {
+          setRowsData(
+            FULL_B03A_DATA.map((r) => {
+              const m = r.code ? res.b03_direct[r.code] : null;
+              return m
+                ? { ...r, quarterCurrent: Number(m.current || 0), quarterPrevious: Number(m.previous || 0) }
+                : r;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+  }, [year, period, fromDate, toDate]);
+
   // Filter rows for B03a-DN
   const filteredB03aRows = useMemo(() => {
-    return FULL_B03A_DATA.filter((row) => {
+    return rowsData.filter((row) => {
       if (row.isHeader) {
         if (!searchKeyword.trim()) return true;
       }
@@ -172,7 +193,7 @@ export default function MisaInterimCashFlowDirectReport({
       }
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [rowsData, hideZero, searchKeyword]);
 
   return (
     <div

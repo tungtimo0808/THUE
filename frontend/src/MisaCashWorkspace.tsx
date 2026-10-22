@@ -1496,7 +1496,6 @@ export function AccountingVoucherModal({
       {/* Floating Tip Badge */}
       {showTip && (
         <div className="misa-voucher-tip-badge">
-          <span className="misa-voucher-tip-tag">Mới</span>
           <span>Thay đổi thiết lập thông tin người ký trên báo cáo chứng từ tại đây.</span>
           <button
             style={{
@@ -2714,6 +2713,12 @@ export function CreateVoucherModal({
       if (active) setFundId(active.id);
     }
   }, [fundId, receiptCatalog.funds]);
+  useEffect(() => {
+    if (!sourceBankAccountId && receiptCatalog.bankAccounts?.length) {
+      const firstBank = receiptCatalog.bankAccounts.find(row => row.status === "ACTIVE");
+      if (firstBank) setSourceBankAccountId(firstBank.id);
+    }
+  }, [sourceBankAccountId, receiptCatalog.bankAccounts]);
   const voucherTypes = isReceipt
     ? (isBank ? MISA_BANK_RECEIPT_TYPES : MISA_RECEIPT_TYPES)
     : (isBank ? MISA_BANK_PAYMENT_TYPES : MISA_PAYMENT_TYPES);
@@ -3485,7 +3490,7 @@ export function CreateVoucherModal({
         )}
 
         {!isReceipt && isBank && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ display: "none", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
             <label>Chi nhánh *<select aria-label="Chi nhánh chi tiền gửi" value={bankBranchId} onChange={event => setBankBranchId(event.target.value)}>
               <option value="">Chọn chi nhánh</option>{(bankPaymentCatalog.branches || []).filter(row => row.status === "ACTIVE" &&
                 (!selectedCompanyBankAccount?.branch || row.id === selectedCompanyBankAccount.branch)).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
@@ -3556,7 +3561,7 @@ export function CreateVoucherModal({
           </div>
         )}
         {isReceipt && !isBank && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ display: "none", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
             <label>Chi nhánh / Quỹ *<select aria-label="Chi nhánh và quỹ tiền mặt" value={fundId} onChange={event => setFundId(event.target.value)}>
               <option value="">Chọn quỹ</option>
               {(receiptCatalog.funds || []).filter(row => row.status === "ACTIVE").map(row => <option key={row.id} value={row.id}>{(receiptCatalog.branches || []).find(branch => branch.id === row.branch)?.name || "Chi nhánh"} · {row.code} · {row.name}</option>)}
@@ -7465,6 +7470,13 @@ function mapCashTransaction(row: ApiCashTransaction) {
   };
 }
 
+const cashDataCache = new Map<string, {
+  transactions: any[];
+  cashBalance: number;
+  cashFunds: ApiCashFund[];
+  timestamp: number;
+}>();
+
 export default function MisaCashWorkspace({
   tab = "transactions",
   company,
@@ -7554,10 +7566,14 @@ export default function MisaCashWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [cashBalance, setCashBalance] = useState(0);
+  const cachedCash = company?.id ? cashDataCache.get(company.id) : undefined;
+  const [transactions, setTransactions] = useState<any[]>(() => cachedCash?.transactions || []);
+  const [cashBalance, setCashBalance] = useState(() => cachedCash?.cashBalance || 0);
   const [cashApiRevision, setCashApiRevision] = useState(0);
-  const reloadCashApi = () => setCashApiRevision((value) => value + 1);
+  const reloadCashApi = () => {
+    if (company?.id) cashDataCache.delete(company.id);
+    setCashApiRevision((value) => value + 1);
+  };
   const apiSave = useMisaApiSave(company?.id || "", notify, reloadCashApi);
   const { rows: debtCatalog } = useMisaApiLists(company?.id || "", { customers: "/api/v1/master-data/customers/" }, notify);
   const { rows: payableCatalog } = useMisaApiLists(company?.id || "", {
@@ -7571,7 +7587,7 @@ export default function MisaCashWorkspace({
     customers: (debtCatalog.customers || []).map((row) => ({ code: row.code, name: row.name })),
     load: (customerCode?: string) => openReceivables(createApiWriter(company?.id || "", (path, init) => request(path, token, init)), customerCode),
   } : undefined;
-  const [cashFunds, setCashFunds] = useState<ApiCashFund[]>([]);
+  const [cashFunds, setCashFunds] = useState<ApiCashFund[]>(() => cachedCash?.cashFunds || []);
 
   useEffect(() => {
     if (!token || !company?.id) {
@@ -7581,38 +7597,62 @@ export default function MisaCashWorkspace({
       return;
     }
     let active = true;
-    setTransactions([]);
-    setCashBalance(0);
-    setCashFunds([]);
+    const hasCache = cashDataCache.has(company.id);
+    if (!hasCache) {
+      setTransactions([]);
+      setCashBalance(0);
+      setCashFunds([]);
+    }
     request<ApiCashFund[] | { results: ApiCashFund[] }>(
-      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}`,
+      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}&page_size=100`,
       token,
     ).then((response) => {
       if (!active) return;
       const funds = Array.isArray(response) ? response : response.results;
+      const totalBalance = funds.reduce((total, fund) => total + Number(fund.balance), 0);
       setCashFunds(funds);
-      setCashBalance(funds.reduce((total, fund) => total + Number(fund.balance), 0));
+      setCashBalance(totalBalance);
+      const prev = cashDataCache.get(company.id);
+      cashDataCache.set(company.id, {
+        transactions: prev?.transactions || [],
+        cashBalance: totalBalance,
+        cashFunds: funds,
+        timestamp: Date.now(),
+      });
     }).catch((error) => {
-      if (active) notify(error instanceof Error ? error.message : "Không tải được số dư quỹ tiền mặt.");
+      if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được số dư quỹ tiền mặt.");
     });
     request<ApiCashTransaction[] | { results: ApiCashTransaction[] }>(
-      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}`,
+      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}&page_size=100`,
       token,
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
-      setTransactions(records.map(mapCashTransaction));
+      const mapped = records.map(mapCashTransaction);
+      setTransactions(mapped);
+      const prev = cashDataCache.get(company.id);
+      cashDataCache.set(company.id, {
+        transactions: mapped,
+        cashBalance: prev?.cashBalance || 0,
+        cashFunds: prev?.cashFunds || [],
+        timestamp: Date.now(),
+      });
       // Internal transfers are listed with the vouchers so they can be reviewed after saving.
       internalTransfers(createApiWriter(company.id, (path, init) => request(path, token, init)), "cash").then((transfers) => {
         if (!active) return;
-        setTransactions((rows) => [...rows.filter((row) => !String(row.id).startsWith("transfer:")), ...transfers.map((row) => ({
-          id: `transfer:${row.id}`, code: row.number, date: row.transfer_date, partner: "Nội bộ", person: "",
-          description: row.description || "Chuyển tiền nội bộ", amount: Number(row.amount), kind: "payment",
-          debit: "", credit: "", status: String(row.status || "").toLowerCase(), reasonLabel: "Chuyển tiền nội bộ",
-        }))]);
+        setTransactions((rows) => {
+          const next = [...rows.filter((row) => !String(row.id).startsWith("transfer:")), ...transfers.map((row) => ({
+            id: `transfer:${row.id}`, code: row.number, date: row.transfer_date, partner: "Nội bộ", person: "",
+            description: row.description || "Chuyển tiền nội bộ", amount: Number(row.amount), kind: "payment",
+            debit: "", credit: "", status: String(row.status || "").toLowerCase(), reasonLabel: "Chuyển tiền nội bộ",
+          }))];
+          const curr = cashDataCache.get(company.id);
+          if (curr) curr.transactions = next;
+          return next;
+        });
       }).catch(() => undefined);
     }).catch((error) => {
-      if (active) notify(error instanceof Error ? error.message : "Không tải được giao dịch tiền mặt.");
+      if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được giao dịch tiền mặt.");
     });
     return () => { active = false; };
   }, [token, company?.id, notify, cashApiRevision]);

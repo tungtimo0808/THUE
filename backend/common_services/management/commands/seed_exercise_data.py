@@ -263,6 +263,7 @@ class Command(BaseCommand):
             ("DANGTHUAN", "Đặng Thuận", "PKTH", "Nhân viên"),
             ("BUIDUCDUNG", "Bùi Đức Dũng", "PKTH", "Nhân viên"),
             ("PHAMDINHTAI", "Phạm Đình Tài", "PKTH", "Nhân viên"),
+            ("NGUYENMINHHAI", "Nguyễn Minh Hải", "PKTH", "Nhân viên kỹ thuật"),
         ]
         from organization.models import Position
         pos_map = {}
@@ -345,18 +346,26 @@ class Command(BaseCommand):
         gl_5111 = Account.objects.filter(company=company, code="5111").first() or Account.objects.filter(company=company, code="511").first()
         gl_632 = Account.objects.filter(company=company, code="632").first()
 
-        # 13. Items Catalog
+        # 13. Items Catalog (Đầy đủ theo Mục VII & VIII tài liệu bài tập)
         items_data = [
             # code, name, uom, cat, inv_acc, purchase_price, sales_price
             ("DT_IP15", "Điện thoại iPhone 15 Pro Max 256GB", "CAI", cat_goods, gl_1561, 16200000, 21000000),
             ("DT_SS24", "Điện thoại Samsung Galaxy S24 Ultra 256GB", "CAI", cat_goods, gl_1561, 14700000, 19500000),
             ("LT_MBAIR", "Máy tính xách tay Macbook Air 13-inch M2", "CAI", cat_goods, gl_1561, 12900000, 20500000),
+            ("LT_MBAIR_M3", "Macbook Air 13\" M3", "CAI", cat_goods, gl_1561, 20500000, 25800000),
             ("LT_HPPAV", "Máy tính xách tay HP Pavilion 14 i5", "CAI", cat_goods, gl_1561, 7800000, 11200000),
+            ("LT_HP15S", "Laptop HP 15s", "CAI", cat_goods, gl_1561, 8000000, 11200000),
             ("LT_DELL", "Laptop Dell Ins 15", "CAI", cat_goods, gl_1561, 12000000, 16800000),
             ("MTB_IPAD10", "Máy tính bảng iPad Gen 10 64GB", "CAI", cat_goods, gl_1561, 5100000, 7500000),
             ("DH_AWSE", "Đồng hồ thông minh Apple Watch SE", "CAI", cat_goods, gl_1561, 3600000, 5200000),
             ("DH_SSGW6", "Đồng hồ thông minh Samsung Galaxy Watch 6", "CAI", cat_goods, gl_1561, 3120000, 4800000),
-            ("TN_APSPRO2", "Tai nghe AirPods Pro 2", "CAI", cat_goods, gl_1561, 2500000, 3900000),
+            ("TN_APSPRO2", "Tai nghe AirPods Pro 2", "BO", cat_goods, gl_1561, 2880000, 3900000),
+            ("TN_SSGWEB", "Tai nghe Samsung Galaxy Buds FE", "BO", cat_goods, gl_1561, 1020000, 1800000),
+            ("MCG_PS5", "Máy chơi game PlayStation 5 Slim", "CAI", cat_goods, gl_1561, 6300000, 11500000),
+            ("LOA_JBL", "Loa Bluetooth JBL Flip 6", "CAI", cat_goods, gl_1561, 1380000, 2500000),
+            ("SDP_ANKER", "Sạc dự phòng Anker PowerCore 20000mAh", "CAI", cat_goods, gl_1561, 210000, 450000),
+            ("MH_LGMQ2", "Màn hình máy tính LG 27-inch 4K", "CAI", cat_goods, gl_1561, 5700000, 8200000),
+            ("MH_LG27UL500", "Màn hình máy tính LG 27UL500", "CAI", cat_goods, gl_1561, 5600000, 7800000),
             ("MH_LG27", "Màn hình máy tính LG 27 inch", "CAI", cat_goods, gl_1561, 5800000, 7800000),
             ("CHUOT_DELL", "Chuột không dây Dell MS5120", "CAI", cat_goods, gl_1561, 450000, 650000),
             ("BANPHIM", "Bàn phím máy tính Logitech", "CAI", cat_goods, gl_1561, 3800000, 5100000),
@@ -368,7 +377,7 @@ class Command(BaseCommand):
             ("BLV-001", "Bàn làm việc", "CAI", cat_tool, gl_1531, 2500000, 0),
         ]
         for i_code, i_name, u_code, i_cat, gl_inv, p_price, s_price in items_data:
-            Item.objects.get_or_create(
+            item_obj, created_item = Item.objects.get_or_create(
                 company=company,
                 code=i_code,
                 defaults={
@@ -388,6 +397,11 @@ class Command(BaseCommand):
                     "status": "ACTIVE",
                 }
             )
+            if not created_item:
+                item_obj.name = i_name
+                item_obj.purchase_price = Decimal(str(p_price))
+                item_obj.sales_price = Decimal(str(s_price))
+                item_obj.save(update_fields=["name", "purchase_price", "sales_price"])
 
         # 14. Customers (Parties + PartyRole CUSTOMER)
         customers_data = [
@@ -403,9 +417,9 @@ class Command(BaseCommand):
             ("DUYVINH", "Công ty TNHH Xây dựng Duy Vinh", "700865055", "Xóm 6. thôn Mã Não. X. Ngọc Sơn. Kim Bảng. Hà Nam"),
             ("KIENQUAN", "CTCP Đầu tư Kiến Quân Việt Nam", "107527141", "Số 168 đường Chiến Thắng. P. Văn Quán. Hà Nội"),
             ("VIETHUNG", "Công ty TNHH Việt Hùng", "102020196", "Số 5. ngõ 165/2 Thái Hà. P. Láng Hạ. Hà Nội"),
-            ("THAIBINH", "Công ty TNHH Thái Bình", "0102345678", "Số 88 Trần Thái Tông, Cầu Giấy, Hà Nội"),
-            ("HOANGLONG", "Công ty CP Hoàng Long computer", "0103456789", "Số 50 Thái Hà, Trung Liệt, Đống Đa, Hà Nội"),
-            ("PHANMINH", "Công ty Phan Minh", "0104567890", "Hà Nội"),
+            ("THAIBINH", "Công ty TNHH Thái Bình", "0108804440", "68 Nguyễn Chí Thanh, Đống Đa, Hà Nội"),
+            ("HOANGLONG", "Công ty CP Hoàng Long computer", "0105509988", "Số 125 Chùa Bộc, Đống Đa, Hà Nội"),
+            ("PHANMINH", "Công ty TNHH Phan Minh", "0109905550", "88 Láng Hạ, Đống Đa, Hà Nội"),
             ("THANHKTS", "Công ty Thanh KTS", "0105678901", "Hà Nội"),
             ("HUNGCUONG", "Công ty Hùng Cường", "0106789012", "Hà Nội"),
         ]
@@ -424,7 +438,7 @@ class Command(BaseCommand):
             )
             PartyRole.objects.get_or_create(party=party, role_type="CUSTOMER", defaults={"active_from": date(2026, 1, 1)})
 
-        # 15. Suppliers (Parties + PartyRole VENDOR)
+        # 15. Suppliers & State Agencies (Parties + PartyRole VENDOR)
         suppliers_data = [
             ("PHATMAI", "Công ty TNHH Phát Mai Group", "110084806", "Số 140 Đường Vạn Hạnh. P. Đức Giang. Hà Nội"),
             ("MINHQUAN", "Công ty Cổ phần Minh Quân Logistics", "110087035", "Số 16. KĐT Văn Khê. Đường Tố Hữu. Hà Nội"),
@@ -437,9 +451,24 @@ class Command(BaseCommand):
             ("CONGNGHE", "Công ty TNHH Phát triển Công nghệ KTS", "100366488", "Số 177. phố Giảng Võ. P. Cát Linh. Hà Nội"),
             ("ANLOC", "Công ty TNHH Thương mại Máy tính An Lộc", "101468933", "Số 49 Phố Thái Hà. P. Trung Liệt. Hà Nội"),
             ("TANCANG", "Công ty cổ phần đại lý giao nhận vận tải xếp dỡ tân cảng", "304875444", "470 Đường Đồng Văn Cống. TP. Thủ Đức. TP. HCM"),
+            ("QUOCTE", "Công ty cổ phần đầu tư thương mại và dịch vụ quốc tế", "100110052", "Số 17. phạm hùng. P. Từ Liêm. TP. Hà Nội"),
             ("LIENKHUONG", "Công ty Liên Khương", "0107890123", "Hà Nội"),
             ("MANHTHANG", "Công ty Mạnh Thắng", "0108901234", "Hà Nội"),
-            ("THANHDAT", "Công ty Thành Đạt", "0109012345", "Hà Nội"),
+            ("THANHDAT", "Công ty TNHH Thành Đạt", "0101234567", "Số 25 Lê Văn Lương, Thanh Xuân, Hà Nội"),
+            ("ANTAM", "CÔNG TY CỔ PHẦN VĂN PHÒNG PHẨM AN TÂM", "2004687684", "Số 10, phố Hàng Bông, P. Hoàn Kiếm, Hà Nội"),
+            ("BINHPHAT", "CTCP THƯƠNG MẠI BÌNH PHÁT", "200433686", "12 Điện Biên Phủ, Ba Đình, Hà Nội"),
+            ("GIANGMY", "CÔNG TY CỔ PHẦN ĐẦU TƯ GIANG MỸ", "225946138", "Tầng 1-2, tòa nhà 17T1, phố Hoàng Đạo Thúy, Cầu Giấy, Hà Nội"),
+            ("TECHWORLD", "Tech world global trading limited", "", "Room 1203, 12/F, Tower 2, Lippo Centre, 89 Queensway, Admiralty, Hong Kong"),
+            ("XNKHAIPHONG", "Công ty Cổ phần Thương mại dịch vụ và Xuất nhập khẩu Hải Phòng", "0200348697", "Số 19 Кhu B1 Lô 7B Lê Hồng Phong, Hải Phòng"),
+            ("TAYPHUONG", "Công ty cổ phần điện máy Tây Phương", "0106026495", "Số 15 đường Tây Hồ, Phường Quảng An, Quận Tây Hồ, Hà Nội"),
+            ("HACOM", "Công ty TNHH TV Đầu tư công nghệ Hacom", "0107406972", "Số 131 Lê Thanh Nghị, Hai Bà Trưng, Hà Nội"),
+            ("NH001", "Ngân hàng TMCP Kỹ thương Việt Nam - Chi nhánh Hà Nội", "100230800", "30B Phố Nguyễn Hữu Huân. Lý Thái Tổ. Hoàn Kiếm. TP. Hà Nội"),
+            # IV. Nhóm danh mục cơ quan nhà nước
+            ("CCTHK", "Chi cục Thuế Hoàn Kiếm", "100856478", "885 Đường Hồng Hà. Chương Dương Độ. Hoàn Kiếm. TP. Hà Nội"),
+            ("BHXHK", "Bảo hiểm xã hội Hoàn Kiếm", "100985412", "54A Phố Hàng Cót. Hàng Mã. Hoàn Kiếm. TP. Hà Nội"),
+            ("KBNHK", "Kho bạc nhà nước Hoàn Kiếm", "100756321", "90 Thợ Nhuộm. Trần Hưng Đạo. Hoàn Kiếm. TP. Hà Nội"),
+            ("EVNHN", "Tổng công ty Điện lực TP. Hà Nội", "100101234", "69 Đinh Tiên Hoàng. Lý Thái Tổ. Hoàn Kiếm. TP. Hà Nội"),
+            ("HNWSCO", "Công ty CP SXKD Nước sạch Số 3 Hà Nội", "100245678", "Số 8C Đinh Công Tráng. Phan Chu Trinh. Hoàn Kiếm. TP. Hà Nội"),
         ]
         for s_code, s_name, s_tax, s_addr in suppliers_data:
             party, _ = Party.objects.get_or_create(
@@ -456,7 +485,7 @@ class Command(BaseCommand):
             )
             PartyRole.objects.get_or_create(party=party, role_type="VENDOR", defaults={"active_from": date(2026, 1, 1)})
 
-        # 16. Seed Opening Balances (01/01/2026)
+        # 16. Seed Opening Balances (01/01/2026 - Chuẩn Mục VII tài liệu bài tập: Tổng Nợ = Tổng Có = 10.759.330.000)
         self.stdout.write("Khoi tao so du dau ky (Opening Balances)...")
         period_1 = AccountingPeriod.objects.filter(company=company, fiscal_year=2026, period_number=1).first()
         period_12 = AccountingPeriod.objects.filter(company=company, fiscal_year=2026, period_number=12).first()
@@ -474,30 +503,44 @@ class Command(BaseCommand):
             company=company, code="213",
             defaults={"name": "Tài sản cố định vô hình", "account_type": "ASSET", "normal_balance": "DEBIT", "is_postable": True, "chart_of_accounts": coa}
         )
+        Account.objects.get_or_create(
+            company=company, code="2143",
+            defaults={"name": "Hao mòn TSCĐ vô hình", "account_type": "ASSET", "normal_balance": "CREDIT", "is_postable": True, "chart_of_accounts": coa}
+        )
 
         party_map = {p.code: p for p in Party.objects.filter(company=company)}
 
-        if period_1 and not JournalEntry.objects.filter(company=company, number="OPEN-2026-001").exists():
+        if period_1:
+            JournalEntry.objects.filter(company=company, number="OPEN-2026-001").delete()
             opening_lines = [
-                ("1111", 500000000, 0, "Số dư đầu kỳ Tiền mặt"),
-                ("1121", 3255000000, 0, "Số dư đầu kỳ Tiền gửi Techcombank VND"),
-                ("1122", 3816750000, 0, "Số dư đầu kỳ Tiền gửi Techcombank USD (150.000 USD x 25.445)"),
-                ("131", 142500000, 0, "Số dư đầu kỳ Phải thu khách hàng (Dư Nợ)"),
-                ("131", 0, 15000000, "Số dư đầu kỳ Phải thu khách hàng (Dư Có ứng trước)"),
-                ("133", 12000000, 0, "Số dư đầu kỳ Thuế GTGT được khấu trừ"),
-                ("141", 12000000, 0, "Số dư đầu kỳ Tạm ứng (Hoàng Bá Cung)"),
-                ("152", 36000000, 0, "Số dư đầu kỳ Nguyên vật liệu"),
-                ("153", 14000000, 0, "Số dư đầu kỳ Công cụ dụng cụ"),
-                ("156", 1158000000, 0, "Số dư đầu kỳ Hàng hóa"),
-                ("2113", 816000000, 0, "Số dư đầu kỳ Phương tiện vận tải (Ford Transit)"),
-                ("211", 513600000, 0, "Số dư đầu kỳ TSCĐ máy móc thiết bị"),
-                ("213", 48000000, 0, "Số dư đầu kỳ Phần mềm kế toán Misa"),
-                ("242", 38680000, 0, "Số dư đầu kỳ Chi phí trả trước CCDC"),
-                ("331", 27000000, 0, "Số dư đầu kỳ Phải trả nhà cung cấp (Dư Nợ ứng trước)"),
-                ("331", 0, 105000000, "Số dư đầu kỳ Phải trả nhà cung cấp (Dư Có)"),
-                ("214", 0, 363400000, "Số dư đầu kỳ Hao mòn lũy kế TSCĐ"),
-                ("411", 0, 5000000000, "Số dư đầu kỳ Vốn đầu tư của chủ sở hữu"),
-                ("421", 0, 4906530000, "Số dư đầu kỳ Lợi nhuận sau thuế chưa phân phối"),
+                ("1111", 500000000, 0, "Số dư đầu kỳ Tiền mặt Việt Nam"),
+                ("1121", 3255000000, 0, "Số dư đầu kỳ Tiền gửi Techcombank VND (TK 123456789)"),
+                ("1122", 3816750000, 0, "Số dư đầu kỳ Tiền gửi Techcombank USD (150.000 USD x 25.445 - TK 987654321)"),
+                ("131", 142500000, 0, "Số dư đầu kỳ Phải thu khách hàng (THANHHA 50tr, MINHHANH 60tr, ANHTUAN 32.5tr)"),
+                ("131", 0, 15000000, "Số dư đầu kỳ Phải thu khách hàng ứng trước (NHATMINH 15tr)"),
+                ("1331", 12000000, 0, "Số dư đầu kỳ Thuế GTGT được khấu trừ của hàng hóa, dịch vụ"),
+                ("141", 12000000, 0, "Số dư đầu kỳ Tạm ứng (Hoàng Bá Cung - Phòng HCNS)"),
+                ("152", 36000000, 0, "Số dư đầu kỳ Nguyên liệu, vật liệu (VL_DCD 30tr, VL_KDN 1tr, VL_VCN 5tr)"),
+                ("153", 14000000, 0, "Số dư đầu kỳ Công cụ, dụng cụ (GXV-001 4tr, MHTL-001 5tr, BLV-001 5tr)"),
+                ("156", 1158000000, 0, "Số dư đầu kỳ Hàng hóa (12 mặt hàng tồn kho đầu kỳ)"),
+                ("211", 513600000, 0, "Số dư đầu kỳ TSCĐ hữu hình - Máy móc, thiết bị (LT001, PD001, DH002, MPD001)"),
+                ("2113", 816000000, 0, "Số dư đầu kỳ Phương tiện vận tải, truyền dẫn (OT002 - Xe ô tô Ford Transit 2023)"),
+                ("213", 48000000, 0, "Số dư đầu kỳ TSCĐ vô hình (PM002 - Phần mềm kế toán Misa)"),
+                ("2141", 0, 354400000, "Số dư đầu kỳ Hao mòn TSCĐ hữu hình"),
+                ("2143", 0, 9000000, "Số dư đầu kỳ Hao mòn TSCĐ vô hình"),
+                ("221", 150000000, 0, "Số dư đầu kỳ Đầu tư vào công ty con"),
+                ("222", 120000000, 0, "Số dư đầu kỳ Đầu tư vào công ty liên doanh, liên kết"),
+                ("241", 100000000, 0, "Số dư đầu kỳ Xây dựng cơ bản dở dang"),
+                ("242", 38480000, 0, "Số dư đầu kỳ Chi phí trả trước (6 mã CCDC đang dùng: PD001, TS001, BG001, TD001, DT001, KD001)"),
+                ("331", 27000000, 0, "Số dư đầu kỳ Phải trả cho người bán ứng trước (MINHQUAN 15tr, MAISON 12tr)"),
+                ("331", 0, 105000000, "Số dư đầu kỳ Phải trả cho người bán (PHATMAI 80tr, THANHTRU 25tr)"),
+                ("3331", 0, 5000000, "Số dư đầu kỳ Thuế GTGT phải nộp"),
+                ("334", 0, 45000000, "Số dư đầu kỳ Phải trả người lao động"),
+                ("338", 0, 5000000, "Số dư đầu kỳ Phải trả, phải nộp khác"),
+                ("341", 0, 2500000000, "Số dư đầu kỳ Vay và nợ thuê tài chính"),
+                ("4111", 0, 7685930000, "Số dư đầu kỳ Vốn góp của chủ sở hữu"),
+                ("4212", 0, 25000000, "Số dư đầu kỳ Lợi nhuận sau thuế chưa phân phối năm trước"),
+                ("441", 0, 10000000, "Số dư đầu kỳ Quỹ đầu tư phát triển"),
             ]
             tot_d = sum(d for _, d, c, _ in opening_lines)
             tot_c = sum(c for _, d, c, _ in opening_lines)
@@ -509,7 +552,7 @@ class Command(BaseCommand):
                 entry_type="OPENING",
                 posting_date=date(2026, 1, 1),
                 document_date=date(2026, 1, 1),
-                description="Nhập số dư đầu kỳ năm tài chính 2026 theo Thông tư 99",
+                description="Nhập số dư đầu kỳ năm tài chính 2026 theo Thông tư 99 (Tổng Nợ = Có = 10.759.330.000 VND)",
                 status="POSTED",
                 total_debit=tot_d,
                 total_credit=tot_c,
@@ -530,112 +573,112 @@ class Command(BaseCommand):
                         description=desc,
                     )
 
-        # 17. Seed Month 12 Real Transactions (32 nghiệp vụ phát sinh)
+        # 17. Seed Month 12 Real Transactions (32 nghiệp vụ phát sinh chuẩn xác theo chứng từ gốc)
         self.stdout.write("Khoi tao 32 nghiep vu kinh te phat sinh thang 12/2026...")
         tx_data = [
-            # 1. 01/12: Hàng gửi đại lý
-            ("PXKDL001", date(2026, 12, 1), "Xuất kho gửi bán đại lý Hoàng Long computer: Laptop Dell & HP",
-             [("157", 280000000, 0), ("156", 0, 280000000)], "HOANGLONG"),
-            # 2. 03/12: Mua hàng nhập kho
-            ("PNK00060", date(2026, 12, 3), "Mua hàng hóa nhập kho (Laptop Dell, HP, Macbook Air) từ Phát Mai Group",
-             [("156", 812000000, 0), ("133", 81200000, 0), ("331", 0, 893200000)], "PHATMAI"),
-            # 3. 05/12: Thanh toán lương T11 qua NH
-            ("UNC00015", date(2026, 12, 5), "Ủy nhiệm chi thanh toán lương tháng 11/N qua Techcombank",
-             [("334", 154200000, 0), ("1121", 0, 154200000)], None),
-            # 4. 05/12: Nộp bảo hiểm qua NH
-            ("UNC00016", date(2026, 12, 5), "Ủy nhiệm chi nộp bảo hiểm xã hội, y tế, thất nghiệp cho cơ quan BHXH",
-             [("338", 48600000, 0), ("1121", 0, 48600000)], None),
-            # 5. 05/12: Bán hàng cho Minh Hạnh
-            ("HDBH00080", date(2026, 12, 5), "Xuất bán hàng hóa theo PXK 80 cho Công ty TNHH Kinh doanh Minh Hạnh",
-             [("131", 474320000, 0), ("511", 0, 431200000), ("3331", 0, 43120000)], "MINHHANH"),
-            # 6. 06/12: Xuất kho NVL phòng kỹ thuật
-            ("PXK00081", date(2026, 12, 6), "Xuất sử dụng vật tư (dây cáp, keo dán, vải lau) cho phòng kỹ thuật",
-             [("642", 11000000, 0), ("152", 0, 11000000)], None),
-            # 7. 08/12: Chi TM mua VPP phòng hành chính
-            ("PC00045", date(2026, 12, 8), "Chi tiền mặt mua văn phòng phẩm từ Công ty Thanh Trúc",
-             [("642", 1675000, 0), ("133", 167500, 0), ("1111", 0, 1842500)], "THANHTRU"),
-            # 8. 09/12: Chi TM tạm ứng công tác Phạm Quang Hòa
-            ("PC00046", date(2026, 12, 9), "Chi tạm ứng cho nhân viên Phạm Quang Hòa kỹ thuật đi công tác",
+            # 1. 01/12: Hàng gửi đại lý (PXK 79)
+            ("PXKDL001", date(2026, 12, 1), "Xuất kho gửi bán đại lý Hoàng Long computer theo PXK 79: Laptop Dell Ins 15 (10c) & HP 15s (10c)",
+             [("157", 200000000, 0), ("156", 0, 200000000)], "HOANGLONG"),
+            # 2. 03/12: Mua hàng nhập kho từ Vạn Phát (PNK 60, HĐ 120)
+            ("PNK00060", date(2026, 12, 3), "Mua hàng hóa nhập kho (Laptop Dell 25c, HP 15s 20c, Macbook Air M3 18c) từ CTCP Vận tải và Thương mại Vạn Phát theo PNK 60, HĐ 120",
+             [("156", 812000000, 0), ("1331", 81200000, 0), ("331", 0, 893200000)], "VANPHO"),
+            # 3. 05/12: Thanh toán lương T11 qua NH (FT25339791951533)
+            ("UNC00015", date(2026, 12, 5), "Giấy báo nợ FT25339791951533 thanh toán tiền lương tháng 11/N cho nhân viên qua Techcombank",
+             [("334", 250600000, 0), ("1121", 0, 250600000)], None),
+            # 4. 05/12: Nộp bảo hiểm qua NH (FT25339791951534)
+            ("UNC00016", date(2026, 12, 5), "Giấy báo nợ FT25339791951534 nộp bảo hiểm tháng 11/N cho Bảo hiểm xã hội Hoàn Kiếm",
+             [("338", 30500000, 0), ("1121", 0, 30500000)], "BHXHK"),
+            # 5. 05/12: Bán hàng cho Minh Hạnh thu ngay bằng TGNH (PXK 80, HĐ 152, FT25339791951543)
+            ("HDBH00080", date(2026, 12, 5), "Bán hàng hóa cho Công ty TNHH Kinh doanh Minh Hạnh theo PXK 80, HĐ 152 và thu ngay qua TGNH (FT25339791951543)",
+             [("1121", 474320000, 0), ("511", 0, 431200000), ("3331", 0, 43120000)], "MINHHANH"),
+            # 6. 06/12: Xuất kho NVL phòng kỹ thuật (PXK 81)
+            ("PXK00081", date(2026, 12, 6), "Xuất kho vật tư (2 cuộn dây cáp điện, 1 lọ keo dán đa năng) theo PXK 81 cho Đặng Thuận - Phòng kỹ thuật",
+             [("641", 3020000, 0), ("152", 0, 3020000)], None),
+            # 7. 08/12: Chi TM mua VPP phòng hành chính (PC 180, HĐ 320)
+            ("PC00045", date(2026, 12, 8), "Chi tiền mặt PC 180 thanh toán tiền văn phòng phẩm theo HĐ 320 của CTCP Văn phòng phẩm An Tâm",
+             [("642", 1675000, 0), ("1331", 167500, 0), ("1111", 0, 1842500)], "ANTAM"),
+            # 8. 09/12: Chi TM tạm ứng công tác Phạm Quang Hòa (PC 181)
+            ("PC00046", date(2026, 12, 9), "Phiếu chi PC 181 tạm ứng tiền công tác cho nhân viên Phạm Quang Hòa - Phòng kỹ thuật",
              [("141", 5000000, 0), ("1111", 0, 5000000)], None),
-            # 9. 09/12: Công ty Thái Bình ứng trước tiền hàng qua NH
-            ("GBC00030", date(2026, 12, 9), "Báo có Công ty TNHH Thái Bình ứng trước tiền hàng qua Techcombank",
-             [("1121", 50000000, 0), ("131", 0, 50000000)], "THAIBINH"),
-            # 10. 10/12: Mua máy chủ phục vụ bán hàng qua NH
-            ("GBN00028", date(2026, 12, 10), "Ủy nhiệm chi mua máy chủ phục vụ quản lý bán hàng từ Việt Gia",
-             [("211", 53000000, 0), ("133", 5300000, 0), ("1121", 0, 58300000)], "VIETGIA"),
-            # 11. 12/12: Mua máy in dùng cho phòng kế toán (phân bổ 18T)
-            ("GBN00029", date(2026, 12, 12), "Ủy nhiệm chi mua máy in từ An Lộc dùng cho phòng kế toán",
-             [("242", 6000000, 0), ("133", 600000, 0), ("1121", 0, 6600000)], "ANLOC"),
-            # 12. 12/12: Bán hàng cho Thái Bình
-            ("HDBH00082", date(2026, 12, 12), "Bán hàng cho Công ty TNHH Thái Bình theo PXK số 82",
+            # 9. 09/12: Công ty Thái Bình ứng trước tiền hàng qua NH (FT25339791951600)
+            ("GBC00030", date(2026, 12, 9), "Giấy báo có FT25339791951600 Công ty TNHH Thái Bình ứng trước tiền mua hàng qua Techcombank",
+             [("1121", 100000000, 0), ("131", 0, 100000000)], "THAIBINH"),
+            # 10. 10/12: Mua máy chủ Dell PowerEdge R350 từ Thành Đạt (HĐ 145, FT25339791951625)
+            ("GBN00028", date(2026, 12, 10), "Giấy báo nợ FT25339791951625 mua máy chủ Dell PowerEdge R350 theo HĐ 145 từ Công ty TNHH Thành Đạt",
+             [("211", 53000000, 0), ("1331", 5300000, 0), ("1121", 0, 58300000)], "THANHDAT"),
+            # 11. 12/12: Mua máy in Canon imageCLASS MF275dw từ Bình Phát dùng ngay cho phòng kế toán (HĐ 120, FT25339791951650)
+            ("GBN00029", date(2026, 12, 12), "Giấy báo nợ FT25339791951650 mua máy in Canon MF275dw theo HĐ 120 từ CTCP Thương mại Bình Phát (phân bổ 18 tháng)",
+             [("242", 6000000, 0), ("1331", 600000, 0), ("1121", 0, 6600000)], "BINHPHAT"),
+            # 12. 12/12: Bán hàng cho Thái Bình (PXK 82, HĐ 153)
+            ("HDBH00082", date(2026, 12, 12), "Bán hàng cho Công ty TNHH Thái Bình theo PXK 82, HĐ 153 (Laptop Dell 7c, HP 15s 7c, Chuột Dell 20c)",
              [("131", 229900000, 0), ("511", 0, 209000000), ("3331", 0, 20900000)], "THAIBINH"),
-            # 13. 12/12: Quyết toán tạm ứng Phạm Quang Hòa
-            ("PT00032", date(2026, 12, 12), "Nhân viên Phạm Quang Hòa thanh toán tạm ứng và hoàn tiền quỹ",
-             [("642", 2300000, 0), ("1111", 2700000, 0), ("141", 0, 5000000)], None),
-            # 14. 13/12: Thanh toán nợ Thành Đạt hưởng chiết khấu 5%
-            ("GBN00030", date(2026, 12, 13), "Thanh toán cho Công ty Thành Đạt được hưởng chiết khấu thanh toán 5%",
-             [("331", 150000000, 0), ("515", 0, 7500000), ("1121", 0, 142500000)], "THANHDAT"),
-            # 15. 15/12: Thu lãi tiền gửi tiết kiệm T11
-            ("GBC00031", date(2026, 12, 15), "Ngân hàng Techcombank báo có thu lãi tiền gửi tháng 11/N",
-             [("1121", 2150000, 0), ("515", 0, 2150000)], None),
-            # 16. 16/12: Bán hàng cho khách lẻ thu tiền ngay qua CK
-            ("HDBH00083", date(2026, 12, 16), "Bán hàng cho khách lẻ theo PXK số 83 (Laptop HP) thu chuyển khoản",
+            # 13. 12/12: Quyết toán tạm ứng Phạm Quang Hòa (PT 185)
+            ("PT00032", date(2026, 12, 12), "Quyết toán tạm ứng công tác phí của Phạm Quang Hòa (chi 2.300.000đ, thu hoàn quỹ PT 185 số tiền 2.700.000đ)",
+             [("641", 2300000, 0), ("1111", 2700000, 0), ("141", 0, 5000000)], None),
+            # 14. 13/12: Thanh toán nợ HĐ 140 ngày 30/11 cho Thành Đạt hưởng chiết khấu 5% (BB 30/BTCN, FT25339791951690)
+            ("GBN00030", date(2026, 12, 13), "Thanh toán HĐ 140 (100.000.000đ) cho Công ty TNHH Thành Đạt, chiết khấu thanh toán 5% (5.000.000đ), thực chuyển 95.000.000đ",
+             [("331", 100000000, 0), ("515", 0, 5000000), ("1121", 0, 95000000)], "THANHDAT"),
+            # 15. 15/12: Thu lãi tiền gửi tiết kiệm T11 (FT25339791951720)
+            ("GBC00031", date(2026, 12, 15), "Giấy báo có FT25339791951720 Ngân hàng Techcombank trả lãi tiền gửi tháng 11/N",
+             [("1121", 1500000, 0), ("515", 0, 1500000)], "NH001"),
+            # 16. 16/12: Bán hàng cho khách lẻ thu tiền ngay qua CK (PXK 83, HĐ 154, FT25339791951756)
+            ("HDBH00083", date(2026, 12, 16), "Bán lẻ 1 Laptop HP 15s cho Trương Minh Tuấn theo PXK 83, HĐ 154 thu chuyển khoản (FT25339791951756)",
              [("1121", 12320000, 0), ("511", 0, 11200000), ("3331", 0, 1120000)], "KHACHLE"),
-            # 17. 16/12: Chi TM tiếp khách
-            ("PC00047", date(2026, 12, 16), "Chi tiền mặt tiếp khách phục vụ bộ phận bán hàng",
-             [("641", 2200000, 0), ("133", 220000, 0), ("1111", 0, 2420000)], None),
-            # 18. 17/12: Bán chứng khoán kinh doanh
-            ("GBC00032", date(2026, 12, 17), "Thu tiền bán chứng khoán kinh doanh (giá gốc 50tr, giá bán 55tr)",
-             [("1121", 55000000, 0), ("121", 0, 50000000), ("515", 0, 5000000)], None),
-            # 19. 17/12: Thanh lý TSCĐ Dell XPS 15 thu TM
-            ("PT00033", date(2026, 12, 17), "Thanh lý máy tính xách tay Dell XPS 15 thu bằng tiền mặt",
-             [("1111", 2200000, 0), ("711", 0, 2000000), ("3331", 0, 200000)], None),
-            # 20. 18/12: Đại lý Hoàng Long thanh toán trừ hoa hồng 10%
-            ("GBC00033", date(2026, 12, 18), "Đại lý Hoàng Long chuyển khoản trả tiền bán hàng trừ hoa hồng đại lý",
-             [("1121", 277200000, 0), ("641", 30800000, 0), ("511", 0, 280000000), ("3331", 0, 28000000)], "HOANGLONG"),
-            # 21. 20/12: Thanh toán tiền cho Vạn Phát qua NH
-            ("GBN00031", date(2026, 12, 20), "Ủy nhiệm chi thanh toán tiền cho Công ty Vạn Phát qua Techcombank",
-             [("331", 12000000, 0), ("1121", 0, 12000000)], "VANPHO"),
-            # 22. 22/12: Chi TM bảo dưỡng máy lạnh Daikin
-            ("PC00048", date(2026, 12, 22), "Chi tiền mặt bảo dưỡng định kỳ máy lạnh Daikin văn phòng",
-             [("642", 1200000, 0), ("133", 120000, 0), ("1111", 0, 1320000)], None),
-            # 23. 22/12: Bán hàng chưa thu tiền cho Cầu Giấy
-            ("HDBH00085", date(2026, 12, 22), "Bán hàng chưa thu tiền cho CTCP Thương mại Cầu Giấy theo PXK 85",
-             [("131", 526460000, 0), ("511", 0, 478600000), ("3331", 0, 47860000)], "CAUGIAY"),
-            # 24. 23/12: Mua hàng nhập kho từ Thanh Trúc
-            ("PNK00061", date(2026, 12, 23), "Mua hàng nhập kho theo PNK 61 từ Công ty Thiết bị Thanh Trúc",
-             [("156", 353500000, 0), ("133", 35350000, 0), ("331", 0, 388850000)], "THANHTRU"),
-            # 25. 24/12: Hàng bán bị trả lại do cháy màn hình
-            ("HDBTL001", date(2026, 12, 24), "Khách hàng Cầu Giấy trả lại sản phẩm màn hình bị cháy theo biên bản",
-             [("521", 7800000, 0), ("3331", 780000, 0), ("131", 0, 8580000)], "CAUGIAY"),
-            # 26. 26/12: Giảm giá hàng mua do bị lỗi
-            ("BBGG001", date(2026, 12, 26), "Thỏa thuận giảm giá 10% hàng mua ngày 23/12 bị lỗi với NCC Thanh Trúc",
-             [("331", 858000, 0), ("156", 0, 780000), ("133", 0, 78000)], "THANHTRU"),
-            # 27. 29/12: Xuất kho CCDC cho phòng kế toán
-            ("PXK00086", date(2026, 12, 29), "Xuất kho ghế xoay và bàn làm việc cho phòng kế toán (phân bổ 1 lần)",
+            # 17. 16/12: Chi TM tiếp khách tại CTCP Đầu tư Giang Mỹ (PC 182, HĐ 420)
+            ("PC00047", date(2026, 12, 16), "Phiếu chi PC 182 thanh toán chi phí tiếp khách theo HĐ 420 của CTCP Đầu tư Giang Mỹ",
+             [("642", 2200000, 0), ("1331", 220000, 0), ("1111", 0, 2420000)], "GIANGMY"),
+            # 18. 17/12: Bán chứng khoán kinh doanh (FT25339791951795)
+            ("GBC00032", date(2026, 12, 17), "Giấy báo có FT25339791951795 thu tiền bán chứng khoán kinh doanh (giá gốc 50.000.000đ, giá bán 60.000.000đ)",
+             [("1121", 60000000, 0), ("121", 0, 50000000), ("515", 0, 10000000)], None),
+            # 19. 17/12: Thanh lý TSCĐ Dell XPS 15 cho Công ty Anh Tuấn thu TM (HĐ 155, PT 186)
+            ("PT00033", date(2026, 12, 17), "Thanh lý máy tính xách tay Dell XPS 15 cho Công ty TNHH Công nghệ số Anh Tuấn theo HĐ 155, PT 186",
+             [("1111", 2200000, 0), ("711", 0, 2000000), ("3331", 0, 200000)], "ANHTUAN"),
+            # 20. 18/12: Đại lý Hoàng Long thanh toán trừ hoa hồng 10% (HĐ 156, HĐ 89, FT25339791951822)
+            ("GBC00033", date(2026, 12, 18), "Đại lý Hoàng Long computer thanh toán tiền hàng bán đại lý (HĐ 156) sau khi trừ hoa hồng 10% (HĐ 89)",
+             [("1121", 277200000, 0), ("641", 28000000, 0), ("1331", 2800000, 0), ("511", 0, 280000000), ("3331", 0, 28000000)], "HOANGLONG"),
+            # 21. 20/12: Thanh toán 50% HĐ 120 ngày 03/12 cho Vạn Phát qua NH (FT25339791951886)
+            ("GBN00031", date(2026, 12, 20), "Giấy báo nợ FT25339791951886 thanh toán 50% HĐ 120 ngày 03/12 cho CTCP Vận tải và Thương mại Vạn Phát",
+             [("331", 446600000, 0), ("1121", 0, 446600000)], "VANPHO"),
+            # 22. 22/12: Chi TM bảo dưỡng máy lạnh Daikin (PC 183, HĐ 189)
+            ("PC00048", date(2026, 12, 22), "Phiếu chi PC 183 thanh toán dịch vụ bảo dưỡng máy lạnh Daikin theo HĐ 189 của Công ty TNHH Thiết bị Thanh Trúc",
+             [("642", 1200000, 0), ("1331", 120000, 0), ("1111", 0, 1320000)], "THANHTRU"),
+            # 23. 22/12: Bán hàng chưa thu tiền cho Công ty TNHH Phan Minh (PXK 85, HĐ 157) + Chi phí vận chuyển Vạn Phát (HĐ 128, FT25339791951934)
+            ("HDBH00085", date(2026, 12, 22), "Bán hàng chưa thu tiền cho Công ty TNHH Phan Minh theo PXK 85, HĐ 157 (Dell 15c, HP 15s 15c, Màn hình LG 27UL500 5c, Bàn phím 5c, Tai nghe 5c)",
+             [("131", 526460000, 0), ("511", 0, 478600000), ("3331", 0, 47860000)], "PHANMINH"),
+            # 24. 23/12: Mua hàng nhập kho từ Công ty TNHH Thành Đạt (PNK 61, HĐ 150)
+            ("PNK00061", date(2026, 12, 23), "Mua hàng nhập kho theo PNK 61, HĐ 150 từ Công ty TNHH Thành Đạt (Dell 15c, HP 15s 15c, Màn hình LG 10c + Cước vận chuyển 1.000.000đ)",
+             [("156", 353500000, 0), ("1331", 35350000, 0), ("331", 0, 388850000)], "THANHDAT"),
+            # 25. 24/12: Khách hàng Phan Minh trả lại 1 màn hình LG 27UL500 bị cháy (BBTH 10/BBTH, HĐ 158,PNK 62)
+            ("HDBTL001", date(2026, 12, 24), "Công ty TNHH Phan Minh trả lại 01 Màn hình LG 27UL500 bị lỗi theo HĐ 158, PNK 62 (giảm trừ công nợ)",
+             [("521", 7800000, 0), ("3331", 780000, 0), ("131", 0, 8580000)], "PHANMINH"),
+            # 26. 26/12: Giảm giá 2 chiếc Laptop HP 15s mua ngày 23/12 từ Thành Đạt (BB 05/ABC-HL, HĐ 160)
+            ("BBGG001", date(2026, 12, 26), "Giảm giá hàng mua 02 chiếc Laptop HP 15s (500.000đ/chiếc) theo HĐ điều chỉnh giảm số 160 từ Công ty TNHH Thành Đạt",
+             [("331", 1100000, 0), ("156", 0, 1000000), ("1331", 0, 100000)], "THANHDAT"),
+            # 27. 29/12: Xuất kho CCDC cho phòng kế toán (PXK 86)
+            ("PXK00086", date(2026, 12, 29), "Xuất kho 02 ghế xoay văn phòng và 01 bàn làm việc theo PXK 86 cho Lê Văn Hiếu - Phòng kế toán (phân bổ 1 lần)",
              [("642", 4100000, 0), ("153", 0, 4100000)], None),
-            # 28. 31/12: Tính lương và các khoản trích theo lương T12
-            ("PKT00001", date(2026, 12, 31), "Trích lập bảng tính lương và các khoản trích theo lương tháng 12/N",
-             [("641", 68500000, 0), ("642", 100000000, 0), ("334", 0, 168500000)], None),
-            # 29. 31/12: Phân bổ CCDC xuất dùng tính vào chi phí T12
-            ("PKT00002", date(2026, 12, 31), "Phân bổ CCDC xuất dùng tính vào chi phí quản lý và bán hàng tháng 12",
-             [("641", 5450000, 0), ("642", 13000000, 0), ("242", 0, 18450000)], None),
-            # 30. 31/12: Tính và phân bổ khấu hao TSCĐ T12
-            ("PKT00003", date(2026, 12, 31), "Tính và trích khấu hao tài sản cố định tháng 12",
-             [("641", 4600000, 0), ("642", 9000000, 0), ("214", 0, 13600000)], None),
+            # 28. 31/12: Tính lương và các khoản trích theo lương T12 (Tổng lương 80.260.000đ, BH tính vào CP 14.512.500đ, BH trừ lương 7.087.500đ)
+            ("PKT00001", date(2026, 12, 31), "Hạch toán chi phí tiền lương (80.260.000đ) và các khoản trích theo lương tính vào chi phí (14.512.500đ) tháng 12/N",
+             [("641", 35750000, 0), ("642", 59022500, 0), ("334", 0, 80260000), ("338", 0, 14512500)], None),
+            # 29. 31/12: Phân bổ CCDC xuất dùng tính vào chi phí T12 (7 mã CCDC đang dùng: 3.003.333đ)
+            ("PKT00002", date(2026, 12, 31), "Phân bổ công cụ dụng cụ tháng 12/N (7 mã CCDC: BG001, DT001, KD001, MI001, PD001, TD001, TS001)",
+             [("641", 400000, 0), ("642", 2603333, 0), ("242", 0, 3003333)], None),
+            # 30. 31/12: Tính và phân bổ khấu hao TSCĐ T12 (8 TSCĐ: 15.905.600đ)
+            ("PKT00003", date(2026, 12, 31), "Trích khấu hao TSCĐ tháng 12/N (TK 6414: 1.060.887đ, TK 6424: 14.844.713đ)",
+             [("641", 1060887, 0), ("642", 14844713, 0), ("2141", 0, 14544489), ("2143", 0, 1361111)], None),
             # 31. 31/12: Xác định thuế GTGT khấu trừ và phải nộp T12
-            ("PKT00004", date(2026, 12, 31), "Khấu trừ và xác định thuế GTGT được khấu trừ và phải nộp tháng 12",
-             [("3331", 128537500, 0), ("133", 0, 128537500)], None),
+            ("PKT00004", date(2026, 12, 31), "Khấu trừ thuế GTGT đầu vào và xác định thuế GTGT phải nộp tháng 12/N",
+             [("3331", 125657500, 0), ("1331", 0, 125657500)], None),
             # 32. 31/12: Kết chuyển xác định kết quả kinh doanh cuối năm
-            ("PKT00005", date(2026, 12, 31), "Kết chuyển doanh thu, chi phí xác định kết quả kinh doanh năm N",
-             [("511", 1400000000, 0), ("911", 0, 1400000000)], None),
+            ("PKT00005", date(2026, 12, 31), "Kết chuyển doanh thu thuần xác định kết quả kinh doanh tháng 12/N",
+             [("511", 1402200000, 0), ("911", 0, 1402200000)], None),
         ]
 
         if period_12:
+            doc_nums = [d[0] for d in tx_data]
+            JournalEntry.objects.filter(company=company, number__in=doc_nums).delete()
             created_tx = 0
             for doc_num, doc_date, desc, lines, p_code in tx_data:
-                if JournalEntry.objects.filter(company=company, number=doc_num).exists():
-                    continue
                 tot_d = sum(d for _, d, c in lines)
                 tot_c = sum(c for _, d, c in lines)
                 party = party_map.get(p_code) if p_code else None

@@ -1,4 +1,13 @@
-export type Company = { id: string; code: string; name: string; status?: string };
+export type Company = {
+  id: string;
+  code: string;
+  name: string;
+  status?: string;
+  tax_code?: string;
+  legal_representative?: string;
+  accounting_regime?: string;
+  address?: string;
+};
 export type Customer = {
   id: string;
   code: string;
@@ -103,48 +112,70 @@ export async function refreshAccessToken(): Promise<string> {
   return token;
 }
 
+const inFlightRequests = new Map<string, Promise<any>>();
+
 export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {
-  let response: Response;
-  const initialToken = token || localStorage.getItem("erp_token") || undefined;
-  try {
-    const fetchWithToken = (access?: string) =>
-      fetch(path, {
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          ...options?.headers,
-          ...(access ? { Authorization: `Bearer ${access}` } : {}),
-        },
-      });
-    response = await fetchWithToken(initialToken);
-    if (response.status === 401 && !path.startsWith("/api/token/")) {
-      const renewed = await renewAccessToken(initialToken);
-      if (!renewed) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
-      response = await fetchWithToken(renewed);
-      if (response.status === 401) {
-        expireSession(renewed);
-        throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
-      }
-    }
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
+  const method = (options?.method || "GET").toUpperCase();
+  const isGet = method === "GET";
+  const effectiveToken = token || localStorage.getItem("erp_token") || "";
+  const dedupeKey = isGet ? `${path}::${effectiveToken}` : null;
+
+  if (dedupeKey && inFlightRequests.has(dedupeKey)) {
+    return inFlightRequests.get(dedupeKey)! as Promise<T>;
   }
 
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    if ([502, 503, 504].includes(response.status)) {
-      throw new ApiError("Backend chưa sẵn sàng. Hãy đợi migrations hoàn tất rồi thử lại.", response.status);
+  const exec = (async (): Promise<T> => {
+    let response: Response;
+    const initialToken = token || localStorage.getItem("erp_token") || undefined;
+    try {
+      const fetchWithToken = (access?: string) =>
+        fetch(path, {
+          ...options,
+          headers: {
+            "Content-Type": "application/json",
+            ...options?.headers,
+            ...(access ? { Authorization: `Bearer ${access}` } : {}),
+          },
+        });
+      response = await fetchWithToken(initialToken);
+      if (response.status === 401 && !path.startsWith("/api/token/")) {
+        const renewed = await renewAccessToken(initialToken);
+        if (!renewed) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
+        response = await fetchWithToken(renewed);
+        if (response.status === 401) {
+          expireSession(renewed);
+          throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
+        }
+      }
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
     }
-    if (response.status === 401) {
-      throw new ApiError("Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.", 401);
+
+    const body: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      if ([502, 503, 504].includes(response.status)) {
+        throw new ApiError("Backend chưa sẵn sàng. Hãy đợi migrations hoàn tất rồi thử lại.", response.status);
+      }
+      if (response.status === 401) {
+        throw new ApiError("Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.", 401);
+      }
+      const detail = body && typeof body === "object"
+        ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : (typeof value === "object" ? JSON.stringify(value) : String(value))}`).join("; ")
+        : `Yêu cầu thất bại (HTTP ${response.status}).`;
+      throw new ApiError(detail, response.status);
     }
-    const detail = body && typeof body === "object"
-      ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : (typeof value === "object" ? JSON.stringify(value) : String(value))}`).join("; ")
-      : `Yêu cầu thất bại (HTTP ${response.status}).`;
-    throw new ApiError(detail, response.status);
+    return body as T;
+  })();
+
+  if (dedupeKey) {
+    inFlightRequests.set(dedupeKey, exec);
+    exec.finally(() => {
+      inFlightRequests.delete(dedupeKey);
+    });
   }
-  return body as T;
+
+  return exec;
 }
 
 function rows<T>(response: ListResponse<T>): T[] {

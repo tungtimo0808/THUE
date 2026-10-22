@@ -127,6 +127,14 @@ function mapBankTransaction(row: ApiBankTransaction): BankTransaction {
   };
 }
 
+const bankDataCache = new Map<string, {
+  transactions: BankTransaction[];
+  bankAccounts: { account: string; name: string }[];
+  bankProfiles: ApiBankProfile[];
+  bankBalance: number;
+  timestamp: number;
+}>();
+
 export default function MisaBankWorkspace({
   tab = "transactions",
   company,
@@ -160,8 +168,8 @@ export default function MisaBankWorkspace({
   const [showInsuranceModal, setShowInsuranceModal] = useState(false);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [editingTransfer, setEditingTransfer] = useState<Record<string, any> | null>(null);
-  const [bankTransferRecords, setBankTransferRecords] = useState<Record<string, any>[]>([]);
+  const [_editingTransfer, setEditingTransfer] = useState<Record<string, any> | null>(null);
+  const [_bankTransferRecords, setBankTransferRecords] = useState<Record<string, any>[]>([]);
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [bankImportKind,setBankImportKind]=useState<"receipt"|"payment"|null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
@@ -223,9 +231,18 @@ export default function MisaBankWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  const [transactions, setTransactions] = useState<BankTransaction[]>([]);
+  const cachedBank = company?.id ? bankDataCache.get(company.id) : undefined;
+  const [transactions, setTransactions] = useState<BankTransaction[]>(() => cachedBank?.transactions || []);
+  const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>(() => cachedBank?.bankAccounts || []);
+  const [bankProfiles, setBankProfiles] = useState<ApiBankProfile[]>(() => cachedBank?.bankProfiles || []);
+  const [bankBalance, setBankBalance] = useState(() => cachedBank?.bankBalance || 0);
+
   const [bankApiRevision, setBankApiRevision] = useState(0);
-  const apiSaveBank = useMisaApiSave(company.id, notify, () => setBankApiRevision((value) => value + 1));
+  const reloadBankApi = () => {
+    if (company?.id) bankDataCache.delete(company.id);
+    setBankApiRevision((value) => value + 1);
+  };
+  const apiSaveBank = useMisaApiSave(company.id, notify, reloadBankApi);
   const [loanRecords, setLoanRecords] = useState<NonNullable<CreditOverviewViewProps["records"]> | undefined>(undefined);
   useEffect(() => {
     if (!token || !company.id || !["loans", "borrowings"].includes(tab)) return;
@@ -239,9 +256,6 @@ export default function MisaBankWorkspace({
       }))))
       .catch((error) => notify(`Không tải được khế ước: ${error instanceof Error ? error.message : String(error)}`));
   }, [token, company.id, tab, bankApiRevision]);
-  const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>([]);
-  const [bankProfiles, setBankProfiles] = useState<ApiBankProfile[]>([]);
-  const [bankBalance, setBankBalance] = useState(0);
 
   useEffect(() => {
     if (!token || !company.id) {
@@ -253,47 +267,74 @@ export default function MisaBankWorkspace({
       return;
     }
     let active = true;
-    setTransactions([]);
-    setBankTransferRecords([]);
-    setBankAccounts([]);
-    setBankProfiles([]);
-    setBankBalance(0);
-    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}`;
+    const hasCache = bankDataCache.has(company.id);
+    if (!hasCache) {
+      setTransactions([]);
+      setBankTransferRecords([]);
+      setBankAccounts([]);
+      setBankProfiles([]);
+      setBankBalance(0);
+    }
+    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}&page_size=100`;
     request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
-      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}`, token,
+      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}&page_size=100`, token,
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
-      setBankProfiles(records);
-      setBankBalance(records.reduce((total, row) => total + Number(row.balance), 0));
-      setBankAccounts(records.map((row) => ({
+      const totalBalance = records.reduce((total, row) => total + Number(row.balance), 0);
+      const accounts = records.map((row) => ({
         account: row.account_number,
         name: `${row.bank_name} - ${row.account_name} (${row.currency_code})`,
-      })));
+      }));
+      setBankProfiles(records);
+      setBankBalance(totalBalance);
+      setBankAccounts(accounts);
+      const prev = bankDataCache.get(company.id);
+      bankDataCache.set(company.id, {
+        transactions: prev?.transactions || [],
+        bankAccounts: accounts,
+        bankProfiles: records,
+        bankBalance: totalBalance,
+        timestamp: Date.now(),
+      });
     }).catch((error) => {
-      if (active) notify(error instanceof Error ? error.message : "Không tải được tài khoản ngân hàng.");
+      if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được tài khoản ngân hàng.");
     });
     request<ApiBankTransaction[] | { results: ApiBankTransaction[] }>(path, token)
       .then((response) => {
         if (!active) return;
         const records = Array.isArray(response) ? response : response.results;
-        setTransactions(records.map(mapBankTransaction));
+        const mapped = records.map(mapBankTransaction);
+        setTransactions(mapped);
+        const prev = bankDataCache.get(company.id);
+        bankDataCache.set(company.id, {
+          transactions: mapped,
+          bankAccounts: prev?.bankAccounts || [],
+          bankProfiles: prev?.bankProfiles || [],
+          bankBalance: prev?.bankBalance || 0,
+          timestamp: Date.now(),
+        });
         // Internal transfers are listed with the vouchers so they can be reviewed after saving.
         internalTransfers(createApiWriter(company.id, (apiPath, init) => request(apiPath, token, init)), "bank").then((transfers) => {
           if (!active) return;
           setBankTransferRecords(transfers);
           const date = (value?: string | null) => value ? value.slice(0, 10).split("-").reverse().join("/") : "";
-          setTransactions((rows) => [...rows.filter((row) => !String(row.id).startsWith("transfer:")), ...transfers.map((row) => ({
-            id: `transfer:${row.id}`, dateHachToan: date(row.posting_date || row.transfer_date), dateChungTu: date(row.transfer_date), code: row.number,
-            description: row.description || "Chuyển tiền nội bộ", amount: Number(row.source_amount ?? row.amount),
-            partner: `${row.source_account_number || ""} → ${row.destination_account_number || ""}`, kind: "transfer" as const,
-            status: row.status === "CONFIRMED" ? "posted" : row.status === "CANCELLED" ? "cancelled" : row.status === "REVERSED" ? "reversed" : "draft",
-            bankAccount: row.source_account_number || "", debit: row.destination_gl_code || "", credit: row.source_gl_code || "", items: [],
-          }) as BankTransaction)]);
+          setTransactions((rows) => {
+            const next = [...rows.filter((row) => !String(row.id).startsWith("transfer:")), ...transfers.map((row) => ({
+              id: `transfer:${row.id}`, dateHachToan: date(row.posting_date || row.transfer_date), dateChungTu: date(row.transfer_date), code: row.number,
+              description: row.description || "Chuyển tiền nội bộ", amount: Number(row.source_amount ?? row.amount),
+              partner: `${row.source_account_number || ""} → ${row.destination_account_number || ""}`, kind: "transfer" as const,
+              status: row.status === "CONFIRMED" ? "posted" : row.status === "CANCELLED" ? "cancelled" : row.status === "REVERSED" ? "reversed" : "draft",
+              bankAccount: row.source_account_number || "", debit: row.destination_gl_code || "", credit: row.source_gl_code || "", items: [],
+            }) as BankTransaction)];
+            const curr = bankDataCache.get(company.id);
+            if (curr) curr.transactions = next;
+            return next;
+          });
         }).catch(() => undefined);
       })
       .catch((error) => {
-        if (active) notify(error instanceof Error ? error.message : "Không tải được giao dịch ngân hàng.");
+        if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được giao dịch ngân hàng.");
       });
     return () => { active = false; };
   }, [token, company.id, notify, bankApiRevision]);
@@ -849,7 +890,7 @@ export default function MisaBankWorkspace({
   if(tab==='reports')return <MisaReportCenterWorkspace key={bankParams.get('report')||'bank'} initialCategory="bank" initialReport={bankParams.get('report')} embedded notify={notify}/>;
   if(tab==='cashflow')return <MisaCashForecastWorkspace companyId={company.id} openingKind="bank" entries={transactions.map(row=>({date:row.dateHachToan,kind:row.kind,amount:row.amount,code:row.code,status:row.status}))}/>;
   if(tab==='advance-settlement')return <><MisaPaymentWorkflow variant="settlement" notify={notify}><AdvanceSettlementTab notify={notify} onOpenCreateReceipt={()=>setShowCreateVoucher('receipt')}/></MisaPaymentWorkflow>{renderModals()}</>;
-  if (tab === 'reconciliation') return <><MisaBankReconciliation companyId={company.id} transactions={transactions} notify={notify} onCreateVoucher={(kind, line) => { setStatementVoucherSource(line); setShowCreateVoucher(kind); }} onOpenVoucher={(id, code) => { setSelectedRowId(id); setSearchQuery(code); setFilterPeriod('all'); navigate(href('/bank/transactions', { voucher: id, voucherCode: code })); }}/>{renderModals()}</>;
+  if (tab === 'reconciliation') return <><MisaBankReconciliation companyId={company.id} transactions={transactions} notify={notify} onCreateVoucher={(kind, line) => { setStatementVoucherSource(line); setShowCreateVoucher(kind); }} onOpenVoucher={(id, code) => { setSelectedRowId(id); setSearchQuery(code); setFilterPeriod('all'); navigate(href(`/bank/transactions?voucher=${encodeURIComponent(id)}&voucherCode=${encodeURIComponent(code)}`)); }}/>{renderModals()}</>;
   if (tab === 'payment-requests') return <><MisaPaymentWorkflow notify={notify}><PaymentRequestsTab notify={notify} onOpenCreatePayment={()=>setShowCreateVoucher('payment')}/></MisaPaymentWorkflow>{renderModals()}</>;
 
   // --------------------------------------------------------------------

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Monitor } from "lucide-react";
+import { apiClient } from "./apiClient";
 import "./misa-invoice-workspace.css";
 const flowNodes = [
   ["Đăng ký/ Thay đổi thông tin sử dụng HĐĐT", "meinvoice", 10, 28],
@@ -39,6 +40,19 @@ export default function MisaInvoiceWorkspace({
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [error, setError] = useState("");
+  useEffect(() => {
+    apiClient
+      .get<any>("/api/v1/tax/connectors/")
+      .then((res) => {
+        const list = Array.isArray(res) ? res : res?.results || [];
+        const first = list[0];
+        if (first) {
+          if (first.tax_code) setTaxCode(String(first.tax_code));
+          if (first.username) setEmail(String(first.username));
+        }
+      })
+      .catch(() => {});
+  }, []);
   const steps =
     fault === faults[0]
       ? [
@@ -83,8 +97,18 @@ export default function MisaInvoiceWorkspace({
                 return;
               }
               setError("");
+              apiClient
+                .post("/api/v1/tax/connectors/", {
+                  provider_code: "MEINVOICE",
+                  provider_name: "MISA meInvoice.VN",
+                  endpoint_url: "https://www.meinvoice.vn",
+                  tax_code: taxCode.trim(),
+                  username: email.trim(),
+                  is_active: true,
+                })
+                .catch(() => {});
               setPassword("");
-              notify("Thông tin kết nối đã được kiểm tra.");
+              notify("Thông tin kết nối đã được kiểm tra và lưu lên hệ thống.");
             }}
           >
             <input

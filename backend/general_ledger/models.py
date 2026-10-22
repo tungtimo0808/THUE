@@ -1,3 +1,4 @@
+from decimal import Decimal
 import uuid
 
 from django.core.exceptions import ValidationError
@@ -499,7 +500,28 @@ class PrepaidExpense(models.Model):
 
     @property
     def remaining_amount(self):
-        return self.amount - self.opening_allocated_amount - self.allocated_amount
+        base_rem = self.amount - self.opening_allocated_amount - self.allocated_amount
+        if hasattr(self, "_decreased_amount_cache"):
+            return max(Decimal("0"), base_rem - self._decreased_amount_cache)
+        try:
+            from fixed_assets.models import AssetRecord
+            comp = (
+                AssetRecord.objects.filter(
+                    company_id=self.company_id,
+                    source_module="PREPAID_EXPENSE",
+                    code__iexact=self.code,
+                )
+                .only("accessories")
+                .first()
+            )
+            if comp and isinstance(comp.accessories, list) and comp.accessories:
+                meta = comp.accessories[0] if isinstance(comp.accessories[0], dict) else {}
+                dec_val = meta.get("decreased_amount")
+                if dec_val is not None:
+                    return max(Decimal("0"), base_rem - Decimal(str(dec_val)))
+        except Exception:
+            pass
+        return max(Decimal("0"), base_rem)
 
     @property
     def remaining_periods(self):
