@@ -519,6 +519,16 @@
 .erp3-validation p {
   margin: 6px 0;
 }
+.erp3-validation [aria-label="Chi tiết kết quả kiểm tra"] {
+  margin-top: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  border-top: 1px solid #ddd8c8;
+}
+.erp3-validation [aria-label="Chi tiết kết quả kiểm tra"] p {
+  padding: 7px 0;
+  border-bottom: 1px solid #e9e5d8;
+}
 .erp3-check,
 .erp3-warn {
   display: inline-grid;
@@ -1011,3 +1021,39 @@
     grid-template-columns: 1fr;
   }
 }
+.erp3-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(15 23 42 / 45%);
+}
+.erp3-linked-document {
+  padding: 8px 0;
+  border-top: 1px solid #ddd8c8;
+}
+.erp3-linked-document button { margin-left: 8px; }
+.erp3-link-dialog {
+  background: #fff;
+  width: min(920px, calc(100vw - 36px));
+  max-height: 88vh;
+  overflow: auto;
+  margin: 6vh auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 16px 48px #0003;
+}
+.erp3-link-dialog header h3 { margin: 0 0 6px; }
+.erp3-link-dialog header p { margin: 4px 0; color: #475569; }
+.erp3-link-candidates { max-height: 320px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
+.erp3-link-candidates > p { padding: 16px; }
+.erp3-link-candidate { display: flex; align-items: flex-start; gap: 12px; padding: 12px;
+  border-bottom: 1px solid #e2e8f0; cursor: pointer; }
+.erp3-link-candidate:has(input:checked) { background: #eff9f2; }
+.erp3-link-candidate span:nth-child(2) { flex: 1; }
+.erp3-link-candidate small { display: block; color: #64748b; margin-top: 3px; }
+.erp3-link-allocation { padding: 12px 0; display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.erp3-link-allocation h4, .erp3-link-allocation p { width: 100%; margin: 0; }
+.erp3-link-allocation label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.erp3-link-allocation input { border: 1px solid #cbd5e1; border-radius: 4px; padding: 7px; min-width: 160px; }
+.erp3-link-dialog footer { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+.erp3-link-dialog footer span { flex: 1; }

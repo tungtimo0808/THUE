@@ -39,6 +39,7 @@ export interface SaleInvoiceModalProps {
   initialType?: SaleInvoiceFormType;
   initialIsReplacement?: boolean;
   initialData?: any;
+  originalInvoices?: any[];
   onClose: () => void;
   onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
@@ -49,6 +50,7 @@ export function SaleInvoiceModal({
   initialType = "Hóa đơn bán hàng hóa, dịch vụ trong nước",
   initialIsReplacement = false,
   initialData,
+  originalInvoices = [],
   onClose,
   onSubmit,
   onOpenCustomerModal,
@@ -121,6 +123,8 @@ export function SaleInvoiceModal({
   const [isReplacementInvoice, setIsReplacementInvoice] = useState(
     initialData?.isReplacementInvoice !== undefined ? initialData.isReplacementInvoice : initialIsReplacement
   );
+  const [originalInvoiceId, setOriginalInvoiceId] = useState(initialData?.originalInvoiceId || "");
+  const [replacementReason, setReplacementReason] = useState(initialData?.replacementReason || "");
 
   // Customer selection helper
   const handleSelectCustomer = (code: string) => {
@@ -255,6 +259,8 @@ export function SaleInvoiceModal({
       contractNo,
       contractDate,
       isReplacementInvoice,
+      originalInvoiceId,
+      replacementReason,
       items,
       amount: totalAmount,
       vatAmount: totalVat,
@@ -266,7 +272,7 @@ export function SaleInvoiceModal({
     if (saved === false) return;
     if (saved !== true) notify(
       andPrint
-        ? `Đã lưu và chuẩn bị phát hành Hóa đơn ${invoiceNo || "mới"}!`
+        ? `Đã lưu hóa đơn ${invoiceNo || "mới"} và mở bản xem trước để in.`
         : `Đã lưu Hóa đơn ${invoiceNo || "mới"} thành công!`
     );
     onClose();
@@ -601,6 +607,7 @@ export function SaleInvoiceModal({
                   </label>
                   <input
                     type="text"
+                    aria-label="Tên khách hàng hóa đơn"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     style={{
@@ -1072,6 +1079,7 @@ export function SaleInvoiceModal({
                 </label>
                 <input
                   type="text"
+                  aria-label="Ký hiệu hóa đơn đầu ra"
                   value={invoiceSeries}
                   onChange={(e) => setInvoiceSeries(e.target.value)}
                   style={{
@@ -1105,6 +1113,7 @@ export function SaleInvoiceModal({
                     boxSizing: "border-box",
                   }}
                 />
+                <small style={{ color: "#64748b", fontSize: 10 }}>Có thể để trống khi lưu nháp; số chính thức do hệ thống phát hành xác nhận.</small>
               </div>
 
               {/* Ngày HĐ ⓘ */}
@@ -1126,6 +1135,7 @@ export function SaleInvoiceModal({
                 >
                   <input
                     type="text"
+                    aria-label="Ngày hóa đơn đầu ra"
                     value={invoiceDate}
                     onChange={(e) => setInvoiceDate(e.target.value)}
                     style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
@@ -1264,6 +1274,7 @@ export function SaleInvoiceModal({
                     <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px" }}>
                       <input
                         type="text"
+                        aria-label={`Tên hàng dòng ${idx + 1}`}
                         value={row.itemName}
                         onChange={(e) => handleItemChange(idx, "itemName", e.target.value)}
                         style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5 }}
@@ -1306,6 +1317,7 @@ export function SaleInvoiceModal({
                     <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                       <input
                         type="text"
+                        aria-label={`Đơn giá dòng ${idx + 1}`}
                         value={row.unitPrice === 0 ? "0,00" : formatVND(row.unitPrice)}
                         onChange={(e) => {
                           const v = Number(e.target.value.replace(/\D/g, "")) || 0;
@@ -1323,6 +1335,7 @@ export function SaleInvoiceModal({
                     {/* % thuế GTGT */}
                     <td style={{ borderRight: (isDomestic || isAgency) ? "1px solid #cbd5e1" : "none", padding: "2px 4px", textAlign: "center" }}>
                       <select
+                        aria-label={`Thuế suất dòng ${idx + 1}`}
                         value={row.vatRate}
                         onChange={(e) => handleItemChange(idx, "vatRate", e.target.value)}
                         style={{ border: "none", background: "transparent", fontSize: 12.5, outline: "none", width: "100%", textAlign: "center" }}
@@ -1681,6 +1694,25 @@ export function SaleInvoiceModal({
                       />
                       <span>Là hóa đơn thay thế</span>
                     </label>
+                    {isReplacementInvoice && <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                      <select aria-label="Hóa đơn bị thay thế" value={originalInvoiceId}
+                        onChange={(event) => {
+                          const original = originalInvoices.find((row) => row.id === event.target.value);
+                          setOriginalInvoiceId(event.target.value);
+                          if (original) {
+                            setCustomerName(original.buyer_name); setTaxCode(original.buyer_tax_code || "");
+                            setInvoiceSeries(original.invoice_series);
+                          }
+                        }} style={{ minWidth: 280, height: 30, border: "1px solid #cbd5e1", borderRadius: 3 }}>
+                        <option value="">-- Chọn hóa đơn gốc đã phát hành --</option>
+                        {originalInvoices.map((row) => <option key={row.id} value={row.id}>
+                          {row.invoice_series} / {row.invoice_number} · {row.buyer_name}
+                        </option>)}
+                      </select>
+                      <input aria-label="Lý do thay thế" placeholder="Lý do thay thế" value={replacementReason}
+                        onChange={(event) => setReplacementReason(event.target.value)}
+                        style={{ minWidth: 280, height: 30, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 8px" }} />
+                    </div>}
                   </div>
                 )}
               </div>

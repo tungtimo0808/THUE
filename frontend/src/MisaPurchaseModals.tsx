@@ -8261,9 +8261,6 @@ export function ReceiveInvoiceSelectModal({
   onSubmit,
   loadVouchers,
 }: ReceiveInvoiceSelectModalProps) {
-  const [invoice, setInvoice] = useState<ReceivedInvoiceInfo>({
-    invoiceTemplate: "1", invoiceSeries: "", invoiceNumber: "", invoiceDate: new Date().toLocaleDateString("en-GB"),
-  });
   // Master Filters
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [reportPeriod, setReportPeriod] = useState<string>("Tháng này");
@@ -8374,11 +8371,7 @@ export function ReceiveInvoiceSelectModal({
       setValidationError("Vui lòng chọn ít nhất một chứng từ mua hàng cần nhận hóa đơn.");
       return;
     }
-    if (loadVouchers && (!invoice.invoiceSeries.trim() || !invoice.invoiceNumber.trim() || !invoice.invoiceDate.trim())) {
-      setValidationError("Vui lòng nhập Ký hiệu, Số và Ngày hóa đơn của người bán.");
-      return;
-    }
-    await onSubmit(chosen, loadVouchers ? invoice : undefined);
+    await onSubmit(chosen);
   };
 
   const selectedCount = selectedIds.length;
@@ -8726,26 +8719,7 @@ export function ReceiveInvoiceSelectModal({
           </div>
         </div>
 
-        {loadVouchers && (
-          <div style={{ display: "flex", gap: 12, padding: "8px 18px", alignItems: "center", fontSize: 12.5, borderTop: "1px solid #e2e8f0" }}>
-            {([
-              ["invoiceTemplate", "Mẫu số", 70],
-              ["invoiceSeries", "Ký hiệu HĐ *", 110],
-              ["invoiceNumber", "Số hóa đơn *", 120],
-              ["invoiceDate", "Ngày hóa đơn *", 110],
-            ] as const).map(([field, label, width]) => (
-              <label key={field} style={{ display: "flex", alignItems: "center", gap: 6, color: "#334155" }}>
-                {label}
-                <input
-                  value={invoice[field]}
-                  onChange={(e) => { setInvoice((prev) => ({ ...prev, [field]: e.target.value })); setValidationError(null); }}
-                  placeholder={field === "invoiceDate" ? "dd/mm/yyyy" : ""}
-                  style={{ width, height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
-                />
-              </label>
-            ))}
-          </div>
-        )}
+        <p style={{ padding: "8px 18px", fontSize: 12.5 }}>Chứng từ được chọn chỉ làm ngữ cảnh. Hãy tải file XML hóa đơn thật tại Hộp thư hóa đơn.</p>
 
         {/* Validation warning if any */}
         {validationError && (

@@ -1,3 +1,5 @@
+import hashlib
+import json
 from decimal import Decimal
 
 from django.db import transaction
@@ -34,21 +36,23 @@ def _period_closed(company, date):
 @transaction.atomic
 def validate_invoice(invoice, request):
     invoice = models.TaxInvoice.objects.select_for_update().prefetch_related("lines").get(pk=invoice.pk)
-    if invoice.status not in {"DRAFT", "RECEIVED", "BLOCKED", "VALIDATED"}:
+    if invoice.status not in {"DRAFT", "RECEIVED", "BLOCKED", "VALIDATED", "ISSUE_FAILED"}:
         raise ValidationError("Trạng thái hóa đơn không cho phép kiểm tra.")
     if _period_closed(invoice.company, invoice.invoice_date):
         raise ValidationError("Không được kiểm tra lại hóa đơn trong kỳ thuế đã đóng.")
     invoice.validation_results.all().delete()
     results = []
-    if not invoice.seller_tax_code or not invoice.invoice_number or not invoice.invoice_series:
+    if not invoice.seller_tax_code or not invoice.invoice_series or (invoice.direction == "INPUT" and not invoice.invoice_number):
         results.append(("REQUIRED_FIELDS", "ERROR", "Thiếu mã số thuế, ký hiệu hoặc số hóa đơn."))
+    if invoice.direction == "OUTPUT" and (invoice.seller_tax_code != invoice.company.tax_code or not invoice.buyer_name.strip()):
+        results.append(("OUTPUT_PARTIES", "ERROR", "Thông tin người bán hoặc người mua không hợp lệ."))
     if not invoice.lines.exists():
         results.append(("NO_LINES", "ERROR", "Hóa đơn phải có ít nhất một dòng chi tiết."))
     line_subtotal = sum((line.taxable_amount for line in invoice.lines.all()), Decimal("0"))
     line_tax = sum((line.tax_amount for line in invoice.lines.all()), Decimal("0"))
     if abs(invoice.subtotal - line_subtotal) > Decimal("0.01") or abs(invoice.tax_amount - line_tax) > Decimal("0.01") or invoice.total_amount != invoice.subtotal + invoice.tax_amount:
         results.append(("TOTAL_MISMATCH", "ERROR", "Tổng tiền hóa đơn không khớp chi tiết."))
-    duplicate = models.TaxInvoice.objects.filter(
+    duplicate = bool(invoice.invoice_number) and models.TaxInvoice.objects.filter(
         company=invoice.company, direction=invoice.direction, seller_tax_code=invoice.seller_tax_code,
         invoice_series=invoice.invoice_series, invoice_number=invoice.invoice_number,
     ).exclude(pk=invoice.pk).exists()
@@ -82,6 +86,8 @@ def validate_invoice(invoice, request):
 @transaction.atomic
 def add_link(data, request):
     invoice = models.TaxInvoice.objects.select_for_update().get(pk=data["invoice"].pk)
+    if invoice.direction == "INPUT":
+        raise ValidationError("Dùng thao tác liên kết chứng từ mua hàng của hóa đơn.")
     if invoice.status in {"CANCELLED", "REPLACED"}:
         raise ValidationError("Không thể liên kết hóa đơn đã hủy/thay thế.")
     data["invoice"] = invoice
@@ -104,6 +110,56 @@ def request_integration(*, invoice=None, filing=None, connector, task_type, key,
         raise ValidationError("Không được phát hành/xử lý hóa đơn trong kỳ thuế đã đóng.")
     if models.IntegrationRequest.objects.filter(idempotency_key=key).exists():
         raise ValidationError({"idempotency_key": "Yêu cầu đã được gửi trước đó."})
+    if invoice and task_type == "ISSUE":
+        invoice = models.TaxInvoice.objects.select_for_update().prefetch_related("lines").get(pk=invoice.pk)
+        if connector.channel != "EINVOICE" or invoice.direction != "OUTPUT" or invoice.status != "VALIDATED":
+            raise ValidationError("Hóa đơn đầu ra cần được kiểm tra và chọn kết nối hóa đơn điện tử hợp lệ.")
+        if invoice.original_invoice_id:
+            original = models.TaxInvoice.objects.select_for_update().get(pk=invoice.original_invoice_id)
+            if original.status not in {"ISSUED", "ADJUSTED"} or models.IntegrationRequest.objects.filter(
+                invoice=original, task_type="CANCEL", status="PENDING").exists():
+                raise ValidationError("Hóa đơn gốc không còn đủ điều kiện xử lý.")
+            if invoice.invoice_type == "REPLACEMENT" and models.TaxInvoice.objects.filter(
+                original_invoice=original, invoice_type="REPLACEMENT", status__in=("ISSUING", "ISSUED")
+            ).exclude(pk=invoice.pk).exists():
+                raise ValidationError("Hóa đơn gốc đã có bản thay thế đang phát hành hoặc đã phát hành.")
+            if invoice.invoice_type == "ADJUSTMENT" and invoice.adjustment_effect == "DECREASE":
+                prior = models.TaxInvoice.objects.filter(original_invoice=original, invoice_type="ADJUSTMENT",
+                    adjustment_effect="DECREASE", status="ISSUED").aggregate(total=Sum("total_amount"))["total"] or Decimal("0")
+                increases = models.TaxInvoice.objects.filter(original_invoice=original, invoice_type="ADJUSTMENT",
+                    adjustment_effect="INCREASE", status="ISSUED").aggregate(total=Sum("total_amount"))["total"] or Decimal("0")
+                if invoice.total_amount > original.total_amount + increases - prior:
+                    raise ValidationError("Tổng điều chỉnh giảm vượt giá trị còn lại của hóa đơn gốc.")
+        snapshot = {
+            "invoice_id": str(invoice.pk), "company_id": str(invoice.company_id),
+            "series": invoice.invoice_series, "number": invoice.invoice_number,
+            "date": str(invoice.invoice_date), "seller_name": invoice.seller_name,
+            "seller_tax_code": invoice.seller_tax_code, "buyer_name": invoice.buyer_name,
+            "buyer_tax_code": invoice.buyer_tax_code, "currency_id": str(invoice.currency_id),
+            "subtotal": str(invoice.subtotal), "tax_amount": str(invoice.tax_amount),
+            "total_amount": str(invoice.total_amount),
+            "lines": [{"description": line.description, "quantity": str(line.quantity),
+                       "unit_price": str(line.unit_price), "discount_amount": str(line.discount_amount),
+                       "tax_rate": str(line.tax_rate), "tax_amount": str(line.tax_amount)}
+                      for line in invoice.lines.all()],
+        }
+        canonical = json.dumps(snapshot, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        payload = {"snapshot": snapshot, "snapshot_sha256": hashlib.sha256(canonical).hexdigest(),
+            "correction": {"original_invoice_id": str(invoice.original_invoice_id),
+                "type": invoice.invoice_type, "effect": invoice.adjustment_effect,
+                "reason": invoice.raw_data.get("correction_reason", "")} if invoice.original_invoice_id else None}
+    if invoice and task_type == "CANCEL":
+        invoice = models.TaxInvoice.objects.select_for_update().get(pk=invoice.pk)
+        if connector.channel != "EINVOICE" or invoice.direction != "OUTPUT" or invoice.status != "ISSUED":
+            raise ValidationError("Chỉ hóa đơn đầu ra đã phát hành còn hiệu lực mới được gửi yêu cầu hủy.")
+        if models.TaxInvoice.objects.filter(original_invoice=invoice, invoice_type="REPLACEMENT",
+            status__in=("ISSUING", "ISSUED")).exists():
+            raise ValidationError("Hóa đơn đã có bản thay thế đang xử lý hoặc có hiệu lực.")
+        if models.IntegrationRequest.objects.filter(invoice=invoice, task_type="CANCEL", status="PENDING").exists():
+            raise ValidationError("Hóa đơn đang có yêu cầu hủy chờ kết quả.")
+        payload = {"reason": str(payload.get("reason", "")).strip(),
+            "case_type": payload.get("case_type"), "invoice_id": str(invoice.pk),
+            "provider_invoice_id": invoice.external_reference, "invoice_number": invoice.invoice_number}
     obj = models.IntegrationRequest.objects.create(
         company=connector.company, connector=connector, invoice=invoice, filing=filing,
         task_type=task_type, idempotency_key=key, request_payload=payload, created_by=actor(request),
@@ -126,8 +182,27 @@ def request_integration(*, invoice=None, filing=None, connector, task_type, key,
 def integration_result(obj, request):
     obj = models.IntegrationRequest.objects.select_for_update().get(pk=obj.pk)
     result = request.data.get("status")
-    if obj.status != "PENDING" or result not in {"SUCCESS", "FAILED"}:
+    if obj.status != "PENDING" or result not in {"SUCCESS", "FAILED", "PROCESSING"}:
         raise ValidationError("Kết quả tích hợp không hợp lệ.")
+    response = request.data.get("response") or {}
+    if result == "PROCESSING":
+        obj.response_payload = response
+        obj.save(update_fields=("response_payload", "updated_at"))
+        return obj
+    if obj.task_type == "CANCEL" and result == "SUCCESS":
+        if not isinstance(response, dict) or response.get("confirmed") is not True or not response.get("provider_reference"):
+            raise ValidationError("Thiếu bằng chứng Provider xác nhận hủy hóa đơn.")
+    if obj.task_type == "ISSUE" and result == "SUCCESS":
+        if not isinstance(response, dict) or response.get("confirmed") is not True or not all(response.get(key) for key in
+            ("provider_invoice_id", "invoice_number", "lookup_code")):
+            raise ValidationError("Thiếu bằng chứng phát hành thành công từ hệ thống tích hợp.")
+        if models.TaxInvoice.objects.filter(company=obj.company, direction="OUTPUT",
+            invoice_series=obj.invoice.invoice_series, invoice_number=response["invoice_number"],
+            seller_tax_code=obj.invoice.seller_tax_code).exclude(pk=obj.invoice_id).exists():
+            raise ValidationError("Số hóa đơn do Provider trả về đã tồn tại.")
+        if models.TaxInvoice.objects.filter(company=obj.company,
+            external_reference=response["provider_invoice_id"]).exclude(pk=obj.invoice_id).exists():
+            raise ValidationError("Mã hóa đơn Provider đã được ghi nhận trước đó.")
     obj.status = result
     obj.response_payload = request.data.get("response", {})
     obj.error_message = request.data.get("error_message", "")
@@ -139,7 +214,9 @@ def integration_result(obj, request):
             invoice.status = "ISSUED"
             invoice.issued_at = timezone.now()
             invoice.external_status = "SUCCESS"
-            invoice.external_reference = str(request.data.get("external_reference", ""))[:150]
+            invoice.external_reference = str(response["provider_invoice_id"])[:150]
+            invoice.invoice_number = str(response["invoice_number"])[:80]
+            invoice.raw_data = {**invoice.raw_data, "lookup_code": str(response["lookup_code"])[:150]}
             if invoice.original_invoice_id:
                 original = models.TaxInvoice.objects.select_for_update().get(pk=invoice.original_invoice_id)
                 original_old = original.status
@@ -149,16 +226,18 @@ def integration_result(obj, request):
         elif obj.task_type == "CANCEL":
             invoice.status = "CANCELLED"
             invoice.external_status = "CANCELLED"
-        invoice.save(update_fields=("status", "issued_at", "external_status", "external_reference", "updated_at"))
+        invoice.save(update_fields=("status", "issued_at", "external_status", "external_reference",
+                                    "invoice_number", "raw_data", "updated_at"))
         _history(invoice, request, old, invoice.status, obj.task_type)
         audit(request, invoice, obj.task_type, {"status": old}, {"status": invoice.status})
     elif obj.invoice_id and result == "FAILED":
         invoice = models.TaxInvoice.objects.select_for_update().get(pk=obj.invoice_id)
         old = invoice.status
-        if obj.task_type == "ISSUE" and invoice.status == "ISSUING":
-            invoice.status = "VALIDATED"
-        invoice.external_status = "FAILED"
-        invoice.save(update_fields=("status", "external_status", "updated_at"))
+        if obj.task_type == "ISSUE":
+            if invoice.status == "ISSUING":
+                invoice.status = "ISSUE_FAILED"
+            invoice.external_status = "FAILED"
+            invoice.save(update_fields=("status", "external_status", "updated_at"))
         _history(invoice, request, old, invoice.status, obj.error_message)
     if obj.filing_id and result == "SUCCESS":
         filing = models.TaxFiling.objects.select_for_update().get(pk=obj.filing_id)
@@ -173,13 +252,16 @@ def integration_result(obj, request):
 @transaction.atomic
 def cancel_invoice(invoice, request):
     reason = request.data.get("reason", "").strip()
+    case_type = request.data.get("case_type")
     if invoice.status != "ISSUED" or not reason:
         raise ValidationError("Chỉ hóa đơn đã phát hành và có lý do mới được hủy.")
+    if case_type != "NOT_SENT_TO_BUYER":
+        raise ValidationError({"case_type": "MVP chỉ hỗ trợ gửi yêu cầu hủy hóa đơn chưa gửi người mua."})
     try:
         connector = models.ConnectorConfig.objects.get(pk=request.data.get("connector"), company=invoice.company, is_active=True)
     except (models.ConnectorConfig.DoesNotExist, ValueError):
         raise ValidationError({"connector": "Connector không hợp lệ."})
-    return request_integration(invoice=invoice, connector=connector, task_type="CANCEL", key=request.data.get("idempotency_key", ""), payload={"reason": reason}, request=request)
+    return request_integration(invoice=invoice, connector=connector, task_type="CANCEL", key=request.data.get("idempotency_key", ""), payload={"reason": reason, "case_type": case_type}, request=request)
 
 
 @transaction.atomic
@@ -190,7 +272,7 @@ def build_summary(period, request):
     included = invoices.filter(
         Q(direction="INPUT", status__in=("VALIDATED", "ADJUSTED"), tax_eligible=True)
         | Q(direction="OUTPUT", status__in=("ISSUED", "ADJUSTED"))
-    )
+    ).exclude(direction="OUTPUT", invoice_type="ADJUSTMENT", original_invoice__status__in=("REPLACED", "CANCELLED"))
     input_rows = included.filter(direction="INPUT")
     output_rows = included.filter(direction="OUTPUT")
     def signed(rows, field):
@@ -233,29 +315,7 @@ def create_filing(data, request):
 
 @transaction.atomic
 def link_payment(obligation, request):
-    obligation = models.TaxObligation.objects.select_for_update().get(pk=obligation.pk)
-    source, transaction_id = request.data.get("source_module"), request.data.get("transaction_id")
-    amount = Decimal(str(request.data.get("amount", "0")))
-    if source == "CASH":
-        from cash_management.models import CashTransaction
-        exists = CashTransaction.objects.filter(pk=transaction_id, company=obligation.company, status="POSTED").exists()
-    elif source == "BANK":
-        from bank_management.models import BankTransaction
-        exists = BankTransaction.objects.filter(pk=transaction_id, company=obligation.company, status="POSTED").exists()
-    else:
-        raise ValidationError({"source_module": "Nguồn thanh toán phải là CASH hoặc BANK."})
-    if not exists or amount <= 0 or amount > obligation.outstanding_amount:
-        raise ValidationError("Giao dịch thanh toán hoặc số tiền không hợp lệ.")
-    obj = models.TaxPaymentLink.objects.create(
-        obligation=obligation, source_module=source, transaction_id=transaction_id,
-        reference=request.data.get("reference", ""), amount=amount,
-        payment_date=request.data.get("payment_date") or timezone.localdate(), created_by=actor(request),
-    )
-    obligation.paid_amount += amount
-    obligation.status = "PAID" if obligation.outstanding_amount == 0 else "PARTIAL"
-    obligation.save(update_fields=("paid_amount", "status", "updated_at"))
-    audit(request, obligation, "PAYMENT_LINK", after={"paid_amount": str(obligation.paid_amount), "status": obligation.status})
-    return obj
+    raise ValidationError("Chứng từ BANK/CASH đã ghi sổ chưa phải bằng chứng NSNN nhận tiền; không thể tự tăng số đã nộp. Hãy lập giấy nộp tiền và chờ xác nhận thanh toán.")
 
 
 @transaction.atomic

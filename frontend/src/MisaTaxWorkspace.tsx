@@ -1,6 +1,12 @@
 import { useState, useEffect, Fragment } from "react";
-import { apiDate, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
-import { createApiWriter, errorText, saveVatDeduction, vatPosition } from "./misa-api-writes";
+import { useMisaApiLists } from "./misa-api-lists";
+import { errorText } from "./misa-api-writes";
+import VatDeductionModal from "./VatDeductionModal";
+import TaxDeclarationPanel from "./TaxDeclarationPanel";
+import TaxObligationPanel, { type TaxObligationRow } from "./TaxObligationPanel";
+import TaxPaymentOrderModal from "./TaxPaymentOrderModal";
+import TaxReconciliationModal from "./TaxReconciliationModal";
+import TaxExportPanel from "./TaxExportPanel";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { useLocation } from "react-router-dom";
@@ -11,15 +17,11 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  FileText,
   SlidersHorizontal,
   Building2,
-  DollarSign,
-  Calculator,
   Download,
   Eye,
   EyeOff,
-  Sparkles,
 } from "lucide-react";
 import "./misa-cash.css";
 
@@ -45,17 +47,17 @@ type DeclarationItem = {
 
 const INITIAL_DECLARATIONS: DeclarationItem[] = [
   // Thuế giá trị gia tăng
-  { id: "01-gtgt", code: "01/GTGT", name: "01/GTGT - Tờ khai thuế GTGT khấu trừ", cycle: "Theo tháng", group: "Thuế giá trị gia tăng", checked: true },
+  { id: "01-gtgt", code: "01/GTGT", name: "01/GTGT - Tờ khai thuế GTGT khấu trừ", cycle: "Theo tháng", group: "Thuế giá trị gia tăng", checked: false },
   { id: "02-gtgt", code: "02/GTGT", name: "02/GTGT - Tờ khai thuế GTGT dành cho dự án đầu tư", cycle: "Theo tháng", group: "Thuế giá trị gia tăng", checked: false },
   { id: "03-gtgt", code: "03/GTGT", name: "03/GTGT - Tờ khai thuế GTGT trực tiếp trên GTGT", cycle: "Theo tháng", group: "Thuế giá trị gia tăng", checked: false },
 
   // Thuế thu nhập cá nhân
   { id: "05-kk-tncn", code: "05/KK-TNCN", name: "05/KK-TNCN - Tờ khai thuế thu nhập cá nhân", cycle: "Theo tháng", group: "Thuế thu nhập cá nhân", checked: false },
-  { id: "05-qtt-tncn", code: "05/QTT-TNCN", name: "05/QTT-TNCN - Tờ khai quyết toán thuế thu nhập cá nhân", cycle: "Theo năm", group: "Thuế thu nhập cá nhân", checked: true },
+  { id: "05-qtt-tncn", code: "05/QTT-TNCN", name: "05/QTT-TNCN - Tờ khai quyết toán thuế thu nhập cá nhân", cycle: "Theo năm", group: "Thuế thu nhập cá nhân", checked: false },
   { id: "tncn-detail", code: "DS-TNCN", name: "Danh sách chi tiết số tiền nộp thuế TNCN đã nộp thay cho từng cá nhân", cycle: "Theo từng lần phát sinh", group: "Thuế thu nhập cá nhân", checked: false },
 
   // Thuế thu nhập doanh nghiệp
-  { id: "03-tndn", code: "03/TNDN", name: "03/TNDN - Tờ khai quyết toán thuế TNDN", cycle: "Theo năm", group: "Thuế thu nhập doanh nghiệp", checked: true },
+  { id: "03-tndn", code: "03/TNDN", name: "03/TNDN - Tờ khai quyết toán thuế TNDN", cycle: "Theo năm", group: "Thuế thu nhập doanh nghiệp", checked: false },
 
   // Thuế tiêu thụ đặc biệt
   { id: "01-ttdb", code: "01/TTĐB", name: "01/TTĐB - Tờ khai thuế TTĐB", cycle: "Theo tháng", group: "Thuế tiêu thụ đặc biệt", checked: false },
@@ -68,40 +70,33 @@ export default function MisaTaxWorkspace({
   company = { id: "cty-ha-noi", name: "Công ty TNHH Dịch vụ & Thương mại Hà Nội" },
   period = "2026-10",
   tab = "declarations",
-  href = (path) => path,
   notify,
 }: MisaTaxWorkspaceProps) {
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(company.id, {
-    filings: "/api/v1/tax/filings/",
     obligations: "/api/v1/tax/obligations/",
-    cashPayments: "/api/v1/cash/transactions/",
-    bankPayments: "/api/v1/bank/transactions/",
   }, notify);
-  const apiSave = useMisaApiSave(company.id, notify, reloadApi);
   const { token: apiToken } = useApiSession();
-  const [vat, setVat] = useState<Awaited<ReturnType<typeof vatPosition>> | null>(null);
-  const vatMoney = (value: number | undefined, sample: string) => (vat ? `${Math.round(value || 0).toLocaleString("vi-VN")} đ` : sample);
-  // Navigation helper
-  const navigateTo = (tabName: string) => {
-    const url = href(`/tax/${tabName}`);
-    if (typeof window !== "undefined") {
-      window.history.pushState({}, "", url);
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-  };
-
   // State: Tab 1 (Khai thuế)
   const [declarations, setDeclarations] = useState<DeclarationItem[]>(INITIAL_DECLARATIONS);
-  const [selectAllDec, setSelectAllDec] = useState(false);
+  const [registrationsLoaded, setRegistrationsLoaded] = useState(false);
+  const selectAllDec = declarations.every((row) => row.checked);
   const [authority, setAuthority] = useState({ department: "001 - Cục Thuế Thành phố Hà Nội", branchOffice: "00109 - Chi cục Thuế Quận Cầu Giấy", taxAgent: "" });
   const authorityUrl = `/api/v1/tax/authority-settings/?company_id=${encodeURIComponent(company.id)}`;
+  const registrationsUrl = `/api/v1/tax/form-registrations/?company_id=${encodeURIComponent(company.id)}`;
+  useEffect(() => {
+    setRegistrationsLoaded(false);
+    if (!apiConnected || !apiToken) return;
+    request<{ forms: { form_code: string }[] }>(registrationsUrl, apiToken).then((data) => {
+      const codes = new Set(data.forms.map((row) => row.form_code));
+      setDeclarations((prev) => prev.map((row) => ({ ...row, checked: codes.has(row.code) })));
+      setRegistrationsLoaded(true);
+    }).catch((error) => notify(`Không tải được đăng ký tờ khai: ${errorText(error)}`));
+  }, [apiConnected, apiToken, registrationsUrl]);
   // Managing tax office and registered declaration forms are stored on the backend.
   useEffect(() => {
     if (!apiConnected || !apiToken) return;
     request<any>(authorityUrl, apiToken).then((data) => {
       if (data.branch_office) setAuthority({ department: data.department, branchOffice: data.branch_office, taxAgent: data.tax_agent || "" });
-      const codes = new Set((data.registered_forms || []).map((row: any) => row.code));
-      if (codes.size) setDeclarations((prev) => prev.map((row) => ({ ...row, checked: codes.has(row.code) })));
     }).catch((error) => notify(`Không tải được thiết lập cơ quan thuế: ${errorText(error)}`));
   }, [apiConnected, apiToken, authorityUrl]);
   const saveAuthority = async (body: Record<string, unknown>, message: string) => {
@@ -123,8 +118,16 @@ export default function MisaTaxWorkspace({
   };
 
   const handleToggleSelectAll = (checked: boolean) => {
-    setSelectAllDec(checked);
     setDeclarations((prev) => prev.map((d) => ({ ...d, checked })));
+  };
+  const saveRegistrations = async () => {
+    if (!apiConnected || !apiToken || !registrationsLoaded) { notify("Chưa tải xong đăng ký tờ khai."); return; }
+    try {
+      await request(registrationsUrl, apiToken, { method: "PUT", body: JSON.stringify({
+        company: company.id, forms: declarations.filter((row) => row.checked).map((row) => row.code),
+      }) });
+      notify("Đã lưu đăng ký tờ khai sử dụng thành công!");
+    } catch (error) { notify(`Không lưu được đăng ký tờ khai: ${errorText(error)}`); }
   };
 
   // State: Tab 2 (Giấy nộp tiền)
@@ -145,22 +148,11 @@ export default function MisaTaxWorkspace({
 
   // Modals for Flyout Utilities
   const [showVatDeductionModal, setShowVatDeductionModal] = useState(false);
-  useEffect(() => {
-    if (!showVatDeductionModal || !apiConnected || !apiToken) return;
-    vatPosition(createApiWriter(company.id, (path, init) => request(path, apiToken, init)), new Date().toLocaleDateString("en-GB"))
-      .then(setVat)
-      .catch((error) => notify(`Không lấy được số thuế GTGT: ${errorText(error)}`));
-  }, [showVatDeductionModal, apiConnected, apiToken, company.id]);
   const [showTaxPaymentModal, setShowTaxPaymentModal] = useState(false);
-  const [selectedObligation, setSelectedObligation] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState("");
-  const [paymentReference, setPaymentReference] = useState("");
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const openObligations = (apiRows.obligations || []).filter((row) => Number(row.outstanding_amount) > 0);
-  const postedPayments: { id: string; number: string; amount: number; source: "CASH" | "BANK" }[] = [
-    ...(apiRows.cashPayments || []).filter((row) => row.status === "POSTED" && row.transaction_type === "PAYMENT").map((row) => ({ id: String(row.id), number: String(row.number), amount: Number(row.amount), source: "CASH" as const })),
-    ...(apiRows.bankPayments || []).filter((row) => row.status === "POSTED" && row.transaction_type === "PAYMENT").map((row) => ({ id: String(row.id), number: String(row.number), amount: Number(row.amount), source: "BANK" as const })),
-  ];
+  const [paymentInitialId, setPaymentInitialId] = useState<string>();
+  const [paymentCandidates, setPaymentCandidates] = useState<TaxObligationRow[] | null>(null);
+  const [obligationReloadKey, setObligationReloadKey] = useState(0);
+  const openObligations = (apiRows.obligations || []).filter((row) => Number(row.outstanding_amount) > 0) as TaxObligationRow[];
   const [showTaxAuthorityModal, setShowTaxAuthorityModal] = useState(false);
 
   // Check URL query parameters for flyout actions
@@ -171,6 +163,8 @@ export default function MisaTaxWorkspace({
     if (action === "vat-deduction") {
       setShowVatDeductionModal(true);
     } else if (action === "pay") {
+      setPaymentCandidates(null);
+      setPaymentInitialId(undefined);
       setShowTaxPaymentModal(true);
     } else if (action === "tax-authority-config") {
       setShowTaxAuthorityModal(true);
@@ -192,247 +186,16 @@ export default function MisaTaxWorkspace({
   const renderModals = () => {
     return (
       <>
-        {/* 1. Modal: Khấu trừ thuế GTGT */}
-        {showVatDeductionModal && (
-          <div className="misa-modal-overlay">
-            <div className="misa-modal-card" style={{ width: 680, maxWidth: "95vw" }}>
-              <div
-                style={{
-                  padding: "14px 20px",
-                  borderBottom: "1px solid #e2e8f0",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: "#f8fafc",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Calculator size={18} style={{ color: "#00a862" }} />
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
-                    Khấu trừ thuế GTGT đầu vào và đầu ra
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowVatDeductionModal(false)}
-                  style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
+        {/* 1. Modal: Kh?u tr? thu? GTGT */}
+        {showVatDeductionModal && <VatDeductionModal companyId={company.id} periodHint={period}
+          token={apiToken} notify={notify} onClose={() => setShowVatDeductionModal(false)} />}
 
-              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
-                <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "12px 16px", borderRadius: 6, fontSize: 13, color: "#065f46" }}>
-                  <strong>Kỳ tính thuế: {vat ? `Tháng ${vat.periodCode.slice(5, 7)}/${vat.periodCode.slice(0, 4)}` : "Tháng 09/2026"}</strong>
-                  <div style={{ marginTop: 4 }}>
-                    Hệ thống tự động bù trừ giữa Thuế GTGT đầu ra (TK 33311) và Thuế GTGT đầu vào được khấu trừ (TK 1331).
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>Thuế GTGT đầu vào còn được khấu trừ (TK 1331):</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#2563eb", marginTop: 4 }}>{vatMoney(vat?.input, "48.520.000 đ")}</div>
-                  </div>
-                  <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>Thuế GTGT đầu ra phát sinh trong kỳ (TK 33311):</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#ea580c", marginTop: 4 }}>{vatMoney(vat?.output, "72.150.000 đ")}</div>
-                  </div>
-                </div>
-
-                <div style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-                  <div style={{ fontSize: 12.5, color: "#334155", fontWeight: 600 }}>Số thuế GTGT khấu trừ trong kỳ:</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#00a862", marginTop: 4 }}>{vatMoney(vat?.deductible, "48.520.000 đ")}</div>
-                  <div style={{ fontSize: 12, color: "#dc2626", marginTop: 2 }}>
-                    Số thuế GTGT còn phải nộp vào NSNN: <strong>{vatMoney(vat?.payable, "23.630.000 đ")}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowVatDeductionModal(false)}
-                  style={{ height: 32, padding: "0 18px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, cursor: "pointer" }}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (apiConnected) {
-                      if (await apiSave((writer) => saveVatDeduction(writer, new Date().toLocaleDateString("en-GB")))) setShowVatDeductionModal(false);
-                      return;
-                    }
-                    notify("Đã sinh chứng từ Khấu trừ thuế GTGT tháng 09/2026 thành công!");
-                    setShowVatDeductionModal(false);
-                  }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-                >
-                  Tạo chứng từ khấu trừ
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2. Modal: Nộp thuế */}
-        {showTaxPaymentModal && (
-          <div className="misa-modal-overlay">
-            <div className="misa-modal-card" style={{ width: 650, maxWidth: "95vw" }}>
-              <div
-                style={{
-                  padding: "14px 20px",
-                  borderBottom: "1px solid #e2e8f0",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: "#f8fafc",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <DollarSign size={18} style={{ color: "#00a862" }} />
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
-                    {apiConnected ? "Ghi nhận tiền nộp NSNN" : "Lập Giấy nộp tiền vào Ngân sách Nhà nước (NSNN)"}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowTaxPaymentModal(false)}
-                  style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
-                {!apiConnected && <div>
-                  <label style={{ fontSize: 12.5, fontWeight: 600, color: "#374151", display: "block", marginBottom: 5 }}>Phương thức nộp:</label>
-                  <select style={{ width: "100%", height: 34, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}>
-                    <option>Nộp thuế điện tử qua dịch vụ Sổ Việt eTax (Khuyên dùng)</option>
-                    <option>Ủy nhiệm chi chuyển khoản qua Ngân hàng</option>
-                    <option>Nộp tiền mặt tại Kho bạc / Ngân hàng thương mại</option>
-                  </select>
-                </div>}
-
-                {!apiConnected && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontSize: 12.5, color: "#374151", display: "block", marginBottom: 5 }}>Kho bạc Nhà nước hạch toán:</label>
-                    <input type="text" defaultValue="KBNN Quận Cầu Giấy - Hà Nội" style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, boxSizing: "border-box" }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 12.5, color: "#374151", display: "block", marginBottom: 5 }}>Tài khoản thu NSNN (7111):</label>
-                    <input type="text" defaultValue="7111.1054238 - KBNN Cầu Giấy" style={{ width: "100%", height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, boxSizing: "border-box" }} />
-                  </div>
-                </div>}
-
-                {apiConnected && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 12.5 }}>
-                  <label>Nghĩa vụ thuế còn phải nộp
-                    <select value={selectedObligation} onChange={(event) => {
-                      setSelectedObligation(event.target.value);
-                      const obligation = openObligations.find((row) => row.id === event.target.value);
-                      setPaymentAmount(Number(obligation?.outstanding_amount || 0));
-                    }} style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 4 }}>
-                      <option value="">Chọn nghĩa vụ thuế</option>
-                      {openObligations.map((row) => <option key={row.id} value={row.id}>{row.tax_type} · {row.period_code} · {Number(row.outstanding_amount).toLocaleString("vi-VN")} đ</option>)}
-                    </select>
-                  </label>
-                  <label>Chứng từ thanh toán đã ghi sổ
-                    <select value={selectedPayment} onChange={(event) => setSelectedPayment(event.target.value)} style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 4 }}>
-                      <option value="">Chọn chứng từ</option>
-                      {postedPayments.map((row) => <option key={row.id} value={`${row.source}:${row.id}`}>{row.number} · {Number(row.amount).toLocaleString("vi-VN")} đ</option>)}
-                    </select>
-                  </label>
-                  <label>Số tiền ghi nhận
-                    <input type="number" min="0" value={paymentAmount} onChange={(event) => setPaymentAmount(Number(event.target.value))} style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
-                  </label>
-                  <label>Số tham chiếu giấy nộp tiền
-                    <input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
-                  </label>
-                  <div style={{ gridColumn: "1 / -1", color: "#64748b" }}>Ghi nhận thanh toán thuế từ chứng từ đã ghi sổ. API hiện chưa phát hành giấy nộp tiền điện tử.</div>
-                </div>}
-                {!apiConnected && <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
-                  <table style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ background: "#f8fafc", height: 34, borderBottom: "1px solid #cbd5e1", color: "#475569" }}>
-                        <th style={{ padding: "6px 10px", textAlign: "left" }}>Nội dung nộp NSNN</th>
-                        <th style={{ padding: "6px 10px", textAlign: "center" }}>Tiểu mục</th>
-                        <th style={{ padding: "6px 10px", textAlign: "right" }}>Số tiền</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{ borderBottom: "1px solid #f1f5f9", height: 34 }}>
-                        <td style={{ padding: "6px 10px", fontWeight: 500 }}>Thuế GTGT hàng SXKD trong nước</td>
-                        <td style={{ padding: "6px 10px", textAlign: "center" }}>1701</td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600 }}>23.630.000 đ</td>
-                      </tr>
-                      <tr style={{ borderBottom: "1px solid #f1f5f9", height: 34 }}>
-                        <td style={{ padding: "6px 10px", fontWeight: 500 }}>Thuế Thu nhập doanh nghiệp tạm nộp</td>
-                        <td style={{ padding: "6px 10px", textAlign: "center" }}>1052</td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600 }}>15.000.000 đ</td>
-                      </tr>
-                      <tr style={{ background: "#f8fafc", height: 36, fontWeight: 700 }}>
-                        <td colSpan={2} style={{ padding: "6px 10px", textAlign: "right" }}>TỔNG SỐ TIỀN NỘP:</td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", color: "#00a862" }}>38.630.000 đ</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>}
-              </div>
-
-              <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowTaxPaymentModal(false)}
-                  style={{ height: 32, padding: "0 18px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, cursor: "pointer" }}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (apiConnected) {
-                      void apiSave(async (writer) => {
-                        const obligation = openObligations.find((row) => row.id === selectedObligation);
-                        const payment = postedPayments.find((row) => `${row.source}:${row.id}` === selectedPayment);
-                        if (!obligation || !payment) throw new Error("Chọn nghĩa vụ thuế và chứng từ thanh toán đã ghi sổ.");
-                        if (!(paymentAmount > 0) || paymentAmount > Number(obligation.outstanding_amount) || paymentAmount > Number(payment.amount)) throw new Error("Số tiền ghi nhận không hợp lệ.");
-                        const link = await writer.action("/api/v1/tax/obligations/", obligation.id, "link-payment", {
-                          source_module: payment.source, transaction_id: payment.id,
-                          amount: String(paymentAmount), reference: paymentReference,
-                          payment_date: new Date().toISOString().slice(0, 10),
-                        });
-                        setShowTaxPaymentModal(false);
-                        return { record: link, message: `Đã ghi nhận nộp ${paymentAmount.toLocaleString("vi-VN")} đ cho nghĩa vụ thuế ${obligation.tax_type}.` };
-                      });
-                      return;
-                    }
-                    notify("Đã lập Giấy nộp tiền vào NSNN thành công (Số tiền: 38.630.000đ)!");
-                    setShowTaxPaymentModal(false);
-                  }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-                >
-                  {apiConnected ? "Ghi nhận thanh toán thuế" : "Lập giấy nộp tiền"}
-                </button>
-                {apiConnected && <button
-                  type="button"
-                  onClick={() => void apiSave(async (writer) => {
-                    const obligation = openObligations.find((row) => row.id === selectedObligation);
-                    if (!obligation) throw new Error("Chọn nghĩa vụ thuế cần nộp.");
-                    const queued = await writer.action("/api/v1/tax/obligations/", obligation.id, "e-payment", {
-                      amount: String(paymentAmount || obligation.outstanding_amount),
-                    });
-                    setShowTaxPaymentModal(false);
-                    return { record: queued, message: `Đã lập giấy nộp tiền điện tử ${Number(queued.request_payload?.amount || 0).toLocaleString("vi-VN")} đ, đang chờ cổng thuế điện tử xử lý.` };
-                  })}
-                  style={{ height: 32, padding: "0 18px", background: "#ffffff", color: "#00a862", border: "1px solid #00a862", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-                >
-                  Lập giấy nộp tiền điện tử
-                </button>}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* 2. Modal: Tax payment order */}
+        {showTaxPaymentModal && <TaxPaymentOrderModal companyId={company.id} token={apiToken}
+          obligations={paymentCandidates || openObligations} initialId={paymentInitialId} notify={notify}
+          onClose={() => setShowTaxPaymentModal(false)} onSaved={() => {
+            reloadApi(); setObligationReloadKey((current) => current + 1);
+          }} />}
 
         {/* 3. Modal: Thiết lập thông tin cơ quan thuế */}
         {showTaxAuthorityModal && (
@@ -521,7 +284,13 @@ export default function MisaTaxWorkspace({
         )}
 
         {/* 4. Modal: Xem chi tiết báo cáo */}
-        {previewReport && (
+        {previewReport === "Bảng đối chiếu bảng kê thuế GTGT và sổ cái" &&
+          <TaxReconciliationModal companyId={company.id} companyName={company.name} token={apiToken}
+            title={previewReport} reconciliationType="VAT_GL" onClose={() => setPreviewReport(null)} />}
+        {previewReport === "Bảng đối chiếu số thuế đã nộp và số thuế phải nộp" &&
+          <TaxReconciliationModal companyId={company.id} companyName={company.name} token={apiToken}
+            title={previewReport} reconciliationType="OBLIGATION_PAYMENT" onClose={() => setPreviewReport(null)} />}
+        {previewReport && !["Bảng đối chiếu bảng kê thuế GTGT và sổ cái", "Bảng đối chiếu số thuế đã nộp và số thuế phải nộp"].includes(previewReport) && (
           <div className="misa-modal-overlay">
             <div className="misa-modal-card" style={{ width: 1000, maxWidth: "96vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
               <div
@@ -550,14 +319,14 @@ export default function MisaTaxWorkspace({
               <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 8 }}>
                 <button
                   type="button"
-                  onClick={() => notify("Đang kết nối máy in để in báo cáo thuế...")}
+                  onClick={() => notify("Bản xem trước này dùng dữ liệu mẫu; hãy dùng mục Xuất dữ liệu thuế để tải dữ liệu thực.")}
                   style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
                 >
                   <Printer size={14} /> In báo cáo
                 </button>
                 <button
                   type="button"
-                  onClick={() => notify("Xuất báo cáo thuế ra tệp Excel (.xlsx) thành công")}
+                  onClick={() => notify("Bản xem trước này dùng dữ liệu mẫu; hãy dùng mục Xuất dữ liệu thuế để tải dữ liệu thực.")}
                   style={{ height: 30, padding: "0 12px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
                 >
                   <Download size={14} /> Xuất Excel
@@ -664,6 +433,7 @@ export default function MisaTaxWorkspace({
                 <th style={{ width: 44, textAlign: "center", padding: "6px" }}>
                   <input
                     type="checkbox"
+                    disabled={!registrationsLoaded}
                     checked={selectAllDec}
                     onChange={(e) => handleToggleSelectAll(e.target.checked)}
                     style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
@@ -695,7 +465,7 @@ export default function MisaTaxWorkspace({
                     {groupItems.map((item) => (
                       <tr
                         key={item.id}
-                        onClick={() => handleToggleDeclaration(item.id)}
+                        onClick={() => { if (registrationsLoaded) handleToggleDeclaration(item.id); }}
                         style={{
                           borderBottom: "1px solid #f1f5f9",
                           height: 38,
@@ -708,6 +478,7 @@ export default function MisaTaxWorkspace({
                         <td style={{ textAlign: "center", padding: "6px" }} onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
+                            disabled={!registrationsLoaded}
                             checked={item.checked}
                             onChange={() => handleToggleDeclaration(item.id)}
                             style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
@@ -728,35 +499,14 @@ export default function MisaTaxWorkspace({
           </table>
         </div>
 
-        <h2 style={{ margin: "28px 0 16px", fontSize: 20, fontWeight: 700, color: "#1e293b" }}>
-          Tờ khai đã lập
-        </h2>
-        <div style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
-          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-            <thead><tr style={{ background: "#e2ede6", height: 36, color: "#334155" }}>
-              <th style={{ padding: "8px 12px", textAlign: "left" }}>Loại tờ khai</th>
-              <th style={{ padding: "8px 12px", textAlign: "left" }}>Kỳ thuế</th>
-              <th style={{ padding: "8px 12px", textAlign: "left" }}>Ngày lập</th>
-              <th style={{ padding: "8px 12px", textAlign: "left" }}>Trạng thái</th>
-            </tr></thead>
-            <tbody>{(apiRows.filings || []).map((filing) => (
-              <tr key={filing.id} style={{ borderTop: "1px solid #e2e8f0", height: 38 }}>
-                <td style={{ padding: "8px 12px" }}>{filing.filing_type}</td>
-                <td style={{ padding: "8px 12px" }}>{filing.period_code}</td>
-                <td style={{ padding: "8px 12px" }}>{apiDate(filing.created_at)}</td>
-                <td style={{ padding: "8px 12px" }}>{filing.status}</td>
-              </tr>
-            ))}{!apiRows.filings?.length && <tr><td colSpan={4} style={{ padding: 20, textAlign: "center", color: "#64748b" }}>Chưa có tờ khai</td></tr>}</tbody>
-          </table>
-        </div>
+        <TaxDeclarationPanel companyId={company.id} token={apiToken} notify={notify} />
 
         {/* Bottom Button: Hoàn thành */}
         <div style={{ textAlign: "center", marginTop: 36 }}>
           <button
             type="button"
-            onClick={() => void saveAuthority({
-              registered_forms: declarations.filter((row) => row.checked).map((row) => ({ code: row.code, name: row.name, frequency: row.cycle })),
-            }, "Đã lưu đăng ký tờ khai sử dụng thành công!")}
+            disabled={!registrationsLoaded}
+            onClick={() => void saveRegistrations()}
             style={{
               height: 36,
               padding: "0 32px",
@@ -795,6 +545,10 @@ export default function MisaTaxWorkspace({
           gap: 20,
         }}
       >
+        <TaxObligationPanel companyId={company.id} token={apiToken} notify={notify}
+          reloadKey={obligationReloadKey} onPay={(obligation, candidates) => {
+            setPaymentCandidates(candidates); setPaymentInitialId(obligation.id); setShowTaxPaymentModal(true);
+          }} />
         {/* Left Card: Form Kết nối Sổ Việt eTax */}
         <div
           style={{
@@ -1281,6 +1035,7 @@ export default function MisaTaxWorkspace({
         flexDirection: "column",
       }}
     >
+      <TaxExportPanel companyId={company.id} token={apiToken} />
       {/* Top Filter Bar */}
       <div
         style={{

@@ -36,6 +36,7 @@ class ObligationAdmin(admin.ModelAdmin):
 
 for model in (
     models.TaxPeriod, models.InvoiceStatusHistory, models.InvoiceDocumentLink, models.TaxSummary,
+    models.VatLedgerEntry, models.VatCalculation, models.VatDeductionDocument,
     models.TaxPaymentLink, models.ReconciliationRun, models.ConnectorConfig,
     models.IntegrationRequest, models.TaxExport,
 ):

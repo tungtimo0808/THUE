@@ -4256,3 +4256,11 @@
 
 
 
+.tax-output-preview-backdrop { position: fixed; inset: 0; z-index: 2000; background: #0006; display: grid; place-items: center; }
+.tax-output-preview { width: min(760px, 94vw); max-height: 90vh; overflow: auto; background: white; padding: 24px; border-radius: 6px; box-shadow: 0 20px 60px #0003; color: #1e293b; }
+.tax-output-preview header, .tax-output-preview footer { display: flex; justify-content: space-between; align-items: center; }
+.tax-output-preview h2 { text-align: center; margin: 28px 0; }
+.tax-output-preview table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+.tax-output-preview th, .tax-output-preview td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+.tax-output-preview button { background: #00a862; color: white; border: 0; padding: 7px 14px; border-radius: 4px; cursor: pointer; }
+@media print { body:has(.tax-output-preview) #root { visibility: hidden; } .tax-output-preview-backdrop, .tax-output-preview-backdrop * { visibility: visible; } .tax-output-preview-backdrop { position: fixed; inset: 0; display: block; background: white; } .tax-output-preview { width: 100%; max-height: none; overflow: visible; box-shadow: none; } .tax-output-preview button { display: none; } }

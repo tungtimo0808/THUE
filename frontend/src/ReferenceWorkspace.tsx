@@ -74,6 +74,8 @@ import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
 import MisaInvoiceWorkspace from './MisaInvoiceWorkspace';
+import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
+import InvoiceLookupWorkspace from './InvoiceLookupWorkspace';
 import MisaCashWorkspace from "./MisaCashWorkspace";
 import MisaBankWorkspace from "./MisaBankWorkspace";
 import MisaPurchaseWorkspace from "./MisaPurchaseWorkspace";
@@ -255,9 +257,11 @@ function ReferenceWorkspace() {
   const moduleId = pathParts[1] || "overview",
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
-  const tab = tabs.some(([id]) => id === requestedTab)
-    ? requestedTab
-    : tabs[0][0],
+  const tab = moduleId === "invoices" && requestedTab === "errors"
+    ? "adjustments"
+    : tabs.some(([id]) => id === requestedTab)
+      ? requestedTab
+      : tabs[0][0],
     childTab = pathParts[3],
     module = referenceNav.find((m) => m.id === moduleId);
   const activeTabNode = referenceTabHierarchy[moduleId]?.find(
@@ -1182,8 +1186,16 @@ function ReferenceWorkspace() {
             href={href}
             notify={setNotice}
           />
+        ) : moduleId === 'invoices' && tab === 'adjustments' ? (
+          <><MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice}/><InvoiceLookupWorkspace mode="errors" href={href}/></>
         ) : moduleId === 'invoices' && ['process','meinvoice','error-guide'].includes(tab) ? (
-          <MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice}/>
+          <MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice} company={company}/>
+        ) : moduleId === 'invoices' && tab === 'sync' ? (
+          <TaxInvoiceSyncPanel companyId={company.id} token={apiToken} href={href}/>
+        ) : moduleId === "invoices" && tab === "incoming" && (!childTab || childTab === "inbox") ? (
+          <IncomingInvoiceWorkspace notify={setNotice} />
+        ) : moduleId === "invoices" && ["outgoing", "pending", "lookup", "issuance", "unposted"].includes(tab) ? (
+          <InvoiceLookupWorkspace mode={tab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href}/>
         ) : moduleId === "purchases" && tab === "invoice-processing" && childTab === "supplier-risk" ? (
           <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />
         ) : moduleId === "purchases" && tab === "invoice-processing" ? (
