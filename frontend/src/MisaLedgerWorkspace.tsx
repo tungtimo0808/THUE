@@ -151,6 +151,7 @@ export type MisaLedgerWorkspaceProps = {
 // Formatter
 const formatVND = (num: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num);
+const formatVndNumber = (num: unknown) => Number(num || 0).toLocaleString("vi-VN");
 
 export type GeneralVoucherType =
   | "1. Hạch toán thuế TNDN phải nộp"
@@ -188,6 +189,7 @@ export default function MisaLedgerWorkspace({
   }, notify);
   const apiSave = useMisaApiSave(company.id, notify, reloadApi);
   const { token: apiToken } = useApiSession();
+  const writer = apiToken ? createApiWriter(company.id, (path, init) => request(path, apiToken, init)) : null;
   const currentTab = tab || "process";
 
   // --- Interactive Popovers on Workflow Nodes (Image 1 & 2) ---
@@ -777,8 +779,7 @@ export default function MisaLedgerWorkspace({
 
     setUc14Loading(true);
     try {
-      if (apiConnected && apiToken) {
-        const writer = createApiWriter(company.id, apiToken);
+      if (apiConnected && apiToken && writer) {
         const res = await queryAccountingBookUcGl14(writer, {
           book_type: bType,
           period: overrideParams?.period || uc14Period,
@@ -811,9 +812,8 @@ export default function MisaLedgerWorkspace({
     const voucherNo = typeof rowOrVoucher === "string" ? rowOrVoucher : (rowOrVoucher.voucher_number || rowOrVoucher.number || "PT-2026-1001");
     const traceStatus = typeof rowOrVoucher === "object" && rowOrVoucher?.trace_status ? rowOrVoucher.trace_status : "TRACEABLE";
 
-    if (apiConnected && apiToken && typeof rowOrVoucher === "object" && rowOrVoucher?.entry_id && String(rowOrVoucher.entry_id).length === 36) {
+    if (apiConnected && apiToken && writer && typeof rowOrVoucher === "object" && rowOrVoucher?.entry_id && String(rowOrVoucher.entry_id).length === 36) {
       try {
-        const writer = createApiWriter(company.id, apiToken);
         const res = await traceGlEntryAndVoucherUcGl14(writer, {
           entry_id: rowOrVoucher.entry_id,
           line_id: rowOrVoucher.line_id,
@@ -1008,8 +1008,7 @@ export default function MisaLedgerWorkspace({
 
   const handleExportReport = async (format: "XLSX" | "PDF" | "PRINT") => {
     try {
-      if (apiConnected && apiToken) {
-        const writer = createApiWriter(company.id, apiToken);
+      if (apiConnected && apiToken && writer) {
         const expRes = await exportAccountingBookUcGl14(writer, {
           book_type: uc14BookType,
           period: uc14Period,
@@ -1563,7 +1562,7 @@ export default function MisaLedgerWorkspace({
           sourceBusinessType: row.source_business_type,
           sourceDocumentNumber: row.source_document_number,
           sourceEventId: row.source_event_id,
-          postingDate: apiDate(row.posting_date, "22/10/2026"),
+          postingDate: apiDate(row.posting_date) || "22/10/2026",
           description: row.description || "",
           totalDebit: apiNumber(row.total_debit),
           postingMode: row.posting_mode || "AUTO_POST",
@@ -1947,6 +1946,7 @@ export default function MisaLedgerWorkspace({
       id: correctionModal.newNumber || `${correctionModal.mode === "ADJUSTMENT" ? "DC" : "REV"}-${src.id}`,
       date: correctionModal.postingDate,
       docDate: correctionModal.documentDate,
+      voucherDate: correctionModal.documentDate,
       desc: `${correctionModal.description} (Lý do: ${reason})`,
       debitAcc: correctionModal.mode === "ADJUSTMENT" ? correctionModal.adjDebitAcc : src.creditAcc,
       creditAcc: correctionModal.mode === "ADJUSTMENT" ? correctionModal.adjCreditAcc : src.debitAcc,
@@ -2666,13 +2666,17 @@ export default function MisaLedgerWorkspace({
 
   const handleFetchFxBalances = async () => {
     try {
-      const res = await fetchFxRevaluationBalances({
-        period: fxRevalPeriod,
-        currency: fxRevalCurrency,
-        account_scope: fxRevalAccountScope,
-      });
-      if (res.ok && res.data?.source_fingerprint) {
-        setFxRevalSourceFingerprint(res.data.source_fingerprint);
+      if (writer) {
+        const res = await fetchFxRevaluationBalances(writer, {
+          period: fxRevalPeriod,
+          currency: fxRevalCurrency,
+          account_scope: fxRevalAccountScope,
+        });
+        if (res.record?.source_fingerprint) {
+          setFxRevalSourceFingerprint(res.record.source_fingerprint);
+        } else {
+          setFxRevalSourceFingerprint(`FP-FX-${fxRevalPeriod}-${fxRevalCurrency}-${Date.now()}`);
+        }
       } else {
         setFxRevalSourceFingerprint(`FP-FX-${fxRevalPeriod}-${fxRevalCurrency}-${Date.now()}`);
       }
@@ -2700,12 +2704,14 @@ export default function MisaLedgerWorkspace({
       return;
     }
     try {
-      await calculateFxRevaluation({
-        period: fxRevalPeriod,
-        currency: fxRevalCurrency,
-        exchange_rate: fxRevalExchangeRate,
-        account_scope: fxRevalAccountScope,
-      });
+      if (writer) {
+        await calculateFxRevaluation(writer, {
+          period: fxRevalPeriod,
+          currency: fxRevalCurrency,
+          exchange_rate: fxRevalExchangeRate,
+          account_scope: fxRevalAccountScope,
+        });
+      }
     } catch {
       // Fallback local calculation when period UUID differs
     }
@@ -2768,17 +2774,19 @@ export default function MisaLedgerWorkspace({
     const totalAccountingAmount = totalGain + totalLoss;
 
     try {
-      await confirmFxRevaluation({
-        period: fxRevalPeriod,
-        currency: fxRevalCurrency,
-        exchange_rate: fxRevalExchangeRate,
-        rate_source: fxRevalRateSource,
-        account_scope: fxRevalAccountScope,
-        number: fxRevalVoucherNo,
-        description: fxRevalDescription,
-        source_fingerprint: fxRevalSourceFingerprint,
-        idempotency_key: `IDEM-${fxRevalVoucherNo}-${fxRevalPeriod}-${fxRevalCurrency}`,
-      });
+      if (writer) {
+        await confirmFxRevaluation(writer, {
+          period: fxRevalPeriod,
+          currency: fxRevalCurrency,
+          exchange_rate: fxRevalExchangeRate,
+          rate_source: fxRevalRateSource,
+          account_scope: fxRevalAccountScope,
+          number: fxRevalVoucherNo,
+          description: fxRevalDescription,
+          source_fingerprint: fxRevalSourceFingerprint,
+          idempotency_key: `IDEM-${fxRevalVoucherNo}-${fxRevalPeriod}-${fxRevalCurrency}`,
+        });
+      }
     } catch {
       // Local state update fallback
     }
@@ -2866,10 +2874,12 @@ export default function MisaLedgerWorkspace({
     action: "POST" | "UNPOST" | "REVERSE" | "CANCEL",
   ) => {
     try {
-      if (action === "POST") await postFxRevaluationRun(runId);
-      if (action === "UNPOST") await unpostFxRevaluationRun(runId);
-      if (action === "REVERSE") await reverseFxRevaluationRun(runId, "Đảo bút toán đánh giá lại ngoại tệ để chạy lại");
-      if (action === "CANCEL") await cancelFxRevaluationRun(runId, "Hủy chứng từ đánh giá lại chưa ghi sổ");
+      if (writer) {
+        if (action === "POST") await postFxRevaluationRun(writer, runId);
+        if (action === "UNPOST") await unpostFxRevaluationRun(writer, runId);
+        if (action === "REVERSE") await reverseFxRevaluationRun(writer, runId, { reason: "Đảo bút toán đánh giá lại ngoại tệ để chạy lại" });
+        if (action === "CANCEL") await cancelFxRevaluationRun(writer, runId, { reason: "Hủy chứng từ đánh giá lại chưa ghi sổ" });
+      }
     } catch {
       // Local state update fallback
     }

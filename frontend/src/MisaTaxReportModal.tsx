@@ -21,7 +21,7 @@ import { request } from "./live-api";
 import {
   createApiWriter,
   queryTaxReportUcRpt07,
-  openCellContextUcRpt14,
+  openReportCellDrilldownUcRpt14,
 } from "./misa-api-writes";
 
 export interface TaxReportModalProps {
@@ -186,7 +186,7 @@ export function MisaTaxReportModal({
   const handleCellClick = async (row: any, colKey: string, val: any) => {
     if (typeof val !== "number" || val === 0) return;
     try {
-      const res = await openCellContextUcRpt14(writer, {
+      const res = await openReportCellDrilldownUcRpt14(writer, {
         report_code: reportCode,
         row_key: String(row.indicator_code || row.row_order || "0"),
         column_key: colKey,

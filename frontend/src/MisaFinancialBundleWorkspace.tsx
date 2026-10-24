@@ -159,7 +159,7 @@ export default function MisaFinancialBundleWorkspace({
         if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
         return data;
       },
-    };
+    } as unknown as ApiWriter;
   }, [companyId]);
 
   const loadCatalogAndList = useCallback(async () => {

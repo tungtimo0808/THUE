@@ -5294,7 +5294,7 @@ if (apiConnected) {
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(Number(row.amount || 0))}</td>
                               <td>{row.object}</td>
                             </tr>
                           ))}
@@ -6272,7 +6272,7 @@ if (apiConnected) {
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(Number(row.amount || 0))}</td>
                               <td>{row.object}</td>
                             </tr>
                           ))}
@@ -6898,7 +6898,7 @@ if (apiConnected) {
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(Number(row.amount || 0))}</td>
                               <td>{row.object}</td>
                             </tr>
                           ))}

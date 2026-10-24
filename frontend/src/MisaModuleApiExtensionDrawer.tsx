@@ -1335,7 +1335,7 @@ export function MisaModuleApiExtensionPanel({
               </button>
             </div>
             <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-              {(activeEndpoint.createFields || activeEndpoint.columns.filter((c) => c.key !== "status").map((c) => ({ key: c.key, label: c.label }))).map((field) => (
+              {(activeEndpoint.createFields || activeEndpoint.columns.filter((c) => c.key !== "status").map((c) => ({ key: c.key, label: c.label }))).map((field: any) => (
                 <label key={field.key} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
                   <span>{field.label}</span>
                   {field.type === "select" && field.options ? (

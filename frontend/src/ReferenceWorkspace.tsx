@@ -57,7 +57,6 @@ import {
   settingsGroups,
 } from "./reference-config";
 import {
-  ReferenceDashboard,
   ReferenceTransactions,
 } from "./ReferencePages";
 import {
@@ -997,7 +996,6 @@ function ReferenceWorkspace() {
                     if (next) {
                       setTabOptionsOpen(false);
                       setTabMoreOpen(false);
-                      setActiveClusterPopover(null);
                     }
                     return next;
                   });

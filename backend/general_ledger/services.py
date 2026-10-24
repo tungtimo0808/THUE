@@ -354,20 +354,23 @@ def post(entry, request):
     )
 
     # EF-33, BR-GL-POST-10, BR-GL-POST-11: Kiểm tra Optimistic Concurrency (version)
-    expected_version = req_data.get("version") if "version" in req_data else req_data.get("expected_version")
-    if expected_version is not None and str(expected_version).strip() != "":
-        try:
-            exp_ver = int(expected_version)
-        except (TypeError, ValueError):
-            raise ValidationError({"version": "Phiên bản chứng từ (version) không hợp lệ."})
-        if exp_ver != entry.version:
-            raise ValidationError({
-                "version": (
-                    f"Dữ liệu bút toán {entry.number} đã bị thay đổi bởi phiên làm việc khác "
-                    f"(version hiện tại: {entry.version}, version yêu cầu: {exp_ver}). Vui lòng tải lại chứng từ."
-                ),
-                "error_code": "CONCURRENT_MODIFICATION",
-            })
+    req_path = (getattr(request, "path", "") or "").lower()
+    is_direct_gl = not req_path or req_path.startswith("/api/v1/general-ledger/")
+    if is_direct_gl and (not entry.source_module or entry.source_module == "GL"):
+        expected_version = req_data.get("version") if "version" in req_data else req_data.get("expected_version")
+        if expected_version is not None and str(expected_version).strip() != "":
+            try:
+                exp_ver = int(expected_version)
+            except (TypeError, ValueError):
+                raise ValidationError({"version": "Phiên bản chứng từ (version) không hợp lệ."})
+            if exp_ver != entry.version:
+                raise ValidationError({
+                    "version": (
+                        f"Dữ liệu bút toán {entry.number} đã bị thay đổi bởi phiên làm việc khác "
+                        f"(version hiện tại: {entry.version}, version yêu cầu: {exp_ver}). Vui lòng tải lại chứng từ."
+                    ),
+                    "error_code": "CONCURRENT_MODIFICATION",
+                })
 
     # EF-06, EF-23, BR-GL-POST-07, BR-GL-POST-74: Chống ghi sổ trùng / Idempotent retry
     req_ref = str(req_data.get("posting_reference") or "").strip()
@@ -432,48 +435,50 @@ def post(entry, request):
     orig_entry_locked = None
     if entry.entry_type in ("ADJUSTMENT", "REVERSAL"):
         if not entry.original_entry_id:
-            raise ValidationError({
-                "original_entry": "Bút toán điều chỉnh/đảo bắt buộc phải có liên kết ID bút toán gốc (BR-GL-ADJ-09, 10).",
-                "error_code": "MISSING_ORIGINAL_ENTRY",
-            })
-        orig_entry_locked = (
-            models.JournalEntry.objects.select_for_update()
-            .filter(pk=entry.original_entry_id, company=entry.company)
-            .first()
-        )
-        if not orig_entry_locked:
-            raise ValidationError({
-                "original_entry": "Không tìm thấy bút toán gốc thuộc cùng doanh nghiệp (EF-03, BR-GL-ADJ-76).",
-                "error_code": "ORIGINAL_NOT_FOUND",
-            })
-        if orig_entry_locked.status not in ("POSTED", "REVERSED"):
-            raise ValidationError({
-                "original_entry": (
-                    f"Bút toán gốc {orig_entry_locked.number} đã thay đổi trạng thái sang {orig_entry_locked.status} "
-                    "sau khi lập chứng từ sửa sai (EF-29). Không thể ghi sổ bút toán điều chỉnh/đảo."
-                ),
-                "error_code": "ORIGINAL_STATUS_CHANGED_BEFORE_POST",
-            })
-        if entry.entry_type == "ADJUSTMENT" and orig_entry_locked.status == "REVERSED":
-            raise ValidationError({
-                "original_entry": f"Bút toán gốc {orig_entry_locked.number} đã được đảo toàn bộ (REVERSED), không thể ghi sổ bút toán điều chỉnh (EF-29).",
-                "error_code": "ORIGINAL_ALREADY_REVERSED",
-            })
-        if entry.entry_type == "REVERSAL":
-            posted_rev_sum = (
-                orig_entry_locked.related_entries.filter(entry_type="REVERSAL", status="POSTED")
-                .exclude(pk=entry.pk)
-                .aggregate(s=Sum("total_debit"))["s"]
-                or Decimal("0")
+            if not entry.source_module or entry.source_module == "GL":
+                raise ValidationError({
+                    "original_entry": "Bút toán điều chỉnh/đảo bắt buộc phải có liên kết ID bút toán gốc (BR-GL-ADJ-09, 10).",
+                    "error_code": "MISSING_ORIGINAL_ENTRY",
+                })
+        else:
+            orig_entry_locked = (
+                models.JournalEntry.objects.select_for_update()
+                .filter(pk=entry.original_entry_id, company=entry.company)
+                .first()
             )
-            if orig_entry_locked.status == "REVERSED" or posted_rev_sum + entry.total_debit > orig_entry_locked.total_debit:
+            if not orig_entry_locked:
+                raise ValidationError({
+                    "original_entry": "Không tìm thấy bút toán gốc thuộc cùng doanh nghiệp (EF-03, BR-GL-ADJ-76).",
+                    "error_code": "ORIGINAL_NOT_FOUND",
+                })
+            if orig_entry_locked.status not in ("POSTED", "REVERSED"):
                 raise ValidationError({
                     "original_entry": (
-                        f"Tổng giá trị đảo ({posted_rev_sum + entry.total_debit}) vượt quá phần giá trị còn lại có thể đảo "
-                        f"của bút toán gốc {orig_entry_locked.number} ({orig_entry_locked.total_debit - posted_rev_sum}) (EF-14, EF-15, EF-29)."
+                        f"Bút toán gốc {orig_entry_locked.number} đã thay đổi trạng thái sang {orig_entry_locked.status} "
+                        "sau khi lập chứng từ sửa sai (EF-29). Không thể ghi sổ bút toán điều chỉnh/đảo."
                     ),
-                    "error_code": "EXCEEDS_REVERSIBLE_AMOUNT",
+                    "error_code": "ORIGINAL_STATUS_CHANGED_BEFORE_POST",
                 })
+            if entry.entry_type == "ADJUSTMENT" and orig_entry_locked.status == "REVERSED":
+                raise ValidationError({
+                    "original_entry": f"Bút toán gốc {orig_entry_locked.number} đã được đảo toàn bộ (REVERSED), không thể ghi sổ bút toán điều chỉnh (EF-29).",
+                    "error_code": "ORIGINAL_ALREADY_REVERSED",
+                })
+            if entry.entry_type == "REVERSAL":
+                posted_rev_sum = (
+                    orig_entry_locked.related_entries.filter(entry_type="REVERSAL", status="POSTED")
+                    .exclude(pk=entry.pk)
+                    .aggregate(s=Sum("total_debit"))["s"]
+                    or Decimal("0")
+                )
+                if orig_entry_locked.status == "REVERSED" or posted_rev_sum + entry.total_debit > orig_entry_locked.total_debit:
+                    raise ValidationError({
+                        "original_entry": (
+                            f"Tổng giá trị đảo ({posted_rev_sum + entry.total_debit}) vượt quá phần giá trị còn lại có thể đảo "
+                            f"của bút toán gốc {orig_entry_locked.number} ({orig_entry_locked.total_debit - posted_rev_sum}) (EF-14, EF-15, EF-29)."
+                        ),
+                        "error_code": "EXCEEDS_REVERSIBLE_AMOUNT",
+                    })
 
     # Steps 12–18, EF-14..20, BR-GL-POST-22..31: Kiểm tra tài khoản, chiều, ngoại tệ và cân đối Nợ/Có
     _validate_entry(entry)
@@ -800,20 +805,23 @@ def unpost(entry, request):
     )
 
     # EF-33, BR-GL-POST-10, BR-GL-POST-11: Kiểm tra Optimistic Concurrency (version)
-    expected_version = req_data.get("version") if "version" in req_data else req_data.get("expected_version")
-    if expected_version is not None and str(expected_version).strip() != "":
-        try:
-            exp_ver = int(expected_version)
-        except (TypeError, ValueError):
-            raise ValidationError({"version": "Phiên bản chứng từ (version) không hợp lệ."})
-        if exp_ver != entry.version:
-            raise ValidationError({
-                "version": (
-                    f"Dữ liệu bút toán {entry.number} đã bị thay đổi bởi phiên làm việc khác "
-                    f"(version hiện tại: {entry.version}, version yêu cầu: {exp_ver}). Vui lòng tải lại chứng từ."
-                ),
-                "error_code": "CONCURRENT_MODIFICATION",
-            })
+    req_path = (getattr(request, "path", "") or "").lower()
+    is_direct_gl = not req_path or req_path.startswith("/api/v1/general-ledger/")
+    if is_direct_gl and (not entry.source_module or entry.source_module == "GL"):
+        expected_version = req_data.get("version") if "version" in req_data else req_data.get("expected_version")
+        if expected_version is not None and str(expected_version).strip() != "":
+            try:
+                exp_ver = int(expected_version)
+            except (TypeError, ValueError):
+                raise ValidationError({"version": "Phiên bản chứng từ (version) không hợp lệ."})
+            if exp_ver != entry.version:
+                raise ValidationError({
+                    "version": (
+                        f"Dữ liệu bút toán {entry.number} đã bị thay đổi bởi phiên làm việc khác "
+                        f"(version hiện tại: {entry.version}, version yêu cầu: {exp_ver}). Vui lòng tải lại chứng từ."
+                    ),
+                    "error_code": "CONCURRENT_MODIFICATION",
+                })
 
     # EF-07, BR-GL-POST-75: Idempotent retry cho Bỏ ghi sổ
     req_unpost_ref = str(req_data.get("unpost_reference") or "").strip()
@@ -1538,7 +1546,9 @@ def _validate_correction_common(entry, req_data, request, action_type="ADJUSTMEN
     external_modules = {"PUR", "AP", "SAL", "AR", "CASH", "BANK", "INV", "FA", "TOOLS", "PAYROLL", "TAX", "COST"}
     src_mod = (entry.source_module or "").strip().upper()
     is_external_subledger = entry.entry_type == "SUBLEDGER" or (src_mod in external_modules)
-    from_source_module = bool(req_data.get("from_source_module", False))
+    req_path = (getattr(request, "path", "") or "").lower()
+    path_is_source = bool(req_path and not req_path.startswith("/api/v1/general-ledger/"))
+    from_source_module = bool(req_data.get("from_source_module", False)) or path_is_source
     source_doc_cancelled = bool(req_data.get("source_document_cancelled", False))
     allow_direct_gl = bool(wf.get("allow_direct_gl_adjustment", False))
 

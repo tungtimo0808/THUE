@@ -301,11 +301,12 @@ class PurchaseContractTests(TestCase):
         self.assertEqual(confirm_res1.data["status"], DocumentStatus.IN_PROGRESS)
 
         # 2. Start date in future -> becomes APPROVED
+        future_start = timezone.now().date() + timedelta(days=10)
         res2 = self.client.post(
             self.url,
             self.contract_payload(
-                start_date=str(self.day + timedelta(days=10)),
-                end_date=str(self.day + timedelta(days=70)),
+                start_date=str(future_start),
+                end_date=str(future_start + timedelta(days=60)),
             ),
             format="json",
         )

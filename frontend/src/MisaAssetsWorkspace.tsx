@@ -18,6 +18,7 @@ import {
   saveDepreciationVoucher,
   saveFixedAsset,
   saveFixedAssetCategory,
+  saveFixedAssetDisposal,
   saveFixedAssetTransfer,
   unpostDepreciationVoucher,
   updateFixedAssetInfo,
@@ -399,12 +400,12 @@ export default function MisaAssetsWorkspace({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
         assetName: row.asset_name || "", fromDept: row.before_snapshot?.department_name || "",
         toDept: row.target_department_name || "", reason: row.reason || "", status: row.status,
-      })));
+      } as any)));
       setDecVouchers(movement(["DISPOSAL"]).map((row) => ({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
         assetName: row.asset_name || "", reason: row.reason || "",
         originalCost: apiNumber(assetOf(row)?.original_cost), remainingValue: apiNumber(row.amount), status: row.status,
-      })));
+      } as any)));
     }
     if (apiRows.revaluations) setRevalVouchers(apiRows.revaluations.map((row) => ({
       id: row.id, voucherNo: row.number, date: apiDate(row.posting_date),
@@ -2286,45 +2287,17 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [incTaxLawMonthValue, setIncTaxLawMonthValue] = useState<number>(0);
 
   // Sub-tab 2: Thiết lập phân bổ (AF09, AF10, BR22, BR23)
-  const [incAllocations, setIncAllocations] = useState<Array<{
-    id: string;
-    dept: string;
-    rate: number;
-    expenseAccount: string;
-    expenseItem: string;
-    costCenter: string;
-  }>>([]);
+  const [incAllocations, setIncAllocations] = useState<any[]>([]);
 
   // Sub-tab 3: Nguồn gốc hình thành (AF05, AF11, BR07, BR12, BR24, BR25)
-  const [incOrigins, setIncOrigins] = useState<Array<{
-    id: string;
-    originType: string;
-    documentNumber: string;
-    documentDate: string;
-    amount: number;
-    partnerCode: string;
-    partnerName: string;
-    sourceDocumentId: string;
-  }>>([]);
+  const [incOrigins, setIncOrigins] = useState<any[]>([]);
   const [incOriginVarianceReason, setIncOriginVarianceReason] = useState("");
 
   // Sub-tab 4: Bộ phận cấu thành (AF12, BR26)
-  const [incComponents, setIncComponents] = useState<Array<{
-    id: string;
-    name: string;
-    unit: string;
-    quantity: number;
-    value: number;
-  }>>([]);
+  const [incComponents, setIncComponents] = useState<any[]>([]);
 
   // Sub-tab 5: Dụng cụ, phụ tùng kèm theo (AF13, BR26)
-  const [incAccessories, setIncAccessories] = useState<Array<{
-    id: string;
-    name: string;
-    unit: string;
-    quantity: number;
-    value: number;
-  }>>([]);
+  const [incAccessories, setIncAccessories] = useState<any[]>([]);
 
   // Sub-tab 6: Thông tin khác (AF14)
   const [incCountryOfOrigin, setIncCountryOfOrigin] = useState("");
@@ -2332,14 +2305,29 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [incSerialNumber, setIncSerialNumber] = useState("");
   const [incDescription, setIncDescription] = useState("");
 
+  const purchaseSourceDocs: Array<{
+    documentNo: string;
+    documentDate: string;
+    amount: number;
+    supplier: string;
+  }> = ((apiRows as any).purchases || []).map((p: any) => ({
+    documentNo: String(p.document_number || p.voucher_no || p.invoice_no || p.code || "MH001"),
+    documentDate: String(p.document_date || p.voucher_date || "15/10/2026"),
+    amount: Number(p.total_amount || p.amount || 0),
+    supplier: String(p.partner_name || p.supplier_name || p.partner || "Công ty TNHH Thiết bị & Kỹ thuật"),
+  }));
+
   // AF04: Quick-Add Loại tài sản Modal state
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCatCode, setNewCatCode] = useState("");
   const [newCatName, setNewCatName] = useState("");
-  const [newCatAssetAcc, setNewCatAssetAcc] = useState("2111");
+  const [newCatCostAcc, setNewCatCostAcc] = useState("2111");
   const [newCatDeprAcc, setNewCatDeprAcc] = useState("2141");
   const [newCatExpAcc, setNewCatExpAcc] = useState("6424");
-  const [newCatPeriods, setNewCatPeriods] = useState("60");
+  const [newCatLifeYears, setNewCatLifeYears] = useState(5);
+  const costAccountOptions = ["2111", "2112", "2113", "2114", "2118", "2131"];
+  const deprAccountOptions = ["2141", "2142", "2143", "2147"];
+  const expenseAccountOptions = ["6274", "6414", "6424", "154"];
   const [localCategories, setLocalCategories] = useState<Array<{
     code: string;
     name: string;
@@ -4065,13 +4053,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const fallbackCalc = vTarget && (!Array.isArray(vTarget.lines) || vTarget.lines.length === 0)
       ? computePeriodDepreciationData(vMonth, vYear, false)
       : null;
-    const linesToValidate: DeprAssetLine[] = vTarget
+    const linesToValidate: any[] = vTarget
       ? (Array.isArray(vTarget.lines) && vTarget.lines.length > 0 ? vTarget.lines : fallbackCalc?.lines || [])
       : deprLines;
-    const allocsToValidate: DeprAllocationRow[] = vTarget
+    const allocsToValidate: any[] = vTarget
       ? (Array.isArray(vTarget.allocations) && vTarget.allocations.length > 0 ? vTarget.allocations : fallbackCalc?.allocations || [])
       : deprAllocationRows;
-    const acctToValidate: DeprAccountingRow[] = vTarget
+    const acctToValidate: any[] = vTarget
       ? (Array.isArray(vTarget.accountingEntries) && vTarget.accountingEntries.length > 0 ? vTarget.accountingEntries : fallbackCalc?.accountingEntries || [])
       : deprAccountingRows;
 
@@ -5343,7 +5331,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             setIncDeprMonthValue(0);
                             setIncDeprYearValue(0);
                           } else {
-                            recalculateIncreaseDepreciation(incDeprCostValue || incOriginalCost, incUseDuration, incUseDurationUnit, false, incLimitTaxLaw, incTaxLawValue);
+                            recalcIncDepreciation(incOriginalCost, incDeprCostValue || incOriginalCost, incUseDuration, incUseDurationUnit, false, incAccumulatedDepr, incLimitTaxLaw, incTaxLawValue);
                           }
                         }}
                         style={{ width: 14, height: 14, accentColor: "#00a862" }}
@@ -5584,7 +5572,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <select
                           value={incUseDurationUnit}
                           disabled={incNoDepr}
-                          onChange={(e) => handleIncUseDurationUnitChange(e.target.value)}
+                          onChange={(e) => handleIncUseDurationUnitChange(e.target.value as "Năm" | "Tháng")}
                           style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", background: incNoDepr ? "#f1f5f9" : "#ffffff" }}
                         >
                           <option value="Năm">Năm</option>
@@ -6374,9 +6362,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   const catObj = {
                     code: newCatCode.trim().toUpperCase(),
                     name: newCatName.trim(),
+                    assetAccount: newCatCostAcc,
                     costAccount: newCatCostAcc,
                     deprAccount: newCatDeprAcc,
                     expenseAccount: newCatExpAcc,
+                    defaultPeriods: Number(newCatLifeYears || 0) * 12,
                     lifeYears: newCatLifeYears,
                   };
                   if (apiConnected) {
@@ -10847,7 +10837,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const newOrig = matched.origAfter || a.originalCost;
                         const newDepr = matched.deprAfter ?? a.depreciatedAmount;
                         const newRem = Math.max(0, newOrig - newDepr);
-                        const newMDepr = matched.monthlyDeprAfter || a.deprMonthValue;
+                        const newMDepr = matched.monthlyDeprAfter || (a as any).deprMonthValue || 0;
                         return {
                           ...a,
                           originalCost: newOrig,
@@ -10920,7 +10910,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const newOrig = matched.origAfter || a.originalCost;
                         const newDepr = matched.deprAfter ?? a.depreciatedAmount;
                         const newRem = Math.max(0, newOrig - newDepr);
-                        const newMDepr = matched.monthlyDeprAfter || a.deprMonthValue;
+                        const newMDepr = matched.monthlyDeprAfter || (a as any).deprMonthValue || 0;
                         return {
                           ...a,
                           originalCost: newOrig,

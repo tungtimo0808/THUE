@@ -20,6 +20,8 @@ export interface MisaDropdownSelectProps {
   minWidth?: number | string;
   align?: "left" | "right";
   ariaLabel?: string;
+  buttonClassName?: string;
+  itemClassName?: string;
   className?: string;
   disabled?: boolean;
 }
@@ -38,6 +40,8 @@ export default function MisaDropdownSelect({
   align = "left",
   ariaLabel,
   className = "",
+  buttonClassName = "",
+  itemClassName = "",
   disabled = false,
 }: MisaDropdownSelectProps) {
   const [open, setOpen] = useState(false);
@@ -83,8 +87,30 @@ export default function MisaDropdownSelect({
         ...style,
       }}
     >
+      <select
+        aria-hidden="true"
+        tabIndex={-1}
+        value={String(value)}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          position: "absolute",
+          opacity: 0,
+          pointerEvents: "none",
+          width: "100%",
+          height: "100%",
+          top: 0,
+          left: 0,
+        }}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={String(opt.value)}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
       <button
         type="button"
+        className={buttonClassName || undefined}
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
         aria-label={ariaLabel || (typeof renderedLabel === "string" ? renderedLabel : "Chọn")}
@@ -204,6 +230,7 @@ export default function MisaDropdownSelect({
                 <button
                   key={String(option.value)}
                   type="button"
+                  className={`misa-dropdown-item ${itemClassName || ""}`.trim() || undefined}
                   onClick={() => {
                     onChange(String(option.value));
                     setOpen(false);

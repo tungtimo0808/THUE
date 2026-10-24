@@ -548,7 +548,7 @@ export function SaleVoucherModal({
       }}
     >
       <div
-        className="misa-purchase-modal-window"
+        className="misa-purchase-modal-window misa-sale-voucher-modal-window"
         style={{
           width: "min(1560px, 98vw)",
           maxWidth: 1560,

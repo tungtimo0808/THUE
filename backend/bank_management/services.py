@@ -241,7 +241,16 @@ def reverse_transfer(o,r):
     d=models.AccountProfile.objects.select_for_update().get(pk=o.destination_account_id)
     if d.balance+(d.overdraft_limit if d.allow_overdraft else 0)<o.destination_amount:
         raise ValidationError("Số dư tài khoản nhận không đủ để bỏ ghi; hãy kiểm tra các giao dịch phát sinh sau.")
-    reversal=reverse_journal(entry,r)
+    proxy_data = {**r.data, "auto_post": True, "from_source_module": True}
+    proxy = type("RequestProxy", (), {
+        "user": getattr(r, "user", None),
+        "data": proxy_data,
+        "META": getattr(r, "META", {}),
+        "headers": getattr(r, "headers", {}),
+        "method": getattr(r, "method", "POST"),
+        "path": getattr(r, "path", ""),
+    })()
+    reversal = reverse_journal(entry, proxy)
     s.balance+=o.source_amount;d.balance-=o.destination_amount
     s.save(update_fields=("balance","updated_at"));d.save(update_fields=("balance","updated_at"))
     o.status="REVERSED";o.reversed_at=timezone.now();o.version+=1

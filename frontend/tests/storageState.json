@@ -1,0 +1,23 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:5173",
+      "localStorage": [
+        {
+          "name": "erp_api_session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNDU5OTE4LCJpYXQiOjE3OTI4NTUxMTksImp0aSI6IjVjYzYxN2RkYTBkYTQ1ZjBhMWJlNjhiODRhYWFlMjI3IiwidXNlcl9pZCI6IjEifQ.QPwv50SHlg9GPd7I0wknwTJJ3cUSscc7Ot-tBF3vYYE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTQ0NzExOCwiaWF0IjoxNzkyODU1MTE4LCJqdGkiOiJkYmM3NTYyZTI1NmU0MWNlODZiYmEzMTM3YTM4NTM1YyIsInVzZXJfaWQiOiIxIn0.gV7zmR0F1M3_zqY6-6Uaq0W23QXo_WJQUANbhP_cGAM\",\"companyId\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"companies\":[{\"id\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"code\":\"ABC\",\"name\":\"Công ty ABC\",\"status\":\"ACTIVE\"},{\"id\":\"minh-an\",\"code\":\"MINH_AN\",\"name\":\"Công ty Cổ phần Minh An\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"1\",\"username\":\"superadmin\",\"display_name\":\"Super Admin Hệ Thống\"}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "erp_api_session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNDU5OTE4LCJpYXQiOjE3OTI4NTUxMTksImp0aSI6IjVjYzYxN2RkYTBkYTQ1ZjBhMWJlNjhiODRhYWFlMjI3IiwidXNlcl9pZCI6IjEifQ.QPwv50SHlg9GPd7I0wknwTJJ3cUSscc7Ot-tBF3vYYE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTQ0NzExOCwiaWF0IjoxNzkyODU1MTE4LCJqdGkiOiJkYmM3NTYyZTI1NmU0MWNlODZiYmEzMTM3YTM4NTM1YyIsInVzZXJfaWQiOiIxIn0.gV7zmR0F1M3_zqY6-6Uaq0W23QXo_WJQUANbhP_cGAM\",\"companyId\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"companies\":[{\"id\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"code\":\"ABC\",\"name\":\"Công ty ABC\",\"status\":\"ACTIVE\"},{\"id\":\"minh-an\",\"code\":\"MINH_AN\",\"name\":\"Công ty Cổ phần Minh An\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"1\",\"username\":\"superadmin\",\"display_name\":\"Super Admin Hệ Thống\"}}"
+        }
+      ]
+    }
+  ]
+}

@@ -29,6 +29,11 @@ export function num(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+export function cleanNum(value: unknown, fallback = 0) {
+  const parsed = typeof value === "number" ? value : Number(String(value ?? "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export function errorText(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -80,6 +85,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
 
   const post = (path: string, body: Row) => fetchJson(scoped(path), { method: "POST", body: JSON.stringify({ company: companyId, ...body }) });
   const patch = (path: string, body: Row) => fetchJson(scoped(path), { method: "PATCH", body: JSON.stringify({ company: companyId, ...body }) });
+  const put = (path: string, body: Row) => fetchJson(scoped(path), { method: "PUT", body: JSON.stringify({ company: companyId, ...body }) });
   const action = (path: string, id: string, name: string, body: Row = {}) =>
     fetchJson(scoped(`${path}${id}/${name}/`), { method: "POST", body: JSON.stringify(body) });
   const upload = (path: string, file: File) => {
@@ -103,6 +109,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
     list,
     post,
     patch,
+    put,
     action,
     upload,
     invalidate: () => cache.clear(),
@@ -164,7 +171,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
       if (!found) throw new FormDataError(`Thuế suất ${text}% chưa có trong danh mục thuế.`);
       return found.id as string;
     },
-    get: (path: string) => fetchJson(scoped(path)) as Promise<any>,
+    get: <T = any>(path: string) => fetchJson(scoped(path)) as Promise<T>,
     company: () => fetchJson(scoped(`/api/v1/organization/companies/${companyId}/`)) as Promise<Row>,
     async paymentTerm(scope: "PURCHASE" | "SALE") {
       const rows = (await list("/api/v1/master-data/payment-terms/")).filter((row) => row.status === "ACTIVE" && [scope, "BOTH"].includes(row.scope));
@@ -1440,8 +1447,8 @@ export async function saveDepreciationVoucher(w: ApiWriter, d: Row) {
     month,
     year,
     voucher_no: voucherNo,
-    voucher_date: d.voucherDate ? isoDate(d.voucherDate) : undefined,
-    posting_date: d.postingDate ? isoDate(d.postingDate) : undefined,
+    voucher_date: d.voucherDate ? toApiDate(d.voucherDate) : undefined,
+    posting_date: d.postingDate ? toApiDate(d.postingDate) : undefined,
     description: d.reason || d.description || `Khấu hao TSCĐ tháng ${String(month).padStart(2, "0")} năm ${year}`,
     reference: d.reference || "",
     prorate_by_days: Boolean(d.prorateByDays ?? d.prorate_by_days ?? false),
@@ -1723,7 +1730,7 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
     };
     // Part of the tracked quantity: the backend splits that part off before moving or disposing of it.
     const requested = row.requestedQty === undefined || row.requestedQty === "" ? null : num(row.requestedQty);
-    if (requested !== null && (kind === "transfer" || kind === "disposal")) {
+    if (requested !== null && ((kind as string) === "transfer" || (kind as string) === "disposal")) {
       if (requested <= 0 || requested > num(asset.quantity)) {
         throw new FormDataError(`Số lượng của ${asset.code} phải lớn hơn 0 và không vượt ${num(asset.quantity)}.`);
       }
@@ -1733,11 +1740,11 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
       const periods = Math.round(num(row.newPeriods) || num(asset.useful_life_periods) + num(row.periodDiff));
       if (periods <= num(asset.periods_processed)) throw new FormDataError(`Số kỳ mới của ${asset.code} phải lớn hơn số kỳ đã phân bổ (${num(asset.periods_processed)}).`);
       Object.assign(body, { transaction_type: "LIFE_CHANGE", target_useful_life_periods: periods });
-    } else if (kind === "revaluation") {
+    } else if ((kind as string) === "revaluation") {
       const diff = num(row.origDiff) || num(row.origAfter) - num(row.origBefore);
       if (!diff) throw new FormDataError(`Tài sản ${asset.code}: nhập nguyên giá sau đánh giá khác nguyên giá hiện tại.`);
       Object.assign(body, { transaction_type: diff > 0 ? "VALUE_INCREASE" : "VALUE_DECREASE", amount: String(Math.abs(diff)) });
-    } else if (kind === "transfer") {
+    } else if ((kind as string) === "transfer") {
       const target = departments.find((dept) => [dept.code, dept.name].includes(String(row.toDept || "").trim()));
       if (!target) throw new FormDataError(`Phòng ban nhận "${row.toDept || ""}" chưa có trong cơ cấu tổ chức.`);
       Object.assign(body, { transaction_type: "TRANSFER", target_department: target.id });
@@ -1955,9 +1962,10 @@ export async function setupAllocationPeriodUc11(w: ApiWriter, d: Row) {
     idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
   });
   return {
+    ...record,
     record,
     message: String(record?.message || ""),
-  };
+  } as any;
 }
 
 /** UC-FA-11 (AF17, EF18, EF19, BR27, BR34, BR35): Kiểm tra lại thông tin kỳ, ngày và số chứng từ trước khi lưu/ghi sổ. */
@@ -1996,9 +2004,10 @@ export async function calculateAllocationVoucherUc12(w: ApiWriter, d: Row) {
     accounting_rows_override: Array.isArray(d.accountingRowsOverride) ? d.accountingRowsOverride : undefined,
   });
   return {
+    ...record,
     record,
     message: String(record?.message || ""),
-  };
+  } as any;
 }
 
 /** UC-FA-12 (Main Flow A & B): Cất / Cất và In chứng từ phân bổ chi phí CCDC hoặc chi phí trả trước (ghi sổ GL & cập nhật lũy kế). */
@@ -4939,8 +4948,10 @@ export async function exportFinancialStatementBatch(w: ApiWriter, batchId: strin
   );
 }
 
-// =====================================================================// UC-GL-14: TRA CỨU SỔ CÁI / NHẬT KÝ / TRUY VẾT CHỨNG TỪ
-// =====================================================================const GL_LEDGER_INQUIRY = "/api/v1/general-ledger/ledger-inquiry/";
+// =====================================================================
+// UC-GL-14: TRA CỨU SỔ CÁI / NHẬT KÝ / TRUY VẾT CHỨNG TỪ
+// =====================================================================
+const GL_LEDGER_INQUIRY = "/api/v1/general-ledger/ledger-inquiry/";
 
 /** UC-GL-14 (Main Flow Steps 1–23, AF-01..16, AF-24, EF-01..15, BR-GL-TRACE-01..34, 56..75): Tra cứu Sổ cái, Sổ nhật ký chung, Sổ chi tiết tài khoản, Bảng cân đối, Nhật ký thu/chi/mua/bán, Sổ ngoại tệ và Bút toán GL theo Thông tư 99/2025/TT-BTC. */
 export async function queryAccountingBookUcGl14(w: ApiWriter, d: Row = {}) {
@@ -5022,8 +5033,10 @@ export async function exportAccountingBookUcGl14(w: ApiWriter, d: Row = {}) {
 
 
 
-// =====================================================================// UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU (10 LUỒNG NGHIỆP VỤ A–J)
-// =====================================================================const GL_OPENING_BALANCES = "/api/v1/general-ledger/opening-balances/";
+// =====================================================================
+// UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU (10 LUỒNG NGHIỆP VỤ A–J)
+// =====================================================================
+const GL_OPENING_BALANCES = "/api/v1/general-ledger/opening-balances/";
 
 /** UC-GL-15 (MF-01..03): Truy xuất toàn bộ 10 nhóm số dư ban đầu, trạng thái cân đối Nợ/Có, tổng hợp tài khoản cha-con (BR07), version (EF-21) và trạng thái khóa kỳ (EF-19). */
 export async function fetchOpeningBalancesUcGl15(w: ApiWriter) {
@@ -5092,8 +5105,10 @@ export async function printOpeningBalanceUcGl15(w: ApiWriter, d: Row = {}) {
   return await w.post(`${GL_OPENING_BALANCES}print/`, payload);
 }
 
-// =====================================================================// UC-RPT-01: XEM DASHBOARD TỔNG QUAN (DASH-01 .. DASH-12)
-// =====================================================================const RPT_DASHBOARD = "/api/v1/reports/dashboard/";
+// =====================================================================
+// UC-RPT-01: XEM DASHBOARD TỔNG QUAN (DASH-01 .. DASH-12)
+// =====================================================================
+const RPT_DASHBOARD = "/api/v1/reports/dashboard/";
 
 function buildDashboardQueryParams(companyId: string, d: Row = {}) {
   const q = new URLSearchParams({ company_id: companyId });
@@ -5993,8 +6008,10 @@ export async function exportFinancialNotesRunUcRpt06(w: ApiWriter, runId: string
   });
 }
 
-// =====================================================================// UC-RPT-07 – Xem báo cáo thuế (Tax Reports)
-// =====================================================================const RPT_TAX = "/api/v1/reports/tax/";
+// =====================================================================
+// UC-RPT-07 – Xem báo cáo thuế (Tax Reports)
+// =====================================================================
+const RPT_TAX = "/api/v1/reports/tax/";
 
 export async function fetchTaxReportCatalogueUcRpt07(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -6074,8 +6091,10 @@ export async function exportTaxReportRunUcRpt07(w: ApiWriter, runId: string | nu
   });
 }
 
-// =====================================================================// UC-RPT-08 – Xem báo cáo mua hàng (Purchase Reports)
-// =====================================================================const RPT_PURCHASE = "/api/v1/reports/purchase/";
+// =====================================================================
+// UC-RPT-08 – Xem báo cáo mua hàng (Purchase Reports)
+// =====================================================================
+const RPT_PURCHASE = "/api/v1/reports/purchase/";
 
 export async function fetchPurchaseReportCatalogueUcRpt08(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -6157,8 +6176,10 @@ export async function exportPurchaseReportRunUcRpt08(w: ApiWriter, runId: string
   });
 }
 
-// =====================================================================// UC-RPT-09: Báo cáo bán hàng (36 báo cáo)
-// =====================================================================const RPT_SALES = "/api/v1/reports/sales/";
+// =====================================================================
+// UC-RPT-09: Báo cáo bán hàng (36 báo cáo)
+// =====================================================================
+const RPT_SALES = "/api/v1/reports/sales/";
 
 export async function fetchSalesReportCatalogueUcRpt09(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -6248,8 +6269,10 @@ export async function exportSalesReportRunUcRpt09(w: ApiWriter, runId: string | 
   });
 }
 
-// =====================================================================// UC-RPT-10: Báo cáo công nợ (49 báo cáo: 18 AP + 31 AR / Combined)
-// =====================================================================const RPT_DEBT = "/api/v1/reports/debt/";
+// =====================================================================
+// UC-RPT-10: Báo cáo công nợ (49 báo cáo: 18 AP + 31 AR / Combined)
+// =====================================================================
+const RPT_DEBT = "/api/v1/reports/debt/";
 
 export async function fetchDebtReportCatalogueUcRpt10(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();

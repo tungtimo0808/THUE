@@ -3374,6 +3374,8 @@ export function CreateVoucherModal({
 
             {/* Type selector pill button */}
             <MisaDropdownSelect
+              buttonClassName="misa-voucher-type-pill"
+              itemClassName="misa-voucher-type-item"
               value={selectedTypeIndex}
               onChange={(val) => handleSelectType(Number(val))}
               title="LOẠI CHỨNG TỪ"
@@ -3490,7 +3492,7 @@ export function CreateVoucherModal({
         )}
 
         {!isReceipt && isBank && (
-          <div style={{ display: "none", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
             <label>Chi nhánh *<select aria-label="Chi nhánh chi tiền gửi" value={bankBranchId} onChange={event => setBankBranchId(event.target.value)}>
               <option value="">Chọn chi nhánh</option>{(bankPaymentCatalog.branches || []).filter(row => row.status === "ACTIVE" &&
                 (!selectedCompanyBankAccount?.branch || row.id === selectedCompanyBankAccount.branch)).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
@@ -3561,7 +3563,7 @@ export function CreateVoucherModal({
           </div>
         )}
         {isReceipt && !isBank && (
-          <div style={{ display: "none", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
             <label>Chi nhánh / Quỹ *<select aria-label="Chi nhánh và quỹ tiền mặt" value={fundId} onChange={event => setFundId(event.target.value)}>
               <option value="">Chọn quỹ</option>
               {(receiptCatalog.funds || []).filter(row => row.status === "ACTIVE").map(row => <option key={row.id} value={row.id}>{(receiptCatalog.branches || []).find(branch => branch.id === row.branch)?.name || "Chi nhánh"} · {row.code} · {row.name}</option>)}

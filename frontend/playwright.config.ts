@@ -6,9 +6,10 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${port}`,
     trace: "retain-on-failure",
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+    storageState: "./tests/storageState.json",
   },
   webServer: {
-    command: `npm run dev -- --port ${port} --strictPort`,
+    command: `npm run dev -- --host 0.0.0.0 --port ${port} --strictPort`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
   },

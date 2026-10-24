@@ -133,14 +133,14 @@ export function useMisaApiLists(
  */
 export function useMisaApiSave(companyId: string, notify: (message: string) => void, reload: () => void) {
   const { token } = useApiSession();
-  return async (save: (writer: ApiWriter) => Promise<{ message: string }>) => {
+  return async (save: (writer: ApiWriter) => Promise<{ message: string; record?: any } | any>): Promise<any> => {
     if (!token || !companyId) return false;
     try {
       const result = await save(createApiWriter(companyId, (path, init) => request(path, token, init)));
       clearMisaApiCache(companyId);
-      notify(result.message);
+      notify(result?.message || "Đã lưu thành công.");
       reload();
-      return true;
+      return result || true;
     } catch (error) {
       notify(error instanceof FormDataError ? error.message : `Không lưu được: ${errorText(error)}`);
       return false;
