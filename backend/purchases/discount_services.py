@@ -1,7 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import F, Q, Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -14,6 +14,8 @@ from common_services.period_services import determine_period_for_date
 from general_ledger.models import AccountingPeriod, JournalEntry, JournalLine
 from general_ledger.services import _balance, _recalculate_closing, post as post_journal
 from master_data.models import DocumentType
+from inventory.models import (InventoryPeriod, InventoryPolicy, InventoryTransaction,
+                              InventoryTransactionLine, StockBalance, StockMovement)
 
 from .models import (ApprovalDecision, GoodsPurchase, GoodsPurchaseLine, PurchaseDiscount,
                      PurchaseDiscountCredit, PurchaseDiscountLine, PurchaseOrder,
@@ -201,6 +203,95 @@ def _update_order_value(document, direction):
         realized_purchase_value=F("realized_purchase_value") + direction * document.pre_tax_amount)
 
 
+def _adjust_stock_value(document, request, *, reverse=False):
+    """Adjust only a source receipt whose complete quantity is provably still on hand.
+
+    This deliberately rejects issued or transferred stock: allocation to COGS or FIFO
+    layers needs provenance that the current inventory ledger does not yet retain.
+    """
+    if not document.reduce_stock_value:
+        return
+    if document.handling != "REDUCE_PAYABLE":
+        raise ValidationError("Thu tiền mặt cần phiếu thu đã ghi nhận; hiện chỉ hỗ trợ giảm trừ công nợ khi điều chỉnh tồn kho.")
+    purchase = document.original_purchase
+    source_tx = purchase.inventory_transaction
+    if purchase.purchase_type != "WAREHOUSE" or not source_tx or source_tx.status != "POSTED":
+        raise ValidationError("Không xác định được chứng từ nhập kho liên quan để điều chỉnh giá trị.")
+    if InventoryPeriod.objects.filter(company=document.company, status="CLOSED",
+            start_date__lte=document.posting_date, end_date__gte=document.posting_date).exists():
+        raise ValidationError("Không thể ghi sổ chứng từ trong kỳ kho đã khóa.")
+    if document.posting_date < source_tx.transaction_date:
+        raise ValidationError("Ngày hạch toán giảm giá phải sau ngày nhập kho nguồn.")
+    source_lines = {row.line_no: row for row in source_tx.lines.all()}
+    movements = {row.line_id: row for row in source_tx.movements.all()}
+    prepared = []
+    locked_balances = {}
+    for line in document.lines.select_related("original_line", "item", "uom"):
+        if line.credit_account_id != line.original_line.debit_account_id:
+            raise ValidationError("Tài khoản kho phải khớp tài khoản hàng mua nguồn.")
+        if document.handling == "REDUCE_PAYABLE" and line.debit_account_id != line.original_line.credit_account_id:
+            raise ValidationError("Tài khoản công nợ phải khớp chứng từ mua nguồn.")
+        source_line = source_lines.get(line.original_line.line_no)
+        source_movement = movements.get(source_line.pk) if source_line else None
+        if (not source_movement or source_line.item_id != line.item_id or
+                source_movement.quantity_delta <= 0 or
+                source_movement.balance_quantity < source_movement.quantity_delta):
+            raise ValidationError("Chưa đủ dữ liệu để phân bổ khoản giảm giá hàng mua.")
+        warehouse = source_movement.warehouse
+        policy = InventoryPolicy.objects.filter(warehouse=warehouse, item=line.item, is_active=True).first()
+        if (policy.valuation_method if policy else line.item.valuation_method or "MOVING_AVERAGE") != "MOVING_AVERAGE":
+            raise ValidationError("Phương pháp tính giá này cần phân bổ theo lớp/kỳ; chưa thể ghi sổ tự động.")
+        if StockMovement.objects.filter(company=document.company, warehouse=warehouse, item=line.item,
+                quantity_delta__lt=0, transaction__status__in=("POSTED", "REVERSED")).filter(
+                Q(created_at__gt=source_movement.created_at) |
+                Q(movement_date__gte=source_tx.transaction_date)).exists():
+            raise ValidationError("Hàng nguồn đã xuất; chưa đủ dữ liệu để phân bổ vào tồn kho và giá vốn.")
+        key = (warehouse.pk, line.item_id, source_movement.location_id, source_movement.lot_serial_id)
+        if key not in locked_balances:
+            locked_balances[key] = StockBalance.objects.select_for_update().filter(company=document.company,
+                warehouse=warehouse, item=line.item, location=source_movement.location,
+                lot_serial=source_movement.lot_serial).first()
+        balance = locked_balances[key]
+        if not balance or balance.quantity < source_movement.quantity_delta:
+            raise ValidationError("Chưa đủ dữ liệu để xác định toàn bộ hàng nguồn còn tồn.")
+        if not reverse and balance.inventory_value < line.pre_tax_amount:
+            raise ValidationError("Kết quả phân bổ giảm giá hàng mua không hợp lệ.")
+        prepared.append((line, source_movement, balance))
+    old_tx = document.inventory_adjustment if reverse else None
+    suffix = f"REV-{document.version}" if reverse else str(document.version)
+    adjustment = InventoryTransaction.objects.create(company=document.company, branch=document.branch,
+        supplier=document.supplier, number=f"{document.number}-VAL-{suffix}",
+        transaction_type="ADJUSTMENT", transaction_date=document.posting_date,
+        document_date=document.document_date, source_module="PUR_DISCOUNT",
+        source_reference=document.number, original_transaction=old_tx or source_tx,
+        reason=document.reason, status="POSTED", inventory_applied=True,
+        total_value=document.pre_tax_amount if reverse else -document.pre_tax_amount,
+        gl_status="POSTED", created_by=request.user.iam_account, posted_at=timezone.now())
+    for line, source_movement, balance in prepared:
+        delta = line.pre_tax_amount if reverse else -line.pre_tax_amount
+        detail = InventoryTransactionLine.objects.create(transaction=adjustment, line_no=line.line_no,
+            item=line.item, uom=line.uom, quantity=line.original_line.quantity,
+            base_quantity=line.original_line.quantity, unit_cost=0, line_value=delta,
+            notes="Điều chỉnh giá trị, không thay đổi số lượng")
+        balance.inventory_value += delta
+        if balance.inventory_value < 0:
+            raise ValidationError("Kết quả phân bổ giảm giá hàng mua không hợp lệ.")
+        balance.average_cost = (balance.inventory_value / balance.quantity).quantize(Decimal("0.0000000001"))
+        balance.save(update_fields=("inventory_value", "average_cost", "updated_at"))
+        StockMovement.objects.create(company=document.company, transaction=adjustment, line=detail,
+            warehouse=source_movement.warehouse, item=line.item, location=source_movement.location,
+            lot_serial=source_movement.lot_serial, movement_date=document.posting_date,
+            quantity_delta=0, value_delta=delta, balance_quantity=balance.quantity,
+            balance_value=balance.inventory_value)
+    if reverse:
+        old_tx.status = "REVERSED"
+        old_tx.reversed_at = timezone.now()
+        old_tx.save(update_fields=("status", "reversed_at", "updated_at"))
+        document.inventory_adjustment = None
+    else:
+        document.inventory_adjustment = adjustment
+
+
 @transaction.atomic
 def post(document, request):
     document = PurchaseDiscount.objects.select_for_update().get(pk=document.pk)
@@ -211,6 +302,7 @@ def post(document, request):
         end_date__gte=document.posting_date, status="OPEN").first()
     if not period:
         raise ValidationError("Không có kỳ sổ cái đang mở cho ngày hạch toán.")
+    _adjust_stock_value(document, request)
     journal = JournalEntry.objects.create(company=document.company, branch=document.branch, period=period,
         number=f"{document.number}-GL-{document.version}", entry_type="SUBLEDGER",
         posting_date=document.posting_date, document_date=document.document_date,
@@ -257,7 +349,7 @@ def post(document, request):
     document.version += 1
     document.posted_at = timezone.now()
     document.adjustment_invoice_status = invoice_status(document)
-    document.save(update_fields=("status", "version", "posted_at", "journal_entry", "payable_adjustment",
+    document.save(update_fields=("status", "version", "posted_at", "journal_entry", "payable_adjustment", "inventory_adjustment",
         "payable_paid_before", "payable_netted_before", "adjustment_invoice_status", "updated_at"))
     audit(request, document, "POST", {"status": "APPROVED"}, {"status": "POSTED", "number": document.number,
         "original_purchase": document.original_purchase.number, "pre_tax_amount": str(document.pre_tax_amount),
@@ -276,6 +368,8 @@ def unpost(document, request):
     credit = PurchaseDiscountCredit.objects.filter(document=document).first()
     if credit and credit.settled_amount:
         raise ValidationError("Chứng từ đã phát sinh dữ liệu liên quan và không thể bỏ ghi sổ.")
+    if document.inventory_adjustment_id:
+        _adjust_stock_value(document, request, reverse=True)
     adjustment = document.payable_adjustment
     if adjustment:
         payable = Payable.objects.select_for_update().get(pk=adjustment.payable_id)
@@ -320,6 +414,6 @@ def unpost(document, request):
     document.posted_at = None
     document.journal_entry = None
     document.payable_adjustment = None
-    document.save(update_fields=("status", "version", "posted_at", "journal_entry", "payable_adjustment", "updated_at"))
+    document.save(update_fields=("status", "version", "posted_at", "journal_entry", "payable_adjustment", "inventory_adjustment", "updated_at"))
     audit(request, document, "UNPOST", {"status": "POSTED"}, {"status": "APPROVED", "original_purchase": document.original_purchase.number}, request.data.get("reason", ""))
     return document

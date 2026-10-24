@@ -107,6 +107,7 @@ const previousReferenceTabs: Record<string, [string, string][]> = {
     ["errors", "Sai sót, điều chỉnh"],
     ["issuance", "Trạng thái phát hành"],
     ["lookup", "Tra cứu"],
+    ["unposted", "Chưa hạch toán"],
   ],
   inventory: [
     ["process", "Quy trình"],
@@ -308,6 +309,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
   invoices: [
     node('process','Quy trình'),
     node('meinvoice','Kết nối MeInvoice'),
+    node('sync','Tự động lấy hóa đơn từ TCT'),
     node('error-guide','Hướng dẫn xử lý hóa đơn đã lập sai'),
     node("incoming", "Hóa đơn đầu vào", [
       node("inbox", "Hộp thư hóa đơn & AI OCR"),
@@ -315,6 +317,10 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
       node("processed", "Hóa đơn đã hạch toán"),
     ]),
     node("outgoing", "Hóa đơn đầu ra & Phát hành"),
+    node("pending", "Hóa đơn cần xử lý"),
+    node("issuance", "Trạng thái phát hành"),
+    node("lookup", "Tra cứu hóa đơn"),
+    node("unposted", "Bảng kê chưa hạch toán"),
     node("risk-warning", "Cảnh báo rủi ro hóa đơn", [
       node("supplier-risk", "Nhà cung cấp rủi ro cao về thuế"),
       node("cash-limit", "Cảnh báo chi tiền mặt trong ngày > 5 triệu"),

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useApiSession } from "./ApiSession";
+import TaxConnectorPanel from "./TaxConnectorPanel";
 import { FileText, Monitor } from "lucide-react";
 import { apiClient } from "./apiClient";
 import "./misa-invoice-workspace.css";
@@ -27,11 +29,14 @@ export default function MisaInvoiceWorkspace({
   tab,
   href,
   notify,
+  company,
 }: {
   tab: string;
-  href: (path: string) => string;
+  href: (path: string, extra?: Record<string, string>) => string;
   notify: (text: string) => void;
+  company?: { id: string; name: string; tax_code?: string };
 }) {
+  const { token } = useApiSession();
   const [kind, setKind] = useState(""),
     [sent, setSent] = useState(""),
     [fault, setFault] = useState(""),
@@ -80,7 +85,7 @@ export default function MisaInvoiceWorkspace({
           ]
         : [];
   if (tab === "meinvoice")
-    return (
+    return company ? <TaxConnectorPanel company={company} token={token} /> : (
       <div className="iw-connect">
         <section>
           <div className="iw-brand">meInvoice</div>
@@ -166,7 +171,7 @@ export default function MisaInvoiceWorkspace({
         </aside>
       </div>
     );
-  if (tab === "error-guide")
+  if (tab === "error-guide" || tab === "adjustments")
     return (
       <div className="iw-guide">
         <header>
@@ -175,6 +180,7 @@ export default function MisaInvoiceWorkspace({
             Cung cấp thông tin về hóa đơn đã lập sai của bạn, hệ thống sẽ hướng
             dẫn cách xử lý phù hợp.
           </p>
+          <Link to={href("/sales/invoices")}>Xem hóa đơn đã phát hành và xử lý hủy</Link>
         </header>
         <div className="iw-guide-columns">
           <section>
@@ -272,7 +278,11 @@ export default function MisaInvoiceWorkspace({
                     <b>{index + 1}</b>
                     <div>
                       <p>{text}</p>
-                      <Link to={href("/invoices/adjustments")}>{label}</Link>
+                      <Link to={label === "Lập hóa đơn thay thế"
+                        ? href("/sales/invoices", { create: "replacement" })
+                        : label === "Lập hóa đơn điều chỉnh"
+                          ? href("/sales/invoices", { create: "adjustment" })
+                          : href("/invoices/adjustments")}>{label}</Link>
                     </div>
                   </article>
                 ))}

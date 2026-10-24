@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
-  saveGoodsPurchase, saveInputInvoice, saveItem, saveMultiInvoicePurchase, savePurchaseContract, savePurchaseDiscount,
+  saveGoodsPurchase, saveItem, saveMultiInvoicePurchase, savePurchaseContract, savePurchaseDiscount,
   savePurchaseReturn, saveServicePurchase, saveSupplierReconciliation, uninvoicedPurchases, createApiWriter,
 } from "./misa-api-writes";
 import { useApiSession } from "./ApiSession";
@@ -59,7 +59,7 @@ import {
   PurchaseServiceModal,
   PurchaseMultiInvoiceModal,
   type UninvoicedVoucher,
-  type ReceivedInvoiceInfo,
+
   SAMPLE_SUPPLIERS,
   formatVND,
 } from "./MisaPurchaseModals";
@@ -791,37 +791,14 @@ export default function MisaPurchaseWorkspace({
     return true;
   };
 
-  const handleSaveReceivedInvoice = async (selectedVouchers: UninvoicedVoucher[], invoice?: ReceivedInvoiceInfo) => {
-    if (apiConnected) {
-      const saved = await apiSave((writer) => saveInputInvoice(writer, { ...invoice, purchaseIds: selectedVouchers.map((row) => row.id) }));
-      if (saved) setShowReceiveInvoiceModal(false);
-      return saved;
-    }
-    const newItems = selectedVouchers.map((v, idx) => {
-      const num = (2811 + receivedInvoices.length + idx).toString().padStart(7, "0");
-      const subtotal = Math.round(v.amount / 1.1);
-      const vat = v.amount - subtotal;
-      return {
-        id: `inv-${Date.now()}-${idx}`,
-        receivedDate: "30/09/2026",
-        invoiceNo: num,
-        invoiceSeries: "1C26TAA",
-        invoiceDate: v.docDate || "30/09/2026",
-        supplierName: v.supplierName,
-        supplierTaxCode: v.supplierCode === "NCC001" ? "0102345678" : v.supplierCode === "NCC002" ? "0900123456" : "0309876543",
-        voucherCode: v.voucherCode,
-        subtotal,
-        vatAmount: vat,
-        totalAmount: v.amount,
-        status: "Đã nhận HĐ",
-      };
-    });
-    setReceivedInvoices((prev) => [...newItems, ...prev]);
+  const handleSaveReceivedInvoice = (selectedVouchers: UninvoicedVoucher[]) => {
+    sessionStorage.setItem("tax_intake_purchase_context", JSON.stringify(selectedVouchers.map((row) => ({
+      id: row.id, code: row.voucherCode, supplier: row.supplierName,
+    }))));
     setShowReceiveInvoiceModal(false);
-    setReceiveInvoiceViewMode("list");
-    notify(`Đã nhận hóa đơn cho ${selectedVouchers.length} chứng từ mua hàng thành công!`);
+    navigate(href ? href("/invoices/incoming/inbox") : "/invoices/incoming/inbox");
+    return true;
   };
-
   const handleSaveService = (data: any) => {
     if (apiConnected) return apiSave((writer) => saveServicePurchase(writer, data));
     setVouchers([
@@ -904,6 +881,10 @@ export default function MisaPurchaseWorkspace({
           onClose={() => setShowDiscountModal(false)}
           onSubmit={handleSaveDiscount}
           onOpenSupplierModal={() => setShowSupplierModal(true)}
+          purchaseSources={(apiRows.vouchers || []).filter((row) => row.purchase_type === "WAREHOUSE")}
+          sourceCatalog={{ suppliers: apiRows.suppliers || [], items: apiRows.items || [],
+            warehouses: apiRows.warehouses || [], accounts: apiRows.accounts || [],
+            units: apiRows.units || [], taxRates: apiRows.taxRates || [] }}
         />
       )}
 

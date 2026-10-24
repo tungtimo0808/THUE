@@ -682,11 +682,16 @@ class ItemViewSet(MasterDataViewSet):
             error = APIException("Đối tượng đã được cập nhật. Hãy tải lại.")
             error.status_code = 409
             raise error
-        before = {"code": item.code, "name": item.name, "status": item.status}
+        # ModelValidationMixin mutates serializer.instance during validation.
+        # Read the persisted row so the audit keeps the actual previous value.
+        persisted = models.Item.objects.only("code", "name", "status", "min_stock").get(pk=item.pk)
+        before = {"code": persisted.code, "name": persisted.name, "status": persisted.status,
+                  "min_stock": str(persisted.min_stock) if persisted.min_stock is not None else None}
         item = serializer.save()
         if not self._allowed(item, "MD.ITEM.EDIT"):
             raise PermissionDenied("Đơn vị mới nằm ngoài phạm vi dữ liệu.")
-        self._audit(item, "ITEM_UPDATE", before=before, after={"code": item.code, "name": item.name, "status": item.status})
+        self._audit(item, "ITEM_UPDATE", before=before, after={"code": item.code, "name": item.name,
+            "status": item.status, "min_stock": str(item.min_stock) if item.min_stock is not None else None})
 
     @action(detail=True, methods=("post",), url_path="change-status")
     @transaction.atomic

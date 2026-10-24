@@ -4,8 +4,8 @@ import { request } from "./live-api";
 
 type Profile = { id: string; account_number: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; currency_id: string; currency_code: string };
 type Mapping = Record<string, string>;
-type PreviewRow = { source_row: number; status: "VALID" | "ERROR" | "DUPLICATE" | "SUSPECT"; reason: string; transaction_date: string; direction: string; amount: string; description: string; reference: string; existing?: { number: string; transaction_date: string; amount: string; description: string } | null };
-type Preview = { rows: PreviewRow[]; counts: Record<string, number>; total_receipts: string; total_payments: string; calculated_closing: string | null; balance_difference: string | null };
+type PreviewRow = { source_row: number; status: "VALID" | "ERROR" | "DUPLICATE" | "SUSPECT"; reason: string; transaction_date: string; direction: string; amount: string; description: string; reference: string; currency?: string; ending_balance?: string; counterparty?: string; counterparty_account?: string; existing?: { number: string; transaction_date: string; direction: string; amount: string; description: string; reference: string; account_number: string } | null };
+type Preview = { rows: PreviewRow[]; counts: Record<string, number>; total_receipts: string; total_payments: string; opening_balance: string | null; closing_balance: string | null; calculated_closing: string | null; balance_difference: string | null };
 
 const fields: [string, string][] = [
   ["transaction_date", "Ngày giao dịch"], ["description", "Nội dung giao dịch"],
@@ -97,12 +97,15 @@ export default function BankStatementImportModal({ companyId, token, profiles, o
   const selectedRows = preview?.rows.filter((row) => selected.includes(row.source_row)) || [];
   const selectedReceipts = selectedRows.filter((row) => row.direction === "CREDIT").reduce((sum, row) => sum + Number(row.amount), 0);
   const selectedPayments = selectedRows.filter((row) => row.direction === "DEBIT").reduce((sum, row) => sum + Number(row.amount), 0);
+  const selectedDifference = preview?.opening_balance != null && preview?.closing_balance != null
+    ? Number(preview.closing_balance) - Number(preview.opening_balance) - selectedReceipts + selectedPayments : null;
   const resetPreview = () => { setPreview(null); setConfirmation(false); setSelected([]); setConfirmSuspects([]); };
 
   async function chooseFile(chosen: File | null) {
     resetPreview(); setError("");
     if (!chosen) return;
     if (!/\.(xlsx|xls)$/i.test(chosen.name) || chosen.size === 0 || chosen.size > 20 * 1024 * 1024) {
+      setFile(null); setWorkbook(null);
       setError("Chỉ nhận tệp Excel .xlsx hoặc .xls, tối đa 20 MB."); return;
     }
     try {
@@ -157,7 +160,7 @@ export default function BankStatementImportModal({ companyId, token, profiles, o
       date_format: dateFormat, number_format: numberFormat, column_mapping: mapping,
       opening_balance: opening ? String(amountValue(opening, numberFormat)) : "",
       closing_balance: closing ? String(amountValue(closing, numberFormat)) : "",
-      unique_reference: uniqueReference, rows: items };
+      unique_reference: uniqueReference, signed_mode: signedMode, rows: items };
   }
 
   async function check() {
@@ -212,8 +215,9 @@ export default function BankStatementImportModal({ companyId, token, profiles, o
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           <label style={labelStyle}>Tài khoản ngân hàng
             <select style={inputStyle} value={accountId} onChange={(event) => { setAccountId(event.target.value); resetPreview(); }}>
-              <option value="">Chọn tài khoản</option>{profiles.map((item) => <option key={item.id} value={item.id}>{item.account_number} · {item.bank_name} · {item.currency_code}</option>)}
+              <option value="">Chọn tài khoản</option>{profiles.map((item) => <option key={item.id} value={item.id}>{item.account_number} · {item.bank_name}{item.bank_branch ? ` (${item.bank_branch})` : ""} · {item.branch_name || "Đơn vị chung"} · {item.currency_code}</option>)}
             </select></label>
+          <label style={labelStyle}>Chi nhánh ngân hàng<input style={inputStyle} readOnly value={profile?.bank_branch || ""}/></label>
           <label style={labelStyle}>Chi nhánh / đơn vị quản lý<input style={inputStyle} readOnly value={profile?.branch_name || ""}/></label>
           <label style={labelStyle}>Loại tiền<input style={inputStyle} readOnly value={profile?.currency_code || ""}/></label>
           <label style={labelStyle}>Từ ngày<input style={inputStyle} type="date" value={from} onChange={(event) => { setFrom(event.target.value); resetPreview(); }}/></label>
@@ -249,10 +253,10 @@ export default function BankStatementImportModal({ companyId, token, profiles, o
           <h3 style={{ fontSize: 14 }}>Xem trước: {preview.counts.VALID} hợp lệ · {preview.counts.ERROR} lỗi · {preview.counts.DUPLICATE} trùng · {preview.counts.SUSPECT} nghi trùng</h3>
           {preview.rows.some((row) => row.status !== "VALID") && <button type="button" className="misa-btn-secondary" onClick={downloadErrors}>Tải danh sách lỗi / trùng (CSV)</button>}
           <p style={{ fontSize: 12 }}>Tổng thu {Number(preview.total_receipts).toLocaleString("vi-VN")} · Tổng chi {Number(preview.total_payments).toLocaleString("vi-VN")}</p>
-          {preview.balance_difference !== null && Number(preview.balance_difference) !== 0 && <label style={{ color: "#b45309", fontSize: 12 }}><input type="checkbox" checked={confirmBalance} onChange={(event) => setConfirmBalance(event.target.checked)}/> Số dư chênh {Number(preview.balance_difference).toLocaleString("vi-VN")}. Tôi đã kiểm tra và chấp nhận cảnh báo.</label>}
-          <div style={{ overflowX: "auto", maxHeight: 300, overflowY: "auto", border: "1px solid #e2e8f0" }}><table className="misa-table" style={{ width: "100%", minWidth: 850, fontSize: 12 }}><thead><tr><th>Chọn</th><th>Dòng</th><th>Ngày</th><th>Mã GD</th><th>Nội dung</th><th>Thu</th><th>Chi</th><th>Kết quả / lý do</th></tr></thead><tbody>
-            {preview.rows.map((row) => <tr key={row.source_row}><td><input type="checkbox" aria-label={`Chọn dòng ${row.source_row}`} disabled={row.status === "ERROR" || row.status === "DUPLICATE"} checked={selected.includes(row.source_row)} onChange={(event) => { setSelected(event.target.checked ? [...selected, row.source_row] : selected.filter((number) => number !== row.source_row)); if (row.status === "SUSPECT") setConfirmSuspects(event.target.checked ? [...confirmSuspects, row.source_row] : confirmSuspects.filter((number) => number !== row.source_row)); }}/></td>
-              <td>{row.source_row}</td><td>{row.transaction_date}</td><td>{row.reference}</td><td>{row.description}</td><td>{row.direction === "CREDIT" ? Number(row.amount).toLocaleString("vi-VN") : ""}</td><td>{row.direction === "DEBIT" ? Number(row.amount).toLocaleString("vi-VN") : ""}</td><td>{row.status === "VALID" ? "Hợp lệ" : row.status === "ERROR" ? "Có lỗi" : row.status === "DUPLICATE" ? "Trùng xác định" : "Nghi trùng"}{row.reason ? ` — ${row.reason}` : ""}{row.existing ? ` (Lần ${row.existing.number}, ${row.existing.transaction_date}, ${row.existing.amount})` : ""}</td></tr>)}
+          {selectedDifference !== null && selectedDifference !== 0 && <label style={{ color: "#b45309", fontSize: 12 }}><input type="checkbox" checked={confirmBalance} onChange={(event) => setConfirmBalance(event.target.checked)}/> Số dư chênh {selectedDifference.toLocaleString("vi-VN")} theo các dòng đã chọn. Tôi đã kiểm tra và chấp nhận cảnh báo.</label>}
+          <div style={{ overflowX: "auto", maxHeight: 300, overflowY: "auto", border: "1px solid #e2e8f0" }}><table className="misa-table" style={{ width: "100%", minWidth: 1200, fontSize: 12 }}><thead><tr><th>Chọn</th><th>Dòng</th><th>Ngày</th><th>Mã GD</th><th>Nội dung</th><th>Thu</th><th>Chi</th><th>Loại tiền</th><th>Số dư</th><th>Đối tác</th><th>Kết quả / lý do</th></tr></thead><tbody>
+            {preview.rows.map((row) => <tr key={row.source_row}><td><input type="checkbox" aria-label={`Chọn dòng ${row.source_row}`} disabled={row.status === "ERROR" || row.status === "DUPLICATE"} checked={selected.includes(row.source_row)} onChange={(event) => { setSelected(event.target.checked ? [...selected, row.source_row] : selected.filter((number) => number !== row.source_row)); if (!event.target.checked) setConfirmSuspects(confirmSuspects.filter((number) => number !== row.source_row)); }}/></td>
+              <td>{row.source_row}</td><td>{row.transaction_date}</td><td>{row.reference}</td><td>{row.description}</td><td>{row.direction === "CREDIT" ? Number(row.amount).toLocaleString("vi-VN") : ""}</td><td>{row.direction === "DEBIT" ? Number(row.amount).toLocaleString("vi-VN") : ""}</td><td>{row.currency}</td><td>{row.ending_balance}</td><td>{row.counterparty}{row.counterparty_account ? ` · ${row.counterparty_account}` : ""}</td><td>{row.status === "VALID" ? "Hợp lệ" : row.status === "ERROR" ? "Có lỗi" : row.status === "DUPLICATE" ? "Trùng xác định" : "Nghi trùng"}{row.reason ? ` — ${row.reason}` : ""}{row.existing ? <div style={{marginTop: 4}}>Đã có: {row.existing.transaction_date} · {row.existing.reference} · {row.existing.description} · {row.existing.direction === "CREDIT" ? "Thu" : "Chi"} {Number(row.existing.amount).toLocaleString("vi-VN")} · TK {row.existing.account_number} · Lần {row.existing.number}</div> : null}{row.status === "SUSPECT" && selected.includes(row.source_row) && <label style={{display:"block",marginTop:4}}><input type="checkbox" aria-label={`Xác nhận dòng ${row.source_row} là giao dịch khác`} checked={confirmSuspects.includes(row.source_row)} onChange={event=>setConfirmSuspects(event.target.checked ? [...confirmSuspects,row.source_row] : confirmSuspects.filter(number=>number!==row.source_row))}/> Xác nhận là giao dịch khác</label>}</td></tr>)}
           </tbody></table></div>
         </section>}
         {confirmation && <div role="alertdialog" aria-label="Xác nhận import sao kê" style={{ padding: 14, marginTop: 14, border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 6, fontSize: 13 }}>
@@ -264,7 +268,7 @@ export default function BankStatementImportModal({ companyId, token, profiles, o
         <button type="button" className="misa-btn-secondary" onClick={close}>Hủy</button>
         <button type="button" className="misa-btn-secondary" disabled={!file || busy} onClick={() => void check()}>{busy && !confirmation ? "Đang kiểm tra..." : "Kiểm tra dữ liệu"}</button>
         {confirmation ? <button type="button" className="misa-btn-primary" disabled={busy} onClick={() => void importRows()}>{busy ? "Đang nhập..." : "Xác nhận import"}</button>
-          : <button type="button" className="misa-btn-primary" disabled={!preview || !selected.length || busy || preview.balance_difference !== null && Number(preview.balance_difference) !== 0 && !confirmBalance} onClick={() => setConfirmation(true)}>Import {selected.length} dòng</button>}
+          : <button type="button" className="misa-btn-primary" disabled={!preview || !selected.length || busy || selectedRows.some(row=>row.status==="SUSPECT"&&!confirmSuspects.includes(row.source_row)) || selectedDifference !== null && selectedDifference !== 0 && !confirmBalance} onClick={() => setConfirmation(true)}>Import {selected.length} dòng</button>}
       </footer>
     </div>
   </div>;

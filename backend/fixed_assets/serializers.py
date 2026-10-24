@@ -266,3 +266,149 @@ class ApprovalSerializer(serializers.ModelSerializer):
         model = models.ApprovalDecision
         fields = "__all__"
         read_only_fields = ("id", "decided_at")
+
+
+class RevaluationMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.RevaluationMember
+        fields = ("id", "line_no", "full_name", "title", "representing")
+        read_only_fields = ("id", "line_no")
+        extra_kwargs = {"full_name": {"allow_blank": True}, "title": {"allow_blank": True}, "representing": {"allow_blank": True}}
+
+
+class RevaluationLineSerializer(serializers.ModelSerializer):
+    asset_code = serializers.CharField(source="asset.code", read_only=True)
+    asset_name = serializers.CharField(source="asset.name", read_only=True)
+    department_name = serializers.CharField(source="asset.department.name", read_only=True, default="")
+    expense_account_code = serializers.CharField(source="expense_account.code", read_only=True, default="")
+    revaluation_account_code = serializers.CharField(source="revaluation_account.code", read_only=True, default="")
+
+    class Meta:
+        model = models.RevaluationLine
+        exclude = ("revaluation",)
+        read_only_fields = ("id", "line_no", "before_snapshot", "asset_transaction")
+
+
+class RevaluationEntrySerializer(serializers.ModelSerializer):
+    debit_account_code = serializers.CharField(source="debit_account.code", read_only=True)
+    credit_account_code = serializers.CharField(source="credit_account.code", read_only=True)
+    party_code = serializers.CharField(source="party.code", read_only=True, default="")
+    party_name = serializers.CharField(source="party.name", read_only=True, default="")
+    expense_item_code = serializers.CharField(source="expense_item.code", read_only=True, default="")
+    department_name = serializers.CharField(source="department.name", read_only=True, default="")
+
+    class Meta:
+        model = models.RevaluationEntry
+        exclude = ("revaluation",)
+        read_only_fields = ("id", "line_no")
+
+
+class RevaluationSerializer(serializers.ModelSerializer):
+    """UC-FA-06 document; every save runs the full rule check of `revaluation.check` in the same transaction."""
+    members = RevaluationMemberSerializer(many=True, required=False)
+    lines = RevaluationLineSerializer(many=True, required=False)
+    entries = RevaluationEntrySerializer(many=True, required=False)
+    reason_label = serializers.CharField(source="get_reason_display", read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    journal_entry_number = serializers.CharField(source="journal_entry.number", read_only=True, default="")
+    totals = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.AssetRevaluation
+        fields = "__all__"
+        read_only_fields = ("id", "status", "journal_entry", "attachments", "created_by", "posted_by", "posted_at",
+            "reversed_at", "reversal_reason", "created_at", "updated_at")
+        extra_kwargs = {"effective_date": {"required": False}, "document_date": {"required": False}, "posting_date": {"required": False}}
+        validators = []
+
+    def get_totals(self, obj):
+        # Step 33: value differences only; the change of remaining life is not money (BR27).
+        lines = obj.lines.all()
+        cost = sum((line.after_original_cost - line.before_original_cost for line in lines), 0)
+        accumulated = sum((line.after_accumulated_depreciation - line.before_accumulated_depreciation for line in lines), 0)
+        depreciable = sum((line.after_depreciable_value - line.before_depreciable_value for line in lines), 0)
+        return {"original_cost": str(cost), "accumulated_depreciation": str(accumulated),
+            "remaining_value": str(cost - accumulated), "depreciable_value": str(depreciable)}
+
+    def to_internal_value(self, data):
+        from .revaluation import MESSAGES
+        for field, code in (("number", "EF02"), ("reason", "EF07")):
+            if field in data and not str(data.get(field) or "").strip():
+                raise serializers.ValidationError({field: MESSAGES[code]})
+        if not self.instance:
+            for field, code in (("number", "EF02"), ("reason", "EF07"), ("document_date", "EF05"), ("posting_date", "EF05")):
+                if not data.get(field):
+                    raise serializers.ValidationError({field: MESSAGES[code]})
+        try:
+            return super().to_internal_value(data)
+        except serializers.ValidationError as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else {}
+            if "document_date" in detail or "posting_date" in detail:
+                raise serializers.ValidationError({"document_date": MESSAGES["EF05"]})
+            if "record_date" in detail:
+                raise serializers.ValidationError({"record_date": MESSAGES["EF04"]})
+            if "reason" in detail:
+                raise serializers.ValidationError({"reason": MESSAGES["EF07"]})
+            raise
+
+    def validate(self, attrs):
+        instance = self.instance
+        if instance and instance.status != "DRAFT":
+            # AF28: a posted document is corrected by unposting, never by editing it in place.
+            raise serializers.ValidationError("Chứng từ đã ghi sổ không được sửa trực tiếp. Vui lòng bỏ ghi sổ trước khi điều chỉnh.")
+        record_date = attrs.get("record_date", getattr(instance, "record_date", None))
+        posting_date = attrs.get("posting_date", getattr(instance, "posting_date", None))
+        if not attrs.get("effective_date"):
+            # Step 5: without a separate effective date the valuation date applies.
+            attrs["effective_date"] = record_date or posting_date
+        attrs["references"] = [str(value).strip()[:100] for value in attrs.get("references", getattr(instance, "references", []) or []) if str(value).strip()]
+        number = attrs.get("number", getattr(instance, "number", ""))
+        company = attrs.get("company", getattr(instance, "company", None))
+        if models.AssetRevaluation.objects.filter(company=company, number=number).exclude(pk=getattr(instance, "pk", None)).exists():
+            from .revaluation import MESSAGES
+            raise serializers.ValidationError({"number": MESSAGES["EF02"]})
+        seen = set()
+        for line in attrs.get("lines") or []:
+            if line["asset"].pk in seen:
+                from .revaluation import MESSAGES
+                raise serializers.ValidationError({"lines": MESSAGES["EF14"].format(code=line["asset"].code)})
+            seen.add(line["asset"].pk)
+        return attrs
+
+    def _save_children(self, revaluation, members, lines, entries):
+        from .revaluation import check
+        if members is not None:
+            revaluation.members.all().delete()
+            for index, row in enumerate(members, start=1):
+                models.RevaluationMember.objects.create(revaluation=revaluation, line_no=index, **row)
+        if lines is not None:
+            revaluation.lines.all().delete()
+            for index, row in enumerate(lines, start=1):
+                models.RevaluationLine.objects.create(revaluation=revaluation, line_no=index, **row)
+        if entries is not None:
+            revaluation.entries.all().delete()
+            for index, row in enumerate(entries, start=1):
+                models.RevaluationEntry.objects.create(revaluation=revaluation, line_no=index, **row)
+        check(revaluation, self.context["request"])
+
+    def create(self, validated_data):
+        from django.db import transaction
+        from django.db import IntegrityError
+        members, lines, entries = (validated_data.pop(key, []) for key in ("members", "lines", "entries"))
+        try:
+            with transaction.atomic():
+                revaluation = models.AssetRevaluation.objects.create(**validated_data)
+                self._save_children(revaluation, members, lines, entries)
+        except IntegrityError:
+            # BR05: two users saving the same number at the same time.
+            from .revaluation import MESSAGES
+            raise serializers.ValidationError({"number": MESSAGES["EF02"]})
+        return revaluation
+
+    def update(self, instance, validated_data):
+        from django.db import transaction
+        members, lines, entries = (validated_data.pop(key, None) for key in ("members", "lines", "entries"))
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            self._save_children(instance, members, lines, entries)
+        return instance

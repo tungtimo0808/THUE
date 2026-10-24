@@ -31,6 +31,8 @@ export interface SpecializedInvoiceModalProps {
   onClose: () => void;
   onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenCustomerModal?: () => void;
+  originalInvoices?: any[];
+  initialOriginalId?: string;
 }
 
 // 1. MODAL: HÓA ĐƠN CHIẾT KHẤU (REDESIGNED MATCHING USER SCREENSHOT 1)
@@ -64,15 +66,20 @@ export interface AdjustmentInvoiceItem {
   amount: number;
   discountRate: number;
   discountAmount: number;
+  vatRate?: number;
 }
 
 export function SaleInvoiceAdjustmentModal({
   onClose,
   onSubmit,
   onOpenCustomerModal,
+  originalInvoices = [],
+  initialOriginalId = "",
 }: SpecializedInvoiceModalProps) {
   // Top Filter
   const [targetInvoiceSearch, setTargetInvoiceSearch] = useState<string>("");
+  const [originalInvoiceId, setOriginalInvoiceId] = useState(initialOriginalId);
+  const [saving, setSaving] = useState(false);
   const [isCommercialInvoice, setIsCommercialInvoice] = useState<boolean>(false);
 
   // Master fields Left
@@ -97,7 +104,7 @@ export function SaleInvoiceAdjustmentModal({
   const [invoiceTemplate, setInvoiceTemplate] = useState<string>("");
   const [invoiceSeries, setInvoiceSeries] = useState<string>("");
   const [invoiceNo, setInvoiceNo] = useState<string>("");
-  const [invoiceDate, setInvoiceDate] = useState<string>("30/09/2026");
+  const [invoiceDate, setInvoiceDate] = useState<string>(() => new Date().toLocaleDateString("en-GB"));
 
   // Options
   const [autoCalculate, setAutoCalculate] = useState<boolean>(false);
@@ -200,13 +207,18 @@ export function SaleInvoiceAdjustmentModal({
   const totalQuantity = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0);
   const totalGoods = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
   const totalDiscount = items.reduce((s, it) => s + (Number(it.discountAmount) || 0), 0);
-  const totalVat = 0;
+  const totalVat = items.reduce((sum, item) => sum +
+    Math.max(0, Number(item.amount) - Number(item.discountAmount)) * Number(item.vatRate || 0) / 100, 0);
   const grandTotal = totalGoods - totalDiscount + totalVat;
 
   const handleSave = async (publish = false) => {
+    if (saving) return;
+    setSaving(true);
+    try {
     const saved = await onSubmit({
       invoiceType: "Hóa đơn điều chỉnh",
       targetInvoiceSearch,
+      originalInvoiceId,
       isCommercialInvoice,
       customerCode,
       customerName,
@@ -234,6 +246,7 @@ export function SaleInvoiceAdjustmentModal({
     });
     if (saved === false) return;
     onClose();
+    } finally { setSaving(false); }
   };
 
   return (
@@ -329,6 +342,24 @@ export function SaleInvoiceAdjustmentModal({
               />
               <Search size={13} style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
             </div>
+            <select aria-label="Hóa đơn gốc cần điều chỉnh" value={originalInvoiceId}
+              onChange={(event) => {
+                const original = originalInvoices.find((row) => row.id === event.target.value);
+                setOriginalInvoiceId(event.target.value);
+                if (original) {
+                  setCustomerName(original.buyer_name); setTaxCode(original.buyer_tax_code || "");
+                  setInvoiceSeries(original.invoice_series);
+                  setItems((current) => current.map((line) => ({ ...line,
+                    vatRate: Number(original.lines?.[0]?.tax_rate || 0) })));
+                }
+              }} style={{ height: 28, minWidth: 270, border: "1px solid #cbd5e1", borderRadius: 3 }}>
+              <option value="">-- Chọn hóa đơn đã phát hành --</option>
+              {originalInvoices.filter((row) => !targetInvoiceSearch ||
+                `${row.invoice_number} ${row.invoice_series} ${row.buyer_name}`.toLowerCase().includes(targetInvoiceSearch.toLowerCase()))
+                .map((row) => <option key={row.id} value={row.id}>
+                  {row.invoice_series} / {row.invoice_number} · {row.buyer_name} · {formatVND(Number(row.total_amount))} đ
+                </option>)}
+            </select>
           </div>
 
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", cursor: "pointer" }}>
@@ -526,6 +557,7 @@ export function SaleInvoiceAdjustmentModal({
                     <input
                       type="text"
                       value={adjustContent}
+                      aria-label="Nội dung điều chỉnh"
                       onChange={(e) => setAdjustContent(e.target.value)}
                       style={{ width: "100%", height: 26, padding: "0 28px 0 6px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12, boxSizing: "border-box" }}
                     />
@@ -654,6 +686,7 @@ export function SaleInvoiceAdjustmentModal({
                     <input
                       type="text"
                       value={invoiceDate}
+                      aria-label="Ngày hóa đơn điều chỉnh"
                       onChange={(e) => setInvoiceDate(e.target.value)}
                       style={{ width: "100%", height: 26, padding: "0 24px 0 6px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12, boxSizing: "border-box" }}
                     />
@@ -729,6 +762,7 @@ export function SaleInvoiceAdjustmentModal({
                 <th style={{ width: 110, padding: "4px 8px", textAlign: "right" }}>Thành tiền</th>
                 <th style={{ width: 80, padding: "4px 8px", textAlign: "right" }}>Tỷ lệ CK(%)</th>
                 <th style={{ width: 110, padding: "4px 8px", textAlign: "right" }}>Tiền chiết khấu</th>
+                <th style={{ width: 82, padding: "4px 8px", textAlign: "right" }}>Thuế GTGT %</th>
                 <th style={{ width: 36, textAlign: "center" }}></th>
               </tr>
 
@@ -744,6 +778,7 @@ export function SaleInvoiceAdjustmentModal({
                 <td style={{ textAlign: "right", padding: "0 8px" }}>{formatVND(totalGoods)}</td>
                 <td></td>
                 <td style={{ textAlign: "right", padding: "0 8px" }}>{formatVND(totalDiscount)}</td>
+                <td style={{ textAlign: "right", padding: "0 8px" }}>{formatVND(totalVat)}</td>
                 <td></td>
               </tr>
             </thead>
@@ -769,6 +804,7 @@ export function SaleInvoiceAdjustmentModal({
                     <input
                       type="text"
                       value={row.itemName}
+                      aria-label={`Tên hàng điều chỉnh dòng ${idx + 1}`}
                       onChange={(e) => handleItemChange(idx, "itemName", e.target.value)}
                       style={{ width: "100%", height: 24, border: "none", outline: "none", fontSize: 12 }}
                     />
@@ -793,6 +829,7 @@ export function SaleInvoiceAdjustmentModal({
                     <input
                       type="number"
                       value={row.quantity}
+                      aria-label={`Số lượng điều chỉnh dòng ${idx + 1}`}
                       onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 0)}
                       style={{ width: "100%", height: 24, border: "none", outline: "none", fontSize: 12, textAlign: "right" }}
                     />
@@ -801,6 +838,7 @@ export function SaleInvoiceAdjustmentModal({
                     <input
                       type="number"
                       value={row.unitPrice}
+                      aria-label={`Đơn giá điều chỉnh dòng ${idx + 1}`}
                       onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
                       style={{ width: "100%", height: 24, border: "none", outline: "none", fontSize: 12, textAlign: "right" }}
                     />
@@ -818,6 +856,11 @@ export function SaleInvoiceAdjustmentModal({
                   </td>
                   <td style={{ textAlign: "right", padding: "2px 6px" }}>
                     {formatVND(row.discountAmount)}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "2px 6px" }}>
+                    <input type="number" min="0" max="100" aria-label={`Thuế GTGT dòng ${idx + 1}`}
+                      value={row.vatRate ?? 0} onChange={(event) => handleItemChange(idx, "vatRate", Number(event.target.value))}
+                      style={{ width: "100%", height: 24, border: "none", textAlign: "right" }} />
                   </td>
                   <td style={{ textAlign: "center" }}>
                     <button
@@ -1002,6 +1045,7 @@ export function SaleInvoiceAdjustmentModal({
           <button
             type="button"
             onClick={() => handleSave(false)}
+            disabled={saving}
             style={{
               height: 30,
               padding: "0 16px",
@@ -1016,6 +1060,7 @@ export function SaleInvoiceAdjustmentModal({
           <button
             type="button"
             onClick={() => handleSave(true)}
+            disabled={saving}
             style={{
               height: 30,
               padding: "0 18px",

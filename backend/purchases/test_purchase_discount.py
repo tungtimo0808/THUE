@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from accounts_payable.models import Payable, Payment, PaymentAllocation, SupplierInvoice
 from general_ledger.models import AccountingPeriod, JournalEntry
-from inventory.models import StockBalance
+from inventory.models import InventoryTransaction, InventoryTransactionLine, StockBalance, StockMovement
 from master_data.models import TaxRate
 from purchases import test_goods_purchase
 from purchases.models import GoodsPurchase, PurchaseDiscount, PurchaseOrder, PurchaseOrderLine
@@ -52,6 +52,60 @@ class PurchaseDiscountTests(TestCase):
         self.assertEqual(submitted.status_code, 200, submitted.data)
         self.assertEqual(submitted.data["status"], "APPROVED")
         return detail, created.data
+
+    def test_inventory_value_discount_draft_post_and_unpost(self):
+        source, _, _, _ = self.original()
+        balance = StockBalance.objects.get(item=self.item)
+        before_value, before_quantity = balance.inventory_value, balance.quantity
+        payload = self.payload(source, value="50")
+        payload["reduce_stock_value"] = True
+        created = self.client.post(self.url, payload, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        balance.refresh_from_db()
+        self.assertEqual(balance.inventory_value, before_value)
+        detail = f"/api/v1/purchases/purchase-discounts/{created.data['id']}/?company_id={self.company.pk}"
+        submitted = self.client.post(detail.replace("/?", "/submit/?"), {"version": 1}, format="json")
+        self.assertEqual(submitted.status_code, 200, submitted.data)
+        posted = self.client.post(detail.replace("/?", "/post/?"), {"version": 2}, format="json")
+        self.assertEqual(posted.status_code, 200, posted.data)
+        balance.refresh_from_db()
+        self.assertEqual(balance.quantity, before_quantity)
+        self.assertEqual(balance.inventory_value, before_value - Decimal("50"))
+        self.assertTrue(posted.data["inventory_adjustment"])
+        movement = StockMovement.objects.get(transaction_id=posted.data["inventory_adjustment"])
+        self.assertEqual(movement.quantity_delta, 0)
+        self.assertEqual(movement.value_delta, Decimal("-50"))
+        report = self.client.get(f"/api/v1/inventory/balances/summary/?company_id={self.company.pk}"
+            f"&date_from={self.day}&date_to={self.day}")
+        self.assertEqual(report.status_code, 200, report.data)
+        self.assertEqual(Decimal(report.data["rows"][0]["closing_quantity"]), before_quantity)
+        self.assertEqual(Decimal(report.data["rows"][0]["closing_value"]), before_value - Decimal("50"))
+        self.assertEqual(self.client.post(detail.replace("/?", "/post/?"), {"version": 3}, format="json").status_code, 400)
+        undone = self.client.post(detail.replace("/?", "/unpost/?"), {"version": 3, "reason": "Sửa"}, format="json")
+        self.assertEqual(undone.status_code, 200, undone.data)
+        balance.refresh_from_db()
+        self.assertEqual(balance.quantity, before_quantity)
+        self.assertEqual(balance.inventory_value, before_value)
+
+    def test_inventory_value_discount_rejects_issued_source_stock(self):
+        source, _, _, _ = self.original()
+        issue = InventoryTransaction.objects.create(company=self.company, branch=self.branch,
+            number="ISSUE-DISCOUNT-TEST", transaction_type="ISSUE", transaction_date=self.day,
+            source_warehouse=self.warehouse, source_module="INV", status="POSTED", created_by=self.actor)
+        detail = InventoryTransactionLine.objects.create(transaction=issue, line_no=1, item=self.item,
+            uom=self.uom, quantity=1, base_quantity=1, line_value=Decimal("-90"))
+        StockMovement.objects.create(company=self.company, transaction=issue, line=detail,
+            warehouse=self.warehouse, item=self.item, movement_date=self.day,
+            quantity_delta=Decimal("-1"), value_delta=Decimal("-90"),
+            balance_quantity=Decimal("1"), balance_value=Decimal("90"))
+        payload = self.payload(source)
+        payload["reduce_stock_value"] = True
+        path, draft = self.create_and_submit(payload)
+        response = self.client.post(path.replace("/?", "/post/?"), {"version": 2}, format="json")
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("đã xuất", str(response.data))
+        self.assertEqual(PurchaseDiscount.objects.get(pk=draft["id"]).status, "APPROVED")
+        self.assertFalse(StockMovement.objects.filter(transaction__source_module="PUR_DISCOUNT").exists())
 
     def test_amount_post_unpost_keeps_quantities_and_stock(self):
         source, source_detail, order, order_line = self.original(order=True)

@@ -1,6 +1,6 @@
 """Checks for a direct transfer between two company bank accounts."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from rest_framework import serializers
 
@@ -48,7 +48,7 @@ def validate_transfer(attrs, instance=None):
             raise serializers.ValidationError({"details": f"Dòng {index}: TK Nợ/Có phải theo tài khoản ngân hàng đến/đi."})
         try:
             line_amount = Decimal(str(line.get("amount")))
-        except (ValueError, TypeError):
+        except (InvalidOperation, ValueError, TypeError):
             line_amount = Decimal("0")
         if not line_amount.is_finite() or line_amount <= 0:
             raise serializers.ValidationError({"details": f"Dòng {index}: số tiền phải lớn hơn 0."})

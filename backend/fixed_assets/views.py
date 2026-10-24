@@ -1,5 +1,9 @@
+import logging
+
 from django.http import Http404
+from django.utils import timezone
 from rest_framework import serializers as drf_serializers, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -9,6 +13,8 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from audit_log.models import AuditLog
 from . import models, serializers, services
 from .permissions import FixedAssetPermission
+
+logger = logging.getLogger(__name__)
 
 
 def permissions(resource):
@@ -1150,3 +1156,89 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
         company = self.request.query_params.get("company_id")
         return self.queryset.filter(company_id=company) if company else self.queryset.none()
 
+
+
+class RevaluationViewSet(CompanyViewSet):
+    """UC-FA-06 – Đánh giá lại tài sản cố định."""
+    queryset = models.AssetRevaluation.objects.select_related("company", "journal_entry", "created_by").prefetch_related(
+        "members", "lines__asset__department", "lines__expense_account", "lines__revaluation_account",
+        "entries__debit_account", "entries__credit_account", "entries__party", "entries__expense_item", "entries__department")
+    serializer_class = serializers.RevaluationSerializer
+    iam_permissions = permissions("FA.REVALUATION")
+    action_permissions = {
+        "post": "FA.REVALUATION.POST", "reverse": "FA.REVALUATION.REVERSE", "candidates": "FA.REVALUATION.VIEW",
+        "next_number": "FA.REVALUATION.VIEW", "attachments": "FA.REVALUATION.EDIT", "attachment_file": "FA.REVALUATION.VIEW",
+        "remove_attachment": "FA.REVALUATION.EDIT",
+    }
+    search_fields = ("number", "record_number", "lines__asset__code", "lines__asset__name")
+    ordering_fields = ("posting_date", "number", "created_at")
+
+    def permission_denied(self, request, message=None, code=None):
+        if self.action in {"create", "post", "update", "partial_update"}:
+            from .revaluation import MESSAGES
+            message = MESSAGES["EF01"]
+        super().permission_denied(request, message=message, code=code)
+
+    def create(self, request, *args, **kwargs):
+        # EF28: a repeated "Cất" with the same key returns the document already created.
+        key = request.data.get("idempotency_key")
+        existing = models.AssetRevaluation.objects.filter(company_id=request.data.get("company"), idempotency_key=key).first() if key else None
+        if existing:
+            return Response(self.get_serializer(existing).data, status=status.HTTP_200_OK)
+        return super().create(request, *args, **kwargs)
+
+    def perform_destroy(self, instance):
+        if instance.status != "DRAFT":
+            raise drf_serializers.ValidationError("Chỉ xóa được chứng từ chưa ghi sổ.")
+        services.audit(self.request, instance, "DELETE", before=self.get_serializer(instance).data)
+        instance.delete()
+
+    @action(detail=False, methods=("get",))
+    def candidates(self, request):
+        from django.utils.dateparse import parse_date
+        from organization.models import Company
+        from .revaluation import candidates
+        on = parse_date(request.query_params.get("date", "")) or timezone.localdate()
+        return Response(candidates(Company.objects.get(pk=request.query_params.get("company_id")), on))
+
+    @action(detail=False, methods=("get",), url_path="next-number")
+    def next_number(self, request):
+        from organization.models import Company
+        from .revaluation import next_number
+        return Response({"number": next_number(Company.objects.get(pk=request.query_params.get("company_id")))})
+
+    @action(detail=True, methods=("post",))
+    def post(self, request, pk=None):
+        from .revaluation import MESSAGES, post
+        obj = self.get_object()
+        try:
+            obj = post(obj, request)
+        except drf_serializers.ValidationError:
+            raise
+        except Exception:
+            # EF27: the transaction rolled back; nothing was recorded.
+            logger.exception("Posting revaluation %s failed", obj.pk)
+            raise drf_serializers.ValidationError(MESSAGES["EF27"])
+        return Response(self.get_serializer(obj).data)
+
+    @action(detail=True, methods=("post",))
+    def reverse(self, request, pk=None):
+        from .revaluation import reverse
+        return Response(self.get_serializer(reverse(self.get_object(), request, request.data.get("reason", ""))).data)
+
+    @action(detail=True, methods=("post",), parser_classes=(MultiPartParser, FormParser))
+    def attachments(self, request, pk=None):
+        from .revaluation import add_attachment
+        return Response(self.get_serializer(add_attachment(self.get_object(), request, request.FILES.get("file"))).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=("get",), url_path=r"attachments/(?P<attachment_id>[0-9a-f-]{36})")
+    def attachment_file(self, request, pk=None, attachment_id=None):
+        from django.http import FileResponse
+        from .revaluation import attachment_file
+        entry, handle = attachment_file(self.get_object(), attachment_id)
+        return FileResponse(handle, as_attachment=True, filename=entry["name"], content_type=entry.get("content_type") or None)
+
+    @action(detail=True, methods=("post",), url_path=r"attachments/(?P<attachment_id>[0-9a-f-]{36})/remove")
+    def remove_attachment(self, request, pk=None, attachment_id=None):
+        from .revaluation import remove_attachment
+        return Response(self.get_serializer(remove_attachment(self.get_object(), request, attachment_id)).data)

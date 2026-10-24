@@ -2,6 +2,7 @@ from decimal import Decimal
 from datetime import timedelta
 from io import BytesIO
 import json
+from pathlib import Path
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -108,10 +109,36 @@ class BankApiTests(TestCase):
   self.assertEqual(self.client.post(path,{**payload,"destination_account":self.profile},format="json").status_code,400)
   self.assertEqual(self.client.post(path,{**payload,"destination_amount":"90"},format="json").status_code,400)
   self.assertEqual(self.client.post(path,{**payload,"details":{"lines":[{**payload["details"]["lines"][0],"amount":"0"}]}},format="json").status_code,400)
+  self.assertEqual(self.client.post(path,{**payload,"details":{"lines":[{**payload["details"]["lines"][0],"amount":"invalid"}]}},format="json").status_code,400)
   saved=self.client.post(path,payload,format="json");self.assertEqual(saved.status_code,201,saved.data)
   AccountingPeriod.objects.create(company=self.company,code="OPEN",fiscal_year=self.today.year,period_number=self.today.month,start_date=self.today.replace(day=1),end_date=self.today,status="OPEN")
   failed=self.client.post(f"/api/v1/bank/transfers/{saved.data['id']}/confirm/{self.q}",{},format="json")
   self.assertEqual(failed.status_code,400);self.assertEqual(AccountProfile.objects.get(pk=p2.data["id"]).balance,Decimal("0"));self.assertFalse(JournalEntry.objects.filter(source_entity_id=saved.data["id"]).exists())
+ def test_transfer_edit_cancel_and_atomic_unpost(self):
+  p2=self.client.post(f"/api/v1/bank/accounts/{self.q}",{"account":str(self.ba2.id),"company":str(self.company.id)},format="json");self.assertEqual(p2.status_code,201,p2.data)
+  AccountingPeriod.objects.create(company=self.company,code="OPEN",fiscal_year=self.today.year,period_number=self.today.month,start_date=self.today.replace(day=1),end_date=self.today,status="OPEN")
+  source=AccountProfile.objects.get(pk=self.profile);source.balance=Decimal("1000");source.save(update_fields=("balance",))
+  payload={"company":str(self.company.id),"number":"CK-EDIT-01","source_account":self.profile,"destination_account":p2.data["id"],"transfer_date":str(self.today),"posting_date":str(self.today),"source_amount":"100","destination_amount":"100","exchange_rate":"1","description":"Transfer test","details":{"lines":[{"description":"Transfer line","debit_account":str(self.gl.id),"credit_account":str(self.gl.id),"amount":"100"}]}}
+  path=f"/api/v1/bank/transfers/{self.q}"
+  created=self.client.post(path,payload,format="json");self.assertEqual(created.status_code,201,created.data)
+  transfer_id=created.data["id"];detail=f"/api/v1/bank/transfers/{transfer_id}/{self.q}"
+  edited=self.client.patch(detail,{"version":created.data["version"],"description":"Updated transfer"},format="json");self.assertEqual(edited.status_code,200,edited.data)
+  self.assertEqual(edited.data["version"],created.data["version"]+1)
+  self.assertEqual(self.client.patch(detail,{"version":created.data["version"],"description":"Stale"},format="json").status_code,400)
+  posted=self.client.post(f"/api/v1/bank/transfers/{transfer_id}/confirm/{self.q}",{},format="json");self.assertEqual(posted.status_code,200,posted.data)
+  self.assertEqual(AccountProfile.objects.get(pk=self.profile).balance,Decimal("900"));self.assertEqual(AccountProfile.objects.get(pk=p2.data["id"]).balance,Decimal("100"))
+  self.assertEqual(self.client.post(f"/api/v1/bank/transfers/{transfer_id}/cancel/{self.q}",{},format="json").status_code,400)
+  self.assertEqual(self.client.post(f"/api/v1/bank/transfers/{transfer_id}/reverse/{self.q}",{},format="json").status_code,400)
+  reversed_response=self.client.post(f"/api/v1/bank/transfers/{transfer_id}/reverse/{self.q}",{"reason":"Correction","period":str(AccountingPeriod.objects.get(company=self.company).id),"posting_date":str(self.today)},format="json")
+  self.assertEqual(reversed_response.status_code,200,reversed_response.data);self.assertEqual(reversed_response.data["status"],"REVERSED")
+  self.assertEqual(AccountProfile.objects.get(pk=self.profile).balance,Decimal("1000"));self.assertEqual(AccountProfile.objects.get(pk=p2.data["id"]).balance,Decimal("0"))
+  self.assertEqual(JournalEntry.objects.get(source_event_id=f"BANK_TRANSFER:{transfer_id}").status,"REVERSED")
+  self.assertEqual(self.client.post(f"/api/v1/bank/transfers/{transfer_id}/reverse/{self.q}",{"reason":"Again"},format="json").status_code,400)
+  payload["number"]="CK-CANCEL-01"
+  draft=self.client.post(path,payload,format="json");self.assertEqual(draft.status_code,201,draft.data)
+  cancelled=self.client.post(f"/api/v1/bank/transfers/{draft.data['id']}/cancel/{self.q}",{},format="json");self.assertEqual(cancelled.status_code,200,cancelled.data)
+  self.assertEqual(cancelled.data["status"],"CANCELLED")
+  self.assertEqual(self.client.post(f"/api/v1/bank/transfers/{draft.data['id']}/confirm/{self.q}",{},format="json").status_code,400)
  def test_statement_preview_and_atomic_file_import(self):
   from openpyxl import Workbook
   book=Workbook();book.active.append(["Ngày","Nội dung","Thu","Chi","Mã"]);book.active.append([str(self.today),"Khách chuyển",100,0,"BANK-1"]);book.active.append([str(self.today),"Phí ngân hàng",0,20,"BANK-2"])
@@ -127,8 +154,13 @@ class BankApiTests(TestCase):
   self.assertEqual(preview.status_code,200,preview.data);self.assertEqual(preview.data["counts"],{"VALID":2,"ERROR":1,"DUPLICATE":1,"SUSPECT":0})
   payload["selected_rows"]=[2,3]
   def upload():return SimpleUploadedFile("statement.xlsx",output.getvalue(),content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+  payload["rows"][0]["amount"]="999"
+  tampered=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
+  self.assertEqual(tampered.status_code,400);self.assertEqual(StatementImport.objects.filter(company=self.company).count(),0)
+  payload["rows"][0]["amount"]="100"
   imported=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
   self.assertEqual(imported.status_code,201,imported.data);self.assertEqual(StatementLine.objects.filter(statement_id=imported.data["id"]).count(),2)
+  self.assertEqual(set(StatementLine.objects.filter(statement_id=imported.data["id"]).values_list("external_id",flat=True)),{"BANK-1","BANK-2"})
   stored=StatementImport.objects.get(pk=imported.data["id"]);self.assertTrue(stored.source_file.name)
   self.assertTrue(imported.data["source_file"].endswith(".xlsx"))
   with self.assertRaises(ValueError):stored.source_file.url
@@ -138,10 +170,13 @@ class BankApiTests(TestCase):
   self.assertEqual(JournalEntry.objects.filter(company=self.company).count(),0)
   duplicate=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
   self.assertEqual(duplicate.status_code,400);self.assertEqual(StatementImport.objects.filter(company=self.company).count(),1)
+  payload["selected_rows"]=[2];payload["unique_reference"]=False;payload["confirmed_suspects"]=[2]
+  overlap=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
+  self.assertEqual(overlap.status_code,400);self.assertEqual(StatementImport.objects.filter(company=self.company).count(),1)
  def test_statement_suspect_requires_explicit_confirmation(self):
   from openpyxl import Workbook
-  book=Workbook();book.active.append(["Ngày","Nội dung","Thu"]);output=BytesIO();book.save(output)
-  payload={"company":str(self.company.id),"account":self.profile,"currency":str(self.currency.id),"period_from":str(self.today),"period_to":str(self.today),"sheet_name":"Sheet","column_mapping":{"transaction_date":"0","description":"1","receipt":"2"},"rows":[
+  book=Workbook();book.active.append(["Ngày","Nội dung","Thu","Chi"]);book.active.append([str(self.today),"Giống nhau",50,0]);book.active.append([str(self.today),"Giống nhau",50,0]);output=BytesIO();book.save(output)
+  payload={"company":str(self.company.id),"account":self.profile,"currency":str(self.currency.id),"period_from":str(self.today),"period_to":str(self.today),"sheet_name":"Sheet","column_mapping":{"transaction_date":"0","description":"1","receipt":"2","payment":"3"},"rows":[
    {"source_row":2,"transaction_date":str(self.today),"description":"Giống nhau","direction":"CREDIT","amount":"50"},
    {"source_row":3,"transaction_date":str(self.today),"description":"Giống nhau","direction":"CREDIT","amount":"50"}],"selected_rows":[2,3]}
   preview=self.client.post(f"/api/v1/bank/statements/preview-import/{self.q}",payload,format="json")
@@ -154,13 +189,52 @@ class BankApiTests(TestCase):
   self.assertEqual(response.status_code,201,response.data);self.assertEqual(len(response.data["lines"]),2)
   repeated=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
   self.assertEqual(repeated.status_code,400);self.assertEqual(StatementImport.objects.filter(company=self.company).count(),1)
+ def test_statement_xls_source_is_verified(self):
+  content=(Path(__file__).resolve().parent/"fixtures"/"uc_bank_04_sample.xls").read_bytes()
+  payload={"company":str(self.company.id),"account":self.profile,"currency":str(self.currency.id),
+   "period_from":"2026-10-21","period_to":"2026-10-21","sheet_name":"Statement",
+   "header_row":1,"first_data_row":2,"date_format":"DMY","number_format":"US",
+   "column_mapping":{"transaction_date":"0","description":"1","receipt":"2","payment":"3"},
+   "rows":[{"source_row":2,"transaction_date":"2026-10-21","description":"XLS receipt","direction":"CREDIT","amount":"125"}],"selected_rows":[2]}
+  def upload():return SimpleUploadedFile("sample.xls",content,content_type="application/vnd.ms-excel")
+  saved=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
+  self.assertEqual(saved.status_code,201,saved.data)
+  self.assertEqual(StatementLine.objects.get(statement_id=saved.data["id"]).amount,Decimal("125"))
+  payload["rows"][0]["description"]="Forged"
+  rejected=self.client.post(f"/api/v1/bank/statements/import-file/{self.q}",{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
+  self.assertEqual(rejected.status_code,400)
+ def test_statement_balance_warning_uses_selected_rows(self):
+  from openpyxl import Workbook
+  book=Workbook();book.active.append(["Date","Description","Receipt","Payment"])
+  book.active.append([str(self.today),"First receipt",100,0]);book.active.append([str(self.today),"Second receipt",50,0])
+  output=BytesIO();book.save(output)
+  payload={"company":str(self.company.id),"account":self.profile,"currency":str(self.currency.id),
+   "period_from":str(self.today),"period_to":str(self.today),"sheet_name":"Sheet","header_row":1,"first_data_row":2,
+   "column_mapping":{"transaction_date":"0","description":"1","receipt":"2","payment":"3"},
+   "opening_balance":"0","closing_balance":"150","selected_rows":[2],
+   "rows":[{"source_row":2,"transaction_date":str(self.today),"description":"First receipt","direction":"CREDIT","amount":"100"},
+           {"source_row":3,"transaction_date":str(self.today),"description":"Second receipt","direction":"CREDIT","amount":"50"}]}
+  def upload():return SimpleUploadedFile("statement.xlsx",output.getvalue())
+  path=f"/api/v1/bank/statements/import-file/{self.q}"
+  blocked=self.client.post(path,{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
+  self.assertEqual(blocked.status_code,400);self.assertEqual(StatementImport.objects.count(),0)
+  payload["confirm_balance_warning"]=True
+  saved=self.client.post(path,{"payload":json.dumps(payload),"source_file":upload()},format="multipart")
+  self.assertEqual(saved.status_code,201,saved.data)
+  self.assertEqual(saved.data["raw_file"]["balance_difference"],"50")
  def test_statement_line_management_preserves_source_and_audits_removal(self):
   statement=StatementImport.objects.create(company=self.company,account_id=self.profile,source="FILE",source_reference="IMP-MANAGE",period_from=self.today,period_to=self.today,created_by=self.maker.iam_account)
-  line=StatementLine.objects.create(statement=statement,external_id="000123",transaction_date=self.today,direction="CREDIT",amount=Decimal("125"),currency=self.currency,reference="0009",description="Thu thử",raw_data={"source_row":2})
+  statement.raw_file={"file_name":"sao-ke.xlsx","sheet_name":"Statement"};statement.save(update_fields=("raw_file",))
+  line=StatementLine.objects.create(statement=statement,external_id="000123",transaction_date=self.today,direction="CREDIT",amount=Decimal("125"),currency=self.currency,reference="0009",description="Thu thử",raw_data={"source_row":2,"counterparty_account":"987654321","ending_balance":"125"})
   path=f"/api/v1/bank/statement-lines/{line.id}/{self.q}"
   listed=self.client.get(f"/api/v1/bank/statement-lines/{self.q}&account={self.profile}&search=000123")
   self.assertEqual(listed.status_code,200,listed.data);self.assertEqual(len(listed.data),1)
   self.assertEqual(listed.data[0]["remaining_amount"],"125.0000")
+  self.assertEqual(listed.data[0]["sheet_name"],"Statement")
+  self.assertEqual(listed.data[0]["counterparty_account"],"987654321")
+  self.assertEqual(listed.data[0]["ending_balance"],"125")
+  self.assertEqual(listed.data[0]["created_by_name"],self.maker.iam_account.display_name)
+  self.assertEqual(len(self.client.get(f"/api/v1/bank/statement-lines/{self.q}&search=987654321").data),1)
   self.assertEqual(self.client.patch(path,{"amount":"999","updated_at":""},format="json").status_code,400)
   self.assertEqual(self.client.patch(path,{"tracking_status":"NEEDS_REVIEW","updated_at":""},format="json").status_code,400)
   saved=self.client.patch(path,{"processing_note":"Cần đối chiếu","tracking_status":"NEEDS_REVIEW","review_reason":"Thiếu tên người chuyển","updated_at":""},format="json")

@@ -4,7 +4,7 @@
  */
 import { parseReportDate } from "./report-date";
 export type Row = Record<string, any>;
-export type FetchJson = (path: string, init?: { method?: string; body?: string }) => Promise<any>;
+export type FetchJson = (path: string, init?: { method?: string; body?: string | FormData }) => Promise<any>;
 
 export class FormDataError extends Error {}
 
@@ -82,6 +82,11 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
   const patch = (path: string, body: Row) => fetchJson(scoped(path), { method: "PATCH", body: JSON.stringify({ company: companyId, ...body }) });
   const action = (path: string, id: string, name: string, body: Row = {}) =>
     fetchJson(scoped(`${path}${id}/${name}/`), { method: "POST", body: JSON.stringify(body) });
+  const upload = (path: string, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return fetchJson(scoped(path), { method: "POST", body: form });
+  };
 
   async function byCode(name: string, code: unknown, label: string) {
     const wanted = String(code ?? "").trim();
@@ -99,6 +104,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
     post,
     patch,
     action,
+    upload,
     invalidate: () => cache.clear(),
     supplier: (code: unknown) => byCode("parties", code, "nhà cung cấp"),
     customer: (code: unknown) => byCode("customers", code, "khách hàng"),
@@ -429,23 +435,46 @@ export async function savePurchaseReturn(w: ApiWriter, d: Row) {
 
 /** "Giảm giá hàng mua" (PurchaseDiscountModal). */
 export async function savePurchaseDiscount(w: ApiWriter, d: Row) {
+  if (d.reduceStockValue && d.discountOption === "cash")
+    throw new FormDataError("Thu tiền mặt cần phiếu thu liên kết; hiện chỉ hỗ trợ Giảm trừ công nợ khi giảm giá trị tồn kho.");
   const supplier = await w.supplier(d.supplierCode);
   const rows = filledLines(d.items);
   const items = await Promise.all(rows.map((line) => w.item(line.code)));
-  const original = await originalPurchase(w, supplier.id, items.map((item) => item.id));
-  const result = await createAndPost(w, `${PURCHASES}purchase-discounts/`, {
+  if (!d.originalPurchaseId) throw new FormDataError("Vui lòng chọn chứng từ mua hàng nguồn.");
+  const original = (await w.list("goodsPurchases")).find((row) => row.id === d.originalPurchaseId);
+  if (!original || original.status !== "POSTED" || original.supplier !== supplier.id || original.purchase_type !== "WAREHOUSE")
+    throw new FormDataError("Chứng từ mua hàng nguồn không hợp lệ hoặc không thuộc nhà cung cấp đã chọn.");
+  const taxRates = await w.list("taxRates");
+  const selectedLines = await Promise.all(rows.map(async (line, index) => {
+    const source = (original.lines || []).find((row: Row) => row.item === items[index].id);
+    if (!source) throw new FormDataError(`Mặt hàng ${line.code} không thuộc chứng từ mua hàng nguồn.`);
+    if (num(line.quantity) <= 0 || num(line.unitPrice) < 0 || num(line.amount) <= 0)
+      throw new FormDataError(`Dòng ${index + 1}: số lượng và số tiền giảm phải hợp lệ.`);
+    if (num(line.quantity) > num(source.quantity))
+      throw new FormDataError(`Dòng ${index + 1}: số lượng tính giảm vượt số lượng mua nguồn.`);
+    const sourceRate = taxRates.find((rate) => rate.id === source.tax_rate);
+    if (num(line.vatRate) !== num(sourceRate?.rate_percent))
+      throw new FormDataError(`Dòng ${index + 1}: thuế suất phải khớp chứng từ mua nguồn (${sourceRate?.rate_percent || 0}%).`);
+    const debit = line.debtAccount ? await w.account(line.debtAccount, "TK Công nợ") : null;
+    const credit = line.stockAccount ? await w.account(line.stockAccount, "TK Kho") : null;
+    if (debit && debit.id !== source.credit_account || credit && credit.id !== source.debit_account)
+      throw new FormDataError(`Dòng ${index + 1}: tài khoản phải khớp chứng từ mua nguồn.`);
+    return { line_no: index + 1, original_line: source.id,
+      pre_tax_amount: String(num(line.amount) || num(line.quantity) * num(line.unitPrice)),
+      ...(debit ? { debit_account: debit.id } : {}), ...(credit ? { credit_account: credit.id } : {}) };
+  }));
+  const record = await w.post(`${PURCHASES}purchase-discounts/`, {
     original_purchase: original.id,
+    number: String(d.voucherCode || "").trim(),
     document_date: toApiDate(d.docDate),
     posting_date: toApiDate(d.postingDate || d.docDate),
     reason: String(d.description || "Giảm giá hàng mua"),
     method: "AMOUNT",
     handling: d.discountOption === "cash" ? "REFUND" : "REDUCE_PAYABLE",
-    lines: rows.map((line, index) => ({
-      line_no: index + 1,
-      original_line: original.lines.find((row: Row) => row.item === items[index].id).id,
-      pre_tax_amount: String(num(line.amount) || num(line.quantity) * num(line.unitPrice)),
-    })),
+    reduce_stock_value: Boolean(d.reduceStockValue),
+    lines: selectedLines,
   });
+  const result = { record, done: [] as string[], warning: "" };
   return { ...result, message: describeResult("chứng từ giảm giá hàng mua", result) };
 }
 
@@ -608,14 +637,14 @@ export async function saveSalesVoucher(w: ApiWriter, d: Row) {
   let needsWarehouse = false;
   for (const [index, line] of filledLines(d.items).entries()) {
     const item = await w.item(line.code);
-    const tracked = !isService && item.track_inventory && d.hasDeliveryNote !== false;
+    const tracked = !isService && item.track_inventory;
     needsWarehouse = needsWarehouse || tracked;
     lines.push({
       line_no: index + 1, item: item.id, uom: await w.uom(item, "sales"),
       quantity: String(num(line.quantity)), unit_price: String(num(line.unitPrice)),
       description: String(line.name || item.name),
       tax_rate: await w.taxRate(num(line.vatRate), "OUTPUT"),
-      warehouse: tracked ? (await w.stockWarehouse(item, num(line.quantity), line.stockCode || line.warehouse)).id : null,
+      warehouse: tracked && d.hasDeliveryNote !== false ? (await w.stockWarehouse(item, num(line.quantity), line.stockCode || line.warehouse)).id : null,
       receivable_or_payment_account: (await w.account(line.debitAccount || "131", "TK Nợ")).id,
       revenue_account: (await w.account(line.creditAccount || (isService ? "5113" : "5111"), "TK doanh thu")).id,
       tax_account: (await w.account(line.vatAccount || "33311", "TK thuế GTGT")).id,
@@ -627,7 +656,7 @@ export async function saveSalesVoucher(w: ApiWriter, d: Row) {
     document_date: toApiDate(d.date), posting_date: toApiDate(d.postingDate || d.date),
     customer_address: String(d.address || ""), customer_tax_code: String(d.taxCode || customer.tax_code || ""),
     payment_type: collected ? (/ngân hàng|chuyển khoản/i.test(String(d.paymentMethod)) ? "BANK" : "CASH") : "UNPAID",
-    ...(isService ? {} : { inventory_handling: needsWarehouse ? "ATTACH_ISSUE" : "NO_INVENTORY" }),
+    ...(isService ? {} : { inventory_handling: needsWarehouse ? (d.hasDeliveryNote === false ? "SEPARATE_ISSUE" : "ATTACH_ISSUE") : "NO_INVENTORY" }),
     description: String(d.description || ""), lines,
   });
   return { ...result, message: describeResult(isService ? "chứng từ bán dịch vụ" : "chứng từ bán hàng", result) };
@@ -795,6 +824,116 @@ export async function saveOtherInventoryReceipt(w: ApiWriter, d: Row) {
     destination_warehouse: warehouse.id, supplier: party?.id || null, branch: (await w.branch()).id, lines };
   const record = d.id ? await w.patch(`${path}${d.id}/`, payload) : await w.post(path, payload);
   return { record, message: `Đã lưu nháp phiếu nhập kho khác ${record.number}.` };
+}
+
+/** Form messages of UC-INV-03 (sale issue) and UC-INV-04 (other issue). */
+const ISSUE_FORM_MESSAGES = {
+  sale: {
+    number: "Vui lòng nhập số phiếu xuất.", documentDate: "Vui lòng chọn ngày chứng từ.", postingDate: "Vui lòng chọn ngày hạch toán.",
+    noLines: "Vui lòng chọn ít nhất một vật tư/hàng hóa để xuất kho.", item: "vật tư/hàng hóa không hợp lệ để xuất kho.",
+    warehouse: "vui lòng chọn kho xuất.", quantity: "số lượng xuất phải lớn hơn 0.",
+    account: "tài khoản hạch toán không hợp lệ. Vui lòng kiểm tra lại.",
+  },
+  other: {
+    number: "Vui lòng nhập số chứng từ.", documentDate: "Vui lòng nhập ngày hợp lệ theo định dạng DD/MM/YYYY.",
+    postingDate: "Vui lòng nhập ngày hợp lệ theo định dạng DD/MM/YYYY.",
+    noLines: "Vui lòng chọn ít nhất một hàng hóa cần xuất kho.", item: "vui lòng chọn mã hàng hợp lệ.",
+    warehouse: "vui lòng chọn kho xuất cho hàng hóa.", quantity: "số lượng xuất kho phải lớn hơn 0.",
+    account: "vui lòng chọn tài khoản hạch toán hợp lệ.",
+  },
+};
+
+/**
+ * "Phiếu xuất kho" for sales (UC-INV-03) and other issues (UC-INV-04). Saving keeps the voucher "Chưa ghi sổ";
+ * posting goes through submit-and-post, so a failed posting leaves an editable draft. New attachment files
+ * (`d.files`) are uploaded after the voucher is saved and before it is posted.
+ */
+export async function saveOtherInventoryIssue(w: ApiWriter, d: Row, post = false) {
+  const path = "/api/v1/inventory/transactions/";
+  const text = d.saleMode ? ISSUE_FORM_MESSAGES.sale : ISSUE_FORM_MESSAGES.other;
+  if (d.id && d.status === "PENDING_APPROVAL") throw new FormDataError("Phiếu xuất kho đang chờ duyệt, chưa thể ghi sổ.");
+  if (d.id && d.status === "POSTED") throw new FormDataError("Phiếu xuất kho đã được ghi sổ.");
+  if (d.id && ["CANCELLED", "REVERSED"].includes(d.status)) throw new FormDataError("Phiếu xuất kho đã bị hủy, không thể lưu hoặc ghi sổ.");
+  let record: Row;
+  if (d.id && d.status === "APPROVED") {
+    // Already approved: nothing left to edit, only the posting step remains.
+    record = { id: d.id, number: d.code, status: d.status };
+  } else {
+    const number = String(d.code || "").trim();
+    if (!number) throw new FormDataError(text.number);
+    const documentDate = parseReportDate(String(d.date || ""));
+    if (!documentDate) throw new FormDataError(text.documentDate);
+    const postingDate = parseReportDate(String(d.postingDate || "").slice(0, 10));
+    if (!postingDate) throw new FormDataError(text.postingDate);
+    const reason = String(d.description || "").trim();
+    if (!reason) throw new FormDataError("Vui lòng nhập lý do xuất kho.");
+    if (d.saleMode && !d.saleId) throw new FormDataError("Vui lòng chọn chứng từ bán hàng tham chiếu.");
+    const rows: Row[] = d.lines || [];
+    if (!rows.length || rows.every((row) => !String(row.itemCode || "").trim())) throw new FormDataError(text.noLines);
+    const [warehouses, items, units, accounts, parties] = await Promise.all([
+      w.list("warehouses"), w.list("items"), w.list("units"), w.list("accounts"), w.list("parties"),
+    ]);
+    const account = (code: unknown) => accounts.find((entry) => entry.code === String(code || "").trim() && entry.status === "ACTIVE" && entry.is_postable);
+    const lines: Row[] = rows.map((row, index) => {
+      const item = items.find((entry) => entry.code === String(row.itemCode || "").trim() && entry.status === "ACTIVE" && entry.track_inventory);
+      if (!item) throw new FormDataError(`Dòng ${index + 1}: ${text.item}`);
+      if (!String(row.warehouse || "").trim()) throw new FormDataError(`Dòng ${index + 1}: ${text.warehouse}`);
+      const warehouse = warehouses.find((entry) => (entry.name === row.warehouse || entry.code === row.warehouse) && entry.status === "ACTIVE" && entry.allow_issue);
+      if (!warehouse) throw new FormDataError(`Dòng ${index + 1}: kho xuất không hợp lệ. Vui lòng chọn kho khác.`);
+      const uom = units.find((entry) => entry.name === row.unit || entry.code === row.unit || entry.symbol === row.unit);
+      if (!uom) throw new FormDataError(`Dòng ${index + 1}: đơn vị tính không hợp lệ.`);
+      const quantity = Number(row.qty); const unitCost = Number(row.price);
+      if (!Number.isFinite(quantity) || quantity <= 0) throw new FormDataError(`Dòng ${index + 1}: ${text.quantity}`);
+      if (d.saleId && row.remaining !== undefined && quantity > Number(row.remaining))
+        throw new FormDataError(`Dòng ${index + 1}: số lượng xuất vượt số lượng còn lại của chứng từ bán hàng.`);
+      if (!Number.isFinite(unitCost) || unitCost < 0) throw new FormDataError(`Dòng ${index + 1}: đơn giá xuất kho không hợp lệ.`);
+      const debit = account(row.debitAcc); const credit = account(row.creditAcc);
+      if (!debit || !credit || debit.id === credit.id) throw new FormDataError(`Dòng ${index + 1}: ${text.account}`);
+      if (d.saleId && !row.saleLineId) throw new FormDataError(`Dòng ${index + 1}: hàng hóa phải được chọn từ chứng từ bán hàng.`);
+      return { line_no: index + 1, item: item.id, source_warehouse: warehouse.id, uom: uom.id,
+        quantity: String(quantity), unit_cost: String(unitCost), debit_account: debit.id, credit_account: credit.id,
+        ...(d.saleId && { sale_line: row.saleLineId }) };
+    });
+    const party = d.partnerCode ? parties.find((entry) => entry.code === String(d.partnerCode).trim()) : null;
+    if (d.partnerCode && !party) throw new FormDataError("Đối tượng không có trong danh mục.");
+    const payload = { number, transaction_type: "ISSUE", source_module: d.saleId ? "INV_SALE_ISSUE" : "INV_OTHER_ISSUE",
+      source_warehouse: lines[0].source_warehouse, branch: (await w.branch()).id,
+      document_date: documentDate, transaction_date: postingDate, reason,
+      delivery_person: String(d.deliveryPerson || ""), supplier: party?.id || null,
+      source_reference: String(d.saleId || d.reference || "").slice(0, 100),
+      document_metadata: { partner_name: String(d.partnerName || ""), partner_address: String(d.partnerAddress || ""),
+        attached_documents: String(d.attachedDocuments || "") }, lines };
+    try {
+      record = d.id ? await w.patch(`${path}${d.id}/`, payload) : await w.post(path, payload);
+    } catch (error) {
+      throw new FormDataError(`Không thể lưu phiếu xuất kho. ${errorText(error)}`);
+    }
+  }
+  const files: File[] = d.files || [];
+  let uploaded = 0;
+  for (const file of files) {
+    try {
+      record = await w.upload(`${path}${record.id}/attachments/`, file);
+      uploaded += 1;
+    } catch (error) {
+      return { record, posted: false, uploaded,
+        message: `Đã lưu phiếu xuất kho ${record.number} (Chưa ghi sổ) nhưng chưa tải được tệp ${file.name}: ${errorText(error)}` };
+    }
+  }
+  if (!post) return { record, posted: false, uploaded, message: `Lưu phiếu xuất kho thành công: ${record.number} (Chưa ghi sổ).` };
+  try {
+    const result = await w.action(path, record.id, "submit-and-post");
+    if (result.status !== "POSTED") {
+      return { record: result, posted: false, uploaded, message: `Đã lưu Phiếu xuất kho ${result.number}, đang chờ duyệt trước khi ghi sổ.` };
+    }
+    const warning = (result.warnings || []).length ? ` Lưu ý: ${result.warnings.join(" ")}` : "";
+    return { record: result, posted: true, uploaded, message: d.saleMode
+      ? `Ghi sổ thành công phiếu xuất kho ${result.number}.${warning}`
+      : `Đã lưu và ghi sổ Phiếu xuất kho ${result.number} thành công!${warning}` };
+  } catch (error) {
+    return { record, posted: false, uploaded,
+      message: `${d.saleMode ? "Ghi sổ không thành công" : "Không thể ghi sổ phiếu xuất kho"}: ${errorText(error)} Phiếu ${record.number} vẫn ở trạng thái Chưa ghi sổ.` };
+  }
 }
 
 export async function saveInventoryTransaction(w: ApiWriter, kind: keyof typeof INVENTORY_TYPES, d: Row) {
@@ -3153,10 +3292,8 @@ export async function retrySubledgerSourceCallback(w: ApiWriter, ingestionId: st
 }
 
 /**
- * ============================================================================
- * UC-GL-05 – GHI SỔ / BỎ GHI SỔ BÚT TOÁN (POST / UNPOST JOURNAL ENTRIES)
- * ============================================================================
- */
+ * ===================================================================== * UC-GL-05 – GHI SỔ / BỎ GHI SỔ BÚT TOÁN (POST / UNPOST JOURNAL ENTRIES)
+ * ===================================================================== */
 
 /** UC-GL-05 Main Flow: Ghi sổ một bút toán Sổ cái (UNPOSTED -> POSTED). */
 export async function postJournalEntry(w: ApiWriter, entryId: string, options: Row = {}) {
@@ -3254,10 +3391,8 @@ export async function unpostSubledgerJournalIngestion(w: ApiWriter, ingestionId:
 }
 
 /**
- * ============================================================================
- * UC-GL-06 – ĐIỀU CHỈNH / ĐẢO BÚT TOÁN (ADJUST / REVERSE JOURNAL ENTRIES)
- * ============================================================================
- */
+ * ===================================================================== * UC-GL-06 – ĐIỀU CHỈNH / ĐẢO BÚT TOÁN (ADJUST / REVERSE JOURNAL ENTRIES)
+ * ===================================================================== */
 
 /** UC-GL-06 (AF-01, AF-07..10): Điều chỉnh bút toán đã ghi sổ (POSTED). */
 export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) {
@@ -3877,6 +4012,16 @@ export async function saveItem(w: ApiWriter, d: Row) {
   const code = String(d.code || "").trim();
   const name = String(d.name || "").trim();
   if (!code || !name) throw new FormDataError("Cần nhập mã và tên vật tư, hàng hóa.");
+  const minimum = Number(d.minStockQty ?? 0);
+  if (!Number.isFinite(minimum) || minimum < 0 || !/^\d+(?:\.\d{1,4})?$/.test(String(d.minStockQty ?? 0)))
+    throw new FormDataError("Số lượng tồn tối thiểu phải là số không âm, tối đa 4 chữ số thập phân.");
+  if (d.recordId) {
+    const record = await w.patch(`/api/v1/master-data/items/${d.recordId}/`, {
+      version: d.version, code, name, min_stock: String(minimum),
+    });
+    w.invalidate();
+    return { record, message: `Đã cập nhật số lượng tồn tối thiểu của ${code}.` };
+  }
   const nature = String(d.nature || d.type || "");
   const itemType = /dịch vụ/i.test(nature) ? "SERVICE" : /nguyên|vật liệu|vật tư/i.test(nature) ? "MATERIAL"
     : /thành phẩm/i.test(nature) ? "FINISHED_GOOD" : "GOODS";
@@ -3892,6 +4037,7 @@ export async function saveItem(w: ApiWriter, d: Row) {
     code, name, item_type: itemType, status: "ACTIVE",
     base_uom: unit?.id || units[0]?.id || null,
     track_inventory: itemType !== "SERVICE",
+    min_stock: String(minimum),
     purchase_price: num(d.purchasePrice ?? d.unitPrice) || null,
     sales_price: num(d.salePrice ?? d.salesPrice) || null,
   });
@@ -4567,10 +4713,8 @@ export async function checkPreClosingReconciliations(w: ApiWriter, period: strin
   );
 }
 
-// =============================================================================
-// UC-GL-12 – KHÓA / BỎ KHÓA SỔ KỲ KẾ TOÁN (ACCOUNTING PERIOD CLOSE & REOPEN)
-// =============================================================================
-
+// ======================================================================// UC-GL-12 – KHÓA / BỎ KHÓA SỔ KỲ KẾ TOÁN (ACCOUNTING PERIOD CLOSE & REOPEN)
+// ======================================================================
 const GL_PERIODS = "/api/v1/general-ledger/periods/";
 
 /** UC-GL-12 (Main Flow Steps 8..21, AF-01..AF-08, EF-07..EF-14, BR-GL-LOCK-13..27): Chạy Checklist kiểm tra điều kiện trước khóa sổ kỳ kế toán. */
@@ -4674,10 +4818,8 @@ export async function runAutoPeriodLock(w: ApiWriter, d: Row = {}) {
   };
 }
 
-// =============================================================================
-// UC-GL-13 – LẬP BÁO CÁO TÀI CHÍNH (FINANCIAL STATEMENTS UNDER TT99/2025/TT-BTC)
-// =============================================================================
-
+// ======================================================================// UC-GL-13 – LẬP BÁO CÁO TÀI CHÍNH (FINANCIAL STATEMENTS UNDER TT99/2025/TT-BTC)
+// ======================================================================
 const GL_FINANCIAL_STATEMENT_MAPPINGS = "/api/v1/general-ledger/financial-statement-mappings/";
 const GL_FINANCIAL_STATEMENTS = "/api/v1/general-ledger/financial-statements/";
 
@@ -4797,10 +4939,8 @@ export async function exportFinancialStatementBatch(w: ApiWriter, batchId: strin
   );
 }
 
-// ============================================================================
-// UC-GL-14: TRA CỨU SỔ CÁI / NHẬT KÝ / TRUY VẾT CHỨNG TỪ
-// ============================================================================
-const GL_LEDGER_INQUIRY = "/api/v1/general-ledger/ledger-inquiry/";
+// =====================================================================// UC-GL-14: TRA CỨU SỔ CÁI / NHẬT KÝ / TRUY VẾT CHỨNG TỪ
+// =====================================================================const GL_LEDGER_INQUIRY = "/api/v1/general-ledger/ledger-inquiry/";
 
 /** UC-GL-14 (Main Flow Steps 1–23, AF-01..16, AF-24, EF-01..15, BR-GL-TRACE-01..34, 56..75): Tra cứu Sổ cái, Sổ nhật ký chung, Sổ chi tiết tài khoản, Bảng cân đối, Nhật ký thu/chi/mua/bán, Sổ ngoại tệ và Bút toán GL theo Thông tư 99/2025/TT-BTC. */
 export async function queryAccountingBookUcGl14(w: ApiWriter, d: Row = {}) {
@@ -4882,10 +5022,8 @@ export async function exportAccountingBookUcGl14(w: ApiWriter, d: Row = {}) {
 
 
 
-// ============================================================================
-// UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU (10 LUỒNG NGHIỆP VỤ A–J)
-// ============================================================================
-const GL_OPENING_BALANCES = "/api/v1/general-ledger/opening-balances/";
+// =====================================================================// UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU (10 LUỒNG NGHIỆP VỤ A–J)
+// =====================================================================const GL_OPENING_BALANCES = "/api/v1/general-ledger/opening-balances/";
 
 /** UC-GL-15 (MF-01..03): Truy xuất toàn bộ 10 nhóm số dư ban đầu, trạng thái cân đối Nợ/Có, tổng hợp tài khoản cha-con (BR07), version (EF-21) và trạng thái khóa kỳ (EF-19). */
 export async function fetchOpeningBalancesUcGl15(w: ApiWriter) {
@@ -4954,10 +5092,8 @@ export async function printOpeningBalanceUcGl15(w: ApiWriter, d: Row = {}) {
   return await w.post(`${GL_OPENING_BALANCES}print/`, payload);
 }
 
-// ============================================================================
-// UC-RPT-01: XEM DASHBOARD TỔNG QUAN (DASH-01 .. DASH-12)
-// ============================================================================
-const RPT_DASHBOARD = "/api/v1/reports/dashboard/";
+// =====================================================================// UC-RPT-01: XEM DASHBOARD TỔNG QUAN (DASH-01 .. DASH-12)
+// =====================================================================const RPT_DASHBOARD = "/api/v1/reports/dashboard/";
 
 function buildDashboardQueryParams(companyId: string, d: Row = {}) {
   const q = new URLSearchParams({ company_id: companyId });
@@ -5069,8 +5205,7 @@ export async function fetchDashboardMetricDetailsUcRpt01(w: ApiWriter, metricCod
   return await w.get(`${RPT_DASHBOARD}metrics/${encodeURIComponent(metricCode)}/details/?${qs}`);
 }
 
-/* ============================================================================
- * UC-RPT-02 – Xem bộ báo cáo tài chính (Financial Statement Bundles)
+/* ===================================================================== * UC-RPT-02 – Xem bộ báo cáo tài chính (Financial Statement Bundles)
  * ============================================================================ */
 
 const RPT_FS_BUNDLES = "/api/v1/reports/financial-bundles/";
@@ -5202,8 +5337,7 @@ export async function fetchFinancialStatementLineSourcesUcRpt02(
   return await w.get(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/line/${encodeURIComponent(lineId)}/sources/?${qs}`);
 }
 
-/* ============================================================================
- * UC-RPT-03 – Xem bảng cân đối kế toán / Báo cáo tình hình tài chính (B01-DN)
+/* ===================================================================== * UC-RPT-03 – Xem bảng cân đối kế toán / Báo cáo tình hình tài chính (B01-DN)
  * ============================================================================ */
 
 const RPT_FINANCIAL_POSITION = "/api/v1/reports/financial-position/";
@@ -5342,8 +5476,7 @@ export async function exportFinancialPositionRunUcRpt03(w: ApiWriter, runId: str
 
 
 
-/* ============================================================================
- * UC-RPT-04 – Xem báo cáo kết quả hoạt động kinh doanh (B02-DN / B02-DNKLT / B02a-DN / B02b-DN)
+/* ===================================================================== * UC-RPT-04 – Xem báo cáo kết quả hoạt động kinh doanh (B02-DN / B02-DNKLT / B02a-DN / B02b-DN)
  * ============================================================================ */
 
 const RPT_BUSINESS_RESULT = "/api/v1/reports/business-result/";
@@ -5494,8 +5627,7 @@ export async function exportBusinessResultRunUcRpt04(w: ApiWriter, runId: string
 
 
 
-/* ============================================================================
- * UC-RPT-05 – Xem báo cáo lưu chuyển tiền tệ (B03-DN / B03-DNKLT / B03a-DN / B03b-DN)
+/* ===================================================================== * UC-RPT-05 – Xem báo cáo lưu chuyển tiền tệ (B03-DN / B03-DNKLT / B03a-DN / B03b-DN)
  * ============================================================================ */
 
 const RPT_CASH_FLOW = "/api/v1/reports/cash-flow/";
@@ -5654,8 +5786,7 @@ export async function exportCashFlowRunUcRpt05(w: ApiWriter, runId: string, d: R
   });
 }
 
-/* ============================================================================
- * UC-RPT-06 – Xem thuyết minh báo cáo tài chính (B09-DN / B09-DNKLT / B09a-DN)
+/* ===================================================================== * UC-RPT-06 – Xem thuyết minh báo cáo tài chính (B09-DN / B09-DNKLT / B09a-DN)
  * ============================================================================ */
 
 const RPT_FINANCIAL_NOTES = "/api/v1/reports/financial-notes/";
@@ -5862,10 +5993,8 @@ export async function exportFinancialNotesRunUcRpt06(w: ApiWriter, runId: string
   });
 }
 
-// ============================================================================
-// UC-RPT-07 – Xem báo cáo thuế (Tax Reports)
-// ============================================================================
-const RPT_TAX = "/api/v1/reports/tax/";
+// =====================================================================// UC-RPT-07 – Xem báo cáo thuế (Tax Reports)
+// =====================================================================const RPT_TAX = "/api/v1/reports/tax/";
 
 export async function fetchTaxReportCatalogueUcRpt07(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -5945,10 +6074,8 @@ export async function exportTaxReportRunUcRpt07(w: ApiWriter, runId: string | nu
   });
 }
 
-// ============================================================================
-// UC-RPT-08 – Xem báo cáo mua hàng (Purchase Reports)
-// ============================================================================
-const RPT_PURCHASE = "/api/v1/reports/purchase/";
+// =====================================================================// UC-RPT-08 – Xem báo cáo mua hàng (Purchase Reports)
+// =====================================================================const RPT_PURCHASE = "/api/v1/reports/purchase/";
 
 export async function fetchPurchaseReportCatalogueUcRpt08(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -6030,10 +6157,8 @@ export async function exportPurchaseReportRunUcRpt08(w: ApiWriter, runId: string
   });
 }
 
-// ============================================================================
-// UC-RPT-09: Báo cáo bán hàng (36 báo cáo)
-// ============================================================================
-const RPT_SALES = "/api/v1/reports/sales/";
+// =====================================================================// UC-RPT-09: Báo cáo bán hàng (36 báo cáo)
+// =====================================================================const RPT_SALES = "/api/v1/reports/sales/";
 
 export async function fetchSalesReportCatalogueUcRpt09(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -6123,10 +6248,8 @@ export async function exportSalesReportRunUcRpt09(w: ApiWriter, runId: string | 
   });
 }
 
-// ============================================================================
-// UC-RPT-10: Báo cáo công nợ (49 báo cáo: 18 AP + 31 AR / Combined)
-// ============================================================================
-const RPT_DEBT = "/api/v1/reports/debt/";
+// =====================================================================// UC-RPT-10: Báo cáo công nợ (49 báo cáo: 18 AP + 31 AR / Combined)
+// =====================================================================const RPT_DEBT = "/api/v1/reports/debt/";
 
 export async function fetchDebtReportCatalogueUcRpt10(w: ApiWriter, d: Row = {}) {
   const qs = new URLSearchParams();
@@ -6226,10 +6349,8 @@ export async function exportDebtReportRunUcRpt10(w: ApiWriter, runId: string | n
   });
 }
 
-// ============================================================================
-// UC-RPT-11: Báo cáo tiền (Cash, Bank, Transfers, Loans)
-// ============================================================================
-
+// =====================================================================// UC-RPT-11: Báo cáo tiền (Cash, Bank, Transfers, Loans)
+// =====================================================================
 const RPT_MONEY = "/api/v1/reports/money/";
 
 export async function fetchMoneyReportCatalogueUcRpt11(w: ApiWriter, companyId?: string) {
@@ -6491,10 +6612,8 @@ export async function exportAssetReportRunUcRpt13(w: ApiWriter, runId: string, d
   });
 }
 
-// ============================================================================
-// UC-RPT-15: In hoặc Export báo cáo (Print & Export Reports Engine)
-// ============================================================================
-
+// =====================================================================// UC-RPT-15: In hoặc Export báo cáo (Print & Export Reports Engine)
+// =====================================================================
 const RPT_EXPORT = "/api/v1/reports/export/";
 
 export async function fetchReportExportCapabilitiesUcRpt15(w: ApiWriter, reportCode: string) {
@@ -6555,10 +6674,8 @@ export async function exportReportDetailUcRpt15(w: ApiWriter, d: Row = {}) {
   });
 }
 
-// ============================================================================
-// UC-RPT-14: Xem chi tiết số liệu báo cáo (Report Data Drill-Down & Lineage)
-// ============================================================================
-
+// =====================================================================// UC-RPT-14: Xem chi tiết số liệu báo cáo (Report Data Drill-Down & Lineage)
+// =====================================================================
 const RPT_DRILLDOWN = "/api/v1/reports/drilldown/";
 
 export async function fetchReportDrilldownCapabilitiesUcRpt14(w: ApiWriter, reportCode: string) {
@@ -6642,3 +6759,229 @@ export async function drillThroughReportUcRpt14(w: ApiWriter, d: Row = {}) {
 
 
 
+/** The three kinds of "Chuyển kho" voucher (UC-INV-05) and their backend codes. */
+export const TRANSFER_KIND_CODES: Record<string, string> = {
+  "Xuất chuyển kho nội bộ": "INTERNAL",
+  "Xuất kho kiêm vận chuyển nội bộ": "TRANSPORT",
+  "Xuất kho gửi bán đại lý": "CONSIGNMENT",
+};
+
+/**
+ * "Chuyển kho" voucher (UC-INV-05): every line names its source and destination warehouse.
+ * "Cất" saves, uploads new attachments (`d.files`) and posts with submit-and-post, so a failed posting
+ * leaves an editable draft. With `d.inTransit` the goods wait in the transit warehouse until received.
+ */
+export async function saveTransferVoucher(w: ApiWriter, d: Row, post = true) {
+  const path = "/api/v1/inventory/transactions/";
+  if (d.id && d.status === "PENDING_APPROVAL") throw new FormDataError("Chứng từ chuyển kho đang chờ duyệt, chưa thể ghi sổ.");
+  if (d.id && d.status === "POSTED") throw new FormDataError("Chứng từ chuyển kho đã được ghi sổ.");
+  if (d.id && ["CANCELLED", "REVERSED"].includes(d.status)) throw new FormDataError("Chứng từ chuyển kho đã bị hủy, không thể lưu hoặc ghi sổ.");
+  const kind = TRANSFER_KIND_CODES[String(d.transferType)] || "INTERNAL";
+  let record: Row;
+  if (d.id && d.status === "APPROVED") {
+    record = { id: d.id, number: d.code, status: d.status };
+  } else {
+    const number = String(d.code || "").trim();
+    if (!number) throw new FormDataError("Vui lòng nhập số chứng từ.");
+    const documentDate = parseReportDate(String(d.date || ""));
+    const postingDate = parseReportDate(String(d.postingDate || "").slice(0, 10));
+    if (!documentDate || !postingDate) throw new FormDataError("Vui lòng nhập ngày hợp lệ theo định dạng DD/MM/YYYY.");
+    const rows: Row[] = d.lines || [];
+    if (!rows.length || rows.every((row) => !String(row.itemCode || "").trim()))
+      throw new FormDataError("Vui lòng chọn ít nhất một hàng hóa cần chuyển kho.");
+    const [warehouses, items, units, accounts, parties] = await Promise.all([
+      w.list("warehouses"), w.list("items"), w.list("units"), w.list("accounts"), w.list("parties"),
+    ]);
+    const warehouseOf = (name: unknown) => warehouses.find((entry) => entry.name === name || entry.code === name);
+    const account = (code: unknown) => accounts.find((entry) => entry.code === String(code || "").trim() && entry.status === "ACTIVE" && entry.is_postable);
+    const lines: Row[] = rows.map((row, index) => {
+      const item = items.find((entry) => entry.code === String(row.itemCode || "").trim() && entry.status === "ACTIVE" && entry.track_inventory);
+      if (!item) throw new FormDataError(`Dòng ${index + 1}: vui lòng chọn mã hàng hợp lệ.`);
+      if (!String(row.sourceWarehouse || "").trim()) throw new FormDataError(`Dòng ${index + 1}: vui lòng chọn kho xuất cho hàng hóa.`);
+      if (!String(row.destWarehouse || "").trim()) throw new FormDataError(`Dòng ${index + 1}: vui lòng chọn kho nhập cho hàng hóa.`);
+      const source = warehouseOf(row.sourceWarehouse); const destination = warehouseOf(row.destWarehouse);
+      if (!source || !destination || source.status !== "ACTIVE" || destination.status !== "ACTIVE")
+        throw new FormDataError(`Dòng ${index + 1}: kho xuất hoặc kho nhập không hợp lệ.`);
+      if (source.id === destination.id) throw new FormDataError(`Dòng ${index + 1}: kho nhập phải khác kho xuất.`);
+      const uom = units.find((entry) => entry.name === row.unit || entry.code === row.unit || entry.symbol === row.unit) || units.find((entry) => entry.id === item.base_uom);
+      if (!uom) throw new FormDataError(`Dòng ${index + 1}: đơn vị tính không hợp lệ.`);
+      const quantity = Number(row.qty); const unitCost = Number(row.price || 0);
+      if (!Number.isFinite(quantity) || quantity <= 0) throw new FormDataError(`Dòng ${index + 1}: số lượng chuyển kho phải lớn hơn 0.`);
+      if (!Number.isFinite(unitCost) || unitCost < 0) throw new FormDataError(`Dòng ${index + 1}: đơn giá chuyển kho không hợp lệ.`);
+      const hasDebit = Boolean(String(row.debitAcc || "").trim()); const hasCredit = Boolean(String(row.creditAcc || "").trim());
+      const debit = hasDebit ? account(row.debitAcc) : null; const credit = hasCredit ? account(row.creditAcc) : null;
+      if (hasDebit !== hasCredit || hasDebit && (!debit || !credit) || kind === "CONSIGNMENT" && !debit)
+        throw new FormDataError(`Dòng ${index + 1}: vui lòng chọn tài khoản hạch toán hợp lệ.`);
+      return { line_no: index + 1, item: item.id, uom: uom.id, source_warehouse: source.id, destination_warehouse: destination.id,
+        quantity: String(quantity), unit_cost: String(unitCost), debit_account: debit?.id || null, credit_account: credit?.id || null };
+    });
+    const partyCode = kind === "CONSIGNMENT" ? d.agentCode : kind === "TRANSPORT" ? d.receiverUnitCode : "";
+    const party = partyCode ? parties.find((entry) => entry.code === String(partyCode).trim()) : null;
+    if (partyCode && !party) throw new FormDataError("Đối tượng không có trong danh mục.");
+    if (kind === "CONSIGNMENT" && !party) throw new FormDataError("Vui lòng chọn đại lý nhận hàng gửi bán.");
+    const metadata: Row = { transfer_kind: kind, in_transit: kind !== "CONSIGNMENT" && Boolean(d.inTransit) };
+    for (const [key, value] of Object.entries(d.metadata || {})) metadata[key] = String(value ?? "");
+    const payload = { number, transaction_type: "TRANSFER", source_module: "INV_TRANSFER",
+      source_warehouse: lines[0].source_warehouse, destination_warehouse: lines[0].destination_warehouse, branch: (await w.branch()).id,
+      document_date: documentDate, transaction_date: postingDate, reason: String(d.description || "").trim(),
+      delivery_person: String(d.transporterName || ""), supplier: party?.id || null,
+      source_reference: String(d.reference || "").slice(0, 100), document_metadata: metadata, lines };
+    try {
+      record = d.id ? await w.patch(`${path}${d.id}/`, payload) : await w.post(path, payload);
+    } catch (error) {
+      throw new FormDataError(`Không thể lưu chứng từ chuyển kho. ${errorText(error)}`);
+    }
+  }
+  const files: File[] = d.files || [];
+  let uploaded = 0;
+  for (const file of files) {
+    try {
+      record = await w.upload(`${path}${record.id}/attachments/`, file);
+      uploaded += 1;
+    } catch (error) {
+      return { record, posted: false, uploaded,
+        message: `Đã lưu chứng từ chuyển kho ${record.number} (Chưa ghi sổ) nhưng chưa tải được tệp ${file.name}: ${errorText(error)}` };
+    }
+  }
+  if (!post) return { record, posted: false, uploaded, message: `Đã lưu chứng từ chuyển kho ${record.number} (Chưa ghi sổ).` };
+  try {
+    const result = await w.action(path, record.id, "submit-and-post");
+    if (result.status !== "POSTED") {
+      return { record: result, posted: false, uploaded, message: `Đã lưu Phiếu chuyển kho ${result.number}, đang chờ duyệt trước khi ghi sổ.` };
+    }
+    const transit = result.document_metadata?.receipt_status === "IN_TRANSIT" ? " Hàng đang vận chuyển, chờ kho nhận xác nhận." : "";
+    return { record: result, posted: true, uploaded, message: `Đã lưu Phiếu chuyển kho ${result.number} thành công!${transit}` };
+  } catch (error) {
+    return { record, posted: false, uploaded,
+      message: `Không thể ghi sổ chứng từ chuyển kho: ${errorText(error)} Chứng từ ${record.number} vẫn ở trạng thái Chưa ghi sổ.` };
+  }
+}
+
+/** AF16: the receiving warehouse confirms the quantities that actually arrived. */
+export async function receiveTransfer(w: ApiWriter, id: string, lines: { line: string; received: number }[], acceptDiscrepancy: boolean, reason: string) {
+  if (lines.some((row) => !Number.isFinite(row.received) || row.received < 0)) throw new FormDataError("Số lượng thực nhận không hợp lệ.");
+  const record = await w.action("/api/v1/inventory/transactions/", id, "receive", {
+    lines: lines.map((row) => ({ line: row.line, received_quantity: String(row.received) })),
+    accept_discrepancy: acceptDiscrepancy, reason,
+  });
+  const differences = (record.document_metadata?.discrepancies || []).length;
+  return { record, message: differences
+    ? `Đã xác nhận nhận hàng ${record.number} với ${differences} dòng chênh lệch.`
+    : `Đã xác nhận nhận đủ hàng chuyển kho ${record.number}.` };
+}
+
+/** Reasons of UC-FA-06 as shown in the form, and their backend codes. */
+export const REVALUATION_REASON_CODES: Record<string, string> = {
+  "Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản": "UPGRADE",
+  "Đánh giá lại theo quyết định của cơ quan nhà nước": "STATE_DECISION",
+  "Đánh giá lại khi chia tách, hợp nhất, sáp nhập doanh nghiệp": "RESTRUCTURE",
+  "Đánh giá lại khi chuyển đổi loại hình doanh nghiệp": "CONVERSION",
+  "Lý do khác": "OTHER",
+};
+
+/** Backend messages without the "field:" prefixes the API error carries. */
+export function plainApiError(error: unknown) {
+  return errorText(error).replace(/(^|; )[a-z_]+: /g, "$1").replace(/(^|; )\d+: /g, "$1");
+}
+
+/**
+ * "Đánh giá lại tài sản cố định" (UC-FA-06). Cất saves the document, uploads new attachments (`d.files`)
+ * and posts it; the backend updates the asset cards, history and ledger together or not at all.
+ */
+export async function saveRevaluation(w: ApiWriter, d: Row, post = true) {
+  const path = `${FIXED_ASSETS}revaluations/`;
+  if (d.id && d.status === "POSTED") throw new FormDataError("Chứng từ đánh giá lại đã được ghi sổ.");
+  if (d.id && d.status === "REVERSED") throw new FormDataError("Chứng từ đánh giá lại đã bỏ ghi sổ, không thể sửa.");
+  const number = String(d.number || "").trim();
+  if (!number) throw new FormDataError("Số chứng từ đánh giá lại không hợp lệ hoặc đã tồn tại.");
+  const reason = REVALUATION_REASON_CODES[String(d.reason || "")] || "";
+  if (!reason) throw new FormDataError("Vui lòng chọn lý do đánh giá lại tài sản.");
+  const documentDate = parseReportDate(String(d.documentDate || ""));
+  const postingDate = parseReportDate(String(d.postingDate || ""));
+  if (!documentDate || !postingDate) throw new FormDataError("Vui lòng nhập ngày chứng từ và ngày hạch toán hợp lệ.");
+  const recordDate = String(d.recordDate || "").trim() ? parseReportDate(String(d.recordDate)) : null;
+  if (String(d.recordDate || "").trim() && !recordDate) throw new FormDataError("Ngày biên bản không hợp lệ. Vui lòng kiểm tra lại.");
+  const rows: Row[] = (d.rows || []).filter((row: Row) => String(row.assetCode || "").trim());
+  if (!rows.length) throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần đánh giá lại.");
+  const [assets, accounts, parties, expenseItems, departments] = await Promise.all([
+    w.list("assets"), w.list("accounts"), w.list("parties"),
+    w.list("/api/v1/master-data/expense-items/"), w.list("/api/v1/organization/departments/"),
+  ]);
+  const account = (code: unknown) => {
+    const wanted = String(code || "").trim();
+    if (!wanted) return null;
+    const found = accounts.find((row) => row.code === wanted && row.status === "ACTIVE" && row.is_postable);
+    if (!found) throw new FormDataError(`Tài khoản hạch toán không phù hợp với nghiệp vụ đánh giá lại. (TK ${wanted})`);
+    return found.id as string;
+  };
+  const lines = rows.map((row) => {
+    const asset = assets.find((entry) => entry.code === String(row.assetCode).trim());
+    if (!asset) throw new FormDataError(`Tài sản ${row.assetCode} không hợp lệ.`);
+    const months = Number(row.monthsAfter);
+    if (!Number.isInteger(months) || months < 0) throw new FormDataError("Thời gian sử dụng còn lại sau điều chỉnh không hợp lệ.");
+    const law = row.monthlyDeprLawAfter === "" || row.monthlyDeprLawAfter === null || row.monthlyDeprLawAfter === undefined ? null : Number(row.monthlyDeprLawAfter);
+    return {
+      asset: asset.id,
+      before_original_cost: String(num(row.origBefore)), after_original_cost: String(num(row.origAfter)),
+      before_remaining_periods: Math.round(num(row.monthsBefore)), after_remaining_periods: months,
+      before_accumulated_depreciation: String(num(row.deprBefore)), after_accumulated_depreciation: String(num(row.deprAfter)),
+      before_depreciable_value: String(num(row.valBefore)), after_depreciable_value: String(num(row.valAfter)),
+      monthly_depreciation_after: String(Math.round(num(row.monthlyDeprAfter))),
+      tax_monthly_depreciation_after: law === null ? null : String(law),
+      expense_account: account(row.costAccount), revaluation_account: account(row.revalAccount),
+    };
+  });
+  const entries = (d.entries || []).filter((row: Row) => String(row.debitAccount || "").trim() || String(row.creditAccount || "").trim() || num(row.amount))
+    .map((row: Row) => {
+      const party = String(row.objectCode || "").trim() ? parties.find((entry) => entry.code === String(row.objectCode).trim()) : null;
+      if (String(row.objectCode || "").trim() && !party) throw new FormDataError(`Đối tượng ${row.objectCode} không có trong danh mục.`);
+      const item = String(row.costItem || "").trim() ? expenseItems.find((entry) => entry.code === String(row.costItem).trim()) : null;
+      if (String(row.costItem || "").trim() && !item) throw new FormDataError(`Khoản mục chi phí ${row.costItem} không có trong danh mục.`);
+      const department = String(row.dept || "").trim() ? departments.find((entry) => entry.name === row.dept || entry.code === row.dept) : null;
+      const debit = account(row.debitAccount); const credit = account(row.creditAccount);
+      if (!debit || !credit || !(num(row.amount) > 0)) throw new FormDataError("Số tiền hạch toán không khớp với kết quả đánh giá lại.");
+      return { description: String(row.desc || ""), debit_account: debit, credit_account: credit, amount: String(num(row.amount)),
+        party: party?.id || null, expense_item: item?.id || null, department: department?.id || null };
+    });
+  const members = (d.members || []).filter((row: Row) => [row.name, row.title, row.rep].some((value) => String(value || "").trim()))
+    .map((row: Row) => ({ full_name: String(row.name || "").trim(), title: String(row.title || "").trim(), representing: String(row.rep || "").trim() }));
+  const payload = {
+    number, reason, record_number: String(d.recordNumber || "").trim(), record_date: recordDate,
+    document_date: documentDate, posting_date: postingDate, conclusion: String(d.conclusion || "").trim(),
+    references: d.references || [], cost_booked_at_source: Boolean(d.costBookedAtSource), source_reference: String(d.sourceReference || "").trim(),
+    idempotency_key: d.id ? undefined : d.idempotencyKey, members, lines, entries,
+  };
+  let record: Row;
+  try {
+    record = d.id ? await w.patch(`${path}${d.id}/`, payload) : await w.post(path, payload);
+  } catch (error) {
+    throw new FormDataError(plainApiError(error));
+  }
+  let uploaded = 0;
+  for (const file of (d.files || []) as File[]) {
+    try {
+      record = await w.upload(`${path}${record.id}/attachments/`, file);
+      uploaded += 1;
+    } catch (error) {
+      return { record, posted: false, uploaded, message: `Đã lưu chứng từ ${record.number} (Chưa ghi sổ) nhưng chưa tải được tệp ${file.name}: ${plainApiError(error)}` };
+    }
+  }
+  if (!post || record.status === "POSTED") return { record, posted: record.status === "POSTED", uploaded, message: `Đã lưu chứng từ đánh giá lại ${record.number}.` };
+  try {
+    record = await w.action(path, record.id, "post");
+    return { record, posted: true, uploaded, message: "Đánh giá lại tài sản cố định thành công." };
+  } catch (error) {
+    return { record, posted: false, uploaded, message: `${plainApiError(error)} Chứng từ ${record.number} vẫn ở trạng thái Chưa ghi sổ.` };
+  }
+}
+
+/** AF28: unpost a revaluation; the backend restores the asset values and reverses the entry. */
+export async function reverseRevaluation(w: ApiWriter, id: string, reason: string) {
+  if (!reason.trim()) throw new FormDataError("Vui lòng nhập lý do bỏ ghi sổ.");
+  try {
+    const record = await w.action(`${FIXED_ASSETS}revaluations/`, id, "reverse", { reason });
+    return { record, message: `Đã bỏ ghi sổ chứng từ đánh giá lại ${record.number}.` };
+  } catch (error) {
+    throw new FormDataError(plainApiError(error));
+  }
+}

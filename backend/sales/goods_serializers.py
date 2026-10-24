@@ -46,6 +46,7 @@ class GoodsSaleSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source="created_by.username", read_only=True)
     posted_by_name = serializers.CharField(source="posted_by.username", read_only=True)
     number = serializers.CharField(required=False, allow_blank=True)
+    issue_status = serializers.SerializerMethodField()
 
     lines = GoodsSaleLineSerializer(many=True, required=False)
 
@@ -58,7 +59,7 @@ class GoodsSaleSerializer(serializers.ModelSerializer):
             "payment_type", "payment_term", "payment_term_name", "due_date",
             "company_bank_account", "company_bank_account_number",
             "inventory_handling", "inventory_transaction", "inventory_transaction_number", "inventory_created",
-            "delivery", "tax_invoice", "tax_invoice_number", "invoice_link_notes",
+            "issue_status", "delivery", "tax_invoice", "tax_invoice_number", "invoice_link_notes",
             "subtotal", "discount_amount", "tax_amount", "total_amount",
             "status", "approval_required", "workflow_snapshot",
             "description", "notes", "attachments", "version",
@@ -82,6 +83,10 @@ class GoodsSaleSerializer(serializers.ModelSerializer):
             "currency": {"required": False},
             "exchange_rate": {"required": False},
         }
+
+    def get_issue_status(self, obj):
+        from inventory.sale_issue import sale_issue_status
+        return sale_issue_status(obj)
 
     def create(self, validated_data):
         lines_data = self.initial_data.get("lines", [])

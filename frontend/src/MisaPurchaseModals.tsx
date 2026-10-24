@@ -5406,12 +5406,18 @@ export interface PurchaseDiscountModalProps {
   onClose: () => void;
   onSubmit: (data: any) => boolean | void | Promise<boolean | void>;
   onOpenSupplierModal?: () => void;
+  purchaseSources?: Array<Record<string, any>>;
+  sourceCatalog?: { suppliers: Array<Record<string, any>>; items: Array<Record<string, any>>;
+    warehouses: Array<Record<string, any>>; accounts: Array<Record<string, any>>;
+    units: Array<Record<string, any>>; taxRates: Array<Record<string, any>> };
 }
 
 export function PurchaseDiscountModal({
   onClose,
   onSubmit,
   onOpenSupplierModal,
+  purchaseSources = [],
+  sourceCatalog,
 }: PurchaseDiscountModalProps) {
   // Option bar states (Matching Screenshots 1, 2, 3, 4)
   const [discountOption, setDiscountOption] = useState<"debt_reduction" | "cash">("debt_reduction");
@@ -5421,6 +5427,7 @@ export function PurchaseDiscountModal({
 
   // Master fields
   const [voucherCode, setVoucherCode] = useState("MGG00001");
+  const [originalPurchaseId, setOriginalPurchaseId] = useState("");
   const [supplierCode, setSupplierCode] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [address, setAddress] = useState("");
@@ -5507,6 +5514,32 @@ export function PurchaseDiscountModal({
     setShowSupplierDropdown(false);
   };
 
+  const handleSelectPurchase = (id: string) => {
+    setOriginalPurchaseId(id);
+    const purchase = purchaseSources.find((source) => source.id === id);
+    if (!purchase || !sourceCatalog) return;
+    const supplier = sourceCatalog.suppliers.find((row) => row.id === purchase.supplier);
+    if (supplier) {
+      setSupplierCode(String(supplier.code || ""));
+      setSupplierName(String(supplier.name || ""));
+      setAddress(String(supplier.address || ""));
+      setTaxCode(String(supplier.tax_code || ""));
+    }
+    setItems((purchase.lines || []).map((line: Record<string, any>, index: number) => {
+      const item = sourceCatalog.items.find((row) => row.id === line.item);
+      const warehouse = sourceCatalog.warehouses.find((row) => row.id === (line.warehouse || purchase.receiving_warehouse));
+      const debt = sourceCatalog.accounts.find((row) => row.id === line.credit_account);
+      const stock = sourceCatalog.accounts.find((row) => row.id === line.debit_account);
+      const unit = sourceCatalog.units.find((row) => row.id === line.uom);
+      const tax = sourceCatalog.taxRates.find((row) => row.id === line.tax_rate);
+      return { id: `mgg-${index}`, code: String(item?.code || ""), name: String(item?.name || ""),
+        stock: String(warehouse?.code || ""), debtAccount: String(debt?.code || "331"),
+        stockAccount: String(stock?.code || ""), unit: String(unit?.symbol || unit?.name || ""),
+        quantity: Number(line.quantity) || 1, unitPrice: 0, amount: 0,
+        vatRate: Number(tax?.rate_percent) || 0, vatAmount: 0 };
+    }));
+  };
+
   const handleItemChange = (index: number, field: string, value: any) => {
     const updated = [...items];
     const row: any = { ...updated[index], [field]: value };
@@ -5545,10 +5578,56 @@ export function PurchaseDiscountModal({
   const vatTotal = items.reduce((s, it) => s + (Number(it.vatAmount) || 0), 0);
   const grandTotal = subtotal + vatTotal;
 
+  const printDraft = (target: Window) => {
+    const paper = target.document;
+    paper.title = `Chứng từ giảm giá hàng mua ${voucherCode}`;
+    const style = paper.createElement("style");
+    style.textContent = "body{font:14px Arial,sans-serif;color:#172033;margin:40px}h1{font-size:20px;text-align:center}p{margin:6px 0}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #9ca3af;padding:8px;text-align:left}th{background:#f1f5f9}.right{text-align:right}.note{color:#64748b;margin-top:24px}";
+    paper.head.appendChild(style);
+    const heading = paper.createElement("h1");
+    heading.textContent = "CHỨNG TỪ GIẢM GIÁ HÀNG MUA";
+    paper.body.appendChild(heading);
+    const detail = (label: string, value: string) => {
+      const paragraph = paper.createElement("p");
+      paragraph.textContent = `${label}: ${value}`;
+      paper.body.appendChild(paragraph);
+    };
+    detail("Số chứng từ", voucherCode);
+    detail("Chứng từ mua nguồn", purchaseSources.find((source) => source.id === originalPurchaseId)?.number || "");
+    detail("Ngày chứng từ / Ngày hạch toán", `${docDate} / ${postingDate}`);
+    detail("Nhà cung cấp", `${supplierCode} - ${supplierName}`);
+    detail("Diễn giải", description);
+    detail("Hình thức", discountOption === "cash" ? "Thu tiền mặt" : "Giảm trừ công nợ");
+    detail("Giảm giá trị hàng nhập kho", reduceStockValue ? "Có" : "Không");
+    const table = paper.createElement("table");
+    const header = paper.createElement("tr");
+    for (const title of ["Mã hàng", "Tên hàng", "Kho", "Số lượng", "Đơn giá giảm", "Thành tiền", "Thuế GTGT"] ) {
+      const cell = paper.createElement("th"); cell.textContent = title; header.appendChild(cell);
+    }
+    table.appendChild(header);
+    for (const row of items.filter((item) => item.code)) {
+      const tr = paper.createElement("tr");
+      for (const value of [row.code, row.name, row.stock, String(row.quantity), formatVND(Number(row.unitPrice)),
+        formatVND(Number(row.amount)), formatVND(Number(row.vatAmount))]) {
+        const cell = paper.createElement("td"); cell.textContent = value; tr.appendChild(cell);
+      }
+      table.appendChild(tr);
+    }
+    paper.body.appendChild(table);
+    detail("Tổng tiền giảm", `${formatVND(grandTotal)} đ`);
+    const note = paper.createElement("p");
+    note.className = "note";
+    note.textContent = "Chứng từ đã cất, chưa ghi sổ.";
+    paper.body.appendChild(note);
+    target.setTimeout(() => target.print(), 250);
+  };
+
   const handleSave = async (andPrint = true) => {
+    const printWindow = andPrint ? window.open("", "_blank", "width=960,height=720") : null;
     const saved = await onSubmit({
       kind: "purchase_discount",
       voucherCode,
+      originalPurchaseId,
       discountOption,
       reduceStockValue,
       supplierCode,
@@ -5573,7 +5652,12 @@ export function PurchaseDiscountModal({
       grandTotal,
       andPrint,
     });
-    if (saved !== false) onClose();
+    if (saved !== false) {
+      if (printWindow) printDraft(printWindow);
+      onClose();
+    } else {
+      printWindow?.close();
+    }
   };
 
   return (
@@ -5620,18 +5704,13 @@ export function PurchaseDiscountModal({
                   boxSizing: "border-box",
                 }}
               >
-                <input
-                  type="text"
-                  placeholder="Nhập số chứng từ mua hàng"
-                  style={{
-                    border: "none",
-                    outline: "none",
-                    fontSize: 12,
-                    width: 170,
-                    background: "transparent",
-                    color: "#334155",
-                  }}
-                />
+                <select aria-label="Chứng từ mua hàng nguồn" value={originalPurchaseId}
+                  onChange={(event) => handleSelectPurchase(event.target.value)}
+                  style={{ border: "none", outline: "none", fontSize: 12, width: 190, background: "transparent", color: "#334155" }}>
+                  <option value="">Chọn chứng từ mua hàng</option>
+                  {purchaseSources.filter((source) => source.status === "POSTED").map((source) =>
+                    <option key={source.id} value={source.id}>{source.number}</option>)}
+                </select>
                 <Search size={13} style={{ color: "#64748b", cursor: "pointer" }} />
                 <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
               </div>
@@ -8182,9 +8261,6 @@ export function ReceiveInvoiceSelectModal({
   onSubmit,
   loadVouchers,
 }: ReceiveInvoiceSelectModalProps) {
-  const [invoice, setInvoice] = useState<ReceivedInvoiceInfo>({
-    invoiceTemplate: "1", invoiceSeries: "", invoiceNumber: "", invoiceDate: new Date().toLocaleDateString("en-GB"),
-  });
   // Master Filters
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [reportPeriod, setReportPeriod] = useState<string>("Tháng này");
@@ -8295,11 +8371,7 @@ export function ReceiveInvoiceSelectModal({
       setValidationError("Vui lòng chọn ít nhất một chứng từ mua hàng cần nhận hóa đơn.");
       return;
     }
-    if (loadVouchers && (!invoice.invoiceSeries.trim() || !invoice.invoiceNumber.trim() || !invoice.invoiceDate.trim())) {
-      setValidationError("Vui lòng nhập Ký hiệu, Số và Ngày hóa đơn của người bán.");
-      return;
-    }
-    await onSubmit(chosen, loadVouchers ? invoice : undefined);
+    await onSubmit(chosen);
   };
 
   const selectedCount = selectedIds.length;
@@ -8647,26 +8719,7 @@ export function ReceiveInvoiceSelectModal({
           </div>
         </div>
 
-        {loadVouchers && (
-          <div style={{ display: "flex", gap: 12, padding: "8px 18px", alignItems: "center", fontSize: 12.5, borderTop: "1px solid #e2e8f0" }}>
-            {([
-              ["invoiceTemplate", "Mẫu số", 70],
-              ["invoiceSeries", "Ký hiệu HĐ *", 110],
-              ["invoiceNumber", "Số hóa đơn *", 120],
-              ["invoiceDate", "Ngày hóa đơn *", 110],
-            ] as const).map(([field, label, width]) => (
-              <label key={field} style={{ display: "flex", alignItems: "center", gap: 6, color: "#334155" }}>
-                {label}
-                <input
-                  value={invoice[field]}
-                  onChange={(e) => { setInvoice((prev) => ({ ...prev, [field]: e.target.value })); setValidationError(null); }}
-                  placeholder={field === "invoiceDate" ? "dd/mm/yyyy" : ""}
-                  style={{ width, height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }}
-                />
-              </label>
-            ))}
-          </div>
-        )}
+        <p style={{ padding: "8px 18px", fontSize: 12.5 }}>Chứng từ được chọn chỉ làm ngữ cảnh. Hãy tải file XML hóa đơn thật tại Hộp thư hóa đơn.</p>
 
         {/* Validation warning if any */}
         {validationError && (

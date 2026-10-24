@@ -83,14 +83,29 @@ class StatementLineManagementSerializer(serializers.ModelSerializer):
     period_to=serializers.DateField(source="statement.period_to",read_only=True)
     period_confirmed=serializers.SerializerMethodField()
     file_name=serializers.SerializerMethodField()
+    sheet_name=serializers.SerializerMethodField()
+    counterparty_account=serializers.SerializerMethodField()
+    counterparty_bank=serializers.SerializerMethodField()
+    ending_balance=serializers.SerializerMethodField()
+    synced_at=serializers.SerializerMethodField()
+    created_at=serializers.DateTimeField(source="statement.created_at",read_only=True)
+    created_by_name=serializers.SerializerMethodField()
+    updated_by_name=serializers.SerializerMethodField()
     matched_amount=serializers.SerializerMethodField()
     remaining_amount=serializers.SerializerMethodField()
     linked_vouchers=serializers.SerializerMethodField()
     class Meta:
         model=models.StatementLine
-        fields=("id","statement","external_id","transaction_date","value_date","direction","amount","currency","currency_code","reference","description","counterparty","raw_data","match_status","processing_note","tracking_status","review_reason","updated_by","updated_at","source","source_reference","account","account_number","branch","period_from","period_to","period_confirmed","file_name","matched_amount","remaining_amount","linked_vouchers")
+        fields=("id","statement","external_id","transaction_date","value_date","direction","amount","currency","currency_code","reference","description","counterparty","raw_data","match_status","processing_note","tracking_status","review_reason","updated_by","updated_at","created_at","created_by_name","updated_by_name","source","source_reference","account","account_number","branch","period_from","period_to","period_confirmed","file_name","sheet_name","counterparty_account","counterparty_bank","ending_balance","synced_at","matched_amount","remaining_amount","linked_vouchers")
         read_only_fields=fields
     def get_file_name(self,obj):return obj.statement.raw_file.get("file_name","")
+    def get_sheet_name(self,obj):return obj.statement.raw_file.get("sheet_name","")
+    def get_counterparty_account(self,obj):return obj.raw_data.get("counterparty_account","")
+    def get_counterparty_bank(self,obj):return obj.raw_data.get("counterparty_bank","")
+    def get_ending_balance(self,obj):return obj.raw_data.get("ending_balance")
+    def get_synced_at(self,obj):return obj.raw_data.get("synced_at") or (obj.statement.created_at if obj.statement.source=="CONNECTOR" else None)
+    def get_created_by_name(self,obj):return getattr(obj.statement.created_by,"display_name","") if obj.statement.created_by_id else ""
+    def get_updated_by_name(self,obj):return getattr(obj.updated_by,"display_name","") if obj.updated_by_id else ""
     def get_period_confirmed(self,obj):
         from .reconciliation import period_confirmed
         return period_confirmed(obj)

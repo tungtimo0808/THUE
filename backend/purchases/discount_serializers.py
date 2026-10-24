@@ -23,18 +23,27 @@ class PurchaseDiscountLineSerializer(serializers.ModelSerializer):
 
 class PurchaseDiscountSerializer(serializers.ModelSerializer):
     lines = PurchaseDiscountLineSerializer(many=True)
+    number = serializers.CharField(required=False, allow_blank=True, max_length=80)
     adjustment_invoice = serializers.PrimaryKeyRelatedField(queryset=SupplierInvoice.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = PurchaseDiscount
         fields = "__all__"
-        read_only_fields = ("id", "company", "branch", "number", "status", "supplier", "supplier_invoice",
+        read_only_fields = ("id", "company", "branch", "status", "supplier", "supplier_invoice",
             "created_by", "submitted_at", "approved_at", "created_at", "updated_at", "version",
             "pre_tax_amount", "tax_amount", "total_amount", "adjustment_invoice_status", "journal_entry",
             "payable_adjustment", "payable_paid_before", "payable_netted_before", "posted_at",
-            "workflow_snapshot", "approval_required")
+            "workflow_snapshot", "approval_required", "inventory_adjustment")
 
     def validate(self, attrs):
+        number = str(attrs.get("number", getattr(self.instance, "number", ""))).strip()
+        if self.instance and "number" in attrs and not number:
+            raise serializers.ValidationError({"number": "Vui lòng nhập số chứng từ."})
+        if number and attrs.get("original_purchase", getattr(self.instance, "original_purchase", None)) and PurchaseDiscount.objects.filter(company=attrs.get("original_purchase", getattr(self.instance, "original_purchase", None)).company,
+                number=number).exclude(pk=getattr(self.instance, "pk", None)).exists():
+            raise serializers.ValidationError({"number": "Số chứng từ đã tồn tại."})
+        if "number" in attrs:
+            attrs["number"] = number
         original = attrs.get("original_purchase", getattr(self.instance, "original_purchase", None))
         if not original or original.status != "POSTED" or original.purchase_type == "SERVICE":
             raise serializers.ValidationError({"original_purchase": "Chứng từ mua hàng chưa được ghi sổ hoặc không còn hiệu lực."})
@@ -104,7 +113,7 @@ class PurchaseDiscountSerializer(serializers.ModelSerializer):
         Company.objects.select_for_update().get(pk=original.company_id)
         validated_data.update(company=original.company, branch=original.branch, supplier=original.supplier,
             supplier_invoice=original.supplier_invoice,
-            number=number_for(original.company, validated_data["document_date"], original.branch))
+            number=validated_data.pop("number", "") or number_for(original.company, validated_data["document_date"], original.branch))
         document = PurchaseDiscount.objects.create(**validated_data)
         save_lines(document, lines)
         return document

@@ -471,6 +471,12 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
       notify("Vui lòng nhập Mã hàng hóa, dịch vụ!");
       return;
     }
+    const minimumText = String(minStockQty).trim().replace(",", ".");
+    if (!isService && !isCombo && minimumText && !/^\d+(?:\.\d{1,4})?$/.test(minimumText)) {
+      notify(/^[-]/.test(minimumText) ? "Số lượng tồn tối thiểu không được nhỏ hơn 0."
+        : "Vui lòng nhập số lượng tồn tối thiểu hợp lệ (tối đa 4 chữ số thập phân).");
+      return;
+    }
 
     const payload: InventoryItemData = {
       id: editingItem?.id || `item-${Date.now()}`,
@@ -482,7 +488,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
       vatPolicy,
       warrantyPeriod: isService ? undefined : warrantyPeriod,
       warrantyUnit: isService ? undefined : warrantyUnit,
-      minStockQty: (isService || isCombo) ? 0 : Number(String(minStockQty).replace(",", ".")) || 0,
+      minStockQty: (isService || isCombo) ? 0 : Number(minimumText || 0),
       origin: isService ? undefined : origin,
       description: isService ? undefined : description,
       purchaseDescription: isCombo ? undefined : purchaseDescription,

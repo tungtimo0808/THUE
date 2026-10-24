@@ -96,6 +96,9 @@ import { CONTRACT_REPORT_TITLES } from "./purchase-contract-data";
 import MisaSalesSummaryReports from "./MisaSalesSummaryReports";
 import { SALES_SUMMARY_TITLES } from "./sales-summary-data";
 import AuditedReportWorkspace from "./AuditedReportWorkspace";
+import MisaInventorySummaryReport from "./MisaInventorySummaryReport";
+import MisaInventoryMultiWarehouseReport from "./MisaInventoryMultiWarehouseReport";
+import MisaInventoryDetailLedgerReport from "./MisaInventoryDetailLedgerReport";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import { canonicalReportName } from "./audited-report-schema";
 
@@ -1752,6 +1755,15 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   }
 
   const catalogueParameterDefinition = CATALOGUE_PARAMETER_DEFINITIONS.find(definition=>selectedReport && canonicalReportName(definition.name) === canonicalReportName(selectedReport));
+  if (selectedReport === "Tổng hợp tồn kho") {
+    return <MisaInventorySummaryReport onBack={() => setSelectedReport(null)} notify={notify} />;
+  }
+  if (selectedReport === "Tổng hợp nhập xuất tồn trên nhiều kho") {
+    return <MisaInventoryMultiWarehouseReport onBack={() => setSelectedReport(null)} />;
+  }
+  if (selectedReport && canonicalReportName(selectedReport) === canonicalReportName("Sổ chi tiết vật tư hàng hóa")) {
+    return <MisaInventoryDetailLedgerReport onBack={() => setSelectedReport(null)} />;
+  }
   const auditedDefinition = selectedReport ? MISA_REPORT_DEFINITIONS.find(definition => canonicalReportName(definition.name) === canonicalReportName(selectedReport)) : undefined;
   if (auditedDefinition) {
     return <AuditedReportWorkspace key={auditedDefinition.name} definition={auditedDefinition} onBack={() => setSelectedReport(null)} notify={notify} />;

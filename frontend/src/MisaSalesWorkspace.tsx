@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
-  saveCommercialInvoice, saveItem, saveSalesAllowance, saveSalesContract, saveSalesInvoice, saveSalesOrder,
-  saveSalesReturn, saveSalesVoucher, saveCustomerReceipts, saveAdjustmentInvoice, openReceivables, createApiWriter,
+  saveCommercialInvoice, saveItem, saveSalesAllowance, saveSalesContract, saveSalesOrder,
+  saveSalesReturn, saveSalesVoucher, saveCustomerReceipts, openReceivables, createApiWriter,
   toApiDate,
 } from "./misa-api-writes";
 import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
@@ -37,7 +37,6 @@ import {
   FileCheck,
   RotateCcw,
   Percent,
-  ArrowRight,
   Check,
 } from "lucide-react";
 import {
@@ -46,7 +45,7 @@ import {
 } from "./MisaInvoiceCollectionModals";
 import { AIAssistantModal } from "./MisaCashWorkspace";
 import { formatVND } from "./MisaPurchaseModals";
-import { SaleQuoteModal, SaleOrderModal, SaleContractModal, SAMPLE_SALE_ITEMS } from "./MisaSalesModals";
+import { SaleQuoteModal, SaleOrderModal, SaleContractModal } from "./MisaSalesModals";
 import {
   SaleInvoiceModal,
   SaleReturnModal,
@@ -89,6 +88,8 @@ export default function MisaSalesWorkspace({
     vouchers: "/api/v1/sales/goods-sales/",
     serviceVouchers: "/api/v1/sales/service-sales/",
     invoices: "/api/v1/sales/sales-invoices/",
+    taxInvoices: "/api/v1/tax/invoices/?direction=OUTPUT",
+    taxConnectors: "/api/v1/tax/connectors/",
     returns: "/api/v1/sales/sales-returns/",
     discounts: "/api/v1/sales/sales-allowances/",
     discountInvoices: "/api/v1/sales/discount-invoices/",
@@ -124,6 +125,13 @@ export default function MisaSalesWorkspace({
   const [showPaymentTermsModal, setShowPaymentTermsModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [editingTaxInvoiceId, setEditingTaxInvoiceId] = useState("");
+  const [previewTaxInvoice, setPreviewTaxInvoice] = useState<any>(null);
+  const [issuingTaxInvoiceId, setIssuingTaxInvoiceId] = useState("");
+  const [cancelTaxInvoice, setCancelTaxInvoice] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelCaseConfirmed, setCancelCaseConfirmed] = useState(false);
+  const [taxHistory, setTaxHistory] = useState<any>(null);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showInvoiceDiscountModal, setShowInvoiceDiscountModal] = useState(false);
@@ -131,6 +139,19 @@ export default function MisaSalesWorkspace({
   const [showInvoiceAdjustmentModal, setShowInvoiceAdjustmentModal] = useState(false);
   const [showInvoiceDropdown, setShowInvoiceDropdown] = useState(false);
   const [invoiceViewMode, setInvoiceViewMode] = useState<"landing" | "list">("landing");
+  const [salesParams, setSalesParams] = useSearchParams();
+  const correctionCreateMode = salesParams.get("create");
+  useEffect(() => {
+    if (correctionCreateMode !== "adjustment" && correctionCreateMode !== "replacement") return;
+    if (correctionCreateMode === "adjustment") setShowInvoiceAdjustmentModal(true);
+    else {
+      setIsReplacementInvoiceMode(true);
+      setShowInvoiceModal(true);
+    }
+    const next = new URLSearchParams(salesParams);
+    next.delete("create");
+    setSalesParams(next, { replace: true });
+  }, [correctionCreateMode]);
 
   // Quote view mode & selection
   const [quoteViewMode, setQuoteViewMode] = useState<"landing" | "list">("landing");
@@ -561,7 +582,18 @@ export default function MisaSalesWorkspace({
       status: row.status || "", hasInvoice: Boolean(row.tax_invoice),
       hasDeliveryNote: Boolean(row.delivery), description: row.description || "", items: [],
     })));
-    if (apiRows.invoices) setInvoices([...apiRows.invoices.map((row) => ({
+    if (apiRows.invoices && apiRows.taxInvoices) setInvoices([...(apiRows.taxInvoices || []).map((row) => ({
+      id: row.id, code: row.invoice_number || "Chưa cấp số", series: row.invoice_series || "",
+      template: row.raw_data?.invoiceTemplate || "", date: apiDate(row.invoice_date),
+      customer: row.buyer_name || "", taxCode: row.buyer_tax_code || "",
+      amount: apiNumber(row.subtotal), vat: apiNumber(row.tax_amount), total: apiNumber(row.total_amount),
+      status: row.status === "ISSUED" ? "Đã phát hành" : row.status === "ISSUING" ? "Đang phát hành"
+        : row.status === "CANCELLED" ? "Đã hủy" : row.status === "REPLACED" ? "Đã thay thế"
+        : row.status === "ADJUSTED" ? "Đã điều chỉnh"
+        : row.status === "ISSUE_FAILED" ? "Phát hành lỗi" : "Chưa phát hành",
+      type: row.invoice_type === "ADJUSTMENT" ? "Hóa đơn điều chỉnh" : row.invoice_type === "REPLACEMENT"
+        ? "Hóa đơn thay thế" : row.raw_data?.invoiceFormType || "Hóa đơn bán hàng hóa, dịch vụ trong nước",
+    })), ...apiRows.invoices.map((row) => ({
       id: row.id, code: row.invoice_number || row.number || "", series: row.invoice_series || "",
       template: row.template_code || "", date: apiDate(row.invoice_date),
       customer: customerName(row), taxCode: row.buyer_tax_code || "",
@@ -589,7 +621,51 @@ export default function MisaSalesWorkspace({
   }, [apiRows, apiConnected]);
 
   const handleSaveInvoice = async (data: any) => {
-    if (apiConnected) return apiSave((writer) => saveSalesInvoice(writer, data));
+    if (apiConnected) return apiSave(async (writer) => {
+      if (data.invoiceFormType !== "Hóa đơn bán hàng hóa, dịch vụ trong nước")
+        throw new Error("MVP hiện hỗ trợ hóa đơn đầu ra trong nước.");
+      const original = data.isReplacementInvoice && apiRows.taxInvoices?.find((row) => row.id === data.originalInvoiceId);
+      if (data.isReplacementInvoice && (!original || !["ISSUED", "ADJUSTED"].includes(original.status) ||
+        !String(data.replacementReason || "").trim()))
+        throw new Error("Chọn hóa đơn gốc đã phát hành và nhập lý do thay thế.");
+      if (!String(data.invoiceSeries || "").trim() || !String(data.customerName || "").trim())
+        throw new Error("Nhập ký hiệu hóa đơn và tên người mua.");
+      const filled = (data.items || []).filter((line: any) => String(line.itemName || line.itemCode || "").trim());
+      if (!filled.length) throw new Error("Nhập ít nhất một dòng hàng hóa hoặc dịch vụ.");
+      if (filled.some((line: any) => line.isTradeDiscount))
+        throw new Error("Hóa đơn có chiết khấu thương mại cần quy trình chiết khấu riêng.");
+      if (filled.some((line: any) => !(Number(line.quantity) > 0) ||
+        !Number.isFinite(Number(line.unitPrice)) || Number(line.unitPrice) < 0 ||
+        !Number.isFinite(Number(String(line.vatRate || "0").replace("%", "")))))
+        throw new Error("Kiểm tra số lượng, đơn giá và thuế suất từng dòng. Mức KCT cần quy trình thuế riêng.");
+      const seller = await writer.get("/api/v1/tax/invoices/output-context/");
+      const branch = await writer.branch();
+      const currency = await writer.currency("VND");
+      const payload = {
+        branch: branch.id, direction: "OUTPUT", invoice_type: data.isReplacementInvoice ? "REPLACEMENT" : "ORIGINAL",
+        ...(original ? { original_invoice: original.id } : {}),
+        invoice_series: String(data.invoiceSeries).trim(), invoice_number: String(data.invoiceNo || "").trim(),
+        invoice_date: toApiDate(data.invoiceDate), seller_name: seller.seller_name,
+        seller_tax_code: seller.seller_tax_code, buyer_name: String(data.customerName).trim(),
+        buyer_tax_code: String(data.taxCode || "").trim(), currency: currency.id,
+        exchange_rate: "1", source: "MANUAL", raw_data: {
+          invoiceFormType: data.invoiceFormType, invoiceTemplate: data.invoiceTemplate,
+          ...(original ? { correction_reason: String(data.replacementReason).trim() } : {}),
+          form: { ...data, andPrint: false },
+        },
+        lines: filled.map((line: any, index: number) => ({
+          line_no: index + 1, description: String(line.itemName || line.itemCode).trim(),
+          quantity: String(Number(line.quantity)), unit_price: String(Number(line.unitPrice)),
+          discount_amount: "0", tax_rate: String(Number(String(line.vatRate || "0").replace("%", ""))),
+        })),
+      };
+      const record = editingTaxInvoiceId
+        ? await writer.patch(`/api/v1/tax/invoices/${editingTaxInvoiceId}/`, payload)
+        : await writer.post("/api/v1/tax/invoices/", payload);
+      setEditingTaxInvoiceId("");
+      if (data.andPrint) setPreviewTaxInvoice(record);
+      return { message: `Đã lưu hóa đơn ${record.invoice_number || "chưa cấp số"} ở trạng thái chưa phát hành.` };
+    });
     setInvoices([
       {
         id: `inv-${Date.now()}`,
@@ -602,12 +678,57 @@ export default function MisaSalesWorkspace({
         amount: data.totalGoods,
         vat: data.totalTax,
         total: data.totalGrand,
-        status: data.andPrint ? "Đã phát hành" : "Chưa phát hành",
+        status: "Chưa phát hành",
         type: data.invoiceFormType,
       },
       ...invoices,
     ]);
     notify(`Đã lưu Hóa đơn bán hàng ${data.invoiceNo}!`);
+  };
+
+  const requestTaxIssue = async (invoice: any) => {
+    if (!token || issuingTaxInvoiceId) return;
+    const connector = (apiRows.taxConnectors || []).find((row) => row.is_active && row.channel === "EINVOICE");
+    if (!connector) { notify("Chưa có kết nối hóa đơn điện tử đang hoạt động. Cấu hình kết nối trước khi phát hành."); return; }
+    setIssuingTaxInvoiceId(invoice.id);
+    try {
+      if (invoice.status !== "VALIDATED") {
+        const checked = await request<any>(`/api/v1/tax/invoices/${invoice.id}/validate/?company_id=${_company.id}`,
+          token, { method: "POST", body: JSON.stringify({}) });
+        if (checked.status !== "VALIDATED") throw new Error("Hóa đơn chưa vượt qua kiểm tra dữ liệu.");
+      }
+      await request(`/api/v1/tax/invoices/${invoice.id}/issue/?company_id=${_company.id}`, token,
+        { method: "POST", body: JSON.stringify({ connector: connector.id,
+          idempotency_key: `tax-issue-${invoice.id}-${Date.now()}` }) });
+      notify("Đã lập yêu cầu phát hành. Hóa đơn đang chờ kết quả xác nhận từ hệ thống tích hợp.");
+      reloadApi();
+    } catch (error) { notify(error instanceof Error ? error.message : "Không lập được yêu cầu phát hành."); }
+    finally { setIssuingTaxInvoiceId(""); }
+  };
+
+  const openTaxInvoice = async (invoice: any) => {
+    setPreviewTaxInvoice(invoice);
+    setTaxHistory(null);
+    if (!token) return;
+    try {
+      setTaxHistory(await request<any>(`/api/v1/tax/invoices/${invoice.id}/history/?company_id=${_company.id}`, token));
+    } catch { /* The invoice preview remains available if history cannot be loaded. */ }
+  };
+
+  const requestTaxCancellation = async () => {
+    if (!token || !cancelTaxInvoice || !cancelReason.trim() || !cancelCaseConfirmed) {
+      notify("Nhập lý do và xác nhận hóa đơn chưa gửi người mua."); return;
+    }
+    const connector = (apiRows.taxConnectors || []).find((row) => row.is_active && row.channel === "EINVOICE");
+    if (!connector) { notify("Chưa có kết nối hóa đơn điện tử đang hoạt động."); return; }
+    try {
+      await request(`/api/v1/tax/invoices/${cancelTaxInvoice.id}/cancel/?company_id=${_company.id}`, token,
+        { method: "POST", body: JSON.stringify({ connector: connector.id, reason: cancelReason.trim(),
+          case_type: "NOT_SENT_TO_BUYER", idempotency_key: `tax-cancel-${cancelTaxInvoice.id}-${Date.now()}` }) });
+      notify("Đã gửi yêu cầu hủy. Hóa đơn vẫn có hiệu lực trong lúc chờ Provider xác nhận.");
+      setCancelTaxInvoice(null); setCancelReason(""); setCancelCaseConfirmed(false);
+      await openTaxInvoice(cancelTaxInvoice); reloadApi();
+    } catch (error) { notify(error instanceof Error ? error.message : "Không gửi được yêu cầu hủy."); }
   };
 
   const handleSaveDiscountInvoice = async (data: any) => {
@@ -638,7 +759,7 @@ export default function MisaSalesWorkspace({
         amount: data.totalGoods || 0,
         vat: data.totalVat || 0,
         total: data.grandTotal || 0,
-        status: data.publish ? "Đã phát hành" : "Chưa phát hành",
+        status: "Chưa phát hành",
         type: "Hóa đơn chiết khấu",
       },
       ...invoices,
@@ -669,7 +790,51 @@ export default function MisaSalesWorkspace({
   };
 
   const handleSaveAdjustmentInvoice = async (data: any) => {
-    if (apiConnected) return apiSave((writer) => saveAdjustmentInvoice(writer, data));
+    if (apiConnected) return apiSave(async (writer) => {
+      const original = apiRows.taxInvoices?.find((row) => row.id === data.originalInvoiceId);
+      if (!original || !["ISSUED", "ADJUSTED"].includes(original.status))
+        throw new Error("Chọn hóa đơn gốc đã phát hành trong danh sách.");
+      if (!String(data.adjustContent || "").trim()) throw new Error("Nhập nội dung điều chỉnh.");
+      const effect = data.adjustReason === "Điều chỉnh giảm" ? "DECREASE"
+        : data.adjustReason === "Điều chỉnh thông tin" ? "INFO" : "INCREASE";
+      const filled = (data.items || []).filter((line: any) => String(line.itemName || line.itemCode || "").trim());
+      if (effect !== "INFO" && (!filled.length || filled.some((line: any) => !(Number(line.quantity) > 0) ||
+        !(Number(line.unitPrice) > 0) || Number(line.discountAmount) > Number(line.quantity) * Number(line.unitPrice) ||
+        !Number.isFinite(Number(line.vatRate || 0)))))
+        throw new Error("Nhập dòng điều chỉnh có số lượng, giá trị và thuế suất hợp lệ.");
+      const connector = (apiRows.taxConnectors || []).find((row) => row.is_active && row.channel === "EINVOICE");
+      if (data.publish && !connector) throw new Error("Chưa có kết nối hóa đơn điện tử để phát hành. Hãy chọn Lưu để tạo nháp.");
+      const record = await writer.post("/api/v1/tax/invoices/", {
+        branch: original.branch, direction: "OUTPUT", invoice_type: "ADJUSTMENT",
+        adjustment_effect: effect, original_invoice: original.id,
+        invoice_series: String(data.invoiceSeries || original.invoice_series).trim(),
+        invoice_number: String(data.invoiceNo || "").trim(), invoice_date: toApiDate(data.invoiceDate),
+        seller_name: original.seller_name, seller_tax_code: original.seller_tax_code,
+        buyer_name: effect === "INFO" ? String(data.customerName || original.buyer_name).trim() : original.buyer_name,
+        buyer_tax_code: effect === "INFO" ? String(data.taxCode || "").trim() : original.buyer_tax_code,
+        currency: original.currency, exchange_rate: original.exchange_rate, source: "MANUAL",
+        raw_data: { correction_reason: String(data.adjustContent).trim(), adjustment_mode: effect,
+          form: { ...data, publish: false } },
+        lines: effect === "INFO" ? [{ line_no: 1, description: String(data.adjustContent).trim(),
+          quantity: "1", unit_price: "0", discount_amount: "0", tax_rate: "0" }]
+          : filled.map((line: any, index: number) => ({ line_no: index + 1,
+            description: String(line.itemName || line.itemCode).trim(), quantity: String(Number(line.quantity)),
+            unit_price: String(Number(line.unitPrice)), discount_amount: String(Number(line.discountAmount || 0)),
+            tax_rate: String(Number(line.vatRate || 0)) })),
+      });
+      if (data.publish) {
+        try {
+          const checked = await writer.post(`/api/v1/tax/invoices/${record.id}/validate/`, {});
+          if (checked.status !== "VALIDATED") throw new Error("Dữ liệu chưa đạt điều kiện phát hành.");
+          await writer.post(`/api/v1/tax/invoices/${record.id}/issue/`, {
+            connector: connector!.id, idempotency_key: `tax-adjust-${record.id}-${Date.now()}` });
+        } catch (error) {
+          return { message: `Đã lưu bản điều chỉnh ${record.invoice_number || "chưa cấp số"}; chưa gửi phát hành: ${error instanceof Error ? error.message : "lỗi kiểm tra"}.` };
+        }
+      }
+      return { message: data.publish ? "Đã gửi yêu cầu phát hành hóa đơn điều chỉnh; chờ Provider xác nhận."
+        : "Đã lưu hóa đơn điều chỉnh dạng nháp; hóa đơn gốc vẫn còn hiệu lực." };
+    });
     setInvoices([
       {
         id: `inv-${Date.now()}`,
@@ -682,7 +847,7 @@ export default function MisaSalesWorkspace({
         amount: data.totalGoods || 0,
         vat: data.totalVat || 0,
         total: data.grandTotal || 0,
-        status: data.publish ? "Đã phát hành" : "Chưa phát hành",
+        status: "Chưa phát hành",
         type: "Hóa đơn điều chỉnh",
       },
       ...invoices,
@@ -805,9 +970,14 @@ export default function MisaSalesWorkspace({
       {showInvoiceModal && (
         <SaleInvoiceModal
           initialIsReplacement={isReplacementInvoiceMode}
+          originalInvoices={(apiRows.taxInvoices || []).filter((row) => ["ISSUED", "ADJUSTED"].includes(row.status))}
+          initialData={editingTaxInvoiceId
+            ? apiRows.taxInvoices?.find((row) => row.id === editingTaxInvoiceId)?.raw_data?.form
+            : undefined}
           onClose={() => {
             setShowInvoiceModal(false);
             setIsReplacementInvoiceMode(false);
+            setEditingTaxInvoiceId("");
           }}
           onSubmit={async (data) => {
             const saved = await handleSaveInvoice(data);
@@ -817,6 +987,64 @@ export default function MisaSalesWorkspace({
           onOpenCustomerModal={() => setShowCustomerModal(true)}
         />
       )}
+      {previewTaxInvoice && <div className="tax-output-preview-backdrop" role="presentation">
+        <section className="tax-output-preview" role="dialog" aria-modal="true" aria-label="Xem trước hóa đơn đầu ra">
+          <header><strong>Bản xem trước hóa đơn · {previewTaxInvoice.status === "ISSUED" ? "Đã phát hành"
+            : previewTaxInvoice.status === "ISSUING" ? "Đang phát hành"
+            : previewTaxInvoice.status === "ADJUSTED" ? "Đã điều chỉnh"
+            : previewTaxInvoice.status === "REPLACED" ? "Đã thay thế"
+            : previewTaxInvoice.status === "CANCELLED" ? "Đã hủy" : "Chưa phát hành"}</strong>
+            <button type="button" onClick={() => setPreviewTaxInvoice(null)}>Đóng</button></header>
+          <h2>HÓA ĐƠN BÁN HÀNG</h2>
+          <p>Ký hiệu: {previewTaxInvoice.invoice_series} · Số: {previewTaxInvoice.invoice_number || "Chưa cấp số"}</p>
+          <p>Ngày: {apiDate(previewTaxInvoice.invoice_date)}</p>
+          <p>Người bán: {previewTaxInvoice.seller_name} · MST: {previewTaxInvoice.seller_tax_code}</p>
+          <p>Người mua: {previewTaxInvoice.buyer_name} · MST: {previewTaxInvoice.buyer_tax_code || "—"}</p>
+          <table><thead><tr><th>Hàng hóa, dịch vụ</th><th>Số lượng</th><th>Đơn giá</th><th>Thuế</th><th>Thành tiền</th></tr></thead>
+            <tbody>{(previewTaxInvoice.lines || []).map((line: any) => <tr key={line.id}>
+              <td>{line.description}</td><td>{line.quantity}</td><td>{formatVND(Number(line.unit_price))}</td>
+              <td>{line.tax_rate}%</td><td>{formatVND(Number(line.total_amount))}</td></tr>)}</tbody></table>
+          <p><strong>Tổng thanh toán: {formatVND(Number(previewTaxInvoice.total_amount))} đ</strong></p>
+          {previewTaxInvoice.original_invoice && <p>Hóa đơn gốc: {
+            apiRows.taxInvoices?.find((row) => row.id === previewTaxInvoice.original_invoice)?.invoice_number
+            || previewTaxInvoice.original_invoice}</p>}
+          {taxHistory && <div><strong>Lịch sử xử lý</strong>
+            {(taxHistory.corrections || []).map((row: any) => <p key={row.id}>
+              {row.type === "REPLACEMENT" ? "Thay thế" : "Điều chỉnh"}: {row.invoice_number || "Chưa cấp số"}
+              · {row.status === "ISSUED" ? "Đã phát hành" : row.status === "ISSUING" ? "Đang phát hành"
+                : row.status === "ISSUE_FAILED" ? "Phát hành lỗi" : "Bản nháp"} · {row.reason}
+            </p>)}
+            {previewTaxInvoice.status === "ADJUSTED" && <p><strong>Giá trị sau điều chỉnh: {formatVND(
+              Number(previewTaxInvoice.total_amount) + (taxHistory.corrections || []).reduce((sum: number, row: any) =>
+                row.type === "ADJUSTMENT" && row.status === "ISSUED"
+                  ? sum + (row.effect === "DECREASE" ? -1 : row.effect === "INFO" ? 0 : 1) * Number(row.total_amount)
+                  : sum, 0))} đ</strong></p>}
+            {(taxHistory.integration_requests || []).filter((row: any) => row.task_type === "CANCEL")
+              .map((row: any) => <p key={row.id}>Yêu cầu hủy: {row.status === "PENDING" ? "Đang chờ" : row.status}
+                · {row.request_payload?.reason}</p>)}
+          </div>}
+          <footer><button type="button" onClick={() => window.print()}>In bản xem trước</button>
+            {previewTaxInvoice.status === "ISSUED" && !taxHistory?.integration_requests?.some(
+              (row: any) => row.task_type === "CANCEL" && row.status === "PENDING") &&
+              <button type="button" onClick={() => { setCancelTaxInvoice(previewTaxInvoice);
+                setCancelReason(""); setCancelCaseConfirmed(false); }}>Xử lý hủy hóa đơn</button>}
+          </footer>
+        </section>
+      </div>}
+      {cancelTaxInvoice && <div className="tax-output-preview-backdrop" role="presentation">
+        <section className="tax-output-preview" role="dialog" aria-modal="true" aria-label="Xử lý hủy hóa đơn">
+          <header><strong>Xử lý hủy hóa đơn {cancelTaxInvoice.invoice_series}/{cancelTaxInvoice.invoice_number}</strong>
+            <button type="button" onClick={() => setCancelTaxInvoice(null)}>Đóng</button></header>
+          <p>Hóa đơn vẫn có hiệu lực trong lúc chờ kết quả. Chỉ gửi yêu cầu nếu hóa đơn chưa gửi người mua.</p>
+          <p>Người mua: {cancelTaxInvoice.buyer_name} · Tổng thanh toán: {formatVND(Number(cancelTaxInvoice.total_amount))} đ</p>
+          <label>Lý do hủy<input aria-label="Lý do hủy hóa đơn" value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)} /></label>
+          <label><input type="checkbox" checked={cancelCaseConfirmed}
+            onChange={(event) => setCancelCaseConfirmed(event.target.checked)} /> Tôi xác nhận hóa đơn chưa gửi người mua</label>
+          <footer><button type="button" onClick={() => setCancelTaxInvoice(null)}>Bỏ qua</button>
+            <button type="button" onClick={() => void requestTaxCancellation()}>Gửi yêu cầu hủy</button></footer>
+        </section>
+      </div>}
 
       {/* Modal: Hóa đơn chiết khấu (Screenshot 1) */}
       {showInvoiceDiscountModal && (
@@ -845,6 +1073,7 @@ export default function MisaSalesWorkspace({
       {/* Modal: Hóa đơn điều chỉnh (Screenshot 3) */}
       {showInvoiceAdjustmentModal && (
         <SaleInvoiceAdjustmentModal
+          originalInvoices={(apiRows.taxInvoices || []).filter((row) => ["ISSUED", "ADJUSTED"].includes(row.status))}
           onClose={() => setShowInvoiceAdjustmentModal(false)}
           onSubmit={handleSaveAdjustmentInvoice}
           onOpenCustomerModal={() => setShowCustomerModal(true)}
@@ -4419,6 +4648,7 @@ export default function MisaSalesWorkspace({
               <button
                 type="button"
                 onClick={() => setShowInvoiceDropdown(!showInvoiceDropdown)}
+                aria-label="Chọn loại hóa đơn"
                 style={{
                   height: 36,
                   padding: "0 8px",
@@ -4621,6 +4851,7 @@ export default function MisaSalesWorkspace({
               <button
                 type="button"
                 onClick={() => setShowInvoiceDropdown(!showInvoiceDropdown)}
+                aria-label="Chọn loại hóa đơn"
                 style={{
                   height: 32,
                   padding: "0 6px",
@@ -4830,6 +5061,13 @@ export default function MisaSalesWorkspace({
                   <tr
                     key={inv.id}
                     onClick={() => {
+                      const taxInvoice = apiRows.taxInvoices?.find((row) => row.id === inv.id);
+                      if (taxInvoice) {
+                        if (["ISSUED", "ISSUING", "ADJUSTED", "REPLACED", "CANCELLED"].includes(taxInvoice.status) ||
+                          taxInvoice.invoice_type === "ADJUSTMENT") void openTaxInvoice(taxInvoice);
+                        else { setEditingTaxInvoiceId(inv.id); setShowInvoiceModal(true); }
+                        return;
+                      }
                       if (inv.type === "Hóa đơn chiết khấu") {
                         setShowInvoiceDiscountModal(true);
                       } else if (inv.type === "Hóa đơn thương mại") {
@@ -4866,6 +5104,14 @@ export default function MisaSalesWorkspace({
                       >
                         {apiStatus("/api/v1/sales/sales-invoices/", "invoices", inv.id, inv.status, false)}
                       </span>
+                      {apiRows.taxInvoices?.some((row) => row.id === inv.id && ["DRAFT", "VALIDATED", "BLOCKED", "ISSUE_FAILED"].includes(row.status)) &&
+                        <button type="button" onClick={(event) => { event.stopPropagation();
+                          const row = apiRows.taxInvoices.find((entry) => entry.id === inv.id);
+                          if (row) void requestTaxIssue(row);
+                        }} disabled={Boolean(issuingTaxInvoiceId)}
+                          style={{ marginLeft: 6, border: "1px solid #00a862", color: "#00834d", background: "white", borderRadius: 4, cursor: "pointer" }}>
+                          {issuingTaxInvoiceId === inv.id ? "Đang gửi…" : "Phát hành"}
+                        </button>}
                     </td>
                   </tr>
                 ))}

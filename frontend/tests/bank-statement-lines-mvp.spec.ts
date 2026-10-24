@@ -9,7 +9,7 @@ test("statement lines can be searched, reviewed, and removed in reconciliation U
   })), { company });
   let deleted = false;
   let saved: Record<string, any> | null = null;
-  const line = { id: "line-1", statement: "statement-1", account, account_number: "123456789", external_id: "000123", reference: "REF-9", transaction_date: "2026-10-20", value_date: "2026-10-20", direction: "CREDIT", amount: "125.0000", currency_code: "VND", description: "Khách chuyển tiền", counterparty: "Khách A", source: "FILE", file_name: "sao-ke.xlsx", period_from: "2026-10-01", period_to: "2026-10-31", match_status: "UNMATCHED", tracking_status: saved?.tracking_status || "NORMAL", processing_note: saved?.processing_note || "", review_reason: saved?.review_reason || "", matched_amount: "0", remaining_amount: "125", linked_vouchers: [], raw_data: { source_row: 2 }, updated_at: null };
+  const line = { id: "line-1", statement: "statement-1", account, account_number: "123456789", external_id: "000123", reference: "REF-9", transaction_date: "2026-10-20", value_date: "2026-10-20", direction: "CREDIT", amount: "125.0000", currency_code: "VND", description: "Khách chuyển tiền", counterparty: "Khách A", counterparty_account: "987654321", ending_balance: "500000", source: "FILE", file_name: "sao-ke.xlsx", sheet_name: "Statement", period_from: "2026-10-01", period_to: "2026-10-31", match_status: "UNMATCHED", tracking_status: saved?.tracking_status || "NORMAL", processing_note: saved?.processing_note || "", review_reason: saved?.review_reason || "", matched_amount: "0", remaining_amount: "125", linked_vouchers: [], raw_data: { source_row: 2 }, updated_at: null };
   await page.route("**/api/v1/**", async route => {
     const path = new URL(route.request().url()).pathname;
     if (path === "/api/v1/bank/statement-lines/line-1/" && route.request().method() === "PATCH") {
@@ -30,10 +30,16 @@ test("statement lines can be searched, reviewed, and removed in reconciliation U
   await page.getByRole("button", { name: "Đối chiếu offline" }).click();
   await page.getByLabel("TK ngân hàng").selectOption(account);
   const section = page.getByRole("region", { name: "Quản lý giao dịch sao kê" });
-  await section.getByLabel("Tìm kiếm").fill("000123");
+  await section.getByLabel("Kỳ sao kê").selectOption("statement-1");
+  await section.getByLabel("Từ ngày").fill("2026-09-30");
+  await expect(section.getByText("Khoảng ngày phải nằm trong kỳ sao kê đã chọn.")).toBeVisible();
+  await section.getByLabel("Từ ngày").fill("");
+  await section.getByLabel("Tìm kiếm").fill("987654321");
   await expect(section.getByText("Khách chuyển tiền")).toBeVisible();
   await section.getByRole("button", { name: "Chi tiết" }).click();
   const dialog = page.getByRole("dialog", { name: "Chi tiết giao dịch sao kê" });
+  await expect(dialog.getByText("sao-ke.xlsx · trang Statement · dòng 2", { exact: false })).toBeVisible();
+  await expect(dialog.getByText("500.000", { exact: false })).toBeVisible();
   await dialog.getByLabel("Trạng thái theo dõi").selectOption("NEEDS_REVIEW");
   await dialog.getByRole("button", { name: "Lưu" }).click();
   await expect(dialog.getByText("Vui lòng nhập lý do cần kiểm tra.")).toBeVisible();

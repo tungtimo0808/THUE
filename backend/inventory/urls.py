@@ -9,6 +9,7 @@ router.register("transactions", views.TransactionViewSet, basename="inventory-tr
 router.register("balances", views.BalanceViewSet, basename="inventory-balance")
 router.register("movements", views.MovementViewSet, basename="inventory-movement")
 router.register("counts", views.StockCountViewSet, basename="inventory-count")
+router.register("count-resolutions", views.CountResolutionViewSet, basename="inventory-count-resolution")
 router.register("assemblies", views.AssemblyViewSet, basename="inventory-assembly")
 router.register("production-orders", production_views.ProductionOrderViewSet, basename="inventory-production-order")
 router.register("valuations", views.ValuationViewSet, basename="inventory-valuation")

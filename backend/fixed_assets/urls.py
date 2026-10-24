@@ -9,6 +9,7 @@ router.register("transactions", views.TransactionViewSet, basename="fixed-asset-
 router.register("calculations", views.CalculationRunViewSet, basename="fixed-asset-calculation")
 router.register("periods", views.PeriodViewSet, basename="fixed-asset-period")
 router.register("approvals", views.ApprovalViewSet, basename="fixed-asset-approval")
+router.register("revaluations", views.RevaluationViewSet, basename="fixed-asset-revaluation")
 router.register("counts", count_views.AssetCountViewSet, basename="fixed-asset-count")
 
 urlpatterns = router.urls
