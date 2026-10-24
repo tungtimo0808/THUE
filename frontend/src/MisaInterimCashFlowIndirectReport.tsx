@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { apiClient } from "./apiClient";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   ChevronDown,
@@ -37,7 +37,7 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
     id: "01",
     name: "1. Lợi nhuận trước thuế",
     code: "01",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
     isBold: true,
     isClickable: true,
@@ -101,7 +101,7 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
     id: "08",
     name: "3. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động",
     code: "08",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
     isBold: true,
   },
@@ -109,7 +109,7 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
     id: "09",
     name: "- Tăng, giảm các khoản phải thu",
     code: "09",
-    quarterCurrent: -32000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
     indent: true,
     isClickable: true,
@@ -118,7 +118,7 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
     id: "10",
     name: "- Tăng, giảm hàng tồn kho",
     code: "10",
-    quarterCurrent: -12475000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
     indent: true,
     isClickable: true,
@@ -127,7 +127,7 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
     id: "11",
     name: "- Tăng, giảm các khoản phải trả (không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)",
     code: "11",
-    quarterCurrent: 17000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
     indent: true,
     isClickable: true,
@@ -185,7 +185,7 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
     id: "20",
     name: "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
     code: "20",
-    quarterCurrent: -7475000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
     isBold: true,
   },
@@ -212,10 +212,10 @@ const FULL_B03A_GT_DATA: InterimCashFlowIndirectItem[] = [
   { id: "40", name: "Lưu chuyển tiền thuần từ hoạt động tài chính", code: "40", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
 
   // Tổng kết cuối kỳ
-  { id: "50", name: "Lưu chuyển tiền thuần trong kỳ (50 = 20 + 30 + 40)", code: "50", quarterCurrent: -7475000, quarterPrevious: 0, isBold: true },
+  { id: "50", name: "Lưu chuyển tiền thuần trong kỳ (50 = 20 + 30 + 40)", code: "50", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
   { id: "60", name: "Tiền và tương đương tiền đầu kỳ", code: "60", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
   { id: "61", name: "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ", code: "61", quarterCurrent: 0, quarterPrevious: 0 },
-  { id: "70", name: "Tiền và tương đương tiền cuối kỳ (70 = 50 + 60 + 61)", code: "70", note: "V.1", quarterCurrent: -7475000, quarterPrevious: 0, isBold: true },
+  { id: "70", name: "Tiền và tương đương tiền cuối kỳ (70 = 50 + 60 + 61)", code: "70", note: "V.1", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
 ];
 
 export interface MisaInterimCashFlowIndirectReportProps {
@@ -306,15 +306,46 @@ export default function MisaInterimCashFlowIndirectReport({
   const [rowsData, setRowsData] = useState<InterimCashFlowIndirectItem[]>(FULL_B03A_GT_DATA);
 
   useEffect(() => {
+    const cid = getSelectedCompanyId();
+    const query = cid
+      ? `?company_id=${cid}&template_code=B03a-DN&cash_flow_method=INDIRECT`
+      : "?template_code=B03a-DN&cash_flow_method=INDIRECT";
     apiClient
-      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
-      .then((res) => {
+      .get<any>(`/api/v1/reports/cash-flow/runs/${query}`)
+      .then(async (runsRes) => {
+        const latestRun = runsRes?.runs?.[0];
+        if (latestRun?.id) {
+          const detailRes: any = await apiClient.get(
+            `/api/v1/reports/cash-flow/runs/${latestRun.id}/${cid ? `?company_id=${cid}` : ""}`
+          );
+          if (Array.isArray(detailRes?.lines)) {
+            const lineMap: Record<string, any> = {};
+            for (const ln of detailRes.lines) {
+              lineMap[ln.indicator_code] = ln;
+            }
+            setRowsData(
+              FULL_B03A_GT_DATA.map((r) => {
+                const m = r.code ? lineMap[r.code] : null;
+                if (!m) return r;
+                const ytdCurr = m.slots_by_code?.YTD_CURRENT?.amount ?? m.current_period_amount;
+                const ytdPrev = m.slots_by_code?.YTD_PREVIOUS?.amount ?? m.comparative_period_amount;
+                return {
+                  ...r,
+                  quarterCurrent: Number(ytdCurr || 0),
+                  quarterPrevious: Number(ytdPrev || 0),
+                };
+              })
+            );
+            return;
+          }
+        }
+        const res = await apiClient.get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`);
         if (res?.b03_indirect) {
           setRowsData(
             FULL_B03A_GT_DATA.map((r) => {
               const m = r.code ? res.b03_indirect[r.code] : null;
               return m
-                ? { ...r, quarterCurrent: Number(m.current || 0), quarterPrevious: Number(m.previous || 0) }
+                ? { ...r, quarterCurrent: Number(m.currentPeriod ?? m.current ?? 0), quarterPrevious: Number(m.previousPeriod ?? m.previous ?? 0) }
                 : r;
             })
           );

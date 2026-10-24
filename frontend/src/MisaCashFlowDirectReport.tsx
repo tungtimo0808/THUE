@@ -60,7 +60,7 @@ const BASE_CASH_FLOW_DATA: CashFlowItem[] = [
     name: "2. Tiền chi trả cho người cung cấp hàng hóa và dịch vụ",
     code: "02",
     note: "",
-    currentPeriod: -10000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isClickable: true,
     accountRef: "TK 331, 156 / TK 111, 112",
@@ -115,7 +115,7 @@ const BASE_CASH_FLOW_DATA: CashFlowItem[] = [
     name: "7. Tiền chi khác cho hoạt động kinh doanh",
     code: "07",
     note: "",
-    currentPeriod: -10000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isClickable: true,
     accountRef: "TK 642, 811 / TK 111, 112",
@@ -126,7 +126,7 @@ const BASE_CASH_FLOW_DATA: CashFlowItem[] = [
     name: "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
     code: "20",
     note: "",
-    currentPeriod: -20000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
     section: "business",
@@ -309,7 +309,7 @@ const BASE_CASH_FLOW_DATA: CashFlowItem[] = [
     name: "Lưu chuyển tiền thuần trong kỳ (50 = 20 + 30 + 40)",
     code: "50",
     note: "",
-    currentPeriod: -20000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
     section: "summary",
@@ -338,7 +338,7 @@ const BASE_CASH_FLOW_DATA: CashFlowItem[] = [
     name: "Tiền và tương đương tiền cuối kỳ (70 = 50 + 60 + 61)",
     code: "70",
     note: "V.1",
-    currentPeriod: -20000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
     section: "summary",
@@ -385,30 +385,50 @@ export default function MisaCashFlowDirectReport({
   const loadReportFromBackend = useCallback(async () => {
     try {
       const cid = getSelectedCompanyId();
-      const query = cid ? `?company_id=${cid}` : "";
-      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
-      if (res && res.b03_direct) {
-        const b03 = res.b03_direct;
-        const hasActivity = Object.values(b03).some(
-          (v: any) => Number(v?.currentPeriod || 0) !== 0 || Number(v?.previousPeriod || 0) !== 0
+      const query = cid ? `?company_id=${cid}&template_code=B03-DN&cash_flow_method=DIRECT` : "?template_code=B03-DN&cash_flow_method=DIRECT";
+      const runsRes: any = await apiClient.get(`/api/v1/reports/cash-flow/runs/${query}`);
+      const latestRun = runsRes?.runs?.[0];
+      if (latestRun?.id) {
+        const detailRes: any = await apiClient.get(
+          `/api/v1/reports/cash-flow/runs/${latestRun.id}/${cid ? `?company_id=${cid}` : ""}`
         );
-        if (hasActivity) {
+        if (Array.isArray(detailRes?.lines)) {
+          const lineMap: Record<string, any> = {};
+          for (const ln of detailRes.lines) {
+            lineMap[ln.indicator_code] = ln;
+          }
           setRows(
             BASE_CASH_FLOW_DATA.map((item) => {
-              if (!item.code) return item;
-              const entry = b03[item.code];
-              if (!entry) return item;
+              if (!item.code || !lineMap[item.code]) return item;
+              const entry = lineMap[item.code];
               return {
                 ...item,
-                currentPeriod: Number(entry.currentPeriod ?? item.currentPeriod ?? 0),
-                previousPeriod: Number(entry.previousPeriod ?? item.previousPeriod ?? 0),
+                currentPeriod: Number(entry.current_period_amount ?? 0),
+                previousPeriod: Number(entry.comparative_period_amount ?? 0),
               };
             })
           );
+          return;
         }
       }
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${cid ? `?company_id=${cid}` : ""}`);
+      if (res && res.b03_direct) {
+        const b03 = res.b03_direct;
+        setRows(
+          BASE_CASH_FLOW_DATA.map((item) => {
+            if (!item.code) return item;
+            const entry = b03[item.code];
+            if (!entry) return item;
+            return {
+              ...item,
+              currentPeriod: Number(entry.currentPeriod ?? entry.current ?? 0),
+              previousPeriod: Number(entry.previousPeriod ?? entry.previous ?? 0),
+            };
+          })
+        );
+      }
     } catch {
-      // Fallback to BASE_CASH_FLOW_DATA
+      // Fallback to BASE_CASH_FLOW_DATA (all zeros)
     }
   }, []);
 

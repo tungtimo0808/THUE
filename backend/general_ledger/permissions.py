@@ -10,7 +10,11 @@ class GeneralLedgerPermission(BasePermission):
             return False
         if request.user.is_superuser:
             return True
-        company_id = request.query_params.get("company_id") or request.data.get("company")
+        company_id = (
+            request.query_params.get("company_id")
+            or request.data.get("company")
+            or request.data.get("company_id")
+        )
         if not company_id and getattr(view, "kwargs", {}).get("pk"):
             model = getattr(getattr(view, "queryset", None), "model", None)
             if model and hasattr(model, "company_id"):

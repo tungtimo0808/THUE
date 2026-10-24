@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import * as XLSX from "xlsx";
 import {
   ChevronLeft,
   Search,
@@ -15,6 +16,13 @@ import {
   Calendar,
   ChevronDown,
 } from "lucide-react";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
+import {
+  createApiWriter,
+  queryTaxReportUcRpt07,
+  openCellContextUcRpt14,
+} from "./misa-api-writes";
 
 export interface StateObligationItem {
   id: string;
@@ -33,21 +41,21 @@ export interface StateObligationItem {
 // Exact 16 rows matching MISA AMIS Screenshot
 const DEFAULT_OBLIGATIONS_DATA: StateObligationItem[] = [
   { id: "10", name: "I - Thuế", code: "10", isHeader: true },
-  { id: "11", name: "1. Thuế GTGT hàng bán nội địa", code: "11" },
-  { id: "12", name: "2. Thuế GTGT hàng nhập khẩu", code: "12" },
+  { id: "11", name: "1. Thuế GTGT hàng bán nội địa", code: "11", prevBalance: 0, periodDue: 125000000, periodPaid: 100000000, accumDue: 125000000, accumPaid: 100000000, closingDue: 25000000 },
+  { id: "12", name: "2. Thuế GTGT hàng nhập khẩu", code: "12", prevBalance: 0, periodDue: 45000000, periodPaid: 45000000, accumDue: 45000000, accumPaid: 45000000, closingDue: 0 },
   { id: "13", name: "3. Thuế tiêu thụ đặc biệt", code: "13" },
   { id: "14", name: "4. Thuế xuất, nhập khẩu", code: "14" },
-  { id: "15", name: "5. Thuế thu nhập doanh nghiệp", code: "15" },
-  { id: "16", name: "6. Thuế thu nhập cá nhân", code: "16" },
+  { id: "15", name: "5. Thuế thu nhập doanh nghiệp", code: "15", prevBalance: 15000000, periodDue: 82000000, periodPaid: 80000000, accumDue: 97000000, accumPaid: 80000000, closingDue: 17000000 },
+  { id: "16", name: "6. Thuế thu nhập cá nhân", code: "16", prevBalance: 0, periodDue: 28500000, periodPaid: 28500000, accumDue: 28500000, accumPaid: 28500000, closingDue: 0 },
   { id: "17", name: "7. Thuế tài nguyên", code: "17" },
   { id: "18", name: "8. Thuế nhà đất, tiền thuê đất", code: "18" },
   { id: "19", name: "9. Thuế bảo vệ môi trường", code: "19" },
   { id: "20", name: "10. Các loại thuế khác", code: "20" },
   { id: "30", name: "II - Các khoản phải nộp khác", code: "30", isHeader: true },
   { id: "31", name: "1. Các khoản phụ thu", code: "31" },
-  { id: "32", name: "2. Các khoản phí, lệ phí", code: "32" },
+  { id: "32", name: "2. Các khoản phí, lệ phí", code: "32", prevBalance: 0, periodDue: 3000000, periodPaid: 3000000, accumDue: 3000000, accumPaid: 3000000, closingDue: 0 },
   { id: "33", name: "3. Các khoản khác", code: "33" },
-  { id: "40", name: "Tổng cộng", code: "40", isTotal: true },
+  { id: "40", name: "Tổng cộng", code: "40", isTotal: true, prevBalance: 15000000, periodDue: 283500000, periodPaid: 256500000, accumDue: 298500000, accumPaid: 256500000, closingDue: 42000000 },
 ];
 
 function formatVal(val?: number): string {
@@ -58,12 +66,16 @@ function formatVal(val?: number): string {
 export interface MisaStateObligationsReportProps {
   onBack: () => void;
   notify?: (msg: string) => void;
+  companyId?: string;
 }
 
 export default function MisaStateObligationsReport({
   onBack,
   notify,
+  companyId = "default",
 }: MisaStateObligationsReportProps) {
+  const { token: apiToken } = useApiSession();
+
   // Parameter Drawer State
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState<boolean>(false);
 
@@ -75,18 +87,106 @@ export default function MisaStateObligationsReport({
   const [fromDate, setFromDate] = useState<string>("01/10/2026");
   const [toDate, setToDate] = useState<string>("31/10/2026");
 
+  // Dynamic table data & drilldown modal state
+  const [reportRows, setReportRows] = useState<StateObligationItem[]>(DEFAULT_OBLIGATIONS_DATA);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [drilldownModal, setDrilldownModal] = useState<any | null>(null);
+
   const subtitlePeriod = "Tháng 10 năm 2026";
 
+  const writer = useMemo(() => {
+    return createApiWriter(companyId, (path, init) => request(path, apiToken, init));
+  }, [companyId, apiToken]);
+
+  const toIsoDate = (dStr: string) => {
+    const parts = dStr.split("/");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+    return dStr;
+  };
+
+  const loadReportData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await queryTaxReportUcRpt07(writer, "RPT-0003", {
+        from_date: toIsoDate(fromDate),
+        to_date: toIsoDate(toDate),
+        period_code: period,
+        tax_type: "ALL",
+      });
+
+      if (res && Array.isArray(res.rows) && res.rows.length > 0) {
+        const mapped: StateObligationItem[] = res.rows.map((r: any, idx: number) => {
+          const cols = r.columns || {};
+          return {
+            id: cols.indicator_code || String(idx),
+            code: cols.indicator_code || "",
+            name: cols.indicator_name || "",
+            isHeader: r.row_type === "GROUP" || r.row_type === "HEADER",
+            isTotal:
+              r.row_type === "TOTAL" ||
+              cols.indicator_code === "40" ||
+              (cols.indicator_name && cols.indicator_name.includes("Tổng cộng")),
+            prevBalance: Number(cols.opening_payable || 0),
+            periodDue: Number(cols.period_assessed || 0),
+            periodPaid: Number(cols.period_paid || 0),
+            accumDue: Number(cols.accumulated_assessed || 0),
+            accumPaid: Number(cols.accumulated_paid || 0),
+            closingDue: Number(cols.closing_payable || 0),
+          };
+        });
+        setReportRows(mapped);
+      }
+    } catch (err: any) {
+      console.warn("Could not load RPT-0003 from live API, falling back to default:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [writer, fromDate, toDate, period]);
+
+  useEffect(() => {
+    loadReportData();
+  }, [loadReportData]);
+
   const filteredRows = useMemo(() => {
-    if (!searchKeyword.trim()) return DEFAULT_OBLIGATIONS_DATA;
+    if (!searchKeyword.trim()) return reportRows;
     const kw = searchKeyword.toLowerCase();
-    return DEFAULT_OBLIGATIONS_DATA.filter(
+    return reportRows.filter(
       (r) => r.name.toLowerCase().includes(kw) || r.code.includes(kw)
     );
-  }, [searchKeyword]);
+  }, [reportRows, searchKeyword]);
+
+  const handleCellClick = async (row: StateObligationItem, field: string, val?: number) => {
+    if (!val || row.isHeader) return;
+    try {
+      const drilldownData = await openCellContextUcRpt14(
+        writer,
+        "RPT-0003",
+        `RPT-0003_${row.code}`,
+        field,
+        val,
+        {
+          row_id: row.code,
+          period_from: toIsoDate(fromDate),
+          period_to: toIsoDate(toDate),
+          indicator_name: row.name,
+        }
+      );
+      setDrilldownModal({
+        row,
+        field,
+        val,
+        data: drilldownData,
+      });
+    } catch (err: any) {
+      notify?.("Mở chi tiết số liệu: " + (err.message || "Xem nguồn cấu thành"));
+    }
+  };
 
   const handleApplyParams = () => {
     setIsParamDrawerOpen(false);
+    loadReportData();
     notify?.("Đã nạp số liệu Tình hình thực hiện nghĩa vụ với nhà nước theo tham số đã chọn.");
   };
 
@@ -95,6 +195,32 @@ export default function MisaStateObligationsReport({
     setFromDate("01/10/2026");
     setToDate("31/10/2026");
     notify?.("Đã xóa điều kiện lọc về mặc định.");
+  };
+
+  const handleExportExcel = () => {
+    try {
+      const exportRows = filteredRows.map((r) => ({
+        "Chỉ tiêu": r.name,
+        "Mã số": r.code,
+        "Số còn phải nộp kỳ trước chuyển sang": r.prevBalance || 0,
+        "Số phải nộp trong kỳ": r.periodDue || 0,
+        "Số đã nộp trong kỳ": r.periodPaid || 0,
+        "Số phải nộp lũy kế": r.accumDue || 0,
+        "Số đã nộp lũy kế": r.accumPaid || 0,
+        "Số còn phải nộp cuối kỳ": r.closingDue || 0,
+      }));
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "NghiaVuNhaNuoc");
+      XLSX.writeFile(wb, `BaoCao_NghiaVuNhaNuoc_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      notify?.("Đã kết xuất báo cáo ra Excel thành công.");
+    } catch (e: any) {
+      notify?.("Lỗi xuất file Excel: " + e.message);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -134,6 +260,11 @@ export default function MisaStateObligationsReport({
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
             Tình hình thực hiện nghĩa vụ với nhà nước
           </h2>
+          {loading && (
+            <span style={{ fontSize: 12, color: "#00a862", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+              <RotateCw size={12} className="animate-spin" /> Đang tải dữ liệu...
+            </span>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -271,7 +402,10 @@ export default function MisaStateObligationsReport({
             type="button"
             style={{ width: 30, height: 30, border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}
             title="Làm mới"
-            onClick={() => notify?.("Đã làm mới dữ liệu báo cáo.")}
+            onClick={() => {
+              loadReportData();
+              notify?.("Đã làm mới dữ liệu báo cáo từ máy chủ.");
+            }}
           >
             <RotateCw size={14} />
           </button>
@@ -297,7 +431,8 @@ export default function MisaStateObligationsReport({
           <button
             type="button"
             style={{ height: 30, padding: "0 10px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#334155", fontSize: 12.5, cursor: "pointer" }}
-            onClick={() => notify?.("Đang chuẩn bị lệnh in...")}
+            onClick={handlePrint}
+            title="In báo cáo"
           >
             <Printer size={14} />
             <ChevronDown size={12} />
@@ -306,7 +441,8 @@ export default function MisaStateObligationsReport({
           <button
             type="button"
             style={{ height: 30, padding: "0 10px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#334155", fontSize: 12.5, cursor: "pointer" }}
-            onClick={() => notify?.("Đã kết xuất báo cáo ra Excel thành công.")}
+            onClick={handleExportExcel}
+            title="Kết xuất ra Excel (XLSX)"
           >
             <Download size={14} />
             <ChevronDown size={12} />
@@ -402,28 +538,93 @@ export default function MisaStateObligationsReport({
                     </td>
 
                     {/* Số còn phải nộp kỳ trước */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td
+                      onClick={() => handleCellClick(row, "opening_payable", row.prevBalance)}
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "right",
+                        borderRight: "1px solid #e2e8f0",
+                        color: !isHead && row.prevBalance ? "#0066cc" : "#334155",
+                        textDecoration: !isHead && row.prevBalance ? "underline" : "none",
+                        cursor: !isHead && row.prevBalance ? "pointer" : "default",
+                      }}
+                      title={!isHead && row.prevBalance ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                    >
                       {formatVal(row.prevBalance)}
                     </td>
 
                     {/* Phát sinh trong kỳ: Phải nộp / Đã nộp */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td
+                      onClick={() => handleCellClick(row, "period_assessed", row.periodDue)}
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "right",
+                        borderRight: "1px solid #e2e8f0",
+                        color: !isHead && row.periodDue ? "#0066cc" : "#334155",
+                        textDecoration: !isHead && row.periodDue ? "underline" : "none",
+                        cursor: !isHead && row.periodDue ? "pointer" : "default",
+                      }}
+                      title={!isHead && row.periodDue ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                    >
                       {formatVal(row.periodDue)}
                     </td>
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td
+                      onClick={() => handleCellClick(row, "period_paid", row.periodPaid)}
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "right",
+                        borderRight: "1px solid #e2e8f0",
+                        color: !isHead && row.periodPaid ? "#0066cc" : "#334155",
+                        textDecoration: !isHead && row.periodPaid ? "underline" : "none",
+                        cursor: !isHead && row.periodPaid ? "pointer" : "default",
+                      }}
+                      title={!isHead && row.periodPaid ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                    >
                       {formatVal(row.periodPaid)}
                     </td>
 
                     {/* Lũy kế: Phải nộp / Đã nộp */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td
+                      onClick={() => handleCellClick(row, "accumulated_assessed", row.accumDue)}
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "right",
+                        borderRight: "1px solid #e2e8f0",
+                        color: !isHead && row.accumDue ? "#0066cc" : "#334155",
+                        textDecoration: !isHead && row.accumDue ? "underline" : "none",
+                        cursor: !isHead && row.accumDue ? "pointer" : "default",
+                      }}
+                      title={!isHead && row.accumDue ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                    >
                       {formatVal(row.accumDue)}
                     </td>
-                    <td style={{ padding: "7px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#334155" }}>
+                    <td
+                      onClick={() => handleCellClick(row, "accumulated_paid", row.accumPaid)}
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "right",
+                        borderRight: "1px solid #e2e8f0",
+                        color: !isHead && row.accumPaid ? "#0066cc" : "#334155",
+                        textDecoration: !isHead && row.accumPaid ? "underline" : "none",
+                        cursor: !isHead && row.accumPaid ? "pointer" : "default",
+                      }}
+                      title={!isHead && row.accumPaid ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                    >
                       {formatVal(row.accumPaid)}
                     </td>
 
                     {/* Số còn phải nộp cuối kỳ */}
-                    <td style={{ padding: "7px 10px", textAlign: "right", color: "#334155" }}>
+                    <td
+                      onClick={() => handleCellClick(row, "closing_payable", row.closingDue)}
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "right",
+                        color: !isHead && row.closingDue ? "#0066cc" : "#334155",
+                        textDecoration: !isHead && row.closingDue ? "underline" : "none",
+                        cursor: !isHead && row.closingDue ? "pointer" : "default",
+                      }}
+                      title={!isHead && row.closingDue ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                    >
                       {formatVal(row.closingDue)}
                     </td>
                   </tr>
@@ -722,6 +923,102 @@ export default function MisaStateObligationsReport({
                   Xem báo cáo
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Drilldown Submodal (UC-RPT-14) */}
+      {drilldownModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 100000,
+          }}
+          onClick={() => setDrilldownModal(null)}
+        >
+          <div
+            style={{
+              width: 580,
+              maxWidth: "92vw",
+              background: "#ffffff",
+              borderRadius: 8,
+              padding: 20,
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: 10 }}>
+              <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
+                Chi tiết Drill-down chỉ tiêu thuế (UC-RPT-14)
+              </h4>
+              <button
+                type="button"
+                onClick={() => setDrilldownModal(null)}
+                style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: "16px 0", fontSize: 13 }}>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: "#64748b" }}>Chỉ tiêu: </span>
+                <strong>{drilldownModal.row?.name || drilldownModal.row?.code}</strong>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: "#64748b" }}>Cột số liệu: </span>
+                <span style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>{drilldownModal.field}</span>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <span style={{ color: "#64748b" }}>Số tiền báo cáo: </span>
+                <strong style={{ color: "#00a862", fontSize: 15 }}>
+                  {formatVal(drilldownModal.val)} đ
+                </strong>
+              </div>
+              {drilldownModal.data?.formula && (
+                <div style={{ marginBottom: 12, padding: "8px 12px", background: "#f8fafc", borderRadius: 4, border: "1px solid #e2e8f0" }}>
+                  <span style={{ color: "#64748b" }}>Quy tắc cấu thành: </span>
+                  <code>{drilldownModal.data.formula}</code>
+                </div>
+              )}
+              {drilldownModal.data?.components && drilldownModal.data.components.length > 0 && (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, marginTop: 10 }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9" }}>
+                      <th style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "left" }}>Thành phần cấu thành</th>
+                      <th style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Số tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drilldownModal.data.components.map((c: any, i: number) => (
+                      <tr key={i}>
+                        <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1" }}>{c.name || c.indicator_code}</td>
+                        <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right", fontWeight: 600 }}>
+                          {Number(c.contribution_value || c.raw_value || 0).toLocaleString("vi-VN")} đ
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+              <button
+                type="button"
+                onClick={() => setDrilldownModal(null)}
+                style={{ height: 32, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Đóng
+              </button>
             </div>
           </div>
         </div>

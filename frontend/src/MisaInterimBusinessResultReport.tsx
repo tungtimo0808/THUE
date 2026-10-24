@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { apiClient } from "./apiClient";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   ChevronDown,
@@ -20,25 +20,38 @@ export interface InterimIncomeItem {
   name: string;
   code: string;
   note?: string;
-  quarterCurrent?: number;  // Quý 4 - Năm nay
-  quarterPrevious?: number; // Quý 4 - Năm trước
-  accumCurrent?: number;    // Lũy kế - Năm nay
-  accumPrevious?: number;   // Lũy kế - Năm trước
+  quarterCurrent?: number | null;  // Quý này - Năm nay
+  quarterPrevious?: number | null; // Quý này - Năm trước
+  accumCurrent?: number | null;    // Lũy kế - Năm nay
+  accumPrevious?: number | null;   // Lũy kế - Năm trước
+  contentStatus?: string;
   isBold?: boolean;
   isClickable?: boolean;
   indent?: boolean;
 }
 
-// Full Catalogue of B02a - DN matching Screenshot exactly
+const INTERIM_CORE_SUMMARY_CODES = new Set(["10", "20", "30", "40", "50", "60"]);
+
+function toIsoDateInterim(ddmmyyyy: string, fallback: string): string {
+  const s = (ddmmyyyy || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (m) {
+    return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  return fallback;
+}
+
+// Full Catalogue of B02a-DN (21 indicators, initial zero state)
 const FULL_B02A_DATA: InterimIncomeItem[] = [
   {
     id: "01",
     name: "1. Doanh thu bán hàng và cung cấp dịch vụ",
     code: "01",
     note: "VI.1",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
-    accumCurrent: 20000000,
+    accumCurrent: 0,
     accumPrevious: 0,
     isClickable: true,
   },
@@ -58,11 +71,12 @@ const FULL_B02A_DATA: InterimIncomeItem[] = [
     name: "3. Doanh thu thuần về bán hàng và cung cấp dịch vụ (10 = 01 - 02)",
     code: "10",
     note: "",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
-    accumCurrent: 20000000,
+    accumCurrent: 0,
     accumPrevious: 0,
     isBold: true,
+    isClickable: true,
   },
   {
     id: "11",
@@ -80,11 +94,12 @@ const FULL_B02A_DATA: InterimIncomeItem[] = [
     name: "5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ (20 = 10 - 11)",
     code: "20",
     note: "",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
-    accumCurrent: 20000000,
+    accumCurrent: 0,
     accumPrevious: 0,
     isBold: true,
+    isClickable: true,
   },
   {
     id: "21",
@@ -129,6 +144,7 @@ const FULL_B02A_DATA: InterimIncomeItem[] = [
     accumCurrent: 0,
     accumPrevious: 0,
     indent: true,
+    isClickable: true,
   },
   {
     id: "25",
@@ -157,11 +173,12 @@ const FULL_B02A_DATA: InterimIncomeItem[] = [
     name: "11. Lợi nhuận thuần từ hoạt động kinh doanh {30 = 20 + 21 + 22 - (23 + 25 + 26)}",
     code: "30",
     note: "",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
-    accumCurrent: 20000000,
+    accumCurrent: 0,
     accumPrevious: 0,
     isBold: true,
+    isClickable: true,
   },
   {
     id: "31",
@@ -195,17 +212,19 @@ const FULL_B02A_DATA: InterimIncomeItem[] = [
     accumCurrent: 0,
     accumPrevious: 0,
     isBold: true,
+    isClickable: true,
   },
   {
     id: "50",
     name: "15. Tổng lợi nhuận kế toán trước thuế (50 = 30 + 40)",
     code: "50",
     note: "",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
-    accumCurrent: 20000000,
+    accumCurrent: 0,
     accumPrevious: 0,
     isBold: true,
+    isClickable: true,
   },
   {
     id: "51",
@@ -234,31 +253,82 @@ const FULL_B02A_DATA: InterimIncomeItem[] = [
     name: "18. Lợi nhuận sau thuế thu nhập doanh nghiệp (60 = 50 - 51 - 52)",
     code: "60",
     note: "",
-    quarterCurrent: 20000000,
+    quarterCurrent: 0,
     quarterPrevious: 0,
-    accumCurrent: 20000000,
+    accumCurrent: 0,
     accumPrevious: 0,
     isBold: true,
+    isClickable: true,
   },
   {
     id: "70",
     name: "19. Lãi cơ bản trên cổ phiếu (*)",
     code: "70",
-    note: "",
-    quarterCurrent: 0,
-    quarterPrevious: 0,
-    accumCurrent: 0,
-    accumPrevious: 0,
+    note: "VI.12",
+    quarterCurrent: null,
+    quarterPrevious: null,
+    accumCurrent: null,
+    accumPrevious: null,
   },
   {
     id: "71",
     name: "20. Lãi suy giảm trên cổ phiếu (*)",
     code: "71",
+    note: "VI.12",
+    quarterCurrent: null,
+    quarterPrevious: null,
+    accumCurrent: null,
+    accumPrevious: null,
+  },
+];
+
+// Condensed Catalogue of B02b-DN (ONLY 4 indicators per Circular 99/2025/TT-BTC: 01, 31, 50, 60)
+const FULL_B02B_DATA: InterimIncomeItem[] = [
+  {
+    id: "01",
+    name: "1. Doanh thu bán hàng và cung cấp dịch vụ",
+    code: "01",
+    note: "VI.01",
+    quarterCurrent: 0,
+    quarterPrevious: 0,
+    accumCurrent: 0,
+    accumPrevious: 0,
+    isClickable: true,
+  },
+  {
+    id: "31",
+    name: "2. Doanh thu hoạt động tài chính và thu nhập khác",
+    code: "31",
+    note: "VI.05, VI.07",
+    quarterCurrent: 0,
+    quarterPrevious: 0,
+    accumCurrent: 0,
+    accumPrevious: 0,
+    isClickable: true,
+  },
+  {
+    id: "50",
+    name: "3. Tổng lợi nhuận kế toán trước thuế",
+    code: "50",
     note: "",
     quarterCurrent: 0,
     quarterPrevious: 0,
     accumCurrent: 0,
     accumPrevious: 0,
+    isBold: true,
+    isClickable: true,
+  },
+  {
+    id: "60",
+    name: "4. Lợi nhuận sau thuế thu nhập doanh nghiệp",
+    code: "60",
+    note: "",
+    quarterCurrent: 0,
+    quarterPrevious: 0,
+    accumCurrent: 0,
+    accumPrevious: 0,
+    isBold: true,
+    isClickable: true,
   },
 ];
 
@@ -273,6 +343,7 @@ export default function MisaInterimBusinessResultReport({
 }: MisaInterimBusinessResultReportProps) {
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
+  const [formCode, setFormCode] = useState<"B02a-DN" | "B02b-DN">("B02a-DN");
   const [period, setPeriod] = useState("Quý 4");
   const [year, setYear] = useState(2026);
   const [fromDate, setFromDate] = useState("01/10/2026");
@@ -281,6 +352,7 @@ export default function MisaInterimBusinessResultReport({
   const [hideZero, setHideZero] = useState(false);
 
   // Temporary drawer draft state
+  const [draftFormCode, setDraftFormCode] = useState<"B02a-DN" | "B02b-DN">("B02a-DN");
   const [draftPeriod, setDraftPeriod] = useState("Quý 4");
   const [draftYear, setDraftYear] = useState(2026);
   const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
@@ -291,17 +363,180 @@ export default function MisaInterimBusinessResultReport({
   // Search keyword inside report
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // Saved reports modal
+  // Saved reports modal & Run state (UC-RPT-04)
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
+  const [currentRun, setCurrentRun] = useState<any | null>(null);
+  const [savedRuns, setSavedRuns] = useState<any[]>([]);
 
   // Drilldown modal item
   const [drilldownItem, setDrilldownItem] = useState<{
     name: string;
     code: string;
-    val?: number;
+    val?: number | null;
+    slotCode?: string;
   } | null>(null);
+  const [drilldownDetail, setDrilldownDetail] = useState<any | null>(null);
+  const [isLoadingDrilldown, setIsLoadingDrilldown] = useState(false);
+
+  const [rowsData, setRowsData] = useState<InterimIncomeItem[]>(FULL_B02A_DATA);
+
+  const mapInterimLines = useCallback(
+    (backendLines: any[], targetForm: "B02a-DN" | "B02b-DN") => {
+      const baseCatalog = targetForm === "B02b-DN" ? FULL_B02B_DATA : FULL_B02A_DATA;
+      const byCode: Record<string, any> = {};
+      for (const ln of backendLines) {
+        if (ln && ln.indicator_code) {
+          byCode[String(ln.indicator_code)] = ln;
+        }
+      }
+      return baseCatalog.map((r) => {
+        const ln = byCode[r.code];
+        if (!ln) return r;
+        const slots = ln.slots_by_code || {};
+        const qCurRaw = slots.QUARTER_CURRENT?.amount ?? ln.current_period_amount;
+        const qPrevRaw = slots.QUARTER_PREVIOUS?.amount ?? ln.comparative_period_amount;
+        const ytdCurRaw = slots.YTD_CURRENT?.amount ?? ln.current_period_amount;
+        const ytdPrevRaw = slots.YTD_PREVIOUS?.amount ?? ln.comparative_period_amount;
+        return {
+          ...r,
+          name: ln.indicator_name || r.name,
+          note: ln.note_reference ?? r.note,
+          contentStatus: ln.content_status || "COMPLETE",
+          quarterCurrent: qCurRaw === null || qCurRaw === undefined ? null : Number(qCurRaw),
+          quarterPrevious: qPrevRaw === null || qPrevRaw === undefined ? null : Number(qPrevRaw),
+          accumCurrent: ytdCurRaw === null || ytdCurRaw === undefined ? null : Number(ytdCurRaw),
+          accumPrevious: ytdPrevRaw === null || ytdPrevRaw === undefined ? null : Number(ytdPrevRaw),
+        };
+      });
+    },
+    []
+  );
+
+  const loadInterimReport = useCallback(
+    async (opts?: {
+      targetForm?: "B02a-DN" | "B02b-DN";
+      targetYear?: number;
+      targetFrom?: string;
+      targetTo?: string;
+      useSavedOnly?: boolean;
+      forceGenerate?: boolean;
+    }) => {
+      const fCode = opts?.targetForm || formCode;
+      const fYear = opts?.targetYear || year;
+      const fDate = opts?.targetFrom || fromDate;
+      const tDate = opts?.targetTo || toDate;
+      const savedOnly = opts?.useSavedOnly ?? fetchFromSaved;
+
+      setRowsData(fCode === "B02b-DN" ? FULL_B02B_DATA : FULL_B02A_DATA);
+
+      try {
+        const cid = getSelectedCompanyId();
+        if (cid) {
+          const runsRes: any = await apiClient.get(
+            `/api/v1/reports/business-result/runs/?company_id=${encodeURIComponent(cid)}&legal_form_code=${encodeURIComponent(fCode)}`
+          );
+          const list = Array.isArray(runsRes?.runs) ? runsRes.runs : [];
+          setSavedRuns(list);
+
+          if (!opts?.forceGenerate && list.length > 0 && savedOnly) {
+            const detail: any = await apiClient.get(
+              `/api/v1/reports/business-result/runs/${encodeURIComponent(list[0].statement_run_id || list[0].id)}/?company_id=${encodeURIComponent(cid)}`
+            );
+            if (detail) {
+              setCurrentRun(detail.run || detail);
+              if (Array.isArray(detail.lines)) {
+                setRowsData(mapInterimLines(detail.lines, fCode));
+              }
+              return;
+            }
+          }
+
+          const created: any = await apiClient.post("/api/v1/reports/business-result/runs/", {
+            company_id: cid,
+            template_code: fCode,
+            period_type: "QUARTERLY",
+            fiscal_year: fYear,
+            period_start_date: toIsoDateInterim(fDate, `${fYear}-10-01`),
+            period_end_date: toIsoDateInterim(tDate, `${fYear}-12-31`),
+          });
+          if (created) {
+            setCurrentRun(created.run || created);
+            if (Array.isArray(created.lines)) {
+              setRowsData(mapInterimLines(created.lines, fCode));
+            }
+            const refreshedList: any = await apiClient.get(
+              `/api/v1/reports/business-result/runs/?company_id=${encodeURIComponent(cid)}&legal_form_code=${encodeURIComponent(fCode)}`
+            );
+            if (Array.isArray(refreshedList?.runs)) {
+              setSavedRuns(refreshedList.runs);
+            }
+            return;
+          }
+        }
+      } catch {
+        // Fallback to tt99 summary if company context is unavailable
+      }
+
+      try {
+        const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/?year=${fYear}`);
+        if (res?.b02_dn) {
+          const base = fCode === "B02b-DN" ? FULL_B02B_DATA : FULL_B02A_DATA;
+          setRowsData(
+            base.map((r) => {
+              const m = res.b02_dn[r.code];
+              return m
+                ? {
+                    ...r,
+                    quarterCurrent: Number(m.current ?? m.currentPeriod ?? 0),
+                    quarterPrevious: Number(m.previous ?? m.previousPeriod ?? 0),
+                    accumCurrent: Number(m.current ?? m.currentPeriod ?? 0),
+                    accumPrevious: Number(m.previous ?? m.previousPeriod ?? 0),
+                  }
+                : r;
+            })
+          );
+        }
+      } catch {
+        // Keep clean zero state
+      }
+    },
+    [fetchFromSaved, formCode, fromDate, mapInterimLines, toDate, year]
+  );
+
+  useEffect(() => {
+    void loadInterimReport();
+  }, [loadInterimReport]);
+
+  const handleOpenInterimDrilldown = async (
+    row: InterimIncomeItem,
+    val: number | null | undefined,
+    slotCode: "QUARTER_CURRENT" | "YTD_CURRENT"
+  ) => {
+    setDrilldownItem({
+      name: row.name,
+      code: row.code,
+      val,
+      slotCode,
+    });
+    setDrilldownDetail(null);
+    const cid = getSelectedCompanyId();
+    const runId = currentRun?.statement_run_id || currentRun?.id;
+    if (!cid || !runId) return;
+    setIsLoadingDrilldown(true);
+    try {
+      const res: any = await apiClient.get(
+        `/api/v1/reports/business-result/runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(row.code)}/drilldown/?company_id=${encodeURIComponent(cid)}&slot_code=${encodeURIComponent(slotCode)}`
+      );
+      setDrilldownDetail(res);
+    } catch {
+      setDrilldownDetail(null);
+    } finally {
+      setIsLoadingDrilldown(false);
+    }
+  };
 
   const handleOpenDrawer = () => {
+    setDraftFormCode(formCode);
     setDraftPeriod(period);
     setDraftYear(year);
     setDraftFromDate(fromDate);
@@ -312,6 +547,7 @@ export default function MisaInterimBusinessResultReport({
   };
 
   const handleApplyParams = () => {
+    setFormCode(draftFormCode);
     setPeriod(draftPeriod);
     setYear(draftYear);
     setFromDate(draftFromDate);
@@ -319,10 +555,18 @@ export default function MisaInterimBusinessResultReport({
     setFetchFromSaved(draftFetchFromSaved);
     setHideZero(draftHideZero);
     setIsParamDrawerOpen(false);
-    notify?.("Đã tải lại B02a - DN với tham số mới.");
+    void loadInterimReport({
+      targetForm: draftFormCode,
+      targetYear: draftYear,
+      targetFrom: draftFromDate,
+      targetTo: draftToDate,
+      useSavedOnly: draftFetchFromSaved,
+    });
+    notify?.(`Đã tải lại ${draftFormCode} với tham số mới.`);
   };
 
   const handleResetParams = () => {
+    setDraftFormCode("B02a-DN");
     setDraftPeriod("Quý 4");
     setDraftYear(2026);
     setDraftFromDate("01/10/2026");
@@ -332,8 +576,12 @@ export default function MisaInterimBusinessResultReport({
   };
 
   // Format currency helper
-  const formatValue = (val?: number) => {
-    if (val === undefined || val === null) return { text: "0", isNegative: false };
+  const formatValue = (val?: number | null, status?: string) => {
+    if (status === "NOT_APPLICABLE") return { text: "-", isNegative: false };
+    if (status === "INSUFFICIENT_DATA" || status === "ZERO_DENOMINATOR") {
+      return { text: "Chưa đủ dữ liệu", isNegative: false };
+    }
+    if (val === undefined || val === null) return { text: "-", isNegative: false };
     if (val === 0) return { text: "0", isNegative: false };
     if (val < 0) {
       return {
@@ -347,37 +595,16 @@ export default function MisaInterimBusinessResultReport({
     };
   };
 
-  const [rowsData, setRowsData] = useState<InterimIncomeItem[]>(FULL_B02A_DATA);
-
-  useEffect(() => {
-    apiClient
-      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
-      .then((res) => {
-        if (res?.b02_dn) {
-          setRowsData(
-            FULL_B02A_DATA.map((r) => {
-              const m = res.b02_dn[r.code];
-              return m
-                ? {
-                    ...r,
-                    quarterCurrent: Number(m.current || 0),
-                    quarterPrevious: Number(m.previous || 0),
-                    accumCurrent: Number(m.current || 0),
-                    accumPrevious: Number(m.previous || 0),
-                  }
-                : r;
-            })
-          );
-        }
-      })
-      .catch(() => {});
-  }, [year, period, fromDate, toDate]);
-
-  // Filter rows for B02a-DN
+  // Filter rows for B02a-DN / B02b-DN
   const filteredB02aRows = useMemo(() => {
     return rowsData.filter((row) => {
-      if (hideZero) {
-        if (!row.quarterCurrent && !row.accumCurrent) {
+      if (hideZero && !INTERIM_CORE_SUMMARY_CODES.has(row.code)) {
+        const allZero =
+          (!row.quarterCurrent || row.quarterCurrent === 0) &&
+          (!row.quarterPrevious || row.quarterPrevious === 0) &&
+          (!row.accumCurrent || row.accumCurrent === 0) &&
+          (!row.accumPrevious || row.accumPrevious === 0);
+        if (allZero) {
           return false;
         }
       }
@@ -445,8 +672,23 @@ export default function MisaInterimBusinessResultReport({
               letterSpacing: "-0.2px",
             }}
           >
-            B02a-DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ (Dạng đầy đủ)
+            {formCode}: Báo cáo kết quả hoạt động kinh doanh giữa niên độ (
+            {formCode === "B02b-DN" ? "Dạng tóm lược – 4 chỉ tiêu" : "Dạng đầy đủ – 21 chỉ tiêu"})
           </h2>
+          {currentRun && (
+            <span
+              style={{
+                background: currentRun.run_status === "APPROVED" ? "#dcfce7" : "#e0f2fe",
+                color: currentRun.run_status === "APPROVED" ? "#166534" : "#0369a1",
+                padding: "2px 8px",
+                borderRadius: 4,
+                fontSize: 11.5,
+                fontWeight: 600,
+              }}
+            >
+              v{currentRun.version_number || currentRun.run_version || 1} • {currentRun.run_status || "GENERATED"}
+            </span>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -465,7 +707,7 @@ export default function MisaInterimBusinessResultReport({
             }}
             onClick={() => setIsSavedReportsOpen(true)}
           >
-            Danh sách báo cáo đã lưu
+            Danh sách báo cáo đã lưu ({savedRuns.length})
           </button>
 
           <button
@@ -481,7 +723,10 @@ export default function MisaInterimBusinessResultReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu B02a - DN kỳ quý 4/2026 thành công.")}
+            onClick={() => {
+              void loadInterimReport({ forceGenerate: true });
+              notify?.(`Đã lưu phiên bản mới của báo cáo ${formCode} kỳ ${period}/${year} thành công.`);
+            }}
           >
             Lưu báo cáo
           </button>
@@ -644,7 +889,7 @@ export default function MisaInterimBusinessResultReport({
               fontSize: 12.5,
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã xuất khẩu báo cáo B02a - DN ra Excel.")}
+            onClick={() => notify?.(`Đã xuất khẩu báo cáo ${formCode} ra Excel.`)}
           >
             <Download size={14} />
             <ChevronDown size={12} />
@@ -699,10 +944,10 @@ export default function MisaInterimBusinessResultReport({
             BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH GIỮA NIÊN ĐỘ
           </h1>
           <div style={{ fontSize: 13, fontStyle: "italic", color: "#475569", marginTop: 4 }}>
-            (Dạng đầy đủ)
+            ({formCode === "B02b-DN" ? "Dạng tóm lược – Mẫu B02b-DN" : "Dạng đầy đủ – Mẫu B02a-DN"})
           </div>
           <div style={{ fontSize: 13, color: "#1e293b", marginTop: 4, fontWeight: 500 }}>
-            Kỳ kế toán quý 4 năm {year}
+            Kỳ kế toán {period.toLowerCase()} năm {year} (Từ {fromDate} đến {toDate})
           </div>
         </div>
 
@@ -767,7 +1012,7 @@ export default function MisaInterimBusinessResultReport({
                   borderBottom: "1px solid #c2d9b8",
                 }}
               >
-                Quý 4
+                {period}
               </th>
               <th
                 colSpan={2}
@@ -831,10 +1076,10 @@ export default function MisaInterimBusinessResultReport({
           </thead>
           <tbody>
             {filteredB02aRows.map((row, index) => {
-              const qCur = formatValue(row.quarterCurrent);
-              const qPrev = formatValue(row.quarterPrevious);
-              const accCur = formatValue(row.accumCurrent);
-              const accPrev = formatValue(row.accumPrevious);
+              const qCur = formatValue(row.quarterCurrent, row.contentStatus);
+              const qPrev = formatValue(row.quarterPrevious, row.contentStatus);
+              const accCur = formatValue(row.accumCurrent, row.contentStatus);
+              const accPrev = formatValue(row.accumPrevious, row.contentStatus);
 
               return (
                 <tr
@@ -875,15 +1120,11 @@ export default function MisaInterimBusinessResultReport({
                   >
                     {row.note || ""}
                   </td>
-                  {/* Quý 4 - Năm nay */}
+                  {/* Quý này - Năm nay */}
                   <td
                     onClick={() => {
-                      if (row.isClickable && row.quarterCurrent) {
-                        setDrilldownItem({
-                          name: row.name,
-                          code: row.code,
-                          val: row.quarterCurrent,
-                        });
+                      if (row.isClickable) {
+                        void handleOpenInterimDrilldown(row, row.quarterCurrent, "QUARTER_CURRENT");
                       }
                     }}
                     style={{
@@ -892,12 +1133,12 @@ export default function MisaInterimBusinessResultReport({
                       borderRight: "1px solid #f1f5f9",
                       color: qCur.isNegative ? "#dc2626" : "#1e293b",
                       fontWeight: row.isBold || qCur.isNegative ? 700 : 400,
-                      cursor: row.isClickable && row.quarterCurrent ? "pointer" : "default",
+                      cursor: row.isClickable ? "pointer" : "default",
                     }}
                   >
                     {qCur.text}
                   </td>
-                  {/* Quý 4 - Năm trước */}
+                  {/* Quý này - Năm trước */}
                   <td
                     style={{
                       padding: "7px 14px",
@@ -912,12 +1153,8 @@ export default function MisaInterimBusinessResultReport({
                   {/* Lũy kế - Năm nay */}
                   <td
                     onClick={() => {
-                      if (row.isClickable && row.accumCurrent) {
-                        setDrilldownItem({
-                          name: row.name,
-                          code: row.code,
-                          val: row.accumCurrent,
-                        });
+                      if (row.isClickable) {
+                        void handleOpenInterimDrilldown(row, row.accumCurrent, "YTD_CURRENT");
                       }
                     }}
                     style={{
@@ -926,7 +1163,7 @@ export default function MisaInterimBusinessResultReport({
                       borderRight: "1px solid #f1f5f9",
                       color: accCur.isNegative ? "#dc2626" : "#1e293b",
                       fontWeight: row.isBold || accCur.isNegative ? 700 : 400,
-                      cursor: row.isClickable && row.accumCurrent ? "pointer" : "default",
+                      cursor: row.isClickable ? "pointer" : "default",
                     }}
                   >
                     {accCur.text}
@@ -1118,7 +1355,7 @@ export default function MisaInterimBusinessResultReport({
                   }}
                   title="Giúp"
                   onClick={() =>
-                    notify?.("Xem hướng dẫn lập B02a - DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ.")
+                    notify?.("Xem hướng dẫn lập B02a-DN / B02b-DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ.")
                   }
                 >
                   <HelpCircle size={18} />
@@ -1151,6 +1388,29 @@ export default function MisaInterimBusinessResultReport({
                 fontSize: 13,
               }}
             >
+              <div>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Mẫu biểu giữa niên độ (TT99)
+                </label>
+                <select
+                  value={draftFormCode}
+                  onChange={(e) => setDraftFormCode(e.target.value as "B02a-DN" | "B02b-DN")}
+                  style={{
+                    width: "100%",
+                    height: 34,
+                    padding: "0 10px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    background: "#ffffff",
+                    fontSize: 13,
+                    outline: "none",
+                  }}
+                >
+                  <option value="B02a-DN">B02a-DN (Dạng đầy đủ – 21 chỉ tiêu)</option>
+                  <option value="B02b-DN">B02b-DN (Dạng tóm lược – 4 chỉ tiêu: 01, 31, 50, 60)</option>
+                </select>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 100px", gap: 12 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
@@ -1162,14 +1422,20 @@ export default function MisaInterimBusinessResultReport({
                       const val = e.target.value;
                       setDraftPeriod(val);
                       if (val === "Quý 4") {
-                        setDraftFromDate("01/10/2026");
-                        setDraftToDate("31/12/2026");
+                        setDraftFromDate(`01/10/${draftYear}`);
+                        setDraftToDate(`31/12/${draftYear}`);
                       } else if (val === "Quý 3") {
-                        setDraftFromDate("01/07/2026");
-                        setDraftToDate("30/09/2026");
+                        setDraftFromDate(`01/07/${draftYear}`);
+                        setDraftToDate(`30/09/${draftYear}`);
+                      } else if (val === "Quý 2") {
+                        setDraftFromDate(`01/04/${draftYear}`);
+                        setDraftToDate(`30/06/${draftYear}`);
+                      } else if (val === "Quý 1") {
+                        setDraftFromDate(`01/01/${draftYear}`);
+                        setDraftToDate(`31/03/${draftYear}`);
                       } else if (val === "6 tháng đầu năm") {
-                        setDraftFromDate("01/01/2026");
-                        setDraftToDate("30/06/2026");
+                        setDraftFromDate(`01/01/${draftYear}`);
+                        setDraftToDate(`30/06/${draftYear}`);
                       }
                     }}
                     style={{
@@ -1395,7 +1661,7 @@ export default function MisaInterimBusinessResultReport({
               borderRadius: 8,
               boxShadow: "0 20px 45px rgba(0, 0, 0, 0.2)",
               width: "100%",
-              maxWidth: 760,
+              maxWidth: 780,
               maxHeight: "85vh",
               overflow: "hidden",
               display: "flex",
@@ -1441,40 +1707,56 @@ export default function MisaInterimBusinessResultReport({
 
             <div style={{ padding: "16px 20px", flex: 1, overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 12.5, color: "#64748b" }}>
-                <span>Kỳ: <strong>Quý 4/{year}</strong> (Từ {fromDate} đến {toDate})</span>
-                <span>Số phát sinh: <strong style={{ color: "#00a862" }}>{formatValue(drilldownItem.val).text} đ</strong></span>
+                <span>
+                  Kỳ: <strong>{period}/{year}</strong> (Từ {fromDate} đến {toDate})
+                </span>
+                <span>
+                  Số phát sinh:{" "}
+                  <strong style={{ color: "#00a862" }}>{formatValue(drilldownItem.val).text}</strong>
+                </span>
               </div>
 
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #e2e8f0" }}>
-                <thead>
-                  <tr style={{ background: "#f1f5f9", textAlign: "left", color: "#334155" }}>
-                    <th style={{ padding: "8px 10px" }}>Ngày CT</th>
-                    <th style={{ padding: "8px 10px" }}>Số CT</th>
-                    <th style={{ padding: "8px 10px" }}>Diễn giải</th>
-                    <th style={{ padding: "8px 10px" }}>TK đối ứng</th>
-                    <th style={{ padding: "8px 10px", textAlign: "right" }}>Số tiền (VND)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {drilldownItem.val && drilldownItem.val > 0 ? (
-                    <tr>
-                      <td style={{ padding: "8px 10px" }}>15/10/2026</td>
-                      <td style={{ padding: "8px 10px", color: "#0284c7", fontWeight: 600 }}>CT001</td>
-                      <td style={{ padding: "8px 10px" }}>Doanh thu bán hàng và cung cấp dịch vụ quý 4</td>
-                      <td style={{ padding: "8px 10px" }}>131 / 511</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#00a862" }}>
-                        {formatValue(drilldownItem.val).text}
-                      </td>
+              {isLoadingDrilldown ? (
+                <div style={{ padding: 24, textAlign: "center", color: "#64748b" }}>
+                  Đang tải bút toán nguồn...
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #e2e8f0" }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9", textAlign: "left", color: "#334155" }}>
+                      <th style={{ padding: "8px 10px" }}>Ngày CT</th>
+                      <th style={{ padding: "8px 10px" }}>Số CT</th>
+                      <th style={{ padding: "8px 10px" }}>Diễn giải</th>
+                      <th style={{ padding: "8px 10px" }}>Tài khoản</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right" }}>Số tiền (VND)</th>
                     </tr>
-                  ) : (
-                    <tr>
-                      <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontStyle: "italic" }}>
-                        Không có chứng từ phát sinh trong kỳ.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {Array.isArray(drilldownDetail?.journal_lines) &&
+                    drilldownDetail.journal_lines.length > 0 ? (
+                      drilldownDetail.journal_lines.map((jl: any, idx: number) => (
+                        <tr key={jl.journal_line_id || idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                          <td style={{ padding: "8px 10px" }}>{jl.posting_date}</td>
+                          <td style={{ padding: "8px 10px", color: "#0284c7", fontWeight: 600 }}>
+                            {jl.entry_no || jl.journal_number}
+                          </td>
+                          <td style={{ padding: "8px 10px" }}>{jl.description}</td>
+                          <td style={{ padding: "8px 10px" }}>{jl.account_code}</td>
+                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#00a862" }}>
+                            {Number(jl.contribution_amount || 0).toLocaleString("vi-VN")}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontStyle: "italic" }}>
+                          Không có chứng từ phát sinh trong kỳ.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
@@ -1522,13 +1804,13 @@ export default function MisaInterimBusinessResultReport({
               borderRadius: 8,
               boxShadow: "0 20px 45px rgba(0, 0, 0, 0.2)",
               width: "100%",
-              maxWidth: 620,
+              maxWidth: 640,
               padding: 20,
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Danh sách B02a - DN đã lưu</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Danh sách {formCode} đã lưu</h3>
               <button
                 type="button"
                 style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}
@@ -1537,9 +1819,36 @@ export default function MisaInterimBusinessResultReport({
                 <X size={18} />
               </button>
             </div>
-            <p style={{ fontSize: 13, color: "#64748b" }}>
-              Hiện tại chưa có báo cáo B02a - DN nào được lưu trong kỳ này.
-            </p>
+            {savedRuns.length > 0 ? (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, border: "1px solid #e2e8f0" }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                    <th style={{ padding: "8px 12px" }}>Phiên bản</th>
+                    <th style={{ padding: "8px 12px" }}>Kỳ áp dụng</th>
+                    <th style={{ padding: "8px 12px" }}>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {savedRuns.map((r: any) => (
+                    <tr key={r.statement_run_id || r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "8px 12px", fontWeight: 600 }}>
+                        {r.legal_form_code || formCode} (v{r.version_number || 1})
+                      </td>
+                      <td style={{ padding: "8px 12px" }}>
+                        {r.period_start_date} → {r.period_end_date}
+                      </td>
+                      <td style={{ padding: "8px 12px" }}>
+                        {r.run_status} ({r.validation_status})
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p style={{ fontSize: 13, color: "#64748b" }}>
+                Hiện tại chưa có báo cáo {formCode} nào được lưu trong kỳ này.
+              </p>
+            )}
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
               <button
                 type="button"

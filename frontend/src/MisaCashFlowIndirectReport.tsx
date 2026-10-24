@@ -45,7 +45,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "1. Lợi nhuận trước thuế",
     code: "01",
     note: "",
-    currentPeriod: 20000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isClickable: true,
     accountRef: "B02-DN Mã 50",
@@ -119,7 +119,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "3. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động",
     code: "08",
     note: "",
-    currentPeriod: 20000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
   },
@@ -128,7 +128,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "- Tăng, giảm các khoản phải thu",
     code: "09",
     note: "",
-    currentPeriod: -32000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isClickable: true,
     indent: true,
@@ -139,7 +139,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "- Tăng, giảm hàng tồn kho",
     code: "10",
     note: "",
-    currentPeriod: -12475000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isClickable: true,
     indent: true,
@@ -150,7 +150,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "- Tăng, giảm các khoản phải trả (không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)",
     code: "11",
     note: "",
-    currentPeriod: 17000000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isClickable: true,
     indent: true,
@@ -218,7 +218,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
     code: "20",
     note: "",
-    currentPeriod: -7475000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
   },
@@ -380,7 +380,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "Lưu chuyển tiền thuần trong kỳ (50 = 20 + 30 + 40)",
     code: "50",
     note: "",
-    currentPeriod: -7475000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
   },
@@ -406,7 +406,7 @@ const BASE_INDIRECT_DATA: CashFlowIndirectItem[] = [
     name: "Tiền và tương đương tiền cuối kỳ (70 = 50 + 60 + 61)",
     code: "70",
     note: "V.1",
-    currentPeriod: -7475000,
+    currentPeriod: 0,
     previousPeriod: 0,
     isBold: true,
   },
@@ -452,30 +452,50 @@ export default function MisaCashFlowIndirectReport({
   const loadReportFromBackend = useCallback(async () => {
     try {
       const cid = getSelectedCompanyId();
-      const query = cid ? `?company_id=${cid}` : "";
-      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${query}`);
-      if (res && res.b03_indirect) {
-        const b03 = res.b03_indirect;
-        const hasActivity = Object.values(b03).some(
-          (v: any) => Number(v?.currentPeriod || 0) !== 0 || Number(v?.previousPeriod || 0) !== 0
+      const query = cid ? `?company_id=${cid}&template_code=B03-DN&cash_flow_method=INDIRECT` : "?template_code=B03-DN&cash_flow_method=INDIRECT";
+      const runsRes: any = await apiClient.get(`/api/v1/reports/cash-flow/runs/${query}`);
+      const latestRun = runsRes?.runs?.[0];
+      if (latestRun?.id) {
+        const detailRes: any = await apiClient.get(
+          `/api/v1/reports/cash-flow/runs/${latestRun.id}/${cid ? `?company_id=${cid}` : ""}`
         );
-        if (hasActivity) {
+        if (Array.isArray(detailRes?.lines)) {
+          const lineMap: Record<string, any> = {};
+          for (const ln of detailRes.lines) {
+            lineMap[ln.indicator_code] = ln;
+          }
           setRows(
             BASE_INDIRECT_DATA.map((item) => {
-              if (!item.code) return item;
-              const entry = b03[item.code];
-              if (!entry) return item;
+              if (!item.code || !lineMap[item.code]) return item;
+              const entry = lineMap[item.code];
               return {
                 ...item,
-                currentPeriod: Number(entry.currentPeriod ?? item.currentPeriod ?? 0),
-                previousPeriod: Number(entry.previousPeriod ?? item.previousPeriod ?? 0),
+                currentPeriod: Number(entry.current_period_amount ?? 0),
+                previousPeriod: Number(entry.comparative_period_amount ?? 0),
               };
             })
           );
+          return;
         }
       }
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${cid ? `?company_id=${cid}` : ""}`);
+      if (res && res.b03_indirect) {
+        const b03 = res.b03_indirect;
+        setRows(
+          BASE_INDIRECT_DATA.map((item) => {
+            if (!item.code) return item;
+            const entry = b03[item.code];
+            if (!entry) return item;
+            return {
+              ...item,
+              currentPeriod: Number(entry.currentPeriod ?? entry.current ?? 0),
+              previousPeriod: Number(entry.previousPeriod ?? entry.previous ?? 0),
+            };
+          })
+        );
+      }
     } catch {
-      // Fallback to BASE_INDIRECT_DATA
+      // Fallback to BASE_INDIRECT_DATA (all zeros)
     }
   }, []);
 

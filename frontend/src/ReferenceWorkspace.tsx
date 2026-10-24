@@ -90,6 +90,7 @@ import MisaBudgetWorkspace from "./MisaBudgetWorkspace";
 import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
 import MisaFinancialAnalysisWorkspace from "./MisaFinancialAnalysisWorkspace";
 import MisaOpeningBalanceWorkspace from "./MisaOpeningBalanceWorkspace";
+import MisaDashboardOverview from "./MisaDashboardOverview";
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
 import LiveAccount from "./LiveAccount";
@@ -1479,9 +1480,10 @@ function ReferenceWorkspace() {
             />
           </div>
         ) : moduleId === "overview" && tab === "overview" ? (
-          <ReferenceDashboard
+          <MisaDashboardOverview
             items={scoped}
-            company={company.name}
+            companyName={company.name}
+            period={period}
             href={href}
             notify={setNotice}
           />

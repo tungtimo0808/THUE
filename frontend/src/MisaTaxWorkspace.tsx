@@ -4,6 +4,7 @@ import { createApiWriter, errorText, saveVatDeduction, vatPosition } from "./mis
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { useLocation } from "react-router-dom";
+import { MisaTaxReportModal } from "./MisaTaxReportModal";
 import {
   Search,
   RotateCw,
@@ -140,8 +141,16 @@ export default function MisaTaxWorkspace({
   const [reportSearch, setReportSearch] = useState("");
   const [reportLanguage, setReportLanguage] = useState("Tiếng Việt");
   const [isTaxSectionOpen, setIsTaxSectionOpen] = useState(true);
-  const [isReconSectionOpen, setIsReconSectionOpen] = useState(false);
+  const [isReconSectionOpen, setIsReconSectionOpen] = useState(true);
+  const [isLegalSectionOpen, setIsLegalSectionOpen] = useState(true);
+  const [taxCategoryFilter, setTaxCategoryFilter] = useState("ALL");
   const [previewReport, setPreviewReport] = useState<string | null>(null);
+  const [activeTaxReport, setActiveTaxReport] = useState<{
+    reportCode: string;
+    reportName: string;
+    category?: string;
+    taxType?: string;
+  } | null>(null);
 
   // Modals for Flyout Utilities
   const [showVatDeductionModal, setShowVatDeductionModal] = useState(false);
@@ -520,102 +529,18 @@ export default function MisaTaxWorkspace({
           </div>
         )}
 
-        {/* 4. Modal: Xem chi tiết báo cáo */}
-        {previewReport && (
-          <div className="misa-modal-overlay">
-            <div className="misa-modal-card" style={{ width: 1000, maxWidth: "96vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-              <div
-                style={{
-                  padding: "14px 20px",
-                  borderBottom: "1px solid #e2e8f0",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: "#f8fafc",
-                }}
-              >
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{previewReport}</h3>
-                  <span style={{ fontSize: 12.5, color: "#64748b" }}>Đơn vị: {company.name} • Kỳ tính thuế: Tháng 09/2026</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewReport(null)}
-                  style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => notify("Đang kết nối máy in để in báo cáo thuế...")}
-                  style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-                >
-                  <Printer size={14} /> In báo cáo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => notify("Xuất báo cáo thuế ra tệp Excel (.xlsx) thành công")}
-                  style={{ height: 30, padding: "0 12px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-                >
-                  <Download size={14} /> Xuất Excel
-                </button>
-              </div>
-
-              <div style={{ flex: 1, overflow: "auto", padding: "24px 30px", background: "#ffffff" }}>
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <h2 style={{ margin: "0 0 6px 0", fontSize: 17, fontWeight: 700, color: "#111827", textTransform: "uppercase" }}>{previewReport}</h2>
-                  <div style={{ fontSize: 13, color: "#4b5563" }}>Kỳ tính thuế: Tháng 09 năm 2026</div>
-                  <div style={{ fontSize: 12.5, color: "#6b7280", fontStyle: "italic", marginTop: 4 }}>Đơn vị tính: Đồng Việt Nam (VND)</div>
-                </div>
-
-                <table style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse", border: "1px solid #cbd5e1" }}>
-                  <thead>
-                    <tr style={{ background: "#f1f5f9", height: 36, borderBottom: "1px solid #cbd5e1" }}>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>STT</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "left" }}>Mã HĐ</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>Ngày HĐ</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "left" }}>Tên người bán / đối tác</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>Mã số thuế</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>Doanh số chưa thuế</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>Thuế suất</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>Tiền thuế GTGT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>1</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", fontWeight: 600 }}>0001234</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>05/09/2026</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>Công ty Cổ phần Giải pháp Số Việt</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>0101243150</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>150.000.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>10%</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>15.000.000</td>
-                    </tr>
-                    <tr>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>2</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", fontWeight: 600 }}>0005678</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>18/09/2026</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>Công ty TNHH Thiết bị Công nghiệp Việt Nhật</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>0106543210</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>335.200.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>10%</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>33.520.000</td>
-                    </tr>
-                    <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
-                      <td colSpan={5} style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "center" }}>TỔNG CỘNG</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#111827" }}>485.200.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "center" }}>-</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#00a862" }}>48.520.000</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+        {/* 4. Modal: Xem chi tiết báo cáo thuế qua UC-RPT-07 Engine & MisaTaxReportModal */}
+        {activeTaxReport && (
+          <MisaTaxReportModal
+            reportCode={activeTaxReport.reportCode}
+            reportName={activeTaxReport.reportName}
+            category={activeTaxReport.category}
+            taxType={activeTaxReport.taxType}
+            company={company}
+            isOpen={Boolean(activeTaxReport)}
+            onClose={() => setActiveTaxReport(null)}
+            notify={notify}
+          />
         )}
       </>
     );
@@ -1401,9 +1326,8 @@ export default function MisaTaxWorkspace({
 
       {/* Accordion List */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {/* Accordion 1: THUẾ (matching Image 5) */}
+        {/* Accordion 1: BÁO CÁO QUẢN TRỊ THUẾ (7 Báo cáo) */}
         <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
-          {/* Header */}
           <div
             onClick={() => setIsTaxSectionOpen(!isTaxSectionOpen)}
             style={{
@@ -1417,7 +1341,10 @@ export default function MisaTaxWorkspace({
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Thuế</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Báo cáo quản trị thuế</span>
+              <span style={{ fontSize: 11.5, background: "#e2e8f0", color: "#475569", padding: "1px 6px", borderRadius: 10, fontWeight: 600 }}>7 báo cáo</span>
+            </div>
             {isTaxSectionOpen ? (
               <ChevronUp size={16} style={{ color: "#64748b" }} />
             ) : (
@@ -1425,126 +1352,57 @@ export default function MisaTaxWorkspace({
             )}
           </div>
 
-          {/* Content 2 columns */}
           {isTaxSectionOpen && (
             <div style={{ padding: "8px 16px" }}>
-              {/* Row 1 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, borderBottom: "1px solid #f1f5f9" }}>
-                {/* Col 1 */}
-                <div
-                  onClick={() => setPreviewReport("Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ mua vào (Mẫu quản trị)")}
-                  style={{
-                    padding: "10px 10px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#334155",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
-                >
-                  <span>Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ mua vào (Mẫu quản trị)</span>
-                  {/* Report icon */}
-                  <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
-                      <path d="M3 3v18h18" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Col 2 */}
-                <div
-                  onClick={() => setPreviewReport("Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ bán ra (Mẫu quản trị)")}
-                  style={{
-                    padding: "10px 10px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#334155",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
-                >
-                  <span>Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ bán ra (Mẫu quản trị)</span>
-                  <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
-                      <path d="M3 3v18h18" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 2 */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                {/* Col 1 */}
-                <div
-                  onClick={() => setPreviewReport("02/TNDN: Bảng kê thu mua hàng hóa, dịch vụ mua vào không có hóa đơn")}
-                  style={{
-                    padding: "10px 10px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#334155",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
-                >
-                  <span>02/TNDN: Bảng kê thu mua hàng hóa, dịch vụ mua vào không có hóa đơn</span>
-                  <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
-                      <path d="M3 3v18h18" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Col 2 */}
-                <div
-                  onClick={() => setPreviewReport("Bảng tổng hợp quyết toán thuế GTGT năm")}
-                  style={{
-                    padding: "10px 10px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#334155",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
-                >
-                  <span>Bảng tổng hợp quyết toán thuế GTGT năm</span>
-                  <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
-                      <path d="M3 3v18h18" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
-                    </svg>
-                  </div>
-                </div>
+                {[
+                  { code: "RPT-0003", title: "Báo cáo tình hình thực hiện nghĩa vụ với Nhà nước", taxType: "ALL" },
+                  { code: "RPT-0175", title: "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ mua vào (Mẫu quản trị)", taxType: "VAT" },
+                  { code: "RPT-0176", title: "Bảng tổng hợp quyết toán thuế GTGT năm", taxType: "VAT" },
+                  { code: "RPT-0177", title: "02/TNDN: Bảng kê thu mua hàng hóa, dịch vụ mua vào không có hóa đơn", taxType: "CIT" },
+                  { code: "RPT-0179", title: "Bảng kê hóa đơn, chứng từ hàng hóa, dịch vụ bán ra (Mẫu quản trị)", taxType: "VAT" },
+                  { code: "RPT-TAX-14", title: "Báo cáo rủi ro hóa đơn và cảnh báo thuế đối tác", taxType: "ALL" },
+                  { code: "RPT-TAX-15", title: "Lịch sử và trạng thái nộp tờ khai thuế điện tử (eTax/HTKK)", taxType: "ALL" },
+                ]
+                  .filter((it) => !reportSearch || it.title.toLowerCase().includes(reportSearch.toLowerCase()) || it.code.toLowerCase().includes(reportSearch.toLowerCase()))
+                  .map((item) => (
+                    <div
+                      key={item.code}
+                      onClick={() => setActiveTaxReport({ reportCode: item.code, reportName: item.title, category: "MANAGEMENT_REPORT", taxType: item.taxType })}
+                      style={{
+                        padding: "10px 10px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        fontSize: 13,
+                        color: "#334155",
+                        borderBottom: "1px solid #f8fafc",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, padding: "2px 6px", background: "#f1f5f9", borderRadius: 3, fontWeight: 700, color: "#475569" }}>{item.code}</span>
+                        <span>{item.title}</span>
+                      </div>
+                      <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
+                          <path d="M3 3v18h18" />
+                          <path d="M18 17V9" />
+                          <path d="M13 17V5" />
+                          <path d="M8 17v-3" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Accordion 2: BÁO CÁO ĐỐI CHIẾU (matching Image 5) */}
+        {/* Accordion 2: BÁO CÁO ĐỐI CHIẾU THUẾ (4 Báo cáo) */}
         <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
-          {/* Header */}
           <div
             onClick={() => setIsReconSectionOpen(!isReconSectionOpen)}
             style={{
@@ -1558,7 +1416,10 @@ export default function MisaTaxWorkspace({
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Báo cáo đối chiếu</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Báo cáo đối chiếu thuế</span>
+              <span style={{ fontSize: 11.5, background: "#e2e8f0", color: "#475569", padding: "1px 6px", borderRadius: 10, fontWeight: 600 }}>4 báo cáo</span>
+            </div>
             {isReconSectionOpen ? (
               <ChevronUp size={16} style={{ color: "#64748b" }} />
             ) : (
@@ -1566,59 +1427,119 @@ export default function MisaTaxWorkspace({
             )}
           </div>
 
-          {/* Content */}
           {isReconSectionOpen && (
             <div style={{ padding: "8px 16px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div
-                  onClick={() => setPreviewReport("Bảng đối chiếu bảng kê thuế GTGT và sổ cái")}
-                  style={{
-                    padding: "10px 10px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#334155",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
-                >
-                  <span>Bảng đối chiếu bảng kê thuế GTGT và sổ cái</span>
-                  <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
-                      <path d="M3 3v18h18" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
-                    </svg>
-                  </div>
-                </div>
+                {[
+                  { code: "RPT-0178", title: "Báo cáo đối chiếu bảng kê thuế GTGT và sổ cái", taxType: "VAT" },
+                  { code: "RPT-0180", title: "Đối chiếu thông tin hóa đơn trên bảng kê mua vào và chứng từ", taxType: "VAT" },
+                  { code: "RPT-TAX-12", title: "Báo cáo đối chiếu nghĩa vụ thuế phát sinh và sổ cái", taxType: "ALL" },
+                  { code: "RPT-TAX-13", title: "Báo cáo đối chiếu khấu trừ thuế TNCN và chi phí tiền lương", taxType: "PIT" },
+                ]
+                  .filter((it) => !reportSearch || it.title.toLowerCase().includes(reportSearch.toLowerCase()) || it.code.toLowerCase().includes(reportSearch.toLowerCase()))
+                  .map((item) => (
+                    <div
+                      key={item.code}
+                      onClick={() => setActiveTaxReport({ reportCode: item.code, reportName: item.title, category: "RECONCILIATION_REPORT", taxType: item.taxType })}
+                      style={{
+                        padding: "10px 10px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        fontSize: 13,
+                        color: "#334155",
+                        borderBottom: "1px solid #f8fafc",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, padding: "2px 6px", background: "#fef3c7", borderRadius: 3, fontWeight: 700, color: "#92400e" }}>{item.code}</span>
+                        <span>{item.title}</span>
+                      </div>
+                      <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
+                          <path d="M3 3v18h18" />
+                          <path d="M18 17V9" />
+                          <path d="M13 17V5" />
+                          <path d="M8 17v-3" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
 
-                <div
-                  onClick={() => setPreviewReport("Bảng đối chiếu số thuế đã nộp và số thuế phải nộp")}
-                  style={{
-                    padding: "10px 10px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "#334155",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
-                >
-                  <span>Bảng đối chiếu số thuế đã nộp và số thuế phải nộp</span>
-                  <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
-                      <path d="M3 3v18h18" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
-                    </svg>
-                  </div>
-                </div>
+        {/* Accordion 3: BIỂU MẪU TỜ KHAI PHÁP LÝ (4 Báo cáo) */}
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+          <div
+            onClick={() => setIsLegalSectionOpen(!isLegalSectionOpen)}
+            style={{
+              padding: "10px 16px",
+              background: "#f8fafc",
+              borderBottom: isLegalSectionOpen ? "1px solid #e2e8f0" : "none",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Biểu mẫu tờ khai pháp lý</span>
+              <span style={{ fontSize: 11.5, background: "#e2e8f0", color: "#475569", padding: "1px 6px", borderRadius: 10, fontWeight: 600 }}>4 biểu mẫu</span>
+            </div>
+            {isLegalSectionOpen ? (
+              <ChevronUp size={16} style={{ color: "#64748b" }} />
+            ) : (
+              <ChevronDown size={16} style={{ color: "#64748b" }} />
+            )}
+          </div>
+
+          {isLegalSectionOpen && (
+            <div style={{ padding: "8px 16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {[
+                  { code: "RPT-TAX-08", title: "Tờ khai thuế GTGT khấu trừ (Mẫu 01/GTGT theo TT 80/2021 & TT 89/2026)", taxType: "VAT" },
+                  { code: "RPT-TAX-09", title: "Tờ khai thuế TNDN tạm tính (Mẫu 02/TNDN)", taxType: "CIT" },
+                  { code: "RPT-TAX-10", title: "Tờ khai quyết toán thuế TNDN (Mẫu 03/TNDN)", taxType: "CIT" },
+                  { code: "RPT-TAX-11", title: "Tờ khai thuế TNCN (Mẫu 05/KK-TNCN)", taxType: "PIT" },
+                ]
+                  .filter((it) => !reportSearch || it.title.toLowerCase().includes(reportSearch.toLowerCase()) || it.code.toLowerCase().includes(reportSearch.toLowerCase()))
+                  .map((item) => (
+                    <div
+                      key={item.code}
+                      onClick={() => setActiveTaxReport({ reportCode: item.code, reportName: item.title, category: "LEGAL_FORM_VIEW", taxType: item.taxType })}
+                      style={{
+                        padding: "10px 10px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        fontSize: 13,
+                        color: "#334155",
+                        borderBottom: "1px solid #f8fafc",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, padding: "2px 6px", background: "#ecfdf5", borderRadius: 3, fontWeight: 700, color: "#065f46" }}>{item.code}</span>
+                        <span>{item.title}</span>
+                      </div>
+                      <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
+                          <path d="M3 3v18h18" />
+                          <path d="M18 17V9" />
+                          <path d="M13 17V5" />
+                          <path d="M8 17v-3" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}

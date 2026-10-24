@@ -34,6 +34,7 @@ import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import MisaTrialBalanceManagementReport from "./MisaTrialBalanceManagementReport";
 import MisaStateObligationsReport from "./MisaStateObligationsReport";
 import MisaFinancialPositionReport from "./MisaFinancialPositionReport";
+import MisaFinancialBundleWorkspace from "./MisaFinancialBundleWorkspace";
 import MisaBusinessResultReport from "./MisaBusinessResultReport";
 import MisaCashFlowDirectReport from "./MisaCashFlowDirectReport";
 import MisaCashFlowIndirectReport from "./MisaCashFlowIndirectReport";
@@ -1932,6 +1933,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             </h3>
 
             {/* If user is viewing structured category (Báo cáo tài chính, Báo cáo phân tích, Tiền mặt, Tiền gửi) */}
+            {activeCategory === "financial" && !searchKeyword && <MisaFinancialBundleWorkspace notify={notify} onOpenReportByName={(rName) => setSelectedReport(rName)} />}
             {currentStructure ? (
               <div className="misa-reports-structured-container">
                 {/* 1. AVA Banner if present */}

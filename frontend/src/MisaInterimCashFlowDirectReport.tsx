@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { apiClient } from "./apiClient";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
   ChevronLeft,
   ChevronDown,
@@ -32,13 +32,13 @@ const FULL_B03A_DATA: InterimCashFlowItem[] = [
   // I. Lưu chuyển tiền từ hoạt động kinh doanh
   { id: "sec_1", name: "I. Lưu chuyển tiền từ hoạt động kinh doanh", isHeader: true, isBold: true },
   { id: "01", name: "1. Tiền thu từ bán hàng, cung cấp dịch vụ và doanh thu khác", code: "01", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
-  { id: "02", name: "2. Tiền chi trả cho người cung cấp hàng hóa và dịch vụ", code: "02", quarterCurrent: -10000000, quarterPrevious: 0, isClickable: true },
+  { id: "02", name: "2. Tiền chi trả cho người cung cấp hàng hóa và dịch vụ", code: "02", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
   { id: "03", name: "3. Tiền chi trả cho người lao động", code: "03", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
   { id: "04", name: "4. Chi phí đi vay đã trả", code: "04", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
   { id: "05", name: "5. Thuế thu nhập doanh nghiệp đã nộp", code: "05", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
   { id: "06", name: "6. Tiền thu khác từ hoạt động kinh doanh", code: "06", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
-  { id: "07", name: "7. Tiền chi khác cho hoạt động kinh doanh", code: "07", quarterCurrent: -10000000, quarterPrevious: 0, isClickable: true },
-  { id: "20", name: "Lưu chuyển tiền thuần từ hoạt động kinh doanh", code: "20", quarterCurrent: -20000000, quarterPrevious: 0, isBold: true },
+  { id: "07", name: "7. Tiền chi khác cho hoạt động kinh doanh", code: "07", quarterCurrent: 0, quarterPrevious: 0, isClickable: true },
+  { id: "20", name: "Lưu chuyển tiền thuần từ hoạt động kinh doanh", code: "20", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
 
   // II. Lưu chuyển tiền từ hoạt động đầu tư
   { id: "sec_2", name: "II. Lưu chuyển tiền từ hoạt động đầu tư", isHeader: true, isBold: true },
@@ -62,10 +62,10 @@ const FULL_B03A_DATA: InterimCashFlowItem[] = [
   { id: "40", name: "Lưu chuyển tiền thuần từ hoạt động tài chính", code: "40", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
 
   // Tổng kết cuối kỳ
-  { id: "50", name: "Lưu chuyển tiền thuần trong kỳ (50 = 20 + 30 + 40)", code: "50", quarterCurrent: -20000000, quarterPrevious: 0, isBold: true },
+  { id: "50", name: "Lưu chuyển tiền thuần trong kỳ (50 = 20 + 30 + 40)", code: "50", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
   { id: "60", name: "Tiền và tương đương tiền đầu kỳ", code: "60", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
   { id: "61", name: "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ", code: "61", quarterCurrent: 0, quarterPrevious: 0 },
-  { id: "70", name: "Tiền và tương đương tiền cuối kỳ (70 = 50 + 60 + 61)", code: "70", note: "V.1", quarterCurrent: -20000000, quarterPrevious: 0, isBold: true },
+  { id: "70", name: "Tiền và tương đương tiền cuối kỳ (70 = 50 + 60 + 61)", code: "70", note: "V.1", quarterCurrent: 0, quarterPrevious: 0, isBold: true },
 ];
 
 export interface MisaInterimCashFlowDirectReportProps {
@@ -156,15 +156,46 @@ export default function MisaInterimCashFlowDirectReport({
   const [rowsData, setRowsData] = useState<InterimCashFlowItem[]>(FULL_B03A_DATA);
 
   useEffect(() => {
+    const cid = getSelectedCompanyId();
+    const query = cid
+      ? `?company_id=${cid}&template_code=B03a-DN&cash_flow_method=DIRECT`
+      : "?template_code=B03a-DN&cash_flow_method=DIRECT";
     apiClient
-      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
-      .then((res) => {
+      .get<any>(`/api/v1/reports/cash-flow/runs/${query}`)
+      .then(async (runsRes) => {
+        const latestRun = runsRes?.runs?.[0];
+        if (latestRun?.id) {
+          const detailRes: any = await apiClient.get(
+            `/api/v1/reports/cash-flow/runs/${latestRun.id}/${cid ? `?company_id=${cid}` : ""}`
+          );
+          if (Array.isArray(detailRes?.lines)) {
+            const lineMap: Record<string, any> = {};
+            for (const ln of detailRes.lines) {
+              lineMap[ln.indicator_code] = ln;
+            }
+            setRowsData(
+              FULL_B03A_DATA.map((r) => {
+                const m = r.code ? lineMap[r.code] : null;
+                if (!m) return r;
+                const ytdCurr = m.slots_by_code?.YTD_CURRENT?.amount ?? m.current_period_amount;
+                const ytdPrev = m.slots_by_code?.YTD_PREVIOUS?.amount ?? m.comparative_period_amount;
+                return {
+                  ...r,
+                  quarterCurrent: Number(ytdCurr || 0),
+                  quarterPrevious: Number(ytdPrev || 0),
+                };
+              })
+            );
+            return;
+          }
+        }
+        const res = await apiClient.get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`);
         if (res?.b03_direct) {
           setRowsData(
             FULL_B03A_DATA.map((r) => {
               const m = r.code ? res.b03_direct[r.code] : null;
               return m
-                ? { ...r, quarterCurrent: Number(m.current || 0), quarterPrevious: Number(m.previous || 0) }
+                ? { ...r, quarterCurrent: Number(m.currentPeriod ?? m.current ?? 0), quarterPrevious: Number(m.previousPeriod ?? m.previous ?? 0) }
                 : r;
             })
           );
