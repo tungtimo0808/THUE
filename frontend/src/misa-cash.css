@@ -2073,8 +2073,8 @@
 /* Master Form Grid */
 .misa-voucher-master-grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 20px;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
   padding: 14px 20px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
@@ -2285,16 +2285,12 @@
 .misa-voucher-master-right {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   border-left: 1px solid #e2e8f0;
   padding-left: 20px;
-}
-
-.misa-voucher-right-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  width: 300px;
+  min-width: 300px;
+  box-sizing: border-box;
 }
 
 .misa-voucher-total-block {
@@ -2302,20 +2298,70 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  width: 100%;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e2e8f0;
+  margin-bottom: 2px;
 }
 
 .misa-voucher-total-label {
   font-size: 12px;
-  color: #475569;
+  color: #64748b;
   font-weight: 500;
   margin-bottom: 2px;
+  white-space: nowrap;
 }
 
 .misa-voucher-total-number {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   color: #0f172a;
-  line-height: 1;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-align: right;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.5px;
+}
+
+/* Metadata Stack below Total */
+.misa-voucher-meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.misa-voucher-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.misa-voucher-meta-row label {
+  font-size: 12.5px;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.misa-voucher-meta-control {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.misa-voucher-meta-control .misa-voucher-input {
+  width: 100%;
+  height: 30px;
+  font-size: 12.5px;
+  box-sizing: border-box;
 }
 
 /* Tabs and Table section */

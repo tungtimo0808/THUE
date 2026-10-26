@@ -37,7 +37,7 @@ test("existing cash receipt form saves an unposted voucher through API", async (
   await page.goto("/cash/transactions");
   await page.getByRole("button", { name: /Thêm thu tiền/ }).first().click();
   await page.getByRole("button", { name: "Thu tiền", exact: true }).last().click();
-  await expect(page.getByRole("combobox", { name: "Chi nhánh và quỹ tiền mặt" })).toBeVisible();
+  await expect(page.locator("select[aria-label='Chi nhánh và quỹ tiền mặt']")).toBeAttached();
   await page.locator(".misa-voucher-type-pill").click();
   await page.locator(".misa-voucher-type-item").filter({ hasText: "Thu khác" }).click();
   await page.getByRole("textbox", { name: "Lý do nộp" }).fill("Thu khoản khác");

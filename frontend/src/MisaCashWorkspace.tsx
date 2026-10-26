@@ -3492,7 +3492,7 @@ export function CreateVoucherModal({
         )}
 
         {!isReceipt && isBank && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ display: "none" }}>
             <label>Chi nhánh *<select aria-label="Chi nhánh chi tiền gửi" value={bankBranchId} onChange={event => setBankBranchId(event.target.value)}>
               <option value="">Chọn chi nhánh</option>{(bankPaymentCatalog.branches || []).filter(row => row.status === "ACTIVE" &&
                 (!selectedCompanyBankAccount?.branch || row.id === selectedCompanyBankAccount.branch)).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
@@ -3563,7 +3563,7 @@ export function CreateVoucherModal({
           </div>
         )}
         {isReceipt && !isBank && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, padding: "10px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ display: "none" }}>
             <label>Chi nhánh / Quỹ *<select aria-label="Chi nhánh và quỹ tiền mặt" value={fundId} onChange={event => setFundId(event.target.value)}>
               <option value="">Chọn quỹ</option>
               {(receiptCatalog.funds || []).filter(row => row.status === "ACTIVE").map(row => <option key={row.id} value={row.id}>{(receiptCatalog.branches || []).find(branch => branch.id === row.branch)?.name || "Chi nhánh"} · {row.code} · {row.name}</option>)}
@@ -3853,7 +3853,7 @@ export function CreateVoucherModal({
                       </div>
 
                       {/* Row 6: Tham chiếu ... */}
-                      <div style={{ paddingTop: 2 }}>
+                      <div style={{ paddingTop: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <a
                           href="#ref"
                           className="misa-voucher-ref-link"
@@ -3865,6 +3865,12 @@ export function CreateVoucherModal({
                           <span>Tham chiếu</span>
                           <span style={{ letterSpacing: 2, marginLeft: 4 }}>...</span>
                         </a>
+                        {currentType.id === "other_expense" && (
+                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#334155" }}>
+                            <input type="checkbox" checked={bankFee} onChange={event => setBankFee(event.target.checked)} />
+                            Phí ngân hàng tự trích
+                          </label>
+                        )}
                       </div>
                     </>
                   ) : currentType.hasYearField ? (
@@ -3916,7 +3922,7 @@ export function CreateVoucherModal({
                       </div>
 
                       {/* Row 6: Tham chiếu ... */}
-                      <div style={{ paddingTop: 2 }}>
+                      <div style={{ paddingTop: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <a
                           href="#ref"
                           className="misa-voucher-ref-link"
@@ -3928,6 +3934,12 @@ export function CreateVoucherModal({
                           <span>Tham chiếu</span>
                           <span style={{ letterSpacing: 2, marginLeft: 4 }}>...</span>
                         </a>
+                        {currentType.id === "other_expense" && (
+                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#334155" }}>
+                            <input type="checkbox" checked={bankFee} onChange={event => setBankFee(event.target.checked)} />
+                            Phí ngân hàng tự trích
+                          </label>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -3968,7 +3980,7 @@ export function CreateVoucherModal({
                       </div>
 
                       {/* Row 6: Tham chiếu ... */}
-                      <div style={{ paddingTop: 2 }}>
+                      <div style={{ paddingTop: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <a
                           href="#ref"
                           className="misa-voucher-ref-link"
@@ -3980,6 +3992,12 @@ export function CreateVoucherModal({
                           <span>Tham chiếu</span>
                           <span style={{ letterSpacing: 2, marginLeft: 4 }}>...</span>
                         </a>
+                        {currentType.id === "other_expense" && (
+                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", color: "#334155" }}>
+                            <input type="checkbox" checked={bankFee} onChange={event => setBankFee(event.target.checked)} />
+                            Phí ngân hàng tự trích
+                          </label>
+                        )}
                       </div>
                     </>
                   )}
@@ -4583,58 +4601,69 @@ export function CreateVoucherModal({
 
             {/* Right Section: Dates, Total, Voucher Code, Settlement Due Date */}
             <div className="misa-voucher-master-right">
-              {/* Row 1: Ngày hạch toán and Tổng tiền */}
-              <div className="misa-voucher-right-row">
-                <div className="misa-voucher-field" style={{ width: 145 }}>
+              {/* Total Block (Always at top, full width of column, right-aligned) */}
+              <div className="misa-voucher-total-block">
+                <div className="misa-voucher-total-label">Tổng tiền</div>
+                <div
+                  className="misa-voucher-total-number"
+                  style={{
+                    fontSize: (() => {
+                      const len = (totalAmount === 0 ? "0" : formatVND(totalAmount)).length;
+                      if (len > 18) return "20px";
+                      if (len > 15) return "24px";
+                      if (len > 12) return "28px";
+                      return "32px";
+                    })(),
+                  }}
+                  title={totalAmount === 0 ? "0" : formatVND(totalAmount)}
+                >
+                  {totalAmount === 0 ? "0" : formatVND(totalAmount)}
+                </div>
+              </div>
+
+              {/* Metadata Fields Stack (Full width, stable rows below Total) */}
+              <div className="misa-voucher-meta-stack">
+                <div className="misa-voucher-meta-row">
                   <label>Ngày hạch toán</label>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <VoucherDateField value={hachToanDate} onChange={setHachToanDate} label="Ngày hạch toán"/>
+                  <div className="misa-voucher-meta-control">
+                    <VoucherDateField value={hachToanDate} onChange={setHachToanDate} label="Ngày hạch toán" />
                   </div>
                 </div>
 
-                <div className="misa-voucher-total-block">
-                  <div className="misa-voucher-total-label">Tổng tiền</div>
-                  <div className="misa-voucher-total-number">
-                    {totalAmount === 0 ? "0" : formatVND(totalAmount)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 2: Ngày chứng từ / Ngày phiếu */}
-              <div className="misa-voucher-right-row">
-                <div className="misa-voucher-field" style={{ width: 145 }}>
+                <div className="misa-voucher-meta-row">
                   <label>{isBank ? "Ngày chứng từ" : (isReceipt ? "Ngày phiếu thu" : "Ngày phiếu chi")}</label>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <VoucherDateField value={voucherDate} onChange={setVoucherDate} label="Ngày chứng từ"/>
+                  <div className="misa-voucher-meta-control">
+                    <VoucherDateField
+                      value={voucherDate}
+                      onChange={setVoucherDate}
+                      label={isBank ? "Ngày chứng từ" : (isReceipt ? "Ngày phiếu thu" : "Ngày phiếu chi")}
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Row 3: Số chứng từ */}
-              <div className="misa-voucher-right-row">
-                <div className="misa-voucher-field" style={{ width: 145 }}>
+                <div className="misa-voucher-meta-row">
                   <label>{isBank ? "Số chứng từ" : (isReceipt ? "Số phiếu thu" : "Số phiếu chi")}</label>
-                  <input
-                    type="text"
-                    className="misa-voucher-input"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    required
-                  />
+                  <div className="misa-voucher-meta-control">
+                    <input
+                      type="text"
+                      className="misa-voucher-input"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      aria-label={isBank ? "Số chứng từ" : (isReceipt ? "Số phiếu thu" : "Số phiếu chi")}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Row 4 (Settlement Due Date for Advance / Format 3) */}
-              {currentType.hasSettlementDueDate && (
-                <div className="misa-voucher-right-row">
-                  <div className="misa-voucher-field" style={{ width: 145 }}>
+                {currentType.hasSettlementDueDate && (
+                  <div className="misa-voucher-meta-row">
                     <label>Hạn quyết toán</label>
-                    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                      <VoucherDateField value={settlementDueDate} onChange={setSettlementDueDate} label="Hạn quyết toán"/>
+                    <div className="misa-voucher-meta-control">
+                      <VoucherDateField value={settlementDueDate} onChange={setSettlementDueDate} label="Hạn quyết toán" />
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 

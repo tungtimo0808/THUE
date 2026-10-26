@@ -38,7 +38,7 @@ test("existing bank payment form saves an unposted voucher through API", async (
   await page.goto("/bank/transactions");
   await page.getByRole("button", { name: /Thêm chi tiền/ }).first().click();
   await page.getByRole("button", { name: "Chi tiền", exact: true }).last().click();
-  await expect(page.getByRole("combobox", { name: "Tài khoản ngân hàng chi" })).toBeVisible();
+  await expect(page.locator("select[aria-label='Tài khoản ngân hàng chi']")).toBeAttached();
   await page.locator(".misa-voucher-type-pill").first().click();
   await page.locator(".misa-voucher-type-item").filter({ hasText: /^8\. Chi khác$/ }).click();
   await page.getByRole("checkbox", { name: "Phí ngân hàng tự trích" }).check();
