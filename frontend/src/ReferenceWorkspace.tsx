@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -73,6 +73,7 @@ import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
 import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
+import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
 
 // Code-split heavy workspace modules for instant initial load (sub-second cold start)
 const MisaCashWorkspace = lazy(() => import("./MisaCashWorkspace"));
@@ -217,6 +218,9 @@ function ReferenceWorkspace() {
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     navigate = useNavigate();
+
+  const [isNavPending, startNavTransition] = useTransition();
+  const [optimisticTab, setOptimisticTab] = useState<string | null>(null);
 
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
@@ -459,6 +463,42 @@ function ReferenceWorkspace() {
   const [recentlyChangedCluster, setRecentlyChangedCluster] = useState<string | null>(null);
   const [isSwitchingContext, setIsSwitchingContext] = useState(false);
 
+  // High-performance Keep-Alive LRU cache for instant tab/workspace switching
+  const [visitedModules, setVisitedModules] = useState<string[]>(() => [moduleId]);
+  const MAX_KEPT_MODULES = 4;
+
+  useEffect(() => {
+    setupIdlePreloading();
+  }, []);
+
+  useEffect(() => {
+    if (optimisticTab && tab === optimisticTab) {
+      setOptimisticTab(null);
+    }
+  }, [tab, optimisticTab]);
+
+  useEffect(() => {
+    setVisitedModules((prev) => {
+      const filtered = prev.filter((id) => id !== moduleId);
+      const updated = [...filtered, moduleId];
+      if (updated.length > MAX_KEPT_MODULES) {
+        return updated.slice(updated.length - MAX_KEPT_MODULES);
+      }
+      return updated;
+    });
+  }, [moduleId]);
+
+  useEffect(() => {
+    setVisitedModules([moduleId]);
+  }, [company.id, period]);
+
+  const displayModules = useMemo(() => {
+    if (!visitedModules.includes(moduleId)) {
+      return [...visitedModules, moduleId];
+    }
+    return visitedModules;
+  }, [visitedModules, moduleId]);
+
   // Sync dashboard summary KPIs from backend /api/v1/common/dashboard/ when on overview
   useEffect(() => {
     if (!apiToken || !company.id || moduleId !== "overview") return;
@@ -694,6 +734,286 @@ function ReferenceWorkspace() {
       return;
     }
     setInfo(name);
+  };
+
+  const renderWorkspaceContentForModule = (targetModuleId: string, targetTab?: string) => {
+    const activeTab = targetTab || (referenceTabs[targetModuleId]?.[0]?.[0] || "transactions");
+
+    if (activeTab === "extended-apis" && targetModuleId in MODULE_EXTENDED_APIS) {
+      return (
+        <div style={{ padding: 16 }}>
+          <MisaModuleApiExtensionPanel
+            moduleKey={targetModuleId as keyof typeof MODULE_EXTENDED_APIS}
+            companyId={company.id}
+            notify={setNotice}
+          />
+        </div>
+      );
+    }
+
+    if (targetModuleId === "overview" && activeTab === "overview") {
+      return (
+        <MisaDashboardOverview
+          items={scoped}
+          companyName={company.name}
+          period={period}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "invoices") {
+      if (activeTab === "adjustments") {
+        return (
+          <>
+            <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} />
+            <InvoiceLookupWorkspace mode="errors" href={href} />
+          </>
+        );
+      }
+      if (["process", "meinvoice", "error-guide"].includes(activeTab)) {
+        return <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} company={company} />;
+      }
+      if (activeTab === "sync") {
+        return <TaxInvoiceSyncPanel companyId={company.id} token={apiToken} href={href} />;
+      }
+      if (activeTab === "incoming" && (!childTab || childTab === "inbox")) {
+        return <IncomingInvoiceWorkspace notify={setNotice} />;
+      }
+      if (["outgoing", "pending", "lookup", "issuance", "unposted"].includes(activeTab)) {
+        return <InvoiceLookupWorkspace mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
+      }
+    }
+
+    if (targetModuleId === "purchases") {
+      if (activeTab === "invoice-processing" && childTab === "supplier-risk") {
+        return <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />;
+      }
+      if (activeTab === "invoice-processing") {
+        return <IncomingInvoiceWorkspace notify={setNotice} />;
+      }
+      return (
+        <MisaPurchaseWorkspace
+          key={`purchases-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "reports") {
+      return <MisaReportCenterWorkspace notify={setNotice} />;
+    }
+
+    if (targetModuleId === "directory") {
+      return (
+        <MisaDirectoryWorkspace
+          key={params.get("directory") || "menu"}
+          initialName={params.get("directory")}
+          notify={setNotice}
+          legacy={<DirectoryWorkspace notify={setNotice} />}
+        />
+      );
+    }
+
+    if (targetModuleId === "opening") {
+      return <MisaOpeningBalanceWorkspace notify={setNotice} />;
+    }
+
+    if (targetModuleId === "cash") {
+      return (
+        <MisaCashWorkspace
+          key={`cash-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "bank") {
+      return (
+        <MisaBankWorkspace
+          key={`bank-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "sales") {
+      return (
+        <MisaSalesWorkspace
+          key={`sales-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "inventory") {
+      return (
+        <MisaInventoryWorkspace
+          key={`inventory-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "tools") {
+      return (
+        <MisaToolsWorkspace
+          key={`tools-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "assets") {
+      return (
+        <MisaAssetsWorkspace
+          key={`assets-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "payroll") {
+      return (
+        <MisaPayrollWorkspace
+          key={`payroll-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "cost") {
+      return (
+        <MisaCostWorkspace
+          key={`cost-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab || "process"}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "ledger") {
+      return (
+        <MisaLedgerWorkspace
+          key={`ledger-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab || "process"}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "budget") {
+      return (
+        <MisaBudgetWorkspace
+          key={`budget-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab || "charts"}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "tax") {
+      return (
+        <MisaTaxWorkspace
+          key={`tax-${company.id}-${period}`}
+          company={company}
+          period={period}
+          tab={activeTab || "declarations"}
+          href={href}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (targetModuleId === "analysis") {
+      return <MisaFinancialAnalysisWorkspace notify={setNotice} />;
+    }
+
+    if (activeTab === "process") {
+      return (
+        <AuditedProcessWorkspace
+          moduleId={targetModuleId}
+          moduleLabel={referenceNav.find((m) => m.id === targetModuleId)?.label || "Kế toán"}
+          notify={setNotice}
+        />
+      );
+    }
+
+    if (activeTab === "transactions" && ["cash", "bank", "sales"].includes(targetModuleId)) {
+      return (
+        <ReferenceTransactions
+          key={`${targetModuleId}-${company.id}-${period}`}
+          moduleId={targetModuleId}
+          items={scoped}
+          create={create}
+          onDetail={(t) => setDetailId(t.id)}
+          notify={setNotice}
+          onInfo={infoAction}
+        />
+      );
+    }
+
+    const modTarget = referenceNav.find((m) => m.id === targetModuleId);
+    const modTabs = referenceTabs[targetModuleId] || [["transactions", "Danh sách"]];
+    const nodeTarget = referenceTabHierarchy[targetModuleId]?.find((item) => item.id === activeTab);
+
+    return (
+      <NestedWorkspace
+        moduleId={targetModuleId}
+        moduleLabel={modTarget?.label || "Phân hệ"}
+        tab={
+          nodeTarget || {
+            id: activeTab,
+            label: modTabs.find((item) => item[0] === activeTab)?.[1] || modTarget?.label || "Danh sách nghiệp vụ",
+          }
+        }
+        childId={childTab}
+        href={href}
+        notify={setNotice}
+      />
+    );
   };
   return (
     <div className={`reference-app ${collapsed ? "ref-collapsed" : ""}`}>
@@ -1199,6 +1519,21 @@ function ReferenceWorkspace() {
         </span>
         {!["reports", "analysis", "opening"].includes(moduleId) && (
         <div className="ref-module-bar" ref={moduleBarRef}>
+          {isNavPending && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 2.5,
+                background: "linear-gradient(90deg, #00b06b 0%, #0284c7 50%, #00b06b 100%)",
+                backgroundSize: "200% 100%",
+                animation: "sv-progress-flow 0.8s linear infinite",
+                zIndex: 9999,
+              }}
+            />
+          )}
           {/* Hidden measurement row to accurately compute how many tabs fit the current width */}
           <div className="ref-module-bar-measure" ref={measureBarRef} aria-hidden="true">
             {candidateTabs.map(([id, label]) => (
@@ -1218,12 +1553,21 @@ function ReferenceWorkspace() {
 
           <nav aria-label="Chức năng phân hệ">
             {primaryVisibleTabs.map(([id, label]) => {
-              const isActive = tab === id || (!tab && id === tabs[0][0]);
+              const effectiveTab = optimisticTab || tab;
+              const isActive = effectiveTab === id || (!effectiveTab && id === tabs[0][0]);
               return (
                 <Link
                   className={isActive ? "active" : ""}
                   to={href(`/${moduleId}/${id}`)}
                   key={id}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                    e.preventDefault();
+                    setOptimisticTab(id);
+                    startNavTransition(() => {
+                      navigate(href(`/${moduleId}/${id}`));
+                    });
+                  }}
                 >
                   {label}
                 </Link>
@@ -1255,13 +1599,22 @@ function ReferenceWorkspace() {
                     Chức năng khác ({secondaryTabs.length})
                   </div>
                   {secondaryTabs.map(([id, label]) => {
-                    const isActive = tab === id;
+                    const effectiveTab = optimisticTab || tab;
+                    const isActive = effectiveTab === id;
                     return (
                       <Link
                         key={id}
                         to={href(`/${moduleId}/${id}`)}
                         className={`ref-tab-more-item ${isActive ? "active" : ""}`}
-                        onClick={() => setTabMoreOpen(false)}
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                          e.preventDefault();
+                          setTabMoreOpen(false);
+                          setOptimisticTab(id);
+                          startNavTransition(() => {
+                            navigate(href(`/${moduleId}/${id}`));
+                          });
+                        }}
                       >
                         <span>{label}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -1497,189 +1850,20 @@ function ReferenceWorkspace() {
         </div>
         )}
         <Suspense fallback={<WorkspaceLoader />}>
-        {tab === "extended-apis" && moduleId in MODULE_EXTENDED_APIS ? (
-          <div style={{ padding: 16 }}>
-            <MisaModuleApiExtensionPanel
-              moduleKey={moduleId as keyof typeof MODULE_EXTENDED_APIS}
-              companyId={company.id}
-              notify={setNotice}
-            />
-          </div>
-        ) : moduleId === "overview" && tab === "overview" ? (
-          <MisaDashboardOverview
-            items={scoped}
-            companyName={company.name}
-            period={period}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === 'invoices' && tab === 'adjustments' ? (
-          <><MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice}/><InvoiceLookupWorkspace mode="errors" href={href}/></>
-        ) : moduleId === 'invoices' && ['process','meinvoice','error-guide'].includes(tab) ? (
-          <MisaInvoiceWorkspace tab={tab} href={href} notify={setNotice} company={company}/>
-        ) : moduleId === 'invoices' && tab === 'sync' ? (
-          <TaxInvoiceSyncPanel companyId={company.id} token={apiToken} href={href}/>
-        ) : moduleId === "invoices" && tab === "incoming" && (!childTab || childTab === "inbox") ? (
-          <IncomingInvoiceWorkspace notify={setNotice} />
-        ) : moduleId === "invoices" && ["outgoing", "pending", "lookup", "issuance", "unposted"].includes(tab) ? (
-          <InvoiceLookupWorkspace mode={tab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href}/>
-        ) : moduleId === "purchases" && tab === "invoice-processing" && childTab === "supplier-risk" ? (
-          <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />
-        ) : moduleId === "purchases" && tab === "invoice-processing" ? (
-          <IncomingInvoiceWorkspace notify={setNotice} />
-        ) : moduleId === "purchases" ? (
-          <MisaPurchaseWorkspace
-            key={`purchases-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "reports" ? (
-          <MisaReportCenterWorkspace notify={setNotice} />
-        ) : moduleId === "directory" ? (
-          <MisaDirectoryWorkspace key={params.get("directory") || "menu"} initialName={params.get("directory")} notify={setNotice} legacy={<DirectoryWorkspace notify={setNotice}/>}/>
-        ) : moduleId === "opening" ? (
-          <MisaOpeningBalanceWorkspace notify={setNotice} />
-        ) : moduleId === "cash" ? (
-          <MisaCashWorkspace
-            key={`cash-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "bank" ? (
-          <MisaBankWorkspace
-            key={`bank-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "sales" ? (
-          <MisaSalesWorkspace
-            key={`sales-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "inventory" ? (
-          <MisaInventoryWorkspace
-            key={`inventory-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "tools" ? (
-          <MisaToolsWorkspace
-            key={`tools-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "assets" ? (
-          <MisaAssetsWorkspace
-            key={`assets-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "payroll" ? (
-          <MisaPayrollWorkspace
-            key={`payroll-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "cost" ? (
-          <MisaCostWorkspace
-            key={`cost-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab || "process"}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "ledger" ? (
-          <MisaLedgerWorkspace
-            key={`ledger-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab || "process"}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "budget" ? (
-          <MisaBudgetWorkspace
-            key={`budget-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab || "charts"}
-            href={href}
-            notify={setNotice}
-          />
-        ) : tab === "process" ? (
-          <AuditedProcessWorkspace
-            moduleId={moduleId}
-            moduleLabel={module?.label || "Kế toán"}
-            notify={setNotice}
-          />
-        ) : tab === "transactions" &&
-          ["cash", "bank", "sales"].includes(
-            moduleId,
-          ) ? (
-          <ReferenceTransactions
-            key={`${moduleId}-${company.id}-${period}`}
-            moduleId={moduleId}
-            items={scoped}
-            create={create}
-            onDetail={(t) => setDetailId(t.id)}
-            notify={setNotice}
-            onInfo={infoAction}
-          />
-        ) : moduleId === "tax" ? (
-          <MisaTaxWorkspace
-            key={`tax-${company.id}-${period}`}
-            company={company}
-            period={period}
-            tab={tab || "declarations"}
-            href={href}
-            notify={setNotice}
-          />
-        ) : moduleId === "analysis" ? (
-          <MisaFinancialAnalysisWorkspace notify={setNotice} />
-        ) : (
-          <NestedWorkspace
-            moduleId={moduleId}
-            moduleLabel={module?.label || "Phân hệ"}
-            tab={
-              activeTabNode || {
-                id: tab,
-                label:
-                  tabs.find((item) => item[0] === tab)?.[1] ||
-                  module?.label ||
-                  "Danh sách nghiệp vụ",
-              }
-            }
-            childId={childTab}
-            href={href}
-            notify={setNotice}
-          />
-        )}
+          {displayModules.map((mId) => {
+            const isCurrent = mId === moduleId;
+            return (
+              <div
+                key={`keepalive-${mId}-${company.id}-${period}`}
+                style={{
+                  display: isCurrent ? "contents" : "none",
+                }}
+                aria-hidden={!isCurrent}
+              >
+                {renderWorkspaceContentForModule(mId, isCurrent ? (optimisticTab || tab) : undefined)}
+              </div>
+            );
+          })}
         </Suspense>
       </main>
       {panel === "settings" && (
