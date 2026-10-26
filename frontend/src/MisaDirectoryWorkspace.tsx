@@ -40,6 +40,11 @@ const directoryApiPaths: Record<string, string> = {
   "Loại tiền": "/api/v1/master-data/currencies/",
   "Loại chứng từ": "/api/v1/master-data/document-types/",
   "Điều khoản thanh toán": "/api/v1/master-data/payment-terms/",
+  "Loại tỷ giá": "/api/v1/master-data/exchange-rate-types/",
+  "Bảng tỷ giá": "/api/v1/master-data/exchange-rates/",
+  "Hồ sơ tín dụng KH": "/api/v1/master-data/customer-profiles/",
+  "Vị trí lưu kho": "/api/v1/master-data/inventory-locations/",
+  "Quy tắc đánh số": "/api/v1/master-data/document-numbering-rules/",
 };
 const writableDirectories = new Set([
   "Kho", "Khoản mục chi phí", "Mã thống kê", "Ngân hàng",

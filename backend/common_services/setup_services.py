@@ -122,8 +122,10 @@ def complete_company_setup(company, actor, request=None):
     _ensure_units(company)
     _ensure_defaults(company)
     _ensure_cash_fund(company)
+    from .models import ModuleCatalog
+    available_catalog = set(ModuleCatalog.objects.values_list("code", flat=True))
     for module_code in WORKSPACE_MODULES:
-        if not check_module_active(company, module_code):
+        if module_code in available_catalog and not check_module_active(company, module_code):
             enable_module(company, module_code, actor, notes="Bật khi hoàn tất thiết lập ban đầu")
 
     setting, _ = CoreCompanySetting.objects.get_or_create(company=company)

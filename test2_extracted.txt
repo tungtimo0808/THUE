@@ -1,0 +1,5879 @@
+BÀI TẬP BÁO CÁO TÀI CHÍNH
+
+THÔNG TIN DOANH NGHIỆP
+
+Thông tin
+
+Chi tiết
+
+Tên công ty
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Địa chỉ trụ sở chính
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Địa điểm kinh doanh
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Mã số thuế
+
+109876543
+
+Ngành nghề kinh doanh
+
+Kinh doanh thương mại các mặt hàng điện tử. thiết bị công nghệ và phụ kiện
+
+Vốn điều lệ
+
+5.000.000.000 đồng
+
+Đơn vị tiền tệ hạch toán
+
+Đồng Việt Nam
+
+Chế độ kế toán áp dụng
+
+Chế độ kế toán doanh nghiệp áp dụng theo Thông tư 200/2014/TT-BTC của Bộ trưởng Bộ Tài chính và các thông tư hướng dẫn. sửa đổi. bổ sung chế độ kế toán của Bộ Tài chính
+
+Hình thức kế toán áp dụng
+
+Nhật ký chung
+
+Phương pháp kế toán hàng tồn kho
+
+Kê khai thường xuyên
+
+Phương pháp tính giá hàng tồn kho
+
+Bình quân cuối kỳ
+
+Phương pháp tính thuế
+
+Khấu trừ
+
+Phương pháp khấu hao
+
+Khấu hao đường thẳng
+
+I. Số dư đầu kỳ
+
+BẢNG TỔNG HỢP CHI TIẾT THANH TOÁN VỚI NGƯỜI BÁN
+
+STT
+
+Đối tượng
+
+Số dư đầu tháng 12
+
+Nợ
+
+Có
+
+1
+
+Công ty Liên Khương
+
+80,000,000
+
+2
+
+Công ty Mạnh Thắng
+
+200,000,000
+
+3
+
+Công ty Thành Đạt
+
+150,000,000
+
+Cộng
+
+430,000,000
+
+BẢNG TỔNG HỢP CHI TIẾT THANH TOÁN VỚI NGƯỜI MUA
+
+STT
+
+Đối tượng
+
+Số dư đầu tháng 12
+
+Nợ
+
+Có
+
+1
+
+Công ty Phan Minh
+
+73,600,000
+
+2
+
+Công ty Thanh KTS
+
+120,000,000
+
+3
+
+Công ty Hùng Cường
+
+180,000,000
+
+Cộng
+
+373,600,000
+
+BẢNG TỔNG HỢP CHI TIẾT VẬT LIỆU, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA
+
+Tài khoản: TK 152
+
+Tháng 12 năm N
+
+STT
+
+Tên, quy cách vật liệu, dụng cụ, sản phẩm, hàng hóa
+
+Số lượng
+
+Đơn giá
+
+Tồn đầu tháng 12
+
+1
+
+Dây cáp điện
+
+20
+
+1,500,000
+
+30,000,000
+
+2
+
+Keo dán đa năng
+
+50
+
+20,000
+
+1,000,000
+
+3
+
+Vải lau CN
+
+100
+
+50,000
+
+5,000,000
+
+Cộng
+
+36,000,000
+
+BẢNG TỔNG HỢP CHI TIẾT VẬT LIỆU, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA
+
+Tài khoản: TK 153
+
+Tháng 12 năm N
+
+STT
+
+Tên, quy cách vật liệu, dụng cụ, sản phẩm, hàng hóa
+
+Số lượng
+
+Đơn giá
+
+Tồn đầu tháng 12
+
+1
+
+Ghế xoay văn phòng
+
+5
+
+800,000
+
+4,000,000
+
+2
+
+Máy hủy tài liệu
+
+1
+
+2,500,000
+
+2,500,000
+
+3
+
+Bàn làm việc
+
+3
+
+2,500,000
+
+7,500,000
+
+Cộng
+
+14,000,000
+
+BẢNG TỔNG HỢP CHI TIẾT VẬT LIỆU, DỤNG CỤ, SẢN PHẨM, HÀNG HÓA
+
+Tài khoản: TK 156
+
+Tháng 12 năm N
+
+STT
+
+Tên, quy cách vật liệu, dụng cụ, sản phẩm, hàng hóa
+
+Số lượng
+
+Đơn giá
+
+Tồn đầu tháng 12
+
+1
+
+Laptop Dell Ins
+
+20
+
+12,000,000
+
+240,000,000
+
+2
+
+Laptop HP
+
+20
+
+8,000,000
+
+160,000,000
+
+3
+
+Macbook Air 13" M3
+
+10
+
+20,500,000
+
+205,000,000
+
+4
+
+Chuột không dây Dell MS5120
+
+100
+
+450,000
+
+45,000,000
+
+5
+
+Màn hình máy tính LG 27UL500
+
+10
+
+5,600,000
+
+56,000,000
+
+Cộng
+
+706,000,000
+
+II. Các nghiệp vụ kinh tế phát sinh trong tháng 12/N
+
+1. Ngày 01/12, xuất kho gửi bán xuất kho gửi đại lý công ty cổ phần Hoàng Long computer, bán đúng giá hưởng hoa hồng 10%: Laptop Dell Ins 15 giá 16.800.000/c; Laptop HP 15s giá 11.200.000/c. Doanh nghiệp xuất kho theo PXK hàng gửi bán đại lý số 1.
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký hiệu:
+
+DL/25ABC
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số:
+
+1
+
+PHIẾU XUẤT KHO HÀNG GỬI BÁN ĐẠI LÝ
+
+Liên 1: Lưu
+
+Ngày 01 tháng 12 năm N
+
+Căn cứ hợp đồng kinh tế số: 131569/ABC ký ngày 01 tháng 12 năm N của Công tyTNHH Thương Mại và dịch vụ ABC và đại lý Công ty CP Hoàng Long Computer, Công ty thực hiện xuất kho hàng gửi bán đại lý theo nội dung sau:
+
+Họ và tên người vận chuyển: NGUYỄN VĂN LÂM
+
+Phương tiện vận chuyển: Xe tải
+
+Xuất tại kho: Kho Công ty của Công ty TNHH Thương Mại và dịch vụ ABC
+
+Nhập tại kho: Kho Đại lý tại Công ty CP Hoàng Long Computer
+
+STT
+
+Tên, nhãn hiệu, quy cách, phẩm chất vật
+
+tư, dụng cụ, sản phẩm, hàng hóa
+
+Mã số
+
+Đơn vị tính
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+Laptop Dell Ins 15
+
+LT_DELL 15s
+
+Cái
+
+10
+
+2
+
+Laptop HP 15s
+
+LT_HP 15s
+
+Cái
+
+10
+
+Cộng
+
+20
+
+Số tiền (viết bằng chữ):
+
+Người nhận hàng
+
+Người lập
+
+Thủ kho xuất
+
+Người vận chuyển
+
+Thủ kho nhập
+
+(Ký, ghi rõ họ tên)
+
+(Ký, ghi rõ họ tên)
+
+(Ký, ghi rõ họ tên)
+
+(Ký, ghi rõ họ tên)
+
+(Ký, ghi rõ họ tên)
+
+(Cần kiểm tra, đối chiếu khi lập, giao nhận)
+
+Ghi chú:
+
+Liên 1: Lưu
+
+Liên 2: Giao cho đại lý bán hàng Liên 3: Nội bộ
+
+2. Ngày 03/12, Công ty mua hàng hóa nhập về kho Công ty, thời hạn thanh toán 10 ngày kể từ ngày nhận hàng. Doanh nghiệp nhập kho theo PNK số 60 ngày 03/12/N
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 03 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TVP
+
+Số:
+
+120
+
+Đơn vị bán hàng:
+
+CTCP VẬN TẢI VÀ THƯƠNG MẠI VẠN PHÁT
+
+Mã số thuế:
+
+2 0 0 4 6 3 6 8 6
+
+Địa chỉ:
+
+Số 7 lô 2A Lê Hồng Phong. P. Đông Khê. Hải Phòng
+
+Số tài khoản:
+
+120400889 - Tại NH MBbank - Chi nhánh Ngô Quyền
+
+Điện thoại:
+
+(0243) 8366 2288
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+1 0 9 8 7 6 5 4 3
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Laptop Dell Ins 15: 20c x 12,000,000
+
+Cái
+
+20
+
+12.300.000
+
+246.000.000
+
+2
+
+Laptop HP 15s: 20c x 8,000,000
+
+Cái
+
+20
+
+8.100.000
+
+162.000.000
+
+3
+
+Macbook Air 13" M3  : 10c x 20,500,000
+
+Cái
+
+20
+
+20.200.000
+
+404.000.000
+
+Cộng tiền hàng:
+
+812.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+81.200.000
+
+Tổng cộng tiền thanh toán:
+
+893.200.000
+
+Số tiền viết bằng chữ: Tám trăm chín ba triệu hai trăm nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CTCP VẬN TẢI VÀ THƯƠNG MẠI VẠN PHÁT
+
+Ký ngày:
+
+03/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+3. Ngày 05/12, thanh toán lương cho cán bộ công nhân viên tháng 11/ N
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951533
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+DICH VU CHUYEN TIEN THANH TOAN LUONG
+
+Số tài khoản
+
+Account number
+
+123456789
+
+-
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 05/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 250,600,000
+
+0
+
+- 250,600,000
+
+Số tiền bằng chữ/ Amount in words: Hai trăm năm mươi triệu sáu trăm nghìn đồng
+
+Nội dung thanh toán/ Description: ABC thanh toan luong thang 11/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+4. Ngày 05/12, nộp bảo hiểm cho cơ quan quản lý
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951534
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+BAO HIEM XA HOI HOAN KIEM
+
+Số tài khoản
+
+Account number
+
+123456789
+
+1300895235
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+BIDV
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 05/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 30,500,000
+
+0
+
+- 30,500,000
+
+Số tiền bằng chữ/ Amount in words: Ba mươi triệu năm trăm nghìn đồng
+
+Nội dung thanh toán/ Description: ABC nop bao hiem xa hoi thang 11/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+5. Ngày 05/12, Công ty xuất bán hàng hóa cho Công ty TNHH Kinh doanh Minh Hạnh. Doanh nghiệp xuất kho theo PXK số 80 ngày 05/12/N.
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 05 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+152
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH Kinh doanh Minh Hạnh
+
+Mã số thuế:
+
+110101949
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số nhà BT21 làng Việt kiều Châu Âu. P. Mộ Lao. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Laptop Dell Ins 15
+
+Cái
+
+12
+
+16.800.000
+
+201.600.000
+
+2
+
+Macbook Air 13" M3
+
+Cái
+
+8
+
+28.700.000
+
+229.600.000
+
+Cộng tiền hàng:
+
+431.200.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+43.120.000
+
+Tổng cộng tiền thanh toán:
+
+474.320.000
+
+Số tiền viết bằng chữ: Bốn trăm bảy bốn triệu ba trăm hai mươi nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+05/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai: Chứng từ thanh toán
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951543
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO CÓ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CTY TNHH KINH DOANH MINH HẠNH
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+Số tài khoản
+
+Account number
+
+175379064
+
+123456789
+
+Ngân hàng
+
+Bank
+
+NH MBBANK
+
+NH TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 05/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+474,320,000
+
+0
+
+474,320,000
+
+Số tiền bằng chữ/ Amount in words: Bốn trăm bảy bốn triệu ba trăm hai mươi nghìn đồng
+
+Nội dung thanh toán/ Description: Cong ty Minh Hanh thanh toan hoa don so 152 ngay 05/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+6. Ngày 6/12, xuất sử dụng cho phòng kỹ thuật
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số : 02 - VT
+
+Bộ phận Kho Công ty
+
+(Ban hành kèm theo Thông tư số 200 ngày 22 tháng 12 năm 2014 của Bộ Tài chính)
+
+PHIẾU XUẤT KHO
+
+Ngày 06  tháng 12 năm N
+
+Số: 81
+
+Nợ: 641
+
+Có: 152
+
+Họ và tên người nhận hàng: ĐẶNG THUẬN
+
+Địa chỉ: Phòng kỹ thuật
+
+Lý do xuất kho: Xuất kho vật liệu bảo hành sản phẩm cho khách hàng
+
+Xuất tại kho: Kho nguyên vật liệu
+
+Địa điểm: 198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+STT
+
+Tên, nhãn hiệu, quy cách, phẩm chất vật tư, dụng cụ sản phẩm, hàng hóa
+
+Mã số
+
+Đơn vị tính
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+Yêu cầu
+
+Thực xuất
+
+A
+
+B
+
+C
+
+D
+
+1
+
+2
+
+3
+
+4
+
+1
+
+Dây cáp điện
+
+VL_DCD
+
+Cuộn
+
+2
+
+2
+
+2
+
+Keo dán đa năng
+
+VL_KDN
+
+Lọ
+
+1
+
+1
+
+Cộng
+
+3
+
+3
+
+- Tổng số tiền (viết bằng chữ):
+
+- Số chứng từ gốc kèm theo: 01 Phiếu đề nghị xuất kho
+
+Ngày 06  tháng 12 năm N
+
+Người lập phiếu
+
+Người nhận hàng
+
+Thủ kho
+
+Kế toán trưởng
+
+Giám đốc
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên, đóng dấu)
+
+HOÀNG VĂN NIÊN
+
+ĐẶNG THUẬN
+
+HOÀNG VĂN NIÊN
+
+NGUYỄN THỊ YẾN
+
+TRƯƠNG THANH QUÂN
+
+7. Ngày 8/12, chi mua VPP dùng cho phòng hành chính
+
+Chứng từ 1: Hóa đơn mua hàng
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 08 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAT
+
+Số:
+
+320
+
+Đơn vị bán hàng:
+
+CÔNG TY CỔ PHẦN VĂN PHÒNG PHẨM AN TÂM
+
+Mã số thuế:
+
+2 0 0 4 6 8 7 6 8 4
+
+Địa chỉ:
+
+Số 27, Ngõ 198, Phố Thái Hà, P. Trung Liệt, TP. Hà Nội
+
+Số tài khoản:
+
+1912345678 - Tại NH Techcombank - Chi nhánh Hoàng Cầu
+
+Điện thoại:
+
+098353834
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+1 0 9 8 7 6 5 4 3
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Tiền mặt
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Giấy in Double A A4 70gsm
+
+Ream
+
+20
+
+55.000
+
+1.100.000
+
+2
+
+Bút bi Thiên Long TL-08
+
+Chiếc
+
+50
+
+5.000
+
+250.000
+
+3
+
+Bìa kẹp nhựa Thiên Long
+
+Chiếc
+
+100
+
+2.500
+
+250.000
+
+4
+
+Kẹp giấy P-55
+
+Hộp
+
+5
+
+15.000
+
+75.000
+
+Cộng tiền hàng:
+
+1.675.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+167.500
+
+Tổng cộng tiền thanh toán:
+
+1.842.500
+
+Số tiền viết bằng chữ: Một triệu tám trăm bốn mươi hai ngàn năm trăm.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY CỔ PHẦN VĂN PHÒNG PHẨM AN TÂM
+
+Ký ngày:
+
+08/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số 02 - TT
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+(Ban hành theo Thông tư số 200/2014/TT-BTC
+
+Ngày 22/12/2014 của Bộ Tài chính)
+
+PHIẾU CHI
+
+Quyển số:
+
+Ngày 08 tháng 12 năm N
+
+Số:
+
+180
+
+Nợ:
+
+6422, 1331
+
+Có:
+
+1111
+
+Họ và tên người nhận tiền:
+
+Hoàng Bá Cung
+
+Địa chỉ:
+
+Phòng Hành chính Nhân sự
+
+Lý do chi:
+
+MUA VPP DÙNG CHO PHÒNG HCNS
+
+Số tiền:
+
+1.842.500 VND
+
+Viết bằng chữ:
+
+Một triệu tám trăm bốn mươi hai nghìn năm trăm đồng chẵn.
+
+Kèm theo:
+
+...........  chứng từ gốc
+
+Ngày 08 tháng 12 năm 2025
+
+Giám đốc
+
+Kế toán trưởng
+
+Thủ quỹ
+
+Người lập phiếu
+
+Người nhận tiền
+
+(Ký, họ tên, đóng dấu)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+Đã nhận đủ số tiền (Viết bằng chữ):
+
+Một triệu tám trăm bốn mươi hai nghìn năm trăm đồng chẵn.
+
+Chứng từ 2: Phiếu chi
+
+8. Ngày 9/12, chi tạm ứng cho nhân viên Phạm Quang Hòa nhân viên kỹ thuật đi công tác
+
+Chứng từ 1: Giấy đề nghị tạm ứng
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+GIẤY ĐỀ NGHỊ TẠM ỨNG
+
+Ngày 09 tháng 12 năm N
+
+Số : 35
+
+Kính gửi: Ban giám đốc Công ty TNHH thương mại và dịch vụ ABC
+
+Tên tôi là: Phạm Quang Hòa
+
+Bộ phận (hoặc địa chỉ): Phòng Kỹ thuật
+
+Đề nghị cho tạm ứng số tiền: 5.000.000
+
+Viết bằng chữ: Năm triệu đồng
+
+Lý do tạm ứng: Tạm ứng đi công tác
+
+Thời hạn thanh toán: 15/12/N
+
+Thủ trưởng đơn vị
+
+Trương Thanh Quân
+
+Kế toán trưởng
+
+Nguyễn Thị Yến
+
+Phụ trách bộ phận
+
+Lương Minh Thành
+
+Người đề nghị tạm ứng
+
+Phạm Quang Hòa
+
+Chứng từ 2: Phiếu chi
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số 02 - TT
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+(Ban hành theo Thông tư số 200/2014/TT-BTC
+
+Ngày 22/12/2014 của Bộ Tài chính)
+
+PHIẾU CHI
+
+Quyển số:
+
+Ngày 09 tháng 12 năm N
+
+Số:
+
+181
+
+Nợ:
+
+141
+
+Có:
+
+1111
+
+Họ và tên người nhận tiền: Phạm Quang Hòa
+
+Địa chỉ: Phòng Kỹ thuật
+
+Lý do chi:
+
+Tạm ứng cho nhân viên
+
+Số tiền:
+
+5.000.000 VND
+
+Viết bằng chữ:
+
+Năm triệu đồng chẵn.
+
+Kèm theo:
+
+...........  chứng từ gốc
+
+Ngày 09 tháng 12 năm N
+
+Giám đốc
+
+Kế toán trưởng
+
+Thủ quỹ
+
+Người lập phiếu
+
+Người nhận tiền
+
+(Ký, họ tên, đóng dấu)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+Đã nhận đủ số tiền (Viết bằng chữ):
+
+Năm triệu đồng chẵn.
+
+9. Ngày 9/12, Công ty TNHH Thái Bình ứng trước tiền hàng
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951600
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO CÓ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CTY TNHH THAI BINH
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+Số tài khoản
+
+Account number
+
+110345078
+
+123456789
+
+Ngân hàng
+
+Bank
+
+MB
+
+TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 09/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+100,000,000
+
+0
+
+100,000,000
+
+Số tiền bằng chữ/ Amount in words: Một trăm triệu đồng
+
+Nội dung thanh toán/ Description: Cty Thai Binh ung truoc tien hang theo hop dong so 155/ABC-TH ngay 5/12/ N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+10. Ngày 10/12, mua máy chủ phục vụ quản lý bán hàng
+
+Chứng từ thứ nhất: Hóa đơn đầu vào
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 10 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TTD
+
+Số:
+
+145
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+Mã số thuế:
+
+100366488
+
+Địa chỉ:
+
+Số 177, phố Giảng Võ, P. Cát Linh, TP. Hà Nội
+
+Số tài khoản:
+
+112269696 - Tại NH VIB - Chi nhánh Đống Đa
+
+Điện thoại:
+
+0912855855
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Dell PowerEdge R350
+
+Cái
+
+1
+
+53.000.000
+
+53.000.000
+
+Cộng tiền hàng:
+
+53.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+5.300.000
+
+Tổng cộng tiền thanh toán:
+
+58.300.000
+
+Số tiền viết bằng chữ: Năm mươi tám triệu ba trăm nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+Ký ngày:
+
+10/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai: QĐ bàn giao TSCĐ
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
+Độc lập - Tự do - Hạnh phúc
+
+Số: 01/QĐ-BGTSCĐ
+
+Hà Nội, ngày 10 tháng 12 năm N
+
+QUYẾT ĐỊNH
+
+Về việc: Bàn giao Tài sản cố định đưa vào sử dụng
+
+GIÁM ĐỐC CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+- Căn cứ Thông tư số 45/2013/TT-BTC ngày 25/04/2013 của Bộ Tài Chính hướng dẫn chế độ quản lý sử
+
+dụng và trích khấu hao tài sản cố định đối với doanh nghiệp;
+
+- Căn cứ vào tình hình thực tế sau khi kiểm tra một số tài sản cố định của công ty.
+
+QUYẾT ĐỊNH
+
+Điều 1. Bàn giao tài sản cố định sau vào sử dụng
+
+Tên:
+
+Dell PowerEdge R350
+
+Loại:
+
+Dụng cụ quản lý
+
+Nguồn vốn hình thành:
+
+Vốn tự có
+
+Nguyên giá TSCĐ:
+
+53.000.000 đồng
+
+Điều 2. Quyết định thời gian phân bổ và bộ phận phân bổ chi phí khấu hao tài sản cố định
+
+Ngày bắt đầu khấu hao:
+
+10/12/N
+
+Số kỳ khấu hao:
+
+48 tháng
+
+Ngày kết thúc khấu hao:
+
+09/12/N+4
+
+Bộ phận sử dụng:
+
+Toàn công ty
+
+Điều 3. Các thành viên trong công ty cùng các phòng ban có liên quan chịu trách nhiệm thi hành Quyết định này. Quyết định này có hiệu lực kể từ ngày ký./.
+
+Nơi nhận:
+
+GIÁM ĐỐC
+
+- Phòng KT, HC;
+
+(Ký tên, đóng dấu)
+
+- Lưu HS.
+
+Chứng từ thứ ba:
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951625
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+CTY TNHH THANH DAT
+
+Số tài khoản
+
+Account number
+
+123456789
+
+112269696
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+VIB
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 10/12/N
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 58,300,000
+
+0
+
+- 58,300,000
+
+Loại tiền/ Currency: VND
+
+Số tiền bằng chữ/ Amount in words: Năm tám triệu ba trăm nghìn đồng
+
+Nội dung thanh toán/ Description: ABC thanh toan hoa don so 145 ngay 10/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+11. Ngày 12/12, mua máy in về dùng ngay cho phòng kế toán (phân bổ 18 tháng)
+
+Chứng từ thứ nhất: Hóa đơn đầu vào
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 12 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TBP
+
+Số:
+
+120
+
+Đơn vị bán hàng:
+
+CTCP THƯƠNG MẠI BÌNH PHÁT
+
+Mã số thuế:
+
+2 0 0 4 3 3 6 8 6
+
+Địa chỉ:
+
+Số 3 lô 2A Lê Hồng Phong. P.Hà Đông. Hà Nội
+
+Số tài khoản:
+
+9322442346 - Tại NH Vietinbank - Chi nhánh Hà Đông
+
+Điện thoại:
+
+098334245
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+1 0 9 8 7 6 5 4 3
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Máy in laser đa chức năng Canon imageCLASS MF275dw
+
+Cái
+
+1
+
+6.000.000
+
+6.000.000
+
+Cộng tiền hàng:
+
+6.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+600.000
+
+Tổng cộng tiền thanh toán:
+
+6.600.000
+
+Số tiền viết bằng chữ: Sáu triệu sáu trăm ngàn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CTCP THƯƠNG MẠI BÌNH PHÁT
+
+Ký ngày:
+
+12/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai:
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951650
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+CONG TY CP THUONG MAI BINH PHAT
+
+Số tài khoản
+
+Account number
+
+123456789
+
+9322442346
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+VIETINBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 12/12/N
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 6,600,000
+
+0
+
+- 6,600,000
+
+Loại tiền/ Currency: VND
+
+Số tiền bằng chữ/ Amount in words: Sáu triệu sáu trăm nghìn đồng
+
+Nội dung thanh toán/ Description: ABC thanh toan hoa don so 120 ngay 12/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+12. Ngày 12/12, bán hàng cho công ty Thái Bình theo Phiếu xuất kho số 82
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 12 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+153
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THÁI BÌNH
+
+Mã số thuế:
+
+110089045
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số 12 đường Thái Hà, Đống Đa, Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Laptop Dell Ins 15
+
+Chiếc
+
+5
+
+16.800.000
+
+84.000.000
+
+2
+
+Laptop HP 15s
+
+Chiếc
+
+10
+
+11.200.000
+
+112.000.000
+
+3
+
+Chuột không dây Dell MS5120
+
+Chiếc
+
+20
+
+650.000
+
+13.000.000
+
+Cộng tiền hàng:
+
+209.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+20.900.000
+
+Tổng cộng tiền thanh toán:
+
+229.900.000
+
+Số tiền viết bằng chữ: Hai trăm hai chín triệu chín trăm nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+12/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+13. Ngày 12/12, nhân viên thanh toán tạm ứng
+
+Chứng từ 1: Bảng kê đề nghị thanh toán tạm ứng
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+BẢNG KÊ ĐỀ NGHỊ THANH TOÁN
+
+Ngày 12 tháng 12 năm N
+
+Số : 35
+
+Nợ: ……
+
+Có: ……
+
+Họ tên người đề nghị thanh toán: Phạm Quang Hòa
+
+Nội dung công việc: Công tác Nghệ An
+
+Địa điểm tổ chức thực hiện:
+
+Thời gian thực hiện: từ ngày 09/12/N đến ngày 11/12/N
+
+STT
+
+Nội dung chi
+
+Số tiền
+
+Ghi  chú
+
+A
+
+B
+
+1
+
+C
+
+1
+
+Chi phí di chuyển (vé tàu khứ hồi Hà Nội - Nghệ An)
+
+1.000.000
+
+500.000/vé x 2 lượt. HĐ mua vé
+
+2
+
+Chi phí ăn ở (2 ngày tại Nghệ An)
+
+600.000
+
+300.000/ngày x 2 ngày. Quy chế công tác phí
+
+3
+
+Chi phí lưu trú (khách sạn 1 đêm)
+
+700.000
+
+700.000/đêm x 1 đêm.  Quy chế công tác phí
+
+Cộng:
+
+2.300.000
+
+Kèm theo: 01 hóa đơn mua vé
+
+Số tiền tạm ứng: 5.000.000
+
+Số tiền thực chi: 2.300.000
+
+Số tiền đề nghị thanh toán: 2.300.000 (hai triệu ba trăm ngàn đồng)
+
+Người đề nghị
+
+thanh toán
+
+Phạm Quang Hòa
+
+Phụ trách bộ phận
+
+Lương Minh Thành
+
+Kế toán trưởng
+
+Nguyễn Thị Yến
+
+Thủ trưởng đơn vị
+
+Trương Thanh Quân
+
+Chứng từ 2: Phiếu thu
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số 01 - TT
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+(Ban hành theo Thông tư số 200/2014/TT-BTC
+
+Ngày 22/12/2014 của Bộ Tài chính)
+
+PHIẾU THU
+
+Quyển số:
+
+Ngày 12 tháng 12 năm N
+
+Số:
+
+PT185
+
+Nợ:
+
+1111
+
+Có:
+
+141
+
+Họ tên người nộp tiền:
+
+PHẠM QUANG HÒA
+
+Địa chỉ:
+
+Lý do nộp:
+
+Thu hoàn ứng sau khi quyết toán tạm ứng nhân viên
+
+Số tiền:
+
+2.700.000 VND
+
+Viết bằng chữ:
+
+Hai triệu bảy trăm nghìn đồng chẵn.
+
+Kèm theo:
+
+............... chứng từ gốc
+
+Ngày..... tháng ..... năm.............
+
+Giám đốc
+
+Kế toán trưởng
+
+Người nộp tiền
+
+Người lập phiếu
+
+Thủ quỹ
+
+(Ký, họ tên, đóng dấu)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+Đã nhận đủ số tiền (Viết bằng chữ)
+
+Hai triệu bảy trăm nghìn đồng chẵn.
+
+14. Ngày 13/12, thanh toán cho công ty Thành Đạt được hưởng chiết khấu 5%
+
+Chứng từ 1: Biên bản bù trừ công nợ
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
+177 phố Giảng Võ, P. Cát Linh, Tp. Hà Nội
+
+Độc lập - Tự do - Hạnh phúc
+
+Hà Nội, ngày 13 tháng 12 năm N
+
+BIÊN BẢN BÙ TRỪ CÔNG NỢ
+
+Số: 30/BTCN/TBT-TĐ
+
+Hôm nay, ngày 13 tháng 12 năm N, tại Số 177, phố Giảng Võ, P. Cát Linh, TP. Hà, Hà Nội, chúng tôi gồm có:
+
+BÊN A (Bên Bán hàng): CÔNG TY TNHH THÀNH ĐẠT
+
+Mã số thuế: 100366488
+
+Địa chỉ: Số 177 phố Giảng Võ, P. Cát Linh, TP. Hà Nội
+
+Đại diện bởi: Nguyễn Văn Nam - Chức vụ: Giám đốc
+
+BÊN B (Bên Mua hàng): CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế: 109876543
+
+Địa chỉ: 198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Đại diện bởi: Trương Thanh Quân  - Chức vụ: Giám đốc
+
+Hai bên cùng nhau thỏa thuận và thống nhất nội dung cấn trừ công nợ như sau:
+
+1. Căn cứ thỏa thuận:
+
+Căn cứ hợp đồng kinh tế số HĐKT-136/N/TBT-TĐ ngày 25/11/N về việc mua bán Laptop Dell Ins Theo hóa đơn số 140, ký hiệu 1C25TTD ngày 30 tháng 11 năm N với tổng giá trị là 100.000.000 VNĐ (Một trăm triệu đồng chẵn), Bên B còn nợ Bên A.
+
+2. Nội dung cấn trừ:
+
+Ngày 13/12/N, Bên B thanh toán cho bên A. Theo chính sách bán hàng và hợp đồng đã ký kết Bên B được hưởng chiết khấu thanh toán sớm 5% do thanh toán trước thời hạn.
+
+Số tiền chiết khấu được hưởng là: 100.000.000 VNĐ x 5% = 5.000.000 VNĐ (Năm triệu đồng).
+
+Sau khi cấn trừ khoản công nợ trên thì số nợ Bên B nợ Bên A số tiền: 95.000.000 VND (Chín lăm triệu đồng)
+
+3. Cam kết:
+
+Biên bản này được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ hạch toán và đối chiếu công nợ.
+
+ĐẠI DIỆN BÊN A
+
+ĐẠI DIỆN BÊN B
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+Nguyễn Văn Nam
+
+Trương Thanh Quân39
+
+Chứng từ 2: Chứng từ thanh toán
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951690
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+CTY TNHH THANH DAT
+
+Số tài khoản
+
+Account number
+
+123456789
+
+112269696
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+VIB
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 95,000,000
+
+0
+
+- 95,000,000
+
+Ngày giao dịch/ Transaction Date: 13/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền bằng chữ/ Amount in words: Chín lăm triệu đồng
+
+Nội dung thanh toán/ Description: ABC thanh toan hoa don so 140 ngay 30/11/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+15. Ngày 15/12, lãi tháng 11/N
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951720
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO CÓ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+NH TMCP KY THUONG VIET NAM
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+Số tài khoản
+
+Account number
+
+999999999
+
+123456789
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 15/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+1,500,000
+
+0
+
+1,500,000
+
+Số tiền bằng chữ/ Amount in words: Một triệu năm trăm nghìn đồng
+
+Nội dung thanh toán/ Description: Lai thang 11/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+16. Ngày 16/12, bán hàng cho khách lẻ theo Phiếu xuất kho số 83
+
+Chứng từ thứ nhất: Hóa đơn
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 16 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+154
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+NGUYỄN PHƯƠNG HOA
+
+Tên đơn vị:
+
+Mã số thuế:
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Laptop HP 15s: 20c x 8,000,000
+
+Cái
+
+1
+
+11.200.000
+
+11.200.000
+
+2
+
+Chuột không dây Dell MS5120
+
+Cái
+
+1
+
+0
+
+0
+
+Cộng tiền hàng:
+
+11.200.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+1.120.000
+
+Tổng cộng tiền thanh toán:
+
+12.320.000
+
+Số tiền viết bằng chữ: Mười hai triệu ba trăm hai mươi nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+16/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai:
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951763
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO CÓ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+NGUYEN PHUONG HOA
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+Số tài khoản
+
+Account number
+
+2600112236
+
+123456789
+
+Ngân hàng
+
+Bank
+
+BIDV
+
+TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 16/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+12,320,000
+
+0
+
+12,320,000
+
+Số tiền bằng chữ/ Amount in words: Mười hai triệu ba trăm hai mươi nghìn đồng
+
+Nội dung thanh toán/ Description: Nguyen Phuong Hoa thanh toan hoa don so 154 ngay 16/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+17. Ngày 16/12, chi tiếp khách
+
+Chứng từ 1: Hóa đơn mua hàng
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày16 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TGM
+
+Số:
+
+420
+
+Đơn vị bán hàng:
+
+CÔNG TY CỔ PHẦN ĐẦU TƯ GIANG MỸ
+
+Mã số thuế:
+
+2 2 5 9 4 6 1 3 8
+
+Địa chỉ:
+
+Tầng 1, Toà nhà CT2A, Khu đô thị Cổ Nhuế Nam Cường, TP Hà Nội
+
+Số tài khoản:
+
+19658445678 - Tại NH Techcombank - Chi nhánh Nam Từ Liêm
+
+Điện thoại:
+
+098353834
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+1 0 9 8 7 6 5 4 3
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Tiền mặt
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Dịch vụ ăn uống
+
+1
+
+2.200.000
+
+2.200.000
+
+Cộng tiền hàng:
+
+2.200.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+220.000
+
+Tổng cộng tiền thanh toán:
+
+2.420.000
+
+Số tiền viết bằng chữ: Hai triệu bốn trăm hai mươi nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY CỔ PHẦN ĐẦU TƯ GIANG MỸ
+
+Ký ngày:
+
+16/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ 2: Phiếu chi
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số 02 - TT
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+(Ban hành theo Thông tư số 200/2014/TT-BTC
+
+Ngày 22/12/2014 của Bộ Tài chính)
+
+PHIẾU CHI
+
+Quyển số:
+
+Ngày 16 tháng 12 năm N
+
+Số:
+
+PC182
+
+Nợ:
+
+6428, 1331
+
+Có:
+
+1111
+
+Họ và tên người nhận tiền:
+
+CÔNG TY GIANG MỸ
+
+Địa chỉ:
+
+Lý do chi:
+
+CHI TIẾP KHÁCH
+
+Số tiền:
+
+2.420.000 VND
+
+Viết bằng chữ:
+
+Hai triệu bốn trăm hai mươi nghìn đồng chẵn.
+
+Kèm theo:
+
+...........  chứng từ gốc
+
+Ngày......tháng......năm...............
+
+Giám đốc
+
+Kế toán trưởng
+
+Thủ quỹ
+
+Người lập phiếu
+
+Người nhận tiền
+
+(Ký, họ tên, đóng dấu)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+Đã nhận đủ số tiền (Viết bằng chữ):
+
+Hai triệu bốn trăm hai mươi nghìn đồng chẵn.
+
+18. Ngày 17/12, thu tiền bán chứng khoán kinh doanh có giá gốc 50,000,000
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951795
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO CÓ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+Số tài khoản
+
+Account number
+
+HSC011C21071999
+
+123456789
+
+Ngân hàng
+
+Bank
+
+BIDV
+
+NH TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 17/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+60,000,000
+
+0
+
+60,000,000
+
+Số tiền bằng chữ/ Amount in words: Sáu mươi triệu đồng
+
+Nội dung thanh toán/ Description: HSC011C21071999 chuyen tien ban chung khoan
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+19. Ngày 17/12, thanh lý máy tính xách tay Dell XPS 15, thu bằng tiền mặt. TSCĐ có nguyên giá 43.200.000, đã khấu hao 35.000.000.
+
+Chứng từ thứ nhất: Hóa đơn đầu ra
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 17 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+155
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH CÔNG NGHỆ SỐ ANH TUẤN
+
+Mã số thuế:
+
+110094515
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số 86/185 Phố Chùa Láng, P. Láng Thượng, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Máy tính xách tay Dell XPS 15
+
+Cái
+
+1
+
+2.000.000
+
+2.000.000
+
+Cộng tiền hàng:
+
+2.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+200.000
+
+Tổng cộng tiền thanh toán:
+
+2.200.000
+
+Số tiền viết bằng chữ: Hai triệu hai trăm nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+17/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số 01 - TT
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+(Ban hành theo Thông tư số 200/2014/TT-BTC
+
+Ngày 22/12/2014 của Bộ Tài chính)
+
+PHIẾU THU
+
+Quyển số:
+
+Ngày 17 tháng 12 năm N
+
+Số:
+
+PT186
+
+Nợ:
+
+1111
+
+Có:
+
+711, 3331
+
+Họ tên người nộp tiền:
+
+LÊ VĂN HIẾU
+
+Địa chỉ:
+
+Lý do nộp:
+
+Thu thanh lý TSCĐ
+
+Số tiền:
+
+2.200.000 VND
+
+Viết bằng chữ:
+
+Hai triệu hai trăm nghìn đồng chẵn.
+
+Kèm theo:
+
+............... chứng từ gốc
+
+Ngày 17 tháng 12 năm N.
+
+Giám đốc
+
+Kế toán trưởng
+
+Người nộp tiền
+
+Người lập phiếu
+
+Thủ quỹ
+
+(Ký, họ tên, đóng dấu)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+Đã nhận đủ số tiền (Viết bằng chữ)
+
+Hai triệu hai trăm nghìn đồng chẵn.
+
+20. Ngày 18/12, đại lý thông báo bán được hàng
+
+Chứng từ 1: Hóa đơn bán hàng
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 18 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+156
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY CỔ PHẦN HOÀNG LONG COMPUTER
+
+Mã số thuế:
+
+0315962794
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số LK2A17, Phố Nguyễn Văn Trỗi, Hà Đông, Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Laptop Dell Ins 15
+
+Cái
+
+10
+
+16.800.000
+
+168.000.000
+
+2
+
+Laptop HP 15s
+
+Cái
+
+10
+
+11.200.000
+
+112.000.000
+
+Cộng tiền hàng:
+
+280.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+28.000.000
+
+Tổng cộng tiền thanh toán:
+
+308.000.000
+
+Số tiền viết bằng chữ: Ba trăm lẻ tám triêu đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+18/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai: Hóa đơn chi phí hoa hồng
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 18 tháng 12 năm N
+
+Ký hiệu:
+
+1C25THL
+
+Số:
+
+202
+
+Đơn vị bán hàng:
+
+CÔNG TY CỔ PHẦN HOÀNG LONG COMPUTER
+
+Mã số thuế:
+
+0315962794
+
+Địa chỉ:
+
+Số LK2A17, Phố Nguyễn Văn Trỗi, Hà Đông, Hà Nội
+
+Số tài khoản:
+
+002586482 - Tại NH VPbank - Chi nhánh Hà Đông
+
+Điện thoại:
+
+(0243) 8238 2568
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Hoa hồng đại lý bán đúng giá theo quy định
+
+1
+
+28.000.000
+
+28.000.000
+
+Cộng tiền hàng:
+
+28.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+2.800.000
+
+Tổng cộng tiền thanh toán:
+
+30.800.000
+
+Số tiền viết bằng chữ: Ba mươi triệu tám trăm nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY CỔ PHẦN HOÀNG LONG COMPUTER
+
+Ký ngày:
+
+18/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ ba: Biên bản bù trừ công nợ
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Độc lập - Tự do - Hạnh phúc
+
+Hà Nội, ngày 18 tháng 12 năm N
+
+BIÊN BẢN BÙ TRỪ CÔNG NỢ
+
+- Căn cứ vào Hóa đơn Giá trị gia tăng số 156 ngày 18/12/N và Hóa đơn Giá trị gia tăng số 202 ngày 18/12/N;
+
+- Căn cứ vào thoả thuận giữa hai bên.
+
+Tại văn phòng Công ty TNHH Thương Mại và dịch vụ ABC tại 198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội. Chúng tôi gồm:
+
+1. Bên A:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Mã số thuế:
+
+109876543
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Đại diện:
+
+TRƯƠNG THANH QUÂN
+
+Chức vụ:
+
+Giám đốc
+
+2. Bên B:
+
+CÔNG TY CỔ PHẦN HOÀNG LONG COMPUTER
+
+Địa chỉ:
+
+Số LK2A17, Phố Nguyễn Văn Trỗi, Hà Đông, Hà Nội
+
+Mã số thuế:
+
+0315962794
+
+Điện thoại:
+
+(0243) 8238 2568
+
+Đại diện:
+
+TRẦN HOÀNG LONG
+
+Chức vụ:
+
+Giám đốc
+
+Sau khi bàn bạc cả 2 bên bên cùng thống nhất và thoả thuận một số nội dung sau:
+
+- Tính đến ngày 18/12/N; Bên B còn nợ Bên A số tiền hàng hóa Bên A xuất bán cho Bên B theo Hóa đơn Giá trị gia tăng số 156 ngày 18/12/N.
+
+Số tiền: 308.000.000 VND.
+
+Số tiền viết bằng chữ: Ba trăm lẻ tám triệu đồng./.
+
+- Hai bên đồng ý cấn trừ khoản nợ trên vào chi phí dịch vụ hoa hồng do Bên B xuất cho Bên A theo Hóa đơn Giá trị gia tăng số 202 ngày 18/12/N.
+
+Số tiền: 30.800.000 VND.
+
+Số tiền viết bằng chữ: Ba mươi triệu tám trăm nghìn đồng./.
+
+- Sau khi cấn trừ khoản công nợ trên thì số nợ Bên B nợ Bên A số tiền: 277.200.000 VND
+
+Bằng chữ: Hai trăm bảy mươi bảy triệu hai trăm nghìn đồng./.
+
+Biên bản này có hiệu lực kể từ ngày ký. Biên bản được thành lập làm 02 (hai) bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm cơ sở hạch toán.
+
+ĐẠI DIỆN BÊN A
+
+ĐẠI DIỆN BÊN B
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+TRƯƠNG THANH QUÂN
+
+TRẦN HOÀNG LONG
+
+Chứng từ thứ tư: Giấy báo có
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951831
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO CÓ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CTY CO PHAN HOANG LONG COMPUTER
+
+CTY TNHH THUONG MAI VA DICH VU ABC
+
+Số tài khoản
+
+Account number
+
+002586482
+
+123456789
+
+Ngân hàng
+
+Bank
+
+VPBANK
+
+TECHCOMBANK
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 18/12/N
+
+Loại tiền/ Currency: VND
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+277,200,000
+
+0
+
+277,200,000
+
+Số tiền bằng chữ/ Amount in words: Hai trăm bảy mươi bảy triệu hai trăm nghìn đồng
+
+Nội dung thanh toán/ Description: Cong ty Hoang Long thanh toan tien hang con no ngay 18/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+21. Ngày 20/12, thanh toán tiền cho công ty Vạn Phát
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951886
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+CONG TY CO PHAN THUONG MAI VAN PHAT
+
+Số tài khoản
+
+Account number
+
+123456789
+
+120400889
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+MB
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 20/12/N
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 446,600,000
+
+0
+
+- 446,600,000
+
+Loại tiền/ Currency: VND
+
+Số tiền bằng chữ/ Amount in words: Bốn trăm bốn sáu triệu sáu trăm nghìn đồng
+
+Nội dung thanh toán/ Description: ABC thanh toan hoa don so 120 ngay 03/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+22. Ngày 22/12, bảo dưỡng định kỳ máy lạnh Daikin
+
+Chứng từ thứ nhất: Hóa đơn đầu vào
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 22 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TTS
+
+Số:
+
+189
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THIET BI THANH TRUC
+
+Mã số thuế:
+
+110092821
+
+Địa chỉ:
+
+Số 13 ngõ 10 Văn Nội, P. Phú Lương, TP. Hà Nội
+
+Số tài khoản:
+
+115555555 - Tại MBBANK - Chi nhánh Tây Hà Nội
+
+Điện thoại:
+
+0912855855
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Dịch vụ bảo dưỡng định kỳ máy lạnh
+
+Gói
+
+1
+
+1.200.000
+
+1.200.000
+
+Cộng tiền hàng:
+
+1.200.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+120.000
+
+Tổng cộng tiền thanh toán:
+
+1.320.000
+
+Số tiền viết bằng chữ: Một triệu ba trăm hai mươi nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THIẾT BỊ THANH TRÚC
+
+Ký ngày:
+
+22/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai: Phiếu chi
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số 02 - TT
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+(Ban hành theo Thông tư số 200/2014/TT-BTC
+
+Ngày 22/12/2014 của Bộ Tài chính)
+
+PHIẾU CHI
+
+Quyển số:
+
+Ngày 22 tháng 12 năm N
+
+Số:
+
+PC183
+
+Nợ:
+
+6428, 1331
+
+Có:
+
+1111
+
+Họ và tên người nhận tiền:
+
+HOÀNG BÁ CUNG
+
+Địa chỉ:
+
+Lý do chi:
+
+BẢO DƯỠNG MÁY LẠNH
+
+Số tiền:
+
+1.320.000 VND
+
+Viết bằng chữ:
+
+Một triệu ba trăm hai mươi nghìn đồng chẵn.
+
+Kèm theo:
+
+...........  chứng từ gốc
+
+Ngày......tháng......năm...............
+
+Giám đốc
+
+Kế toán trưởng
+
+Thủ quỹ
+
+Người lập phiếu
+
+Người nhận tiền
+
+(Ký, họ tên, đóng dấu)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+Đã nhận đủ số tiền (Viết bằng chữ):
+
+Một triệu ba trăm hai mươi nghìn đồng chẵn.
+
+23. Ngày 22/12, bán hàng chưa thu tiền (Phiếu xuất kho số 85), chi phí vận chuyển đã thanh toán bằng chuyển khoản
+
+Chứng từ thứ nhất: Hóa đơn đầu ra
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 22 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+157
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH PHAN MINH
+
+Mã số thuế:
+
+0109905550
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số 87/46/19/8 Đường Yên Xá, Phường Thanh Liệt, TP Hà Nội,
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Máy tính xách tay Macbook Air 13” M3
+
+Chiếc
+
+15
+
+20.800.000
+
+312.000.000
+
+2
+
+Laptop HP 15s
+
+Chiếc
+
+10
+
+11.200.000
+
+112.000.000
+
+3
+
+Màn hình máy tính LG 27UL500
+
+Chiếc
+
+7
+
+7.800.000
+
+54.600.000
+
+Cộng tiền hàng:
+
+478.600.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+47.860.000
+
+Tổng cộng tiền thanh toán:
+
+526.460.000
+
+Số tiền viết bằng chữ: Năm trăm hai sáu triệu bốn sáu mươi nghìn  đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+22/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ hai: Hóa đơn đầu vào
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 22 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TVP
+
+Số:
+
+128
+
+Đơn vị bán hàng:
+
+CÔNG TY CP VẬN TẢI VÀ THƯƠNG MẠI VẠN PHÁT
+
+Mã số thuế:
+
+200463686
+
+Địa chỉ:
+
+Số 7 lô 2A Lê Hồng Phong. P. Đông Khê. Hải Phòng
+
+Số tài khoản:
+
+120400889 - Tại NH MBBANK - Chi nhánh Hải Phòng
+
+Điện thoại:
+
+(0243) 8366 2288
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán:
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Cước vận chuyển
+
+Chuyến
+
+1
+
+800.000
+
+800.000
+
+Cộng tiền hàng:
+
+800.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+80.000
+
+Tổng cộng tiền thanh toán:
+
+880.000
+
+Số tiền viết bằng chữ: Tám trăm tám mươi nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY CP VẬN TẢI VÀ THƯƠNG MẠI VẠN PHÁT
+
+Ký ngày:
+
+22/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+Chứng từ thứ ba:
+
+Ngân hàng TMCP Kỹ Thương Việt NamSố giao dịch/ Transaction No. : FT25339791951934
+
+Vietnam Technological and Commercial Join-Stock Bank
+
+Mã số thuế/ Tax code: 0100230800
+
+PHIẾU BÁO NỢ
+
+Debit advice
+
+THÔNG TIN KHÁCH HÀNG/ CUSTOMER INFORMATION
+
+Tên tổ chức/ Customer name: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế/ Tax ID:109876543
+
+Địa chỉ/ Address:198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Người chuyển tiền
+
+Remitters’ account name
+
+Người nhận tiền
+
+Beneficiaries' account name
+
+Tên tài khoản
+
+Account name
+
+CONG TY TNHH THUONG MAI VA DICH VU ABC
+
+CONG TY CO PHAN THUONG MAI VAN PHAT
+
+Số tài khoản
+
+Account number
+
+123456789
+
+120400889
+
+Ngân hàng
+
+Bank
+
+TECHCOMBANK
+
+MB
+
+CHI TIẾT GIAO DỊCH/ TRANSACTION DETAILS
+
+Ngày giao dịch/ Transaction Date: 22/12/N
+
+Số tiền giao dịch/ Amount
+
+Tổng phí + thuế/ Fee + VAT
+
+Tổng số tiền/ Total amount
+
+- 880,000
+
+0
+
+- 880,000
+
+Loại tiền/ Currency: VND
+
+Số tiền bằng chữ/ Amount in words: Tám trăm tám mươi nghìn đồng
+
+Nội dung thanh toán/ Description: ABC thanh toan hoa don 128 ngay 22/12/N
+
+Giao dịch viên/Chuyên viênKiểm soát viên
+
+Teller/OfficerSupervisor
+
+24. Ngày 23/12, mua hàng nhập kho, chưa thanh toán theo Phiếu nhập kho số 61. (Phân bổ chi phí vận chuyển theo số lượng).
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 23 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TTD
+
+Số:
+
+150
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+Mã số thuế:
+
+100366488
+
+Địa chỉ:
+
+Số 177, phố Giảng Võ, P. Cát Linh, TP. Hà Nội
+
+Số tài khoản:
+
+112269696 - Tại NH VIB - Chi nhánh Đống Đa
+
+Điện thoại:
+
+0912855855
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+1 0 9 8 7 6 5 4 3
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Laptop Dell Ins 15
+
+Cái
+
+15
+
+12.300.000
+
+184.500.000
+
+2
+
+Laptop HP 15s
+
+Cái
+
+15
+
+7.800.000
+
+117.000.000
+
+3
+
+Màn hình máy tính LG 27UL500
+
+Cái
+
+10
+
+5.100.000
+
+51.000.000
+
+4
+
+Cước vận chuyển
+
+Chuyến
+
+1
+
+1.000.000
+
+1.000.000
+
+Cộng tiền hàng:
+
+353.500.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+35.350.000
+
+Tổng cộng tiền thanh toán:
+
+388.850.000
+
+Số tiền viết bằng chữ: Ba trăm tám tám triệu tám trăm năm mươi nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+Ký ngày:
+
+23/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+25. Ngày 24/12, khách hàng ngày 22/12 trả lại sản phẩm cháy màn hình
+
+Chứng từ thứ nhất: Biên bản thu hồi hàng bán bị trả lại
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Độc lập - Tự do - Hạnh phúc
+
+Hà Nội, ngày 24 tháng 12 năm N
+
+BIÊN BẢN THU HỒI HÀNG BÁN BỊ TRẢ LẠI
+
+Số: 10/BBTH
+
+- Căn cứ hợp đồng ký kết giữa hai bên;
+
+- Căn cứ vào tình trạng thực tế của sản phẩm.
+
+Tại văn phòng Công ty TNHH Thương Mại và dịch vụ ABC tại 198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội chúng tôi gồm:
+
+1. Bên A:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Mã số thuế:
+
+109876543
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Đại diện:
+
+TRƯƠNG THANH QUÂN
+
+Chức vụ:
+
+Giám đốc
+
+2. Bên B:
+
+CÔNG TY TNHH PHAN MINH
+
+Địa chỉ:
+
+Số 87/46/19/8 Đường Yên Xá, Phường Thanh Liệt, TP Hà Nội
+
+Mã số thuế:
+
+0109905550
+
+Điện thoại:
+
+0919888999
+
+Đại diện:
+
+HOÀNG NGUYÊN PHONG
+
+Chức vụ:
+
+Giám đốc
+
+Sau khi bàn bạc cả 2 bên bên cùng thống nhất và thoả thuận một số nội dung sau:
+
+1. Tiến hành thu hồi hàng hóa sau:
+
+Tên hàng hóa
+
+Số lượng
+
+Đơn giá
+
+Tiền hàng
+
+Thuế suất thuế GTGT
+
+Tiền thuế GTGT
+
+Thành tiền
+
+Màn hình máy tính LG 27UL500
+
+1
+
+7.800.000
+
+7.800.000
+
+10%
+
+7.800.000
+
+8.580.000
+
+Số tiền viết bằng chữ: Tám triệu năm trăm tám mươi nghìn đồng./.
+
+2. Lý do thu hồi: Chất lượng sản phẩm không đạt yêu cầu theo thỏa thuận hợp đồng đã ký kết giữa hai bên.
+
+3. Bên B có trách nhiệm bàn giao đầy đủ số lượng hàng hóa trong danh sách bị thu hồi. Trong trường hợp có dấu hiệu trốn tránh hoặc bàn giao không trung thực sẽ phải chịu trách nhiệm trước pháp luật.
+
+4. Hai bên tiến hành lập Biên bản bù trừ công nợ theo giá trị hàng hóa thực tế Bên A bán cho Bên B.
+
+Biên bản này có hiệu lực kể từ ngày ký. Biên bản được thành lập làm 02 (hai) bản có giá trị pháp lý như nhau
+
+ĐẠI DIỆN BÊN A
+
+ĐẠI DIỆN BÊN B
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+Chứng từ thứ hai: Biên bản bù trừ công nợ
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
+198 Trần Quang Khải, P. Hoàn Kiếm, TP. Hà Nội
+
+Độc lập - Tự do - Hạnh phúc
+
+Hà Nội, ngày 24 tháng 12 năm N
+
+BIÊN BẢN BÙ TRỪ CÔNG NỢ
+
+Số: 15/BTCN/FA-CI
+
+- Căn cứ vào Hóa đơn Giá trị gia tăng số 157 ngày 22/12/N và Biên bản thu hồi hàng bán bị trả lại số
+
+10/BBTH ngày 24/12/N;
+
+- Căn cứ vào thoả thuận giữa hai bên.
+
+Tại văn phòng Công ty TNHH Thương mại và dịch vụ ABC tại 198 Trần Quang Khải, P. Hoàn Kiếm, TP Hà Nội, chúng tôi gồm:
+
+1. Bên A:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Mã số thuế:
+
+109876543
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Đại diện:
+
+TRƯƠNG THANH QUÂN
+
+Chức vụ:
+
+Giám đốc
+
+2. Bên B:
+
+CÔNG TY TNHH PHAN MINH
+
+Địa chỉ:
+
+Số 87/46/19/8 Đường Yên Xá, Phường Thanh Liệt, TP Hà Nội
+
+Mã số thuế:
+
+0109905550
+
+Điện thoại:
+
+0919888999
+
+Đại diện:
+
+HOÀNG NGUYÊN PHONG
+
+Chức vụ:
+
+Giám đốc
+
+Sau khi bàn bạc cả 2 bên cùng thống nhất và thoả thuận một số nội dung sau:
+
+- Tính đến ngày 24/12/N; Bên B còn nợ Bên A số tiền hàng hóa Bên A xuất bán cho Bên B theo Hóa đơn Giá trị gia tăng số 157 ngày 22/12/N.
+
+Số tiền: 526.460.000 VND.
+
+Số tiền viết bằng chữ: Năm trăm hai sáu triệu bốn trăm sáu mươi nghìn đồng./.
+
+- Hai bên đồng ý cấn trừ khoản nợ trên vào số tiền hàng không đạt yêu cầu theo thỏa thuận mà Bên A đã tiến hành thu hồi theo Biên bản thu hồi hàng bán bị trả lại số 10/BBTH ngày 24/12/N.
+
+Số tiền: 8.580.000 VND.
+
+Số tiền viết bằng chữ: Tám triệu năm trăm tám mươi nghìn đồng./.
+
+- Sau khi cấn trừ khoản công nợ trên thì số nợ Bên B nợ Bên A số tiền: 517.880.000 VND
+
+Bằng chữ: Năm trăm mười bảy triệu tám trăm tám mươi nghìn đồng./.
+
+Biên bản này có hiệu lực kể từ ngày ký. Biên bản được thành lập làm 02 (hai) bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm cơ sở hạch toán.
+
+ĐẠI DIỆN BÊN A
+
+ĐẠI DIỆN BÊN B
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+(Ký và ghi rõ họ tên, đóng dấu)
+
+Chứng từ thứ ba: Hóa đơn điều chỉnh giảm
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 24 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TAB
+
+Số:
+
+158
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+109876543
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+123456789 - Tại NH Techcombank - Chi nhánh Hà Nội
+
+Điện thoại:
+
+(0243) 5566 5526
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH PHAN MINH
+
+Mã số thuế:
+
+0109905550
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+Số 87/46/19/8 Đường Yên Xá, Phường Thanh Liệt, TP Hà Nội, Việt Nam
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+1
+
+Màn hình máy tính LG 27UL500
+
+Cái
+
+-1
+
+-7.800.000
+
+-7.800.000
+
+Điều chỉnh hóa đơn ký hiệu 1C25TAB số 4
+
+ngày 22 tháng 12 năm N: Hàng bán bị trả lại
+
+do không đạt tiêu chuẩn theo thỏa thuận
+
+Cộng tiền hàng:
+
+-7.800.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+-780.000
+
+Tổng cộng tiền thanh toán:
+
+-8.580.000
+
+Số tiền viết bằng chữ: Âm tám triệu năm trăm tám mươi đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Ký ngày:
+
+24/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+26. Ngày 26/12, 1 sản phẩm mua ngày 23/12 bị lỗi yêu cầu giảm giá
+
+Chứng từ 1: Lập Biên bản xác nhận hàng bị lỗi:
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAMĐộc lập – Tự do – Hạnh phúc------------------
+
+BIÊN BẢN THỎA THUẬN GIẢM GIÁ HÀNG BÁN
+
+DO HÀNG BỊ LỖI, KÉM CHẤT LƯỢNG(Số 05/ABC-HL)
+
+Hôm nay, ngày 26 tháng 12 năm N hai bên chúng tôi gồm có:
+
+Đơn vị mua hàng: CÔNG TY TNHH THÀNH ĐẠT
+
+Mã số thuế: 1 0 0 3 6 6 4 8 8
+
+Địa chỉ: Số 177. phố Giảng Võ. P. Cát Linh. Hà Nội
+
+Đại diện: Ông Nguyễn Mạnh Tuyên                 Chức vụ: Giám đốc
+
+Đơn vị mua hàng: CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế: 1 0 9 8 7 6 5 4 3Địa chỉ: 198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội Đại diện: Ông Trương Thanh Quân        Chức vụ: Giám đốc
+
+1. Xác nhận chất lượng hàng hóa:- Ngày 23/12/N, Công ty TNHH Thành Đạt bán hàng công ty TNHH thương mại và dịch vụ ABC: đã xuất hóa đơn số 214, ký hiệu 1C25TTD, với các thông tin như sau:
+
+Tên hàng hoá dịch vụ
+
+ĐVT
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+Tiền thuế
+
+(10%)
+
+Tổng thanh toán
+
+Laptop HP 15s
+
+Chiếc
+
+15
+
+7.800.000
+
+117.000.000
+
+11.700.000
+
+128.700.000
+
+- Ngày 26/12/N, qua xác minh tình trạng thực tế của 2 chiếc Laptop HP 15s  thì 2 bên chúng tôi xác nhận:
+
+Mặt ngoài Laptop bị tróc sơn, trầy xước, không đảm bảo chất lượng như đã thỏa thuận
+
+2. Hai bên thống nhất quyết định:- Giảm đơn giá của Laptop HP 15s, cụ thể: giảm 500.000đ/chiếc trên giá chưa VAT. Giá trị của hàng hóa được giảm giá là 1.000.000 VNĐ (Một triệu đồng chẵn) - Bên bán hàng sẽ xuất hóa đơn điều chỉnh giảm đơn giá theo quy định tại điểm b, khoản 2, Điều 19 Nghị định số 123/2020/NĐ-CP và khoản 1, điều 7 của Thông tư 78/2021/TT-BTC vào ngày 06/01/2025.
+
+- Hai bên thực hiện kê khai hạch toán theo quy định.Biên bản này được lập thành 2 bản, mỗi bên giữ một bản.
+
+ĐẠI DIỆN BÊN BÁN(Ký, đóng dấu, ghi rõ họ tên)
+
+ĐẠI DIỆN BÊN BÁN(Ký, đóng dấu, ghi rõ họ tên)
+
+Chứng từ 2: Hóa đơn điều chỉnh giảm giá
+
+HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+
+Ngày 26 tháng 12 năm N
+
+Ký hiệu:
+
+1C25TTD
+
+Số:
+
+160
+
+Đơn vị bán hàng:
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+Mã số thuế:
+
+1 0 0 3 6 6 4 8 8
+
+Địa chỉ:
+
+Số 177. phố Giảng Võ. P. Cát Linh. Hà Nội
+
+Số tài khoản:
+
+987234456 - Tại NH Vietinbank - Chi nhánh Láng Hạ
+
+Điện thoại:
+
+0983345678
+
+Họ và tên người mua hàng:
+
+Tên đơn vị:
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mã số thuế:
+
+1 0 9 8 7 6 5 4 3
+
+Đồng tiền thanh toán: VNĐ
+
+Địa chỉ:
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+Số tài khoản:
+
+Hình thức thanh toán: Chuyển khoản
+
+Điều chỉnh cho hóa đơn Mẫu số 1 ký hiệu C25TTD số 150 ngày 23 tháng 12 năm N: Điều chỉnh giảm đơn giá do hàng bán bị lỗi, kém chất lượng.
+
+Stt
+
+Tên hàng hóa, dịch vụ
+
+Đvt
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6= 4x5
+
+2
+
+Laptop HP 15s
+
+Cái
+
+2
+
+-500.000
+
+-1.000.000
+
+Cộng tiền hàng:
+
+-1.000.000
+
+Thuế suất GTGT:
+
+10%
+
+Tiền thuế GTGT:
+
+-100.000
+
+Tổng cộng tiền thanh toán:
+
+-1.100.000
+
+Số tiền viết bằng chữ: Âm một triệu một trăm nghìn đồng.
+
+Người mua hàng
+
+Người bán hàng
+
+(Chữ ký điện tử, Chữ ký số)
+
+Ký bởi:
+
+CÔNG TY TNHH THÀNH ĐẠT
+
+Ký ngày:
+
+26/12/N
+
+(Cần kiểm tra, đối chiếu khi lập, nhận hóa đơn)
+
+27. Ngày 29/12, xuất kho ghế xoay và bàn làm việc cho phòng kế toán (phân bổ 1 lần)
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+Mẫu số : 02 - VT
+
+Bộ phận Kho Công ty
+
+(Ban hành kèm theo Thông tư số 200 ngày 22 tháng 12 năm 2014 của Bộ Tài chính)
+
+PHIẾU XUẤT KHO
+
+Ngày 29  tháng 12 năm N
+
+Số: 86
+
+Nợ:
+
+Có:
+
+Họ và tên người nhận hàng: LÊ VĂN HIẾU
+
+Địa chỉ: Phòng kế toán
+
+Lý do xuất kho: Xuất kho công cụ dụng cụ sử dụng cho phòng kế toán
+
+Xuất tại kho: Kho công cụ dụng cụ
+
+Địa điểm: 198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+STT
+
+Tên, nhãn hiệu, quy cách, phẩm chất vật tư, dụng cụ sản phẩm, hàng hóa
+
+Mã số
+
+Đơn vị tính
+
+Số lượng
+
+Đơn giá
+
+Thành tiền
+
+Yêu cầu
+
+Thực xuất
+
+A
+
+B
+
+C
+
+D
+
+1
+
+2
+
+3
+
+4
+
+1
+
+Ghế xoay
+
+GXV-001
+
+Chiếc
+
+2
+
+2
+
+2
+
+Bàn làm việc
+
+BLV-001
+
+Chiếc
+
+1
+
+1
+
+Cộng
+
+3
+
+3
+
+- Tổng số tiền (viết bằng chữ):
+
+- Số chứng từ gốc kèm theo: 01 Phiếu đề nghị xuất kho
+
+Ngày 29  tháng 12 năm N
+
+Người lập phiếu
+
+Người nhận hàng
+
+Thủ kho
+
+Kế toán trưởng
+
+Giám đốc
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên)
+
+(Ký, họ tên, đóng dấu)
+
+HOÀNG VĂN NIÊN
+
+LÊ VĂN HIẾU
+
+HOÀNG VĂN NIÊN
+
+NGUYỄN THỊ YẾN
+
+TRƯƠNG THANH QUÂN
+
+28. Ngày 31/12, tính lương và các khoản trích theo lương
+
+CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC
+
+198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội
+
+BẢNG TÍNH LƯƠNG
+
+Tháng 12 năm N
+
+ĐVT: đồng
+
+STT
+
+Mã NV
+
+Họ và tên
+
+Chức vụ
+
+Lương Cơ bản
+
+Ngày công
+
+Lương theo ngày công
+
+Phụ cấp
+
+Tổng lương
+
+Khoản trích tính vào chi phí
+
+Các khoản trừ vào lương (Bảo hiểm bắt buộc nộp)
+
+Tổng chi phí bảo hiểm
+
+thực nộp
+
+Lương thực nhận
+
+Ăn trưa
+
+Trách nhiệm
+
+BHXH (17,5%)
+
+BHYT (3%)
+
+BHTN (1%)
+
+Cộng (21,5%)
+
+BHXH (8%)
+
+BHYT (1,5%)
+
+BHTN (1%)
+
+Cộng (10,5%)
+
+A
+
+B
+
+C
+
+D
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10=7+8+9
+
+11
+
+12
+
+13
+
+14=11+12+13
+
+15=10+14
+
+16=6-14
+
+I
+
+Bộ phận quản lý
+
+41,500,000
+
+3,600,000
+
+5,000,000
+
+50,100,000
+
+7,262,500
+
+1,245,000
+
+415,000
+
+8,922,500
+
+3,320,000
+
+622,500
+
+415,000
+
+4,357,500
+
+13,280,000
+
+45,742,500
+
+01
+
+NV001
+
+TRƯƠNG THANH QUÂN
+
+Giám đốc
+
+12,000,000
+
+24.0
+
+12,000,000
+
+720,000
+
+3,000,000
+
+15,720,000
+
+2,100,000
+
+360,000
+
+120,000
+
+2,580,000
+
+960,000
+
+180,000
+
+120,000
+
+1,260,000
+
+3,840,000
+
+14,460,000
+
+02
+
+NV002
+
+NGUYỄN THỊ YẾN
+
+Kế toán trưởng
+
+10,000,000
+
+24.0
+
+10,000,000
+
+720,000
+
+2,000,000
+
+12,720,000
+
+1,750,000
+
+300,000
+
+100,000
+
+2,150,000
+
+800,000
+
+150,000
+
+100,000
+
+1,050,000
+
+3,200,000
+
+11,670,000
+
+03
+
+NV003
+
+LÊ VĂN HIẾU
+
+Kế toán viên
+
+7,000,000
+
+24.0
+
+7,000,000
+
+720,000
+
+0
+
+7,720,000
+
+1,225,000
+
+210,000
+
+70,000
+
+1,505,000
+
+560,000
+
+105,000
+
+70,000
+
+735,000
+
+2,240,000
+
+6,985,000
+
+04
+
+NV004
+
+TRẦN VĂN HÙNG
+
+Thủ quỹ
+
+6,500,000
+
+24.0
+
+6,500,000
+
+720,000
+
+0
+
+7,220,000
+
+1,137,500
+
+195,000
+
+65,000
+
+1,397,500
+
+520,000
+
+97,500
+
+65,000
+
+682,500
+
+2,080,000
+
+6,537,500
+
+05
+
+NV005
+
+HOÀNG BÁ CUNG
+
+NV Văn phòng
+
+6,000,000
+
+24.0
+
+6,000,000
+
+720,000
+
+0
+
+6,720,000
+
+1,050,000
+
+180,000
+
+60,000
+
+1,290,000
+
+480,000
+
+90,000
+
+60,000
+
+630,000
+
+1,920,000
+
+6,090,000
+
+II
+
+Bộ phận kỹ thuật
+
+26,000,000
+
+2,160,000
+
+2,000,000
+
+30,160,000
+
+4,550,000
+
+780,000
+
+260,000
+
+5,590,000
+
+2,080,000
+
+390,000
+
+260,000
+
+2,730,000
+
+8,320,000
+
+27,430,000
+
+01
+
+NV006
+
+PHẠM ĐÌNH TÀI
+
+Trưởng phòng
+
+10,000,000
+
+24.0
+
+10,000,000
+
+720,000
+
+2,000,000
+
+12,720,000
+
+1,750,000
+
+300,000
+
+100,000
+
+2,150,000
+
+800,000
+
+150,000
+
+100,000
+
+1,050,000
+
+3,200,000
+
+11,670,000
+
+02
+
+NV007
+
+NGUYỄN MINH HẢI
+
+NV kỹ thuật
+
+8,000,000
+
+24.0
+
+8,000,000
+
+720,000
+
+0
+
+8,720,000
+
+1,400,000
+
+240,000
+
+80,000
+
+1,720,000
+
+640,000
+
+120,000
+
+80,000
+
+840,000
+
+2,560,000
+
+7,880,000
+
+03
+
+NV008
+
+BÙI ĐỨC DŨNG
+
+NV kỹ thuật
+
+8,000,000
+
+24.0
+
+8,000,000
+
+720,000
+
+0
+
+8,720,000
+
+1,400,000
+
+240,000
+
+80,000
+
+1,720,000
+
+640,000
+
+120,000
+
+80,000
+
+840,000
+
+2,560,000
+
+7,880,000
+
+Cộng
+
+67,500,000
+
+5,760,000
+
+7,000,000
+
+80,260,000
+
+11,812,500
+
+2,025,000
+
+675,000
+
+14,512,500
+
+5,400,000
+
+1,012,500
+
+675,000
+
+7,087,500
+
+21,600,000
+
+73,172,500
+
+Ngày 31 tháng 12 năm N
+
+Giám đốc
+
+Kế toán trưởng
+
+Người lập
+
+29. Ngày 31/12, phân bổ CCDC xuất dùng tính vào chi phí tháng 12
+
+BẢNG PHÂN BỔ CÔNG CỤ DỤNG CỤ THÁNG 12
+
+Mã CCDC
+
+Tên CCDC
+
+Chi phí phân bổ
+
+Đối tượng phân bổ
+
+Tỷ lệ (%)
+
+Số tiền
+
+TK chi phí
+
+BG001
+
+Bộ bàn ghế họp phòng ban
+
+600,000
+
+PHCNS
+
+100.00
+
+600,000
+
+6423
+
+DT001
+
+Dụng cụ trang trí văn phòng
+
+700,000
+
+PHCNS
+
+100.00
+
+700,000
+
+6423
+
+KD001
+
+Kệ đựng hàng
+
+400,000
+
+PKTH
+
+100.00
+
+400,000
+
+6413
+
+MI001
+
+Máy in Laser
+
+333,333
+
+PKT
+
+100.00
+
+333,333
+
+6423
+
+PD001
+
+Máy in Canon
+
+300,000
+
+PHCNS
+
+100.00
+
+300,000
+
+6423
+
+TD001
+
+Tủ đựng tài liệu
+
+400,000
+
+BGD
+
+100.00
+
+400,000
+
+6423
+
+TS001
+
+Tủ sắt văn phòng 4 cánh
+
+270,000
+
+PKT
+
+100.00
+
+270,000
+
+6423
+
+30. Ngày 31/12, tính và phân bổ khấu hao TSCĐ tháng 12
+
+BẢNG TÍNH VÀ PHÂN BỔ TSCĐ THÁNG 12
+
+Tên tài sản
+
+Giá trị KH tháng
+
+Đối tượng phân bổ
+
+Tỷ lệ %
+
+Chi phí phân bổ
+
+TK chi phí
+
+DELL 7780
+
+393,145
+
+PKTH
+
+100.00
+
+393,145
+
+6414
+
+DELL R350
+
+783,602
+
+PHCNS
+
+100.00
+
+783,602
+
+6424
+
+Máy lạnh Daikin VRV A Series
+
+2,100,000
+
+PHCNS
+
+100.00
+
+2,100,000
+
+6424
+
+Máy tính xách tay Dell XPS 15
+
+667,742
+
+PKTH
+
+100.00
+
+667,742
+
+6414
+
+Máy phát điện Cummins
+
+1,100,000
+
+PHCNS
+
+100.00
+
+1,100,000
+
+6424
+
+Xe ô tô Ford Transit 2023
+
+8,500,000
+
+PHCNS
+
+100.00
+
+8,500,000
+
+6424
+
+Máy photocopy Ricoh MP 5054
+
+1,000,000
+
+PHCNS
+
+100.00
+
+1,000,000
+
+6424
+
+Phần mềm kế toán Misa
+
+1,361,111
+
+PKT
+
+100.00
+
+1,361,111
+
+6424
+
+31. Ngày 31/12, xác định thuế GTGT phải nộp tháng 12
+
+32. Ngày 31/12, xác định kết quả kinh doanh
+
+Yêu cầu:
+
+1. Bảng cân đối tài khoản
+
+2. Lập Báo cáo tài chính năm N: Bảng cân đối kế toán, Báo cáo kết quả hoạt động kinh doanh, Báo cáo lưu chuyển

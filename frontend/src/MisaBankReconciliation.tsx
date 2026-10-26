@@ -239,7 +239,6 @@ export default function MisaBankReconciliation({
             onClick={() => setTab(id)}
           >
             {label}
-            {id === "ava" && <small>Mới</small>}
           </button>
         ))}
       </nav>
@@ -492,7 +491,7 @@ export default function MisaBankReconciliation({
       )}
       {matchingLine && <BankMatchDialog line={matchingLine} companyId={companyId} branchId={(apiRows.profiles || []).find((profile) => profile.id === matchingLine.account)?.branch_id}
         onClose={() => setMatchingLineId("")} onSaved={() => { reload(); setPreviewRevision((value) => value + 1); }} notify={notify} />}
-      {showImport && <ExcelImportModal companyId={companyId} token={token} profiles={apiRows.profiles || []}
+      {showImport && <ExcelImportModal companyId={companyId} token={token} profiles={(apiRows.profiles || []) as any}
         onClose={() => setShowImport(false)} onImportSuccess={(count, reference, importedAccountId) => {
           notify(`Đã nhập ${count} giao dịch sao kê (${reference}); chưa tạo chứng từ kế toán.`);
           setAccount(importedAccountId);

@@ -9,7 +9,7 @@ type Choice = { id: string; code: string; name: string };
 type Field = { key: string; label: string; values: string[] };
 const base = "/api/v1/common/accounting-policies";
 const fields: Field[] = [
-  { key: "accounting_regime", label: "Chế độ kế toán", values: ["CIRCULAR_133", "CIRCULAR_200", "CIRCULAR_88", "IFRS"] },
+  { key: "accounting_regime", label: "Chế độ kế toán", values: ["CIRCULAR_99", "CIRCULAR_200", "CIRCULAR_133", "CIRCULAR_88", "IFRS"] },
   { key: "accounting_basis", label: "Cơ sở kế toán", values: ["ACCRUAL", "CASH"] },
   { key: "exchange_rate_source", label: "Nguồn tỷ giá", values: ["MANUAL", "VIETCOMBANK", "STATE_BANK", "CUSTOM_INTEGRATION"] },
   { key: "inventory_accounting", label: "Hạch toán kho", values: ["PERPETUAL", "PERIODIC"] },
@@ -21,7 +21,7 @@ const fields: Field[] = [
   { key: "debt_tracking", label: "Theo dõi công nợ", values: ["INVOICE", "CUSTOMER_VENDOR", "DUE_DATE"] },
   { key: "rounding_method", label: "Làm tròn", values: ["HALF_UP", "ROUND_UP", "ROUND_DOWN"] },
 ];
-const defaults: Record<string, string | number | boolean | null> = { code: "", name: "", scope: "COMPANY", branch: null, effective_from_period: "", effective_to_period: null, accounting_regime: "CIRCULAR_133", accounting_basis: "ACCRUAL", accounting_currency: null, allow_multi_currency: false, exchange_rate_source: "MANUAL", inventory_accounting: "PERPETUAL", inventory_valuation: "WEIGHTED_AVERAGE", depreciation_method: "STRAIGHT_LINE", allocation_method: "BY_MONTHS", posting_mode: "MANUAL", tax_method: "DEDUCTION", debt_tracking: "INVOICE", amount_decimals: 0, unit_price_decimals: 2, quantity_decimals: 2, exchange_rate_decimals: 2, rounding_method: "HALF_UP", legal_basis: "", change_reason: "" };
+const defaults: Record<string, string | number | boolean | null> = { code: "", name: "", scope: "COMPANY", branch: null, effective_from_period: "", effective_to_period: null, accounting_regime: "CIRCULAR_99", accounting_basis: "ACCRUAL", accounting_currency: null, allow_multi_currency: false, exchange_rate_source: "MANUAL", inventory_accounting: "PERPETUAL", inventory_valuation: "WEIGHTED_AVERAGE", depreciation_method: "STRAIGHT_LINE", allocation_method: "BY_MONTHS", posting_mode: "MANUAL", tax_method: "DEDUCTION", debt_tracking: "INVOICE", amount_decimals: 0, unit_price_decimals: 2, quantity_decimals: 2, exchange_rate_decimals: 2, rounding_method: "HALF_UP", legal_basis: "", change_reason: "" };
 const list = <T,>(value: T[] | { results: T[] }): T[] => Array.isArray(value) ? value : value.results;
 
 export default function LiveAccountingPolicies() {

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { apiClient } from "./apiClient";
 import {
   ChevronLeft,
   Printer,
@@ -330,9 +331,34 @@ export default function MisaMultiBranchBusinessResultReport({
     };
   };
 
+  const [rowsData, setRowsData] = useState<MultiBranchBusinessRow[]>(DEFAULT_ROWS);
+
+  useEffect(() => {
+    apiClient
+      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=2026`)
+      .then((res) => {
+        if (res?.b02_dn) {
+          setRowsData(
+            DEFAULT_ROWS.map((r) => {
+              const m = res.b02_dn[r.code];
+              return m
+                ? {
+                    ...r,
+                    currentPeriod: Number(m.current || 0),
+                    prevPeriod: Number(m.previous || 0),
+                    samePeriodLastYear: Number(m.previous || 0),
+                  }
+                : r;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+  }, [period, fromDate, toDate]);
+
   // Filter rows
   const filteredRows = useMemo(() => {
-    return DEFAULT_ROWS.filter((row) => {
+    return rowsData.filter((row) => {
       if (searchKeyword.trim()) {
         const kw = searchKeyword.toLowerCase();
         return (
@@ -342,7 +368,7 @@ export default function MisaMultiBranchBusinessResultReport({
       }
       return true;
     });
-  }, [searchKeyword]);
+  }, [rowsData, searchKeyword]);
 
   return (
     <div

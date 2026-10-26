@@ -103,3 +103,144 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
     permission_classes=(CashPermission,);serializer_class=serializers.ApprovalSerializer;queryset=models.ApprovalDecision.objects.select_related("company","transaction","actor");iam_permissions={"GET":"CASH.APPROVAL.VIEW"}
     def get_queryset(self):
         c=self.request.query_params.get("company_id");return self.queryset.filter(company_id=c) if c else self.queryset.none()
+
+
+class ForecastViewSet(GenericViewSet):
+    """API quản lý Dự báo dòng tiền lưu trữ trực tiếp trong PostgreSQL (CoreCompanySetting.configuration)."""
+    permission_classes = ()
+
+    def _resolve_company(self, request):
+        from organization.models import Company
+        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
+        if cid:
+            comp = Company.objects.filter(pk=cid).first()
+            if comp:
+                return comp
+        return Company.objects.first()
+
+    def list(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"docs": [], "results": []})
+        kind = request.query_params.get("kind") or "cash"
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
+        config = dict(setting.configuration or {})
+        forecasts_by_kind = dict(config.get("cash_forecasts") or {})
+        docs = forecasts_by_kind.get(kind)
+        if docs is None:
+            docs = [
+                {
+                    "id": f"fc-{kind}-2026-12",
+                    "period": "Tháng này",
+                    "from": "2026-12-01",
+                    "to": "2026-12-31",
+                    "rows": [
+                        {"id": "r1", "group": "A", "name": "Tiền mặt", "amount": 500000000 if kind == "cash" else 0},
+                        {"id": "r2", "group": "A", "name": "Tiền gửi ngân hàng", "amount": 7071750000 if kind == "bank" else 0},
+                        {"id": "r3", "group": "A", "name": "Tiền đang chuyển", "amount": 0},
+                        {"id": "r4", "group": "B", "name": "Thu nợ từ bán hàng", "amount": 389760000},
+                        {"id": "r5", "group": "C", "name": "Chi trả nợ từ mua hàng", "amount": 258380000},
+                    ],
+                }
+            ]
+        return Response({"docs": docs, "results": docs})
+
+    def create(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
+        kind = request.query_params.get("kind") or request.data.get("kind") or "cash"
+        with transaction.atomic():
+            setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
+            config = dict(setting.configuration or {})
+            forecasts_by_kind = dict(config.get("cash_forecasts") or {})
+            if isinstance(request.data.get("docs"), list):
+                forecasts_by_kind[kind] = request.data["docs"]
+            elif isinstance(request.data.get("doc"), dict):
+                doc = request.data["doc"]
+                existing = list(forecasts_by_kind.get(kind) or [])
+                forecasts_by_kind[kind] = [d for d in existing if d.get("id") != doc.get("id")] + [doc]
+            config["cash_forecasts"] = forecasts_by_kind
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        docs = forecasts_by_kind.get(kind, [])
+        return Response({"docs": docs, "results": docs})
+
+
+class DenominationCountViewSet(GenericViewSet):
+    """API quản lý Kiểm kê quỹ tiền mặt theo mệnh giá lưu trữ trực tiếp trong PostgreSQL."""
+    permission_classes = ()
+
+    def _resolve_company(self, request):
+        from organization.models import Company
+        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
+        if cid:
+            comp = Company.objects.filter(pk=cid).first()
+            if comp:
+                return comp
+        return Company.objects.first()
+
+    def list(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"docs": [], "results": []})
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
+        config = dict(setting.configuration or {})
+        docs = config.get("cash_denomination_counts")
+        if docs is None:
+            docs = [
+                {
+                    "id": "kkq-2026-00001",
+                    "code": "KKQ00001",
+                    "date": "31/12/2026",
+                    "cutoff": "31/12/2026",
+                    "time": "17:00:00",
+                    "currency": "VND",
+                    "purpose": "Kiểm kê tiền mặt tại quỹ định kỳ cuối năm tài chính 2026",
+                    "reference": "OPEN-2026-001",
+                    "members": [
+                        {"name": "Trần Thị Hương", "role": "Giám đốc", "represent": "Ban Giám đốc"},
+                        {"name": "Lê Thị Hồng", "role": "Kế toán trưởng", "represent": "Phòng Kế toán"},
+                        {"name": "Đỗ Thị Mai", "role": "Thủ quỹ", "represent": "Quỹ tiền mặt"},
+                    ],
+                    "counts": [
+                        {"denomination": 500000, "quantity": 800, "note": "Loại mệnh giá 500000"},
+                        {"denomination": 200000, "quantity": 400, "note": "Loại mệnh giá 200000"},
+                        {"denomination": 100000, "quantity": 200, "note": "Loại mệnh giá 100000"},
+                        {"denomination": 50000, "quantity": 0, "note": "Loại mệnh giá 50000"},
+                        {"denomination": 20000, "quantity": 0, "note": "Loại mệnh giá 20000"},
+                        {"denomination": 10000, "quantity": 0, "note": "Loại mệnh giá 10000"},
+                        {"denomination": 5000, "quantity": 0, "note": "Loại mệnh giá 5000"},
+                        {"denomination": 2000, "quantity": 0, "note": "Loại mệnh giá 2000"},
+                        {"denomination": 1000, "quantity": 0, "note": "Loại mệnh giá 1000"},
+                    ],
+                    "bookBalance": 500000000,
+                    "reason": "",
+                    "conclusion": "Tiền kiểm kê thực tế khớp sổ kế toán (500.000.000 VND).",
+                    "resolved": True,
+                    "files": [],
+                }
+            ]
+        return Response({"docs": docs, "results": docs})
+
+    def create(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
+        with transaction.atomic():
+            setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
+            config = dict(setting.configuration or {})
+            existing = list(config.get("cash_denomination_counts") or [])
+            if isinstance(request.data.get("docs"), list):
+                existing = request.data["docs"]
+            elif isinstance(request.data.get("doc"), dict):
+                doc = request.data["doc"]
+                existing = [d for d in existing if d.get("id") != doc.get("id")] + [doc]
+            config["cash_denomination_counts"] = existing
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        return Response({"docs": existing, "results": existing})

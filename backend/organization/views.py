@@ -77,6 +77,8 @@ class CompanyViewSet(ProtectedModelViewSet):
     ordering_fields = ("code", "name", "created_at")
 
     def get_queryset(self):
+        if getattr(self.request.user, "is_superuser", False):
+            return self.queryset.all()
         account = getattr(self.request.user, "iam_account", None)
         if account is None:
             return self.queryset.none()

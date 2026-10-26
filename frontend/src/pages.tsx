@@ -1,20 +1,13 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Download,
-  FileCheck2,
   FileText,
   Filter,
   Plus,
   Search,
-  ShieldCheck,
-  Wallet,
 } from "lucide-react";
 import {
   downloadCsv,
@@ -22,12 +15,11 @@ import {
   matchesModule,
   modules,
   money,
-  shortMoney,
   statuses,
   type Transaction,
 } from "./data";
 import { StatusBadge, TransactionTable } from "./components";
-const FinancialChart = lazy(() => import("./Chart"));
+import { MisaDashboardOverview } from "./MisaDashboardOverview";
 type Href = (path: string, extra?: Record<string, string>) => string;
 type PageProps = {
   items: Transaction[];
@@ -42,206 +34,14 @@ export function Dashboard({
   period,
   href,
   onSelect,
-  onCreate,
 }: PageProps & { period: string }) {
-  const posted = items.filter((t) => t.status === "posted"),
-    pending = items.filter((t) => t.status === "pending");
-  const revenue = sum(posted.filter((t) => t.kind === "sale")),
-    expenses = sum(posted.filter((t) => t.kind === "purchase"));
-  const received = sum(
-    posted.filter((t) => t.kind === "receipt" || t.kind === "bank"),
-  );
-  const metrics = [
-    {
-      label: "Doanh thu bán hàng",
-      value: revenue,
-      icon: ArrowUpRight,
-      tone: "blue",
-      hint: "Chứng từ bán hàng đã ghi sổ",
-    },
-    {
-      label: "Giá trị mua hàng",
-      value: expenses,
-      icon: ArrowDownLeft,
-      tone: "orange",
-      hint: "Chứng từ mua hàng đã ghi sổ",
-    },
-    {
-      label: "Tiền đã thu",
-      value: received,
-      icon: Wallet,
-      tone: "teal",
-      hint: "Tiền mặt và tiền gửi đã ghi sổ",
-    },
-    {
-      label: "Chứng từ chờ duyệt",
-      value: pending.length,
-      icon: FileCheck2,
-      tone: "violet",
-      hint: "Cần kiểm tra và xác nhận",
-    },
-  ];
   return (
-    <>
-      <div className="overview-tabs">
-        <span className="active">Tổng quan hoạt động</span>
-        <Link to={href("/reports")}>Báo cáo quản trị</Link>
-        <span className="live-note">
-          <span />
-          {period === "2026"
-            ? "Năm 2026"
-            : `Tháng ${Number(period.slice(5))}/2026`}{" "}
-          · VND
-        </span>
-      </div>
-      <div className="metrics">
-        {metrics.map((m, i) => (
-          <article className="metric" key={m.label}>
-            <div className="metric-top">
-              <span>{m.label}</span>
-              <span className={`metric-icon ${m.tone}`}>
-                <m.icon size={19} />
-              </span>
-            </div>
-            <strong className="metric-value">
-              {i === 3
-                ? m.value.toString().padStart(2, "0")
-                : shortMoney(m.value)}
-              {i !== 3 && <small>VND</small>}
-            </strong>
-            <div className="metric-hint">
-              {i === 3 ? (
-                <Clock3 size={13} />
-              ) : (
-                <span className={`small-dot ${m.tone}`} />
-              )}
-              {m.hint}
-            </div>
-          </article>
-        ))}
-      </div>
-      <div className="dashboard-grid">
-        <section className="card chart-card">
-          <div className="card-heading">
-            <div>
-              <h2>Dòng tiền thu & chi</h2>
-              <p>Theo chứng từ đã ghi sổ trong kỳ</p>
-            </div>
-            <Link className="text-link" to={href("/cash/transactions")}>
-              Chi tiết
-              <ArrowUpRight size={15} />
-            </Link>
-          </div>
-          <div className="chart-summary">
-            <div>
-              <span>
-                <i className="legend-dot blue" />
-                Tổng thu
-              </span>
-              <strong>{money(received)}</strong>
-            </div>
-            <div>
-              <span>
-                <i className="legend-dot muted-blue" />
-                Tổng chi
-              </span>
-              <strong>
-                {money(sum(posted.filter((t) => t.kind === "payment")))}
-              </strong>
-            </div>
-          </div>
-          <Suspense
-            fallback={
-              <div className="chart-skeleton" role="status">
-                Đang tải biểu đồ…
-              </div>
-            }
-          >
-            <FinancialChart items={posted} period={period} />
-          </Suspense>
-        </section>
-        <section className="card tasks-card">
-          <div className="card-heading">
-            <div>
-              <h2>Cần xử lý</h2>
-              <p>Những công việc đang chờ bạn</p>
-            </div>
-            <span className="count-pill">{pending.length}</span>
-          </div>
-          <div className="task-list">
-            {pending.slice(0, 3).map((t, i) => (
-              <button
-                className="task-item"
-                key={t.id}
-                onClick={() => onSelect(t)}
-              >
-                <span
-                  className={`task-icon ${["orange", "blue", "violet"][i]}`}
-                >
-                  <FileCheck2 size={20} />
-                </span>
-                <span>
-                  <strong>{kinds[t.kind]} chờ duyệt</strong>
-                  <small>
-                    {t.code} · {money(t.amount)}
-                  </small>
-                </span>
-                <ChevronRight size={17} />
-              </button>
-            ))}
-            {!pending.length && (
-              <div className="compact-empty">
-                <Check size={24} />
-                <p>Đã xử lý hết công việc trong kỳ.</p>
-              </div>
-            )}
-          </div>
-          <div className="period-note">
-            <ShieldCheck size={22} />
-            <div>
-              <strong>Kiểm soát trước khi ghi sổ</strong>
-              <p>Đối chiếu chứng từ để số liệu luôn nhất quán.</p>
-            </div>
-          </div>
-          <Link
-            className="all-tasks"
-            to={href("/ledger/transactions", { status: "pending" })}
-          >
-            Xem tất cả việc cần xử lý
-            <ChevronRight size={16} />
-          </Link>
-        </section>
-      </div>
-      <section className="card recent-card">
-        <div className="card-heading">
-          <div>
-            <h2>Chứng từ gần đây</h2>
-            <p>Các giao dịch mới nhất trong kỳ kế toán</p>
-          </div>
-          <Link className="text-link" to={href("/ledger/transactions")}>
-            Xem tất cả
-            <ChevronRight size={15} />
-          </Link>
-        </div>
-        {items.length ? (
-          <TransactionTable
-            items={[...items]
-              .sort((a, b) => b.date.localeCompare(a.date))
-              .slice(0, 5)}
-            onSelect={onSelect}
-          />
-        ) : (
-          <Empty onCreate={onCreate} />
-        )}
-      </section>
-      <div className="dashboard-bottom">
-        <span>
-          <ShieldCheck size={14} />
-          Dữ liệu minh họa · Chưa kết nối sổ kế toán thực tế
-        </span>
-        <span>Sổ Việt Workspace</span>
-      </div>
-    </>
+    <MisaDashboardOverview
+      items={items}
+      period={period}
+      href={href}
+      onSelectTransaction={onSelect}
+    />
   );
 }
 

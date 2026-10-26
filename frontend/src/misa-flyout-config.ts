@@ -219,7 +219,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Phân bổ chi phí bán hàng, quản lý doanh nghiệp, khác", path: "/ledger/allocation" },
       { label: "Khóa sổ kỳ kế toán", path: "/ledger/process?action=lock" },
       { label: "Bỏ khóa sổ kỳ kế toán", path: "/ledger/process?action=unlock" },
-      { label: "Khóa sổ/Bỏ khóa sổ theo Loại chứng từ", path: "/ledger/process?action=lock-by-type", badge: "Mới" },
+      { label: "Khóa sổ/Bỏ khóa sổ theo Loại chứng từ", path: "/ledger/process?action=lock-by-type" },
     ],
   },
   budget: {

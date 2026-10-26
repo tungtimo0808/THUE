@@ -86,9 +86,99 @@ def save_lock_settings(company, data):
     return lock_settings(company)
 
 
+def _extract_period_locked_doc_date(period, code):
+    """
+    UC-GL-12 (AF-02, BR-GL-LOCK-10, 47..51):
+    Kiểm tra xem loại chứng từ `code` có nằm trong phạm vi bị khóa của kỳ `period` hay không,
+    trả về ngày khóa hiệu lực (date) nếu bị khóa, hoặc None nếu không bị khóa.
+    """
+    eff_period_lock_date = period.lock_to_date or period.end_date
+    if period.status == "CLOSED":
+        return eff_period_lock_date
+    if period.status != "PARTIALLY_LOCKED":
+        return None
+    raw_locked = period.locked_document_types or []
+    if isinstance(raw_locked, dict):
+        info = raw_locked.get(code) or raw_locked.get("ALL")
+        if not info:
+            return None
+        if isinstance(info, dict) and info.get("lock_to_date"):
+            try:
+                return date.fromisoformat(str(info["lock_to_date"])[:10])
+            except ValueError:
+                return eff_period_lock_date
+        if isinstance(info, str):
+            try:
+                return date.fromisoformat(info[:10])
+            except ValueError:
+                return eff_period_lock_date
+        return eff_period_lock_date
+    if isinstance(raw_locked, list):
+        for item in raw_locked:
+            if isinstance(item, str) and item.upper() in (str(code or "").upper(), "ALL"):
+                return eff_period_lock_date
+            if isinstance(item, dict) and str(item.get("code") or "").upper() in (str(code or "").upper(), "ALL"):
+                if item.get("lock_to_date"):
+                    try:
+                        return date.fromisoformat(str(item["lock_to_date"])[:10])
+                    except ValueError:
+                        pass
+                return eff_period_lock_date
+    return None
+
+
 def assert_not_locked(company, code, document_date):
-    """Refuse to post a document dated on or before its type's effective lock date."""
-    if code not in LOCK_TYPES or not document_date:
+    """
+    Refuse to create/edit/post/unpost a document dated on or before its type's effective lock date
+    or belonging to a CLOSED / PARTIALLY_LOCKED AccountingPeriod (UC-GL-12, BR-GL-LOCK-06, 10..12, 43..50).
+    """
+    if not document_date or not company:
+        return
+    if isinstance(document_date, str):
+        try:
+            document_date = date.fromisoformat(document_date[:10])
+        except ValueError:
+            return
+
+    # 1. Kiểm tra Period Lock trên AccountingPeriod (UC-GL-12, BR-GL-LOCK-10..12, 43..50)
+    try:
+        from general_ledger.models import AccountingPeriod
+
+        periods = AccountingPeriod.objects.filter(
+            company=company,
+            start_date__lte=document_date,
+            end_date__gte=document_date,
+            status__in=("CLOSED", "PARTIALLY_LOCKED"),
+        )
+        for period in periods:
+            if period.status == "CLOSED":
+                eff_date = period.lock_to_date or period.end_date
+                if document_date <= eff_date:
+                    raise ValidationError({
+                        "period": (
+                            f"Kỳ kế toán {period.code} đã khóa sổ đến ngày {eff_date.strftime('%d/%m/%Y')}; "
+                            f"không thể thực hiện nghiệp vụ ngày hạch toán {document_date.strftime('%d/%m/%Y')} (BR-GL-LOCK-10..12, 43)."
+                        ),
+                        "error_code": "PERIOD_LOCKED",
+                    })
+            elif period.status == "PARTIALLY_LOCKED" and code:
+                doc_lock_date = _extract_period_locked_doc_date(period, code)
+                if doc_lock_date and document_date <= doc_lock_date:
+                    doc_label = LOCK_TYPES.get(code, code)
+                    raise ValidationError({
+                        "period": (
+                            f"{doc_label} ({code}) trong kỳ {period.code} đã bị khóa sổ một phần đến ngày "
+                            f"{doc_lock_date.strftime('%d/%m/%Y')}; không thể thực hiện nghiệp vụ ngày {document_date.strftime('%d/%m/%Y')} (BR-GL-LOCK-47, 48)."
+                        ),
+                        "error_code": "DOCUMENT_TYPE_LOCKED_IN_PERIOD",
+                    })
+    except ValidationError:
+        raise
+    except Exception:
+        pass
+
+    # 2. Kiểm tra khóa sổ theo loại chứng từ trong CoreCompanySetting
+    if code not in LOCK_TYPES:
         return
     _, config = _configuration(company)
     dates = [d for d in (
@@ -98,8 +188,6 @@ def assert_not_locked(company, code, document_date):
     if not dates:
         return
     locked_until = max(dates)
-    if isinstance(document_date, str):
-        document_date = date.fromisoformat(document_date[:10])
     if document_date <= locked_until:
         raise ValidationError(
             f"{LOCK_TYPES[code]} đã khóa sổ đến ngày {locked_until.strftime('%d/%m/%Y')}; "
@@ -108,9 +196,24 @@ def assert_not_locked(company, code, document_date):
 
 
 def journal_lock_code(entry):
-    """Map a GL entry to the document type the lock screen manages."""
-    if entry.source_module == "GL" or not entry.source_module:
-        return "KCLL" if entry.entry_type == "CLOSING" else "PKT"
-    if str(entry.source_event_id or "").startswith(("SAL.GOODS", "SAL.SERVICE")):
+    """Map a GL entry to the document type the lock screen manages (UC-GL-12, AF-02)."""
+    if getattr(entry, "source_entity_type", "") == "AdvanceSettlementVoucher" or str(getattr(entry, "number", "")).upper().startswith("QT"):
+        return "QTU"
+    if entry.entry_type == "CLOSING":
+        return "KCLL"
+    src_mod = (entry.source_module or "").upper()
+    ev = str(entry.source_event_id or "").upper()
+    num = str(getattr(entry, "number", "") or "").upper()
+    if src_mod == "CASH":
+        if "RECEIPT" in ev or num.startswith("PT"):
+            return "PT"
+        return "PC"
+    if src_mod == "BANK":
+        if "RECEIPT" in ev or "CREDIT" in ev or num.startswith("BC"):
+            return "BC"
+        return "BN"
+    if ev.startswith(("SAL.GOODS", "SAL.SERVICE")) or src_mod in ("SAL", "AR"):
         return "HDBH"
-    return None
+    if src_mod == "GL" or not src_mod:
+        return "PKT"
+    return src_mod

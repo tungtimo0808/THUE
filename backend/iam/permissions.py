@@ -44,6 +44,15 @@ def _scope_allows(scope, *, branch_id=None, department_id=None, warehouse_id=Non
     )
 
 
+def sync_assignment_statuses_for_company(company, at=None):
+    at = at or timezone.now()
+    queryset = UserRoleAssignment.objects.filter(company_membership__company=company)
+    queryset.filter(status="SCHEDULED", valid_from__lte=at).filter(
+        Q(valid_to__isnull=True) | Q(valid_to__gte=at)
+    ).update(status="ACTIVE")
+    queryset.filter(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at).update(status="EXPIRED")
+
+
 def sync_assignment_statuses(user_account, company, at=None):
     at = at or timezone.now()
     queryset = UserRoleAssignment.objects.filter(
@@ -55,10 +64,11 @@ def sync_assignment_statuses(user_account, company, at=None):
     queryset.filter(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at).update(status="EXPIRED")
 
 
-def effective_assignments(user_account, company, at=None):
+def effective_assignments(user_account, company, at=None, skip_sync=False):
     """Return grants per assignment; scopes are deliberately never merged."""
     at = at or timezone.now()
-    sync_assignment_statuses(user_account, company, at)
+    if not skip_sync:
+        sync_assignment_statuses(user_account, company, at)
     queryset = UserRoleAssignment.objects.filter(
             company_membership__user=user_account,
             company_membership__company=company,

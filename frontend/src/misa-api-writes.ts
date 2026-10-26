@@ -988,9 +988,10 @@ export async function saveProductionOrder(w: ApiWriter, d: Row) {
 const FIXED_ASSETS = "/api/v1/fixed-assets/";
 
 async function assetCategory(w: ApiWriter, name: unknown, accounts: { cost: unknown; depreciation: unknown; expense: unknown }) {
-  const wanted = String(name || "").trim() || "Tài sản cố định khác";
+  const wanted = String(name || "").trim();
+  if (!wanted) throw new FormDataError("Vui lòng chọn loại tài sản hợp lệ.");
   const rows = await w.list("assetCategories");
-  const found = rows.find((row) => [row.code, row.name].some((value) => String(value).toLowerCase() === wanted.toLowerCase()));
+  const found = rows.find((row) => [row.id, row.code, row.name].some((value) => String(value || "").toLowerCase() === wanted.toLowerCase()));
   if (found) return found;
   return w.post(`${FIXED_ASSETS}categories/`, {
     code: unitCode(wanted).slice(0, 20), name: wanted, asset_type: "FIXED_ASSET", default_method: "STRAIGHT_LINE",
@@ -1000,42 +1001,336 @@ async function assetCategory(w: ApiWriter, name: unknown, accounts: { cost: unkn
   });
 }
 
-/** "Ghi tăng TSCĐ" (acquire = true) and "Khai báo TSCĐ đầu kỳ" (acquire = false). */
-export async function saveFixedAsset(w: ApiWriter, d: Row, acquire: boolean) {
-  if (!String(d.name || "").trim()) throw new FormDataError("Vui lòng nhập Tên tài sản cố định!");
-  const cost = num(d.originalCost);
-  if (cost <= 0) throw new FormDataError("Nguyên giá phải lớn hơn 0.");
-  const category = await assetCategory(w, d.category, { cost: d.costAccount, depreciation: d.deprAccount, expense: d.expenseAccount });
-  const date = toApiDate(d.startDate);
-  const assets = await w.list("assets");
-  const code = String(d.code || "").trim() || `TSCD${String(assets.length + 1).padStart(5, "0")}`;
-  if (assets.some((row) => row.code === code)) throw new FormDataError(`Mã tài sản ${code} đã tồn tại.`);
-  const asset = await w.post(`${FIXED_ASSETS}assets/`, {
-    code, name: String(d.name).trim(), asset_type: "FIXED_ASSET", category: category.id, branch: (await w.branch()).id,
-    acquisition_date: date, in_service_date: date, original_cost: String(cost), method: "STRAIGHT_LINE",
-    useful_life_periods: Math.round((num(d.years) || 5) * 12), source_module: acquire ? "FA" : "OPENING",
+async function resolveOrEnsureDepartment(w: ApiWriter, deptInput: unknown) {
+  const wanted = String(deptInput || "").trim();
+  if (!wanted) throw new FormDataError("Vui lòng chọn đơn vị sử dụng hợp lệ.");
+  const depts = await w.list("/api/v1/organization/departments/");
+  const found = depts.find((row) => [row.id, row.code, row.name].some((val) => String(val || "").toLowerCase() === wanted.toLowerCase()));
+  if (found) return found;
+  const branch = await w.branch();
+  const baseCode = unitCode(wanted).slice(0, 20) || "PB";
+  const code = depts.some((row) => String(row.code).toUpperCase() === baseCode) ? `${baseCode}${depts.length + 1}` : baseCode;
+  const created = await w.post("/api/v1/organization/departments/", {
+    branch: branch.id, code, name: wanted, status: "ACTIVE",
   });
-  if (!acquire) {
-    const note = num(d.depreciatedAmount) > 0 ? " Hao mòn lũy kế đầu kỳ cần nhập qua số dư đầu kỳ tài khoản 214." : "";
-    return { record: asset, message: `Đã khai báo TSCĐ ${code} - ${asset.name}.${note}` };
-  }
-  const result = await createAndPost(w, `${FIXED_ASSETS}transactions/`, {
-    number: await nextVoucherNumber(w, `${FIXED_ASSETS}transactions/`, "GTTS", d.voucherNo),
-    transaction_type: "ACQUISITION", transaction_date: date, asset: asset.id, amount: String(cost),
-    reason: `Ghi tăng ${code} - ${asset.name}`,
-  });
-  return { ...result, message: describeResult(`chứng từ ghi tăng ${code}`, result) };
+  w.invalidate();
+  return created;
 }
 
-/** Store a CCDC record and its acquisition transaction using the existing fixed-assets API. */
+/** AF04: "Thêm loại tài sản" từ nút (+) trên form Ghi tăng TSCĐ. */
+export async function saveFixedAssetCategory(w: ApiWriter, d: Row) {
+  const code = String(d.code || "").trim();
+  const name = String(d.name || "").trim();
+  if (!code || !name) throw new FormDataError("Vui lòng nhập mã và tên loại tài sản.");
+  const assetAcc = d.assetAccount ? (await w.account(d.assetAccount, "TK nguyên giá")).id : null;
+  const deprAcc = d.deprAccount ? (await w.account(d.deprAccount, "TK khấu hao")).id : null;
+  const expAcc = d.expenseAccount ? (await w.account(d.expenseAccount, "TK chi phí")).id : null;
+  const record = await w.post(`${FIXED_ASSETS}categories/`, {
+    code,
+    name,
+    asset_type: "FIXED_ASSET",
+    default_method: String(d.defaultMethod || "STRAIGHT_LINE"),
+    default_periods: Math.max(1, Math.round(num(d.defaultPeriods) || 60)),
+    asset_account: assetAcc,
+    accumulated_account: deprAcc,
+    expense_account: expAcc,
+    is_active: true,
+  });
+  w.invalidate();
+  return { record, message: `Đã thêm loại tài sản ${record.code} - ${record.name}.` };
+}
+
+/** UC-FA-01: "Ghi tăng TSCĐ" (acquire = true) and AF18 "Khai báo TSCĐ đầu kỳ" (acquire = false). */
+export async function saveFixedAsset(w: ApiWriter, d: Row, acquire: boolean) {
+  const voucherNo = String(d.voucherNo || "").trim();
+  if (!voucherNo) throw new FormDataError("Vui lòng nhập số chứng từ ghi tăng.");
+  const acqDateRaw = String(d.voucherDate || d.startDate || "").trim();
+  if (!acqDateRaw) throw new FormDataError("Vui lòng nhập Ngày ghi tăng hợp lệ theo định dạng DD/MM/YYYY.");
+  const code = String(d.code || "").trim();
+  if (!code) throw new FormDataError("Vui lòng nhập mã tài sản.");
+  const name = String(d.name || "").trim();
+  if (!name) throw new FormDataError("Vui lòng nhập tên tài sản cố định.");
+  const cost = num(d.originalCost);
+  if (cost <= 0) throw new FormDataError("Nguyên giá tài sản phải lớn hơn 0 và có căn cứ hợp lệ.");
+
+  const noDepr = Boolean(d.noDepr);
+  const firstAllocAcc = Array.isArray(d.allocations) && d.allocations[0]?.expenseAccount ? d.allocations[0].expenseAccount : d.expenseAccount;
+  const category = await assetCategory(w, d.category, {
+    cost: d.costAccount || "211",
+    depreciation: d.deprAccount || "214",
+    expense: firstAllocAcc || "642",
+  });
+  const department = await resolveOrEnsureDepartment(w, d.dept);
+  const branch = await w.branch();
+
+  const rawAllocations = Array.isArray(d.allocations) ? d.allocations : [];
+  const allocations = [];
+  if (!noDepr) {
+    for (const row of rawAllocations) {
+      const rowDept = await resolveOrEnsureDepartment(w, row.dept || d.dept);
+      const expAcc = await w.account(row.expenseAccount, "TK chi phí");
+      allocations.push({
+        department_id: rowDept.id,
+        department_name: rowDept.name,
+        rate: String(num(row.rate)),
+        expense_account: expAcc.code,
+        expense_item: String(row.expenseItem || "").trim(),
+        cost_center: String(row.costCenter || "").trim(),
+      });
+    }
+  }
+
+  const origins = (Array.isArray(d.origins) ? d.origins : [])
+    .filter((row: Row) => String(row.documentNumber || "").trim() || num(row.amount) > 0)
+    .map((row: Row) => ({
+      origin_type: String(row.originType || "Mua sắm mới trong nước").trim(),
+      document_number: String(row.documentNumber || "").trim(),
+      document_date: String(row.documentDate || acqDateRaw).trim(),
+      amount: String(num(row.amount)),
+      partner_code: String(row.partnerCode || "").trim(),
+      partner_name: String(row.partnerName || "").trim(),
+      source_document_id: String(row.sourceDocumentId || "").trim(),
+      allow_multiple_assets: Boolean(row.allowMultipleAssets),
+    }));
+
+  const components = (Array.isArray(d.components) ? d.components : [])
+    .filter((row: Row) => String(row.name || "").trim())
+    .map((row: Row) => ({
+      name: String(row.name).trim(),
+      unit: String(row.unit || "").trim(),
+      quantity: String(num(row.quantity) || 1),
+      value: String(num(row.value) || 0),
+    }));
+
+  const accessories = (Array.isArray(d.accessories) ? d.accessories : [])
+    .filter((row: Row) => String(row.name || "").trim())
+    .map((row: Row) => ({
+      name: String(row.name).trim(),
+      unit: String(row.unit || "").trim(),
+      quantity: String(num(row.quantity) || 1),
+      value: String(num(row.value) || 0),
+    }));
+
+  const assetAccObj = await w.account(d.costAccount, "TK nguyên giá");
+  const deprAccObj = !noDepr ? await w.account(d.deprAccount, "TK khấu hao") : null;
+
+  const payload: Row = {
+    voucher_no: voucherNo,
+    acquisition_date: acqDateRaw,
+    category: category.id,
+    code,
+    department: department.id,
+    branch: branch.id,
+    name,
+    no_depreciation: noDepr,
+    asset_account: assetAccObj.code,
+    accumulated_account: deprAccObj ? deprAccObj.code : "",
+    original_cost: String(cost),
+    depreciable_amount: String(noDepr ? 0 : num(d.deprCostValue || cost)),
+    accumulated_depreciation: String(num(d.depreciatedAmount || 0)),
+    useful_life_value: String(noDepr ? 0 : num(d.useDuration ?? d.years)),
+    useful_life_unit: /tháng|month/i.test(String(d.useDurationUnit || "")) ? "MONTH" : "YEAR",
+    in_service_date: String(d.deprStartDate || d.startDate || acqDateRaw).trim(),
+    monthly_depreciation_rate: d.rateMonth !== undefined ? String(num(d.rateMonth)) : undefined,
+    annual_depreciation_rate: d.rateYear !== undefined ? String(num(d.rateYear)) : undefined,
+    monthly_depreciation_amount: d.deprMonthValue !== undefined ? String(num(d.deprMonthValue)) : undefined,
+    annual_depreciation_amount: d.deprYearValue !== undefined ? String(num(d.deprYearValue)) : undefined,
+    cit_cap_enabled: Boolean(d.limitTaxLaw),
+    cit_depreciable_cap: String(num(d.taxLawValue || 0)),
+    cit_monthly_cap: String(num(d.taxLawMonthValue || 0)),
+    allocations,
+    origins,
+    origin_variance_reason: String(d.originVarianceReason || "").trim(),
+    components,
+    accessories,
+    country_of_origin: String(d.countryOfOrigin || "").trim(),
+    manufacture_year: d.manufactureYear ? Number(d.manufactureYear) : null,
+    source_module: acquire ? "FA" : "OPENING",
+    allow_prior_depreciation: !acquire || Boolean(d.allowPriorDepreciation),
+  };
+
+  const result = await w.post(`${FIXED_ASSETS}assets/acquire/`, payload);
+  w.invalidate();
+  return {
+    record: result.asset,
+    transaction: result.transaction,
+    message: acquire
+      ? (result.message || "Ghi tăng tài sản cố định thành công.")
+      : `Đã khai báo TSCĐ đầu kỳ ${code} - ${name} thành công.`,
+  };
+}
+
+/** UC-FA-02: "Cập nhật thông tin tài sản" (không tạo tài sản/chứng từ mới, giữ nguyên số liệu kế toán). */
+export async function updateFixedAssetInfo(w: ApiWriter, d: Row) {
+  let assetId = String(d.id || "").trim();
+  if (!assetId) {
+    const code = String(d.code || "").trim();
+    const assets = await w.list("assets");
+    const found = assets.find((row) => String(row.code || "") === code);
+    if (!found) throw new FormDataError("Không tìm thấy thông tin tài sản cố định.");
+    assetId = String(found.id);
+  }
+
+  const components = Array.isArray(d.components)
+    ? d.components
+        .filter((row: Row) => String(row.name || "").trim())
+        .map((row: Row) => ({
+          name: String(row.name).trim(),
+          unit: String(row.unit || "").trim(),
+          quantity: String(num(row.quantity) || 1),
+          value: String(num(row.value) || 0),
+        }))
+    : undefined;
+
+  const accessories = Array.isArray(d.accessories)
+    ? d.accessories
+        .filter((row: Row) => String(row.name || "").trim())
+        .map((row: Row) => ({
+          name: String(row.name).trim(),
+          unit: String(row.unit || "").trim(),
+          quantity: String(num(row.quantity) || 1),
+          value: String(num(row.value) || 0),
+        }))
+    : undefined;
+
+  const origins = Array.isArray(d.origins)
+    ? d.origins
+        .filter((row: Row) => String(row.documentNo || row.documentNumber || row.document_number || "").trim() || num(row.amount) > 0)
+        .map((row: Row) => ({
+          origin_type: String(row.sourceType || row.originType || row.origin_type || "Mua sắm mới trong nước").trim(),
+          document_number: String(row.documentNo || row.documentNumber || row.document_number || "").trim(),
+          document_date: String(row.documentDate || row.document_date || "").trim(),
+          amount: String(num(row.amount)),
+          partner_name: String(row.supplier || row.partnerName || row.partner_name || "").trim(),
+        }))
+    : undefined;
+
+  const payload: Row = {
+    name: d.name !== undefined ? String(d.name) : undefined,
+    country_of_origin: d.countryOfOrigin !== undefined ? String(d.countryOfOrigin) : undefined,
+    manufacture_year: d.manufactureYear !== undefined && String(d.manufactureYear).trim() !== "" ? d.manufactureYear : null,
+    serial_number: d.serialNumber !== undefined ? String(d.serialNumber) : undefined,
+    description: d.description !== undefined ? String(d.description) : undefined,
+    ...(components !== undefined ? { components } : {}),
+    ...(accessories !== undefined ? { accessories } : {}),
+    ...(origins !== undefined ? { origins } : {}),
+    update_reason: String(d.updateReason || "").trim(),
+    ...(d.version !== undefined ? { version: d.version } : {}),
+    ...(d.expectedStatus ? { expected_status: d.expectedStatus } : {}),
+  };
+
+  const result = await w.action(`${FIXED_ASSETS}assets/`, assetId, "update-info", payload);
+  w.invalidate();
+  return {
+    record: result.asset,
+    changes: result.changes,
+    noChanges: Boolean(result.no_changes),
+    message: result.message || "Cập nhật thông tin tài sản thành công.",
+  };
+}
+
+/** UC-FA-02: Lấy chi tiết tài sản + lịch sử giao dịch + Audit Log thay đổi thông tin. */
+export async function fetchFixedAssetHistory(w: ApiWriter, assetId: string) {
+  return await w.get(`${FIXED_ASSETS}assets/${encodeURIComponent(assetId)}/history/`);
+}
+
+/** UC-FA-02: Đối chiếu hạch toán TSCĐ với chứng từ nguồn và Sổ cái. */
+export async function reconcileFixedAssetAccounting(w: ApiWriter, assetIdOrCode: string) {
+  let assetId = String(assetIdOrCode || "").trim();
+  if (!assetId) throw new FormDataError("Không tìm thấy mã tài sản để đối chiếu.");
+  if (!assetId.includes("-")) {
+    const assets = await w.list("assets");
+    const found = assets.find((row) => String(row.code || "") === assetId);
+    if (!found) throw new FormDataError(`Không tìm thấy hồ sơ TSCĐ ${assetId} trên hệ thống.`);
+    assetId = String(found.id);
+  }
+  const resp = await w.action(`${FIXED_ASSETS}assets/`, assetId, "reconcile", {});
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã đối chiếu dữ liệu hạch toán TSCĐ với Sổ cái."),
+  };
+}
+
+/** UC-FA-10: Lấy danh sách chứng từ nguồn đủ điều kiện ghi tăng CCDC (Xuất kho/Mua hàng & Ghi giảm TSCĐ chuyển sang CCDC). */
+export async function fetchToolSourceVouchers(w: ApiWriter, sourceType?: string) {
+  const qs = sourceType ? `&source_type=${encodeURIComponent(sourceType)}` : "";
+  return await w.get(`${FIXED_ASSETS}assets/tool-source-vouchers/?_=${Date.now()}${qs}`);
+}
+
+/** UC-FA-10 (Main Flow A): Ghi tăng một CCDC qua endpoint /api/v1/fixed-assets/assets/acquire-tool/ (với fallback tương thích). */
 export async function saveToolAsset(w: ApiWriter, d: Row) {
   const code = String(d.code || "").trim();
   const name = String(d.name || "").trim();
   const cost = num(d.originalCost);
   const quantity = num(d.quantity) || 1;
   const periods = Math.round(num(d.allocationMonths) || 1);
-  if (!code || !name) throw new FormDataError("Nhập mã và tên công cụ dụng cụ.");
-  if (!(cost > 0) || !(quantity > 0) || !(periods > 0)) throw new FormDataError("Nguyên giá, số lượng và số kỳ phân bổ phải lớn hơn 0.");
+  const unitPrice = d.unitPrice !== undefined ? num(d.unitPrice) : (quantity > 0 ? cost / quantity : cost);
+  const allowZeroCost = Boolean(d.allowZeroCost) || String(d.sourceType || "").includes("TSCĐ") || String(d.sourceType || "") === "FA_DISPOSAL";
+
+  if (!code) throw new FormDataError("Mã CCDC không hợp lệ hoặc đã tồn tại.");
+  if (!name) throw new FormDataError("Vui lòng nhập tên công cụ dụng cụ.");
+  if (!(quantity > 0)) throw new FormDataError("Số lượng ghi tăng phải lớn hơn 0.");
+  if ((!allowZeroCost && !(cost > 0)) || cost < 0) {
+    throw new FormDataError("Đơn giá hoặc thành tiền CCDC không hợp lệ. Vui lòng kiểm tra lại.");
+  }
+  if (!(periods > 0)) throw new FormDataError("Số kỳ phân bổ phải là số nguyên lớn hơn 0.");
+
+  // If UC-FA-10 structured departmentAllocations or allocations are provided, use the dedicated UC-FA-10 endpoint
+  const deptRows = Array.isArray(d.departmentAllocations)
+    ? d.departmentAllocations.filter((r: Row) => String(r.code || r.department_code || r.name || r.department_name || "").trim())
+    : [];
+  const allocRows = Array.isArray(d.allocations)
+    ? d.allocations.filter((r: Row) => String(r.targetCode || r.target_code || r.targetName || r.target_name || r.costAccount || r.expense_account || "").trim())
+    : [];
+
+  if (deptRows.length > 0 || allocRows.length > 0 || d.useUc10Endpoint) {
+    const resp = await w.post(`${FIXED_ASSETS}assets/acquire-tool/`, {
+      voucher_no: String(d.voucherNo || "").trim() || undefined,
+      acquisition_date: String(d.startDate || d.acquisitionDate || "").trim(),
+      start_allocation_date: String(d.startAllocationDate || d.startDate || "").trim() || undefined,
+      code,
+      name,
+      category_name: String(d.category || "Công cụ dụng cụ").trim(),
+      group_name: String(d.group || d.category || "Công cụ dụng cụ").trim(),
+      reason: String(d.reason || `Ghi tăng CCDC ${code}`),
+      unit: String(d.unit || "Cái").trim(),
+      quantity: String(quantity),
+      unit_price: String(unitPrice),
+      original_cost: String(cost),
+      useful_life_periods: periods,
+      periodic_allocation_amount: d.periodicAllocationAmount !== undefined ? String(num(d.periodicAllocationAmount)) : undefined,
+      waiting_account: String(d.waitingAccount || "242").trim(),
+      suspend_allocation: Boolean(d.stopAllocation ?? d.suspendAllocation ?? false),
+      suspend_reason: String(d.suspendReason || "Tạm dừng phân bổ theo thiết lập ban đầu"),
+      source_type: String(d.sourceType || "STOCK_ISSUE"),
+      source_voucher_no: String(d.sourceVoucherNo || ""),
+      source_voucher_date: String(d.sourceVoucherDate || d.startDate || ""),
+      source_gl_posted: d.sourceGlPosted !== undefined ? Boolean(d.sourceGlPosted) : true,
+      credit_account: String(d.creditAccount || "153"),
+      detailed_description: String(d.detailedDescription || d.reason || ""),
+      technical_specs: d.technicalSpecs || {},
+      origins: Array.isArray(d.origins) ? d.origins : undefined,
+      department_allocations: deptRows.map((r: Row) => ({
+        code: String(r.code || r.department_code || "").trim(),
+        name: String(r.name || r.department_name || "").trim(),
+        quantity: String(num(r.qty ?? r.quantity)),
+      })),
+      allocations: allocRows.map((r: Row) => ({
+        target_code: String(r.targetCode || r.target_code || "").trim(),
+        target_name: String(r.targetName || r.target_name || "").trim(),
+        rate: String(num(r.rate)),
+        expense_account: String(r.costAccount || r.expense_account || "6422").trim(),
+        cost_item: String(r.costItem || r.cost_item || "").trim(),
+        stats_code: String(r.statCode || r.stats_code || "").trim(),
+      })),
+    });
+    return {
+      record: resp.asset || resp,
+      transaction: resp.transaction,
+      message: resp.message || "Đã ghi tăng công cụ dụng cụ thành công.",
+    };
+  }
+
   if ((await w.list("assets")).some((row) => row.code === code)) throw new FormDataError(`Mã CCDC ${code} đã tồn tại.`);
   const categories = await w.list("assetCategories");
   const categoryName = String(d.category || "Công cụ dụng cụ").trim();
@@ -1068,8 +1363,143 @@ export async function saveToolAsset(w: ApiWriter, d: Row) {
   return { record: result.record, message: `Đã lưu CCDC ${code}. ${describeResult("chứng từ ghi tăng", result)}` };
 }
 
+/** UC-FA-10 (AF01): Ghi tăng CCDC hàng loạt qua endpoint /api/v1/fixed-assets/assets/acquire-tools-batch/. */
+export async function saveToolAssetBatch(w: ApiWriter, d: Row) {
+  const items = Array.isArray(d.items) ? d.items : [];
+  if (!items.length) {
+    throw new FormDataError("Vui lòng nhập đầy đủ thông tin cho các dòng CCDC ghi tăng.");
+  }
+  const resp = await w.post(`${FIXED_ASSETS}assets/acquire-tools-batch/`, {
+    source_type: String(d.sourceType || "STOCK_ISSUE"),
+    items: items.map((item: Row) => ({
+      code: String(item.code || "").trim(),
+      name: String(item.name || "").trim(),
+      category_name: String(item.category || item.group || "Công cụ dụng cụ").trim(),
+      group_name: String(item.group || item.category || "Công cụ dụng cụ").trim(),
+      reason: String(item.reason || "").trim(),
+      unit: String(item.unit || "Cái").trim(),
+      quantity: String(num(item.qty ?? item.quantity) || 1),
+      unit_price: String(num(item.price ?? item.unitPrice)),
+      original_cost: String(num(item.amount ?? item.originalCost) || (num(item.price) * num(item.qty))),
+      acquisition_date: String(item.date || item.acquisitionDate || "").trim(),
+      voucher_no: String(item.voucherNo || "").trim(),
+      useful_life_periods: Math.round(num(item.allocMonths ?? item.usefulLifePeriods) || 12),
+      waiting_account: String(item.waitingAccount || "242").trim(),
+      department_allocations: Array.isArray(item.departmentAllocations)
+        ? item.departmentAllocations.map((r: Row) => ({
+            code: String(r.code || "").trim(),
+            name: String(r.name || "").trim(),
+            quantity: String(num(r.qty ?? r.quantity)),
+          }))
+        : [],
+      allocations: Array.isArray(item.allocations)
+        ? item.allocations.map((r: Row) => ({
+            target_code: String(r.targetCode || r.target_code || "").trim(),
+            target_name: String(r.targetName || r.target_name || "").trim(),
+            rate: String(num(r.rate)),
+            expense_account: String(r.costAccount || r.expense_account || "6422").trim(),
+            cost_item: String(r.costItem || r.cost_item || "").trim(),
+            stats_code: String(r.statCode || r.stats_code || "").trim(),
+          }))
+        : [],
+    })),
+  });
+  return {
+    record: resp,
+    message: resp.message || `Đã ghi tăng hàng loạt thành công ${resp.count || items.length} CCDC.`,
+  };
+}
+
+/** UC-FA-03: Preview depreciation calculation for a given month/year. */
+export async function previewDepreciationPeriod(w: ApiWriter, d: Row) {
+  const year = Number(d.year);
+  const month = Number(d.month);
+  if (!year || !month || month < 1 || month > 12) {
+    throw new FormDataError("Kỳ tính khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+  }
+  const resp = await w.post(`${FIXED_ASSETS}calculations/preview/`, {
+    month,
+    year,
+    prorate_by_days: Boolean(d.prorateByDays ?? d.prorate_by_days ?? false),
+  });
+  return { record: resp, message: `Đã tải dữ liệu tính khấu hao kỳ ${String(month).padStart(2, "0")}/${year}.` };
+}
+
+/** UC-FA-03: Save & optionally post a Fixed Asset Depreciation Calculation Voucher. */
+export async function saveDepreciationVoucher(w: ApiWriter, d: Row) {
+  const year = Number(d.year);
+  const month = Number(d.month);
+  if (!year || !month || month < 1 || month > 12) {
+    throw new FormDataError("Kỳ tính khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+  }
+  const voucherNo = String(d.voucherNo || d.voucher_no || "").trim();
+  if (!voucherNo) {
+    throw new FormDataError("Vui lòng nhập số chứng từ tính khấu hao.");
+  }
+  const resp = await w.post(`${FIXED_ASSETS}calculations/save-voucher/`, {
+    month,
+    year,
+    voucher_no: voucherNo,
+    voucher_date: d.voucherDate ? isoDate(d.voucherDate) : undefined,
+    posting_date: d.postingDate ? isoDate(d.postingDate) : undefined,
+    description: d.reason || d.description || `Khấu hao TSCĐ tháng ${String(month).padStart(2, "0")} năm ${year}`,
+    reference: d.reference || "",
+    prorate_by_days: Boolean(d.prorateByDays ?? d.prorate_by_days ?? false),
+    post_now: d.postNow !== undefined ? Boolean(d.postNow) : true,
+    recalculate: Boolean(d.recalculate ?? false),
+    idempotency_key: d.idempotencyKey || undefined,
+    lines: Array.isArray(d.lines) ? d.lines : undefined,
+    allocations: Array.isArray(d.allocations) ? d.allocations : undefined,
+    accounting_entries: Array.isArray(d.accountingEntries) ? d.accountingEntries : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : undefined,
+  });
+  return {
+    record: resp.run || resp,
+    message: resp.message || `Đã lưu chứng từ tính khấu hao ${voucherNo} thành công!`,
+  };
+}
+
+/** UC-FA-04: Post (Ghi sổ) an unposted (CALCULATED) depreciation voucher. */
+export async function postDepreciationVoucher(w: ApiWriter, id: string, payload: Row = {}) {
+  const resp = await w.action(`${FIXED_ASSETS}calculations/`, id, "post", payload);
+  return {
+    record: resp,
+    message: resp.message || "Ghi sổ chứng từ khấu hao thành công.",
+  };
+}
+
+/** UC-FA-03 AF14: Unpost (Bỏ ghi sổ) a posted depreciation voucher. */
+export async function unpostDepreciationVoucher(w: ApiWriter, id: string, reason = "Bỏ ghi sổ chứng từ tính khấu hao") {
+  const resp = await w.action(`${FIXED_ASSETS}calculations/`, id, "unpost", { reason });
+  return {
+    record: resp,
+    message: resp.message || `Đã bỏ ghi sổ chứng từ tính khấu hao ${resp.number || ""}.`,
+  };
+}
+
+/** UC-FA-03 Section 5: Cancel an unposted depreciation voucher. */
+export async function cancelDepreciationVoucher(w: ApiWriter, id: string, reason = "Hủy chứng từ tính khấu hao") {
+  const resp = await w.action(`${FIXED_ASSETS}calculations/`, id, "cancel", { reason });
+  return {
+    record: resp,
+    message: resp.message || `Đã hủy chứng từ tính khấu hao ${resp.number || ""}.`,
+  };
+}
+
+/** UC-FA-03 / UC-FA-04: Xuất khẩu bảng phân bổ chi phí khấu hao TSCĐ. */
+export async function exportDepreciationAllocation(w: ApiWriter, id: string) {
+  const resp = await w.get(`${FIXED_ASSETS}calculations/${encodeURIComponent(id)}/export-allocation/?_=${Date.now()}`);
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã xuất bảng phân bổ khấu hao TSCĐ."),
+  };
+}
+
 /** "Tính khấu hao TSCĐ" for a month: opens the FA period if needed, calculates, then posts. */
 export async function saveDepreciation(w: ApiWriter, d: Row, calculationType: "DEPRECIATION" | "ALLOCATION" = "DEPRECIATION") {
+  if (calculationType === "DEPRECIATION") {
+    return saveDepreciationVoucher(w, d);
+  }
   const year = Number(d.year);
   const month = Number(d.month);
   if (!year || !month) throw new FormDataError("Chọn kỳ tính khấu hao.");
@@ -1082,20 +1512,201 @@ export async function saveDepreciation(w: ApiWriter, d: Row, calculationType: "D
   }
   const path = `${FIXED_ASSETS}calculations/`;
   let record = await w.post(path, {
-    number: await nextVoucherNumber(w, path, calculationType === "ALLOCATION" ? "PBCC" : "KH", d.voucherNo), calculation_type: calculationType,
+    number: await nextVoucherNumber(w, path, "PBCC", d.voucherNo), calculation_type: calculationType,
     period_code: code, period_start: start, period_end: end,
   });
   record = await w.action(path, record.id, "calculate", { version: record.version });
   try {
     record = await w.action(path, record.id, "post", { version: record.version });
   } catch (error) {
-    return { record, message: `Đã tính ${calculationType === "ALLOCATION" ? "phân bổ CCDC" : "khấu hao"} kỳ ${code} (${record.number}), chưa ghi sổ: ${errorText(error)}` };
+    return { record, message: `Đã tính phân bổ CCDC kỳ ${code} (${record.number}), chưa ghi sổ: ${errorText(error)}` };
   }
-  return { record, message: `Đã tính và ghi sổ ${calculationType === "ALLOCATION" ? "phân bổ CCDC" : "khấu hao"} kỳ ${code} (${record.number}).` };
+  return { record, message: `Đã tính và ghi sổ phân bổ CCDC kỳ ${code} (${record.number}).` };
+}
+
+/** UC-FA-05: Điều chuyển tài sản cố định nội bộ (1..N tài sản, đầy đủ thông tin bàn giao & tập hợp chi phí). */
+export async function saveFixedAssetTransfer(w: ApiWriter, d: Row) {
+  const rows = (d.rows || d.lines || []).filter((row: Row) => String(row.assetCode || row.asset_code || row.asset_id || "").trim());
+  if (!rows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần điều chuyển.");
+  }
+  const assets = await w.list("assets");
+  const departments = await w.list("/api/v1/organization/departments/");
+  const lines = rows.map((row: Row) => {
+    const codeStr = String(row.assetCode || row.asset_code || "").trim();
+    const asset = assets.find((item) => item.code === codeStr || String(item.id) === String(row.asset_id || ""));
+    const toDeptStr = String(row.toDept || row.to_department || "").trim();
+    const targetDept = departments.find((dept) => [dept.code, dept.name, String(dept.id)].includes(toDeptStr));
+    return {
+      asset_id: asset?.id || row.asset_id || "",
+      asset_code: codeStr,
+      from_department: String(row.fromDept || row.from_department || ""),
+      to_department: targetDept ? targetDept.id : toDeptStr,
+      sales_contract: String(row.contract || row.sales_contract || "").trim(),
+      sales_order: String(row.order || row.sales_order || "").trim(),
+      project: String(row.project || "").trim(),
+      expense_item: String(row.costItem || row.expense_item || "").trim(),
+      cost_object: String(row.costObj || row.cost_object || "").trim(),
+    };
+  });
+
+  const payload: Row = {
+    company: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    transaction_date: toApiDate(d.date || d.transaction_date),
+    deliverer: String(d.deliverer || d.sender || "").trim(),
+    receiver: String(d.receiver || "").trim(),
+    reason: String(d.reason || "").trim(),
+    reference: String(d.reference || "").trim(),
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    lines,
+  };
+  const record = await w.post(`${FIXED_ASSETS}transactions/transfer/`, payload);
+  return {
+    record,
+    message: String(record?.message || "Điều chuyển tài sản cố định thành công."),
+  };
+}
+
+/** UC-FA-06: Đánh giá lại tài sản cố định (nâng cấp / đánh giá lại theo quyết định / điều chỉnh giá trị & thời gian sử dụng còn lại). */
+export async function saveFixedAssetRevaluation(w: ApiWriter, d: Row) {
+  const rows = (d.rows || d.items || d.lines || []).filter((row: Row) =>
+    String(row.assetCode || row.asset_code || row.asset_id || "").trim()
+  );
+  if (!rows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần đánh giá lại.");
+  }
+  const assets = await w.list("assets");
+  const items = rows.map((row: Row) => {
+    const codeStr = String(row.assetCode || row.asset_code || "").trim();
+    const asset = assets.find((item) => item.code === codeStr || String(item.id) === String(row.asset_id || ""));
+    return {
+      asset_id: asset?.id || row.asset_id || "",
+      asset_code: codeStr,
+      orig_after: String(num(row.origAfter ?? row.orig_after ?? row.origBefore ?? 0)),
+      depr_after: String(num(row.deprAfter ?? row.depr_after ?? row.deprBefore ?? 0)),
+      months_after: Math.round(num(row.monthsAfter ?? row.months_after ?? row.monthsBefore ?? 0)),
+      val_after: String(num(row.valAfter ?? row.val_after ?? (num(row.origAfter) - num(row.deprAfter)))),
+      monthly_depr_after: String(num(row.monthlyDeprAfter ?? row.monthly_depr_after ?? 0)),
+      monthly_depr_law_after: String(num(row.monthlyDeprLawAfter ?? row.monthly_depr_law_after ?? row.monthlyDeprAfter ?? 0)),
+      cost_account: String(row.costAcc || row.cost_account || "6424").trim(),
+      reval_account: String(row.revalAcc || row.reval_account || "").trim(),
+      skip_months_before_check: true,
+    };
+  });
+
+  const members = (d.members || [])
+    .filter((m: Row) => String(m.name || "").trim() || String(m.title || "").trim() || String(m.representation || "").trim())
+    .map((m: Row) => ({
+      name: String(m.name || "").trim(),
+      title: String(m.title || "").trim(),
+      representation: String(m.representation || "").trim(),
+    }));
+
+  const accountingEntries = (d.accountingRows || d.accounting_entries || [])
+    .filter((ae: Row) => num(ae.amount) > 0 && (String(ae.debitAcc || ae.debit_account || "").trim() || String(ae.creditAcc || ae.credit_account || "").trim()))
+    .map((ae: Row) => ({
+      description: String(ae.description || d.reason || "").trim(),
+      debit_account: String(ae.debitAcc || ae.debit_account || "").trim(),
+      credit_account: String(ae.creditAcc || ae.credit_account || "").trim(),
+      amount: String(num(ae.amount)),
+      object_code: String(ae.objCode || ae.object_code || "").trim(),
+      object_name: String(ae.objName || ae.object_name || "").trim(),
+      cost_item: String(ae.costItem || ae.cost_item || "").trim(),
+    }));
+
+  const payload: Row = {
+    company: w.companyId,
+    report_no: String(d.reportNo || d.report_no || "").trim(),
+    report_date: toApiDate(d.reportDate || d.report_date || d.date),
+    posting_date: toApiDate(d.postingDate || d.posting_date || d.date),
+    voucher_date: toApiDate(d.voucherDate || d.voucher_date || d.date),
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "").trim(),
+    conclusion: String(d.conclusion || "").trim(),
+    reference: String(d.reference || "").trim(),
+    members,
+    items,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    ...(accountingEntries.length ? { accounting_entries: accountingEntries } : {}),
+  };
+
+  const record = await w.post(`${FIXED_ASSETS}transactions/revaluate/`, payload);
+  return {
+    record,
+    message: String(record?.message || "Đánh giá lại tài sản cố định thành công."),
+  };
+}
+
+/**
+ * UC-FA-07 – Ghi giảm tài sản cố định:
+ * Calls POST /api/v1/fixed-assets/transactions/dispose/ to atomically validate and save
+ * the fixed asset disposal voucher across all 8 business reasons, post General Ledger entries,
+ * transition asset status to DISPOSED, stop depreciation, and record audit logs.
+ */
+export async function saveFixedAssetDisposal(w: ApiWriter, d: Row) {
+  const filledRows = (d.rows || d.items || []).filter((r: Row) =>
+    String(r.assetCode || r.asset_code || r.asset_id || "").trim()
+  );
+  if (!filledRows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một tài sản cần ghi giảm.");
+  }
+
+  const assets = await w.list("assets");
+  const rowsPayload = filledRows.map((row: Row) => {
+    const code = String(row.assetCode || row.asset_code || "").trim();
+    const asset = assets.find(
+      (item) => String(item.code || "").trim().toLowerCase() === code.toLowerCase()
+    );
+    return {
+      asset_id: asset?.id || row.asset_id || undefined,
+      asset_code: code,
+      asset_account: String(row.costAcc || row.asset_account || "2112").trim(),
+      accumulated_account: String(row.accumulatedAcc || row.accumulated_account || "2141").trim(),
+      disposal_account: String(row.handlingAcc || row.disposal_account || "811").trim(),
+    };
+  });
+
+  const accountingEntries = (d.accountingRows || d.accounting_entries || [])
+    .filter((ae: Row) => num(ae.amount) > 0 && (String(ae.debitAcc || ae.debit_account || "").trim() || String(ae.creditAcc || ae.credit_account || "").trim()))
+    .map((ae: Row) => ({
+      asset_code: String(ae.assetCode || ae.asset_code || "").trim(),
+      description: String(ae.description || d.reason || "").trim(),
+      debit_account: String(ae.debitAcc || ae.debit_account || "").trim(),
+      credit_account: String(ae.creditAcc || ae.credit_account || "").trim(),
+      amount: String(num(ae.amount)),
+    }));
+
+  const payload: Row = {
+    company: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "").trim(),
+    posting_date: toApiDate(d.postingDate || d.posting_date || d.date),
+    voucher_date: toApiDate(d.voucherDate || d.voucher_date || d.date),
+    reference: String(d.reference || "").trim(),
+    rows: rowsPayload,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    ...(accountingEntries.length ? { accounting_entries: accountingEntries } : {}),
+  };
+
+  const record = await w.post(`${FIXED_ASSETS}transactions/dispose/`, payload);
+  return {
+    record,
+    message: String(record?.message || "Ghi giảm tài sản cố định thành công."),
+  };
 }
 
 /** Đánh giá lại / Điều chuyển / Ghi giảm TSCĐ: one asset transaction per filled row. */
 export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "transfer" | "disposal" | "lifeChange", d: Row) {
+  if (kind === "transfer" && (d.deliverer || d.receiver || d.sender)) {
+    return saveFixedAssetTransfer(w, d);
+  }
+  if (kind === "revaluation") {
+    return saveFixedAssetRevaluation(w, d);
+  }
+  if (kind === "disposal") {
+    return saveFixedAssetDisposal(w, d);
+  }
   const rows = (d.rows || []).filter((row: Row) => String(row.assetCode || "").trim());
   if (!rows.length) throw new FormDataError("Chọn ít nhất một tài sản.");
   const assets = await w.list("assets");
@@ -1140,27 +1751,727 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
   return { message: messages.join(" ") };
 }
 
-/** "Kiểm kê TSCĐ / CCDC": records book vs counted quantity per asset. */
+/** UC-FA-08: "Kiểm kê TSCĐ / CCDC" – Lập và lưu biên bản kiểm kê tài sản cố định, đối chiếu sổ kế toán và thực tế. */
 export async function saveAssetCount(w: ApiWriter, assetType: "FIXED_ASSET" | "TOOL", d: Row) {
   const assets = (await w.list("assets")).filter((row) => row.asset_type === assetType);
-  const rows = (d.rows || []).filter((row: Row) => String(row.assetCode || row.code || "").trim());
-  if (!rows.length) throw new FormDataError("Chọn ít nhất một tài sản để kiểm kê.");
+  const rows = (d.rows || d.lines || []).filter((row: Row) =>
+    Boolean(row.isSurplus || row.is_surplus || String(row.assetCode || row.asset_code || row.code || row.assetName || row.asset_name || "").trim())
+  );
+  if (!rows.length) throw new FormDataError("Chưa có tài sản trong bảng kiểm kê.");
   const path = `${FIXED_ASSETS}counts/`;
   const lines = rows.map((row: Row) => {
-    const code = String(row.assetCode || row.code).trim();
-    const asset = assets.find((item) => item.code === code);
-    if (!asset) throw new FormDataError(`${assetType === "TOOL" ? "CCDC" : "TSCĐ"} ${code} chưa có trên hệ thống.`);
-    const actual = row.actualQty !== undefined ? num(row.actualQty) : row.exists === false ? 0 : num(asset.quantity);
+    const isSurplus = Boolean(row.isSurplus ?? row.is_surplus);
+    if (isSurplus) {
+      return {
+        is_surplus: true,
+        temp_code: String(row.assetCode || row.temp_code || "").trim(),
+        asset_name: String(row.assetName || row.asset_name || "").trim(),
+        actual_department_name: String(row.actualDept || row.actual_department_name || row.dept || "").trim(),
+        identification_info: String(row.identificationInfo || row.identification_info || row.note || "").trim(),
+        current_quality: String(row.currentQuality || row.current_quality || "Bình thường").trim(),
+        recommendation: String(row.recommendation || row.solution || "Xác minh nguồn gốc để ghi tăng").trim(),
+        note: String(row.note || "").trim(),
+      };
+    }
+    const code = String(row.assetCode || row.asset_code || row.code || "").trim();
+    const asset = assets.find((item) => String(item.code || "").toLowerCase() === code.toLowerCase());
+    if (!asset) throw new FormDataError(`Tài sản ${code} không hợp lệ.`);
+    const existenceStatus = String(
+      row.existenceStatus || row.existence_status || (row.exists === null ? "UNCOUNTED" : row.exists === false ? "MISSING" : "EXISTS")
+    ).toUpperCase();
+    const actual = row.actualQty !== undefined ? num(row.actualQty) : existenceStatus === "EXISTS" ? num(asset.quantity) : 0;
     return {
-      asset: asset.id, actual_quantity: String(actual), condition: String(row.currentQuality || ""),
-      recommendation: String(row.recommendation || row.solution || ""), note: String(row.note || ""),
+      asset: asset.id,
+      asset_code: asset.code,
+      existence_status: existenceStatus,
+      exists: existenceStatus === "UNCOUNTED" ? null : existenceStatus === "EXISTS",
+      actual_quantity: String(actual),
+      actual_department_name: String(row.actualDept || row.actual_department_name || row.dept || "").trim(),
+      condition: String(row.currentQuality || row.condition || ""),
+      current_quality: String(row.currentQuality || row.current_quality || row.condition || ""),
+      recommendation: String(row.recommendation || row.solution || ""),
+      resolution_voucher_no: String(row.resolutionVoucherNo || row.resolution_voucher_no || ""),
+      note: String(row.note || ""),
     };
   });
+  const members = Array.isArray(d.members)
+    ? d.members
+        .filter((m: Row) => String(m.name || "").trim() || String(m.position || "").trim() || String(m.represent || "").trim())
+        .map((m: Row) => ({
+          name: String(m.name || "").trim(),
+          position: String(m.position || "").trim(),
+          represent: String(m.represent || "").trim(),
+          role: String(m.role || "Thành viên").trim(),
+        }))
+    : undefined;
+  const voucherNo = await nextVoucherNumber(w, path, assetType === "TOOL" ? "BBKK" : "KKTS", d.voucherNo || d.number);
   const record = await w.post(path, {
-    asset_type: assetType, number: await nextVoucherNumber(w, path, assetType === "TOOL" ? "BBKK" : "KKTS", d.number),
-    count_date: toApiDate(d.date), purpose: String(d.purpose || ""), conclusion: String(d.conclusion || ""), lines,
+    company: w.companyId,
+    asset_type: assetType,
+    number: voucherNo,
+    voucher_no: voucherNo,
+    count_date: toApiDate(d.auditDate || d.count_date || d.date),
+    report_datetime: String(d.reportDatetime || d.report_datetime || d.date || ""),
+    purpose: String(d.purpose || ""),
+    conclusion: String(d.conclusion || ""),
+    reference: String(d.reference || ""),
+    recommendations_processed: Boolean(d.recommendationsProcessed ?? d.recommendations_processed ?? false),
+    scope: d.scope || undefined,
+    ...(members ? { members } : {}),
+    ...(Array.isArray(d.attachments) ? { attachments: d.attachments } : {}),
+    lines,
   });
-  return { record, message: `Đã lưu biên bản kiểm kê ${record.number} (${lines.length} tài sản).` };
+  return {
+    record,
+    message: String(record?.message || "Lưu biên bản kiểm kê tài sản cố định thành công."),
+  };
+}
+
+/** UC-FA-08: Tải danh sách tài sản trên sổ kế toán theo phạm vi và ngày kiểm kê. */
+export async function loadBookAssetsForStocktakeUc08(w: ApiWriter, params: Row = {}) {
+  const qs = new URLSearchParams();
+  if (params.assetType || params.asset_type) qs.set("asset_type", String(params.assetType || params.asset_type));
+  if (params.countDate || params.count_date) qs.set("count_date", toApiDate(params.countDate || params.count_date));
+  if (params.departmentName || params.department_name) qs.set("department_name", String(params.departmentName || params.department_name));
+  if (params.categoryName || params.category_name) qs.set("category_name", String(params.categoryName || params.category_name));
+  qs.set("_", String(Date.now()));
+  const resp = await w.get(`${FIXED_ASSETS}counts/load-book-assets/?${qs.toString()}`);
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã lấy danh sách TSCĐ từ sổ kế toán."),
+  };
+}
+
+/** UC-FA-08: Cập nhật chứng từ kiểm kê TSCĐ đã lập (POST /api/v1/fixed-assets/counts/<id>/update-stocktake/). */
+export async function updateStocktakeVoucherUc08(w: ApiWriter, countId: string, d: Row = {}) {
+  const resp = await w.action(`${FIXED_ASSETS}counts/`, countId, "update-stocktake", {
+    count_date: d.auditDate || d.count_date ? toApiDate(d.auditDate || d.count_date) : undefined,
+    report_datetime: d.reportDatetime || d.report_datetime || undefined,
+    purpose: d.purpose !== undefined ? String(d.purpose) : undefined,
+    conclusion: d.conclusion !== undefined ? String(d.conclusion) : undefined,
+    recommendations_processed:
+      d.recommendationsProcessed !== undefined || d.recommendations_processed !== undefined
+        ? Boolean(d.recommendationsProcessed ?? d.recommendations_processed)
+        : undefined,
+    members: Array.isArray(d.members) ? d.members : undefined,
+    lines: Array.isArray(d.lines) ? d.lines : undefined,
+  });
+  return {
+    record: resp,
+    message: String(resp?.message || "Đã cập nhật chứng từ kiểm kê TSCĐ."),
+  };
+}
+
+/** UC-FA-09 Main Flow A: Xem sổ tài sản cố định theo ngày xem số liệu (as_of_date) và điều kiện lọc. */
+export async function fetchFixedAssetRegister(w: ApiWriter, params: Row = {}) {
+  const path = `${FIXED_ASSETS}assets/register/`;
+  const record = await w.post(path, {
+    company: w.companyId,
+    company_id: w.companyId,
+    as_of_date: params.asOfDate || params.as_of_date || undefined,
+    search: params.search || undefined,
+    department_name: params.departmentName || params.department_name || undefined,
+    category_name: params.categoryName || params.category_name || undefined,
+    include_disposed: Boolean(params.includeDisposed ?? params.include_disposed ?? false),
+    page: Number(params.page || 1),
+    page_size: Number(params.pageSize || params.page_size || 50),
+    export_excel: Boolean(params.exportExcel ?? params.export_excel ?? false),
+  });
+  return { record, message: "" };
+}
+
+/** UC-FA-09 Main Flow B: Lập và xem báo cáo tài sản cố định / báo cáo đối chiếu. */
+export async function fetchFixedAssetReport(w: ApiWriter, params: Row = {}) {
+  const path = `${FIXED_ASSETS}assets/reports/`;
+  const record = await w.post(path, {
+    company: w.companyId,
+    company_id: w.companyId,
+    report_code: params.reportCode || params.report_code || params.reportId || "ASSET_REGISTER",
+    from_date: params.fromDate || params.from_date || undefined,
+    to_date: params.toDate || params.to_date || undefined,
+    year: params.year || undefined,
+    department_name: params.departmentName || params.department_name || undefined,
+    category_name: params.categoryName || params.category_name || undefined,
+    asset_code: params.assetCode || params.asset_code || undefined,
+    account_code: params.accountCode || params.account_code || undefined,
+    only_differences: Boolean(params.onlyDifferences ?? params.only_differences ?? false),
+    exclude_disposed_in_period: Boolean(params.excludeDisposedInPeriod ?? params.exclude_disposed_in_period ?? false),
+    lang: params.lang || "vi",
+  });
+  return { record, message: "" };
+}
+
+/** UC-FA-09 Main Flow B (AF10, AF12, AF13, AF14): Danh mục báo cáo, tìm kiếm AVA và tùy chọn ẩn/hiện báo cáo. */
+export async function fetchFixedAssetReportCatalog(w: ApiWriter, params: Row = {}) {
+  const path = `${FIXED_ASSETS}assets/report-catalog/`;
+  const record = await w.post(path, {
+    company: w.companyId,
+    company_id: w.companyId,
+    search: params.search || undefined,
+    ava_query: params.avaQuery || params.ava_query || undefined,
+    lang: params.lang || "vi",
+    hidden_report_codes: Array.isArray(params.hiddenReportCodes) ? params.hiddenReportCodes : undefined,
+    include_hidden: Boolean(params.includeHidden ?? params.include_hidden ?? false),
+  });
+  return { record, message: "" };
+}
+
+/** UC-FA-11 (Step 4, BR06): Lấy kỳ phân bổ mặc định đề xuất theo kỳ làm việc của doanh nghiệp. */
+export async function fetchDefaultAllocationPeriodUc11(
+  w: ApiWriter,
+  allocationType: "TOOL" | "PREPAID" = "TOOL",
+) {
+  return await w.get(
+    `${FIXED_ASSETS}calculations/default-allocation-period/?allocation_type=${encodeURIComponent(allocationType)}&_=${Date.now()}`,
+  );
+}
+
+/** UC-FA-11 (Main Flow A & B, Steps 7–11): Thiết lập kỳ phân bổ CCDC hoặc chi phí trả trước (chưa ghi sổ GL). */
+export async function setupAllocationPeriodUc11(w: ApiWriter, d: Row) {
+  const rawMonth = d.month ?? d.period_month;
+  const rawYear = d.year ?? d.period_year;
+  if (rawMonth === undefined || rawMonth === null || String(rawMonth).trim() === "") {
+    throw new FormDataError("Vui lòng chọn tháng phân bổ.");
+  }
+  const monthNum = Number(rawMonth);
+  if (!Number.isInteger(monthNum) || monthNum < 1 || monthNum > 12) {
+    throw new FormDataError("Tháng phân bổ phải có giá trị từ 1 đến 12.");
+  }
+  if (rawYear === undefined || rawYear === null || String(rawYear).trim() === "") {
+    throw new FormDataError("Vui lòng nhập năm phân bổ.");
+  }
+  const yearNum = Number(rawYear);
+  if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 2100) {
+    throw new FormDataError("Năm phân bổ không hợp lệ.");
+  }
+
+  const record = await w.post(`${FIXED_ASSETS}calculations/setup-allocation-period/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "TOOL").toUpperCase(),
+    month: monthNum,
+    year: yearNum,
+    ai_assisted: Boolean(d.aiAssisted ?? d.ai_assisted ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  return {
+    record,
+    message: String(record?.message || ""),
+  };
+}
+
+/** UC-FA-11 (AF17, EF18, EF19, BR27, BR34, BR35): Kiểm tra lại thông tin kỳ, ngày và số chứng từ trước khi lưu/ghi sổ. */
+export async function validateAllocationVoucherUc11(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}calculations/validate-allocation-voucher/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "TOOL").toUpperCase(),
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    posting_date: String(d.postingDate || d.posting_date || "").trim(),
+    voucher_date: String(d.voucherDate || d.voucher_date || "").trim(),
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    description: String(d.description || "").trim(),
+  });
+  return {
+    record,
+    message: "",
+  };
+}
+
+/** UC-FA-12 (Main Flow A & B): Tính / tính lại phân bổ chi phí CCDC hoặc chi phí trả trước theo kỳ (chưa ghi sổ GL). */
+export async function calculateAllocationVoucherUc12(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/calculate-allocation/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "TOOL").toUpperCase(),
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim() || undefined,
+    description: String(d.description || "").trim() || undefined,
+    reference: String(d.reference || "").trim() || undefined,
+    item_ids: Array.isArray(d.itemIds) ? d.itemIds : undefined,
+    identify_rows_override: Array.isArray(d.identifyRowsOverride) ? d.identifyRowsOverride : undefined,
+    allocation_rows_override: Array.isArray(d.allocationRowsOverride) ? d.allocationRowsOverride : undefined,
+    accounting_rows_override: Array.isArray(d.accountingRowsOverride) ? d.accountingRowsOverride : undefined,
+  });
+  return {
+    record,
+    message: String(record?.message || ""),
+  };
+}
+
+/** UC-FA-12 (Main Flow A & B): Cất / Cất và In chứng từ phân bổ chi phí CCDC hoặc chi phí trả trước (ghi sổ GL & cập nhật lũy kế). */
+export async function saveAllocationVoucherUc12(w: ApiWriter, d: Row) {
+  const allocType = String(d.allocationType || d.allocation_type || "TOOL").toUpperCase();
+  const record = await w.post(`${FIXED_ASSETS}assets/save-allocation-voucher/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: allocType,
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    voucher_no: String(d.voucherNo ?? d.voucher_no ?? "").trim(),
+    posting_date: String(d.postingDate ?? d.posting_date ?? "").trim(),
+    voucher_date: String(d.voucherDate ?? d.voucher_date ?? "").trim(),
+    description: String(d.description ?? d.reason ?? "").trim(),
+    reference: String(d.reference ?? "").trim(),
+    selected_vouchers: Array.isArray(d.selectedVouchers) ? d.selectedVouchers : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    item_ids: Array.isArray(d.itemIds) ? d.itemIds : undefined,
+    identify_rows_override: Array.isArray(d.identifyRowsOverride) ? d.identifyRowsOverride : undefined,
+    allocation_rows_override: Array.isArray(d.allocationRowsOverride) ? d.allocationRowsOverride : undefined,
+    accounting_rows_override: Array.isArray(d.accountingRowsOverride) ? d.accountingRowsOverride : undefined,
+    print_on_save: Boolean(d.printOnSave ?? d.print_on_save ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(
+      record?.message ||
+        (allocType === "TOOL"
+          ? "Đã cất chứng từ phân bổ CCDC thành công."
+          : "Đã lưu chứng từ phân bổ chi phí trả trước thành công."),
+    ),
+  };
+}
+
+/** UC-FA-12 (AF22, BR36): Bỏ ghi sổ / hủy chứng từ phân bổ CCDC hoặc chi phí trả trước. */
+export async function unpostAllocationVoucherUc12(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/unpost-allocation-voucher/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim() || undefined,
+    run_id: d.runId || d.run_id || undefined,
+    reason: String(d.reason || "Bỏ ghi sổ chứng từ phân bổ").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã bỏ ghi sổ chứng từ phân bổ."),
+  };
+}
+
+/** UC-FA-12 (AF18, EF33, BR38): Xuất bảng phân bổ ra Excel (không tự động ghi sổ). */
+export async function exportAllocationExcelUc12(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/export-allocation-excel/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    allocation_type: String(d.allocationType || d.allocation_type || "PREPAID").toUpperCase(),
+    month: Number(d.month ?? d.period_month),
+    year: Number(d.year ?? d.period_year),
+    item_ids: Array.isArray(d.itemIds) ? d.itemIds : undefined,
+  });
+  return {
+    record,
+    message: String(record?.message || "Xuất bảng phân bổ ra Excel thành công."),
+  };
+}
+
+/** UC-FA-12 (AF01–AF03, BR26–BR29): Tìm kiếm chứng từ tham chiếu cho chứng từ phân bổ. */
+export async function fetchAllocationReferenceVouchersUc12(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/allocation-reference-vouchers/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_type: d.voucherType || d.voucher_type || "ALL",
+    from_date: d.fromDate || d.from_date || undefined,
+    to_date: d.toDate || d.to_date || undefined,
+    keyword: d.keyword || d.search || undefined,
+    selected_vouchers: Array.isArray(d.selectedVouchers) ? d.selectedVouchers : undefined,
+  });
+}
+
+/** UC-FA-13 (Steps 5, 10–11): Lấy số biên bản đề xuất tiếp theo, ngày mặc định và danh sách CCDC khả dụng để điều chuyển. */
+export async function fetchTransferableToolsUc13(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/transferable-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    transfer_date: d.transferDate || d.transfer_date || d.date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/** UC-FA-13 (Main Flow Steps 19–31): Lưu / Cất và In biên bản điều chuyển CCDC giữa các đơn vị. */
+export async function saveToolTransferUc13(w: ApiWriter, d: Row) {
+  const lines = (Array.isArray(d.lines) ? d.lines : Array.isArray(d.rows) ? d.rows : []).map((r: Row) => ({
+    asset_id: r.assetId || r.asset_id || undefined,
+    code: String(r.code || r.toolCode || r.assetCode || "").trim(),
+    from_department: String(r.fromDept || r.from_department || "").trim(),
+    to_department: String(r.toDept || r.to_department || "").trim(),
+    transfer_quantity: r.transferQty ?? r.transfer_quantity ?? r.quantity ?? 0,
+    statistical_code: String(r.statCode || r.statistical_code || "").trim(),
+    sales_contract: String(r.contract || r.sales_contract || "").trim(),
+    purchase_order: String(r.order || r.purchase_order || "").trim(),
+  }));
+
+  const record = await w.post(`${FIXED_ASSETS}assets/transfer-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo ?? d.voucher_no ?? "").trim(),
+    transfer_date: String(d.transferDate ?? d.date ?? d.voucherDate ?? "").trim(),
+    deliverer: String(d.deliverer ?? "").trim(),
+    receiver: String(d.receiver ?? "").trim(),
+    reason: String(d.reason ?? "").trim(),
+    reference: String(d.reference ?? "").trim(),
+    references: Array.isArray(d.references) ? d.references : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    lines,
+    print_on_save: Boolean(d.printOnSave ?? d.print_on_save ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu chứng từ điều chuyển CCDC ${record?.voucher_no || ""} thành công.`),
+  };
+}
+
+/** UC-FA-13 (AF24, EF29, BR36): Hủy biên bản điều chuyển CCDC. */
+export async function cancelToolTransferUc13(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-tool-transfer/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    transaction_id: d.transactionId || d.transaction_id || undefined,
+    reason: String(d.reason || "Hủy biên bản điều chuyển CCDC").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã hủy biên bản điều chuyển CCDC thành công."),
+  };
+}
+
+/** UC-FA-14 (Main Flow A, Steps 5 & 8): Lấy số chứng từ đề xuất và danh sách CCDC khả dụng để ghi giảm. */
+export async function fetchDisposableToolsUc14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/disposable-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_date: d.voucherDate || d.voucher_date || d.date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/** UC-FA-14 (Main Flow A, Steps 19–31): Lưu / Cất và In chứng từ ghi giảm CCDC. */
+export async function saveToolDecreaseUc14(w: ApiWriter, d: Row) {
+  const lines = (Array.isArray(d.lines) ? d.lines : Array.isArray(d.rows) ? d.rows : []).map((r: Row) => ({
+    asset_id: r.assetId || r.asset_id || undefined,
+    code: String(r.code || r.toolCode || r.assetCode || "").trim(),
+    department: String(r.dept || r.department || r.departmentCode || "").trim() || undefined,
+    decrease_quantity: r.decreaseQty ?? r.decrease_quantity ?? r.requestedQty ?? r.quantity ?? 0,
+    decrease_remaining_value:
+      r.remainingValue !== undefined && r.remainingValue !== "" && r.remainingValue !== null
+        ? r.remainingValue
+        : r.decrease_remaining_value,
+    adjustment_basis: r.adjustmentBasis || r.adjustment_basis || (r.manualValueChanged ? "Điều chỉnh theo số liệu thực tế" : undefined),
+    allow_manual_value_override: Boolean(r.allowManualValueOverride ?? r.allow_manual_value_override ?? r.manualValueChanged ?? false),
+  }));
+
+  const record = await w.post(`${FIXED_ASSETS}assets/decrease-tools/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo ?? d.voucher_no ?? "").trim(),
+    voucher_date: String(d.voucherDate ?? d.date ?? d.voucher_date ?? "").trim(),
+    reason: String(d.reason ?? "Nhượng bán, Thanh lý").trim(),
+    reference: String(d.reference ?? "").trim(),
+    references: Array.isArray(d.references) ? d.references : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    accounting_treatment: d.accountingTreatment || d.accounting_treatment || undefined,
+    lines,
+    print_on_save: Boolean(d.printOnSave ?? d.print_on_save ?? d.printAfterSave ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu chứng từ ghi giảm CCDC ${record?.voucher_no || ""} thành công.`),
+  };
+}
+
+/** UC-FA-14 (AF25, EF36, BR40): Hủy chứng từ ghi giảm CCDC và hoàn nguyên số lượng, giá trị còn lại. */
+export async function cancelToolDecreaseUc14(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-tool-decrease/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "Hủy chứng từ ghi giảm CCDC").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã hủy chứng từ ghi giảm CCDC thành công."),
+  };
+}
+
+/** UC-FA-14 (Main Flow B, Steps 6 & 9): Lấy số chứng từ đề xuất và danh sách CPTT khả dụng để ghi giảm. */
+export async function fetchDisposablePrepaidExpensesUc14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/disposable-prepaid-expenses/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_date: d.voucherDate || d.voucher_date || d.date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/** UC-FA-14 (Main Flow B, Steps 15–26): Lưu (Cất / Cất và Đóng) chứng từ ghi giảm chi phí trả trước. */
+export async function savePrepaidDecreaseUc14(w: ApiWriter, d: Row) {
+  const lines = (Array.isArray(d.lines) ? d.lines : Array.isArray(d.rows) ? d.rows : []).map((r: Row) => ({
+    prepaid_id: r.prepaidId || r.prepaid_id || undefined,
+    code: String(r.code || r.prepaidCode || "").trim(),
+    decrease_amount: r.decreaseAmount ?? r.decrease_amount ?? r.remainingAmount ?? r.amount ?? 0,
+  }));
+
+  const record = await w.post(`${FIXED_ASSETS}assets/decrease-prepaid-expenses/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo ?? d.number ?? d.voucher_no ?? "").trim(),
+    voucher_date: String(d.voucherDate ?? d.date ?? d.voucher_date ?? "").trim(),
+    reason: String(d.reason ?? "").trim(),
+    reference: String(d.reference ?? "").trim(),
+    references: Array.isArray(d.references) ? d.references : undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+    accounting_treatment: d.accountingTreatment || d.accounting_treatment || undefined,
+    lines,
+    keep_open: Boolean(d.keepOpen ?? d.keep_open ?? false),
+    allow_idempotent_voucher_resave: Boolean(d.allowIdempotentVoucherResave ?? d.allow_idempotent_voucher_resave ?? true),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu chứng từ ghi giảm chi phí trả trước ${record?.voucher_no || ""} thành công.`),
+  };
+}
+
+/** UC-FA-14 (AF25, EF36, BR40): Hủy chứng từ ghi giảm chi phí trả trước. */
+export async function cancelPrepaidDecreaseUc14(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-prepaid-decrease/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "Hủy chứng từ ghi giảm chi phí trả trước").trim(),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã hủy chứng từ ghi giảm chi phí trả trước thành công."),
+  };
+}
+
+/** UC-FA-14 (AF01–AF02, EF30): Tìm kiếm chứng từ tham chiếu cho chứng từ ghi giảm CCDC / CPTT. */
+export async function fetchDecreaseReferenceVouchersUc14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/decrease-reference-vouchers/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_type: d.voucherType || d.voucher_type || "ALL",
+    from_date: d.fromDate || d.from_date || undefined,
+    to_date: d.toDate || d.to_date || undefined,
+    keyword: d.keyword || d.search || undefined,
+  });
+}
+
+/* ───────────────────────── UC-FA-15: Kiểm kê CCDC ───────────────────────── */
+
+/** UC-FA-15 (Steps 4–8, EF01–EF05): Kiểm tra ngày kiểm kê đến ngày và lấy số biên bản BBKK00001 đề xuất. */
+export async function validateToolStocktakeDateUc15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/validate-tool-stocktake-date/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    count_to_date: d.countToDate || d.count_to_date || d.toDate || d.date ? toApiDate(d.countToDate || d.count_to_date || d.toDate || d.date) : "",
+    require_explicit_date: true,
+  });
+}
+
+/** UC-FA-15 (Steps 11–13, AF04–AF06, EF17–EF21, BR05, BR06, BR10, BR11, BR35): Lấy toàn bộ CCDC đang dùng tại ngày kiểm kê. */
+export async function fetchInUseToolsForStocktakeUc15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-stocktake-items/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    count_to_date: d.countToDate || d.count_to_date || d.toDate || d.date ? toApiDate(d.countToDate || d.count_to_date || d.toDate || d.date) : undefined,
+    previous_count_to_date: d.previousCountToDate ? toApiDate(d.previousCountToDate) : undefined,
+    confirm_date_change_reload: Boolean(d.confirmDateChangeReload),
+    existing_rows: Array.isArray(d.existingRows) ? d.existingRows : undefined,
+    confirm_overwrite: Boolean(d.confirmOverwrite),
+    merge_existing: Boolean(d.mergeExisting),
+    department: d.department || undefined,
+    search: d.search || undefined,
+  });
+}
+
+/** UC-FA-15 (Steps 14–33, AF07–AF19, EF01–EF32, BR01–BR36): Lưu / Cất hoặc Cất và In biên bản kiểm kê CCDC. */
+export async function saveToolStocktakeUc15(w: ApiWriter, d: Row) {
+  const rows = Array.isArray(d.rows) ? d.rows : Array.isArray(d.lines) ? d.lines : [];
+  const validRows = rows.filter((r: Row) => String(r.code || r.asset_code || r.asset || r.asset_id || "").trim() !== "");
+  if (!validRows.length) {
+    throw new FormDataError("Vui lòng chọn ít nhất một CCDC cần kiểm kê.");
+  }
+  const committee = Array.isArray(d.committee) ? d.committee : [];
+  const payload = {
+    _uc15: true,
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.number || d.voucher_no || "").trim(),
+    count_to_date: toApiDate(d.countToDate || d.toDate || d.date || d.count_to_date),
+    purpose: String(d.purpose || "").trim(),
+    conclusion: String(d.conclusion || "").trim(),
+    print_on_save: Boolean(d.printOnSave || d.print_on_save || d.print),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+    lines: validRows.map((r: Row) => ({
+      asset_id: r.asset_id || r.assetId || r.asset || undefined,
+      code: String(r.code || r.asset_code || "").trim(),
+      department_id: r.department_id || r.departmentId || undefined,
+      department_code: String(r.department_code || r.deptCode || r.dept || "").trim(),
+      department_name: String(r.department_name || r.dept || "").trim(),
+      expected_book_quantity: r.expectedBookQty !== undefined ? String(r.expectedBookQty) : undefined,
+      actual_quantity: r.actualQty !== undefined && r.actualQty !== "" && r.actualQty !== null
+        ? String(r.actualQty)
+        : (r.actual_quantity !== undefined && r.actual_quantity !== "" && r.actual_quantity !== null ? String(r.actual_quantity) : null),
+      counted_confirmed: r.countedConfirmed !== undefined ? Boolean(r.countedConfirmed) : true,
+      solution: String(r.solution || r.recommendation || "").trim(),
+      verification_note: r.verificationNote || r.verification_note || undefined,
+    })),
+    committee: committee.map((m: Row) => ({
+      name: String(m.name || m.full_name || "").trim(),
+      title: String(m.title || m.position || "").trim(),
+      department: String(m.dept || m.department || "").trim(),
+      role: String(m.role || "").trim(),
+    })),
+    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+  };
+  const record = await w.post(`${FIXED_ASSETS}assets/save-tool-stocktake/`, payload);
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || `Đã lưu biên bản kiểm kê CCDC ${record?.voucher_no || payload.voucher_no} thành công.`),
+  };
+}
+
+/** UC-FA-15 (AF20–AF23, EF27, EF33–EF34, BR23–BR29, BR37): Xác minh, phê duyệt và xử lý chênh lệch sau kiểm kê CCDC. */
+export async function resolveToolStocktakeUc15(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/resolve-tool-stocktake/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    action: String(d.action || "RESOLVE").trim(),
+    code: d.code || undefined,
+    department_code: d.departmentCode || d.dept || undefined,
+    verification_note: d.verificationNote || d.verification_note || undefined,
+    solution: d.solution || undefined,
+    approved: Boolean(d.approved),
+    auto_create_voucher: Boolean(d.autoCreateVoucher),
+    resolution_voucher_no: d.resolutionVoucherNo || undefined,
+  });
+  w.invalidate();
+  return { record, message: "Đã cập nhật tình trạng xử lý chênh lệch kiểm kê CCDC." };
+}
+
+/** UC-FA-15 (EF35, BR40): Hủy biên bản kiểm kê CCDC. */
+export async function cancelToolStocktakeUc15(w: ApiWriter, d: Row) {
+  const record = await w.post(`${FIXED_ASSETS}assets/cancel-tool-stocktake/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    voucher_no: String(d.voucherNo || d.voucher_no || "").trim(),
+    reason: String(d.reason || "Hủy biên bản kiểm kê CCDC").trim(),
+  });
+  w.invalidate();
+  return { record, message: String(record?.message || "Đã hủy biên bản kiểm kê CCDC thành công.") };
+}
+
+/** UC-FA-15 (AF24–AF27, BR39): Xuất Excel danh sách biên bản kiểm kê CCDC. */
+export async function exportToolStocktakeExcelUc15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/export-tool-stocktake-excel/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    search: d.search || undefined,
+    status: d.status || undefined,
+  });
+}
+
+/* ───────────────────────── UC-FA-16: Xem sổ và báo cáo CCDC ───────────────────────── */
+
+/** UC-FA-16 (Main Flow A, Steps 1–9, AF01–AF05, BR01–BR16): Lấy dữ liệu Sổ theo dõi công cụ dụng cụ (12 cột chuẩn). */
+export async function fetchToolRegisterUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-register-uc16/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    as_of_date: d.asOfDate || d.as_of_date || d.toDate || d.date ? toApiDate(d.asOfDate || d.as_of_date || d.toDate || d.date) : undefined,
+    search: d.search || d.keyword || undefined,
+    department: d.department || d.department_id || undefined,
+    category: d.category || d.category_id || undefined,
+    status: d.status || undefined,
+    include_disposed: Boolean(d.includeDisposed ?? d.include_disposed ?? false),
+    split_by_department: Boolean(d.splitByDepartment ?? d.split_by_department ?? false),
+    page: d.page || 1,
+    page_size: d.pageSize || d.page_size || 20,
+  });
+}
+
+/** UC-FA-16 (Main Flow A, Steps 10–12, AF06–AF07, EF20–EF21, BR34, BR40): Xuất khẩu Sổ theo dõi CCDC ra Excel. */
+export async function exportToolRegisterUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/export-tool-register/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    as_of_date: d.asOfDate || d.as_of_date || d.toDate || d.date ? toApiDate(d.asOfDate || d.as_of_date || d.toDate || d.date) : undefined,
+    search: d.search || d.keyword || undefined,
+    department: d.department || d.department_id || undefined,
+    category: d.category || d.category_id || undefined,
+    status: d.status || undefined,
+    include_disposed: Boolean(d.includeDisposed ?? d.include_disposed ?? false),
+    split_by_department: Boolean(d.splitByDepartment ?? d.split_by_department ?? false),
+    export_excel: true,
+    export_format: "EXCEL",
+  });
+}
+
+/** UC-FA-16 (AF04, AF28, EF18, EF19, BR37): Xem chi tiết & lịch sử biến động CCDC hoặc truy vết chứng từ nguồn. */
+export async function fetchToolDetailTraceUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-detail-trace/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    tool_id: d.toolId || d.tool_id || d.id || undefined,
+    tool_code: d.toolCode || d.tool_code || d.code || undefined,
+    voucher_no: d.voucherNo || d.voucher_no || undefined,
+  });
+}
+
+/** UC-FA-16 (Main Flow B, Steps 1–4, AF08–AF10, AF17–AF21, EF02, EF17, EF24, EF25, BR30–BR33): Lấy danh mục báo cáo CCDC, Yêu thích, Ẩn/hiện, Ngôn ngữ và Tìm kiếm AVA. */
+export async function fetchToolReportCatalogUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-report-catalog/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    search: d.search || d.q || undefined,
+    ava_query: d.avaQuery || d.ava_query || undefined,
+    lang: d.lang || d.language || undefined,
+    toggle_favorite: d.toggleFavorite || d.toggle_favorite || d.reportName || d.report_name || undefined,
+    favorite_report_codes: Array.isArray(d.favoriteReportCodes) ? d.favoriteReportCodes : undefined,
+    hidden_report_codes: Array.isArray(d.hiddenReportCodes || d.hiddenReports || d.hidden_reports)
+      ? (d.hiddenReportCodes || d.hiddenReports || d.hidden_reports)
+      : undefined,
+    include_hidden: Boolean(d.includeHidden ?? d.include_hidden ?? false),
+  });
+}
+
+/** UC-FA-16 (Main Flow B, Steps 5–14, AF11–AF16, AF22–AF28, EF04–EF16, EF20–EF27, BR17–BR40): Tổng hợp, Xem trước, Xuất Excel và In báo cáo CCDC / CPTT / Đối chiếu TK 242. */
+export async function generateToolReportUc16(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${FIXED_ASSETS}assets/tool-reports/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    report_code: d.reportCode || d.report_code || d.reportId || d.reportName || d.report_name || "TOOL_ALLOCATION_SHEET",
+    period_type: d.periodType || d.period_type || undefined,
+    month: d.month !== undefined ? Number(d.month) : undefined,
+    quarter: d.quarter !== undefined ? Number(d.quarter) : undefined,
+    year: d.year !== undefined ? Number(d.year) : undefined,
+    from_date: d.fromDate || d.from_date ? toApiDate(d.fromDate || d.from_date) : undefined,
+    to_date: d.toDate || d.to_date ? toApiDate(d.toDate || d.to_date) : undefined,
+    department: d.department || d.department_id || undefined,
+    category: d.category || d.category_id || undefined,
+    tool_code: d.toolCode || d.tool_code || undefined,
+    status: d.status || undefined,
+    waiting_account: d.waitingAccount || d.waiting_account || undefined,
+    lang: d.lang || d.language || undefined,
+    export_excel: Boolean(d.exportExcel ?? d.export_excel ?? (String(d.exportFormat || "").toUpperCase() === "EXCEL")),
+    print_report: Boolean(d.printReport ?? d.print_report ?? false),
+  });
 }
 
 /* ───────────────────────── Tiền mặt / Ngân hàng ───────────────────────── */
@@ -1590,32 +2901,605 @@ export async function saveJournalVoucher(w: ApiWriter, d: Row) {
   return { ...result, message: describeResult("chứng từ", result) };
 }
 
-/** Settle an existing disbursed advance. The cash API owns the advance balance. */
+/** UC-GL-02: Lập chứng từ quyết toán tạm ứng (lưu ở trạng thái Chưa ghi sổ - UNPOSTED). */
 export async function saveAdvanceSettlement(w: ApiWriter, d: Row) {
-  const employeeText = String(d.employee || "").trim().toLowerCase();
-  if (!employeeText) throw new FormDataError("Chọn nhân viên hoặc nhập số khoản tạm ứng cần quyết toán.");
-  const employees = await w.list("/api/v1/organization/employees/");
-  const employee = employees.find((row) =>
-    [row.code, row.full_name, row.name].some((value) => String(value || "").trim().toLowerCase() === employeeText));
-  const advances = (await w.list("/api/v1/cash/advances/"))
-    .filter((row) => ["ACTIVE", "PARTIAL"].includes(row.status) && num(row.remaining_amount) > 0)
-    .filter((row) => String(row.number || "").toLowerCase() === employeeText || (employee && row.recipient === employee.id));
-  if (advances.length !== 1) {
-    throw new FormDataError(advances.length
-      ? "Nhân viên có nhiều khoản tạm ứng đang mở; hãy nhập số khoản tạm ứng vào ô Nhân viên."
-      : "Không tìm thấy khoản tạm ứng đang mở của nhân viên này.");
+  const employeeText = String(d.employeeId || d.employee || "").trim();
+  if (!employeeText) {
+    throw new FormDataError("Nhân viên quyết toán tạm ứng là bắt buộc.");
   }
-  const accepted = (d.rows || []).reduce((sum: number, row: Row) => sum + num(row.amount), 0);
-  if (accepted <= 0) throw new FormDataError("Nhập số tiền quyết toán lớn hơn 0.");
-  if (accepted > num(advances[0].remaining_amount)) throw new FormDataError("Số tiền quyết toán vượt số tạm ứng còn lại.");
-  const record = await w.action("/api/v1/cash/advances/", advances[0].id, "settle", {
-    settlement_date: toApiDate(d.docDate),
-    accepted_expense: String(accepted),
-    note: String(d.description || d.number || "").slice(0, 500),
-    documents: [{ number: String(d.number || ""), description: String(d.description || "") }],
+
+  const settlePerAdvance = Boolean(d.settlePerAdvance || d.settle_per_advance);
+  const sourceAdvanceRef = String(d.sourceAdvanceRef || d.source_advance_ref || d.cashAdvance || "").trim();
+  if (settlePerAdvance && !sourceAdvanceRef) {
+    throw new FormDataError("Khi chọn 'Quyết toán cho từng lần tạm ứng', bắt buộc phải chọn khoản/lần tạm ứng nguồn.");
+  }
+
+  const rawRows = Array.isArray(d.rows) ? d.rows : Array.isArray(d.accounting_lines) ? d.accounting_lines : [];
+  const validRows = rawRows.filter((row: Row) =>
+    String(row.debitAcc || row.debit_account || "").trim() ||
+    num(row.amount) > 0
+  );
+  if (!validRows.length) {
+    throw new FormDataError("Chứng từ quyết toán tạm ứng phải có ít nhất một dòng hạch toán hợp lệ.");
+  }
+
+  const accountingLines = validRows.map((row: Row, idx: number) => {
+    const debitAcc = String(row.debitAcc || row.debit_account || "").trim();
+    const creditAcc = String(row.creditAcc || row.credit_account || "141").trim();
+    const amount = num(row.amount);
+    if (!debitAcc || !creditAcc) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Vui lòng nhập đầy đủ Tài khoản Nợ và Tài khoản Có.`);
+    }
+    if (debitAcc === creditAcc) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Tài khoản Nợ và Tài khoản Có (${debitAcc}) không được trùng nhau.`);
+    }
+    if (!(amount > 0)) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Số tiền phải lớn hơn 0.`);
+    }
+    return {
+      description: String(row.desc || row.description || d.description || "Quyết toán tạm ứng").trim(),
+      debit_account: debitAcc,
+      credit_account: creditAcc,
+      amount: String(amount),
+      debit_object_code: String(row.debitObject || row.debit_object_code || "").trim(),
+      debit_object_name: String(row.debitObjectName || row.debit_object_name || "").trim(),
+      credit_object_code: String(row.creditObject || row.credit_object_code || "").trim(),
+      credit_object_name: String(row.creditObjectName || row.credit_object_name || "").trim(),
+      department: row.department || d.department || undefined,
+    };
   });
-  return { record, message: `Đã quyết toán ${accepted.toLocaleString("vi-VN")}đ cho khoản tạm ứng ${advances[0].number}. Các dòng hạch toán chưa được ghi sổ.` };
+
+  const rawTaxRows = Array.isArray(d.taxRows) ? d.taxRows : Array.isArray(d.tax_lines) ? d.tax_lines : [];
+  const activeTaxRows = rawTaxRows.filter((tRow: Row) =>
+    String(tRow.invoiceNo || tRow.invoice_number || "").trim() ||
+    num(tRow.preTaxAmount ?? tRow.pre_tax_amount) > 0 ||
+    num(tRow.vatAmount ?? tRow.vat_amount) > 0
+  );
+
+  const taxLines = activeTaxRows.map((tRow: Row, idx: number) => {
+    const invNo = String(tRow.invoiceNo || tRow.invoice_number || "").trim();
+    const invDateRaw = String(tRow.invoiceDate || tRow.invoice_date || "").trim();
+    if (!invNo) {
+      throw new FormDataError(`Dòng kê khai thuế ${idx + 1}: Vui lòng nhập Số hóa đơn.`);
+    }
+    if (!invDateRaw) {
+      throw new FormDataError(`Dòng kê khai thuế ${idx + 1}: Vui lòng nhập Ngày hóa đơn.`);
+    }
+    const preTax = num(tRow.preTaxAmount ?? tRow.pre_tax_amount);
+    const vatAmt = num(tRow.vatAmount ?? tRow.vat_amount);
+    const vatRateStr = String(tRow.vatRate ?? tRow.vat_rate ?? "10").replace("%", "").trim();
+    return {
+      description: String(tRow.desc || tRow.description || "Thuế GTGT đầu vào").trim(),
+      tax_account: String(tRow.debitAcc || tRow.tax_account || "1331").trim(),
+      credit_account: String(tRow.creditAcc || tRow.credit_account || "141").trim(),
+      goods_group: String(tRow.goodsGroup || tRow.goods_group || "1").trim(),
+      pre_tax_amount: String(preTax),
+      vat_rate: vatRateStr,
+      vat_amount: String(vatAmt),
+      invoice_date: toApiDate(invDateRaw),
+      invoice_number: invNo,
+      invoice_form: String(tRow.invoiceForm || tRow.invoice_form || "1").trim(),
+      invoice_serial: String(tRow.invoiceSerial || tRow.invoice_serial || "").trim(),
+      supplier_code: String(tRow.partnerCode || tRow.supplier_code || "").trim(),
+      supplier_name: String(tRow.partnerName || tRow.supplier_name || "").trim(),
+      supplier_tax_code: String(tRow.partnerTaxCode || tRow.supplier_tax_code || "").trim(),
+    };
+  });
+
+  const rawAttachments = Array.isArray(d.attachments) ? d.attachments : [];
+  for (const att of rawAttachments) {
+    const sizeBytes = Number(att?.file_size ?? att?.size ?? 0);
+    if (sizeBytes > 5 * 1024 * 1024) {
+      throw new FormDataError(`Tệp đính kèm '${att?.file_name || att?.name || ""}' vượt quá giới hạn tối đa 5MB.`);
+    }
+  }
+
+  const payload: Row = {
+    number: String(d.number || "").trim() || undefined,
+    posting_date: toApiDate(d.postingDate || d.docDate),
+    document_date: toApiDate(d.docDate || d.postingDate),
+    employee: employeeText,
+    department: d.department || undefined,
+    description: String(d.description || "Quyết toán tạm ứng").trim() || "Quyết toán tạm ứng",
+    settle_per_advance: settlePerAdvance,
+    group_invoices: Boolean(d.groupInvoices || d.group_invoices),
+    advance_request: d.advanceRequestId || d.advance_request || undefined,
+    cash_advance: d.cashAdvanceId || d.cash_advance || undefined,
+    source_advance_ref: sourceAdvanceRef || undefined,
+    source_advance_amount: d.sourceAdvanceAmount ? String(num(d.sourceAdvanceAmount)) : undefined,
+    references: Array.isArray(d.references) ? d.references : [],
+    attachments: rawAttachments,
+    accounting_lines: accountingLines,
+    tax_lines: taxLines,
+    auto_create_employee_if_missing: true,
+    save_and_new: Boolean(d.saveAndNew),
+    idempotency_key: d.idempotencyKey || undefined,
+  };
+
+  const path = "/api/v1/general-ledger/advance-settlements/";
+  const record = d.id
+    ? await w.put(`${path}${d.id}/`, payload)
+    : await w.post(path, payload);
+
+  return {
+    record,
+    message: record.message || `Đã lưu chứng từ quyết toán tạm ứng ${record.number} thành công.`,
+  };
 }
+
+/** Danh sách chứng từ quyết toán tạm ứng (UC-GL-02). */
+export async function listAdvanceSettlementVouchers(w: ApiWriter) {
+  return w.list("/api/v1/general-ledger/advance-settlements/");
+}
+
+/** UC-GL-03: Lập chứng từ nghiệp vụ khác (lưu ở trạng thái Chưa ghi sổ - UNPOSTED). */
+export async function saveGeneralBusinessVoucher(w: ApiWriter, d: Row) {
+  const businessType = String(d.businessType || d.business_type || "1. Hạch toán thuế TNDN phải nộp").trim();
+  const isType2 = businessType.startsWith("2.") || businessType === "BANK_LOAN_TO_SUPPLIER";
+  const isType3 = businessType.startsWith("3.") || businessType === "SALARY_EXPENSE";
+  const isType4 = businessType.startsWith("4.") || businessType === "OTHER";
+  const isType5 = businessType.startsWith("5.") || businessType === "OPENING_PROFIT_LOSS_TRANSFER";
+  const isType6 = businessType.startsWith("6.") || businessType === "SCT_DEDUCTION";
+
+  const rawRows = Array.isArray(d.rows) ? d.rows : Array.isArray(d.accounting_lines) ? d.accounting_lines : [];
+  const validRows = rawRows.filter((row: Row) =>
+    String(row.debitAcc || row.debit_account || "").trim() ||
+    String(row.creditAcc || row.credit_account || "").trim() ||
+    num(row.amount) > 0
+  );
+  if (!validRows.length) {
+    throw new FormDataError("Chứng từ nghiệp vụ khác phải có ít nhất một dòng hạch toán hợp lệ.");
+  }
+
+  const accountingLines = validRows.map((row: Row, idx: number) => {
+    const debitAcc = String(row.debitAcc || row.debit_account || "").trim();
+    const creditAcc = String(row.creditAcc || row.credit_account || "").trim();
+    const amount = num(row.amount);
+
+    if (isType3 && !debitAcc) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Nghiệp vụ 'Hạch toán chi phí lương' bắt buộc chọn Tài khoản Nợ (tài khoản chi phí).`);
+    }
+    if (!debitAcc || !creditAcc) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Vui lòng nhập đầy đủ Tài khoản Nợ và Tài khoản Có.`);
+    }
+    if (debitAcc === creditAcc) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Tài khoản Nợ và Tài khoản Có (${debitAcc}) không được trùng nhau.`);
+    }
+    if (!(amount > 0)) {
+      throw new FormDataError(`Dòng hạch toán ${idx + 1}: Số tiền phải lớn hơn 0.`);
+    }
+
+    const debitObjCode = String(row.debitObject || row.debit_object_code || "").trim();
+    const debitObjName = String(row.debitObjectName || row.debit_object_name || "").trim();
+    const creditObjCode = String(row.creditObject || row.credit_object_code || "").trim();
+    const creditObjName = String(row.creditObjectName || row.credit_object_name || "").trim();
+    const loanContract = String(row.loanContract || row.loan_contract || "").trim();
+
+    if (isType2) {
+      if (!debitObjCode && !debitObjName) {
+        throw new FormDataError(`Dòng hạch toán ${idx + 1}: Nghiệp vụ 'Vay ngân hàng chuyển trả cho nhà cung cấp' bắt buộc nhập Đối tượng Nợ (Nhà cung cấp).`);
+      }
+      if (!creditObjCode && !creditObjName && !loanContract) {
+        throw new FormDataError(`Dòng hạch toán ${idx + 1}: Nghiệp vụ 'Vay ngân hàng chuyển trả cho nhà cung cấp' bắt buộc nhập Đối tượng Có (Ngân hàng) hoặc Khế ước vay.`);
+      }
+    }
+
+    return {
+      description: String(row.desc || row.description || d.description || "Chứng từ nghiệp vụ khác").trim(),
+      debit_account: debitAcc,
+      credit_account: creditAcc,
+      amount: String(amount),
+      operation: String(row.operation || "").trim(),
+      debit_object_code: debitObjCode,
+      debit_object_name: debitObjName,
+      credit_object_code: creditObjCode,
+      credit_object_name: creditObjName,
+      loan_contract: loanContract,
+      expense_item: String(row.expenseItem || row.expense_item || "").trim(),
+      department: String(row.department || "").trim() || undefined,
+      cost_object: String(row.costObject || row.cost_object || "").trim(),
+    };
+  });
+
+  const rawTaxRows = isType4 && Array.isArray(d.taxRows) ? d.taxRows : [];
+  const activeTaxRows = rawTaxRows.filter((tRow: Row) =>
+    String(tRow.invoiceNo || tRow.invoice_number || "").trim() ||
+    num(tRow.preTaxAmount ?? tRow.pre_tax_amount) > 0 ||
+    num(tRow.vatAmount ?? tRow.vat_amount) > 0
+  );
+
+  const taxLines = activeTaxRows.map((tRow: Row, idx: number) => {
+    const invNo = String(tRow.invoiceNo || tRow.invoice_number || "").trim();
+    const invDateRaw = String(tRow.invoiceDate || tRow.invoice_date || "").trim();
+    if (!invNo) {
+      throw new FormDataError(`Dòng kê khai thuế ${idx + 1}: Vui lòng nhập Số hóa đơn.`);
+    }
+    if (!invDateRaw) {
+      throw new FormDataError(`Dòng kê khai thuế ${idx + 1}: Vui lòng nhập Ngày hóa đơn.`);
+    }
+    const preTax = num(tRow.preTaxAmount ?? tRow.pre_tax_amount);
+    const vatAmt = num(tRow.vatAmount ?? tRow.vat_amount);
+    const vatRateStr = String(tRow.vatRate ?? tRow.vat_rate ?? "10").replace("%", "").trim();
+    return {
+      description: String(tRow.desc || tRow.description || `Thuế GTGT HĐ ${invNo}`).trim(),
+      tax_account: String(tRow.debitAcc || tRow.tax_account || "1331").trim(),
+      credit_account: String(tRow.creditAcc || tRow.credit_account || "331").trim(),
+      goods_group: String(tRow.goodsGroup || tRow.goods_group || "1").trim(),
+      pre_tax_amount: String(preTax),
+      vat_rate: vatRateStr,
+      vat_amount: String(vatAmt),
+      invoice_date: toApiDate(invDateRaw),
+      invoice_number: invNo,
+      invoice_form: String(tRow.invoiceForm || tRow.invoice_form || "1").trim(),
+      invoice_serial: String(tRow.invoiceSerial || tRow.invoice_serial || "").trim(),
+      supplier_code: String(tRow.partnerCode || tRow.supplier_code || "").trim(),
+      supplier_name: String(tRow.partnerName || tRow.supplier_name || "").trim(),
+      supplier_tax_code: String(tRow.partnerTaxCode || tRow.supplier_tax_code || "").trim(),
+    };
+  });
+
+  const groupInvoices = Boolean(d.groupInvoices || d.group_invoices);
+  const excludeFromVat = isType6 ? false : Boolean(d.excludeFromVatDeclaration || d.exclude_from_vat_declaration);
+  if (excludeFromVat && groupInvoices && taxLines.length > 0) {
+    throw new FormDataError("Thiết lập 'Không lên bảng kê thuế GTGT' mâu thuẫn với 'Hạch toán gộp nhiều hóa đơn' trên tab thuế.");
+  }
+
+  const rawAttachments = Array.isArray(d.attachments) ? d.attachments : [];
+  for (const att of rawAttachments) {
+    const sizeBytes = Number(att?.file_size ?? att?.size ?? 0);
+    if (sizeBytes > 5 * 1024 * 1024) {
+      throw new FormDataError(`Tệp đính kèm '${att?.file_name || att?.name || ""}' vượt quá giới hạn tối đa 5MB.`);
+    }
+  }
+
+  const rawDueDate = String(d.dueDate || d.due_date || "").trim();
+  const hasDueDate = !businessType.startsWith("1.") && !isType5 && rawDueDate && rawDueDate.toUpperCase() !== "DD/MM/YYYY";
+
+  const payload: Row = {
+    number: String(d.number || "").trim() || undefined,
+    business_type: businessType,
+    closing_year: isType5 ? Number(d.closingYear || d.closing_year || 2026) : undefined,
+    posting_date: toApiDate(d.postingDate || d.docDate),
+    document_date: toApiDate(d.docDate || d.postingDate),
+    due_date: hasDueDate ? toApiDate(rawDueDate) : undefined,
+    description: String(d.description || "Chứng từ nghiệp vụ khác").trim(),
+    references: d.references || "",
+    group_invoices: groupInvoices,
+    exclude_from_vat_declaration: excludeFromVat,
+    attachments: rawAttachments,
+    accounting_lines: accountingLines,
+    tax_lines: taxLines,
+    auto_reallocate_number: !d.id,
+    save_and_print: Boolean(d.saveAndPrint),
+    idempotency_key: d.idempotencyKey || undefined,
+  };
+
+  const path = "/api/v1/general-ledger/general-vouchers/";
+  const record = d.id
+    ? await w.put(`${path}${d.id}/`, payload)
+    : await w.post(path, payload);
+
+  return {
+    record,
+    message: record.message || `Đã lưu chứng từ nghiệp vụ khác ${record.number} thành công.`,
+  };
+}
+
+/** UC-GL-03 AF-16: Nhập chứng từ nghiệp vụ khác từ Excel. */
+export async function importGeneralBusinessVouchersExcel(w: ApiWriter, vouchers: Row[]) {
+  const record = await w.post("/api/v1/general-ledger/general-vouchers/import-excel/", {
+    vouchers,
+  });
+  return {
+    record,
+    message: record.message || `Đã nhập thành công ${record.count || vouchers.length} chứng từ nghiệp vụ khác từ Excel.`,
+  };
+}
+
+/**
+ * UC-GL-04 – Tiếp nhận bút toán từ các phân hệ (PUR, AP, SAL, AR, CASH, BANK, INV, FA, TOOLS, PAYROLL, TAX, COST).
+ */
+export async function ingestSubledgerJournalEvent(w: ApiWriter, d: Row) {
+  const sourceModule = String(d.sourceModule || d.source_module || "PUR").trim().toUpperCase();
+  const sourceBusinessType = String(d.sourceBusinessType || d.source_business_type || "PURCHASE_GOODS").trim().toUpperCase();
+  const sourceDocumentNumber = String(d.sourceDocumentNumber || d.source_document_number || "").trim();
+  const sourceDocumentId = String(d.sourceDocumentId || d.source_document_id || sourceDocumentNumber).trim();
+  const sourceEventId = String(
+    d.sourceEventId || d.source_event_id || `EVT-${sourceModule}-${sourceDocumentNumber}-${Date.now()}`
+  ).trim();
+
+  if (!sourceDocumentNumber) {
+    throw new FormDataError("Vui lòng nhập Số chứng từ nguồn (source_document_number).");
+  }
+
+  const rawLines = Array.isArray(d.lines) ? d.lines : [];
+  const normalizedLines = rawLines
+    .filter((ln: Row) => String(ln.account || ln.debitAcc || "").trim())
+    .map((ln: Row) => ({
+      account: String(ln.account || "").trim() || undefined,
+      debit_account: String(ln.debitAcc || ln.debit_account || "").trim() || undefined,
+      credit_account: String(ln.creditAcc || ln.credit_account || "").trim() || undefined,
+      debit: ln.debit !== undefined ? cleanNum(ln.debit) : undefined,
+      credit: ln.credit !== undefined ? cleanNum(ln.credit) : undefined,
+      amount: ln.amount !== undefined ? cleanNum(ln.amount) : undefined,
+      foreign_amount: ln.foreignAmount !== undefined ? cleanNum(ln.foreignAmount) : undefined,
+      description: String(ln.description || d.description || "").trim(),
+      party: String(ln.party || d.party || "").trim() || undefined,
+      department: String(ln.department || d.department || "").trim() || undefined,
+      project: String(ln.project || d.project || "").trim() || undefined,
+      cost_center: String(ln.costCenter || d.costCenter || "").trim() || undefined,
+    }));
+
+  const payload: Row = {
+    source_module: sourceModule,
+    source_business_type: sourceBusinessType,
+    source_document_type: String(d.sourceDocumentType || d.source_document_type || sourceModule).trim(),
+    source_document_id: sourceDocumentId,
+    source_document_number: sourceDocumentNumber,
+    source_document_status: String(d.sourceDocumentStatus || d.source_document_status || "ELIGIBLE").trim().toUpperCase(),
+    source_event_id: sourceEventId,
+    posting_date: toApiDate(d.postingDate || d.posting_date),
+    document_date: toApiDate(d.documentDate || d.document_date || d.postingDate),
+    description: String(d.description || `Tiếp nhận bút toán ${sourceModule} - ${sourceDocumentNumber}`).trim(),
+    currency: String(d.currency || "VND").trim().toUpperCase(),
+    exchange_rate: cleanNum(d.exchangeRate || d.exchange_rate, 1),
+    posting_mode: String(d.postingMode || d.posting_mode || "AUTO_POST").trim().toUpperCase(),
+    party: String(d.party || "").trim() || undefined,
+    department: String(d.department || "").trim() || undefined,
+    project: String(d.project || "").trim() || undefined,
+    cost_center: String(d.costCenter || d.cost_center || "").trim() || undefined,
+    amount: d.amount !== undefined ? cleanNum(d.amount) : undefined,
+    tax_amount: d.taxAmount !== undefined ? cleanNum(d.taxAmount) : undefined,
+    lines: normalizedLines.length > 0 ? normalizedLines : undefined,
+    entry_groups: Array.isArray(d.entryGroups) && d.entryGroups.length > 0 ? d.entryGroups : undefined,
+    use_default_rule: d.useDefaultRule !== undefined ? Boolean(d.useDefaultRule) : true,
+  };
+
+  const record = await w.post("/api/v1/general-ledger/subledger-ingestions/ingest/", payload);
+  return {
+    record,
+    message:
+      record.message ||
+      `Đã tiếp nhận bút toán từ phân hệ ${sourceModule} (${sourceDocumentNumber}) - trạng thái ${record.status}.`,
+  };
+}
+
+/** UC-GL-04 BR-GL-INT-43: Thử lại (Retry) bản ghi tiếp nhận bút toán bị lỗi (ERROR). */
+export async function retrySubledgerJournalIngestion(w: ApiWriter, ingestionId: string, overridePayload: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/subledger-ingestions/${ingestionId}/retry/`, overridePayload);
+  return {
+    record,
+    message: record.message || `Đã thử lại tiếp nhận bút toán thành công (trạng thái: ${record.status}).`,
+  };
+}
+
+/** UC-GL-04 AF-08: Ghi sổ bút toán tiếp nhận đang ở trạng thái UNPOSTED vào Sổ cái. */
+export async function postSubledgerJournalIngestion(w: ApiWriter, ingestionId: string) {
+  const record = await w.post(`/api/v1/general-ledger/subledger-ingestions/${ingestionId}/post/`, {});
+  return {
+    record,
+    message: record.message || `Đã ghi sổ chính thức bút toán ${record.primary_journal_number || ""} vào Sổ cái.`,
+  };
+}
+
+/** UC-GL-04 EF-24: Đồng bộ lại trạng thái callback về phân hệ nguồn. */
+export async function retrySubledgerSourceCallback(w: ApiWriter, ingestionId: string) {
+  const record = await w.post(`/api/v1/general-ledger/subledger-ingestions/${ingestionId}/retry-callback/`, {});
+  return {
+    record,
+    message: record.message || "Đã đồng bộ lại phản hồi trạng thái về phân hệ nguồn.",
+  };
+}
+
+/**
+ * ============================================================================
+ * UC-GL-05 – GHI SỔ / BỎ GHI SỔ BÚT TOÁN (POST / UNPOST JOURNAL ENTRIES)
+ * ============================================================================
+ */
+
+/** UC-GL-05 Main Flow: Ghi sổ một bút toán Sổ cái (UNPOSTED -> POSTED). */
+export async function postJournalEntry(w: ApiWriter, entryId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/journals/${entryId}/post/`, options);
+  return {
+    record,
+    message:
+      record.message ||
+      `Đã ghi sổ chính thức bút toán ${record.number || ""} vào Sổ cái (Mã tham chiếu: ${record.posting_reference || "N/A"}).`,
+  };
+}
+
+/** UC-GL-05 AF-06..AF-18: Bỏ ghi sổ một bút toán Sổ cái (POSTED -> UNPOSTED). */
+export async function unpostJournalEntry(w: ApiWriter, entryId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/journals/${entryId}/unpost/`, options);
+  return {
+    record,
+    message:
+      record.message ||
+      `Đã bỏ ghi sổ bút toán ${record.number || ""} khỏi Sổ cái, đưa về trạng thái chưa ghi sổ.`,
+  };
+}
+
+/** UC-GL-05 AF-22: Ghi sổ hàng loạt nhiều bút toán/chứng từ. */
+export async function batchPostJournalEntries(w: ApiWriter, journalIds: string[], options: Row = {}) {
+  const record = await w.post("/api/v1/general-ledger/journals/batch-post/", {
+    journal_ids: journalIds,
+    ...options,
+  });
+  return {
+    record,
+    message:
+      record.message ||
+      `Đã ghi sổ hàng loạt: thành công ${record.succeeded_count ?? 0}/${record.total ?? journalIds.length}.`,
+  };
+}
+
+/** UC-GL-05 AF-23: Bỏ ghi sổ hàng loạt nhiều bút toán/chứng từ. */
+export async function batchUnpostJournalEntries(w: ApiWriter, journalIds: string[], options: Row = {}) {
+  const record = await w.post("/api/v1/general-ledger/journals/batch-unpost/", {
+    journal_ids: journalIds,
+    ...options,
+  });
+  return {
+    record,
+    message:
+      record.message ||
+      `Đã bỏ ghi sổ hàng loạt: thành công ${record.succeeded_count ?? 0}/${record.total ?? journalIds.length}.`,
+  };
+}
+
+/** UC-GL-05 + UC-GL-03: Ghi sổ Chứng từ nghiệp vụ khác (NVK). */
+export async function postGeneralBusinessVoucher(w: ApiWriter, voucherId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/general-vouchers/${voucherId}/post/`, options);
+  return {
+    record,
+    message: record.message || `Đã ghi sổ chứng từ nghiệp vụ khác ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-05 + UC-GL-03: Bỏ ghi sổ Chứng từ nghiệp vụ khác (NVK). */
+export async function unpostGeneralBusinessVoucher(w: ApiWriter, voucherId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/general-vouchers/${voucherId}/unpost/`, options);
+  return {
+    record,
+    message: record.message || `Đã bỏ ghi sổ chứng từ nghiệp vụ khác ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-05 + UC-GL-02: Ghi sổ Chứng từ quyết toán tạm ứng (QTTU). */
+export async function postAdvanceSettlementVoucher(w: ApiWriter, voucherId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/advance-settlements/${voucherId}/post/`, options);
+  return {
+    record,
+    message: record.message || `Đã ghi sổ chứng từ quyết toán tạm ứng ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-05 + UC-GL-02: Bỏ ghi sổ Chứng từ quyết toán tạm ứng (QTTU). */
+export async function unpostAdvanceSettlementVoucher(w: ApiWriter, voucherId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/advance-settlements/${voucherId}/unpost/`, options);
+  return {
+    record,
+    message: record.message || `Đã bỏ ghi sổ chứng từ quyết toán tạm ứng ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-05 + UC-GL-04: Bỏ ghi sổ bút toán tiếp nhận phân hệ (khi có xác nhận từ nguồn). */
+export async function unpostSubledgerJournalIngestion(w: ApiWriter, ingestionId: string, options: Row = {}) {
+  const record = await w.post(`/api/v1/general-ledger/subledger-ingestions/${ingestionId}/unpost/`, options);
+  return {
+    record,
+    message: record.message || `Đã bỏ ghi sổ bút toán phân hệ ${record.primary_journal_number || ""} khỏi Sổ cái.`,
+  };
+}
+
+/**
+ * ============================================================================
+ * UC-GL-06 – ĐIỀU CHỈNH / ĐẢO BÚT TOÁN (ADJUST / REVERSE JOURNAL ENTRIES)
+ * ============================================================================
+ */
+
+/** UC-GL-06 (AF-01, AF-07..10): Điều chỉnh bút toán đã ghi sổ (POSTED). */
+export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) {
+  const reason = String(d.reason || d.correction_reason || "").trim();
+  if (!reason) {
+    throw new FormDataError("Vui lòng nhập Lý do điều chỉnh bút toán (BR-GL-ADJ-14).");
+  }
+  const rawRows = Array.isArray(d.accounting_lines)
+    ? d.accounting_lines
+    : Array.isArray(d.adjustment_lines)
+    ? d.adjustment_lines
+    : Array.isArray(d.rows)
+    ? d.rows
+    : [];
+  const accountingLines = rawRows
+    .filter((r: Row) => String(r.debitAcc || r.debit_account || "").trim() || String(r.creditAcc || r.credit_account || "").trim())
+    .map((r: Row) => ({
+      description: String(r.desc || r.description || d.description || reason).trim(),
+      debit_account: String(r.debitAcc || r.debit_account || "").trim(),
+      credit_account: String(r.creditAcc || r.credit_account || "").trim(),
+      amount: String(cleanNum(r.amount)),
+      debit_object_code: String(r.debitObject || r.debit_object_code || "").trim() || undefined,
+      credit_object_code: String(r.creditObject || r.credit_object_code || "").trim() || undefined,
+      department: String(r.department || "").trim() || undefined,
+      project: String(r.project || "").trim() || undefined,
+      cost_center: String(r.costCenter || r.cost_center || "").trim() || undefined,
+    }));
+
+  const payload: Row = {
+    reason,
+    posting_date: toApiDate(d.postingDate || d.posting_date),
+    document_date: toApiDate(d.documentDate || d.document_date || d.postingDate || d.posting_date),
+    number: String(d.number || "").trim() || undefined,
+    description: String(d.description || "").trim() || undefined,
+    adjustment_mode: String(d.adjustmentMode || d.adjustment_mode || "GENERAL").trim().toUpperCase(),
+    accounting_lines: accountingLines.length > 0 ? accountingLines : undefined,
+    lines: Array.isArray(d.lines) && d.lines.length > 0 ? d.lines : undefined,
+    auto_post: Boolean(d.autoPost || d.auto_post),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  };
+  const record = await w.post(`/api/v1/general-ledger/journals/${entryId}/adjust/`, payload);
+  return {
+    record,
+    message: record.message || `Đã tạo bút toán điều chỉnh ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-06 (AF-02, AF-11..13): Đảo bút toán đã ghi sổ (POSTED). */
+export async function reverseJournalEntry(w: ApiWriter, entryId: string, d: Row) {
+  const reason = String(d.reason || d.correction_reason || "").trim();
+  if (!reason) {
+    throw new FormDataError("Vui lòng nhập Lý do đảo bút toán (BR-GL-ADJ-14).");
+  }
+  const payload: Row = {
+    reason,
+    posting_date: toApiDate(d.postingDate || d.posting_date),
+    document_date: toApiDate(d.documentDate || d.document_date || d.postingDate || d.posting_date),
+    number: String(d.number || "").trim() || undefined,
+    description: String(d.description || "").trim() || undefined,
+    reversal_method: String(d.reversalMethod || d.reversal_method || "SWAP_DEBIT_CREDIT").trim().toUpperCase(),
+    reversal_amount: d.reversalAmount !== undefined || d.reversal_amount !== undefined
+      ? String(cleanNum(d.reversalAmount ?? d.reversal_amount))
+      : undefined,
+    reversal_percent: d.reversalPercent !== undefined || d.reversal_percent !== undefined
+      ? String(cleanNum(d.reversalPercent ?? d.reversal_percent))
+      : undefined,
+    auto_post: Boolean(d.autoPost || d.auto_post),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  };
+  const record = await w.post(`/api/v1/general-ledger/journals/${entryId}/reverse/`, payload);
+  return {
+    record,
+    message: record.message || `Đã tạo bút toán đảo ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-06 (AF-18, BR-GL-ADJ-68): Lập lại chứng từ đúng sau khi đảo. */
+export async function createReplacementJournalEntry(w: ApiWriter, entryId: string, d: Row) {
+  const record = await w.post(`/api/v1/general-ledger/journals/${entryId}/create-replacement/`, d);
+  return {
+    record,
+    message: record.message || `Đã tạo bút toán lập lại thay thế ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-06 + UC-GL-03: Điều chỉnh từ Chứng từ nghiệp vụ khác đã ghi sổ. */
+export async function adjustGeneralBusinessVoucher(w: ApiWriter, voucherId: string, d: Row) {
+  const record = await w.post(`/api/v1/general-ledger/general-vouchers/${voucherId}/adjust/`, d);
+  return {
+    record,
+    message: record.message || `Đã tạo bút toán điều chỉnh ${record.number || ""} thành công.`,
+  };
+}
+
+/** UC-GL-06 + UC-GL-03: Đảo bút toán từ Chứng từ nghiệp vụ khác đã ghi sổ. */
+export async function reverseGeneralBusinessVoucher(w: ApiWriter, voucherId: string, d: Row) {
+  const record = await w.post(`/api/v1/general-ledger/general-vouchers/${voucherId}/reverse/`, d);
+  return {
+    record,
+    message: record.message || `Đã tạo bút toán đảo ${record.number || ""} thành công.`,
+  };
+}
+
 
 /** Preserve the existing assembly/disassembly form as a draft inventory order. */
 export async function saveAssemblyOrder(w: ApiWriter, d: Row) {
@@ -1646,35 +3530,82 @@ export async function saveAssemblyOrder(w: ApiWriter, d: Row) {
 
 const PREPAID = "/api/v1/general-ledger/";
 
-/** "Thêm chi phí trả trước" (opening = false) and "… đầu kỳ" (opening = true). */
+/** UC-FA-10 (Main Flow B & AF02): "Thêm chi phí trả trước" (opening = false) và "Chi phí trả trước đầu kỳ" (opening = true). */
 export async function savePrepaidExpense(w: ApiWriter, d: Row, opening: boolean) {
   const code = String(d.code || "").trim();
-  if (!code || !String(d.name || "").trim()) throw new FormDataError("Cần nhập mã và tên chi phí trả trước.");
+  const name = String(d.name || "").trim();
+  if (!code) throw new FormDataError("Mã chi phí trả trước không hợp lệ hoặc đã tồn tại.");
+  if (!name) throw new FormDataError("Vui lòng nhập tên chi phí trả trước.");
   const amount = num(d.amount);
   const periods = Math.round(num(d.allocMonths));
-  if (amount <= 0 || periods <= 0) throw new FormDataError("Số tiền và số kỳ phân bổ phải lớn hơn 0.");
-  const targets = (d.rows || []).filter((row: Row) => String(row.costAccount || "").trim());
-  if (!targets.length) throw new FormDataError("Cần ít nhất một dòng TK chi phí nhận phân bổ.");
+  if (!(amount > 0)) throw new FormDataError("Số tiền chi phí trả trước phải lớn hơn 0.");
+  if (!(periods > 0)) throw new FormDataError("Số kỳ phân bổ phải là số nguyên lớn hơn 0.");
+
+  const rawRows = Array.isArray(d.rows) ? d.rows : [];
+  const targets = rawRows.filter((row: Row) => String(row.costAccount || row.targetCode || row.targetName || "").trim());
+  if (!targets.length) {
+    throw new FormDataError("Vui lòng khai báo đầy đủ thông tin thiết lập phân bổ.");
+  }
   const rates = targets.map((row: Row) => num(row.rate));
-  // A single line without a rate takes the whole amount.
   if (targets.length === 1 && !rates[0]) rates[0] = 100;
   if (Math.abs(rates.reduce((total: number, rate: number) => total + rate, 0) - 100) > 0.0001) {
-    throw new FormDataError("Tổng tỷ lệ phân bổ các dòng phải bằng 100%.");
+    throw new FormDataError("Tổng tỷ lệ phân bổ phải bằng 100%.");
   }
+
   const remainingPeriods = Math.round(num(d.remainingMonths));
-  const record = await w.post(`${PREPAID}prepaid-expenses/`, {
-    code, name: String(d.name).trim(), record_date: toApiDate(d.recordDate), start_date: toApiDate(d.startDate || d.recordDate),
-    amount: String(amount), allocation_periods: periods,
-    prepaid_account: (await w.account(d.waitingAcc || "242", "TK chờ phân bổ")).id,
-    is_opening: opening, stop_allocation: Boolean(d.stopAlloc),
-    opening_allocated_amount: opening ? String(num(d.allocatedAmount)) : "0",
-    opening_allocated_periods: opening ? Math.max(periods - remainingPeriods, 0) : 0,
-    targets: await Promise.all(targets.map(async (row: Row, index: number) => ({
-      expense_account: (await w.account(row.costAccount, "TK chi phí")).id, rate: String(rates[index]),
-      description: String(row.targetName || row.costItem || ""),
-    }))),
+  const allocatedAmount = num(d.allocatedAmount);
+  const remainingAmount = d.remainingAmount !== undefined ? num(d.remainingAmount) : Math.max(0, amount - allocatedAmount);
+  const periodicAmount = d.monthlyAlloc !== undefined && num(d.monthlyAlloc) > 0
+    ? num(d.monthlyAlloc)
+    : Math.round(amount / periods);
+
+  const resp = await w.post(`${FIXED_ASSETS}assets/prepaid-expenses/`, {
+    is_opening: opening,
+    code,
+    name,
+    record_date: String(d.recordDate || "").trim(),
+    start_date: String(d.startDate || d.recordDate || "").trim(),
+    amount: String(amount),
+    allocation_periods: periods,
+    periodic_allocation_amount: String(periodicAmount),
+    remaining_periods: opening ? remainingPeriods : undefined,
+    allocated_amount: opening ? String(allocatedAmount) : undefined,
+    remaining_amount: opening ? String(remainingAmount) : undefined,
+    waiting_account: String(d.waitingAcc || "242").trim(),
+    suspend_allocation: Boolean(d.stopAlloc),
+    suspend_reason: String(d.suspendReason || "Tạm dừng phân bổ theo thiết lập"),
+    references: Array.isArray(d.references) ? d.references : [],
+    source_documents: Array.isArray(d.sourceDocs) ? d.sourceDocs : [],
+    allocations: targets.map((row: Row, index: number) => ({
+      target_code: String(row.targetCode || "").trim(),
+      target_name: String(row.targetName || "").trim(),
+      rate: String(rates[index]),
+      expense_account: String(row.costAccount || "6422").trim(),
+      cost_item: String(row.costItem || "").trim(),
+      stats_code: String(row.statCode || "").trim(),
+    })),
   });
-  return { record, message: `Đã lưu chi phí trả trước ${code}.` };
+
+  return {
+    record: resp.prepaid_expense || resp,
+    message: resp.message || (opening ? "Đã lưu chi phí trả trước đầu kỳ thành công." : "Đã lưu chi phí trả trước thành công."),
+  };
+}
+
+/** UC-FA-10 (AF18, EF38): Nhập chi phí trả trước từ Excel. */
+export async function importPrepaidExpensesExcel(w: ApiWriter, d: Row) {
+  const resp = await w.post(`${FIXED_ASSETS}assets/prepaid-expenses/import-excel/`, {
+    file_name: String(d.fileName || "Mau_Chi_Phi_Tra_Truoc.xlsx").trim(),
+    sheet_name: String(d.sheetName || "Sheet1").trim(),
+    header_row: Number(d.headerRow || 1),
+    auto_map_ai: Boolean(d.autoMap ?? true),
+    columns: Array.isArray(d.columns) ? d.columns : undefined,
+    rows: Array.isArray(d.rows) ? d.rows : [],
+  });
+  return {
+    record: resp,
+    message: resp.message || `Đã nhập khẩu thành công ${resp.imported_count || 0} khoản chi phí trả trước từ Excel.`,
+  };
 }
 
 /** Items the allocation of that posting date would book (the "Phân bổ" tab). */
@@ -1691,8 +3622,17 @@ export async function savePrepaidAllocation(w: ApiWriter, d: Row) {
   return { record, message: `Đã ghi sổ phân bổ chi phí trả trước ${record.number}: ${num(record.total_amount).toLocaleString("vi-VN")}đ.` };
 }
 
-/** "Ghi giảm chi phí trả trước": the remainder of each chosen item goes to expense. */
+/** "Ghi giảm chi phí trả trước" (UC-FA-14 Main Flow B): ghi giảm toàn bộ hoặc một phần giá trị chưa phân bổ của CPTT. */
 export async function savePrepaidDecrease(w: ApiWriter, d: Row) {
+  try {
+    return await savePrepaidDecreaseUc14(w, d);
+  } catch (err) {
+    if (err instanceof FormDataError) throw err;
+    const msg = errorText(err);
+    if (msg && !msg.includes("404") && !msg.includes("Not Found")) {
+      throw new FormDataError(msg);
+    }
+  }
   const codes = (d.rows || []).map((row: Row) => String(row.code || "").trim()).filter(Boolean);
   if (!codes.length) throw new FormDataError("Chọn ít nhất một khoản chi phí trả trước cần ghi giảm.");
   const items = await w.list(`${PREPAID}prepaid-expenses/`);
@@ -1704,7 +3644,7 @@ export async function savePrepaidDecrease(w: ApiWriter, d: Row) {
   const record = await w.post(`${PREPAID}prepaid-decreases/`, {
     number: String(d.number || ""), document_date: toApiDate(d.date), reason: String(d.reason || ""), lines,
   });
-  return { record, message: `Đã ghi sổ ghi giảm chi phí trả trước ${record.number}: ${num(record.total_amount).toLocaleString("vi-VN")}đ.` };
+  return { record, message: `Đã lưu chứng từ ghi giảm chi phí trả trước ${record.number} thành công.` };
 }
 
 /** "Hóa đơn điều chỉnh": an ADJUSTMENT tax invoice against the original output invoice the form searched for. */
@@ -2334,4 +4274,2738 @@ export async function reverseRevaluation(w: ApiWriter, id: string, reason: strin
   } catch (error) {
     throw new FormDataError(plainApiError(error));
   }
+}
+/* ───────────────────────────── UC-GL-01: Đề nghị quyết toán tạm ứng ───────────────────────────── */
+
+const GL_ADVANCE_REQUESTS = "/api/v1/general-ledger/advance-requests/";
+
+/** UC-GL-01 (Main Flow Steps 1–20): Tạo mới và gửi phê duyệt đề nghị quyết toán tạm ứng. */
+export async function saveAdvanceSettlementRequest(w: ApiWriter, d: Row) {
+  const requester = String(d.requester || d.requester_id || d.employee || "").trim();
+  if (!requester) {
+    throw new FormDataError("Người đề nghị là bắt buộc.");
+  }
+  const rawAmount = d.amount;
+  if (rawAmount === undefined || rawAmount === null || String(rawAmount).trim() === "") {
+    throw new FormDataError("Số tiền đề nghị quyết toán là bắt buộc.");
+  }
+  const amountNum = Number(String(rawAmount).replace(/,/g, "").trim());
+  if (!Number.isFinite(amountNum)) {
+    throw new FormDataError("Số tiền đề nghị quyết toán không hợp lệ.");
+  }
+  if (amountNum <= 0) {
+    throw new FormDataError("Số tiền đề nghị quyết toán phải lớn hơn 0.");
+  }
+  const purpose = String(d.purpose ?? d.description ?? "").trim();
+  if (!purpose) {
+    throw new FormDataError("Mục đích/Diễn giải là bắt buộc và không được chỉ chứa khoảng trắng.");
+  }
+
+  const record = await w.post(GL_ADVANCE_REQUESTS, {
+    company: w.companyId,
+    company_id: w.companyId,
+    requester,
+    department: d.department || d.department_id || undefined,
+    amount: String(amountNum),
+    purpose,
+    request_date: d.requestDate ? toApiDate(d.requestDate) : undefined,
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+    auto_create_employee_if_missing: Boolean(d.autoCreateEmployeeIfMissing ?? true),
+    workflow_snapshot: d.workflowSnapshot || d.workflow_snapshot || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã gửi đề nghị quyết toán tạm ứng lên cấp duyệt."),
+  };
+}
+
+/** UC-GL-01 (Steps 21–32, AF-04..09): Phê duyệt, Yêu cầu bổ sung hoặc Từ chối đề nghị quyết toán tạm ứng. */
+export async function decideAdvanceSettlementRequest(
+  w: ApiWriter,
+  id: string,
+  decision: "approve" | "reject" | "request-info",
+  d: Row = {},
+) {
+  const record = await w.action(GL_ADVANCE_REQUESTS, id, decision, {
+    company: w.companyId,
+    company_id: w.companyId,
+    comment: String(d.comment || d.reason || "").trim(),
+    version: d.version,
+    sync_mode: d.syncMode || d.sync_mode || undefined,
+    simulate_sync_error: d.simulateSyncError ?? d.simulate_sync_error ?? undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã cập nhật trạng thái phê duyệt đề nghị quyết toán tạm ứng."),
+  };
+}
+
+/** UC-GL-01 (AF-05): Bổ sung thông tin và gửi phê duyệt lại đề nghị quyết toán tạm ứng. */
+export async function resubmitAdvanceSettlementRequest(w: ApiWriter, id: string, d: Row) {
+  const record = await w.action(GL_ADVANCE_REQUESTS, id, "resubmit", {
+    company: w.companyId,
+    company_id: w.companyId,
+    requester: d.requester || d.requester_id || undefined,
+    department: d.department || d.department_id || undefined,
+    amount: d.amount !== undefined ? String(Number(String(d.amount).replace(/,/g, "").trim())) : undefined,
+    purpose: d.purpose !== undefined ? String(d.purpose).trim() : undefined,
+    comment: String(d.comment || "Bổ sung thông tin và gửi duyệt lại").trim(),
+    version: d.version,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã gửi đề nghị quyết toán tạm ứng lên cấp duyệt."),
+  };
+}
+
+/** UC-GL-01 (EF-17, EF-18): Thử đồng bộ lại đề nghị đã duyệt sang danh sách quyết toán. */
+export async function retrySyncAdvanceSettlementRequest(w: ApiWriter, id: string) {
+  const record = await w.action(GL_ADVANCE_REQUESTS, id, "retry-sync", {
+    company: w.companyId,
+    company_id: w.companyId,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã đồng bộ thành công đề nghị sang danh sách quyết toán."),
+  };
+}
+
+/** UC-GL-01 -> UC-GL-02 (AF-11, BR-GL-ADV-33, BR-GL-ADV-40): Đánh dấu kế thừa đề nghị sang chứng từ quyết toán tạm ứng. */
+export async function inheritAdvanceRequestForSettlement(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_ADVANCE_REQUESTS, id, "inherit-to-settlement", {
+    company: w.companyId,
+    company_id: w.companyId,
+    settlement_voucher_no: d.settlementVoucherNo || d.settlement_voucher_no || undefined,
+    settlement_entry: d.settlementEntry || d.settlement_entry || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: String(record?.message || "Đã kế thừa đề nghị vào chứng từ quyết toán tạm ứng."),
+  };
+}
+
+/* ───────────────────────────── UC-GL-07: Phân bổ chi phí bán hàng, QLDN và chi phí khác ───────────────────────────── */
+
+const GL_ALLOCATION_RUNS = "/api/v1/general-ledger/allocation-runs/";
+
+/** UC-GL-07 (Steps 7–12, AF-03, AF-19): Lấy số liệu chi phí nguồn đã POSTED và kiểm tra phần còn lại được phép phân bổ. */
+export async function fetchAllocationSourceData(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_ALLOCATION_RUNS}fetch-source/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    rule: d.rule || d.rule_id || undefined,
+    source_account: d.sourceAccount || d.source_account || undefined,
+    source_account_codes: d.sourceAccountCodes || d.source_account_codes || undefined,
+    source_filter: d.sourceFilter || d.source_filter || undefined,
+    exclude_run_id: d.excludeRunId || d.exclude_run_id || undefined,
+  });
+  return {
+    record,
+    message: "Đã tải dữ liệu chi phí nguồn cần phân bổ.",
+  };
+}
+
+/** UC-GL-07 (Steps 13–25, AF-04..11): Tính phân bổ chi phí và xử lý làm tròn ở trạng thái CALCULATED. */
+export async function calculateExpenseAllocation(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_ALLOCATION_RUNS}calculate/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    rule: d.rule || d.rule_id || undefined,
+    allocation_group: d.allocationGroup || d.allocation_group || "ADMIN",
+    source_account: d.sourceAccount || d.source_account || undefined,
+    source_account_codes: d.sourceAccountCodes || d.source_account_codes || undefined,
+    offset_account: d.offsetAccount || d.offset_account || undefined,
+    source_filter: d.sourceFilter || d.source_filter || undefined,
+    method: d.method || "FIXED_PERCENT",
+    rounding_method: d.roundingMethod || d.rounding_method || "LAST_LINE",
+    amount_to_allocate: d.amountToAllocate || d.amount_to_allocate || undefined,
+    destinations: Array.isArray(d.destinations) ? d.destinations : undefined,
+    description: d.description || undefined,
+    save_calculation: Boolean(d.saveCalculation ?? d.save_calculation ?? false),
+  });
+  return {
+    record,
+    message: "Đã tính toán kết quả phân bổ chi phí.",
+  };
+}
+
+/** UC-GL-07 (Steps 26–50, AF-13..15): Xác nhận tạo chứng từ phân bổ ở trạng thái UNPOSTED (hoặc tự động POST nếu auto_post=true). */
+export async function confirmExpenseAllocation(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_ALLOCATION_RUNS}confirm/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    number: d.number || d.voucherNo || undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    rule: d.rule || d.rule_id || undefined,
+    allocation_group: d.allocationGroup || d.allocation_group || "ADMIN",
+    source_account: d.sourceAccount || d.source_account || undefined,
+    source_account_codes: d.sourceAccountCodes || d.source_account_codes || undefined,
+    offset_account: d.offsetAccount || d.offset_account || undefined,
+    source_filter: d.sourceFilter || d.source_filter || undefined,
+    method: d.method || "FIXED_PERCENT",
+    rounding_method: d.roundingMethod || d.rounding_method || "LAST_LINE",
+    amount_to_allocate: d.amountToAllocate || d.amount_to_allocate || undefined,
+    destinations: Array.isArray(d.destinations) ? d.destinations : undefined,
+    description: d.description || undefined,
+    expected_source_fingerprint: d.expectedSourceFingerprint || d.expected_source_fingerprint || undefined,
+    replace_run_id: d.replaceRunId || d.replace_run_id || undefined,
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+    auto_post: Boolean(d.autoPost ?? d.auto_post ?? false),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: record?.status === "POSTED"
+      ? `Đã tạo và ghi sổ chứng từ phân bổ ${record?.number || ""}.`
+      : `Đã tạo chứng từ phân bổ ${record?.number || ""} ở trạng thái Chưa ghi sổ (UNPOSTED).`,
+  };
+}
+
+/** UC-GL-07 (Step 50, UC-GL-05): Ghi sổ chứng từ phân bổ đang ở trạng thái UNPOSTED. */
+export async function postAllocationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_ALLOCATION_RUNS, id, "post", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã ghi sổ chứng từ phân bổ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-07 (AF-16, UC-GL-05): Bỏ ghi sổ chứng từ phân bổ đã POSTED về UNPOSTED. */
+export async function unpostAllocationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_ALLOCATION_RUNS, id, "unpost", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Bỏ ghi sổ chứng từ phân bổ để chạy lại",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã bỏ ghi sổ chứng từ phân bổ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-07 (AF-17, UC-GL-06): Đảo bút toán phân bổ đã POSTED để giải phóng nguồn chi phí và phân bổ lại. */
+export async function reverseAllocationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_ALLOCATION_RUNS, id, "reverse", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Đảo bút toán phân bổ chi phí",
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    auto_post: Boolean(d.autoPost ?? d.auto_post ?? true),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã tạo bút toán đảo cho đợt phân bổ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-07 (AF-12, AF-16): Hủy đợt phân bổ chưa ghi sổ (UNPOSTED / CALCULATED) để giải phóng nguồn. */
+export async function cancelAllocationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_ALLOCATION_RUNS, id, "cancel", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Hủy đợt phân bổ chưa ghi sổ",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã hủy đợt phân bổ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-07 (Steps 43–44, BR-GL-ALLOC-51, 52, 69..72): Truy vết hai chiều chứng từ phân bổ và nguồn chi phí. */
+export async function fetchAllocationTrace(w: ApiWriter, id: string) {
+  return await w.get(`${GL_ALLOCATION_RUNS}${encodeURIComponent(id)}/trace/?company_id=${encodeURIComponent(w.companyId)}`);
+}
+
+/* ───────────────────────────── UC-GL-08: Đánh giá lại tài khoản ngoại tệ ───────────────────────────── */
+
+const GL_FX_REVALUATION_RUNS = "/api/v1/general-ledger/fx-revaluation-runs/";
+
+/** UC-GL-08 (Steps 6–9, AF-02..05): Lấy danh sách tài khoản tiền tệ có gốc ngoại tệ và số dư nguyên tệ / giá trị ghi sổ. */
+export async function fetchFxRevaluationBalances(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_FX_REVALUATION_RUNS}fetch-balances/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    revaluation_date: d.revaluationDate || d.revaluation_date ? toApiDate(d.revaluationDate || d.revaluation_date) : undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    currency: d.currency || d.currencyCode || d.currency_code || "USD",
+    account_scope: d.accountScope || d.account_scope || "ALL",
+    account_ids: d.accountIds || d.account_ids || undefined,
+    account_codes: d.accountCodes || d.account_codes || undefined,
+    item_groups: d.itemGroups || d.item_groups || undefined,
+  });
+  return {
+    record,
+    message: "Đã tải danh sách khoản mục ngoại tệ cần đánh giá lại.",
+  };
+}
+
+/** UC-GL-08 (Steps 10–25, AF-01..09): Tính giá trị quy đổi cuối kỳ, chênh lệch tỷ giá tăng/giảm (Lãi/Lỗ) và định khoản dự kiến. */
+export async function calculateFxRevaluation(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_FX_REVALUATION_RUNS}calculate/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    revaluation_date: d.revaluationDate || d.revaluation_date ? toApiDate(d.revaluationDate || d.revaluation_date) : undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    currency: d.currency || d.currencyCode || d.currency_code || "USD",
+    exchange_rate: d.exchangeRate || d.exchange_rate || undefined,
+    rate_type: d.rateType || d.rate_type || undefined,
+    rate_source: d.rateSource || d.rate_source || undefined,
+    account_scope: d.accountScope || d.account_scope || "ALL",
+    account_ids: d.accountIds || d.account_ids || undefined,
+    account_codes: d.accountCodes || d.account_codes || undefined,
+    item_groups: d.itemGroups || d.item_groups || undefined,
+    fx_difference_account: d.fxDifferenceAccount || d.fx_difference_account || undefined,
+    fx_gain_account: d.fxGainAccount || d.fx_gain_account || undefined,
+    fx_loss_account: d.fxLossAccount || d.fx_loss_account || undefined,
+    selected_line_keys: d.selectedLineKeys || d.selected_line_keys || undefined,
+    line_overrides: d.lineOverrides || d.line_overrides || undefined,
+    description: d.description || undefined,
+    save_calculation: Boolean(d.saveCalculation ?? d.save_calculation ?? false),
+  });
+  return {
+    record,
+    message: "Đã tính toán kết quả đánh giá lại tài khoản ngoại tệ.",
+  };
+}
+
+/** UC-GL-08 (Steps 26–50, AF-14, AF-15): Xác nhận tạo chứng từ đánh giá lại ngoại tệ ở trạng thái UNPOSTED (hoặc tự động POST nếu auto_post=true). */
+export async function confirmFxRevaluation(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_FX_REVALUATION_RUNS}confirm/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    number: d.number || d.voucherNo || undefined,
+    revaluation_date: d.revaluationDate || d.revaluation_date ? toApiDate(d.revaluationDate || d.revaluation_date) : undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    currency: d.currency || d.currencyCode || d.currency_code || "USD",
+    exchange_rate: d.exchangeRate || d.exchange_rate || undefined,
+    rate_type: d.rateType || d.rate_type || undefined,
+    rate_source: d.rateSource || d.rate_source || undefined,
+    account_scope: d.accountScope || d.account_scope || "ALL",
+    account_ids: d.accountIds || d.account_ids || undefined,
+    account_codes: d.accountCodes || d.account_codes || undefined,
+    item_groups: d.itemGroups || d.item_groups || undefined,
+    fx_difference_account: d.fxDifferenceAccount || d.fx_difference_account || undefined,
+    fx_gain_account: d.fxGainAccount || d.fx_gain_account || undefined,
+    fx_loss_account: d.fxLossAccount || d.fx_loss_account || undefined,
+    selected_line_keys: d.selectedLineKeys || d.selected_line_keys || undefined,
+    line_overrides: d.lineOverrides || d.line_overrides || undefined,
+    description: d.description || undefined,
+    source_fingerprint: d.sourceFingerprint || d.source_fingerprint || undefined,
+    replace_run_id: d.replaceRunId || d.replace_run_id || undefined,
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+    auto_post: Boolean(d.autoPost ?? d.auto_post ?? false),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: record?.status === "POSTED"
+      ? `Đã tạo và ghi sổ chứng từ đánh giá lại ngoại tệ ${record?.number || ""}.`
+      : `Đã tạo chứng từ đánh giá lại ngoại tệ ${record?.number || ""} ở trạng thái Chưa ghi sổ (UNPOSTED).`,
+  };
+}
+
+/** UC-GL-08 (Step 50, UC-GL-05): Ghi sổ chứng từ đánh giá lại ngoại tệ đang UNPOSTED. */
+export async function postFxRevaluationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_FX_REVALUATION_RUNS, id, "post", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã ghi sổ chứng từ đánh giá lại ngoại tệ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-08 (AF-16, UC-GL-05): Bỏ ghi sổ chứng từ đánh giá lại ngoại tệ đã POSTED về UNPOSTED. */
+export async function unpostFxRevaluationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_FX_REVALUATION_RUNS, id, "unpost", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Bỏ ghi sổ chứng từ đánh giá lại ngoại tệ để tính lại",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã bỏ ghi sổ chứng từ đánh giá lại ngoại tệ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-08 (AF-17, UC-GL-06): Đảo bút toán đánh giá lại ngoại tệ đã POSTED để đánh giá lại theo tỷ giá mới. */
+export async function reverseFxRevaluationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_FX_REVALUATION_RUNS, id, "reverse", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Đảo bút toán đánh giá lại ngoại tệ",
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    auto_post: Boolean(d.autoPost ?? d.auto_post ?? true),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã tạo bút toán đảo cho đợt đánh giá lại ngoại tệ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-08 (AF-11, AF-16): Hủy đợt đánh giá lại ngoại tệ chưa ghi sổ (UNPOSTED / CALCULATED). */
+export async function cancelFxRevaluationRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_FX_REVALUATION_RUNS, id, "cancel", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Hủy đợt đánh giá lại ngoại tệ chưa ghi sổ",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã hủy đợt đánh giá lại ngoại tệ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-08 (Steps 42–43, BR-GL-FX-57, 58, 82): Truy vết hai chiều đợt đánh giá lại ngoại tệ và bút toán GL. */
+export async function fetchFxRevaluationTrace(w: ApiWriter, id: string) {
+  return await w.get(`${GL_FX_REVALUATION_RUNS}${encodeURIComponent(id)}/trace/?company_id=${encodeURIComponent(w.companyId)}`);
+}
+
+/* ───────────────────────────── UC-GL-09: Kết chuyển lãi lỗ ───────────────────────────── */
+
+const GL_CLOSING_RULES = "/api/v1/general-ledger/closing-rules/";
+const GL_CLOSING_RUNS = "/api/v1/general-ledger/closing-runs/";
+
+/** UC-GL-09 (Pre-condition 6, BR-GL-PL-14): Khởi tạo bộ quy tắc kết chuyển lãi lỗ chuẩn (521->511, 511/515/711->911, 632/635/641/642/811/821->911, 911<->4212). */
+export async function seedDefaultClosingRules(w: ApiWriter) {
+  const record = await w.post(`${GL_CLOSING_RULES}seed-defaults/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: "Đã khởi tạo bộ quy tắc kết chuyển lãi lỗ mặc định.",
+  };
+}
+
+/** UC-GL-09 (Steps 11–35, AF-03..AF-09): Lấy dữ liệu kết chuyển lãi lỗ đến ngày được chọn từ các bút toán POSTED. */
+export async function fetchProfitLossClosingData(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_CLOSING_RUNS}fetch-data/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    closing_to_date: d.closingToDate || d.closing_to_date ? toApiDate(d.closingToDate || d.closing_to_date) : undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    run_type: d.runType || d.run_type || "PROFIT_LOSS_CLOSING",
+    auto_seed_default_rules: Boolean(d.autoSeedDefaultRules ?? d.auto_seed_default_rules ?? true),
+  });
+  return {
+    record,
+    message: "Đã lấy dữ liệu kết chuyển lãi lỗ từ Sổ cái.",
+  };
+}
+
+/** UC-GL-09 (Steps 45–75, AF-10..AF-20): Xác nhận Cất (hoặc Cất và In) chứng từ kết chuyển lãi lỗ. */
+export async function confirmProfitLossClosing(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_CLOSING_RUNS}confirm/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || undefined,
+    number: d.number || d.voucherNo || d.voucher_no || undefined,
+    closing_to_date: d.closingToDate || d.closing_to_date ? toApiDate(d.closingToDate || d.closing_to_date) : undefined,
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    document_date: d.documentDate || d.document_date ? toApiDate(d.documentDate || d.document_date) : undefined,
+    description: d.description || undefined,
+    reference: d.reference || undefined,
+    attachments: Array.isArray(d.attachments) ? d.attachments : undefined,
+    lines: Array.isArray(d.lines) ? d.lines : undefined,
+    source_fingerprint: d.sourceFingerprint || d.source_fingerprint || undefined,
+    replace_unposted: Boolean(d.replaceUnposted ?? d.replace_unposted ?? true),
+    allow_additional_closing: Boolean(d.allowAdditionalClosing ?? d.allow_additional_closing ?? false),
+    auto_post: Boolean(d.autoPost ?? d.auto_post ?? false),
+    save_and_print: Boolean(d.saveAndPrint ?? d.save_and_print ?? false),
+    idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message:
+      record?.status === "COMPLETED" || record?.entry_status === "POSTED"
+        ? `Đã tạo và ghi sổ chứng từ kết chuyển lãi lỗ ${record?.number || ""}.`
+        : `Đã cất chứng từ kết chuyển lãi lỗ ${record?.number || ""} ở trạng thái Chưa ghi sổ (UNPOSTED).`,
+  };
+}
+
+/** UC-GL-09 (Step 75, UC-GL-05): Ghi sổ chứng từ kết chuyển lãi lỗ đang UNPOSTED sang COMPLETED/POSTED. */
+export async function postClosingRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_CLOSING_RUNS, id, "post", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã ghi sổ chứng từ kết chuyển lãi lỗ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-09 (AF-19, UC-GL-05): Bỏ ghi sổ chứng từ kết chuyển lãi lỗ về UNPOSTED. */
+export async function unpostClosingRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_CLOSING_RUNS, id, "unpost", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Bỏ ghi sổ chứng từ kết chuyển lãi lỗ để kết chuyển lại",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã bỏ ghi sổ chứng từ kết chuyển lãi lỗ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-09 (AF-19, UC-GL-06): Đảo bút toán kết chuyển lãi lỗ đã POSTED. */
+export async function reverseClosingRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_CLOSING_RUNS, id, "reverse", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Đảo bút toán kết chuyển lãi lỗ",
+    posting_date: d.postingDate || d.posting_date ? toApiDate(d.postingDate || d.posting_date) : undefined,
+    auto_post: Boolean(d.autoPost ?? d.auto_post ?? true),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã tạo bút toán đảo cho đợt kết chuyển lãi lỗ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-09 (AF-16, AF-18): Hủy đợt kết chuyển lãi lỗ chưa ghi sổ (DRAFT/UNPOSTED). */
+export async function cancelClosingRun(w: ApiWriter, id: string, d: Row = {}) {
+  const record = await w.action(GL_CLOSING_RUNS, id, "cancel", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || "Hủy chứng từ kết chuyển lãi lỗ chưa ghi sổ",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã hủy chứng từ kết chuyển lãi lỗ ${record?.number || id}.`,
+  };
+}
+
+/** UC-GL-09 (Steps 71–73, BR-GL-PL-74..78): Truy vết từ lần kết chuyển -> dòng kết chuyển -> bút toán -> số liệu nguồn. */
+export async function fetchClosingRunTrace(w: ApiWriter, id: string) {
+  return await w.get(`${GL_CLOSING_RUNS}${encodeURIComponent(id)}/trace/?company_id=${encodeURIComponent(w.companyId)}`);
+}
+
+/* ───────────────────────────── UC-GL-10: Tổng hợp phát sinh, số dư và kiểm tra cân đối GL ───────────────────────────── */
+
+const GL_BALANCES = "/api/v1/general-ledger/balances/";
+
+/** UC-GL-10 (Steps 1–30, AF-01..AF-15, BR-GL-BAL-01..67): Tổng hợp lại số dư đầu kỳ, phát sinh Nợ/Có, số dư cuối kỳ và kiểm tra cân đối cho một kỳ kế toán. */
+export async function aggregatePeriodBalances(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_BALANCES}aggregate-period/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || d.periodCode || d.period_code || undefined,
+    trigger_type: d.triggerType || d.trigger_type || "MANUAL_REAGGREGATE",
+    account_scope: d.accountScope || d.account_scope || "ALL",
+    dimension_keys: d.dimensionKeys || d.dimension_keys || ["party", "department", "project", "cost_center"],
+    include_zero_accounts: Boolean(d.includeZeroAccounts ?? d.include_zero_accounts ?? false),
+    allow_closed_period_verify: Boolean(d.allowClosedPeriodVerify ?? d.allow_closed_period_verify ?? true),
+    cascade_subsequent_periods: Boolean(d.cascadeSubsequentPeriods ?? d.cascade_subsequent_periods ?? true),
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã tổng hợp số dư và kiểm tra cân đối kỳ ${record?.period_code || ""} (Trạng thái: ${record?.status || "VALID"}).`,
+  };
+}
+
+/** UC-GL-10 (Steps 17–25, BR-GL-BAL-31..46): Kiểm tra cân đối Tổng phát sinh Nợ/Có, Tổng dư đầu kỳ/cuối kỳ, tính liên tục giữa các kỳ và khớp TK tổng hợp - chi tiết. */
+export async function validatePeriodBalances(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_BALANCES}validate-balance/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.period_id || d.periodCode || d.period_code || undefined,
+  });
+  return {
+    record,
+    message: record?.is_balanced
+      ? `Kỳ kế toán ${record?.period_code || ""} cân đối hợp lệ (VALID).`
+      : `Phát hiện chênh lệch mất cân đối trong kỳ ${record?.period_code || ""} (INVALID).`,
+  };
+}
+
+/** UC-GL-10 (AF-13, EF-21, BR-GL-BAL-51..54): Drill-down từ số dư tài khoản xuống danh sách dòng bút toán POSTED cấu thành. */
+export async function drilldownAccountBalance(w: ApiWriter, d: Row) {
+  const period = encodeURIComponent(String(d.period || d.period_id || d.periodCode || ""));
+  const account = encodeURIComponent(String(d.account || d.account_id || d.accountCode || d.account_code || ""));
+  return await w.get(
+    `${GL_BALANCES}drilldown/?company_id=${encodeURIComponent(w.companyId)}&period=${period}&account=${account}`
+  );
+}
+
+/* ───────────────────────────── UC-GL-11: Đối chiếu số liệu GL với các phân hệ ───────────────────────────── */
+
+const GL_RECONCILIATION_RULES = "/api/v1/general-ledger/reconciliation-rules/";
+const GL_RECONCILIATIONS = "/api/v1/general-ledger/reconciliations/";
+
+/** UC-GL-11 (Section 1.1.B, BR-GL-REC-05..28): Khởi tạo 7 quy tắc đối chiếu mặc định (GL ↔ AP, AR, CASH, BANK, INV, FA, TAX). */
+export async function seedDefaultReconciliationRules(w: ApiWriter) {
+  const record = await w.post(`${GL_RECONCILIATION_RULES}seed-defaults/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: "Đã khởi tạo bộ quy tắc đối chiếu mặc định giữa GL và 7 phân hệ (AP, AR, CASH, BANK, INV, FA, TAX).",
+  };
+}
+
+/** UC-GL-11 (Steps 1–38, AF-01..AF-19, BR-GL-REC-01..94): Thực hiện đối chiếu số liệu GL với phân hệ chi tiết. */
+export async function runGlSubledgerReconciliation(w: ApiWriter, d: Row) {
+  const record = await w.post(`${GL_RECONCILIATIONS}run/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.periodId || d.periodCode || undefined,
+    reconciliation_type: d.reconciliationType || d.reconciliation_type || "GL_AR",
+    source_module: d.sourceModule || d.source_module || undefined,
+    account_code: d.accountCode || d.account_code || undefined,
+    party_code: d.partyCode || d.party_code || undefined,
+    currency_code: d.currencyCode || d.currency_code || undefined,
+    rounding_tolerance: d.roundingTolerance ?? d.rounding_tolerance ?? "0",
+    tolerance_behavior: d.toleranceBehavior || d.tolerance_behavior || "MATCHED",
+    subledger_items: Array.isArray(d.subledgerItems) ? d.subledgerItems : undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã hoàn tất đối chiếu ${record?.reconciliation_type || d.reconciliationType || "GL"} (Trạng thái: ${record?.status || "MATCHED"}).`,
+  };
+}
+
+/** UC-GL-11 (Steps 39–43, AF-14, AF-15, EF-25, BR-GL-REC-48, 49, 68, 69, 93): Drill-down chi tiết chênh lệch 2 phía GL và phân hệ. */
+export async function drilldownGlReconciliation(w: ApiWriter, id: string, d: Row = {}) {
+  const q = new URLSearchParams({ company_id: w.companyId });
+  if (d.lineId) q.set("line_id", String(d.lineId));
+  if (d.reconciliationKey) q.set("reconciliation_key", String(d.reconciliationKey));
+  if (d.restrictSubledgerPermission) q.set("restrict_subledger_permission", "true");
+  return await w.get(`${GL_RECONCILIATIONS}${encodeURIComponent(id)}/drilldown/?${q.toString()}`);
+}
+
+/** UC-GL-11 (Step 44, BR-GL-REC-50, 56, 57): Ghi chú nguyên nhân/xử lý chênh lệch mà không tự động đổi trạng thái thành MATCHED. */
+export async function annotateGlReconciliationNote(w: ApiWriter, id: string, d: Row) {
+  const record = await w.action(GL_RECONCILIATIONS, id, "annotate", {
+    company: w.companyId,
+    company_id: w.companyId,
+    note: d.note || d.reason || "",
+    line_id: d.lineId || d.line_id || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: "Đã lưu ghi chú xử lý chênh lệch (BR-GL-REC-56: Cần chạy 'Đối chiếu lại' sau khi xử lý chứng từ nguồn để chuyển sang MATCHED).",
+  };
+}
+
+/** UC-GL-11 (AF-18, BR-GL-REC-81..83): Kiểm tra điều kiện đối chiếu trước khi khóa sổ kỳ kế toán (UC-GL-12). */
+export async function checkPreClosingReconciliations(w: ApiWriter, period: string) {
+  return await w.get(
+    `${GL_RECONCILIATIONS}pre-closing-check/?company_id=${encodeURIComponent(w.companyId)}&period=${encodeURIComponent(period)}`
+  );
+}
+
+// =============================================================================
+// UC-GL-12 – KHÓA / BỎ KHÓA SỔ KỲ KẾ TOÁN (ACCOUNTING PERIOD CLOSE & REOPEN)
+// =============================================================================
+
+const GL_PERIODS = "/api/v1/general-ledger/periods/";
+
+/** UC-GL-12 (Main Flow Steps 8..21, AF-01..AF-08, EF-07..EF-14, BR-GL-LOCK-13..27): Chạy Checklist kiểm tra điều kiện trước khóa sổ kỳ kế toán. */
+export async function evaluatePeriodCloseChecklist(w: ApiWriter, periodId: string, d: Row = {}) {
+  const record = await w.action(GL_PERIODS, periodId, "checklist", {
+    company: w.companyId,
+    company_id: w.companyId,
+    lock_scope: d.lockScope || d.lock_scope || "FULL_PERIOD",
+    lock_to_date: d.lockToDate || d.lock_to_date || undefined,
+    document_types: Array.isArray(d.documentTypes) ? d.documentTypes : d.document_types,
+    unposted_policy: d.unpostedPolicy || d.unposted_policy || undefined,
+    reconciliation_policy: d.reconciliationPolicy || d.reconciliation_policy || undefined,
+    require_expense_allocation: d.requireExpenseAllocation ?? d.require_expense_allocation,
+    require_fx_revaluation: d.requireFxRevaluation ?? d.require_fx_revaluation,
+    require_pl_closing: d.requirePlClosing ?? d.require_pl_closing,
+  });
+  return {
+    record,
+    message: `Đã kiểm tra Checklist khóa sổ kỳ ${record?.period_code || periodId} (${record?.status || "READY"}).`,
+  };
+}
+
+/** UC-GL-12 (Main Flow Steps 22..34, AF-01, AF-02, AF-25, BR-GL-LOCK-01..53, 80..90): Xác nhận Khóa sổ toàn kỳ hoặc Khóa theo loại chứng từ. */
+export async function closeAccountingPeriod(w: ApiWriter, periodId: string, d: Row = {}) {
+  const record = await w.action(GL_PERIODS, periodId, "close", {
+    company: w.companyId,
+    company_id: w.companyId,
+    checklist_id: d.checklistId || d.checklist_id || undefined,
+    expected_watermark: d.expectedWatermark || d.expected_watermark || undefined,
+    lock_scope: d.lockScope || d.lock_scope || "FULL_PERIOD",
+    lock_to_date: d.lockToDate || d.lock_to_date || undefined,
+    document_types: Array.isArray(d.documentTypes) ? d.documentTypes : d.document_types,
+    unposted_policy: d.unpostedPolicy || d.unposted_policy || undefined,
+    reconciliation_policy: d.reconciliationPolicy || d.reconciliation_policy || undefined,
+    require_expense_allocation: d.requireExpenseAllocation ?? d.require_expense_allocation,
+    require_fx_revaluation: d.requireFxRevaluation ?? d.require_fx_revaluation,
+    require_pl_closing: d.requirePlClosing ?? d.require_pl_closing,
+    notes: d.notes || d.reason || "",
+    version: d.version ?? undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: record?.message || `Khóa sổ kỳ kế toán ${record?.code || periodId} thành công (${record?.status || "CLOSED"}).`,
+  };
+}
+
+/** UC-GL-12 (AF-11..AF-24, EF-03, EF-24..EF-28, BR-GL-LOCK-52..76): Bỏ khóa / Mở lại kỳ kế toán hoặc mở khóa theo loại chứng từ. */
+export async function reopenAccountingPeriod(w: ApiWriter, periodId: string, d: Row) {
+  const record = await w.action(GL_PERIODS, periodId, "reopen", {
+    company: w.companyId,
+    company_id: w.companyId,
+    reason: d.reason || d.reopenReason || "",
+    unlock_scope: d.unlockScope || d.unlock_scope || "FULL_PERIOD",
+    document_types: Array.isArray(d.documentTypes) ? d.documentTypes : d.document_types,
+    require_reopen_approval: d.requireReopenApproval ?? d.require_reopen_approval ?? false,
+    enforce_reverse_chronological_reopen: d.enforceReverseChronologicalReopen ?? d.enforce_reverse_chronological_reopen,
+    version: d.version ?? undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: record?.message || `Bỏ khóa sổ kỳ kế toán ${record?.code || periodId} thành công (${record?.status || "OPEN"}).`,
+  };
+}
+
+/** UC-GL-12 (AF-16, AF-17, EF-25, EF-26, BR-GL-LOCK-57..59, 64): Phê duyệt hoặc từ chối yêu cầu mở lại kỳ kế toán. */
+export async function decideReopenAccountingPeriod(w: ApiWriter, periodId: string, d: Row) {
+  const record = await w.action(GL_PERIODS, periodId, "decide-reopen", {
+    company: w.companyId,
+    company_id: w.companyId,
+    approved: d.approved ?? true,
+    comment: d.comment || d.reason || "",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: record?.message || (d.approved ? "Đã phê duyệt mở lại kỳ kế toán." : "Đã từ chối yêu cầu mở lại kỳ kế toán."),
+  };
+}
+
+/** UC-GL-12 (Section 1.1.D, BR-GL-LOCK-60..64, 88..96): Truy vấn lịch sử Khóa / Bỏ khóa và Checklist của kỳ kế toán. */
+export async function fetchPeriodLockHistory(w: ApiWriter, periodId: string) {
+  return await w.get(
+    `${GL_PERIODS}${encodeURIComponent(periodId)}/lock-history/?company_id=${encodeURIComponent(w.companyId)}`
+  );
+}
+
+/** UC-GL-12 (Trigger 3, AF-10, BR-GL-LOCK-91..93): Thực thi khóa sổ tự động định kỳ theo chính sách doanh nghiệp. */
+export async function runAutoPeriodLock(w: ApiWriter, d: Row = {}) {
+  const record = await w.post(`${GL_PERIODS}auto-lock/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.periodId || undefined,
+    cutoff_date: d.cutoffDate || d.cutoff_date || undefined,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Khóa sổ tự động hoàn tất: Đã khóa ${record?.closed_count ?? 0} kỳ, chặn ${record?.failed_count ?? 0} kỳ do còn lỗi BLOCKER.`,
+  };
+}
+
+// =============================================================================
+// UC-GL-13 – LẬP BÁO CÁO TÀI CHÍNH (FINANCIAL STATEMENTS UNDER TT99/2025/TT-BTC)
+// =============================================================================
+
+const GL_FINANCIAL_STATEMENT_MAPPINGS = "/api/v1/general-ledger/financial-statement-mappings/";
+const GL_FINANCIAL_STATEMENTS = "/api/v1/general-ledger/financial-statements/";
+
+/** UC-GL-13 (Section 1.1, BR-GL-FS-06..26, 54..59): Khởi tạo cấu hình mapping chỉ tiêu BCTC mặc định theo TT99/2025/TT-BTC. */
+export async function seedDefaultFinancialStatementMappings(w: ApiWriter) {
+  const record = await w.post(`${GL_FINANCIAL_STATEMENT_MAPPINGS}seed-defaults/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: "Đã khởi tạo bộ quy tắc mapping chỉ tiêu Báo cáo tài chính theo Thông tư 99/2025/TT-BTC.",
+  };
+}
+
+/** UC-GL-13 (Main Flow Steps 23–25, EF-08..13, BR-GL-FS-02..05, 81, 82, 86): Kiểm tra điều kiện nguồn GL, tổng hợp số dư (UC-GL-10), đối chiếu (UC-GL-11), khóa kỳ (UC-GL-12) và kết chuyển lãi lỗ (UC-GL-09) trước khi lập BCTC. */
+export async function precheckFinancialStatements(w: ApiWriter, d: Row = {}) {
+  const record = await w.post(`${GL_FINANCIAL_STATEMENTS}precheck/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.periodId || d.periodCode || undefined,
+    report_group: d.reportGroup || d.report_group || "ANNUAL_BCTC",
+    going_concern_assumption: d.goingConcernAssumption || d.going_concern_assumption || "CONTINUOUS",
+    interim_format: d.interimFormat || d.interim_format || "FULL",
+    cash_flow_method: d.cashFlowMethod || d.cash_flow_method || "DIRECT",
+    selected_forms: Array.isArray(d.selectedForms) ? d.selectedForms : d.selected_forms,
+    from_date: d.fromDate || d.from_date || undefined,
+    to_date: d.toDate || d.to_date || undefined,
+    require_closed_period: d.requireClosedPeriod ?? d.require_closed_period ?? false,
+    require_pl_closing: d.requirePlClosing ?? d.require_pl_closing ?? false,
+  });
+  return {
+    record,
+    message: `Đã kiểm tra điều kiện lập BCTC (${record?.status || "READY"}).`,
+  };
+}
+
+/** UC-GL-13 (Main Flow Steps 1–47, AF-01..AF-24, EF-01..EF-29, BR-GL-FS-01..90): Lập / Lập lại bộ Báo cáo tài chính phiên bản mới theo Thông tư 99/2025/TT-BTC. */
+export async function generateFinancialStatements(w: ApiWriter, d: Row = {}) {
+  const record = await w.post(`${GL_FINANCIAL_STATEMENTS}generate/`, {
+    company: w.companyId,
+    company_id: w.companyId,
+    period: d.period || d.periodId || d.periodCode || undefined,
+    comparative_period: d.comparativePeriod || d.comparative_period || undefined,
+    report_group: d.reportGroup || d.report_group || "ANNUAL_BCTC",
+    going_concern_assumption: d.goingConcernAssumption || d.going_concern_assumption || "CONTINUOUS",
+    interim_format: d.interimFormat || d.interim_format || "FULL",
+    cash_flow_method: d.cashFlowMethod || d.cash_flow_method || "DIRECT",
+    selected_forms: Array.isArray(d.selectedForms) ? d.selectedForms : d.selected_forms,
+    from_date: d.fromDate || d.from_date || undefined,
+    to_date: d.toDate || d.to_date || undefined,
+    comparative_from_date: d.comparativeFromDate || d.comparative_from_date || undefined,
+    comparative_to_date: d.comparativeToDate || d.comparative_to_date || undefined,
+    unit_scale: d.unitScale ?? d.unit_scale ?? 1,
+    reuse_latest_notes: Boolean(d.reuseLatestNotes ?? d.reuse_latest_notes ?? false),
+    notes_general_info: d.notesGeneralInfo || d.notes_general_info || undefined,
+    accounting_policies: d.accountingPolicies || d.accounting_policies || undefined,
+    notes_explanations: d.notesExplanations || d.notes_explanations || undefined,
+    custom_indicators: Array.isArray(d.customIndicators) ? d.customIndicators : d.custom_indicators,
+    require_closed_period: d.requireClosedPeriod ?? d.require_closed_period ?? false,
+    require_pl_closing: d.requirePlClosing ?? d.require_pl_closing ?? false,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã lập bộ Báo cáo tài chính ${record?.batch_number || ""} (Phiên bản v${record?.version_number || 1}, Trạng thái: ${record?.status || "GENERATED"}).`,
+  };
+}
+
+/** UC-GL-13 (AF-12, AF-13, BR-GL-FS-38..40, 75): Cập nhật nội dung Thuyết minh BCTC (B09-DN / B09-DNKLT / B09a-DN) trên phiên bản chưa chốt. */
+export async function updateFinancialStatementNotes(w: ApiWriter, batchId: string, d: Row = {}) {
+  const record = await w.action(GL_FINANCIAL_STATEMENTS, batchId, "update-notes", {
+    company: w.companyId,
+    company_id: w.companyId,
+    notes_general_info: d.notesGeneralInfo || d.notes_general_info || undefined,
+    accounting_policies: d.accountingPolicies || d.accounting_policies || undefined,
+    notes_explanations: d.notesExplanations || d.notes_explanations || undefined,
+    custom_indicators: Array.isArray(d.customIndicators) ? d.customIndicators : d.custom_indicators,
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã lưu cập nhật Thuyết minh BCTC cho phiên bản ${record?.batch_number || batchId}.`,
+  };
+}
+
+/** UC-GL-13 (AF-21, EF-29, BR-GL-FS-68..75): Chốt chính thức (FINALIZED) phiên bản Báo cáo tài chính để khóa sửa trực tiếp. */
+export async function finalizeFinancialStatementBatch(w: ApiWriter, batchId: string, d: Row = {}) {
+  const record = await w.action(GL_FINANCIAL_STATEMENTS, batchId, "finalize", {
+    company: w.companyId,
+    company_id: w.companyId,
+    require_closed_period: d.requireClosedPeriod ?? d.require_closed_period ?? true,
+    allow_open_period_finalize: d.allowOpenPeriodFinalize ?? d.allow_open_period_finalize ?? false,
+    finalize_note: d.finalizeNote || d.finalize_note || d.notes || "",
+  });
+  w.invalidate();
+  return {
+    record,
+    message: `Đã chốt chính thức (FINALIZED) bộ Báo cáo tài chính ${record?.batch_number || batchId}.`,
+  };
+}
+
+/** UC-GL-13 (Main Flow Steps 48–50, BR-GL-FS-78..80, 112, 115): Truy vết ngược (Drill-down) từ dòng chỉ tiêu BCTC về số dư tài khoản/đối tượng và bút toán POSTED. */
+export async function drilldownFinancialStatementLine(w: ApiWriter, batchId: string, d: Row = {}) {
+  const q = new URLSearchParams({ company_id: w.companyId });
+  if (d.formCode || d.form_code) q.set("form_code", String(d.formCode || d.form_code));
+  if (d.indicatorCode || d.indicator_code) q.set("indicator_code", String(d.indicatorCode || d.indicator_code));
+  if (d.cashFlowMethod || d.cash_flow_method) q.set("cash_flow_method", String(d.cashFlowMethod || d.cash_flow_method));
+  return await w.get(`${GL_FINANCIAL_STATEMENTS}${encodeURIComponent(batchId)}/drilldown/?${q.toString()}`);
+}
+
+/** UC-GL-13 (Main Flow Step 51, AF-20, BR-GL-FS-66, 72..74): Xuất khẩu bộ Báo cáo tài chính kèm đầy đủ siêu dữ liệu pháp lý, phiên bản và trạng thái. */
+export async function exportFinancialStatementBatch(w: ApiWriter, batchId: string, exportFormat = "JSON") {
+  return await w.get(
+    `${GL_FINANCIAL_STATEMENTS}${encodeURIComponent(batchId)}/export/?company_id=${encodeURIComponent(w.companyId)}&export_format=${encodeURIComponent(exportFormat)}`
+  );
+}
+
+// ============================================================================
+// UC-GL-14: TRA CỨU SỔ CÁI / NHẬT KÝ / TRUY VẾT CHỨNG TỪ
+// ============================================================================
+const GL_LEDGER_INQUIRY = "/api/v1/general-ledger/ledger-inquiry/";
+
+/** UC-GL-14 (Main Flow Steps 1–23, AF-01..16, AF-24, EF-01..15, BR-GL-TRACE-01..34, 56..75): Tra cứu Sổ cái, Sổ nhật ký chung, Sổ chi tiết tài khoản, Bảng cân đối, Nhật ký thu/chi/mua/bán, Sổ ngoại tệ và Bút toán GL theo Thông tư 99/2025/TT-BTC. */
+export async function queryAccountingBookUcGl14(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company: w.companyId,
+    company_id: w.companyId,
+    book_type: d.bookType || d.book_type || d.inquiryMode || d.inquiry_mode || undefined,
+    report_name: d.reportName || d.report_name || undefined,
+    period: d.period || d.periodCode || d.period_code || undefined,
+    from_date: d.fromDate || d.from_date ? toApiDate(d.fromDate || d.from_date) : undefined,
+    to_date: d.toDate || d.to_date ? toApiDate(d.toDate || d.to_date) : undefined,
+    account_code: d.accountCode || d.account_code || undefined,
+    include_child_accounts: d.includeChildAccounts ?? d.include_child_accounts ?? true,
+    reciprocal_account_code: d.reciprocalAccountCode || d.reciprocal_account_code || undefined,
+    voucher_number: d.voucherNumber || d.voucher_number || undefined,
+    entry_type: d.entryType || d.entry_type || undefined,
+    source_module: d.sourceModule || d.source_module || undefined,
+    entry_status: d.entryStatus || d.entry_status || undefined,
+    currency_code: d.currencyCode || d.currency_code || undefined,
+    party_code: d.partyCode || d.party_code || undefined,
+    department_code: d.departmentCode || d.department_code || undefined,
+    project_code: d.projectCode || d.project_code || undefined,
+    cost_center_code: d.costCenterCode || d.cost_center_code || undefined,
+    cost_item_code: d.costItemCode || d.cost_item_code || undefined,
+    contract_code: d.contractCode || d.contract_code || undefined,
+    stat_code: d.statCode || d.stat_code || undefined,
+    keyword: d.keyword || d.search || undefined,
+    min_amount: d.minAmount ?? d.min_amount ?? undefined,
+    max_amount: d.maxAmount ?? d.max_amount ?? undefined,
+    page: d.page ?? 1,
+    page_size: d.pageSize ?? d.page_size ?? 200,
+  };
+  return await w.post(`${GL_LEDGER_INQUIRY}query/`, payload);
+}
+
+/** UC-GL-14 (Main Flow Steps 24–40, AF-17..23, EF-16..21, BR-GL-TRACE-35..55, 108..111): Truy vết chuỗi 2 chiều Sổ/Báo cáo ↔ Dòng hạch toán ↔ Bút toán GL (kèm chuỗi Đảo/Điều chỉnh UC-GL-06) ↔ Chứng từ nghiệp vụ nguồn. */
+export async function traceGlEntryAndVoucherUcGl14(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company: w.companyId,
+    company_id: w.companyId,
+    entry_id: d.entryId || d.entry_id || undefined,
+    line_id: d.lineId || d.line_id || undefined,
+    voucher_number: d.voucherNumber || d.voucher_number || d.number || undefined,
+    source_document_id: d.sourceDocumentId || d.source_document_id || undefined,
+    source_module: d.sourceModule || d.source_module || undefined,
+    denied_source_modules: Array.isArray(d.deniedSourceModules) ? d.deniedSourceModules : d.denied_source_modules,
+  };
+  return await w.post(`${GL_LEDGER_INQUIRY}trace/`, payload);
+}
+
+/** UC-GL-14 (Main Flow Steps 41–44, AF-25, AF-26, EF-22..24, BR-GL-TRACE-64..70): In / Xuất Sổ kế toán theo đúng bộ lọc và phạm vi dữ liệu hiện tại. */
+export async function exportAccountingBookUcGl14(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company: w.companyId,
+    company_id: w.companyId,
+    book_type: d.bookType || d.book_type || undefined,
+    report_name: d.reportName || d.report_name || undefined,
+    period: d.period || d.periodCode || d.period_code || undefined,
+    from_date: d.fromDate || d.from_date ? toApiDate(d.fromDate || d.from_date) : undefined,
+    to_date: d.toDate || d.to_date ? toApiDate(d.toDate || d.to_date) : undefined,
+    account_code: d.accountCode || d.account_code || undefined,
+    include_child_accounts: d.includeChildAccounts ?? d.include_child_accounts ?? true,
+    reciprocal_account_code: d.reciprocalAccountCode || d.reciprocal_account_code || undefined,
+    voucher_number: d.voucherNumber || d.voucher_number || undefined,
+    entry_type: d.entryType || d.entry_type || undefined,
+    source_module: d.sourceModule || d.source_module || undefined,
+    entry_status: d.entryStatus || d.entry_status || undefined,
+    currency_code: d.currencyCode || d.currency_code || undefined,
+    keyword: d.keyword || undefined,
+    format: d.format || d.exportFormat || "EXCEL",
+  };
+  return await w.post(`${GL_LEDGER_INQUIRY}export/`, payload);
+}
+
+
+
+
+
+
+
+
+// ============================================================================
+// UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU (10 LUỒNG NGHIỆP VỤ A–J)
+// ============================================================================
+const GL_OPENING_BALANCES = "/api/v1/general-ledger/opening-balances/";
+
+/** UC-GL-15 (MF-01..03): Truy xuất toàn bộ 10 nhóm số dư ban đầu, trạng thái cân đối Nợ/Có, tổng hợp tài khoản cha-con (BR07), version (EF-21) và trạng thái khóa kỳ (EF-19). */
+export async function fetchOpeningBalancesUcGl15(w: ApiWriter) {
+  return await w.get(`${GL_OPENING_BALANCES}?company_id=${encodeURIComponent(w.companyId)}&_=${Date.now()}`);
+}
+
+/** UC-GL-15 (Luồng A–J, AF-01..02): Lưu đồng bộ một hoặc nhiều nhóm số dư ban đầu, kiểm tra EF-01..23 và BR01..42. */
+export async function saveOpeningBalancesUcGl15(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company_id: w.companyId,
+    ...d,
+  };
+  return await w.post(GL_OPENING_BALANCES, payload);
+}
+
+/** UC-GL-15 (AF-01, AF-02, AF-10, AF-12, AF-13): Thêm mới hoặc Sửa một bản ghi số dư ban đầu (kèm hỗ trợ Lưu và Thêm / Lưu và Đóng / Lưu và In). */
+export async function saveOpeningBalanceItemUcGl15(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company_id: w.companyId,
+    category: d.category,
+    editing_id: d.editingId || d.editing_id || undefined,
+    action_mode: d.actionMode || d.action_mode || "SAVE",
+    expected_version: d.expectedVersion ?? d.expected_version ?? undefined,
+    simulate_print_error: d.simulatePrintError ?? d.simulate_print_error ?? undefined,
+    item: d.item || {},
+  };
+  return await w.post(`${GL_OPENING_BALANCES}save-item/`, payload);
+}
+
+/** UC-GL-15 (AF-11, EF-19): Xóa một bản ghi số dư ban đầu đã lưu, kiểm tra khóa kỳ và chứng từ phụ thuộc. */
+export async function deleteOpeningBalanceItemUcGl15(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company_id: w.companyId,
+    category: d.category,
+    item_id: d.itemId || d.item_id || d.id || d.code,
+  };
+  return await w.post(`${GL_OPENING_BALANCES}delete-item/`, payload);
+}
+
+/** UC-GL-15 (AF-03, EF-18, BR41): Nhập số dư ban đầu từ tệp Excel với kiểm tra cấu trúc và quy tắc nghiệp vụ từng dòng. */
+export async function importOpeningBalancesExcelUcGl15(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company_id: w.companyId,
+    category: d.category,
+    rows: Array.isArray(d.rows) ? d.rows : [],
+    atomic: d.atomic ?? true,
+    replace_existing: d.replaceExisting ?? d.replace_existing ?? false,
+  };
+  return await w.post(`${GL_OPENING_BALANCES}import-excel/`, payload);
+}
+
+/** UC-GL-15 (AF-09): Xem danh sách chứng từ / bản ghi số dư ban đầu đã khai báo. */
+export async function fetchOpeningBalanceVouchersUcGl15(w: ApiWriter, category?: string) {
+  const catParam = category ? `&category=${encodeURIComponent(category)}` : "";
+  return await w.get(`${GL_OPENING_BALANCES}vouchers/?company_id=${encodeURIComponent(w.companyId)}${catParam}&_=${Date.now()}`);
+}
+
+/** UC-GL-15 (AF-13, EF-17, BR34, BR35): Tạo dữ liệu in Phiếu/Bảng kê số dư ban đầu từ dữ liệu đã lưu thành công. */
+export async function printOpeningBalanceUcGl15(w: ApiWriter, d: Row = {}) {
+  const payload: Row = {
+    company_id: w.companyId,
+    category: d.category || "accounts",
+    item_id: d.itemId || d.item_id || undefined,
+    simulate_print_error: d.simulatePrintError ?? d.simulate_print_error ?? undefined,
+  };
+  return await w.post(`${GL_OPENING_BALANCES}print/`, payload);
+}
+
+// ============================================================================
+// UC-RPT-01: XEM DASHBOARD TỔNG QUAN (DASH-01 .. DASH-12)
+// ============================================================================
+const RPT_DASHBOARD = "/api/v1/reports/dashboard/";
+
+function buildDashboardQueryParams(companyId: string, d: Row = {}) {
+  const q = new URLSearchParams({ company_id: companyId });
+  if (d.period || d.periodCode || d.period_code) q.set("period", String(d.period || d.periodCode || d.period_code));
+  if (d.periodId || d.period_id) q.set("period_id", String(d.periodId || d.period_id));
+  if (d.fromDate || d.from_date) q.set("from_date", toApiDate(d.fromDate || d.from_date));
+  if (d.toDate || d.to_date) q.set("to_date", toApiDate(d.toDate || d.to_date));
+  if (d.asOfDate || d.as_of_date) q.set("as_of_date", toApiDate(d.asOfDate || d.as_of_date));
+  if (d.branchId || d.branch_id) q.set("branch_id", String(d.branchId || d.branch_id));
+  if (d.departmentId || d.department_id) q.set("department_id", String(d.departmentId || d.department_id));
+  if (d.comparisonMode || d.comparison_mode) q.set("comparison_mode", String(d.comparisonMode || d.comparison_mode));
+  if (d.basis) q.set("basis", String(d.basis));
+  if (d.refresh) q.set("refresh", "true");
+  if (d.moduleFilter || d.module_filter || d.module) q.set("module", String(d.moduleFilter || d.module_filter || d.module));
+  if (d.statusFilter || d.status_filter || d.status) q.set("status", String(d.statusFilter || d.status_filter || d.status));
+  if (d.limit) q.set("limit", String(d.limit));
+  return q.toString();
+}
+
+/** UC-RPT-01 (MF-02, MF-03, DR-RPT-01, DR-RPT-09): Nạp cấu hình Dashboard, danh mục kỳ kế toán thật, chi nhánh trong Data Scope và danh mục 12 thành phần DASH-01..DASH-12. */
+export async function fetchDashboardConfigUcRpt01(w: ApiWriter) {
+  return await w.get(`${RPT_DASHBOARD}config/?company_id=${encodeURIComponent(w.companyId)}`);
+}
+
+/** UC-RPT-01 (DR-RPT-09): Lưu cấu hình cá nhân hóa hoặc mặc định Dashboard của người dùng/doanh nghiệp. */
+export async function saveDashboardConfigUcRpt01(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DASHBOARD}config/`, {
+    company_id: w.companyId,
+    is_company_default: Boolean(d.isCompanyDefault ?? d.is_company_default ?? false),
+    default_period_type: d.defaultPeriodType || d.default_period_type || "CURRENT_PERIOD",
+    default_branch_id: d.defaultBranchId || d.default_branch_id || null,
+    default_comparison_mode: d.defaultComparisonMode || d.default_comparison_mode || "PREVIOUS_PERIOD",
+    revenue_basis: d.revenueBasis || d.revenue_basis || "GL",
+    visible_widgets: Array.isArray(d.visibleWidgets || d.visible_widgets) ? (d.visibleWidgets || d.visible_widgets) : undefined,
+    widget_order: Array.isArray(d.widgetOrder || d.widget_order) ? (d.widgetOrder || d.widget_order) : undefined,
+    auto_refresh_seconds: d.autoRefreshSeconds ?? d.auto_refresh_seconds ?? 0,
+  });
+}
+
+/** UC-RPT-01 (MF-04, MF-05, DASH-01..DASH-12, BR-RPT-DASH-01..70): Nạp toàn bộ dữ liệu tổng quan Dashboard (4 KPI, 2 biểu đồ, 4 widget công nợ/tồn kho/thuế, 2 danh sách điều hành) với cô lập lỗi từng thành phần. */
+export async function fetchDashboardOverviewUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}overview/?${qs}`);
+}
+
+/** UC-RPT-01 (AF-05, BR-RPT-DASH-59): Làm mới (Invalidate Cache & Tính lại) toàn bộ hoặc một số thành phần Dashboard. */
+export async function refreshDashboardUcRpt01(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DASHBOARD}refresh/`, {
+    company_id: w.companyId,
+    period: d.period || d.periodCode || d.period_code || undefined,
+    branch_id: d.branchId || d.branch_id || undefined,
+    comparison_mode: d.comparisonMode || d.comparison_mode || undefined,
+    basis: d.basis || undefined,
+    widgets: Array.isArray(d.widgets) ? d.widgets : undefined,
+  });
+}
+
+/** UC-RPT-01 (DASH-05): Nạp dữ liệu biểu đồ Dòng tiền thu - chi theo kỳ/ngày/tháng. */
+export async function fetchDashboardCashFlowUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}cash-flow/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-06): Nạp dữ liệu biểu đồ Doanh thu, Chi phí và Lợi nhuận theo kỳ. */
+export async function fetchDashboardProfitabilityUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}profitability/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-07): Nạp dữ liệu Tổng quan Công nợ phải thu (AR) và tuổi nợ. */
+export async function fetchDashboardReceivablesUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}receivables/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-08): Nạp dữ liệu Tổng quan Công nợ phải trả (AP) và tuổi nợ. */
+export async function fetchDashboardPayablesUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}payables/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-09): Nạp dữ liệu Tổng quan Tồn kho (INV) và cảnh báo dưới định mức tối thiểu. */
+export async function fetchDashboardInventoryUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}inventory/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-10): Nạp dữ liệu Tổng quan Nghĩa vụ thuế (TAX) và tờ khai sắp đến hạn. */
+export async function fetchDashboardTaxObligationsUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}tax-obligations/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-11): Nạp Danh sách công việc cần xử lý (Approval / Chờ ghi sổ / Cảnh báo tồn kho / Thuế). */
+export async function fetchDashboardTasksUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}tasks/?${qs}`);
+}
+
+/** UC-RPT-01 (DASH-12): Nạp Danh sách chứng từ gần đây có phân lọc theo phân hệ và trạng thái. */
+export async function fetchDashboardRecentDocumentsUcRpt01(w: ApiWriter, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}recent-documents/?${qs}`);
+}
+
+/** UC-RPT-01 (MF-06, AF-06..AF-08, BR-RPT-DASH-60..63): Drill-down chi tiết chỉ tiêu KPI (DASH-01..DASH-10) để mở danh sách chứng từ/báo cáo nguồn kèm bộ lọc đồng bộ. */
+export async function fetchDashboardMetricDetailsUcRpt01(w: ApiWriter, metricCode: string, d: Row = {}) {
+  const qs = buildDashboardQueryParams(w.companyId, d);
+  return await w.get(`${RPT_DASHBOARD}metrics/${encodeURIComponent(metricCode)}/details/?${qs}`);
+}
+
+/* ============================================================================
+ * UC-RPT-02 – Xem bộ báo cáo tài chính (Financial Statement Bundles)
+ * ============================================================================ */
+
+const RPT_FS_BUNDLES = "/api/v1/reports/financial-bundles/";
+const RPT_FS_STATEMENTS = "/api/v1/reports/financial-statements/";
+
+function buildFsBundleQueryParams(companyId: string | null | undefined, d: Row = {}): string {
+  const p = new URLSearchParams();
+  const cid = String(d.company_id || companyId || "");
+  if (cid) p.set("company_id", cid);
+  for (const key of [
+    "fiscal_year",
+    "fiscal_period_id",
+    "bundle_type",
+    "reporting_scope",
+    "branch_id",
+    "bundle_status",
+    "bundle_version",
+    "current_only",
+    "show_zero_lines",
+  ]) {
+    if (d[key] !== undefined && d[key] !== null && d[key] !== "") {
+      p.set(key, String(d[key]));
+    }
+  }
+  return p.toString();
+}
+
+export async function fetchFinancialBundleTypesUcRpt02(w: ApiWriter, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}types/?${qs}`);
+}
+
+export async function fetchFinancialBundlesListUcRpt02(w: ApiWriter, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}?${qs}`);
+}
+
+export async function createFinancialBundleUcRpt02(w: ApiWriter, d: Row = {}) {
+  return await w.post(RPT_FS_BUNDLES, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialBundleDetailUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/?${qs}`);
+}
+
+export async function fetchFinancialBundleComponentsUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/components/?${qs}`);
+}
+
+export async function fetchFinancialBundleValidationUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/validation/?${qs}`);
+}
+
+export async function validateFinancialBundleUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/validate/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialBundleHistoryUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/history/?${qs}`);
+}
+
+export async function fetchFinancialBundleSupportingReportsUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/supporting-reports/?${qs}`);
+}
+
+export async function submitFinancialBundleReviewUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/submit-review/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function approveFinancialBundleUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/approve/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportFinancialBundleUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+  return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function generateFinancialStatementRunUcRpt02(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_FS_STATEMENTS}generate/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialStatementRunDetailUcRpt02(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/?${qs}`);
+}
+
+export async function fetchFinancialStatementRunLinesUcRpt02(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/lines/?${qs}`);
+}
+
+export async function approveFinancialStatementRunUcRpt02(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/approve/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialStatementLineSourcesUcRpt02(
+  w: ApiWriter,
+  runId: string,
+  lineId: string,
+  d: Row = {},
+) {
+  const qs = buildFsBundleQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/line/${encodeURIComponent(lineId)}/sources/?${qs}`);
+}
+
+/* ============================================================================
+ * UC-RPT-03 – Xem bảng cân đối kế toán / Báo cáo tình hình tài chính (B01-DN)
+ * ============================================================================ */
+
+const RPT_FINANCIAL_POSITION = "/api/v1/reports/financial-position/";
+
+function buildFinancialPositionQueryParams(companyId: string | null | undefined, d: Row = {}): string {
+  const p = new URLSearchParams();
+  const cid = String(d.company_id || companyId || "");
+  if (cid) p.set("company_id", cid);
+  for (const key of [
+    "template_code",
+    "template_id",
+    "template_version_id",
+    "fiscal_year",
+    "fiscal_period_id",
+    "period_id",
+    "comparison_period_id",
+    "reporting_scope",
+    "branch_id",
+    "run_status",
+    "display_unit",
+    "hide_zero_lines",
+    "show_zero_lines",
+    "search",
+    "column",
+    "bundle_id",
+  ]) {
+    if (d[key] !== undefined && d[key] !== null && d[key] !== "") {
+      p.set(key, String(d[key]));
+    }
+  }
+  return p.toString();
+}
+
+export async function fetchFinancialPositionTemplatesUcRpt03(w: ApiWriter, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}templates/?${qs}`);
+}
+
+export async function fetchFinancialPositionTemplateVersionsUcRpt03(
+  w: ApiWriter,
+  templateIdOrCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}templates/${encodeURIComponent(templateIdOrCode)}/versions/?${qs}`);
+}
+
+export async function fetchFinancialPositionParametersUcRpt03(w: ApiWriter, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}parameters/?${qs}`);
+}
+
+export async function fetchFinancialPositionRunsUcRpt03(w: ApiWriter, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}runs/?${qs}`);
+}
+
+export async function generateFinancialPositionRunUcRpt03(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_POSITION}runs/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialPositionRunDetailUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/?${qs}`);
+}
+
+export async function fetchFinancialPositionRunLinesUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/lines/?${qs}`);
+}
+
+export async function fetchFinancialPositionRunValidationUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/validation/?${qs}`);
+}
+
+export async function validateFinancialPositionRunUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/validate/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialPositionLineCalculationUcRpt03(
+  w: ApiWriter,
+  runId: string,
+  lineIdOrCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(lineIdOrCode)}/calculation/?${qs}`,
+  );
+}
+
+export async function fetchFinancialPositionLineDrilldownUcRpt03(
+  w: ApiWriter,
+  runId: string,
+  lineIdOrCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(lineIdOrCode)}/drilldown/?${qs}`,
+  );
+}
+
+export async function fetchFinancialPositionRunHistoryUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialPositionQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/history/?${qs}`);
+}
+
+export async function submitFinancialPositionRunReviewUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/submit-review/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function approveFinancialPositionRunUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/approve/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportFinancialPositionRunUcRpt03(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_POSITION}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+
+
+/* ============================================================================
+ * UC-RPT-04 – Xem báo cáo kết quả hoạt động kinh doanh (B02-DN / B02-DNKLT / B02a-DN / B02b-DN)
+ * ============================================================================ */
+
+const RPT_BUSINESS_RESULT = "/api/v1/reports/business-result/";
+
+function buildBusinessResultQueryParams(companyId: string | null | undefined, d: Row = {}): string {
+  const p = new URLSearchParams();
+  const cid = String(d.company_id || companyId || "");
+  if (cid) p.set("company_id", cid);
+  for (const key of [
+    "template_code",
+    "legal_form_code",
+    "template_id",
+    "template_version_id",
+    "going_concern_status",
+    "period_type",
+    "fiscal_year",
+    "fiscal_period_id",
+    "period_id",
+    "comparison_period_id",
+    "reporting_scope",
+    "branch_id",
+    "run_status",
+    "display_unit",
+    "negative_format",
+    "hide_zero_lines",
+    "search",
+    "slot_code",
+    "require_saved_run",
+    "strict_completeness",
+  ]) {
+    if (d[key] !== undefined && d[key] !== null && d[key] !== "") {
+      p.set(key, String(d[key]));
+    }
+  }
+  return p.toString();
+}
+
+export async function fetchBusinessResultTemplatesUcRpt04(w: ApiWriter, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}templates/?${qs}`);
+}
+
+export async function fetchBusinessResultTemplateVersionsUcRpt04(
+  w: ApiWriter,
+  templateIdOrCode: string = "",
+  d: Row = {},
+) {
+  const qs = buildBusinessResultQueryParams(w.companyId, {
+    ...d,
+    ...(templateIdOrCode ? { template_code: templateIdOrCode } : {}),
+  });
+  return await w.get(`${RPT_BUSINESS_RESULT}template-versions/?${qs}`);
+}
+
+export async function fetchBusinessResultParametersUcRpt04(w: ApiWriter, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}parameters/?${qs}`);
+}
+
+export async function fetchBusinessResultRunsUcRpt04(w: ApiWriter, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}runs/?${qs}`);
+}
+
+export async function generateBusinessResultRunUcRpt04(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_BUSINESS_RESULT}runs/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchBusinessResultRunDetailUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/?${qs}`);
+}
+
+export async function fetchBusinessResultRunLinesUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/lines/?${qs}`);
+}
+
+export async function fetchBusinessResultRunValuesUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/values/?${qs}`);
+}
+
+export async function fetchBusinessResultRunValidationUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/validation/?${qs}`);
+}
+
+export async function validateBusinessResultRunUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/validate/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchBusinessResultLineCalculationUcRpt04(
+  w: ApiWriter,
+  runId: string,
+  indicatorCode: string,
+  d: Row = {},
+) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(indicatorCode)}/calculation/?${qs}`,
+  );
+}
+
+export async function fetchBusinessResultLineDrilldownUcRpt04(
+  w: ApiWriter,
+  runId: string,
+  indicatorCode: string,
+  d: Row = {},
+) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(indicatorCode)}/drilldown/?${qs}`,
+  );
+}
+
+export async function fetchBusinessResultRunHistoryUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildBusinessResultQueryParams(w.companyId, d);
+  return await w.get(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/history/?${qs}`);
+}
+
+export async function submitBusinessResultRunReviewUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/submit-review/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function approveBusinessResultRunUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/approve/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportBusinessResultRunUcRpt04(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_BUSINESS_RESULT}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+
+
+/* ============================================================================
+ * UC-RPT-05 – Xem báo cáo lưu chuyển tiền tệ (B03-DN / B03-DNKLT / B03a-DN / B03b-DN)
+ * ============================================================================ */
+
+const RPT_CASH_FLOW = "/api/v1/reports/cash-flow/";
+
+function buildCashFlowQueryParams(companyId: string | null | undefined, d: Row = {}): string {
+  const p = new URLSearchParams();
+  const cid = String(d.company_id || companyId || "");
+  if (cid) p.set("company_id", cid);
+  for (const key of [
+    "template_code",
+    "legal_form_code",
+    "template_id",
+    "template_version_id",
+    "cash_flow_method",
+    "going_concern_status",
+    "period_type",
+    "fiscal_year",
+    "fiscal_period_id",
+    "period_id",
+    "comparison_period_id",
+    "reporting_scope",
+    "branch_id",
+    "run_status",
+    "display_unit",
+    "negative_format",
+    "hide_zero_lines",
+    "search",
+    "slot_code",
+    "require_saved_run",
+  ]) {
+    if (d[key] !== undefined && d[key] !== null && d[key] !== "") {
+      p.set(key, String(d[key]));
+    }
+  }
+  return p.toString();
+}
+
+export async function fetchCashFlowTemplatesUcRpt05(w: ApiWriter, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}templates/?${qs}`);
+}
+
+export async function fetchCashFlowTemplateVersionsUcRpt05(
+  w: ApiWriter,
+  templateIdOrCode: string = "",
+  d: Row = {},
+) {
+  const qs = buildCashFlowQueryParams(w.companyId, {
+    ...d,
+    ...(templateIdOrCode ? { template_code: templateIdOrCode } : {}),
+  });
+  return await w.get(`${RPT_CASH_FLOW}template-versions/?${qs}`);
+}
+
+export async function fetchCashFlowParametersUcRpt05(w: ApiWriter, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}parameters/?${qs}`);
+}
+
+export async function fetchCashFlowRunsUcRpt05(w: ApiWriter, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/?${qs}`);
+}
+
+export async function generateCashFlowRunUcRpt05(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_CASH_FLOW}runs/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchCashFlowRunDetailUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/?${qs}`);
+}
+
+export async function fetchCashFlowRunLinesUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/lines/?${qs}`);
+}
+
+export async function fetchCashFlowRunValuesUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/values/?${qs}`);
+}
+
+export async function fetchCashFlowRunValidationUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/validation/?${qs}`);
+}
+
+export async function validateCashFlowRunUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/validate/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchCashFlowLineCalculationUcRpt05(
+  w: ApiWriter,
+  runId: string,
+  indicatorCode: string,
+  d: Row = {},
+) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(indicatorCode)}/calculation/?${qs}`,
+  );
+}
+
+export async function fetchCashFlowLineDrilldownUcRpt05(
+  w: ApiWriter,
+  runId: string,
+  indicatorCode: string,
+  d: Row = {},
+) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(indicatorCode)}/drilldown/?${qs}`,
+  );
+}
+
+export async function fetchCashFlowUnclassifiedTransactionsUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/unclassified-transactions/?${qs}`);
+}
+
+export async function fetchCashFlowReconciliationUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/reconciliation/?${qs}`);
+}
+
+export async function fetchCashFlowRunHistoryUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildCashFlowQueryParams(w.companyId, d);
+  return await w.get(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/history/?${qs}`);
+}
+
+export async function submitCashFlowRunReviewUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/submit-review/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function approveCashFlowRunUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/approve/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportCashFlowRunUcRpt05(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_CASH_FLOW}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+/* ============================================================================
+ * UC-RPT-06 – Xem thuyết minh báo cáo tài chính (B09-DN / B09-DNKLT / B09a-DN)
+ * ============================================================================ */
+
+const RPT_FINANCIAL_NOTES = "/api/v1/reports/financial-notes/";
+
+function buildFinancialNotesQueryParams(companyId: string | null | undefined, d: Row = {}): string {
+  const p = new URLSearchParams();
+  const cid = String(d.company_id || companyId || "");
+  if (cid) p.set("company_id", cid);
+  for (const key of [
+    "template_code",
+    "legal_form_code",
+    "template_id",
+    "template_version_id",
+    "going_concern_status",
+    "period_type",
+    "fiscal_year",
+    "fiscal_period_id",
+    "period_id",
+    "comparison_period_id",
+    "reporting_scope",
+    "branch_id",
+    "run_status",
+    "display_unit",
+    "negative_format",
+    "hide_not_applicable",
+    "search",
+    "q",
+    "slot_code",
+    "require_saved_run",
+  ]) {
+    if (d[key] !== undefined && d[key] !== null && d[key] !== "") {
+      p.set(key, String(d[key]));
+    }
+  }
+  return p.toString();
+}
+
+export async function fetchFinancialNotesTemplatesUcRpt06(w: ApiWriter, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}templates/?${qs}`);
+}
+
+export async function fetchFinancialNotesTemplateVersionsUcRpt06(
+  w: ApiWriter,
+  templateIdOrCode: string = "",
+  d: Row = {},
+) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  if (templateIdOrCode) {
+    return await w.get(
+      `${RPT_FINANCIAL_NOTES}templates/${encodeURIComponent(templateIdOrCode)}/versions/?${qs}`,
+    );
+  }
+  return await w.get(`${RPT_FINANCIAL_NOTES}template-versions/?${qs}`);
+}
+
+export async function fetchFinancialNotesParametersUcRpt06(w: ApiWriter, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}parameters/?${qs}`);
+}
+
+export async function fetchFinancialNotesRunsUcRpt06(w: ApiWriter, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/?${qs}`);
+}
+
+export async function generateFinancialNotesRunUcRpt06(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_NOTES}runs/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchFinancialNotesRunDetailUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/?${qs}`);
+}
+
+export async function fetchFinancialNotesRunSectionsUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/sections/?${qs}`);
+}
+
+export async function fetchFinancialNotesSectionDetailUcRpt06(
+  w: ApiWriter,
+  runId: string,
+  sectionCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/sections/${encodeURIComponent(sectionCode)}/?${qs}`,
+  );
+}
+
+export async function fetchFinancialNotesItemDetailUcRpt06(
+  w: ApiWriter,
+  runId: string,
+  noteCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(noteCode)}/?${qs}`,
+  );
+}
+
+export async function updateFinancialNotesItemDetailUcRpt06(
+  w: ApiWriter,
+  runId: string,
+  noteCode: string,
+  d: Row = {},
+) {
+  return await w.post(
+    `${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(noteCode)}/`,
+    {
+      company_id: d.company_id || w.companyId,
+      ...d,
+    },
+  );
+}
+
+export async function fetchFinancialNotesItemTablesUcRpt06(
+  w: ApiWriter,
+  runId: string,
+  noteCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(noteCode)}/tables/?${qs}`,
+  );
+}
+
+export async function fetchFinancialNotesTableRowsUcRpt06(
+  w: ApiWriter,
+  runId: string,
+  tableIdOrCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/tables/${encodeURIComponent(tableIdOrCode)}/rows/?${qs}`,
+  );
+}
+
+export async function fetchFinancialNotesItemSourcesUcRpt06(
+  w: ApiWriter,
+  runId: string,
+  noteCode: string,
+  d: Row = {},
+) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(
+    `${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/items/${encodeURIComponent(noteCode)}/sources/?${qs}`,
+  );
+}
+
+export async function fetchFinancialNotesRunValidationUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/validation/?${qs}`);
+}
+
+export async function fetchFinancialNotesRunCompletenessUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/completeness/?${qs}`);
+}
+
+export async function fetchFinancialNotesRunHistoryUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/history/?${qs}`);
+}
+
+export async function searchFinancialNotesRunUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = buildFinancialNotesQueryParams(w.companyId, d);
+  return await w.get(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/search/?${qs}`);
+}
+
+export async function validateFinancialNotesRunUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/validate/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function submitFinancialNotesRunReviewUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/submit-review/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function approveFinancialNotesRunUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/approve/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportFinancialNotesRunUcRpt06(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_FINANCIAL_NOTES}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-07 – Xem báo cáo thuế (Tax Reports)
+// ============================================================================
+const RPT_TAX = "/api/v1/reports/tax/";
+
+export async function fetchTaxReportCatalogueUcRpt07(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.tax_type) qs.set("tax_type", String(d.tax_type));
+  if (d.report_category) qs.set("report_category", String(d.report_category));
+  return await w.get(`${RPT_TAX}catalogue/?${qs.toString()}`);
+}
+
+export async function fetchTaxReportSchemaUcRpt07(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_TAX}${encodeURIComponent(reportCode)}/schema/?${qs.toString()}`);
+}
+
+export async function fetchTaxReportParametersUcRpt07(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_TAX}${encodeURIComponent(reportCode)}/parameters/?${qs.toString()}`);
+}
+
+export async function fetchTaxReportFormsUcRpt07(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_TAX}forms/?${qs.toString()}`);
+}
+
+export async function fetchTaxReportFormVersionsUcRpt07(w: ApiWriter, formCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_TAX}forms/${encodeURIComponent(formCode)}/versions/?${qs.toString()}`);
+}
+
+export async function queryTaxReportUcRpt07(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_TAX}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchTaxReportRunHeaderUcRpt07(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/`);
+}
+
+export async function fetchTaxReportRunRowsUcRpt07(w: ApiWriter, runId: string | number, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  if (d.only_warnings) qs.set("only_warnings", String(d.only_warnings));
+  const queryStr = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/rows/${queryStr}`);
+}
+
+export async function fetchTaxReportRunSummaryUcRpt07(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/summary/`);
+}
+
+export async function fetchTaxReportRunValidationUcRpt07(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/validation/`);
+}
+
+export async function fetchTaxReportRowSourcesUcRpt07(w: ApiWriter, runId: string | number, rowId: string | number) {
+  return await w.get(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchTaxReportRunHistoryUcRpt07(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/history/`);
+}
+
+export async function fetchTaxReconciliationDifferencesUcRpt07(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_TAX}reconciliation-runs/${encodeURIComponent(String(runId))}/differences/`);
+}
+
+export async function exportTaxReportRunUcRpt07(w: ApiWriter, runId: string | number, d: Row = {}) {
+  return await w.post(`${RPT_TAX}runs/${encodeURIComponent(String(runId))}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-08 – Xem báo cáo mua hàng (Purchase Reports)
+// ============================================================================
+const RPT_PURCHASE = "/api/v1/reports/purchase/";
+
+export async function fetchPurchaseReportCatalogueUcRpt08(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_category_type) qs.set("report_category_type", String(d.report_category_type));
+  if (d.report_category) qs.set("report_category", String(d.report_category));
+  return await w.get(`${RPT_PURCHASE}catalogue/?${qs.toString()}`);
+}
+
+export async function fetchPurchaseReportSchemaUcRpt08(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_PURCHASE}${encodeURIComponent(reportCode)}/schema/?${qs.toString()}`);
+}
+
+export async function fetchPurchaseReportParametersUcRpt08(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_PURCHASE}${encodeURIComponent(reportCode)}/parameters/?${qs.toString()}`);
+}
+
+export async function queryPurchaseReportUcRpt08(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_PURCHASE}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchPurchaseReportRunHeaderUcRpt08(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/`);
+}
+
+export async function fetchPurchaseReportRunRowsUcRpt08(w: ApiWriter, runId: string | number, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  if (d.only_warnings) qs.set("only_warnings", String(d.only_warnings));
+  const queryStr = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/rows/${queryStr}`);
+}
+
+export async function fetchPurchaseReportRunSummaryUcRpt08(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/summary/`);
+}
+
+export async function fetchPurchaseReportRunValidationUcRpt08(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/validation/`);
+}
+
+export async function fetchPurchaseReportRowSourcesUcRpt08(w: ApiWriter, runId: string | number, rowId: string | number) {
+  return await w.get(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchPurchaseReportRunHistoryUcRpt08(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/history/`);
+}
+
+export async function fetchPurchaseReportSavedFiltersUcRpt08(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_code) qs.set("report_code", String(d.report_code));
+  return await w.get(`${RPT_PURCHASE}saved/?${qs.toString()}`);
+}
+
+export async function savePurchaseReportFilterUcRpt08(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_PURCHASE}saved/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchPurchaseReconciliationDifferencesUcRpt08(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_PURCHASE}reconciliation/${encodeURIComponent(String(runId))}/differences/`);
+}
+
+export async function exportPurchaseReportRunUcRpt08(w: ApiWriter, runId: string | number, d: Row = {}) {
+  return await w.post(`${RPT_PURCHASE}runs/${encodeURIComponent(String(runId))}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-09: Báo cáo bán hàng (36 báo cáo)
+// ============================================================================
+const RPT_SALES = "/api/v1/reports/sales/";
+
+export async function fetchSalesReportCatalogueUcRpt09(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_category_type) qs.set("report_category_type", String(d.report_category_type));
+  if (d.report_category) qs.set("report_category", String(d.report_category));
+  return await w.get(`${RPT_SALES}catalogue/?${qs.toString()}`);
+}
+
+export async function fetchSalesReportSchemaUcRpt09(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_SALES}${encodeURIComponent(reportCode)}/schema/?${qs.toString()}`);
+}
+
+export async function fetchSalesReportParametersUcRpt09(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_SALES}${encodeURIComponent(reportCode)}/parameters/?${qs.toString()}`);
+}
+
+export async function querySalesReportUcRpt09(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_SALES}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchSalesReportRunHeaderUcRpt09(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/`);
+}
+
+export async function fetchSalesReportRunRowsUcRpt09(w: ApiWriter, runId: string | number, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  if (d.only_warnings) qs.set("only_warnings", String(d.only_warnings));
+  const queryStr = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/rows/${queryStr}`);
+}
+
+export async function fetchSalesReportRunSummaryUcRpt09(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/summary/`);
+}
+
+export async function fetchSalesReportRunValidationUcRpt09(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/validation/`);
+}
+
+export async function fetchSalesReportRowSourcesUcRpt09(w: ApiWriter, runId: string | number, rowId: string | number) {
+  return await w.get(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchSalesReportRunHistoryUcRpt09(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/history/`);
+}
+
+export async function fetchSalesReportSavedFiltersUcRpt09(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_code) qs.set("report_code", String(d.report_code));
+  return await w.get(`${RPT_SALES}saved/?${qs.toString()}`);
+}
+
+export async function saveSalesReportFilterUcRpt09(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_SALES}saved/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchSalesOrderFulfillmentUcRpt09(w: ApiWriter, orderId: string | number) {
+  return await w.get(`${RPT_SALES}order-fulfillment/${encodeURIComponent(String(orderId))}/`);
+}
+
+export async function fetchSalesContractFulfillmentUcRpt09(w: ApiWriter, contractId: string | number) {
+  return await w.get(`${RPT_SALES}contract-fulfillment/${encodeURIComponent(String(contractId))}/`);
+}
+
+export async function fetchSalesProfitabilityUcRpt09(w: ApiWriter, targetType: string, targetId: string | number) {
+  return await w.get(`${RPT_SALES}profitability/${encodeURIComponent(targetType)}/${encodeURIComponent(String(targetId))}/`);
+}
+
+export async function exportSalesReportRunUcRpt09(w: ApiWriter, runId: string | number, d: Row = {}) {
+  return await w.post(`${RPT_SALES}runs/${encodeURIComponent(String(runId))}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-10: Báo cáo công nợ (49 báo cáo: 18 AP + 31 AR / Combined)
+// ============================================================================
+const RPT_DEBT = "/api/v1/reports/debt/";
+
+export async function fetchDebtReportCatalogueUcRpt10(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_direction) qs.set("report_direction", String(d.report_direction));
+  if (d.report_category_type) qs.set("report_category_type", String(d.report_category_type));
+  return await w.get(`${RPT_DEBT}catalogue/?${qs.toString()}`);
+}
+
+export async function fetchDebtReportSchemaUcRpt10(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_DEBT}${encodeURIComponent(reportCode)}/schema/?${qs.toString()}`);
+}
+
+export async function fetchDebtReportParametersUcRpt10(w: ApiWriter, reportCode: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_DEBT}${encodeURIComponent(reportCode)}/parameters/?${qs.toString()}`);
+}
+
+export async function queryDebtReportUcRpt10(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_DEBT}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchDebtReportRunHeaderUcRpt10(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/`);
+}
+
+export async function fetchDebtReportRunRowsUcRpt10(w: ApiWriter, runId: string | number, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  if (d.only_warnings) qs.set("only_warnings", String(d.only_warnings));
+  const queryStr = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/rows/${queryStr}`);
+}
+
+export async function fetchDebtReportRunSummaryUcRpt10(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/summary/`);
+}
+
+export async function fetchDebtReportRunValidationUcRpt10(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/validation/`);
+}
+
+export async function fetchDebtReportRowSourcesUcRpt10(w: ApiWriter, runId: string | number, rowId: string | number) {
+  return await w.get(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchDebtReportRunHistoryUcRpt10(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/history/`);
+}
+
+export async function fetchDebtReportSavedFiltersUcRpt10(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_code) qs.set("report_code", String(d.report_code));
+  return await w.get(`${RPT_DEBT}saved/?${qs.toString()}`);
+}
+
+export async function saveDebtReportFilterUcRpt10(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DEBT}saved/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchDebtAgingAnalysisUcRpt10(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DEBT}aging-analysis/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchDebtConfirmationDocumentUcRpt10(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DEBT}confirmation-document/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchDebtContractCombinedUcRpt10(w: ApiWriter, contractId: string | number) {
+  return await w.get(`${RPT_DEBT}contract-combined/${encodeURIComponent(String(contractId))}/`);
+}
+
+export async function fetchDebtReconciliationDifferencesUcRpt10(w: ApiWriter, runId: string | number) {
+  return await w.get(`${RPT_DEBT}reconciliation/${encodeURIComponent(String(runId))}/differences/`);
+}
+
+export async function exportDebtReportRunUcRpt10(w: ApiWriter, runId: string | number, d: Row = {}) {
+  return await w.post(`${RPT_DEBT}runs/${encodeURIComponent(String(runId))}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-11: Báo cáo tiền (Cash, Bank, Transfers, Loans)
+// ============================================================================
+
+const RPT_MONEY = "/api/v1/reports/money/";
+
+export async function fetchMoneyReportCatalogueUcRpt11(w: ApiWriter, companyId?: string) {
+  const cid = companyId || w.companyId;
+  return await w.get(`${RPT_MONEY}catalogue/?company_id=${encodeURIComponent(cid)}`);
+}
+
+export async function fetchMoneyReportSchemaUcRpt11(w: ApiWriter, reportCode: string) {
+  return await w.get(`${RPT_MONEY}${encodeURIComponent(reportCode)}/schema/`);
+}
+
+export async function fetchMoneyReportParametersUcRpt11(w: ApiWriter, reportCode: string) {
+  return await w.get(`${RPT_MONEY}${encodeURIComponent(reportCode)}/parameters/`);
+}
+
+export async function queryMoneyReportUcRpt11(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_MONEY}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchMoneyReportRunDetailsUcRpt11(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/`);
+}
+
+export async function fetchMoneyReportRunRowsUcRpt11(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  const queryStr = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/rows/${queryStr}`);
+}
+
+export async function fetchMoneyReportRunSummaryUcRpt11(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/summary/`);
+}
+
+export async function fetchMoneyReportRunValidationUcRpt11(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/validation/`);
+}
+
+export async function fetchMoneyReportRowSourcesUcRpt11(w: ApiWriter, runId: string, rowId: string | number) {
+  return await w.get(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchMoneyReportRunHistoryUcRpt11(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/history/`);
+}
+
+export async function fetchMoneyBalancesAsOfUcRpt11(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.as_of_date) qs.set("as_of_date", String(d.as_of_date));
+  if (d.comparison_date) qs.set("comparison_date", String(d.comparison_date));
+  return await w.get(`${RPT_MONEY}balances/as-of/?${qs.toString()}`);
+}
+
+export async function fetchMoneyCashFundsUcRpt11(w: ApiWriter, companyId?: string) {
+  const cid = companyId || w.companyId;
+  return await w.get(`${RPT_MONEY}cash-funds/?company_id=${encodeURIComponent(cid)}`);
+}
+
+export async function fetchMoneyBankAccountsUcRpt11(w: ApiWriter, companyId?: string) {
+  const cid = companyId || w.companyId;
+  return await w.get(`${RPT_MONEY}bank-accounts/?company_id=${encodeURIComponent(cid)}`);
+}
+
+export async function traceMoneyTransferUcRpt11(w: ApiWriter, transferId: string) {
+  return await w.get(`${RPT_MONEY}transfers/${encodeURIComponent(transferId)}/trace/`);
+}
+
+export async function fetchLoanSummaryUcRpt11(w: ApiWriter, loanId: string) {
+  return await w.get(`${RPT_MONEY}loans/${encodeURIComponent(loanId)}/summary/`);
+}
+
+export async function fetchBankReconciliationDifferencesUcRpt11(w: ApiWriter, companyId?: string) {
+  const cid = companyId || w.companyId;
+  return await w.get(`${RPT_MONEY}reconciliation/differences/?company_id=${encodeURIComponent(cid)}`);
+}
+
+export async function fetchMoneyReportSavedFiltersUcRpt11(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_code) qs.set("report_code", String(d.report_code));
+  return await w.get(`${RPT_MONEY}saved/?${qs.toString()}`);
+}
+
+export async function saveMoneyReportFilterUcRpt11(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_MONEY}saved/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportMoneyReportRunUcRpt11(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_MONEY}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// UC-RPT-12 – Xem báo cáo kho (15 Báo cáo)
+// ---------------------------------------------------------------------------
+const RPT_INVENTORY = "/api/v1/reports/inventory/";
+
+export async function fetchInventoryReportCatalogueUcRpt12(w: ApiWriter, companyId?: string) {
+  const cid = companyId || w.companyId;
+  return await w.get(`${RPT_INVENTORY}catalogue/?company_id=${encodeURIComponent(cid)}`);
+}
+
+export async function fetchInventoryReportSchemaUcRpt12(w: ApiWriter, reportCode: string) {
+  return await w.get(`${RPT_INVENTORY}${encodeURIComponent(reportCode)}/schema/`);
+}
+
+export async function fetchInventoryReportParametersUcRpt12(w: ApiWriter, reportCode: string) {
+  return await w.get(`${RPT_INVENTORY}${encodeURIComponent(reportCode)}/parameters/`);
+}
+
+export async function queryInventoryReportUcRpt12(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_INVENTORY}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchInventoryReportRunDetailsUcRpt12(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/`);
+}
+
+export async function fetchInventoryReportRunRowsUcRpt12(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/rows/${query}`);
+}
+
+export async function fetchInventoryReportRunSummaryUcRpt12(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/summary/`);
+}
+
+export async function fetchInventoryReportRunValidationUcRpt12(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/validation/`);
+}
+
+export async function fetchInventoryReportRowSourcesUcRpt12(w: ApiWriter, runId: string, rowId: string | number) {
+  return await w.get(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchInventoryReportRunHistoryUcRpt12(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/history/`);
+}
+
+export async function fetchInventoryBalancesAsOfUcRpt12(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.as_of_date) qs.set("as_of_date", String(d.as_of_date));
+  return await w.get(`${RPT_INVENTORY}balances/as-of/?${qs.toString()}`);
+}
+
+export async function fetchInventorySavedFiltersUcRpt12(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_code) qs.set("report_code", String(d.report_code));
+  return await w.get(`${RPT_INVENTORY}saved/?${qs.toString()}`);
+}
+
+export async function saveInventoryFilterUcRpt12(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_INVENTORY}saved/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportInventoryReportRunUcRpt12(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_INVENTORY}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// UC-RPT-13 – Xem báo cáo tài sản và công cụ dụng cụ (14 Báo cáo TSCĐ, CCDC & CPTT)
+// ---------------------------------------------------------------------------
+const RPT_ASSETS = "/api/v1/reports/assets/";
+
+export async function fetchAssetReportCatalogueUcRpt13(w: ApiWriter, companyId?: string) {
+  const cid = companyId || w.companyId;
+  return await w.get(`${RPT_ASSETS}catalogue/?company_id=${encodeURIComponent(cid)}`);
+}
+
+export async function fetchAssetReportSchemaUcRpt13(w: ApiWriter, reportCode: string) {
+  return await w.get(`${RPT_ASSETS}${encodeURIComponent(reportCode)}/schema/`);
+}
+
+export async function fetchAssetReportParametersUcRpt13(w: ApiWriter, reportCode: string) {
+  return await w.get(`${RPT_ASSETS}${encodeURIComponent(reportCode)}/parameters/`);
+}
+
+export async function queryAssetReportUcRpt13(w: ApiWriter, reportCode: string, d: Row = {}) {
+  return await w.post(`${RPT_ASSETS}${encodeURIComponent(reportCode)}/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchAssetReportRunDetailsUcRpt13(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/`);
+}
+
+export async function fetchAssetReportRunRowsUcRpt13(w: ApiWriter, runId: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.search) qs.set("search", String(d.search));
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+  return await w.get(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/rows/${query}`);
+}
+
+export async function fetchAssetReportRunSummaryUcRpt13(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/summary/`);
+}
+
+export async function fetchAssetReportRunValidationUcRpt13(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/validation/`);
+}
+
+export async function fetchAssetReportRowSourcesUcRpt13(w: ApiWriter, runId: string, rowId: string | number) {
+  return await w.get(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/rows/${encodeURIComponent(String(rowId))}/sources/`);
+}
+
+export async function fetchAssetReportRunHistoryUcRpt13(w: ApiWriter, runId: string) {
+  return await w.get(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/history/`);
+}
+
+export async function fetchAssetBalancesAsOfUcRpt13(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.as_of_date) qs.set("as_of_date", String(d.as_of_date));
+  return await w.get(`${RPT_ASSETS}balances/as-of/?${qs.toString()}`);
+}
+
+export async function fetchAssetSavedFiltersUcRpt13(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  if (d.report_code) qs.set("report_code", String(d.report_code));
+  return await w.get(`${RPT_ASSETS}saved/?${qs.toString()}`);
+}
+
+export async function saveAssetFilterUcRpt13(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_ASSETS}saved/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function exportAssetReportRunUcRpt13(w: ApiWriter, runId: string, d: Row = {}) {
+  return await w.post(`${RPT_ASSETS}runs/${encodeURIComponent(runId)}/export/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-15: In hoặc Export báo cáo (Print & Export Reports Engine)
+// ============================================================================
+
+const RPT_EXPORT = "/api/v1/reports/export/";
+
+export async function fetchReportExportCapabilitiesUcRpt15(w: ApiWriter, reportCode: string) {
+  return await w.get(`/api/v1/reports/${encodeURIComponent(reportCode)}/export-capabilities/`);
+}
+
+export async function fetchReportExportTemplatesUcRpt15(w: ApiWriter, reportCode: string) {
+  return await w.get(`/api/v1/reports/${encodeURIComponent(reportCode)}/export-templates/`);
+}
+
+export async function previewReportExportUcRpt15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_EXPORT}preview/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function createReportExportJobUcRpt15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_EXPORT}jobs/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchReportExportJobDetailUcRpt15(w: ApiWriter, jobId: string) {
+  return await w.get(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/`);
+}
+
+export async function fetchReportExportJobArtifactsUcRpt15(w: ApiWriter, jobId: string) {
+  return await w.get(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/artifacts/`);
+}
+
+export async function cancelReportExportJobUcRpt15(w: ApiWriter, jobId: string) {
+  return await w.post(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/cancel/`, {});
+}
+
+export async function retryReportExportJobUcRpt15(w: ApiWriter, jobId: string, d: Row = {}) {
+  return await w.post(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/retry/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function requestReportExportDownloadAccessUcRpt15(w: ApiWriter, artifactId: string) {
+  return await w.post(`${RPT_EXPORT}artifacts/${encodeURIComponent(artifactId)}/download-access/`, {});
+}
+
+export async function fetchReportExportHistoryUcRpt15(w: ApiWriter, d: Row = {}) {
+  const qs = new URLSearchParams();
+  qs.set("company_id", String(d.company_id || w.companyId));
+  return await w.get(`${RPT_EXPORT}history/?${qs.toString()}`);
+}
+
+export async function exportReportDetailUcRpt15(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_EXPORT}detail/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+// ============================================================================
+// UC-RPT-14: Xem chi tiết số liệu báo cáo (Report Data Drill-Down & Lineage)
+// ============================================================================
+
+const RPT_DRILLDOWN = "/api/v1/reports/drilldown/";
+
+export async function fetchReportDrilldownCapabilitiesUcRpt14(w: ApiWriter, reportCode: string) {
+  return await w.get(`/api/v1/reports/${encodeURIComponent(reportCode)}/drilldown-capabilities/`);
+}
+
+export async function openReportCellDrilldownUcRpt14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DRILLDOWN}open/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+
+export async function openCellContextUcRpt14(
+  w: ApiWriter,
+  reportCode: string,
+  cellKey: string,
+  field: string,
+  val: any,
+  contextData: Row = {}
+) {
+  return await openReportCellDrilldownUcRpt14(w, {
+    report_code: reportCode,
+    cell_key: cellKey,
+    field_code: field,
+    value: val,
+    ...contextData,
+  });
+}
+export async function queryReportDrilldownNodeUcRpt14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DRILLDOWN}nodes/query/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
+}
+
+export async function fetchReportCellFormulaUcRpt14(w: ApiWriter, contextId: string) {
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/formula/`);
+}
+
+export async function fetchReportCellSummaryUcRpt14(w: ApiWriter, contextId: string) {
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/summary/`);
+}
+
+export async function fetchReportCellTransactionsUcRpt14(w: ApiWriter, contextId: string, d: Row = {}) {
+  const qs = new URLSearchParams();
+  if (d.page) qs.set("page", String(d.page));
+  if (d.page_size) qs.set("page_size", String(d.page_size));
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/transactions/?${qs.toString()}`);
+}
+
+export async function fetchReportCellSourcesUcRpt14(w: ApiWriter, contextId: string) {
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/sources/`);
+}
+
+export async function openReportSourceDocumentUcRpt14(w: ApiWriter, contextId: string, sourceId: string) {
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/sources/${encodeURIComponent(sourceId)}/open/`);
+}
+
+export async function fetchReportCellValidationUcRpt14(w: ApiWriter, contextId: string) {
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/validation/`);
+}
+
+export async function fetchReportCellBreadcrumbsUcRpt14(w: ApiWriter, contextId: string) {
+  return await w.get(`${RPT_DRILLDOWN}${encodeURIComponent(contextId)}/breadcrumbs/`);
+}
+
+export async function drillThroughReportUcRpt14(w: ApiWriter, d: Row = {}) {
+  return await w.post(`${RPT_DRILLDOWN}through/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
 }

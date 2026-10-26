@@ -279,6 +279,9 @@ class CompanyMembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     queryset = CompanyMembership.objects.select_related(
         "company", "user__auth_user", "user__preference", "employee__branch", "employee__department",
         "organization_unit", "created_by", "updated_by",
+    ).prefetch_related(
+        "role_assignments__role",
+        "lock_records",
     )
 
     def get_queryset(self):

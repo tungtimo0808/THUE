@@ -29,9 +29,12 @@ import {
   Filter,
 } from "lucide-react";
 import "./misa-reports.css";
+import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
+
 import MisaTrialBalanceManagementReport from "./MisaTrialBalanceManagementReport";
 import MisaStateObligationsReport from "./MisaStateObligationsReport";
 import MisaFinancialPositionReport from "./MisaFinancialPositionReport";
+import MisaFinancialBundleWorkspace from "./MisaFinancialBundleWorkspace";
 import MisaBusinessResultReport from "./MisaBusinessResultReport";
 import MisaCashFlowDirectReport from "./MisaCashFlowDirectReport";
 import MisaCashFlowIndirectReport from "./MisaCashFlowIndirectReport";
@@ -855,7 +858,7 @@ const REPORTS_BY_CATEGORY: Record<string, string[]> = {
 export default function MisaReportCenterWorkspace({ notify,initialCategory="favorites",initialReport=null,embedded=false }: MisaReportCenterWorkspaceProps) {
   // Subtabs: "all" (Tất cả) | "saved" (Báo cáo đã lưu) | "schedule" (Lịch gửi báo cáo định kỳ)
   const [activeSubtab, setActiveSubtab] = useState<"all" | "saved" | "schedule">("all");
-  
+
   // Left category active ID
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
 
@@ -1787,11 +1790,18 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           </button>
           <button
             type="button"
+            className={`misa-reports-subtab-btn ${(activeSubtab as string) === "extended-apis" ? "active" : ""}`}
+            onClick={() => setActiveSubtab("extended-apis" as any)}
+          >
+            Cấu hình biểu mẫu & Kết xuất API
+          </button>
+          <button
+            type="button"
             className={`misa-reports-subtab-btn ${activeSubtab === "schedule" ? "active" : ""}`}
             onClick={() => setActiveSubtab("schedule")}
           >
             <span>Lịch gửi báo cáo định kỳ</span>
-            <span className="misa-reports-badge-orange">Mới</span>
+
           </button>
         </div>
 
@@ -1801,13 +1811,18 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           onClick={() => setIsPrintBannerModalOpen(true)}
           title="Trình in mới của Sổ Việt ERP"
         >
-          <span className="misa-reports-banner-tag">Mới</span>
+
           <span>In nhanh hơn - Ổn định hơn - In dữ liệu lớn với trình in mới của Sổ Việt ERP.</span>
           <span className="misa-reports-banner-link">Xem ngay &gt;</span>
         </div>
       </div>}
 
       {/* 2. Toolbar */}
+      {(activeSubtab as string) === "extended-apis" && (
+        <div style={{ padding: 16 }}>
+          <MisaModuleApiExtensionPanel moduleKey="reports" companyId="abc" notify={notify || (() => {})} />
+        </div>
+      )}
       <div className="misa-reports-toolbar">
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div className="misa-reports-search-wrap">
@@ -1930,6 +1945,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             </h3>
 
             {/* If user is viewing structured category (Báo cáo tài chính, Báo cáo phân tích, Tiền mặt, Tiền gửi) */}
+            {activeCategory === "financial" && !searchKeyword && <MisaFinancialBundleWorkspace notify={notify} onOpenReportByName={(rName) => setSelectedReport(rName)} />}
             {currentStructure ? (
               <div className="misa-reports-structured-container">
                 {/* 1. AVA Banner if present */}
@@ -2470,7 +2486,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="misa-reports-badge-orange">Mới</span>
+
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Trình in thông minh mới của Sổ Việt ERP</h3>
               </div>
               <button
@@ -2518,5 +2534,3 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     </div>
   );
 }
-
-

@@ -28,6 +28,23 @@ export default function LivePasswordReset() {
     finally { setBusy(false); }
   }
 
+  async function resendOtp() {
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const result = await request<{ challenge: string; dev_otp?: string }>("/api/v1/common/auth/password-reset/resend/", undefined, {
+        method: "POST", body: JSON.stringify({ challenge, email: email.trim() }),
+      });
+      if (result.challenge) setChallenge(result.challenge);
+      if (result.dev_otp) setDevOtp(result.dev_otp);
+      setMessage("Đã gửi lại mã xác thực đặt lại mật khẩu.");
+    } catch {
+      await request("/api/v1/common/auth/forgot-password/", undefined, {
+        method: "POST", body: JSON.stringify({ email: email.trim() }),
+      }).catch(() => {});
+      setMessage("Đã gửi lại yêu cầu xác thực.");
+    } finally { setBusy(false); }
+  }
+
   async function verify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError("");
     try {
@@ -47,7 +64,11 @@ export default function LivePasswordReset() {
     try {
       await request<{ reset: boolean }>("/api/v1/common/auth/password-reset/confirm/", undefined, {
         method: "POST", body: JSON.stringify({ reset_token: resetToken, new_password: password, new_password_confirm: confirm }),
-      });
+      }).catch(() =>
+        request<{ reset: boolean }>("/api/v1/common/auth/reset-password/", undefined, {
+          method: "POST", body: JSON.stringify({ reset_token: resetToken, new_password: password, new_password_confirm: confirm }),
+        })
+      );
       setPassword(""); setConfirm(""); setResetToken(""); setStep("done");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không đặt lại được mật khẩu."); }
     finally { setBusy(false); }
@@ -68,6 +89,7 @@ export default function LivePasswordReset() {
       {devOtp && <p className="account-dev-code">Mã kiểm thử trên BE local: <strong>{devOtp}</strong></p>}
       <label>Mã xác thực<input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value)} autoComplete="one-time-code" required /></label>
       <button type="submit" disabled={busy}>Xác nhận mã</button>
+      <button type="button" className="account-text-button" onClick={resendOtp} disabled={busy}>Gửi lại mã xác thực</button>
     </form>}
     {step === "change" && <form onSubmit={change}>
       <label>Mật khẩu mới<input type="password" minLength={8} value={password} onChange={event => setPassword(event.target.value)} autoComplete="new-password" required /></label>

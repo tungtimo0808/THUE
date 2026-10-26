@@ -15,6 +15,15 @@
   to { transform: rotate(360deg); }
 }
 
+.account-page,
+.company-portal-page,
+.company-portal-header,
+.company-portal-content,
+.company-portal-card,
+.company-portal-card * {
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
 .account-page {
   min-height: 100vh;
   width: 100%;
@@ -970,7 +979,7 @@
 
 .company-portal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 20px;
   margin-bottom: 32px;
 }
@@ -1048,29 +1057,100 @@
 
 .company-portal-card-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 14px;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
   border-top: 1px solid #f1f5f9;
+  margin-top: auto;
+}
+
+.company-portal-card-status-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap !important;
+  color: #64748b;
+}
+
+.company-portal-card-status-line.current {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.company-portal-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.company-portal-status-dot.active {
+  background: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+
+.company-portal-card-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.company-portal-admin-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0052cc;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.company-portal-admin-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #0043a8;
+  transform: translateY(-1px);
 }
 
 .company-portal-enter-btn {
+  flex: 1.25;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 10px;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
   background: #0284c7;
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
   border: none;
   cursor: pointer;
+  white-space: nowrap !important;
+  flex-shrink: 0;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .company-portal-enter-btn:hover {
   background: #0369a1;
-  transform: translateX(2px);
+  transform: translateY(-1px);
 }
 

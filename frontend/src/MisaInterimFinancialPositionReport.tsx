@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { apiClient } from "./apiClient";
 import {
   ChevronLeft,
   Search,
@@ -526,9 +527,55 @@ export default function MisaInterimFinancialPositionReport({
     };
   };
 
+  const [b01aRows, setB01aRows] = useState<InterimBalanceSheetItem[]>(FULL_B01A_DATA);
+  const [b02aRows, setB02aRows] = useState<InterimIncomeItem[]>(FULL_B02A_DATA);
+  const [b03aRows, setB03aRows] = useState<InterimCashFlowItem[]>(FULL_B03A_DATA);
+
+  useEffect(() => {
+    apiClient
+      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`)
+      .then((res) => {
+        if (res?.b01_dn) {
+          setB01aRows(
+            FULL_B01A_DATA.map((r) => {
+              const m = res.b01_dn[r.code];
+              return m ? { ...r, closingQuarter: Number(m.closing || 0), openingYear: Number(m.opening || 0) } : r;
+            })
+          );
+        }
+        if (res?.b02_dn) {
+          setB02aRows(
+            FULL_B02A_DATA.map((r) => {
+              const m = res.b02_dn[r.code];
+              return m
+                ? {
+                    ...r,
+                    quarterCurrent: Number(m.current || 0),
+                    quarterPrevious: Number(m.previous || 0),
+                    accumCurrent: Number(m.current || 0),
+                    accumPrevious: Number(m.previous || 0),
+                  }
+                : r;
+            })
+          );
+        }
+        if (res?.b03_direct) {
+          setB03aRows(
+            FULL_B03A_DATA.map((r) => {
+              const m = r.code ? res.b03_direct[r.code] : null;
+              return m
+                ? { ...r, accumCurrent: Number(m.current || 0), accumPrevious: Number(m.previous || 0) }
+                : r;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+  }, [year, period, fromDate, toDate]);
+
   // Filter rows for B01a-DN
   const filteredB01aRows = useMemo(() => {
-    return FULL_B01A_DATA.filter((row) => {
+    return b01aRows.filter((row) => {
       if (hideZero) {
         if (!row.closingQuarter && !row.openingYear) {
           return false;
@@ -544,11 +591,11 @@ export default function MisaInterimFinancialPositionReport({
       }
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [b01aRows, hideZero, searchKeyword]);
 
   // Filter rows for B02a-DN
   const filteredB02aRows = useMemo(() => {
-    return FULL_B02A_DATA.filter((row) => {
+    return b02aRows.filter((row) => {
       if (hideZero) {
         if (!row.quarterCurrent && !row.accumCurrent) {
           return false;
@@ -564,11 +611,11 @@ export default function MisaInterimFinancialPositionReport({
       }
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [b02aRows, hideZero, searchKeyword]);
 
   // Filter rows for B03a-DN
   const filteredB03aRows = useMemo(() => {
-    return FULL_B03A_DATA.filter((row) => {
+    return b03aRows.filter((row) => {
       if (row.isHeader) {
         if (!searchKeyword.trim()) return true;
       }
@@ -581,7 +628,7 @@ export default function MisaInterimFinancialPositionReport({
       }
       return true;
     });
-  }, [hideZero, searchKeyword]);
+  }, [b03aRows, hideZero, searchKeyword]);
 
   return (
     <div

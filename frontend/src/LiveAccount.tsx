@@ -45,7 +45,11 @@ export default function LiveAccount() {
     try {
       const result = await request<VerificationResponse>("/api/v1/common/auth/verify-registration/", undefined, {
         method: "POST", body: JSON.stringify({ challenge, code }),
-      });
+      }).catch(() =>
+        request<VerificationResponse>("/api/v1/common/auth/verify-email/", undefined, {
+          method: "POST", body: JSON.stringify({ challenge, code }),
+        })
+      );
       if (!result.verified) throw new Error("Backend chưa xác nhận tài khoản.");
       setCode(""); setDevOtp(""); setStep("complete");
       setMessage("Tài khoản đã được xác thực. Bạn có thể đăng nhập và tham gia doanh nghiệp.");

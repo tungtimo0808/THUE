@@ -54,6 +54,10 @@ export default function LiveCompanyBootstrap() {
         }),
       });
       setCreated(result);
+      await request("/api/v1/common/companies/complete-setup/", token, {
+        method: "POST",
+        body: JSON.stringify({ company_id: result.id }),
+      }).catch(() => {});
       await refreshCompanies();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không tạo được doanh nghiệp."); }
     finally { setBusy(false); }
