@@ -12,7 +12,30 @@
     <title>Sổ Việt | Kế toán & thuế</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-splash" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;z-index:99999;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+          <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#00b06b 0%,#008751 100%);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:22px;font-weight:800;box-shadow:0 4px 12px rgba(0,176,107,0.25);">
+            SV
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">SỔ VIỆT</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Kế toán & Thuế Doanh nghiệp</div>
+          </div>
+        </div>
+        <div style="width:160px;height:4px;background:#e2e8f0;border-radius:999px;overflow:hidden;position:relative;">
+          <div style="position:absolute;top:0;bottom:0;width:40%;background:#00b06b;border-radius:999px;animation:sv-indeterminate 1.4s ease-in-out infinite;"></div>
+        </div>
+        <div style="margin-top:14px;font-size:12.5px;color:#94a3b8;font-weight:500;">Đang tải ứng dụng...</div>
+        <style>
+          @keyframes sv-indeterminate {
+            0% { left: -40%; width: 40%; }
+            50% { left: 40%; width: 60%; }
+            100% { left: 100%; width: 40%; }
+          }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
