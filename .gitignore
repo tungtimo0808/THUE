@@ -31,3 +31,7 @@ gitlab-fe/
 .idea/
 *.swp
 *.swo
+
+# Test artifacts
+test-results/
+playwright-report/

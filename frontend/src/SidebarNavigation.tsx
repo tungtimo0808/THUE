@@ -4,6 +4,7 @@ import { LayoutGrid } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { referenceNav } from "./reference-config";
 import { MISA_MODULE_FLYOUTS } from "./misa-flyout-config";
+import { preloadWorkspace } from "./workspace-preloader";
 
 type SidebarNavigationProps = {
   moduleId: string;
@@ -114,6 +115,8 @@ export function SidebarNavigation({
             `ref-nav-item ${moduleId === "overview" ? "misa-active active" : ""}`
           }
           to={href("/overview")}
+          onMouseEnter={() => preloadWorkspace("overview")}
+          onFocus={() => preloadWorkspace("overview")}
           onClick={() => {
             setOpenModule(null);
             onNavigate();
@@ -140,9 +143,15 @@ export function SidebarNavigation({
             <div
               className={`ref-nav-group ${isOpen ? "open" : ""}`}
               key={module.id}
-              onMouseEnter={(e) => handleOpenModule(e.currentTarget, module.id)}
+              onMouseEnter={(e) => {
+                handleOpenModule(e.currentTarget, module.id);
+                preloadWorkspace(module.id);
+              }}
               onMouseLeave={handleCloseModule}
-              onFocus={(e) => handleOpenModule(e.currentTarget, module.id)}
+              onFocus={(e) => {
+                handleOpenModule(e.currentTarget, module.id);
+                preloadWorkspace(module.id);
+              }}
               onBlur={closeAfterBlur}
               onKeyDown={closeWithEscape}
             >
@@ -194,6 +203,8 @@ export function SidebarNavigation({
                             <li key={idx}>
                               <Link
                                 to={href(op.path || `/${module.id}`)}
+                                onMouseEnter={() => preloadWorkspace(module.id)}
+                                onFocus={() => preloadWorkspace(module.id)}
                                 onClick={() => {
                                   setOpenModule(null);
                                   setFlyoutPos(null);
@@ -255,6 +266,8 @@ export function SidebarNavigation({
                                 ) : (
                                   <Link
                                     to={href(util.path || `/${module.id}`)}
+                                    onMouseEnter={() => preloadWorkspace(module.id)}
+                                    onFocus={() => preloadWorkspace(module.id)}
                                     onClick={() => {
                                       setOpenModule(null);
                                       setFlyoutPos(null);

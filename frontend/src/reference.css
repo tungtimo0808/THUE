@@ -1051,6 +1051,11 @@ select:has(~ svg),
   transition: transform 0.18s ease;
 }
 
+@keyframes sv-progress-flow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* "Khác ▾" dropdown on the 1-line bar */
 .ref-tab-more-wrap {
   position: relative;

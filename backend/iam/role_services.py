@@ -253,3 +253,134 @@ def set_role_active(*, role_id, company, actor, active, data, request=None, is_p
         "status": desired, "affected_user_count": impact["active_user_count"],
     }, request)
     return role
+
+
+STANDARD_ROLE_DEFINITIONS = [
+    {
+        "code": "KT_TRUONG",
+        "name": "Kế toán trưởng",
+        "description": "Toàn quyền quản lý tài chính, kiểm soát sổ cái, phê duyệt chứng từ, khóa/mở kỳ kế toán.",
+        "permission_prefixes": [
+            "GL.", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
+        ],
+    },
+    {
+        "code": "KT_BANHANG",
+        "name": "Kế toán bán hàng & Công nợ phải thu",
+        "description": "Lập báo giá, đơn hàng, hóa đơn bán hàng, theo dõi công nợ khách hàng và đối chiếu công nợ.",
+        "permission_prefixes": [
+            "SAL.", "AR.", "MD.PARTY.", "RPT.",
+        ],
+    },
+    {
+        "code": "KT_MUAHANG",
+        "name": "Kế toán mua hàng & Công nợ phải trả",
+        "description": "Lập đơn mua, hóa đơn mua hàng, theo dõi nợ nhà cung cấp và thanh toán chi phí mua hàng.",
+        "permission_prefixes": [
+            "PUR.", "AP.", "MD.PARTY.", "RPT.",
+        ],
+    },
+    {
+        "code": "THU_QUY",
+        "name": "Thủ quỹ",
+        "description": "Xác nhận thu/chi tiền mặt, nộp tiền ngân hàng, kiểm kê quỹ tiền mặt.",
+        "permission_prefixes": [
+            "CASH.TRANSACTION.VIEW", "CASH.TRANSACTION.CONFIRM", "CASH.COUNT.", "CASH.FUND.VIEW", "RPT.",
+        ],
+    },
+    {
+        "code": "KT_KHO",
+        "name": "Thủ kho & Kế toán kho",
+        "description": "Nhập kho, xuất kho, điều chuyển kho, kiểm kê hàng hóa, theo dõi thẻ kho.",
+        "permission_prefixes": [
+            "INV.", "MD.ITEM.", "MD.WAREHOUSE.", "MD.UOM.", "RPT.",
+        ],
+    },
+    {
+        "code": "NVKD",
+        "name": "Nhân viên kinh doanh",
+        "description": "Lập báo giá cho khách, tạo đơn đặt hàng, tra cứu tồn kho và thông tin khách hàng.",
+        "permission_prefixes": [
+            "SAL.QUOTATION.VIEW", "SAL.QUOTATION.CREATE", "SAL.QUOTATION.EDIT",
+            "SAL.ORDER.VIEW", "SAL.ORDER.CREATE", "MD.PARTY.VIEW", "INV.BALANCE.VIEW",
+        ],
+    },
+]
+
+
+def seed_standard_roles_for_company(company, actor=None):
+    """
+    Idempotently seeds COMPANY_ADMIN with full 929 permissions,
+    plus the 6 standard operational accounting roles for the given company.
+    """
+    created_roles = []
+    with transaction.atomic():
+        all_perms = list(Permission.objects.filter(status=ActiveStatus.ACTIVE).select_related("resource"))
+
+        # 1. Ensure COMPANY_ADMIN role has full enterprise permissions (929 perms)
+        admin_role, _ = Role.objects.get_or_create(
+            company=company,
+            code="COMPANY_ADMIN",
+            defaults={
+                "name": "Admin doanh nghiệp",
+                "description": "Quản trị viên Doanh nghiệp (Chủ sở hữu) nắm toàn quyền quản trị và nghiệp vụ.",
+                "role_type": RoleType.STANDARD,
+                "status": RoleStatus.ACTIVE,
+                "is_system_admin": True,
+                "created_by": actor,
+                "updated_by": actor,
+            },
+        )
+        existing_admin_perm_ids = set(RolePermission.objects.filter(role=admin_role).values_list("permission_id", flat=True))
+        new_admin_grants = [
+            RolePermission(role=admin_role, permission=p, effect="ALLOW")
+            for p in all_perms if p.id not in existing_admin_perm_ids
+        ]
+        if new_admin_grants:
+            RolePermission.objects.bulk_create(new_admin_grants)
+
+        created_roles.append({
+            "code": admin_role.code,
+            "name": admin_role.name,
+            "created": False,
+            "permission_count": len(all_perms),
+        })
+
+        # 2. Seed standard 6 roles
+        for role_def in STANDARD_ROLE_DEFINITIONS:
+            role, created = Role.objects.get_or_create(
+                company=company,
+                code=role_def["code"],
+                defaults={
+                    "name": role_def["name"],
+                    "description": role_def["description"],
+                    "role_type": RoleType.STANDARD,
+                    "status": RoleStatus.ACTIVE,
+                    "created_by": actor,
+                    "updated_by": actor,
+                },
+            )
+
+            prefixes = role_def["permission_prefixes"]
+            matched_perms = [
+                p for p in all_perms
+                if any(p.code.startswith(prefix) for prefix in prefixes)
+            ]
+
+            existing_perm_ids = set(RolePermission.objects.filter(role=role).values_list("permission_id", flat=True))
+            new_grants = [
+                RolePermission(role=role, permission=p, effect="ALLOW")
+                for p in matched_perms if p.id not in existing_perm_ids
+            ]
+            if new_grants:
+                RolePermission.objects.bulk_create(new_grants)
+
+            created_roles.append({
+                "code": role.code,
+                "name": role.name,
+                "created": created,
+                "permission_count": len(matched_perms),
+            })
+
+    return created_roles
+

@@ -118,9 +118,13 @@ class Command(BaseCommand):
             company.status = CompanyStatus.ACTIVE
             company.save()
 
+        # Seed standard roles and full-permission COMPANY_ADMIN role for ABC
+        from iam.role_services import seed_standard_roles_for_company
+        seed_standard_roles_for_company(company, iam_user)
+
         # Memberships for superadmin & admin
         from iam.models import Role, UserRoleAssignment
-        roles = list(Role.objects.all())
+        company_roles = list(Role.objects.filter(company=company))
         for user_target in [super_iam, admin_iam]:
             m, _ = CompanyMembership.objects.get_or_create(
                 company=company,
@@ -130,7 +134,7 @@ class Command(BaseCommand):
             if m.membership_status != "ACTIVE":
                 m.membership_status = "ACTIVE"
                 m.save()
-            for r in roles:
+            for r in company_roles:
                 UserRoleAssignment.objects.get_or_create(
                     company_membership=m, role=r, defaults={"assigned_by": user_target, "status": "ACTIVE"}
                 )
