@@ -6,7 +6,7 @@
       "localStorage": [
         {
           "name": "erp_api_session",
-          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNDU5OTE4LCJpYXQiOjE3OTI4NTUxMTksImp0aSI6IjVjYzYxN2RkYTBkYTQ1ZjBhMWJlNjhiODRhYWFlMjI3IiwidXNlcl9pZCI6IjEifQ.QPwv50SHlg9GPd7I0wknwTJJ3cUSscc7Ot-tBF3vYYE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTQ0NzExOCwiaWF0IjoxNzkyODU1MTE4LCJqdGkiOiJkYmM3NTYyZTI1NmU0MWNlODZiYmEzMTM3YTM4NTM1YyIsInVzZXJfaWQiOiIxIn0.gV7zmR0F1M3_zqY6-6Uaq0W23QXo_WJQUANbhP_cGAM\",\"companyId\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"companies\":[{\"id\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"code\":\"ABC\",\"name\":\"Công ty ABC\",\"status\":\"ACTIVE\"},{\"id\":\"minh-an\",\"code\":\"MINH_AN\",\"name\":\"Công ty Cổ phần Minh An\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"1\",\"username\":\"superadmin\",\"display_name\":\"Super Admin Hệ Thống\"}}"
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNjEyOTYyLCJpYXQiOjE3OTMwMDgxNjMsImp0aSI6IjlkMzZlYjkxYTVmNTQyYmI4YTcwOWFjNWViMmUzNTE5IiwidXNlcl9pZCI6IjciLCJzaWQiOiJkODkxM2Y5YS1kNzNhLTRkNTYtYTBlYS02MjMwYzBjZGY0YjAifQ.YHPLTkC7Pn6ywweW8cq7KRaD30vjLB3Vwd0pE_Dk1sE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTYwMDE2MiwiaWF0IjoxNzkzMDA4MTYyLCJqdGkiOiJhNWNmZGZiZjJhNGE0YTViYTU1YzM4ZGQ3YmRiMjE2MSIsInVzZXJfaWQiOiI3Iiwic2lkIjoiZDg5MTNmOWEtZDczYS00ZDU2LWEwZWEtNjIzMGMwY2RmNGIwIn0.J-iJaNjAGzPup1eiixHMoYUyRRINrFyZJmYZ3BGeQg8\",\"companyId\":\"614f784c-f253-4fe8-b519-e50631be518e\",\"companies\":[{\"id\":\"614f784c-f253-4fe8-b519-e50631be518e\",\"code\":\"ABC\",\"name\":\"CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"c779a7d1-8315-4007-afbe-9f146eaa1ecd\",\"username\":\"superadmin\",\"display_name\":\"Đỗ Đức Tùng\"}}"
         }
       ]
     },
@@ -15,25 +15,7 @@
       "localStorage": [
         {
           "name": "erp_api_session",
-          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNDU5OTE4LCJpYXQiOjE3OTI4NTUxMTksImp0aSI6IjVjYzYxN2RkYTBkYTQ1ZjBhMWJlNjhiODRhYWFlMjI3IiwidXNlcl9pZCI6IjEifQ.QPwv50SHlg9GPd7I0wknwTJJ3cUSscc7Ot-tBF3vYYE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTQ0NzExOCwiaWF0IjoxNzkyODU1MTE4LCJqdGkiOiJkYmM3NTYyZTI1NmU0MWNlODZiYmEzMTM3YTM4NTM1YyIsInVzZXJfaWQiOiIxIn0.gV7zmR0F1M3_zqY6-6Uaq0W23QXo_WJQUANbhP_cGAM\",\"companyId\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"companies\":[{\"id\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"code\":\"ABC\",\"name\":\"Công ty ABC\",\"status\":\"ACTIVE\"},{\"id\":\"minh-an\",\"code\":\"MINH_AN\",\"name\":\"Công ty Cổ phần Minh An\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"1\",\"username\":\"superadmin\",\"display_name\":\"Super Admin Hệ Thống\"}}"
-        }
-      ]
-    },
-    {
-      "origin": "http://127.0.0.1:5173",
-      "localStorage": [
-        {
-          "name": "erp_api_session",
-          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNDU5OTE4LCJpYXQiOjE3OTI4NTUxMTksImp0aSI6IjVjYzYxN2RkYTBkYTQ1ZjBhMWJlNjhiODRhYWFlMjI3IiwidXNlcl9pZCI6IjEifQ.QPwv50SHlg9GPd7I0wknwTJJ3cUSscc7Ot-tBF3vYYE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTQ0NzExOCwiaWF0IjoxNzkyODU1MTE4LCJqdGkiOiJkYmM3NTYyZTI1NmU0MWNlODZiYmEzMTM3YTM4NTM1YyIsInVzZXJfaWQiOiIxIn0.gV7zmR0F1M3_zqY6-6Uaq0W23QXo_WJQUANbhP_cGAM\",\"companyId\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"companies\":[{\"id\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"code\":\"ABC\",\"name\":\"Công ty ABC\",\"status\":\"ACTIVE\"},{\"id\":\"minh-an\",\"code\":\"MINH_AN\",\"name\":\"Công ty Cổ phần Minh An\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"1\",\"username\":\"superadmin\",\"display_name\":\"Super Admin Hệ Thống\"}}"
-        }
-      ]
-    },
-    {
-      "origin": "http://localhost:5173",
-      "localStorage": [
-        {
-          "name": "erp_api_session",
-          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNDU5OTE4LCJpYXQiOjE3OTI4NTUxMTksImp0aSI6IjVjYzYxN2RkYTBkYTQ1ZjBhMWJlNjhiODRhYWFlMjI3IiwidXNlcl9pZCI6IjEifQ.QPwv50SHlg9GPd7I0wknwTJJ3cUSscc7Ot-tBF3vYYE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTQ0NzExOCwiaWF0IjoxNzkyODU1MTE4LCJqdGkiOiJkYmM3NTYyZTI1NmU0MWNlODZiYmEzMTM3YTM4NTM1YyIsInVzZXJfaWQiOiIxIn0.gV7zmR0F1M3_zqY6-6Uaq0W23QXo_WJQUANbhP_cGAM\",\"companyId\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"companies\":[{\"id\":\"17ee74a0-7608-4f20-8122-53688751932c\",\"code\":\"ABC\",\"name\":\"Công ty ABC\",\"status\":\"ACTIVE\"},{\"id\":\"minh-an\",\"code\":\"MINH_AN\",\"name\":\"Công ty Cổ phần Minh An\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"1\",\"username\":\"superadmin\",\"display_name\":\"Super Admin Hệ Thống\"}}"
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkzNjEyOTYyLCJpYXQiOjE3OTMwMDgxNjMsImp0aSI6IjlkMzZlYjkxYTVmNTQyYmI4YTcwOWFjNWViMmUzNTE5IiwidXNlcl9pZCI6IjciLCJzaWQiOiJkODkxM2Y5YS1kNzNhLTRkNTYtYTBlYS02MjMwYzBjZGY0YjAifQ.YHPLTkC7Pn6ywweW8cq7KRaD30vjLB3Vwd0pE_Dk1sE\",\"refresh\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc5NTYwMDE2MiwiaWF0IjoxNzkzMDA4MTYyLCJqdGkiOiJhNWNmZGZiZjJhNGE0YTViYTU1YzM4ZGQ3YmRiMjE2MSIsInVzZXJfaWQiOiI3Iiwic2lkIjoiZDg5MTNmOWEtZDczYS00ZDU2LWEwZWEtNjIzMGMwY2RmNGIwIn0.J-iJaNjAGzPup1eiixHMoYUyRRINrFyZJmYZ3BGeQg8\",\"companyId\":\"614f784c-f253-4fe8-b519-e50631be518e\",\"companies\":[{\"id\":\"614f784c-f253-4fe8-b519-e50631be518e\",\"code\":\"ABC\",\"name\":\"CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC\",\"status\":\"ACTIVE\"}],\"user\":{\"id\":\"c779a7d1-8315-4007-afbe-9f146eaa1ecd\",\"username\":\"superadmin\",\"display_name\":\"Đỗ Đức Tùng\"}}"
         }
       ]
     }
