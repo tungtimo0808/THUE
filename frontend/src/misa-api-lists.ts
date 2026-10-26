@@ -13,13 +13,25 @@ interface CacheEntry {
 
 const apiListCache = new Map<string, CacheEntry>();
 
-export function clearMisaApiCache(companyId?: string) {
+const STATIC_CATALOG_PATTERNS = [
+  "/general-ledger/accounts/",
+  "/master-data/currencies/",
+  "/organization/branches/",
+  "/master-data/banks/",
+  "/organization/employees/",
+  "/master-data/company-bank-accounts/",
+];
+
+export function clearMisaApiCache(companyId?: string, onlyDynamic = false) {
   if (!companyId) {
     apiListCache.clear();
   } else {
     const prefix = `${companyId}::`;
     for (const key of apiListCache.keys()) {
       if (key.startsWith(prefix)) {
+        if (onlyDynamic && STATIC_CATALOG_PATTERNS.some((p) => key.includes(p))) {
+          continue; // Preserve static master data to avoid redundant 120KB re-fetch flood
+        }
         apiListCache.delete(key);
       }
     }
@@ -103,7 +115,11 @@ export function useMisaApiLists(
         }));
       } catch (error) {
         if (!active) return;
-        if (!(error instanceof ApiError && error.status === 401)) {
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          // SEC-05: Evict cached data on auth failure or permission revocation
+          apiListCache.delete(`${companyId}::${path}`);
+          setRows((prev) => ({ ...prev, [name]: [] }));
+        } else {
           const hasData = (apiListCache.get(`${companyId}::${path}`)?.data.length ?? 0) > 0;
           if (!hasData) {
             notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);
@@ -137,7 +153,7 @@ export function useMisaApiSave(companyId: string, notify: (message: string) => v
     if (!token || !companyId) return false;
     try {
       const result = await save(createApiWriter(companyId, (path, init) => request(path, token, init)));
-      clearMisaApiCache(companyId);
+      clearMisaApiCache(companyId, true);
       notify(result?.message || "Đã lưu thành công.");
       reload();
       return result || true;

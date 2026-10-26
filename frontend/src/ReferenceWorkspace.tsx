@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -72,26 +72,38 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
-import MisaInvoiceWorkspace from './MisaInvoiceWorkspace';
 import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
-import InvoiceLookupWorkspace from './InvoiceLookupWorkspace';
-import MisaCashWorkspace from "./MisaCashWorkspace";
-import MisaBankWorkspace from "./MisaBankWorkspace";
-import MisaPurchaseWorkspace from "./MisaPurchaseWorkspace";
-import MisaSupplierRiskWorkspace from "./MisaSupplierRiskWorkspace";
-import MisaSalesWorkspace from "./MisaSalesWorkspace";
-import MisaInventoryWorkspace from "./MisaInventoryWorkspace";
-import MisaToolsWorkspace from "./MisaToolsWorkspace";
-import MisaAssetsWorkspace from "./MisaAssetsWorkspace";
-import MisaPayrollWorkspace from "./MisaPayrollWorkspace";
-import MisaTaxWorkspace from "./MisaTaxWorkspace";
-import MisaCostWorkspace from "./MisaCostWorkspace";
-import MisaLedgerWorkspace from "./MisaLedgerWorkspace";
-import MisaBudgetWorkspace from "./MisaBudgetWorkspace";
-import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
-import MisaFinancialAnalysisWorkspace from "./MisaFinancialAnalysisWorkspace";
-import MisaOpeningBalanceWorkspace from "./MisaOpeningBalanceWorkspace";
-import MisaDashboardOverview from "./MisaDashboardOverview";
+
+// Code-split heavy workspace modules for instant initial load (sub-second cold start)
+const MisaCashWorkspace = lazy(() => import("./MisaCashWorkspace"));
+const MisaBankWorkspace = lazy(() => import("./MisaBankWorkspace"));
+const MisaPurchaseWorkspace = lazy(() => import("./MisaPurchaseWorkspace"));
+const MisaSupplierRiskWorkspace = lazy(() => import("./MisaSupplierRiskWorkspace"));
+const MisaSalesWorkspace = lazy(() => import("./MisaSalesWorkspace"));
+const MisaInventoryWorkspace = lazy(() => import("./MisaInventoryWorkspace"));
+const MisaToolsWorkspace = lazy(() => import("./MisaToolsWorkspace"));
+const MisaAssetsWorkspace = lazy(() => import("./MisaAssetsWorkspace"));
+const MisaPayrollWorkspace = lazy(() => import("./MisaPayrollWorkspace"));
+const MisaTaxWorkspace = lazy(() => import("./MisaTaxWorkspace"));
+const MisaCostWorkspace = lazy(() => import("./MisaCostWorkspace"));
+const MisaLedgerWorkspace = lazy(() => import("./MisaLedgerWorkspace"));
+const MisaBudgetWorkspace = lazy(() => import("./MisaBudgetWorkspace"));
+const MisaReportCenterWorkspace = lazy(() => import("./MisaReportCenterWorkspace"));
+const MisaFinancialAnalysisWorkspace = lazy(() => import("./MisaFinancialAnalysisWorkspace"));
+const MisaOpeningBalanceWorkspace = lazy(() => import("./MisaOpeningBalanceWorkspace"));
+const MisaDashboardOverview = lazy(() => import("./MisaDashboardOverview"));
+const MisaInvoiceWorkspace = lazy(() => import("./MisaInvoiceWorkspace"));
+const InvoiceLookupWorkspace = lazy(() => import("./InvoiceLookupWorkspace"));
+const CompanyAdminWorkspace = lazy(() => import("./CompanyAdminWorkspace"));
+const SuperAdminWorkspace = lazy(() => import("./SuperAdminWorkspace"));
+
+const WorkspaceLoader = () => (
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 360, gap: 12, width: "100%" }}>
+    <div style={{ width: 32, height: 32, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+    <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải dữ liệu phân hệ...</span>
+    <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
 import LiveAccount from "./LiveAccount";
@@ -130,8 +142,6 @@ import LiveWarehouses from "./LiveWarehouses";
 import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
 import LiveAccounts from "./LiveAccounts";
 import LiveCatalogExtensions from "./LiveCatalogExtensions";
-import CompanyAdminWorkspace from "./CompanyAdminWorkspace";
-import SuperAdminWorkspace from "./SuperAdminWorkspace";
 import { MisaModuleApiExtensionPanel, MODULE_EXTENDED_APIS } from "./MisaModuleApiExtensionDrawer";
 import { request } from "./live-api";
 import "./App.css";
@@ -1486,6 +1496,7 @@ function ReferenceWorkspace() {
           </div>
         </div>
         )}
+        <Suspense fallback={<WorkspaceLoader />}>
         {tab === "extended-apis" && moduleId in MODULE_EXTENDED_APIS ? (
           <div style={{ padding: 16 }}>
             <MisaModuleApiExtensionPanel
@@ -1669,6 +1680,7 @@ function ReferenceWorkspace() {
             notify={setNotice}
           />
         )}
+        </Suspense>
       </main>
       {panel === "settings" && (
         <Modal
@@ -2053,8 +2065,8 @@ function ReferenceWorkspace() {
 }
 function AppRoute() {
   const location = useLocation();
-  if (location.pathname === "/admin" || location.pathname === "/company-admin") return <CompanyAdminWorkspace />;
-  if (location.pathname === "/super-admin" || location.pathname === "/platform-admin") return <SuperAdminWorkspace />;
+  if (location.pathname === "/admin" || location.pathname === "/company-admin") return <Suspense fallback={<WorkspaceLoader />}><CompanyAdminWorkspace /></Suspense>;
+  if (location.pathname === "/super-admin" || location.pathname === "/platform-admin") return <Suspense fallback={<WorkspaceLoader />}><SuperAdminWorkspace /></Suspense>;
   if (location.pathname === "/account") return <LiveAccount />;
   if (location.pathname === "/join") return <LiveJoin />;
   if (location.pathname === "/login" || location.pathname === "/login/") return <LiveLogin />;
