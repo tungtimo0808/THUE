@@ -398,46 +398,8 @@ def seed_standard_roles_view(request):
     company = get_object_or_404(Company, pk=company_id)
     actor_account = getattr(request.user, "iam_account", None)
 
-    created_roles = []
-    with transaction.atomic():
-        all_perms = list(Permission.objects.filter(status=ActiveStatus.ACTIVE).select_related("resource"))
-
-        for role_def in STANDARD_ROLE_DEFINITIONS:
-            role, created = Role.objects.get_or_create(
-                company=company,
-                code=role_def["code"],
-                defaults={
-                    "name": role_def["name"],
-                    "description": role_def["description"],
-                    "role_type": RoleType.STANDARD,
-                    "status": RoleStatus.ACTIVE,
-                    "created_by": actor_account,
-                    "updated_by": actor_account,
-                },
-            )
-
-            # Match permissions
-            prefixes = role_def["permission_prefixes"]
-            matched_perms = [
-                p for p in all_perms
-                if any(p.code.startswith(prefix) for prefix in prefixes)
-            ]
-
-            # Assign permissions to role
-            existing_perm_ids = set(RolePermission.objects.filter(role=role).values_list("permission_id", flat=True))
-            new_grants = [
-                RolePermission(role=role, permission=p, effect="ALLOW")
-                for p in matched_perms if p.id not in existing_perm_ids
-            ]
-            if new_grants:
-                RolePermission.objects.bulk_create(new_grants)
-
-            created_roles.append({
-                "code": role.code,
-                "name": role.name,
-                "created": created,
-                "permission_count": len(matched_perms),
-            })
+    from iam.role_services import seed_standard_roles_for_company
+    created_roles = seed_standard_roles_for_company(company, actor_account)
 
     return Response({
         "message": f"Đã khởi tạo thành công {len(created_roles)} vai trò mẫu cho công ty {company.name}.",

@@ -68,3 +68,4 @@ test("Verify zero-delay tab switching and Keep-Alive state preservation", async 
   // Expect Keep-Alive switch to be faster and free of errors
   expect(errors).toHaveLength(0);
 });
+

@@ -1204,7 +1204,7 @@ def decide_join_request(item, decision, reason, request, *, options=None, auto_a
         raise ValidationError({"reason": "Cần nhập lý do từ chối."})
 
     with transaction.atomic():
-        item = CompanyJoinRequest.objects.select_for_update().select_related(
+        item = CompanyJoinRequest.objects.select_for_update(of=("self",)).select_related(
             "company", "requester__auth_user", "requester__preference"
         ).get(pk=item.pk)
         company = item.company
