@@ -44,20 +44,51 @@ class Command(BaseCommand):
             defaults={"name": "Đô la Mỹ", "numeric_code": "840", "decimal_places": 2, "is_active": True}
         )
 
-        # 2. Users: ensure tanh and admin
-        auth_user = User.objects.filter(is_superuser=True).first()
-        if not auth_user:
-            auth_user, _ = User.objects.get_or_create(
-                username="tanh",
-                defaults={"email": "anhtank47@gmail.com", "is_staff": True, "is_superuser": True}
-            )
-            auth_user.set_password("Admin@123")
-            auth_user.save()
+        # 2. Users: ensure superadmin and default admin from .env
+        import os
+        superadmin_user = os.getenv("SUPERADMIN_USERNAME", "superadmin")
+        superadmin_email = os.getenv("SUPERADMIN_EMAIL", "superadmin@soviet.vn")
+        superadmin_pass = os.getenv("SUPERADMIN_PASSWORD", "SuperAdmin@2026")
 
-        iam_user, _ = UserAccount.objects.get_or_create(
-            auth_user=auth_user,
-            defaults={"email": auth_user.email or "tanh@example.com", "display_name": "Trần Anh"}
+        super_auth, _ = User.objects.get_or_create(
+            username=superadmin_user,
+            defaults={"email": superadmin_email, "is_staff": True, "is_superuser": True}
         )
+        super_auth.email = superadmin_email
+        super_auth.is_staff = True
+        super_auth.is_superuser = True
+        super_auth.is_active = True
+        super_auth.set_password(superadmin_pass)
+        super_auth.save()
+
+        super_iam, _ = UserAccount.objects.get_or_create(
+            auth_user=super_auth,
+            defaults={"email": superadmin_email, "display_name": "Super Admin Hệ Thống"}
+        )
+
+        admin_username = os.getenv("ADMIN_USERNAME", "timodapoettt")
+        admin_email = os.getenv("ADMIN_EMAIL", "tungtimo0808@gmail.com")
+        admin_pass = os.getenv("ADMIN_PASSWORD", "123456")
+        admin_display = os.getenv("ADMIN_DISPLAY_NAME", "Đỗ Đức Tùng")
+
+        admin_auth, _ = User.objects.get_or_create(
+            username=admin_username,
+            defaults={"email": admin_email, "is_staff": False, "is_superuser": False}
+        )
+        admin_auth.email = admin_email
+        admin_auth.is_active = True
+        admin_auth.set_password(admin_pass)
+        admin_auth.save()
+
+        admin_iam, _ = UserAccount.objects.get_or_create(
+            auth_user=admin_auth,
+            defaults={"email": admin_email, "display_name": admin_display}
+        )
+        admin_iam.display_name = admin_display
+        admin_iam.save()
+
+        auth_user = super_auth
+        iam_user = admin_iam
 
         # 3. Company ABC
         company, created = Company.objects.get_or_create(
@@ -87,23 +118,22 @@ class Command(BaseCommand):
             company.status = CompanyStatus.ACTIVE
             company.save()
 
-        # Membership for tanh
-        membership, _ = CompanyMembership.objects.get_or_create(
-            company=company,
-            user=iam_user,
-            defaults={"membership_status": "ACTIVE", "joined_at": timezone.now(), "created_by": iam_user}
-        )
-        if membership.membership_status != "ACTIVE":
-            membership.membership_status = "ACTIVE"
-            membership.save()
-
-        # Assign all available roles to admin user
+        # Memberships for superadmin & admin
         from iam.models import Role, UserRoleAssignment
-        auth_user.is_superuser = True
-        auth_user.is_staff = True
-        auth_user.save()
-        for r in Role.objects.all():
-            UserRoleAssignment.objects.get_or_create(company_membership=membership, role=r, defaults={"assigned_by": iam_user, "status": "ACTIVE"})
+        roles = list(Role.objects.all())
+        for user_target in [super_iam, admin_iam]:
+            m, _ = CompanyMembership.objects.get_or_create(
+                company=company,
+                user=user_target,
+                defaults={"membership_status": "ACTIVE", "joined_at": timezone.now(), "created_by": user_target}
+            )
+            if m.membership_status != "ACTIVE":
+                m.membership_status = "ACTIVE"
+                m.save()
+            for r in roles:
+                UserRoleAssignment.objects.get_or_create(
+                    company_membership=m, role=r, defaults={"assigned_by": user_target, "status": "ACTIVE"}
+                )
 
         # Ensure ModuleCatalog has all WORKSPACE_MODULES
         from common_services.models import ModuleCatalog, ModuleCategory
