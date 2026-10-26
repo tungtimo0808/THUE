@@ -592,10 +592,18 @@ class AdminCompanyJoinRequestSerializer(CompanyJoinRequestSerializer):
 
 
 class CompanySwitchSerializer(serializers.Serializer):
-    company = serializers.UUIDField()
+    company = serializers.UUIDField(required=False)
+    company_id = serializers.UUIDField(required=False)
     branch = serializers.UUIDField(required=False, allow_null=True)
     all_branches = serializers.BooleanField(default=False)
     confirm_discard = serializers.BooleanField(default=False)
+
+    def validate(self, attrs):
+        comp = attrs.get("company") or attrs.get("company_id")
+        if not comp:
+            raise serializers.ValidationError({"company": "Cần cung cấp company hoặc company_id."})
+        attrs["company"] = comp
+        return attrs
 
 
 class UserPreferenceSerializer(serializers.ModelSerializer):

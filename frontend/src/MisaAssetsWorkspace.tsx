@@ -915,6 +915,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     if (apiConnected && _company?.id) {
       fetch(`/api/v1/fixed-assets/transactions/next-transfer-number/?company_id=${encodeURIComponent(_company.id)}`, {
         credentials: "include",
+        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
@@ -1331,6 +1332,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     if (apiConnected && _company?.id) {
       fetch(`/api/v1/fixed-assets/transactions/next-disposal-number/?company_id=${encodeURIComponent(_company.id)}`, {
         credentials: "include",
+        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
@@ -1833,6 +1835,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     if (apiConnected && _company?.id) {
       fetch(`/api/v1/fixed-assets/counts/next-number/?company_id=${encodeURIComponent(_company.id)}&asset_type=FIXED_ASSET`, {
         credentials: "include",
+        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
