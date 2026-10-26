@@ -104,11 +104,11 @@ Hệ thống được đóng gói và vận hành qua `docker compose`:
 
 | Container | Image | Port Mapping | Trạng thái | Ghi chú |
 | :--- | :--- | :--- | :--- | :--- |
-| `thue_erp_postgres` | `postgres:16-alpine` | `0.0.0.0:5433->5432` | Healthy (Up) | Chứa CSDL PostgreSQL thật với dữ liệu seed |
+| `thue_erp_postgres` | `postgres:16-alpine` | `0.0.0.0:26015->5432` | Healthy (Up) | Chứa CSDL PostgreSQL thật với dữ liệu seed |
 | `thue_erp_backend` | `thue-backend` | `0.0.0.0:8080->8080` | Healthy (Up) | Django 6.1 REST API + Quản lý phân quyền RBAC |
-| `thue_erp_frontend` | `thue-frontend` | `0.0.0.0:5173->5173` | Running (Up) | React 19 + Vite UI kết nối trực tiếp Backend |
+| `thue_erp_frontend` | `thue-frontend` | `0.0.0.0:2601->2601` | Running (Up) | React 19 + Vite UI kết nối trực tiếp Backend |
 
-- **Địa chỉ truy cập giao diện:** [http://localhost:5173](http://localhost:5173)
+- **Địa chỉ truy cập giao diện:** [http://localhost:2601](http://localhost:2601)
 - **Tài khoản đăng nhập quản trị:**
   - Email: `admin@abc.com` (Mật khẩu: `Password123!`)
   - Email: `anhtank47@gmail.com` (Username: `tanh`, Mật khẩu: `password123`)
@@ -140,7 +140,7 @@ Mặc dù toàn bộ dữ liệu thật, chế độ kế toán TT99 và giao di
 
 ## 4. HƯỚNG DẪN KIỂM TRA NHANH TRÊN GIAO DIỆN
 
-1. Mở trình duyệt tại [http://localhost:5173](http://localhost:5173).
+1. Mở trình duyệt tại [http://localhost:2601](http://localhost:2601).
 2. Nếu xuất hiện màn hình đăng nhập, nhập `admin@abc.com` / `Password123!`.
 3. Kiểm tra thông tin góc trên bên trái:
    - Tên công ty: **CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC**

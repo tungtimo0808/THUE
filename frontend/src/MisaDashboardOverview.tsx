@@ -382,8 +382,8 @@ export function MisaDashboardOverview({
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <Calendar size={14} />
             <span>Kỳ:</span>
             <select
@@ -396,6 +396,7 @@ export function MisaDashboardOverview({
                 border: "1px solid #cbd5e1",
                 fontSize: 12.5,
                 background: "#fff",
+                maxWidth: 160,
               }}
             >
               {periodsList.map((p) => (
@@ -406,7 +407,7 @@ export function MisaDashboardOverview({
             </select>
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <Building2 size={14} />
             <span>Đơn vị:</span>
             <select
@@ -419,6 +420,8 @@ export function MisaDashboardOverview({
                 border: "1px solid #cbd5e1",
                 fontSize: 12.5,
                 background: "#fff",
+                maxWidth: 200,
+                textOverflow: "ellipsis",
               }}
             >
               <option value="">Toàn doanh nghiệp ({companyName})</option>
@@ -430,7 +433,7 @@ export function MisaDashboardOverview({
             </select>
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <span>So sánh:</span>
             <select
               aria-label="Chế độ so sánh kỳ"
@@ -442,6 +445,7 @@ export function MisaDashboardOverview({
                 border: "1px solid #cbd5e1",
                 fontSize: 12.5,
                 background: "#fff",
+                maxWidth: 150,
               }}
             >
               <option value="PREVIOUS_PERIOD">Kỳ liền trước</option>
@@ -450,7 +454,7 @@ export function MisaDashboardOverview({
             </select>
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <span>Nguồn DT:</span>
             <select
               aria-label="Nguồn tính doanh thu"
@@ -462,6 +466,7 @@ export function MisaDashboardOverview({
                 border: "1px solid #cbd5e1",
                 fontSize: 12.5,
                 background: "#fff",
+                maxWidth: 155,
               }}
             >
               <option value="GL">Sổ cái (TK 511/521)</option>
@@ -474,7 +479,7 @@ export function MisaDashboardOverview({
             className="ref-button teal"
             disabled={loading || refreshing}
             onClick={() => void loadDashboardOverview({ forceRefresh: true })}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", fontSize: 12.5 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}
           >
             <RefreshCw size={14} className={loading || refreshing ? "spin" : ""} />
             <span>{refreshing ? "Đang làm mới…" : "Làm mới"}</span>
@@ -483,7 +488,7 @@ export function MisaDashboardOverview({
           <Link
             to={href("/reports")}
             className="ref-button"
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 12.5 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}
           >
             <span>Trung tâm báo cáo</span>
             <ExternalLink size={13} />
@@ -857,7 +862,7 @@ export function MisaDashboardOverview({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 520px), 1fr))",
           gap: 16,
         }}
       >

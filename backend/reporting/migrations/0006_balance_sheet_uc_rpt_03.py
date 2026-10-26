@@ -7,6 +7,7 @@ from reporting.financial_position_services import seed_balance_sheet_uc_rpt_03
 
 
 class Migration(migrations.Migration):
+    atomic = False
 
     dependencies = [
         ("reporting", "0005_financial_bundles_uc_rpt_02"),

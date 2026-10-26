@@ -6404,11 +6404,11 @@ export default function MisaLedgerWorkspace({
               </div>
             </div>
 
-            {/* Middle Row: 5 Action Cards (Hệ thống tài khoản, Mã thống kê, Khoản mục CP, Tiện ích, Tùy chọn) */}
+            {/* Middle Row: 6 Action Cards (Hệ thống tài khoản, Mã thống kê, Khoản mục CP, Tiện ích, Ngoại tệ, Tùy chọn) */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(5, 1fr)",
+                gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
                 gap: 16,
               }}
             >

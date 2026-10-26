@@ -231,7 +231,13 @@ class HasIamPermission(BasePermission):
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError):
             return False
-        if getattr(view, "allow_scoped_list_permission", False):
+        has_specific_scope = bool(
+            request.query_params.get("warehouse_id")
+            or (isinstance(request.data, dict) and request.data.get("warehouse"))
+            or request.query_params.get("branch_id")
+            or (isinstance(request.data, dict) and request.data.get("branch"))
+        )
+        if getattr(view, "allow_scoped_list_permission", False) and not has_specific_scope:
             if _setting(company).get("direct_user_permissions_enabled", False):
                 now = timezone.now()
                 if UserPermissionOverride.objects.filter(

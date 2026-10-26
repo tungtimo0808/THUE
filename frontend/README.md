@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-Mở URL Vite in ra trong terminal, thường là http://127.0.0.1:5173. Giao diện mẫu chạy độc lập, không cần chạy Django. Nếu PowerShell chặn `npm.ps1`, thay `npm` bằng `npm.cmd`. Khi phát triển API, Vite proxy `/api` tới `http://127.0.0.1:8000`.
+Mở URL Vite in ra trong terminal, thường là http://127.0.0.1:2601. Giao diện mẫu chạy độc lập, không cần chạy Django. Nếu PowerShell chặn `npm.ps1`, thay `npm` bằng `npm.cmd`. Khi phát triển API, Vite proxy `/api` tới `http://127.0.0.1:8000`.
 
 ## Đã triển khai
 

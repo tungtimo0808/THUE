@@ -2463,6 +2463,21 @@ export default function MisaPurchaseWorkspace({
                   </td>
                 </tr>
               ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={8} style={{ padding: "50px 20px", textAlign: "center", color: "#64748b" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <ShoppingCart size={38} strokeWidth={1.4} style={{ color: "#94a3b8" }} />
+                      <strong style={{ fontSize: 14, color: "#334155" }}>
+                        Chưa có đơn mua hàng nào
+                      </strong>
+                      <span style={{ fontSize: 12.5, color: "#64748b" }}>
+                        Nhấn nút <b>"Thêm đơn mua hàng"</b> để bắt đầu lập đơn
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -2518,6 +2533,21 @@ export default function MisaPurchaseWorkspace({
                   </td>
                 </tr>
               ))}
+              {contracts.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ padding: "50px 20px", textAlign: "center", color: "#64748b" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <FileCheck size={38} strokeWidth={1.4} style={{ color: "#94a3b8" }} />
+                      <strong style={{ fontSize: 14, color: "#334155" }}>
+                        Chưa có hợp đồng mua hàng nào
+                      </strong>
+                      <span style={{ fontSize: 12.5, color: "#64748b" }}>
+                        Nhấn nút <b>"Thêm hợp đồng mua"</b> để bắt đầu tạo hợp đồng
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -2898,6 +2928,21 @@ export default function MisaPurchaseWorkspace({
                   </td>
                 </tr>
               ))}
+              {vouchers.length === 0 && (
+                <tr>
+                  <td colSpan={8} style={{ padding: "50px 20px", textAlign: "center", color: "#64748b" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <ShoppingCart size={38} strokeWidth={1.4} style={{ color: "#94a3b8" }} />
+                      <strong style={{ fontSize: 14, color: "#334155" }}>
+                        Chưa có chứng từ mua hàng trong kỳ kế toán này
+                      </strong>
+                      <span style={{ fontSize: 12.5, color: "#64748b" }}>
+                        Nhấn nút <b>"Thêm"</b> hoặc <b>"Thêm bằng AI"</b> trên thanh công cụ để tạo mới
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -2951,6 +2996,21 @@ export default function MisaPurchaseWorkspace({
                   </td>
                 </tr>
               ))}
+              {returns.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ padding: "50px 20px", textAlign: "center", color: "#64748b" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <RotateCcw size={38} strokeWidth={1.4} style={{ color: "#94a3b8" }} />
+                      <strong style={{ fontSize: 14, color: "#334155" }}>
+                        Chưa có chứng từ trả lại hàng mua
+                      </strong>
+                      <span style={{ fontSize: 12.5, color: "#64748b" }}>
+                        Nhấn nút <b>"Thêm chứng từ trả lại hàng"</b> để bắt đầu lập chứng từ
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

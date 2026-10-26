@@ -134,6 +134,7 @@ export default function LiveCompanySelect() {
           business_type: "LLC_ONE_MEMBER",
           address: "Trụ sở chính doanh nghiệp",
           province: "Hà Nội",
+          legal_representative: session?.user?.display_name || "Đỗ Đức Tùng",
           confirmed_authority: true,
           fiscal_year_start_month: 1,
         }),

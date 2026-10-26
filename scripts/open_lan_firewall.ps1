@@ -6,6 +6,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 }
 
 $rules = @(
+    @{ Name = "ERP QA Frontend 2601"; Port = 2601 },
     @{ Name = "ERP QA Frontend 5173"; Port = 5173 },
     @{ Name = "ERP QA API 8080"; Port = 8080 }
 )

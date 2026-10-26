@@ -224,6 +224,8 @@ class CustomerApiTests(MasterDataFixture):
 
 class WarehouseScopeTests(MasterDataFixture):
     def test_warehouse_scope_filters_and_authorizes_each_warehouse(self):
+        from common_services.models import CoreCompanySetting
+        CoreCompanySetting.objects.update_or_create(company=self.company, defaults={"configuration": {"enabled_modules": ["MD", "INV"]}})
         warehouse_a = Warehouse.objects.create(company=self.company, branch=self.branch, code="A", name="Kho A")
         warehouse_b = Warehouse.objects.create(company=self.company, branch=self.branch, code="B", name="Kho B")
         viewer_auth = get_user_model().objects.create_user(username="store-viewer", password="password-123")

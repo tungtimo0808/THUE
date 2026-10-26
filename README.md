@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Mở URL Vite in ra trong terminal (thường là http://127.0.0.1:5173) để xem bản trải nghiệm với dữ liệu mẫu. Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd install` và `npm.cmd run dev`. Chi tiết chức năng, giới hạn và kiểm thử xem trong [FRONTEND/README.md](./FRONTEND/README.md).
+Mở URL Vite in ra trong terminal (thường là http://127.0.0.1:2601) để xem bản trải nghiệm với dữ liệu mẫu. Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd install` và `npm.cmd run dev`. Chi tiết chức năng, giới hạn và kiểm thử xem trong [FRONTEND/README.md](./FRONTEND/README.md).
 
 Dự án Backend xây dựng trên nền tảng **Django** và **Django REST Framework (DRF)**.
 

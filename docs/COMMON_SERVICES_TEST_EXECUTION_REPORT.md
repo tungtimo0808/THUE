@@ -6,7 +6,7 @@
 |---|---|
 | Ngày chạy | 30/09/2026 |
 | Backend | Django/DRF hiện tại trong workspace (`common_services`) |
-| Database chính | PostgreSQL 16 Docker, `127.0.0.1:5433` |
+| Database chính | PostgreSQL 16 Docker, `127.0.0.1:26015` |
 | Database đối chiếu | SQLite in-memory |
 | Nguồn expected result | `COMMON_SERVICES_TEST_PLAN.md` và API contract hiện tại |
 | Phạm vi | Toàn bộ 12 Use Case dùng chung (UC-COM-01 đến UC-COM-12) |

@@ -25,7 +25,7 @@ foreach ($processId in @($state.backend_pid, $state.frontend_pid)) {
 
 # npm.cmd có thể kết thúc trước child node.exe. Chỉ dừng listener khi command
 # line được xác nhận thuộc đúng workspace và đúng dịch vụ LAN này.
-foreach ($port in @(8080, 5173)) {
+foreach ($port in @(8080, 2601, 5173)) {
     $listener = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue |
         Select-Object -First 1
     if (-not $listener) { continue }

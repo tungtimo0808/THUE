@@ -397,6 +397,35 @@ class PaymentSerializer(serializers.ModelSerializer):
         supplier = attrs.get("supplier") or (self.instance.supplier if self.instance else None)
         if company and supplier and supplier.company_id != company.id:
             raise serializers.ValidationError({"supplier": "Nhà cung cấp phải thuộc cùng doanh nghiệp."})
+        method = attrs.get("payment_method_config") if "payment_method_config" in attrs else getattr(self.instance, "payment_method_config", None)
+        if method and (not self.instance or getattr(self.instance, "payment_method_config_id", None) != method.pk):
+            attrs["payment_method_snapshot"] = method_snapshot(method)
+        elif "payment_method_config" in attrs and method is None:
+            attrs["payment_method_snapshot"] = {}
+        if method:
+            expected = "CASH" if method.group == "CASH" else "BANK" if method.group == "BANK" else "OTHER"
+            if attrs.get("external_type", expected) != expected:
+                raise serializers.ValidationError({"external_type": "External type conflicts with the selected method."})
+            attrs["external_type"] = expected
+            account = attrs.get("company_bank_account") or getattr(self.instance, "company_bank_account", None) or method.default_bank_account
+            fund = attrs.get("cash_fund") or getattr(self.instance, "cash_fund", None) or method.default_cash_fund
+            if account:
+                attrs["company_bank_account"] = account
+            if fund:
+                attrs["cash_fund"] = fund
+            on_date = attrs.get("payment_date") or (self.instance.payment_date if self.instance else None)
+            validate_method_selection(
+                method,
+                company=company,
+                scope="PAYMENT",
+                on_date=on_date,
+                reference=attrs.get("external_reference", getattr(self.instance, "external_reference", "")),
+                bank_account=account,
+                cash_fund=fund,
+                previous=getattr(self.instance, "payment_method_config", None),
+            )
+            if not self.instance and not attrs.get("external_reference"):
+                attrs["external_reference"] = str(uuid.uuid4())
         return attrs
 
 

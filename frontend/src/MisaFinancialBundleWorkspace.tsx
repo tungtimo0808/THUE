@@ -85,6 +85,27 @@ function statusBadgeStyle(status: string): React.CSSProperties {
   }
 }
 
+const COMPONENT_TYPE_LABELS: Record<string, { title: string; subtitle: string; icon: string }> = {
+  FINANCIAL_POSITION: { title: "Tình hình tài chính", subtitle: "Bảng cân đối kế toán", icon: "🏛️" },
+  BUSINESS_RESULT: { title: "Kết quả kinh doanh", subtitle: "Doanh thu & Chi phí", icon: "📈" },
+  CASH_FLOW: { title: "Lưu chuyển tiền tệ", subtitle: "Dòng tiền thuần", icon: "💵" },
+  FINANCIAL_NOTES: { title: "Thuyết minh BCTC", subtitle: "Thuyết minh chi tiết", icon: "📝" },
+};
+
+function formatStatusLabel(status: string): string {
+  switch (status) {
+    case "APPROVED": return "Đã duyệt";
+    case "READY_FOR_APPROVAL": return "Chờ duyệt";
+    case "GENERATED": return "Đã lập";
+    case "REVIEW_REQUIRED": return "Cần rà soát";
+    case "DRAFT": return "Bản nháp";
+    case "FAILED": return "Không đạt";
+    case "PASSED": return "Hợp lệ";
+    case "PASSED_WITH_WARNING": return "Cảnh báo";
+    default: return status || "--";
+  }
+}
+
 export default function MisaFinancialBundleWorkspace({
   companyId,
   notify,
@@ -115,12 +136,27 @@ export default function MisaFinancialBundleWorkspace({
   const [exportPayload, setExportPayload] = useState<any>(null);
 
   const getWriter = useCallback((): ApiWriter => {
+    let sessionToken = "";
+    let sessionCompanyId = "";
+    try {
+      const raw = localStorage.getItem("erp_api_session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        sessionToken = parsed.token || parsed.access || "";
+        sessionCompanyId = parsed.companyId || "";
+      }
+    } catch {}
+
     const cid =
       companyId ||
+      sessionCompanyId ||
+      localStorage.getItem("erp_company_id") ||
       localStorage.getItem("active_company_id") ||
       localStorage.getItem("company_id") ||
       "";
     const token =
+      sessionToken ||
+      localStorage.getItem("erp_token") ||
       localStorage.getItem("access_token") ||
       localStorage.getItem("jwt_token") ||
       localStorage.getItem("token") ||
@@ -426,7 +462,7 @@ export default function MisaFinancialBundleWorkspace({
   ];
 
   return (
-    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 18, marginBottom: 20 }}>
+    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "16px 18px", marginBottom: 20, maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}>
       {/* Header Banner */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", borderBottom: "1px solid #e2e8f0", paddingBottom: 14, marginBottom: 14 }}>
         <div>
@@ -463,13 +499,15 @@ export default function MisaFinancialBundleWorkspace({
       </div>
 
       {/* Filter & Parameter Bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(195px, 1fr))", gap: 10, background: "#f8fafc", padding: 12, borderRadius: 6, border: "1px solid #e2e8f0", marginBottom: 14, fontSize: 12.5 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, background: "#f8fafc", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 16, boxSizing: "border-box" }}>
         <div>
-          <label style={{ display: "block", fontWeight: 600, color: "#475569", marginBottom: 4 }}>Loại bộ BCTC pháp lý</label>
+          <label title="Loại bộ BCTC pháp lý" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Loại bộ BCTC
+          </label>
           <select
             value={bundleType}
             onChange={(e) => setBundleType(e.target.value)}
-            style={{ width: "100%", height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", background: "#ffffff" }}
+            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
           >
             {bundleTypes.map((bt: any) => (
               <option key={bt.code} value={bt.code}>
@@ -480,7 +518,9 @@ export default function MisaFinancialBundleWorkspace({
         </div>
 
         <div>
-          <label style={{ display: "block", fontWeight: 600, color: "#475569", marginBottom: 4 }}>Kỳ kế toán</label>
+          <label title="Kỳ kế toán báo cáo" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Kỳ kế toán
+          </label>
           <select
             value={fiscalPeriodId}
             onChange={(e) => {
@@ -489,7 +529,7 @@ export default function MisaFinancialBundleWorkspace({
               const found = periods.find((p: any) => p.id === pid);
               if (found) setFiscalYear(found.fiscal_year);
             }}
-            style={{ width: "100%", height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", background: "#ffffff" }}
+            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
           >
             {periods.length === 0 && <option value="">-- Chọn kỳ kế toán --</option>}
             {periods.map((p: any) => (
@@ -501,36 +541,42 @@ export default function MisaFinancialBundleWorkspace({
         </div>
 
         <div>
-          <label style={{ display: "block", fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phương pháp Lưu chuyển tiền tệ (B03)</label>
+          <label title="Phương pháp Lưu chuyển tiền tệ (B03)" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Phương pháp LCTT (B03)
+          </label>
           <select
             value={cashFlowMethod}
             onChange={(e) => setCashFlowMethod(e.target.value)}
-            style={{ width: "100%", height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", background: "#ffffff" }}
+            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
           >
-            <option value="DIRECT">Phương pháp trực tiếp (B03-DN / B03a-DN)</option>
-            <option value="INDIRECT">Phương pháp gián tiếp (B03-DN-GT / B03a-DN-GT)</option>
+            <option value="DIRECT">Phương pháp trực tiếp (B03-DN)</option>
+            <option value="INDIRECT">Phương pháp gián tiếp (B03-DN-GT)</option>
           </select>
         </div>
 
         <div>
-          <label style={{ display: "block", fontWeight: 600, color: "#475569", marginBottom: 4 }}>Phạm vi báo cáo</label>
+          <label title="Phạm vi báo cáo" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Phạm vi báo cáo
+          </label>
           <select
             value={reportingScope}
             onChange={(e) => setReportingScope(e.target.value)}
-            style={{ width: "100%", height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", background: "#ffffff" }}
+            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
           >
             <option value="COMPANY">Toàn doanh nghiệp (COMPANY)</option>
-            <option value="BRANCH">Theo chi nhánh / đơn vị (BRANCH)</option>
+            <option value="BRANCH">Theo chi nhánh (BRANCH)</option>
           </select>
         </div>
 
         {reportingScope === "BRANCH" && (
           <div>
-            <label style={{ display: "block", fontWeight: 600, color: "#475569", marginBottom: 4 }}>Chi nhánh</label>
+            <label title="Chi nhánh" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              Chi nhánh
+            </label>
             <select
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
-              style={{ width: "100%", height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", background: "#ffffff" }}
+              style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
             >
               <option value="">-- Chọn chi nhánh --</option>
               {(catalog?.branches || []).map((b: any) => (
@@ -543,16 +589,18 @@ export default function MisaFinancialBundleWorkspace({
         )}
 
         <div>
-          <label style={{ display: "block", fontWeight: 600, color: "#475569", marginBottom: 4 }}>Bộ BCTC đã lưu</label>
+          <label title="Bộ BCTC đã lưu" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Bộ BCTC đã lưu
+          </label>
           <select
             value={selectedBundleId}
             onChange={(e) => setSelectedBundleId(e.target.value)}
-            style={{ width: "100%", height: 30, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 8px", background: "#ffffff" }}
+            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
           >
             <option value="">-- Chọn bộ BCTC đã lưu ({bundles.length}) --</option>
             {bundles.map((b: any) => (
               <option key={b.bundle_id} value={b.bundle_id}>
-                {b.bundle_code} (v{b.bundle_version}) - {b.bundle_status} [{b.available_component_count}/4]
+                {b.bundle_code} (v{b.bundle_version}) - {formatStatusLabel(b.bundle_status)} [{b.available_component_count}/4]
               </option>
             ))}
           </select>
@@ -561,7 +609,7 @@ export default function MisaFinancialBundleWorkspace({
 
       {/* Confirmation checkbox for Non-going concern (AF-02) */}
       {bundleType === "ANNUAL_NON_GOING_CONCERN" && (
-        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: "8px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#92400e" }}>
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#92400e" }}>
           <AlertTriangle size={16} />
           <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 600 }}>
             <input
@@ -575,7 +623,7 @@ export default function MisaFinancialBundleWorkspace({
       )}
 
       {errorMsg && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "10px 14px", marginBottom: 12, color: "#991b1b", fontSize: 12.5, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", marginBottom: 14, color: "#991b1b", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
           <XCircle size={16} />
           <span>{errorMsg}</span>
         </div>
@@ -585,79 +633,79 @@ export default function MisaFinancialBundleWorkspace({
       {bundleDetail ? (
         <div>
           {/* Bundle Metadata & Workflow Bar */}
-          <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6, padding: 12, marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14.5, color: "#0f172a" }}>
-                    {bundleDetail.bundle_name} — Mã: {bundleDetail.bundle_code} (v{bundleDetail.bundle_version})
+          {/* Bundle Metadata & Workflow Bar */}
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "14px 16px", marginBottom: 16 }}>
+            {/* Top row: Bundle Title & Status on left, Actions on right */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, borderBottom: "1px solid #e2e8f0", paddingBottom: 10, marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <h4 style={{ margin: 0, fontWeight: 700, fontSize: 14.5, color: "#0f172a" }}>
+                  {bundleDetail.bundle_name}
+                </h4>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  Mã: <strong>{bundleDetail.bundle_code}</strong> (v{bundleDetail.bundle_version})
+                </span>
+                <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", ...statusBadgeStyle(bundleDetail.bundle_status) }}>
+                  Trạng thái: {formatStatusLabel(bundleDetail.bundle_status)}
+                </span>
+                <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", ...statusBadgeStyle(bundleDetail.validation_status) }}>
+                  Kiểm tra chéo: {formatStatusLabel(bundleDetail.validation_status)}
+                </span>
+                {bundleDetail.is_stale && (
+                  <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#ffedd5", color: "#9a3412", border: "1px solid #fdba74", whiteSpace: "nowrap" }}>
+                    ⚠️ GL mới
                   </span>
-                  <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11.5, fontWeight: 700, ...statusBadgeStyle(bundleDetail.bundle_status) }}>
-                    Trạng thái Bộ: {bundleDetail.bundle_status}
+                )}
+                {bundleDetail.is_period_closed && (
+                  <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#e2e8f0", color: "#334155", whiteSpace: "nowrap" }}>
+                    🔒 Đã khóa sổ
                   </span>
-                  <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11.5, fontWeight: 700, ...statusBadgeStyle(bundleDetail.validation_status) }}>
-                    Kiểm tra chéo: {bundleDetail.validation_status}
-                  </span>
-                  {bundleDetail.is_stale && (
-                    <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11.5, fontWeight: 700, background: "#ffedd5", color: "#9a3412", border: "1px solid #fdba74" }}>
-                      ⚠️ Sổ cái (GL) đã thay đổi sau khi lập (Stale)
-                    </span>
-                  )}
-                  {bundleDetail.is_period_closed && (
-                    <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11.5, fontWeight: 700, background: "#e2e8f0", color: "#334155" }}>
-                      🔒 Kỳ kế toán đã khóa (Read-only)
-                    </span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, color: "#475569", marginTop: 4 }}>
-                  Doanh nghiệp: <strong>{bundleDetail.company_name}</strong> (MST: {bundleDetail.tax_code || "N/A"}) | Căn cứ pháp lý:{" "}
-                  <strong>{bundleDetail.legal_basis}</strong> | Thành phần:{" "}
-                  <strong>{bundleDetail.available_component_count}/4 đã có</strong>,{" "}
-                  <strong>{bundleDetail.approved_component_count}/4 đã duyệt</strong> | Cảnh báo:{" "}
-                  <strong>{bundleDetail.warning_count} Warning / {bundleDetail.blocker_count} Blocker</strong>
-                </div>
+                )}
               </div>
 
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                 <button
                   type="button"
                   onClick={handleValidateBundle}
-                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}
+                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                 >
-                  Kiểm tra chéo lại
+                  <RefreshCw size={12} />
+                  <span>Kiểm tra chéo lại</span>
                 </button>
                 {bundleDetail.permissions?.can_generate && bundleDetail.bundle_status !== "APPROVED" && (
                   <button
                     type="button"
                     onClick={handleSubmitReview}
-                    style={{ height: 30, padding: "0 10px", background: "#0284c7", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
+                    style={{ height: 30, padding: "0 12px", background: "#0284c7", border: "none", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                   >
-                    Trình duyệt
+                    <CheckCircle2 size={13} />
+                    <span>Trình duyệt</span>
                   </button>
                 )}
                 {bundleDetail.permissions?.can_approve && bundleDetail.bundle_status !== "APPROVED" && (
                   <button
                     type="button"
                     onClick={handleApproveBundle}
-                    style={{ height: 30, padding: "0 10px", background: "#16a34a", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
+                    style={{ height: 30, padding: "0 12px", background: "#16a34a", border: "none", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                   >
-                    Phê duyệt Bộ BCTC
+                    <ShieldCheck size={13} />
+                    <span>Phê duyệt Bộ BCTC</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={handleOpenHistory}
-                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "#334155", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#334155", display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", whiteSpace: "nowrap" }}
                 >
-                  <History size={13} />
+                  <History size={12} />
                   <span>Lịch sử V1/V2</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleOpenSupportingReports}
-                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer" }}
+                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                 >
-                  Báo cáo hỗ trợ kiểm tra
+                  <FileSpreadsheet size={12} />
+                  <span>Báo cáo hỗ trợ</span>
                 </button>
                 {bundleDetail.permissions?.can_export && (
                   <button
@@ -668,125 +716,206 @@ export default function MisaFinancialBundleWorkspace({
                         bundleDetail.bundle_status === "APPROVED" ? "OFFICIAL" : "DRAFT",
                       )
                     }
-                    style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "#0f172a", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                    style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#0f172a", display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", whiteSpace: "nowrap" }}
                   >
-                    <Printer size={13} />
-                    <span>In / Xuất Bộ BCTC (UC-RPT-15)</span>
+                    <Printer size={12} />
+                    <span>In / Xuất BCTC</span>
                   </button>
                 )}
               </div>
             </div>
+
+            {/* Bottom metadata tags */}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, fontSize: 12, color: "#475569" }}>
+              <span>
+                🏢 <strong>{bundleDetail.company_name}</strong> (MST: {bundleDetail.tax_code || "N/A"})
+              </span>
+              <span style={{ color: "#cbd5e1" }}>•</span>
+              <span>
+                📜 Căn cứ: <strong>Thông tư 99/2025/TT-BTC</strong>
+              </span>
+              <span style={{ color: "#cbd5e1" }}>•</span>
+              <span>
+                📑 Thành phần: <strong>{bundleDetail.available_component_count}/4 đã có</strong>, <strong>{bundleDetail.approved_component_count}/4 đã duyệt</strong>
+              </span>
+              <span style={{ color: "#cbd5e1" }}>•</span>
+              <span style={{ color: bundleDetail.blocker_count > 0 ? "#dc2626" : "#16a34a", fontWeight: 600 }}>
+                ⚠️ Cảnh báo: {bundleDetail.warning_count} Warning / {bundleDetail.blocker_count} Blocker
+              </span>
+            </div>
           </div>
 
           {/* 4 Required Legal Components Table */}
-          <div style={{ marginBottom: 14 }}>
-            <h4 style={{ margin: "0 0 8px", fontSize: 13.5, fontWeight: 700, color: "#1e293b" }}>
-              Danh sách 4 Báo cáo thành phần bắt buộc của Bộ BCTC ({bundleDetail.bundle_type})
-            </h4>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #e2e8f0" }}>
-              <thead>
-                <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
-                  <th style={{ padding: "8px 10px" }}>Thành phần</th>
-                  <th style={{ padding: "8px 10px" }}>Mã biểu mẫu pháp lý</th>
-                  <th style={{ padding: "8px 10px" }}>Tên báo cáo</th>
-                  <th style={{ padding: "8px 10px", textAlign: "center" }}>Mẫu / Run Ver</th>
-                  <th style={{ padding: "8px 10px", textAlign: "center" }}>Trạng thái Run</th>
-                  <th style={{ padding: "8px 10px", textAlign: "center" }}>Kiểm tra chéo</th>
-                  <th style={{ padding: "8px 10px", textAlign: "center" }}>UC đích</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right" }}>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(bundleDetail.components || []).map((comp: any) => (
-                  <tr key={comp.component_type} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{ padding: "8px 10px", fontWeight: 600 }}>{comp.component_type}</td>
-                    <td style={{ padding: "8px 10px", fontWeight: 700, color: "#0284c7" }}>{comp.legal_form_code}</td>
-                    <td style={{ padding: "8px 10px" }}>
-                      {comp.report_name}
-                      {comp.is_stale && (
-                        <span style={{ marginLeft: 6, fontSize: 11, color: "#b45309", fontWeight: 600 }}>
-                          (Stale - GL mới cập nhật)
-                        </span>
-                      )}
-                      {comp.error_message && (
-                        <div style={{ color: "#dc2626", fontSize: 11.5 }}>{comp.error_message}</div>
-                      )}
-                    </td>
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      Mẫu v{comp.template_version} / {comp.run_version ? `Run v${comp.run_version}` : "Chưa lập"}
-                    </td>
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ padding: "2px 6px", borderRadius: 4, fontSize: 11, fontWeight: 700, ...statusBadgeStyle(comp.run_status) }}>
-                        {comp.run_status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ padding: "2px 6px", borderRadius: 4, fontSize: 11, fontWeight: 700, ...statusBadgeStyle(comp.validation_status) }}>
-                        {comp.validation_status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 600, color: "#475569" }}>
-                      {comp.target_uc_code}
-                    </td>
-                    <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: 6 }}>
-                        {comp.statement_run_id && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenStatementLines(comp.statement_run_id)}
-                            style={{ padding: "3px 8px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 4, fontSize: 11.5, fontWeight: 600, color: "#166534", cursor: "pointer" }}
-                          >
-                            Xem chỉ tiêu ({comp.line_count})
-                          </button>
-                        )}
-                        {bundleDetail.permissions?.can_generate && !bundleDetail.read_only && (
-                          <button
-                            type="button"
-                            onClick={() => handleRegenerateComponent(comp)}
-                            style={{ padding: "3px 8px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11.5, color: "#334155", cursor: "pointer" }}
-                          >
-                            Lập lại
-                          </button>
-                        )}
-                        {comp.statement_run_id &&
-                          comp.run_status !== "APPROVED" &&
-                          bundleDetail.permissions?.can_approve && (
-                            <button
-                              type="button"
-                              onClick={() => handleApproveComponentRun(comp.statement_run_id)}
-                              style={{ padding: "3px 8px", background: "#eff6ff", border: "1px solid #93c5fd", borderRadius: 4, fontSize: 11.5, fontWeight: 600, color: "#1d4ed8", cursor: "pointer" }}
-                            >
-                              Duyệt thành phần
-                            </button>
-                          )}
-                        {onOpenReportByName && LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code] && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenReportByName(LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code])}
-                            style={{ padding: "3px 8px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11.5, color: "#0284c7", cursor: "pointer" }}
-                          >
-                            Mở mẫu in
-                          </button>
-                        )}
-                      </div>
-                    </td>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
+                Danh sách 4 Báo cáo thành phần bắt buộc ({bundleDetail.bundle_type})
+              </h4>
+              <span style={{ fontSize: 12, color: "#64748b" }}>
+                Căn cứ chuẩn Thông tư 99/2025/TT-BTC
+              </span>
+            </div>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto", background: "#ffffff" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, textAlign: "left", minWidth: 850 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#475569", fontWeight: 700 }}>
+                    <th style={{ padding: "10px 12px", width: 85, textAlign: "center", whiteSpace: "nowrap" }}>Mã mẫu</th>
+                    <th style={{ padding: "10px 12px", minWidth: 240, whiteSpace: "nowrap" }}>Báo cáo thành phần</th>
+                    <th style={{ padding: "10px 12px", width: 120, textAlign: "center", whiteSpace: "nowrap" }}>Phiên bản</th>
+                    <th style={{ padding: "10px 12px", width: 110, textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
+                    <th style={{ padding: "10px 12px", width: 105, textAlign: "center", whiteSpace: "nowrap" }}>Kiểm tra chéo</th>
+                    <th style={{ padding: "10px 12px", width: 384, textAlign: "right", whiteSpace: "nowrap" }}>Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(bundleDetail.components || []).map((comp: any) => {
+                    const friendly = COMPONENT_TYPE_LABELS[comp.component_type] || {
+                      title: comp.component_type,
+                      subtitle: "",
+                      icon: "📄",
+                    };
+                    return (
+                      <tr key={comp.component_type} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          <span style={{ padding: "3px 9px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, fontWeight: 700, fontSize: 12, color: "#1d4ed8", display: "inline-block" }}>
+                            {comp.legal_form_code}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 18 }}>{friendly.icon}</span>
+                            <div>
+                              <div style={{ fontWeight: 600, color: "#0f172a", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                                <span>{friendly.title}</span>
+                                {comp.is_stale && (
+                                  <span style={{ fontSize: 10.5, color: "#b45309", background: "#fef3c7", padding: "1px 6px", borderRadius: 4, fontWeight: 700 }}>
+                                    GL mới
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                                {comp.report_name}
+                                {friendly.subtitle ? ` (${friendly.subtitle})` : ""}
+                              </div>
+                              {comp.error_message && (
+                                <div style={{ color: "#dc2626", fontSize: 11.5, marginTop: 2 }}>{comp.error_message}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap", color: "#64748b", fontSize: 12 }}>
+                          Mẫu v{comp.template_version} · {comp.run_version ? `Run v${comp.run_version}` : "Chưa lập"}
+                        </td>
+                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11.5, fontWeight: 700, display: "inline-block", ...statusBadgeStyle(comp.run_status) }}>
+                            {formatStatusLabel(comp.run_status)}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11.5, fontWeight: 700, display: "inline-block", ...statusBadgeStyle(comp.validation_status) }}>
+                            {formatStatusLabel(comp.validation_status)}
+                          </span>
+                        </td>
+                        <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "142px 74px 72px 78px", gap: 6, alignItems: "center", justifyContent: "end" }}>
+                            {comp.statement_run_id ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenStatementLines(comp.statement_run_id)}
+                                style={{ width: 142, height: 28, padding: "0 6px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#166534", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                              >
+                                <Eye size={12} />
+                                <span>Xem chỉ tiêu ({comp.line_count})</span>
+                              </button>
+                            ) : (
+                              <div style={{ width: 142 }} />
+                            )}
+                            {bundleDetail.permissions?.can_generate && !bundleDetail.read_only ? (
+                              <button
+                                type="button"
+                                onClick={() => handleRegenerateComponent(comp)}
+                                style={{ width: 74, height: 28, padding: "0 6px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                              >
+                                <RefreshCw size={11} />
+                                <span>Lập lại</span>
+                              </button>
+                            ) : (
+                              <div style={{ width: 74 }} />
+                            )}
+                            {comp.statement_run_id &&
+                              comp.run_status !== "APPROVED" &&
+                              bundleDetail.permissions?.can_approve ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveComponentRun(comp.statement_run_id)}
+                                  style={{ width: 72, height: 28, padding: "0 6px", background: "#eff6ff", border: "1px solid #93c5fd", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#1d4ed8", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                >
+                                  <ShieldCheck size={12} />
+                                  <span>Duyệt</span>
+                                </button>
+                              ) : comp.run_status === "APPROVED" ? (
+                                <div
+                                  style={{
+                                    width: 72,
+                                    height: 28,
+                                    fontSize: 11.5,
+                                    fontWeight: 600,
+                                    color: "#166534",
+                                    background: "#f0fdf4",
+                                    border: "1px solid #bbf7d0",
+                                    borderRadius: 5,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 3,
+                                    boxSizing: "border-box",
+                                  }}
+                                >
+                                  <CheckCircle2 size={11} />
+                                  <span>Đã duyệt</span>
+                                </div>
+                              ) : (
+                                <div style={{ width: 72 }} />
+                              )}
+                            {onOpenReportByName && LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code] ? (
+                              <button
+                                type="button"
+                                onClick={() => onOpenReportByName(LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code])}
+                                style={{ width: 78, height: 28, padding: "0 6px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, color: "#0284c7", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                              >
+                                <Printer size={12} />
+                                <span>Mẫu in</span>
+                              </button>
+                            ) : (
+                              <div style={{ width: 78 }} />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Cross-Statement Validations Panel */}
           {(bundleDetail.validations || []).length > 0 && (
-            <div style={{ marginBottom: 14, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: 12 }}>
-              <h4 style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 700, color: "#92400e" }}>
-                Kết quả kiểm tra chéo & Cảnh báo tính nhất quán trong Bộ BCTC ({bundleDetail.validations.length})
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.7 }}>
+            <div style={{ marginBottom: 16, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "14px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <AlertTriangle size={16} color="#b45309" />
+                <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#92400e" }}>
+                  Kết quả kiểm tra chéo & Cảnh báo tính nhất quán trong Bộ BCTC ({bundleDetail.validations.length})
+                </h4>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12.5, lineHeight: 1.7 }}>
                 {bundleDetail.validations.map((v: any) => (
-                  <li key={v.id} style={{ color: v.severity === "BLOCKER" ? "#b91c1c" : "#92400e" }}>
-                    <strong>[{v.rule_code} - {v.severity}]</strong> ({v.component_type}
-                    {v.indicator_code ? ` / Chỉ tiêu ${v.indicator_code}` : ""}): {v.message}
+                  <li key={v.id} style={{ color: v.severity === "BLOCKER" ? "#b91c1c" : "#92400e", marginBottom: 4 }}>
+                    <span style={{ padding: "1px 6px", borderRadius: 4, fontWeight: 700, fontSize: 11, background: v.severity === "BLOCKER" ? "#fee2e2" : "#fef3c7", color: v.severity === "BLOCKER" ? "#991b1b" : "#854d0e", marginRight: 6, display: "inline-block" }}>
+                      {v.rule_code} · {v.severity}
+                    </span>
+                    <strong>{COMPONENT_TYPE_LABELS[v.component_type]?.title || v.component_type}</strong>
+                    {v.indicator_code ? ` (Chỉ tiêu [${v.indicator_code}])` : ""}: {v.message}
                   </li>
                 ))}
               </ul>
@@ -827,7 +956,8 @@ export default function MisaFinancialBundleWorkspace({
                 </div>
               </div>
 
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #e2e8f0" }}>
+              <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, minWidth: 780 }}>
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
                     <th style={{ padding: "7px 10px", textAlign: "left" }}>Chỉ tiêu</th>
@@ -920,6 +1050,7 @@ export default function MisaFinancialBundleWorkspace({
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
@@ -943,38 +1074,40 @@ export default function MisaFinancialBundleWorkspace({
                 <strong>{drilldownPayload.formula_expression || "Tổng hợp theo ánh xạ Tài khoản Sổ cái (GL)"}</strong> | Ánh xạ TK:{" "}
                 {(drilldownPayload.account_mappings || []).map((m: any) => `${m.account_prefix} (${m.balance_side})`).join(", ") || "Chỉ tiêu tổng hợp"}
               </div>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, background: "#ffffff", border: "1px solid #bfdbfe" }}>
-                <thead>
-                  <tr style={{ background: "#dbeafe", color: "#1e3a8a", textAlign: "left" }}>
-                    <th style={{ padding: "6px 8px" }}>Số chứng từ GL</th>
-                    <th style={{ padding: "6px 8px" }}>Ngày hạch toán</th>
-                    <th style={{ padding: "6px 8px" }}>Tài khoản</th>
-                    <th style={{ padding: "6px 8px" }}>Diễn giải</th>
-                    <th style={{ padding: "6px 8px", textAlign: "right" }}>Phát sinh Nợ</th>
-                    <th style={{ padding: "6px 8px", textAlign: "right" }}>Phát sinh Có</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(drilldownPayload.source_journal_lines || []).length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ padding: 10, textAlign: "center", color: "#64748b" }}>
-                        Không có bút toán chi tiết hoặc chỉ tiêu được tính theo công thức tổng hợp.
-                      </td>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, background: "#ffffff", border: "1px solid #bfdbfe", minWidth: 600 }}>
+                  <thead>
+                    <tr style={{ background: "#dbeafe", color: "#1e3a8a", textAlign: "left" }}>
+                      <th style={{ padding: "6px 8px" }}>Số chứng từ GL</th>
+                      <th style={{ padding: "6px 8px" }}>Ngày hạch toán</th>
+                      <th style={{ padding: "6px 8px" }}>Tài khoản</th>
+                      <th style={{ padding: "6px 8px" }}>Diễn giải</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right" }}>Phát sinh Nợ</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right" }}>Phát sinh Có</th>
                     </tr>
-                  ) : (
-                    drilldownPayload.source_journal_lines.map((jl: any, idx: number) => (
-                      <tr key={idx} style={{ borderBottom: "1px solid #eff6ff" }}>
-                        <td style={{ padding: "6px 8px", fontWeight: 600 }}>{jl.journal_number}</td>
-                        <td style={{ padding: "6px 8px" }}>{jl.posting_date}</td>
-                        <td style={{ padding: "6px 8px" }}>{jl.account_code} - {jl.account_name}</td>
-                        <td style={{ padding: "6px 8px" }}>{jl.description}</td>
-                        <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatMoney(jl.debit)}</td>
-                        <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatMoney(jl.credit)}</td>
+                  </thead>
+                  <tbody>
+                    {(drilldownPayload.source_journal_lines || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: 10, textAlign: "center", color: "#64748b" }}>
+                          Không có bút toán chi tiết hoặc chỉ tiêu được tính theo công thức tổng hợp.
+                        </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      drilldownPayload.source_journal_lines.map((jl: any, idx: number) => (
+                        <tr key={idx} style={{ borderBottom: "1px solid #eff6ff" }}>
+                          <td style={{ padding: "6px 8px", fontWeight: 600 }}>{jl.journal_number}</td>
+                          <td style={{ padding: "6px 8px" }}>{jl.posting_date}</td>
+                          <td style={{ padding: "6px 8px" }}>{jl.account_code} - {jl.account_name}</td>
+                          <td style={{ padding: "6px 8px" }}>{jl.description}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatMoney(jl.debit)}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatMoney(jl.credit)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -993,38 +1126,40 @@ export default function MisaFinancialBundleWorkspace({
                   Đóng
                 </button>
               </div>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, background: "#ffffff", border: "1px solid #e2e8f0" }}>
-                <thead>
-                  <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
-                    <th style={{ padding: "6px 8px" }}>Phiên bản</th>
-                    <th style={{ padding: "6px 8px" }}>Trạng thái</th>
-                    <th style={{ padding: "6px 8px" }}>Kiểm tra chéo</th>
-                    <th style={{ padding: "6px 8px" }}>Thời điểm lập</th>
-                    <th style={{ padding: "6px 8px", textAlign: "right" }}>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(historyPayload.versions || []).map((v: any) => (
-                    <tr key={v.bundle_id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "6px 8px", fontWeight: 700 }}>
-                        v{v.bundle_version} {v.is_current_version ? "(Hiện hành)" : "(Lịch sử)"}
-                      </td>
-                      <td style={{ padding: "6px 8px" }}>{v.bundle_status}</td>
-                      <td style={{ padding: "6px 8px" }}>{v.validation_status}</td>
-                      <td style={{ padding: "6px 8px" }}>{v.last_generated_at || "N/A"}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "right" }}>
-                        <button
-                          type="button"
-                          onClick={() => loadBundleDetail(bundleDetail.bundle_id, v.bundle_version)}
-                          style={{ padding: "2px 8px", fontSize: 11.5, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0284c7", cursor: "pointer" }}
-                        >
-                          Xem phiên bản v{v.bundle_version}
-                        </button>
-                      </td>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, background: "#ffffff", border: "1px solid #e2e8f0", minWidth: 600 }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
+                      <th style={{ padding: "6px 8px" }}>Phiên bản</th>
+                      <th style={{ padding: "6px 8px" }}>Trạng thái</th>
+                      <th style={{ padding: "6px 8px" }}>Kiểm tra chéo</th>
+                      <th style={{ padding: "6px 8px" }}>Thời điểm lập</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right" }}>Thao tác</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(historyPayload.versions || []).map((v: any) => (
+                      <tr key={v.bundle_id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "6px 8px", fontWeight: 700 }}>
+                          v{v.bundle_version} {v.is_current_version ? "(Hiện hành)" : "(Lịch sử)"}
+                        </td>
+                        <td style={{ padding: "6px 8px" }}>{v.bundle_status}</td>
+                        <td style={{ padding: "6px 8px" }}>{v.validation_status}</td>
+                        <td style={{ padding: "6px 8px" }}>{v.last_generated_at || "N/A"}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right" }}>
+                          <button
+                            type="button"
+                            onClick={() => loadBundleDetail(bundleDetail.bundle_id, v.bundle_version)}
+                            style={{ padding: "2px 8px", fontSize: 11.5, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0284c7", cursor: "pointer" }}
+                          >
+                            Xem phiên bản v{v.bundle_version}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

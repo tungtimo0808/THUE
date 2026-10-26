@@ -279,11 +279,14 @@ class LoginSerializer(serializers.Serializer):
             attrs["login"] = "+84" + raw_login if not raw_login.startswith("84") else "+" + raw_login
 
         if not is_phone:
-            # EF-02: Email sai định dạng -> "Email không đúng định dạng."
             try:
                 attrs["login"] = validate_and_normalize_email(raw_login)
             except serializers.ValidationError:
-                raise serializers.ValidationError({"email": "Email không đúng định dạng."})
+                # Cho phép đăng nhập bằng username (ví dụ: superadmin, admin)
+                if re.fullmatch(r"^[a-zA-Z0-9_@.+-]+$", raw_login):
+                    attrs["login"] = raw_login
+                else:
+                    raise serializers.ValidationError({"email": "Email hoặc tên đăng nhập không đúng định dạng."})
 
         attrs["password"] = raw_password
         return attrs

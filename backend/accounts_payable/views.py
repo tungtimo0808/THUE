@@ -348,12 +348,17 @@ class PaymentViewSet(BaseViewSet):
         return qs
 
     def create(self, request, *args, **kwargs):
-        if "action" not in request.data and "external_type" in request.data and "payment_method" not in request.data:
+        if "action" not in request.data and ("external_type" in request.data or "payment_method_config" in request.data) and "payment_method" not in request.data:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            obj = serializer.save(status="CONFIRMED", created_by=services.actor(self.request))
+            config = serializer.validated_data.get("payment_method_config")
+            ext_type = serializer.validated_data.get("external_type") or (config.group if config else "OTHER")
+            snapshot = serializer.validated_data.get("payment_method_snapshot") or ({
+                "code": config.code, "name": config.name, "group": config.group,
+            } if config else {})
+            obj = serializer.save(status="CONFIRMED", external_type=ext_type, payment_method_snapshot=snapshot, created_by=services.actor(self.request))
             services.audit(self.request, obj, "CREATE", after=serializer.data)
-            return Response(serializer.data, status=201)
+            return Response(self.get_serializer(obj).data, status=201)
 
         action_type = request.data.get("action", "POST")
         voucher = payment_voucher_services.save_payment_voucher(request, request.data, action=action_type)

@@ -175,14 +175,18 @@ for email, username, display_name, role_code, dept_name, pos_name in assignments
     acc.display_name = display_name
     acc.save()
 
-    dept, _ = Department.objects.get_or_create(
-        company=company, name=dept_name,
-        defaults={"code": f"PB_{usr.id}", "branch": branch, "status": "ACTIVE"}
-    )
-    emp, _ = Employee.objects.get_or_create(
-        company=company, employee_code=f"NV_{usr.id}",
-        defaults={"full_name": display_name, "email": email, "department": dept, "branch": branch, "status": "ACTIVE"}
-    )
+    dept = Department.objects.filter(company=company, name=dept_name).first()
+    if not dept:
+        dept = Department.objects.create(
+            company=company, name=dept_name,
+            code=f"PB_{usr.id}", branch=branch, status="ACTIVE"
+        )
+    emp = Employee.objects.filter(company=company, email=email).first() or Employee.objects.filter(company=company, employee_code=f"NV_{usr.id}").first()
+    if not emp:
+        emp = Employee.objects.create(
+            company=company, employee_code=f"NV_{usr.id}",
+            full_name=display_name, email=email, department=dept, branch=branch, status="ACTIVE"
+        )
 
     m, _ = CompanyMembership.objects.get_or_create(company=company, user=acc, defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": admin_acc, "employee": emp})
     m.membership_status = ActiveStatus.ACTIVE

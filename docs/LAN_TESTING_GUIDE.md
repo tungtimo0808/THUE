@@ -2,7 +2,7 @@
 
 ## Địa chỉ truy cập
 
-- Giao diện: `http://192.168.0.100:5173/`
+- Giao diện: `http://192.168.0.100:2601/`
 - Swagger API: `http://192.168.0.100:8080/api/docs/`
 - API base URL cho Postman: `http://192.168.0.100:8080`
 
@@ -42,7 +42,7 @@ Không dùng `localhost` hoặc `127.0.0.1` trên máy tester vì các địa ch
 
 ## Windows Firewall
 
-Máy chủ cần cho phép TCP inbound cổng 5173 và 8080 từ `LocalSubnet`. Không mở cổng PostgreSQL cho tester; tester chỉ truy cập frontend/API.
+Máy chủ cần cho phép TCP inbound cổng 2601 và 8080 từ `LocalSubnet`. Không mở cổng PostgreSQL cho tester; tester chỉ truy cập frontend/API.
 
 Nếu trình duyệt không kết nối được nhưng máy chủ tự mở được URL, quản trị viên chạy PowerShell **Run as Administrator**:
 
@@ -59,7 +59,7 @@ powershell -ExecutionPolicy Bypass -File scripts\close_lan_firewall.ps1
 ## Kiểm tra từ máy tester
 
 ```powershell
-Test-NetConnection 192.168.0.100 -Port 5173
+Test-NetConnection 192.168.0.100 -Port 2601
 Test-NetConnection 192.168.0.100 -Port 8080
 ```
 

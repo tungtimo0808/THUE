@@ -1391,6 +1391,33 @@ function ReferenceWorkspace() {
               </button>
             ) : null}
 
+            {moduleId === "bank" && (
+              <button
+                type="button"
+                className="misa-ebank-header-btn"
+                onClick={() => setNotice("Mở kết nối Ngân hàng điện tử Sổ Việt eBanking...")}
+                title="Kết nối Ngân hàng điện tử"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "4px 12px",
+                  borderRadius: 6,
+                  height: 30,
+                  marginRight: 6,
+                  flexShrink: 0,
+                }}
+              >
+                <span className="misa-ebank-badge-dot" />
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, lineHeight: 1 }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap" }}>
+                    Ngân hàng điện tử
+                  </span>
+                  <span style={{ fontSize: 10.5, color: "#bae6fd", whiteSpace: "nowrap" }}>· Kết nối ngay</span>
+                </div>
+              </button>
+            )}
+
             {moduleId !== "budget" && (
               <div className="ref-tab-tools-wrap" ref={tabOptionsRef}>
                 <button
@@ -1453,20 +1480,6 @@ function ReferenceWorkspace() {
                       </button>
                     </div>
                   </div>
-                )}
-
-                {moduleId === "bank" && (
-                  <button
-                    type="button"
-                    className="misa-ebank-header-btn"
-                    onClick={() => setNotice("Mở kết nối Ngân hàng điện tử Sổ Việt eBanking...")}
-                  >
-                    <span className="misa-ebank-badge-dot" />
-                    <div style={{ display: "flex", flexDirection: "column", textAlign: "left", lineHeight: 1.15 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "#ffffff" }}>Ngân hàng điện tử</span>
-                      <span style={{ fontSize: 10, color: "#e0f2fe" }}>Kết nối ngay</span>
-                    </div>
-                  </button>
                 )}
               </div>
             )}

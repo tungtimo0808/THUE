@@ -5,10 +5,13 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: #ffffff;
   color: #1e293b;
   font-family: inherit;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Header bar with subtabs and right announcement banner */
@@ -179,6 +182,9 @@
   display: flex;
   flex: 1;
   min-height: calc(100vh - 180px);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Left Category Sidebar */
@@ -223,9 +229,13 @@
 /* Right Reports Grid */
 .misa-reports-content {
   flex: 1;
-  padding: 16px 24px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .misa-reports-content-title {

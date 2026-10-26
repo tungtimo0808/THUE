@@ -713,8 +713,8 @@ def main():
             ("Swagger UI (Giao diện thử trực tiếp)", "http://127.0.0.1:8080/api/docs/"),
             ("ReDoc (Tài liệu OpenAPI kỹ thuật)", "http://127.0.0.1:8080/api/redoc/"),
             ("OpenAPI 3.0 Schema", "http://127.0.0.1:8080/api/schema/"),
-            ("Frontend Web App (Giao diện người dùng)", "http://127.0.0.1:5173/"),
-            ("Cơ sở dữ liệu (PostgreSQL)", "127.0.0.1:5433 (Database: thue_erp, User: thue_erp)"),
+            ("Frontend Web App (Giao diện người dùng)", "http://127.0.0.1:2601/"),
+            ("Cơ sở dữ liệu (PostgreSQL)", "127.0.0.1:26015 (Database: thue_erp, User: thue_erp)"),
         ]),
         ("2. TÀI KHOẢN VÀ THÔNG SỐ XÁC THỰC", [
             ("Tài khoản Quản trị (Admin)", "tanh"),

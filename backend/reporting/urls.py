@@ -456,7 +456,7 @@ urlpatterns = [
     ),
     re_path(
         r"^tax/(?P<report_code>[^/]+)/schema/?$",
-        TaxReportViewSet.as_view({"get": "schema"}),
+        TaxReportViewSet.as_view({"get": "report_schema"}),
         name="report-tax-schema",
     ),
     re_path(
@@ -522,7 +522,7 @@ urlpatterns = [
     ),
     re_path(
         r"^purchase/(?P<report_code>[^/]+)/schema/?$",
-        PurchaseReportViewSet.as_view({"get": "schema"}),
+        PurchaseReportViewSet.as_view({"get": "report_schema"}),
         name="report-purchase-schema",
     ),
     re_path(
@@ -598,7 +598,7 @@ urlpatterns = [
     ),
     re_path(
         r"^sales/(?P<report_code>[^/]+)/schema/?$",
-        SalesReportViewSet.as_view({"get": "schema"}),
+        SalesReportViewSet.as_view({"get": "report_schema"}),
         name="report-sales-schema",
     ),
     re_path(
@@ -679,7 +679,7 @@ urlpatterns = [
     ),
     re_path(
         r"^debt/(?P<report_code>[^/]+)/schema/?$",
-        DebtReportViewSet.as_view({"get": "schema"}),
+        DebtReportViewSet.as_view({"get": "report_schema"}),
         name="report-debt-schema",
     ),
     re_path(
@@ -770,7 +770,7 @@ urlpatterns = [
     ),
     re_path(
         r"^money/(?P<report_code>[^/]+)/schema/?$",
-        MoneyReportViewSet.as_view({"get": "schema"}),
+        MoneyReportViewSet.as_view({"get": "report_schema"}),
         name="report-money-schema",
     ),
     re_path(
@@ -836,7 +836,7 @@ urlpatterns = [
     ),
     re_path(
         r"^inventory/(?P<report_code>[^/]+)/schema/?$",
-        InventoryReportViewSet.as_view({"get": "schema"}),
+        InventoryReportViewSet.as_view({"get": "report_schema"}),
         name="report-inventory-schema",
     ),
     re_path(
@@ -902,7 +902,7 @@ urlpatterns = [
     ),
     re_path(
         r"^assets/(?P<report_code>[^/]+)/schema/?$",
-        AssetReportViewSet.as_view({"get": "schema"}),
+        AssetReportViewSet.as_view({"get": "report_schema"}),
         name="report-asset-schema",
     ),
     re_path(

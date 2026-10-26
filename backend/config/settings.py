@@ -4,6 +4,7 @@ Django settings for config project.
 
 from pathlib import Path
 import os
+import sys
 from datetime import timedelta
 from dotenv import load_dotenv
 
@@ -269,3 +270,9 @@ CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
 CATALOG_IMPORT_MAX_BYTES = int(os.getenv('CATALOG_IMPORT_MAX_BYTES', str(5 * 1024 * 1024)))
 CATALOG_IMPORT_MAX_ROWS = int(os.getenv('CATALOG_IMPORT_MAX_ROWS', '5000'))
 CATALOG_IMPORT_BACKGROUND_ROWS = int(os.getenv('CATALOG_IMPORT_BACKGROUND_ROWS', '1000'))
+
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+

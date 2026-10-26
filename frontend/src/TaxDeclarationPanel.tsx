@@ -63,9 +63,9 @@ export default function TaxDeclarationPanel({ companyId, token, notify }: {
   return <section style={{ marginTop: 28 }}>
     <h2 style={{ margin: "0 0 12px", fontSize: 20, color: "#1e293b" }}>Hồ sơ kê khai</h2>
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, fontSize: 13 }}>
-      <label htmlFor="declaration-period">Kỳ thuế GTGT</label>
+      <label htmlFor="declaration-period" style={{ whiteSpace: "nowrap" }}>Kỳ thuế GTGT</label>
       <select id="declaration-period" value={periodId} onChange={(event) => setPeriodId(event.target.value)}
-        style={{ padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 4 }}>
+        style={{ padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 4, width: "auto", minWidth: 160, maxWidth: 240 }}>
         {periods.map((row) => <option key={row.id} value={row.id}>{row.code}{row.status !== "OPEN" ? " (Đã khóa)" : ""}</option>)}
       </select>
       <button type="button" disabled={!periodId || busy} onClick={() => void run(`/api/v1/tax/declarations/${base}`,

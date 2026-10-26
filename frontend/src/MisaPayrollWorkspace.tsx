@@ -3323,7 +3323,7 @@ export default function MisaPayrollWorkspace({
             >
               <ShieldCheck size={18} />
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Quy định lương,...</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Quy định lương, BHXH</span>
           </div>
 
           {/* 5. Tùy chọn */}

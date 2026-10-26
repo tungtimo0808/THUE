@@ -377,11 +377,18 @@ export default function CompanyAdminWorkspace() {
 
   // Load Initial Data (Fast essential load for Tab 1 & Tab 2)
   const loadWorkspaceData = async () => {
-    if (!token || !companyId) return;
+    const effectiveToken = token || localStorage.getItem("erp_token") || "";
+    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || (companies.length > 0 ? companies[0].id : "");
+    if (!effectiveToken || !effectiveCompanyId) return;
     setLoading(true);
     setAlertMsg(null);
     try {
-      const activeComp = companies.find((c) => c.id === companyId);
+      let activeComp = companies.find((c) => c.id === effectiveCompanyId);
+      if (!activeComp) {
+        try {
+          activeComp = await request<any>(`/api/v1/organization/companies/${effectiveCompanyId}/`, effectiveToken);
+        } catch {}
+      }
       if (activeComp) {
         setCompanyInfo({
           id: activeComp.id,
@@ -396,11 +403,11 @@ export default function CompanyAdminWorkspace() {
 
       // Load essential personnel & org data
       const [memRes, empRes, deptRes, posRes, roleRes] = await Promise.allSettled([
-        request<MemberItem[] | { results: MemberItem[] }>(`/api/v1/iam/memberships/?company_id=${companyId}`, token),
-        request<EmployeeItem[] | { results: EmployeeItem[] }>(`/api/v1/organization/employees/?company_id=${companyId}`, token),
-        request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/departments/?company_id=${companyId}`, token),
-        request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/positions/?company_id=${companyId}`, token),
-        request<RoleItem[] | { results: RoleItem[] }>(`/api/v1/iam/roles/?company_id=${companyId}`, token),
+        request<MemberItem[] | { results: MemberItem[] }>(`/api/v1/iam/memberships/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<EmployeeItem[] | { results: EmployeeItem[] }>(`/api/v1/organization/employees/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/departments/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/positions/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<RoleItem[] | { results: RoleItem[] }>(`/api/v1/iam/roles/?company_id=${effectiveCompanyId}`, effectiveToken),
       ]);
 
       if (memRes.status === "fulfilled") {
@@ -436,26 +443,30 @@ export default function CompanyAdminWorkspace() {
 
   useEffect(() => {
     loadWorkspaceData();
-  }, [token, companyId]);
+  }, [token, companyId, companies.length]);
 
   // Lazy load permissions when Tab 3 is clicked
   useEffect(() => {
-    if (activeTab === "roles" && allPermissions.length === 0 && token && companyId) {
-      request<PermissionItem[] | { results: PermissionItem[] }>(`/api/v1/iam/permissions/?company_id=${companyId}`, token)
+    const effectiveToken = token || localStorage.getItem("erp_token") || "";
+    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || (companies.length > 0 ? companies[0].id : "");
+    if (activeTab === "roles" && allPermissions.length === 0 && effectiveToken && effectiveCompanyId) {
+      request<PermissionItem[] | { results: PermissionItem[] }>(`/api/v1/iam/permissions/?company_id=${effectiveCompanyId}`, effectiveToken)
         .then((val) => {
           setAllPermissions(Array.isArray(val) ? val : val.results || []);
         })
         .catch(() => {});
     }
-  }, [activeTab, allPermissions.length, token, companyId]);
+  }, [activeTab, allPermissions.length, token, companyId, companies.length]);
 
   // Lazy load config when Tab 4 is clicked
   useEffect(() => {
-    if (activeTab === "config" && modules.length === 0 && token && companyId) {
+    const effectiveToken = token || localStorage.getItem("erp_token") || "";
+    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || (companies.length > 0 ? companies[0].id : "");
+    if (activeTab === "config" && modules.length === 0 && effectiveToken && effectiveCompanyId) {
       Promise.allSettled([
-        request<ModuleSetting[] | { results: ModuleSetting[] }>(`/api/v1/common/modules/?company_id=${companyId}`, token),
-        request<FiscalPeriod[] | { results: FiscalPeriod[] }>(`/api/v1/common/fiscal-periods/?company_id=${companyId}`, token),
-        request<NumberingRule[] | { results: NumberingRule[] }>(`/api/v1/common/numbering-rules/?company_id=${companyId}`, token),
+        request<ModuleSetting[] | { results: ModuleSetting[] }>(`/api/v1/common/modules/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<FiscalPeriod[] | { results: FiscalPeriod[] }>(`/api/v1/common/fiscal-periods/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<NumberingRule[] | { results: NumberingRule[] }>(`/api/v1/common/numbering-rules/?company_id=${effectiveCompanyId}`, effectiveToken),
       ]).then(([modRes, periodRes, ruleRes]) => {
         if (modRes.status === "fulfilled") {
           const val = modRes.value;

@@ -21,7 +21,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $FrontendDir "package.json"))) {
 New-Item -ItemType Directory -Force -Path $RuntimeDir | Out-Null
 
 $existingPorts = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
-    Where-Object { $_.LocalPort -in 8080, 5173 }
+    Where-Object { $_.LocalPort -in 8080, 2601, 5173 }
 if ($existingPorts) {
     $details = ($existingPorts | ForEach-Object { "$($_.LocalAddress):$($_.LocalPort) PID=$($_.OwningProcess)" }) -join "; "
     throw "Cổng LAN đã được sử dụng: $details. Chạy scripts\stop_lan.ps1 hoặc xử lý tiến trình trước."
@@ -65,7 +65,7 @@ try {
 
     $frontend = Start-Process `
         -FilePath "npm.cmd" `
-        -ArgumentList @("run", "dev", "--", "--host", "0.0.0.0", "--port", "5173") `
+        -ArgumentList @("run", "dev", "--", "--host", "0.0.0.0", "--port", "2601") `
         -WorkingDirectory $FrontendDir `
         -WindowStyle Hidden `
         -RedirectStandardOutput (Join-Path $RuntimeDir "frontend.out.log") `
@@ -93,7 +93,7 @@ try {
         Select-Object -ExpandProperty IPAddress
 
     Write-Host "Backend:  http://$lanAddress`:8080/api/docs/"
-    Write-Host "Frontend: http://$lanAddress`:5173/"
+    Write-Host "Frontend: http://$lanAddress`:2601/"
     Write-Host "Logs:     $RuntimeDir"
 }
 finally {

@@ -117,12 +117,14 @@ export default function SuperAdminWorkspace() {
   const [newPassword, setNewPassword] = useState<string>("");
 
   // Load Platform Stats
+  // Load Platform Stats
   const loadPlatformStats = async () => {
-    if (!token) return;
+    const t = token || localStorage.getItem("erp_token") || "";
+    if (!t) return;
     setLoading(true);
     setAlertMsg(null);
     try {
-      const statsRes: any = await request("/api/v1/iam/platform/stats/", token);
+      const statsRes: any = await request("/api/v1/iam/platform/stats/", t);
       setMetrics(statsRes.metrics);
       setRecentLogs(statsRes.recent_logs || []);
       setServerTime(statsRes.server_time || "");
@@ -135,9 +137,10 @@ export default function SuperAdminWorkspace() {
 
   // Load Companies
   const loadCompanies = async () => {
-    if (!token) return;
+    const t = token || localStorage.getItem("erp_token") || "";
+    if (!t) return;
     try {
-      const res: any = await request("/api/v1/iam/platform/companies/", token);
+      const res: any = await request("/api/v1/iam/platform/companies/", t);
       setCompanies(Array.isArray(res) ? res : res.results || []);
     } catch (err: any) {
       setAlertMsg({ type: "error", text: err.message || "Không tải được danh sách doanh nghiệp." });
@@ -146,9 +149,10 @@ export default function SuperAdminWorkspace() {
 
   // Load Users
   const loadUsers = async () => {
-    if (!token) return;
+    const t = token || localStorage.getItem("erp_token") || "";
+    if (!t) return;
     try {
-      const res: any = await request("/api/v1/iam/platform/users/", token);
+      const res: any = await request("/api/v1/iam/platform/users/", t);
       setUsers(Array.isArray(res) ? res : res.results || []);
     } catch (err: any) {
       setAlertMsg({ type: "error", text: err.message || "Không tải được danh sách người dùng toàn cục." });

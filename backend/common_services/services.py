@@ -286,7 +286,7 @@ def change_registration_email(challenge_id, email, request):
 
 def login(data, request):
     User = get_user_model()
-    login_value = data["login"]
+    login_value = data.get("login") or data.get("email") or data.get("username") or ""
 
     # BR-COM-LOGIN-21 / EF-08: Giới hạn số yêu cầu đăng nhập liên tiếp
     _enforce_rate_limit(
@@ -1244,7 +1244,8 @@ def decide_join_request(item, decision, reason, request, *, options=None, auto_a
                 if not auto_approve and not has_effective_permission(actor, company, "COM.JOIN_REQUEST.ASSIGN_UNIT"):
                     raise PermissionDenied("Không có quyền phân công đơn vị.")
                 unit = OrganizationUnit.objects.filter(pk=options["organization_unit"], company=company).first()
-                if not unit or unit.status != "ACTIVE" or unit.start_date > now.date() or (unit.end_date and unit.end_date < now.date()):
+                today = timezone.localdate()
+                if not unit or unit.status != "ACTIVE" or unit.start_date > today or (unit.end_date and unit.end_date < today):
                     raise ValidationError({"organization_unit": "Đơn vị không còn hiệu lực."})
 
             selected = options.get("role_assignments")

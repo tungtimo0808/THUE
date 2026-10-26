@@ -8948,7 +8948,8 @@ export default function MisaCashWorkspace({
         {selectedTransaction && (
           <div
             style={{
-              height: 190,
+              height: 235,
+              minHeight: 220,
               borderTop: "1px solid #e5e7eb",
               background: "#ffffff",
               display: "flex",
@@ -9014,7 +9015,66 @@ export default function MisaCashWorkspace({
                 </thead>
                 <tbody>{cashDetailRows.slice((cashDetailVisiblePage-1)*cashDetailSize,cashDetailVisiblePage*cashDetailSize).map((row,index)=><tr key={row.id}><td>{(cashDetailVisiblePage-1)*cashDetailSize+index+1}</td><td>{row.description}</td><td><strong style={{color:'#2563eb'}}>{row.debit}</strong></td><td><strong style={{color:'#7c3aed'}}>{row.credit}</strong></td><td className="numeric"><strong>{formatVND(Number(row.amount)||0)}</strong></td><td>{row.partnerCode}</td><td>{row.partnerName}</td></tr>)}</tbody>
                 <tfoot><tr><td/><td>Tổng</td><td/><td/><td className="numeric"><strong>{formatVND(cashDetailRows.reduce((sum,row)=>sum+(Number(row.amount)||0),0))}</strong></td><td/><td/></tr></tfoot>
-              </table><div className="ce-toolbar" style={{justifyContent:'space-between'}}><span>Tổng số: {cashDetailRows.length}</span><label>Số dòng/trang <select aria-label="Số dòng/trang chi tiết hạch toán" value={cashDetailSize} onChange={event=>{setCashDetailSize(Number(event.target.value));setCashDetailPage(1);}}>{[20,50,100].map(size=><option key={size}>{size}</option>)}</select></label><div><button aria-label="Trang trước chi tiết" disabled={cashDetailVisiblePage===1} onClick={()=>setCashDetailPage(cashDetailVisiblePage-1)}>‹</button> {cashDetailVisiblePage}/{cashDetailPages} <button aria-label="Trang sau chi tiết" disabled={cashDetailVisiblePage===cashDetailPages} onClick={()=>setCashDetailPage(cashDetailVisiblePage+1)}>›</button></div></div>
+              </table>
+              <div
+                className="ce-toolbar"
+                style={{
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 0 2px",
+                  margin: "6px 0 0",
+                  fontSize: 12.5,
+                }}
+              >
+                <span>Tổng số: {cashDetailRows.length} bản ghi</span>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 6, margin: 0 }}>
+                  Số dòng/trang:
+                  <select
+                    aria-label="Số dòng/trang chi tiết hạch toán"
+                    value={cashDetailSize}
+                    onChange={(event) => {
+                      setCashDetailSize(Number(event.target.value));
+                      setCashDetailPage(1);
+                    }}
+                    style={{
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12,
+                      display: "inline-block",
+                      width: "auto",
+                      margin: 0,
+                    }}
+                  >
+                    {[20, 50, 100].map((size) => (
+                      <option key={size}>{size}</option>
+                    ))}
+                  </select>
+                </label>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <button
+                    type="button"
+                    aria-label="Trang trước chi tiết"
+                    disabled={cashDetailVisiblePage === 1}
+                    onClick={() => setCashDetailPage(cashDetailVisiblePage - 1)}
+                    style={{ padding: "2px 8px", minWidth: 26, fontSize: 13, height: 26 }}
+                  >
+                    ‹
+                  </button>
+                  <span>
+                    {cashDetailVisiblePage}/{cashDetailPages}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Trang sau chi tiết"
+                    disabled={cashDetailVisiblePage === cashDetailPages}
+                    onClick={() => setCashDetailPage(cashDetailVisiblePage + 1)}
+                    style={{ padding: "2px 8px", minWidth: 26, fontSize: 13, height: 26 }}
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

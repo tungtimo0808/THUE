@@ -2284,7 +2284,31 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
                 {selectedReport}
               </h3>
-              {(selectedReport === "Báo cáo chi tiết tình hình thực hiện đơn đặt hàng" || catalogueParameterDefinition) && <button type="button" onClick={()=>setOrderDetailParametersOpen(true)}>Chọn tham số</button>}
+              {(selectedReport === "Báo cáo chi tiết tình hình thực hiện đơn đặt hàng" || catalogueParameterDefinition) && (
+                <button
+                  type="button"
+                  style={{
+                    height: 28,
+                    padding: "0 12px",
+                    background: "#f1f5f9",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#0f766e",
+                    cursor: "pointer",
+                    marginLeft: "auto",
+                    marginRight: 10,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                  onClick={() => setOrderDetailParametersOpen(true)}
+                >
+                  <Filter size={13} />
+                  <span>Chọn tham số</span>
+                </button>
+              )}
               <button
                 type="button"
                 style={{
