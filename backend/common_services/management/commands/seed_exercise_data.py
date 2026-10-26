@@ -431,7 +431,7 @@ class Command(BaseCommand):
                     "name": c_name,
                     "legal_name": c_name,
                     "party_type": "ORGANIZATION" if c_tax else "INDIVIDUAL",
-                    "tax_code": c_tax,
+                    "tax_code": c_tax or None,
                     "branch": branch,
                     "status": "ACTIVE",
                 }
@@ -478,7 +478,7 @@ class Command(BaseCommand):
                     "name": s_name,
                     "legal_name": s_name,
                     "party_type": "ORGANIZATION",
-                    "tax_code": s_tax,
+                    "tax_code": s_tax or None,
                     "branch": branch,
                     "status": "ACTIVE",
                 }

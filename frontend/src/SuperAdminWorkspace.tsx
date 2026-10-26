@@ -295,7 +295,7 @@ export default function SuperAdminWorkspace() {
           </div>
           <div className="admin-header-actions">
             <a
-              href="http://localhost:8080/admin/"
+              href={`${window.location.protocol}//${window.location.hostname}:8080/admin/`}
               target="_blank"
               rel="noreferrer"
               className="admin-btn admin-btn-light"

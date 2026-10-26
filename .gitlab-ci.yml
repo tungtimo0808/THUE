@@ -1,0 +1,155 @@
+# ==============================================================================
+# GitLab CI/CD Pipeline - THUẾ ERP Project (Lint & Test Workflow)
+# ==============================================================================
+# - Runner: Gắn tag "docker" (chạy container trên GitLab Runner)
+# - Không yêu cầu Docker Container Registry
+# - Tự động hóa kiểm tra Frontend (oxlint, vite build) và Backend (compileall)
+# - Hỗ trợ cache npm giúp tối ưu tốc độ CI
+# ==============================================================================
+
+stages:
+  - lint
+  - test
+  - deploy
+  - verify
+
+# Mặc định tất cả jobs đều được gán tag "docker" để runner nhận việc
+default:
+  tags:
+    - docker
+
+# Biến môi trường toàn cục
+variables:
+  npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+
+# ==============================================================================
+# FRONTEND CACHE & TEMPLATE
+# ==============================================================================
+.frontend_base:
+  image: node:20-alpine
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - .cache/npm/
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    # Cài đặt thư viện (tận dụng cache, fallback sang npm install nếu cần)
+    - npm ci --prefer-offline || npm install --prefer-offline
+    - cd ..
+
+# ==============================================================================
+# 1. STAGE: LINT
+# ==============================================================================
+
+# Kiểm tra cú pháp & code style Frontend bằng oxlint
+frontend:lint:
+  stage: lint
+  extends: .frontend_base
+  script:
+    - cd frontend
+    - npm run lint
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH'
+      changes:
+        - frontend/**/*
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+# Kiểm tra cú pháp Python toàn bộ backend
+backend:lint:
+  stage: lint
+  image: python:3.12-slim
+  script:
+    - python -m compileall backend/
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH'
+      changes:
+        - backend/**/*
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+# ==============================================================================
+# 2. STAGE: TEST & BUILD VERIFICATION
+# ==============================================================================
+
+# Kiểm tra đóng gói build Frontend với Vite (đảm bảo code không lỗi import/bundle)
+frontend:build-test:
+  stage: test
+  extends: .frontend_base
+  script:
+    - cd frontend
+    - npx vite build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH'
+      changes:
+        - frontend/**/*
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+# ==============================================================================
+# 3. STAGE: DEPLOY & VERIFY (server test, chỉ chạy trên main)
+# ==============================================================================
+# Biến cần tạo ở Settings → CI/CD → Variables (đều Protected): SSH_PRIVATE_KEY (File), SSH_KNOWN_HOSTS (File), DEPLOY_TARGET (user@ip).
+
+.test_ssh:
+  image: alpine:3.20
+  interruptible: false
+  variables:
+    GIT_STRATEGY: none          # job chỉ SSH sang server, không cần clone repo 200MB
+    DEPLOY_PATH: thue
+    HEALTH_URL: http://127.0.0.1:2601/api/docs/   # đi qua proxy Vite → kiểm tra cả frontend lẫn backend
+  before_script:
+    - apk add --no-cache openssh-client
+    - chmod 600 "$SSH_PRIVATE_KEY"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Biến $CI_* / $DEPLOY_* được thay ở runner; \$ chạy trên server.
+deploy:test:
+  extends: .test_ssh
+  stage: deploy
+  resource_group: test-server
+  environment:
+    name: test
+  script:
+    - echo "DEPLOY_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > deploy.env
+    - |
+      ssh -i "$SSH_PRIVATE_KEY" -o UserKnownHostsFile="$SSH_KNOWN_HOSTS" "$DEPLOY_TARGET" sh -s <<EOF
+      set -e
+      cd $DEPLOY_PATH
+      git fetch --quiet origin
+      git checkout --quiet --detach $CI_COMMIT_SHA
+      # -V: tạo lại volume ẩn danh (node_modules), nếu không package.json đổi mà container vẫn dùng node_modules cũ
+      docker compose up -d --build --remove-orphans -V
+      docker image prune -f
+      EOF
+  artifacts:
+    reports:
+      dotenv: deploy.env
+
+verify:test:
+  extends: .test_ssh
+  stage: verify
+  script:
+    - |
+      ssh -i "$SSH_PRIVATE_KEY" -o UserKnownHostsFile="$SSH_KNOWN_HOSTS" "$DEPLOY_TARGET" sh -s <<EOF
+      cd $DEPLOY_PATH
+      ok=0
+      for i in \$(seq 1 60); do
+        curl -fsS -o /dev/null $HEALTH_URL && ok=1 && break
+        sleep 10
+      done
+      docker compose ps
+      docker compose logs --since "$DEPLOY_STARTED" --tail=50 backend
+      [ \$ok = 1 ] || { echo "App không phản hồi sau 10 phút"; exit 1; }
+      if docker compose logs --since "$DEPLOY_STARTED" --no-log-prefix backend | grep -E '^Traceback'; then
+        echo "Bản $CI_COMMIT_SHORT_SHA đang chạy nhưng backend có Traceback"; exit 1
+      fi
+      echo "Verify $CI_COMMIT_SHORT_SHA OK"
+      EOF

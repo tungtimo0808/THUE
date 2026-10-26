@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${DB_USER:-thue_erp}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
     ports:
-      - "${DB_PORT:-26015}:5432"
+      - "127.0.0.1:${DB_PORT:-26015}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-thue_erp} -d ${DB_NAME:-thue_erp}"]
       interval: 5s
@@ -40,7 +40,7 @@ services:
       DB_HOST: "postgres"
       DB_PORT: "5432"
       DB_CONN_MAX_AGE: "0"
-      COMMON_REQUIRE_VERIFICATION: "True"
+      COMMON_REQUIRE_VERIFICATION: ${COMMON_REQUIRE_VERIFICATION:-True}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.locmem.EmailBackend}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@example.local}
       EMAIL_HOST: ${EMAIL_HOST:-localhost}
