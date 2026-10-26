@@ -222,9 +222,16 @@ class HasIamPermission(BasePermission):
         permission_code = getattr(view, "action_permissions", {}).get(getattr(view, "action", None)) or permission_map.get(request.method)
         if not permission_code:
             return False
-        company_id = request.query_params.get("company_id") or request.data.get("company")
+        query_company = request.query_params.get("company_id")
+        body_company = (request.data.get("company") or request.data.get("company_id")) if isinstance(request.data, dict) else None
+        header_company = request.headers.get("X-Company-ID") or request.META.get("HTTP_X_COMPANY_ID")
+        all_ids = {str(c) for c in (header_company, query_company, body_company) if c}
+        if len(all_ids) > 1:
+            return False
+        company_id = header_company or query_company or body_company
         if not company_id or not hasattr(request.user, "iam_account"):
             return False
+        request._validated_company_id = str(company_id)
         from organization.models import Company
 
         try:

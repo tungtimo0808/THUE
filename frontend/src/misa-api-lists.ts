@@ -115,7 +115,11 @@ export function useMisaApiLists(
         }));
       } catch (error) {
         if (!active) return;
-        if (!(error instanceof ApiError && error.status === 401)) {
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          // SEC-05: Evict cached data on auth failure or permission revocation
+          apiListCache.delete(`${companyId}::${path}`);
+          setRows((prev) => ({ ...prev, [name]: [] }));
+        } else {
           const hasData = (apiListCache.get(`${companyId}::${path}`)?.data.length ?? 0) > 0;
           if (!hasData) {
             notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);

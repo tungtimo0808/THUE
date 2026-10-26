@@ -637,6 +637,6 @@ def get_template_accounts(regime: str = "TT99", scope: str = "FULL") -> List[Dic
     else:
         accounts = TT99_ACCOUNTS
 
-    if scope and scope.upper() == "ESSENTIAL":
+    if scope and scope.upper() in ("ESSENTIAL", "MINIMAL"):
         return [acc for acc in accounts if acc.get("is_essential", False)]
     return list(accounts)

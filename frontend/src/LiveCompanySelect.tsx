@@ -53,30 +53,40 @@ export default function LiveCompanySelect() {
   }, [restoring, token, navigate, params]);
 
   // Handle selecting a company and entering workspace
-  function handleSelectAndEnter(targetCompanyId: string) {
+  async function handleSelectAndEnter(targetCompanyId: string) {
     setEntering(true);
     selectCompany(targetCompanyId);
     if (token) {
-      void request("/api/v1/common/companies/switch/", token, {
-        method: "POST",
-        body: JSON.stringify({ company_id: targetCompanyId }),
-      }).catch(() => {});
+      try {
+        await request("/api/v1/common/companies/switch/", token, {
+          method: "POST",
+          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId }),
+        });
+      } catch {
+        // Fallback or ignore if offline/switched locally
+      }
     }
 
-    setTimeout(() => {
-      const redirectTarget = params.get("redirect") || "/";
-      navigate(redirectTarget);
-    }, 450);
+    const redirectTarget = params.get("redirect") || "/";
+    navigate(redirectTarget);
   }
 
   // Handle selecting a company and going straight to Company Admin
-  function handleSelectAndGoAdmin(targetCompanyId: string) {
+  async function handleSelectAndGoAdmin(targetCompanyId: string) {
     setEntering(true);
     selectCompany(targetCompanyId);
+    if (token) {
+      try {
+        await request("/api/v1/common/companies/switch/", token, {
+          method: "POST",
+          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId }),
+        });
+      } catch {
+        // Fallback or ignore if offline/switched locally
+      }
+    }
 
-    setTimeout(() => {
-      navigate("/admin");
-    }, 450);
+    navigate("/admin");
   }
 
   // 1-Click Demo Company Quick Bootstrap

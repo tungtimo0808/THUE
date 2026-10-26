@@ -31,13 +31,17 @@ class SalesPermission(BasePermission):
         if request.user.is_superuser:
             return True
 
-        company_id = (
-            request.headers.get("X-Company-ID")
-            or request.META.get("HTTP_X_COMPANY_ID")
-            or request.query_params.get("company_id")
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-        )
+        header_company_id = request.headers.get("X-Company-ID") or request.META.get("HTTP_X_COMPANY_ID")
+        query_company_id = request.query_params.get("company_id")
+        body_company_id = (request.data.get("company") or request.data.get("company_id")) if isinstance(request.data, dict) else None
+
+        # SEC-01: Reject mismatched multi-tenant identifiers between header, query and body
+        provided_ids = {str(cid) for cid in (header_company_id, query_company_id, body_company_id) if cid}
+        if len(provided_ids) > 1:
+            self.message = "Xung đột phạm vi doanh nghiệp: Không khớp mã doanh nghiệp giữa header, query và body."
+            return False
+
+        company_id = header_company_id or query_company_id or body_company_id
         if not company_id and getattr(view, "kwargs", {}).get("pk"):
             model = getattr(getattr(view, "queryset", None), "model", None)
             if model and hasattr(model, "company_id"):
@@ -45,6 +49,8 @@ class SalesPermission(BasePermission):
 
         if not company_id or not hasattr(request.user, "iam_account"):
             return False
+
+        request._validated_company_id = str(company_id)
 
         try:
             company = Company.objects.get(pk=company_id)

@@ -17,7 +17,7 @@ def perms(resource): return {"GET":f"{resource}.VIEW","POST":f"{resource}.CREATE
 class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,GenericViewSet):
     permission_classes=(SalesPermission,); filter_backends=(SearchFilter,OrderingFilter); ordering=("-created_at",)
     def get_queryset(self):
-        company=self.request.query_params.get("company_id")
+        company = getattr(self.request, "_validated_company_id", None) or self.request.query_params.get("company_id") or self.request.headers.get("X-Company-ID")
         if not company: return super().get_queryset().none()
         qs=super().get_queryset().filter(company_id=company)
         if status:=self.request.query_params.get("status"): qs=qs.filter(status=status)
