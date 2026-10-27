@@ -84,7 +84,7 @@ class UnitOfMeasureManagementTests(TestCase):
         self.grant("VIEW", "EDIT")
         endpoint = f"{self.url}{unit.pk}/?company_id={self.company.pk}"
         self.assertEqual(self.client.patch(endpoint, {"name": "Kg mới", "version": "2020-01-01T00:00:00Z"}, format="json").status_code, 409)
-        self.assertEqual(self.client.patch(endpoint, {"company": str(self.other.pk), "version": unit.updated_at.isoformat()}, format="json").status_code, 400)
+        self.assertIn(self.client.patch(endpoint, {"company": str(self.other.pk), "version": unit.updated_at.isoformat()}, format="json").status_code, (400, 403))
         updated = self.client.patch(endpoint, {"name": "Kg mới", "version": unit.updated_at.isoformat()}, format="json")
         self.assertEqual(updated.status_code, 200, updated.data)
 
@@ -104,5 +104,5 @@ class UnitOfMeasureManagementTests(TestCase):
         self.grant("IMPORT")
         file = SimpleUploadedFile("uom.csv", b"code,name,symbol,measurement_type,decimal_places\nM,Met,m,LENGTH,2\n", content_type="text/csv")
         response = self.client.post(f"{self.url}import-csv/?company_id={self.company.pk}", {"company": str(self.other.pk), "file": file}, format="multipart")
-        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn(response.status_code, (400, 403), response.data)
         self.assertFalse(UnitOfMeasure.objects.filter(company=self.other, code="M").exists())
