@@ -288,7 +288,7 @@ function ReferenceWorkspace() {
   }, [apiRestoring, apiToken, apiCompanies.length, navigate]);
 
   const pathParts = location.pathname.split("/");
-  const moduleId = pathParts[1] || "overview",
+  const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
   const tab = moduleId === "invoices" && requestedTab === "errors"
