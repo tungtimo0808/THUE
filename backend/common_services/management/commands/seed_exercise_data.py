@@ -65,6 +65,8 @@ class Command(BaseCommand):
             auth_user=super_auth,
             defaults={"email": superadmin_email, "display_name": "Super Admin Hệ Thống"}
         )
+        super_iam.display_name = "Super Admin Hệ Thống"
+        super_iam.save(update_fields=("display_name",))
 
         admin_username = os.getenv("ADMIN_USERNAME", "timodapoettt")
         admin_email = os.getenv("ADMIN_EMAIL", "tungtimo0808@gmail.com")
@@ -122,21 +124,26 @@ class Command(BaseCommand):
         from iam.role_services import seed_standard_roles_for_company
         seed_standard_roles_for_company(company, iam_user)
 
-        # Memberships for superadmin & admin
-        from iam.models import Role, UserRoleAssignment
-        company_roles = list(Role.objects.filter(company=company))
+        # Memberships for superadmin & admin -> Ensure single COMPANY_ADMIN role
+        from iam.models import ActiveStatus, Role, UserRoleAssignment
+        admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
         for user_target in [super_iam, admin_iam]:
             m, _ = CompanyMembership.objects.get_or_create(
                 company=company,
                 user=user_target,
-                defaults={"membership_status": "ACTIVE", "joined_at": timezone.now(), "created_by": user_target}
+                defaults={"membership_status": ActiveStatus.ACTIVE, "joined_at": timezone.now(), "created_by": user_target}
             )
-            if m.membership_status != "ACTIVE":
-                m.membership_status = "ACTIVE"
+            if m.membership_status != ActiveStatus.ACTIVE:
+                m.membership_status = ActiveStatus.ACTIVE
                 m.save()
-            for r in company_roles:
-                UserRoleAssignment.objects.get_or_create(
-                    company_membership=m, role=r, defaults={"assigned_by": user_target, "status": "ACTIVE"}
+            if admin_role:
+                UserRoleAssignment.objects.filter(company_membership=m).delete()
+                UserRoleAssignment.objects.create(
+                    company_membership=m,
+                    role=admin_role,
+                    status=ActiveStatus.ACTIVE,
+                    assigned_by=user_target,
+                    assign_reason="Quản trị viên Doanh nghiệp (Chủ sở hữu)",
                 )
 
         # Ensure ModuleCatalog has all WORKSPACE_MODULES
@@ -185,6 +192,52 @@ class Command(BaseCommand):
                 "status": "ACTIVE",
             }
         )
+
+        # 5.1 Seed standard operational accounting staff members and assign roles (Image 2 verification)
+        staff_map = [
+            ("nongxuanmai098@gmail.com", "+84971389093", "Nông Xuân Mai", "KT_TRUONG", "Phòng Kế toán", "Kế toán trưởng"),
+            ("timo2026@example.com", "+84987654321", "Trần Thủ Quỹ", "THU_QUY", "Phòng Tài chính - Quỹ", "Thủ quỹ"),
+            ("admin@soviet.vn", "+84912345678", "Lê Kế Toán Bán Hàng", "KT_BANHANG", "Phòng Kinh doanh", "Kế toán bán hàng"),
+            ("admin@example.com", "admin", "Nguyễn Kế Toán Mua", "KT_MUAHANG", "Phòng Mua hàng", "Kế toán mua hàng"),
+        ]
+        from organization.models import Department, Employee
+        for staff_email, staff_uname, staff_dname, rcode, dname, pname in staff_map:
+            u_obj = User.objects.filter(email=staff_email).first() or User.objects.filter(username=staff_uname).first()
+            if not u_obj:
+                u_obj = User.objects.create_user(username=staff_uname, email=staff_email, password="123456", first_name=staff_dname)
+            u_obj.is_superuser = False
+            u_obj.is_staff = False
+            u_obj.save()
+
+            u_acc, _ = UserAccount.objects.get_or_create(auth_user=u_obj, defaults={"display_name": staff_dname, "phone": staff_uname if staff_uname.startswith("+") else ""})
+            u_acc.display_name = staff_dname
+            u_acc.save()
+
+            dept_obj = Department.objects.filter(company=company, name=dname).first()
+            if not dept_obj:
+                dept_obj = Department.objects.create(company=company, name=dname, code=f"PB_{u_obj.id}", branch=branch, status="ACTIVE")
+
+            emp_obj = Employee.objects.filter(company=company, email=staff_email).first()
+            if not emp_obj:
+                emp_obj = Employee.objects.create(company=company, email=staff_email, employee_code=f"NV_{u_obj.id}", full_name=staff_dname, department=dept_obj, branch=branch, status="ACTIVE")
+            staff_m, _ = CompanyMembership.objects.get_or_create(
+                company=company, user=u_acc,
+                defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": iam_user, "employee": emp_obj}
+            )
+            staff_m.membership_status = ActiveStatus.ACTIVE
+            staff_m.employee = emp_obj
+            staff_m.save()
+
+            r_target = Role.objects.filter(company=company, code=rcode).first()
+            if r_target:
+                UserRoleAssignment.objects.filter(company_membership=staff_m).delete()
+                UserRoleAssignment.objects.create(
+                    company_membership=staff_m,
+                    role=r_target,
+                    status=ActiveStatus.ACTIVE,
+                    assigned_by=iam_user,
+                    assign_reason=f"Phân công {r_target.name}",
+                )
 
         # 6. Bank & Bank Accounts
         bank_tcb, _ = Bank.objects.get_or_create(

@@ -852,16 +852,20 @@ def create_company(data, request):
         role_type="STANDARD", status=RoleStatus.ACTIVE, is_system_admin=True,
         created_by=account,
     )
-    admin_permissions = Permission.objects.filter(
-        status=ActiveStatus.ACTIVE,
-    ).exclude(
-        code="SYS.COMPANY_PROFILE.EDIT_SUSPENDED",
-    ).filter(
-        Q(code__startswith="SYS.")
-        | Q(code__startswith="COM.")
-        | Q(action__code="VIEW")
-    )
-    RolePermission.objects.bulk_create([RolePermission(role=role, permission=item) for item in admin_permissions])
+    if company.status == CompanyStatus.ACTIVE:
+        from iam.role_services import seed_standard_roles_for_company
+        seed_standard_roles_for_company(company, account)
+    else:
+        admin_permissions = Permission.objects.filter(
+            status=ActiveStatus.ACTIVE,
+        ).exclude(
+            code="SYS.COMPANY_PROFILE.EDIT_SUSPENDED",
+        ).filter(
+            Q(code__startswith="SYS.")
+            | Q(code__startswith="COM.")
+            | Q(action__code="VIEW")
+        )
+        RolePermission.objects.bulk_create([RolePermission(role=role, permission=item) for item in admin_permissions])
     UserRoleAssignment.objects.create(company_membership=membership, role=role, assigned_by=account)
     # The founder of a one-person company works at the company root by default.
     membership.organization_unit = root

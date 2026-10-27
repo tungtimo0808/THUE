@@ -317,11 +317,21 @@ const translatePermissionCode = (code: string): { module: string; name: string; 
 };
 
 export default function CompanyAdminWorkspace() {
-  const { token, companyId, companies } = useApiSession();
+  const { token, companyId, companies, restoring } = useApiSession();
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [_loading, setLoading] = useState<boolean>(false);
   const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  if (restoring) {
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
+        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+        <span style={{ marginTop: 12, fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải không gian quản trị...</span>
+        <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   // Data states
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
@@ -964,11 +974,11 @@ export default function CompanyAdminWorkspace() {
                       Quản trị viên Doanh nghiệp (Chủ tài khoản):
                     </span>
                     <span className="admin-badge admin-badge-gold">
-                      👑 tungtimo0808@gmail.com
+                      👑 {members.find(m => m.role_assignments?.some(r => r.role_code === "COMPANY_ADMIN"))?.email || companyInfo?.legal_representative || "Admin Doanh nghiệp"}
                     </span>
                   </div>
                   <p style={{ margin: "0.2rem 0 0", fontSize: "0.825rem", color: "#475569" }}>
-                    Tài khoản <strong>tungtimo0808@gmail.com</strong> nắm toàn quyền quản trị và phân bổ vai trò cho toàn bộ nhân sự trong doanh nghiệp <strong>{companyInfo?.name}</strong>. Các tài khoản còn lại thuộc doanh nghiệp và được cấp quyền theo vai trò nghiệp vụ.
+                    Quản trị viên Doanh nghiệp nắm toàn quyền quản trị và phân bổ vai trò cho toàn bộ nhân sự trong doanh nghiệp <strong>{companyInfo?.name}</strong>. Các tài khoản còn lại thuộc doanh nghiệp và được cấp quyền theo vai trò nghiệp vụ.
                   </p>
                 </div>
               </div>
@@ -1007,7 +1017,7 @@ export default function CompanyAdminWorkspace() {
                 </div>
                 <div className="admin-kpi-data">
                   <h4>Admin Doanh nghiệp</h4>
-                  <p>{adminMembersCount} (tungtimo0808)</p>
+                  <p>{adminMembersCount}</p>
                 </div>
               </div>
               <div className="admin-kpi-card">
