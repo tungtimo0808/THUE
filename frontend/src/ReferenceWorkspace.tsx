@@ -502,7 +502,7 @@ function ReferenceWorkspace() {
   // Sync dashboard summary KPIs from backend /api/v1/common/dashboard/ when on overview
   useEffect(() => {
     if (!apiToken || !company.id || moduleId !== "overview") return;
-    void request(`/api/v1/common/dashboard/?company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
+    void request(`/api/v1/common/dashboard/?company=${encodeURIComponent(company.id)}&company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
   }, [apiToken, company.id, moduleId]);
 
   const triggerSwitchFeedback = (type: string, message: string) => {
