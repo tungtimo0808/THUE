@@ -109,11 +109,26 @@ def create_salary_sheet(company, data, request):
 
 
 def _account(company, code):
-    """Exact postable account, else the closest postable parent (3341 → 334)."""
+    """Find a postable leaf account without active children, preferring sub-account (e.g. 3341 for 334)."""
+    exact = Account.objects.filter(company=company, code=code, is_postable=True, status="ACTIVE").first()
+    if exact and not Account.objects.filter(company=company, parent=exact, status="ACTIVE").exists():
+        return exact
+
+    leaf = Account.objects.filter(
+        company=company, code__startswith=code, is_postable=True, status="ACTIVE"
+    ).exclude(
+        pk__in=Account.objects.filter(company=company, parent__isnull=False, status="ACTIVE").values("parent_id")
+    ).order_by("code").first()
+    if leaf:
+        return leaf
+
     for size in range(len(code), 2, -1):
         account = Account.objects.filter(company=company, code=code[:size], is_postable=True, status="ACTIVE").first()
-        if account:
+        if account and not Account.objects.filter(company=company, parent=account, status="ACTIVE").exists():
             return account
+
+    if exact:
+        return exact
     raise ValidationError(f"Thiếu tài khoản {code} trong hệ thống tài khoản.")
 
 
