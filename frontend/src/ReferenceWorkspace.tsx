@@ -288,7 +288,7 @@ function ReferenceWorkspace() {
   }, [apiRestoring, apiToken, apiCompanies.length, navigate]);
 
   const pathParts = location.pathname.split("/");
-  const moduleId = pathParts[1] || "overview",
+  const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
   const tab = moduleId === "invoices" && requestedTab === "errors"
@@ -502,7 +502,7 @@ function ReferenceWorkspace() {
   // Sync dashboard summary KPIs from backend /api/v1/common/dashboard/ when on overview
   useEffect(() => {
     if (!apiToken || !company.id || moduleId !== "overview") return;
-    void request(`/api/v1/common/dashboard/?company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
+    void request(`/api/v1/common/dashboard/?company=${encodeURIComponent(company.id)}&company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
   }, [apiToken, company.id, moduleId]);
 
   const triggerSwitchFeedback = (type: string, message: string) => {
@@ -1015,6 +1015,15 @@ function ReferenceWorkspace() {
       />
     );
   };
+
+  if (apiRestoring || !apiToken) {
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
+        <WorkspaceLoader />
+      </div>
+    );
+  }
+
   return (
     <div className={`reference-app ${collapsed ? "ref-collapsed" : ""}`}>
       <a href="#reference-main" className="skip-link">

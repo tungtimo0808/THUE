@@ -690,11 +690,16 @@ class WorkItemHistorySerializer(serializers.ModelSerializer):
 
 
 class DashboardRequestSerializer(serializers.Serializer):
-    company = serializers.UUIDField()
+    company = serializers.UUIDField(required=False)
+    company_id = serializers.UUIDField(required=False)
     date_from = serializers.DateField(required=False)
     date_to = serializers.DateField(required=False)
 
     def validate(self, attrs):
+        if not attrs.get("company") and not attrs.get("company_id"):
+            raise serializers.ValidationError({"company": "Trường này là bắt buộc."})
+        if not attrs.get("company"):
+            attrs["company"] = attrs["company_id"]
         if attrs.get("date_from") and attrs.get("date_to") and attrs["date_from"] > attrs["date_to"]:
             raise serializers.ValidationError("Từ ngày không được lớn hơn đến ngày.")
         return attrs

@@ -646,12 +646,10 @@ class RoleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewS
     @action(detail=True, methods=("get",))
     def history(self, request, pk=None):
         role = self.get_object()
-        grants = RolePermission.objects.filter(role=role).values("pk")
-        bundles = RolePermissionBundle.objects.filter(role=role).values("pk")
-        logs = AuditLog.objects.filter(company=role.company).filter(
-            Q(entity_type="iam.Role", entity_id=role.pk)
-            | Q(entity_type="iam.RolePermission", entity_id__in=grants)
-            | Q(entity_type="iam.RolePermissionBundle", entity_id__in=bundles)
+        logs = AuditLog.objects.filter(
+            company=role.company,
+            entity_type="iam.Role",
+            entity_id=role.pk,
         ).select_related("actor_user").prefetch_related("changes")[:100]
         return Response([
             {"id": str(log.pk), "action": log.action_code, "actor_id": str(log.actor_user_id),

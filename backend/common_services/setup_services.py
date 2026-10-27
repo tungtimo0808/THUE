@@ -128,6 +128,10 @@ def complete_company_setup(company, actor, request=None):
         if module_code in available_catalog and not check_module_active(company, module_code):
             enable_module(company, module_code, actor, notes="Bật khi hoàn tất thiết lập ban đầu")
 
+    # Ensure COMPANY_ADMIN and standard business accounting roles exist with complete permissions
+    from iam.role_services import seed_standard_roles_for_company
+    seed_standard_roles_for_company(company, actor)
+
     setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
     configuration = dict(setting.configuration or {})
     configuration["setup_completed"] = True

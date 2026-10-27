@@ -390,7 +390,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
                     | Q(tax_code__icontains=term)
                 )
         if self.action in ("update", "partial_update", "set_status", "destroy", "merge"):
-            query = query.select_for_update()
+            query = query.select_for_update(of=("self",))
         return query.order_by("code")
 
     def _check_create_scope(self, company, branch, owner, permission="MD.PARTY.CREATE"):

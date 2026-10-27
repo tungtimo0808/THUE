@@ -169,10 +169,11 @@ def _journal(period, kind, lines, request, warehouse=None):
     number = f"{period.code}-{kind}"[:70]
     count = JournalEntry.objects.filter(company=period.company, number__startswith=number).count()
     entry = JournalEntry.objects.create(
-        company=period.company, period=accounting_period, number=f"{number}{count + 1 if count else ''}", entry_type="ADJUSTMENT",
+        company=period.company, period=accounting_period, number=f"{number}{count + 1 if count else ''}",
+        entry_type="CLOSING",
         posting_date=period.end_date, document_date=period.end_date,
         description=("Kết chuyển chi phí sản xuất " if kind == "KC" else "Nghiệm thu / nhập kho ") + period.name,
-        source_module="GL", source_event_id=f"COST:{period.pk}:{kind}:{count}", status="APPROVED", total_debit=total, total_credit=total,
+        source_module="COST", source_event_id=f"COST:{period.pk}:{kind}:{count}", status="APPROVED", total_debit=total, total_credit=total,
         created_by=actor(request), approved_by=actor(request), approved_at=timezone.now(), workflow_snapshot={"allow_creator_posting": True},
     )
     for index, (debit, credit, amount, text) in enumerate(lines):

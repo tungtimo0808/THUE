@@ -81,7 +81,7 @@ interface RecentLog {
 }
 
 export default function SuperAdminWorkspace() {
-  const { token, session } = useApiSession();
+  const { token, session, restoring } = useApiSession();
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [_loading, setLoading] = useState<boolean>(false);
@@ -273,6 +273,16 @@ export default function SuperAdminWorkspace() {
       );
     });
   }, [users, userSearch]);
+
+  if (restoring) {
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
+        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+        <span style={{ marginTop: 12, fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải trung tâm điều hành nền tảng...</span>
+        <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-workspace">
