@@ -52,7 +52,7 @@ class MembershipVersionConflict(ValidationError):
 
 @transaction.atomic
 def update_company_user(*, membership_id, company, actor, data, request=None, is_platform_admin=False):
-    membership = CompanyMembership.objects.select_for_update().select_related(
+    membership = CompanyMembership.objects.select_for_update(of=("self",)).select_related(
         "company", "employee", "user"
     ).get(pk=membership_id, company=company)
     if company.status != "ACTIVE":
@@ -210,7 +210,7 @@ def lock_user(
             raise PermissionDenied("Admin doanh nghiệp không được khóa tài khoản toàn hệ thống (BR-LOCK-05, BR-LOCK-06).")
 
     # 3. Fetch membership with lock (select_for_update for concurrency guard - BR-LOCK-43)
-    queryset = CompanyMembership.objects.select_for_update().select_related("company", "user__auth_user", "employee")
+    queryset = CompanyMembership.objects.select_for_update(of=("self",)).select_related("company", "user__auth_user", "employee")
     if target_membership_id:
         membership = queryset.filter(pk=target_membership_id, company=company).first()
     elif target_user_id:
@@ -440,7 +440,7 @@ def unlock_user(
         raise PermissionDenied("Bạn không có Permission mở khóa User trong doanh nghiệp (BR-LOCK-03, EF-16).")
 
     # 2. Fetch membership with lock (BR-LOCK-43)
-    queryset = CompanyMembership.objects.select_for_update().select_related("company", "user__auth_user")
+    queryset = CompanyMembership.objects.select_for_update(of=("self",)).select_related("company", "user__auth_user")
     if target_membership_id:
         membership = queryset.filter(pk=target_membership_id, company=company).first()
     elif target_user_id:
@@ -988,7 +988,7 @@ def terminate_membership(
 
     # 3. Locate Membership with select_for_update (BR-MEM-END-46, 47, EF-14)
     with transaction.atomic():
-        query = CompanyMembership.objects.select_for_update().select_related("user", "company", "employee")
+        query = CompanyMembership.objects.select_for_update(of=("self",)).select_related("user", "company", "employee")
         if target_membership_id:
             membership = query.filter(pk=target_membership_id, company=company).first()
         elif target_user_id:
@@ -1272,7 +1272,7 @@ def cancel_scheduled_termination(*, company, actor, membership_id, reason="", re
             raise ValidationError({"actor": "Actor không có Permission quản lý Membership (EF-01, BR-MEM-END-04)."})
 
     with transaction.atomic():
-        membership = CompanyMembership.objects.select_for_update().select_related("user").filter(
+        membership = CompanyMembership.objects.select_for_update(of=("self",)).select_related("user").filter(
             pk=membership_id, company=company
         ).first()
         if not membership:
@@ -1331,7 +1331,7 @@ def process_scheduled_terminations(at=None):
     from audit_log.models import ActorType, EventCategory
 
     now = at or timezone.now()
-    pending_records = MembershipTerminationRecord.objects.select_for_update().select_related(
+    pending_records = MembershipTerminationRecord.objects.select_for_update(of=("self",)).select_related(
         "company", "membership", "user", "substitute_user"
     ).filter(
         status=TerminationRecordStatus.PENDING,
@@ -1484,7 +1484,7 @@ def approve_membership_exit(
     from .models import ExitRequestStatus, MembershipExitRequest, TerminationType
 
     with transaction.atomic():
-        exit_req = MembershipExitRequest.objects.select_for_update().select_related("user", "membership").filter(
+        exit_req = MembershipExitRequest.objects.select_for_update(of=("self",)).select_related("user", "membership").filter(
             pk=request_id, company=company
         ).first()
         if not exit_req:
@@ -1533,7 +1533,7 @@ def reject_membership_exit(*, company, actor, request_id, rejection_reason="", r
         raise ValidationError({"rejection_reason": "Lý do từ chối yêu cầu rời doanh nghiệp là bắt buộc."})
 
     with transaction.atomic():
-        exit_req = MembershipExitRequest.objects.select_for_update().select_related("user").filter(
+        exit_req = MembershipExitRequest.objects.select_for_update(of=("self",)).select_related("user").filter(
             pk=request_id, company=company
         ).first()
         if not exit_req:

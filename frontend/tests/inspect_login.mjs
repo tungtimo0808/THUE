@@ -75,3 +75,4 @@ async function loginAndInspect() {
 }
 
 loginAndInspect().catch(console.error);
+

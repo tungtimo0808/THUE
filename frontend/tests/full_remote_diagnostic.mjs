@@ -232,3 +232,4 @@ runFullDiagnostic().catch((err) => {
   console.error("DIAGNOSTIC CRASHED:", err);
   process.exit(1);
 });
+
