@@ -323,16 +323,6 @@ export default function CompanyAdminWorkspace() {
   const [_loading, setLoading] = useState<boolean>(false);
   const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  if (restoring) {
-    return (
-      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
-        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
-        <span style={{ marginTop: 12, fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải không gian quản trị...</span>
-        <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
   // Data states
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [members, setMembers] = useState<MemberItem[]>([]);
@@ -721,6 +711,16 @@ export default function CompanyAdminWorkspace() {
         m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")
     ).length;
   }, [members]);
+
+  if (restoring) {
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
+        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+        <span style={{ marginTop: 12, fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải không gian quản trị...</span>
+        <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-workspace">

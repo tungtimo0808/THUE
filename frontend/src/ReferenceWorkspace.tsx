@@ -287,14 +287,6 @@ function ReferenceWorkspace() {
     }
   }, [apiRestoring, apiToken, apiCompanies.length, navigate]);
 
-  if (apiRestoring || !apiToken) {
-    return (
-      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
-        <WorkspaceLoader />
-      </div>
-    );
-  }
-
   const pathParts = location.pathname.split("/");
   const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
@@ -1023,6 +1015,15 @@ function ReferenceWorkspace() {
       />
     );
   };
+
+  if (apiRestoring || !apiToken) {
+    return (
+      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
+        <WorkspaceLoader />
+      </div>
+    );
+  }
+
   return (
     <div className={`reference-app ${collapsed ? "ref-collapsed" : ""}`}>
       <a href="#reference-main" className="skip-link">
