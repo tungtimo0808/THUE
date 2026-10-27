@@ -21,10 +21,11 @@ class Command(BaseCommand):
         )
         for batch_id in queued_ids:
             try:
-                batch = CatalogExportBatch.objects.get(pk=batch_id)
-                if batch.status != "QUEUED":
-                    continue
-                execute_export_batch(batch)
+                with transaction.atomic():
+                    batch = CatalogExportBatch.objects.select_for_update().get(pk=batch_id)
+                    if batch.status != "QUEUED":
+                        continue
+                    execute_export_batch(batch)
                 self.stdout.write(f"Processed export batch {batch_id}: {batch.status}")
             except Exception as exc:
                 self.stderr.write(f"Failed export batch {batch_id}: {exc}")

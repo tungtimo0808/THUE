@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from iam.permissions import has_effective_permission, effective_assignments, assignment_permission_codes
+from iam.permissions import company_identifiers_agree, has_effective_permission, effective_assignments, assignment_permission_codes
 from organization.models import Company
 from uuid import UUID
 
@@ -8,6 +8,7 @@ class AccountsReceivablePermission(BasePermission):
     def has_permission(self,request,view):
         if not request.user or not request.user.is_authenticated:return False
         if request.user.is_superuser:return True
+        if not company_identifiers_agree(request):return False
         company_id=request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
         if not company_id and getattr(view, "kwargs", {}).get("pk"):
             try:

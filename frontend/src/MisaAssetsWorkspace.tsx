@@ -23,6 +23,7 @@ import {
   saveDepreciationVoucher,
   saveFixedAsset,
   saveFixedAssetCategory,
+  saveFixedAssetDisposal,
   saveFixedAssetTransfer,
   unpostDepreciationVoucher,
   updateFixedAssetInfo,
@@ -399,6 +400,9 @@ export default function MisaAssetsWorkspace({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
         assetName: row.asset_name || "", fromDept: row.before_snapshot?.department_name || "",
         toDept: row.target_department_name || "", reason: row.reason || "", status: row.status,
+        deliverer: row.deliverer_name || "", receiver: row.receiver_name || "",
+        reference: row.reference || "", contract: row.contract || "", order: row.order || "",
+        project: row.project || "", costItem: row.cost_item || "", costObj: row.cost_object || "",
       })));
       setDecVouchers(movement(["DISPOSAL"]).map((row) => ({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
@@ -912,16 +916,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setShowTransferModal(true);
 
     if (apiConnected && _company?.id) {
-      fetch(`/api/v1/fixed-assets/transactions/next-transfer-number/?company_id=${encodeURIComponent(_company.id)}`, {
-        credentials: "include",
-      })
-        .then((r) => (r.ok ? r.json() : null))
+      void request<{ voucher_no?: string }>(`/api/v1/fixed-assets/transactions/next-transfer-number/?company_id=${encodeURIComponent(_company.id)}`, apiToken)
         .then((data) => {
           if (data?.voucher_no) {
             setTransferVoucherNo(String(data.voucher_no));
           }
         })
-        .catch(() => {});
+        .catch((cause) => notify(`Không lấy được số biên bản giao nhận: ${errorText(cause)}`));
     }
   };
 
@@ -1328,16 +1329,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setShowDecreaseModal(true);
 
     if (apiConnected && _company?.id) {
-      fetch(`/api/v1/fixed-assets/transactions/next-disposal-number/?company_id=${encodeURIComponent(_company.id)}`, {
-        credentials: "include",
-      })
-        .then((r) => (r.ok ? r.json() : null))
+      void request<{ voucher_no?: string }>(`/api/v1/fixed-assets/transactions/next-disposal-number/?company_id=${encodeURIComponent(_company.id)}`, apiToken)
         .then((data) => {
           if (data?.voucher_no) {
             setDecVoucherNo(String(data.voucher_no));
           }
         })
-        .catch(() => {});
+        .catch((cause) => notify(`Không lấy được số chứng từ ghi giảm: ${errorText(cause)}`));
     }
   };
 
@@ -1830,16 +1828,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setShowStocktakeModal(true);
 
     if (apiConnected && _company?.id) {
-      fetch(`/api/v1/fixed-assets/counts/next-number/?company_id=${encodeURIComponent(_company.id)}&asset_type=FIXED_ASSET`, {
-        credentials: "include",
-      })
-        .then((r) => (r.ok ? r.json() : null))
+      void request<{ voucher_no?: string }>(`/api/v1/fixed-assets/counts/next-number/?company_id=${encodeURIComponent(_company.id)}&asset_type=FIXED_ASSET`, apiToken)
         .then((data) => {
           if (data?.voucher_no) {
             setStocktakeVoucherNo(String(data.voucher_no));
           }
         })
-        .catch(() => {});
+        .catch((cause) => notify(`Không lấy được số biên bản kiểm kê: ${errorText(cause)}`));
     }
   };
 
@@ -2373,6 +2368,22 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
     return Array.from(map.values());
   })();
+  const costAccountOptions = (apiRows.accounts || [])
+    .filter((account) => /^(211|213)/.test(String(account.code || "")) && account.status === "ACTIVE" && account.is_postable)
+    .map((account) => String(account.code));
+  const deprAccountOptions = (apiRows.accounts || [])
+    .filter((account) => /^214/.test(String(account.code || "")) && account.status === "ACTIVE" && account.is_postable)
+    .map((account) => String(account.code));
+  const expenseAccountOptions = (apiRows.accounts || [])
+    .filter((account) => /^(627|641|642)/.test(String(account.code || "")) && account.status === "ACTIVE" && account.is_postable)
+    .map((account) => String(account.code));
+  const purchaseSourceDocs = (apiRows.goodsPurchases || []).map((purchase) => ({
+    id: String(purchase.id || ""),
+    documentNo: String(purchase.number || ""),
+    documentDate: toViDate(purchase.document_date || ""),
+    amount: Number(purchase.total_amount || 0),
+    supplier: String(purchase.supplier_name || ""),
+  })).filter((purchase) => purchase.documentNo);
 
   const departmentOptions = (() => {
     const names = new Set<string>([
@@ -4065,7 +4076,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const fallbackCalc = vTarget && (!Array.isArray(vTarget.lines) || vTarget.lines.length === 0)
       ? computePeriodDepreciationData(vMonth, vYear, false)
       : null;
-    const linesToValidate: DeprAssetLine[] = vTarget
+    const linesToValidate: DeprLineItem[] = vTarget
       ? (Array.isArray(vTarget.lines) && vTarget.lines.length > 0 ? vTarget.lines : fallbackCalc?.lines || [])
       : deprLines;
     const allocsToValidate: DeprAllocationRow[] = vTarget
@@ -5343,7 +5354,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             setIncDeprMonthValue(0);
                             setIncDeprYearValue(0);
                           } else {
-                            recalculateIncreaseDepreciation(incDeprCostValue || incOriginalCost, incUseDuration, incUseDurationUnit, false, incLimitTaxLaw, incTaxLawValue);
+                            recalcIncDepreciation(incOriginalCost, incDeprCostValue || incOriginalCost, incUseDuration, incUseDurationUnit, false, incAccumulatedDepr, incLimitTaxLaw, incTaxLawValue);
                           }
                         }}
                         style={{ width: 14, height: 14, accentColor: "#00a862" }}
@@ -5584,7 +5595,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <select
                           value={incUseDurationUnit}
                           disabled={incNoDepr}
-                          onChange={(e) => handleIncUseDurationUnitChange(e.target.value)}
+                           onChange={(e) => handleIncUseDurationUnitChange(e.target.value === "Tháng" ? "Tháng" : "Năm")}
                           style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", background: incNoDepr ? "#f1f5f9" : "#ffffff" }}
                         >
                           <option value="Năm">Năm</option>
@@ -5697,10 +5708,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ padding: "6px 8px" }}>
                             <select
-                              value={row.department}
+                              value={row.dept}
                               onChange={(e) => {
                                 const next = [...incAllocations];
-                                next[idx] = { ...next[idx], department: e.target.value };
+                                next[idx] = { ...next[idx], dept: e.target.value };
                                 setIncAllocations(next);
                               }}
                               style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, background: "#ffffff" }}
@@ -5756,10 +5767,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <input
                               type="text"
-                              value={row.costObject}
+                              value={row.costCenter}
                               onChange={(e) => {
                                 const next = [...incAllocations];
-                                next[idx] = { ...next[idx], costObject: e.target.value };
+                                next[idx] = { ...next[idx], costCenter: e.target.value };
                                 setIncAllocations(next);
                               }}
                               placeholder="Đối tượng THCP..."
@@ -5791,7 +5802,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const fallbackExp = incAllocations[0]?.expenseAccount || "";
                         setIncAllocations([
                           ...incAllocations,
-                          { department: "", rate: remRate, expenseAccount: fallbackExp, expenseItem: "Chi phí khấu hao TSCĐ", costObject: "" },
+                          { id: `alloc-${Date.now()}`, dept: "", rate: remRate, expenseAccount: fallbackExp, expenseItem: "Chi phí khấu hao TSCĐ", costCenter: "" },
                         ]);
                       }}
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
@@ -5818,14 +5829,15 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           if (!docNo) return;
                           const found = purchaseSourceDocs.find((p) => p.documentNo === docNo);
                           if (!found) return;
-                          if (incOrigins.some((o) => o.documentNo.trim().toUpperCase() === found.documentNo.trim().toUpperCase())) {
+                           if (incOrigins.some((o) => o.documentNumber.trim().toUpperCase() === found.documentNo.trim().toUpperCase())) {
                             notify("Chứng từ nguồn đã được gắn cho tài sản khác hoặc bị trùng lặp.");
                             e.target.value = "";
                             return;
                           }
-                          const next = incOrigins.length === 1 && !incOrigins[0].documentNo
-                            ? [{ sourceType: "Mua sắm mới trong nước", documentNo: found.documentNo, documentDate: found.documentDate, amount: found.amount, supplier: found.supplier }]
-                            : [...incOrigins, { sourceType: "Mua sắm mới trong nước", documentNo: found.documentNo, documentDate: found.documentDate, amount: found.amount, supplier: found.supplier }];
+                           const origin = { id: `origin-${Date.now()}`, originType: "Mua sắm mới trong nước", documentNumber: found.documentNo, documentDate: found.documentDate, amount: found.amount, partnerCode: "", partnerName: found.supplier, sourceDocumentId: found.id };
+                           const next = incOrigins.length === 1 && !incOrigins[0].documentNumber
+                             ? [origin]
+                             : [...incOrigins, origin];
                           setIncOrigins(next);
                           const totalOriginAmt = next.reduce((s, r) => s + (Number(r.amount) || 0), 0);
                           if (totalOriginAmt > 0) {
@@ -5860,10 +5872,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ padding: "6px 8px" }}>
                             <select
-                              value={row.sourceType}
+                               value={row.originType}
                               onChange={(e) => {
                                 const next = [...incOrigins];
-                                next[idx] = { ...next[idx], sourceType: e.target.value };
+                                 next[idx] = { ...next[idx], originType: e.target.value };
                                 setIncOrigins(next);
                               }}
                               style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, background: "#ffffff" }}
@@ -5878,10 +5890,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <input
                               type="text"
-                              value={row.documentNo}
+                               value={row.documentNumber}
                               onChange={(e) => {
                                 const next = [...incOrigins];
-                                next[idx] = { ...next[idx], documentNo: e.target.value };
+                                 next[idx] = { ...next[idx], documentNumber: e.target.value };
                                 setIncOrigins(next);
                               }}
                               placeholder="Số CT / Hóa đơn..."
@@ -5917,10 +5929,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <input
                               type="text"
-                              value={row.supplier}
+                               value={row.partnerName}
                               onChange={(e) => {
                                 const next = [...incOrigins];
-                                next[idx] = { ...next[idx], supplier: e.target.value };
+                                 next[idx] = { ...next[idx], partnerName: e.target.value };
                                 setIncOrigins(next);
                               }}
                               placeholder="Nhà cung cấp / Đối tác..."
@@ -5949,7 +5961,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       onClick={() =>
                         setIncOrigins([
                           ...incOrigins,
-                          { sourceType: "Chi phí vận chuyển, lắp đặt, chạy thử", documentNo: "", documentDate: incVoucherDate, amount: 0, supplier: "" },
+                           { id: `origin-${Date.now()}`, originType: "Chi phí vận chuyển, lắp đặt, chạy thử", documentNumber: "", documentDate: incVoucherDate, amount: 0, partnerCode: "", partnerName: "", sourceDocumentId: "" },
                         ])
                       }
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
@@ -6056,7 +6068,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   <div>
                     <button
                       type="button"
-                      onClick={() => setIncComponents([...incComponents, { name: "", unit: "Cái", quantity: 1, value: 0 }])}
+                      onClick={() => setIncComponents([...incComponents, { id: crypto.randomUUID(), name: "", unit: "Cái", quantity: 1, value: 0 }])}
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm bộ phận cấu thành
@@ -6155,7 +6167,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   <div>
                     <button
                       type="button"
-                      onClick={() => setIncAccessories([...incAccessories, { name: "", unit: "Bộ", quantity: 1, value: 0 }])}
+                      onClick={() => setIncAccessories([...incAccessories, { id: crypto.randomUUID(), name: "", unit: "Bộ", quantity: 1, value: 0 }])}
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dụng cụ, phụ tùng kèm theo
@@ -6333,7 +6345,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>TK nguyên giá</label>
-                  <select value={newCatCostAcc} onChange={(e) => setNewCatCostAcc(e.target.value)} style={{ width: "100%", height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}>
+                  <select value={newCatAssetAcc} onChange={(e) => setNewCatAssetAcc(e.target.value)} style={{ width: "100%", height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}>
                     {costAccountOptions.map((a) => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
@@ -6354,8 +6366,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Thời gian sử dụng mặc định (Năm)</label>
                 <input
                   type="number"
-                  value={newCatLifeYears}
-                  onChange={(e) => setNewCatLifeYears(Number(e.target.value) || 5)}
+                  value={Number(newCatPeriods) / 12}
+                  onChange={(e) => setNewCatPeriods(String((Number(e.target.value) || 5) * 12))}
                   style={{ width: 140, height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}
                 />
               </div>
@@ -6374,10 +6386,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   const catObj = {
                     code: newCatCode.trim().toUpperCase(),
                     name: newCatName.trim(),
-                    costAccount: newCatCostAcc,
+                    assetAccount: newCatAssetAcc,
                     deprAccount: newCatDeprAcc,
                     expenseAccount: newCatExpAcc,
-                    lifeYears: newCatLifeYears,
+                    defaultPeriods: Number(newCatPeriods),
                   };
                   if (apiConnected) {
                     void apiSave((writer) => saveFixedAssetCategory(writer, catObj)).then((saved) => {
@@ -10848,7 +10860,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const newOrig = matched.origAfter || a.originalCost;
                         const newDepr = matched.deprAfter ?? a.depreciatedAmount;
                         const newRem = Math.max(0, newOrig - newDepr);
-                        const newMDepr = matched.monthlyDeprAfter || a.deprMonthValue;
+                         const newMDepr = matched.monthlyDeprAfter || ("deprMonthValue" in a ? Number(a.deprMonthValue) : 0);
                         return {
                           ...a,
                           originalCost: newOrig,
@@ -10921,7 +10933,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const newOrig = matched.origAfter || a.originalCost;
                         const newDepr = matched.deprAfter ?? a.depreciatedAmount;
                         const newRem = Math.max(0, newOrig - newDepr);
-                        const newMDepr = matched.monthlyDeprAfter || a.deprMonthValue;
+                         const newMDepr = matched.monthlyDeprAfter || ("deprMonthValue" in a ? Number(a.deprMonthValue) : 0);
                         return {
                           ...a,
                           originalCost: newOrig,

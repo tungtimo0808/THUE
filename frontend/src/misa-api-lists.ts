@@ -26,10 +26,10 @@ export function clearMisaApiCache(companyId?: string) {
   }
 }
 
-function getInitialRows(companyId: string, resources: Record<string, string>): Record<string, ApiRow[]> {
+function getInitialRows(companyId: string, identity: string, resources: Record<string, string>): Record<string, ApiRow[]> {
   const result: Record<string, ApiRow[]> = {};
   for (const [name, path] of Object.entries(resources)) {
-    const cacheKey = `${companyId}::${path}`;
+    const cacheKey = `${companyId}::${identity}::${path}`;
     const cached = apiListCache.get(cacheKey);
     result[name] = cached ? cached.data : [];
   }
@@ -45,17 +45,19 @@ export function useMisaApiLists(
   resources: Record<string, string>,
   notify: (message: string) => void,
 ) {
-  const { token } = useApiSession();
+  const { token, session } = useApiSession();
   const validCompany = Boolean(token && companyId && isUuidCompany(companyId));
+  const identity = String(session?.user?.id || token);
   const key = useMemo(() => JSON.stringify(resources), [resources]);
-  const [rows, setRows] = useState<Record<string, ApiRow[]>>(() => {
-    return validCompany ? getInitialRows(companyId, JSON.parse(key)) : {};
+  const scopeKey = `${companyId}::${identity}::${key}`;
+  const [rowState, setRowState] = useState(() => {
+    return { scopeKey, rows: validCompany ? getInitialRows(companyId, identity, JSON.parse(key)) : {} as Record<string, ApiRow[]> };
   });
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     if (!validCompany) {
-      setRows({});
+      setRowState({ scopeKey, rows: {} });
       return;
     }
     let active = true;
@@ -63,14 +65,8 @@ export function useMisaApiLists(
     const entries = Object.entries(resourceMap);
 
     // Hydrate immediately from cache if available so switching tabs has 0ms delay!
-    const cached = getInitialRows(companyId, resourceMap);
-    setRows((prev) => {
-      const next: Record<string, ApiRow[]> = {};
-      for (const [name] of entries) {
-        next[name] = prev[name]?.length ? prev[name] : (cached[name] || []);
-      }
-      return next;
-    });
+    const cached = getInitialRows(companyId, identity, resourceMap);
+    setRowState({ scopeKey, rows: cached });
 
     // Revalidate each resource in background progressively
     entries.forEach(async ([name, path]) => {
@@ -96,15 +92,22 @@ export function useMisaApiLists(
         }
 
         if (!active) return;
-        apiListCache.set(`${companyId}::${path}`, { data: collected, timestamp: Date.now() });
-        setRows((prev) => ({
-          ...prev,
-          [name]: collected,
-        }));
+        apiListCache.set(`${companyId}::${identity}::${path}`, { data: collected, timestamp: Date.now() });
+        setRowState((prev) => prev.scopeKey === scopeKey ? {
+          scopeKey,
+          rows: { ...prev.rows, [name]: collected },
+        } : prev);
       } catch (error) {
         if (!active) return;
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+          apiListCache.delete(`${companyId}::${identity}::${path}`);
+          setRowState((prev) => prev.scopeKey === scopeKey ? {
+            scopeKey,
+            rows: { ...prev.rows, [name]: [] },
+          } : prev);
+        }
         if (!(error instanceof ApiError && error.status === 401)) {
-          const hasData = (apiListCache.get(`${companyId}::${path}`)?.data.length ?? 0) > 0;
+          const hasData = (apiListCache.get(`${companyId}::${identity}::${path}`)?.data.length ?? 0) > 0;
           if (!hasData) {
             notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);
           }
@@ -115,10 +118,10 @@ export function useMisaApiLists(
     return () => {
       active = false;
     };
-  }, [token, companyId, key, revision]);
+  }, [token, companyId, identity, key, revision, scopeKey]);
 
   return {
-    rows,
+    rows: rowState.scopeKey === scopeKey ? rowState.rows : {},
     connected: validCompany,
     reload: () => {
       clearMisaApiCache(companyId);
@@ -148,8 +151,8 @@ export function useMisaApiSave(companyId: string, notify: (message: string) => v
   };
 }
 
-export function apiDate(value: unknown) {
-  if (typeof value !== "string" || !value) return "";
+export function apiDate(value: unknown, fallback = "") {
+  if (typeof value !== "string" || !value) return fallback;
   const date = value.slice(0, 10).split("-");
   return date.length === 3 ? `${date[2]}/${date[1]}/${date[0]}` : value;
 }

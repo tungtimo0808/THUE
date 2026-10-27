@@ -160,6 +160,9 @@ class CustomerSerializer(serializers.ModelSerializer):
             "version": {"required": False},
             "code": {"required": False, "allow_blank": True},
         }
+        # Validate the normalized tax code in validate(); DRF's generated
+        # company/tax_code validator runs before normalization.
+        validators = ()
 
     def validate(self, attrs):
         instance = self.instance

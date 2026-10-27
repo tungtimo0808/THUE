@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-27",
+  "environment": "Local Windows, Django APIClient, SQLite development data, authenticated superuser, sequential requests; no production load testing",
+  "account_list": {
+    "company": "ABC",
+    "rows": 64,
+    "sql_before": 65,
+    "sql_after": 1,
+    "http_status_after": 200,
+    "note": "Before value is from perf_baseline_2026-10-27.json; after value measured following Count(children) annotation."
+  },
+  "dashboard_force_refresh": {
+    "company": "ABC",
+    "sql_before": 220,
+    "sql_after": 188,
+    "dash_11_sql_before": 31,
+    "dash_11_sql_after": 1,
+    "http_status_before": 200,
+    "http_status_after": 200,
+    "note": "Both measurements used the same local data and FORCE_REFRESH during this fix session; workflow summary is reused within one request."
+  }
+}

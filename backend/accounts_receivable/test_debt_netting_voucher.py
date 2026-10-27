@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -114,7 +114,7 @@ class DebtNettingVoucherTests(TestCase):
             company=self.company, branch=self.branch, supplier=self.partner,
             invoice=self.invoice, currency=self.currency_vnd, exchange_rate=Decimal("1"),
             original_amount=Decimal("800000"), balance=Decimal("800000"),
-            due_date=date(2026, 1, 28), status=PayableStatus.OPEN,
+            due_date=self.today + timedelta(days=2), status=PayableStatus.OPEN,
         )
 
     def voucher_payload(self, **extra):
@@ -210,7 +210,7 @@ class DebtNettingVoucherTests(TestCase):
         v_id = res.data["id"]
 
         post_res = self.client.post(f"/api/v1/accounts-receivable/debt-netting-vouchers/{v_id}/post/?company_id={self.company.id}", {})
-        self.assertEqual(post_res.status_code, 200)
+        self.assertEqual(post_res.status_code, 200, post_res.data)
 
         self.payable.refresh_from_db()
         self.assertEqual(self.payable.balance, Decimal("0"))
@@ -458,7 +458,7 @@ class DebtNettingVoucherTests(TestCase):
         v_id = res.data["id"]
 
         post_res = self.client.post(f"/api/v1/accounts-receivable/debt-netting-vouchers/{v_id}/post/?company_id={self.company.id}", {})
-        self.assertEqual(post_res.status_code, 200)
+        self.assertEqual(post_res.status_code, 200, post_res.data)
 
         voucher = DebtNettingVoucher.objects.get(pk=v_id)
         journal = voucher.journal_entry
@@ -534,7 +534,7 @@ class DebtNettingVoucherTests(TestCase):
         v_id = res.data["id"]
 
         post_res = self.client.post(f"/api/v1/accounts-receivable/debt-netting-vouchers/{v_id}/post/?company_id={self.company.id}", {})
-        self.assertEqual(post_res.status_code, 200)
+        self.assertEqual(post_res.status_code, 200, post_res.data)
 
         voucher = DebtNettingVoucher.objects.get(pk=v_id)
         journal = voucher.journal_entry

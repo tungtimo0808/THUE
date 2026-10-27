@@ -630,6 +630,10 @@ TT99_ACCOUNTS: List[Dict[str, Any]] = [
 def get_template_accounts(regime: str = "TT99", scope: str = "FULL") -> List[Dict[str, Any]]:
     """Lấy danh sách tài khoản theo mẫu chế độ kế toán (TT99, TT200, TT133) và phạm vi (FULL / ESSENTIAL)."""
     regime_upper = (regime or "TT99").upper()
+    if regime_upper not in {"TT99", "99", "TT133", "CIRCULAR_133", "133", "TT200", "CIRCULAR_200", "200"}:
+        raise ValueError("Chế độ kế toán không hợp lệ.")
+    if (scope or "FULL").upper() not in {"FULL", "ESSENTIAL"}:
+        raise ValueError("Phạm vi mẫu không hợp lệ.")
     if regime_upper in ("TT133", "CIRCULAR_133", "133"):
         accounts = TT133_ACCOUNTS
     elif regime_upper in ("TT200", "CIRCULAR_200", "200"):

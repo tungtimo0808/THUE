@@ -423,7 +423,7 @@ def post_voucher(voucher, request):
             credit=ZERO,
             currency=voucher.currency,
             foreign_amount=voucher.total_amount,
-            exchange_rate=Decimal("1"),
+            exchange_rate=(voucher.total_converted_amount / voucher.total_amount).quantize(Decimal("0.00000001")),
             party=voucher.customer,
             description=voucher.description,
         )
@@ -498,7 +498,7 @@ def post_voucher(voucher, request):
             credit=voucher.total_converted_amount,
             currency=voucher.currency,
             foreign_amount=voucher.total_amount,
-            exchange_rate=Decimal("1"),
+            exchange_rate=(voucher.total_converted_amount / voucher.total_amount).quantize(Decimal("0.00000001")),
             party=voucher.customer,
             description=voucher.description,
         )
@@ -633,6 +633,8 @@ def unpost_voucher(voucher, request):
                 "period": str(period.pk),
                 "posting_date": voucher.posting_date,
                 "number": f"REV-GL-{voucher.number}-{voucher.posting_count}",
+                "from_source_module": True,
+                "auto_post": True,
             },
             "META": getattr(request, "META", {}),
             "headers": getattr(request, "headers", {}),

@@ -118,7 +118,8 @@ export async function request<T>(path: string, token?: string, options?: Request
   const method = (options?.method || "GET").toUpperCase();
   const isGet = method === "GET";
   const effectiveToken = token || localStorage.getItem("erp_token") || "";
-  const dedupeKey = isGet ? `${path}::${effectiveToken}` : null;
+  // Requests with their own cancellation lifecycle must not share a promise.
+  const dedupeKey = isGet && !options?.signal ? `${path}::${effectiveToken}` : null;
 
   if (dedupeKey && inFlightRequests.has(dedupeKey)) {
     return inFlightRequests.get(dedupeKey)! as Promise<T>;

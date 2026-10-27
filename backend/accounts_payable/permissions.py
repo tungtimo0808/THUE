@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from iam.permissions import has_effective_permission
+from iam.permissions import company_identifiers_agree, has_effective_permission
 from organization.models import Company
 
 
@@ -9,6 +9,8 @@ class AccountsPayablePermission(BasePermission):
     def has_permission(self, request, view):
         self.message = getattr(view, "permission_denied_message", "Bạn không có quyền xem công nợ phải trả.")
         if not request.user or not request.user.is_authenticated:
+            return False
+        if not request.user.is_superuser and not company_identifiers_agree(request):
             return False
         company_id = request.query_params.get("company_id") or request.data.get("company")
         strict = getattr(view, "enforce_strict_permissions", False)

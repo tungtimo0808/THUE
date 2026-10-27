@@ -79,6 +79,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
   }
 
   const post = (path: string, body: Row) => fetchJson(scoped(path), { method: "POST", body: JSON.stringify({ company: companyId, ...body }) });
+  const put = (path: string, body: Row) => fetchJson(scoped(path), { method: "PUT", body: JSON.stringify({ company: companyId, ...body }) });
   const patch = (path: string, body: Row) => fetchJson(scoped(path), { method: "PATCH", body: JSON.stringify({ company: companyId, ...body }) });
   const action = (path: string, id: string, name: string, body: Row = {}) =>
     fetchJson(scoped(`${path}${id}/${name}/`), { method: "POST", body: JSON.stringify(body) });
@@ -102,6 +103,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
     companyId,
     list,
     post,
+    put,
     patch,
     action,
     upload,
@@ -1440,8 +1442,8 @@ export async function saveDepreciationVoucher(w: ApiWriter, d: Row) {
     month,
     year,
     voucher_no: voucherNo,
-    voucher_date: d.voucherDate ? isoDate(d.voucherDate) : undefined,
-    posting_date: d.postingDate ? isoDate(d.postingDate) : undefined,
+    voucher_date: d.voucherDate ? toApiDate(d.voucherDate) : undefined,
+    posting_date: d.postingDate ? toApiDate(d.postingDate) : undefined,
     description: d.reason || d.description || `Khấu hao TSCĐ tháng ${String(month).padStart(2, "0")} năm ${year}`,
     reference: d.reference || "",
     prorate_by_days: Boolean(d.prorateByDays ?? d.prorate_by_days ?? false),
@@ -1712,7 +1714,7 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
   const assets = await w.list("assets");
   const departments = kind === "transfer" ? await w.list("/api/v1/organization/departments/") : [];
   const path = `${FIXED_ASSETS}transactions/`;
-  const prefix = { revaluation: "ĐGL", transfer: "ĐCTS", disposal: "GGTS", lifeChange: "ĐCKY" }[kind];
+  const prefix = kind === "transfer" ? "ĐCTS" : "ĐCKY";
   const messages: string[] = [];
   for (const [index, row] of rows.entries()) {
     const asset = assets.find((item) => item.code === String(row.assetCode).trim());
@@ -1723,7 +1725,7 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
     };
     // Part of the tracked quantity: the backend splits that part off before moving or disposing of it.
     const requested = row.requestedQty === undefined || row.requestedQty === "" ? null : num(row.requestedQty);
-    if (requested !== null && (kind === "transfer" || kind === "disposal")) {
+    if (requested !== null && kind === "transfer") {
       if (requested <= 0 || requested > num(asset.quantity)) {
         throw new FormDataError(`Số lượng của ${asset.code} phải lớn hơn 0 và không vượt ${num(asset.quantity)}.`);
       }
@@ -1733,17 +1735,10 @@ export async function saveAssetMovement(w: ApiWriter, kind: "revaluation" | "tra
       const periods = Math.round(num(row.newPeriods) || num(asset.useful_life_periods) + num(row.periodDiff));
       if (periods <= num(asset.periods_processed)) throw new FormDataError(`Số kỳ mới của ${asset.code} phải lớn hơn số kỳ đã phân bổ (${num(asset.periods_processed)}).`);
       Object.assign(body, { transaction_type: "LIFE_CHANGE", target_useful_life_periods: periods });
-    } else if (kind === "revaluation") {
-      const diff = num(row.origDiff) || num(row.origAfter) - num(row.origBefore);
-      if (!diff) throw new FormDataError(`Tài sản ${asset.code}: nhập nguyên giá sau đánh giá khác nguyên giá hiện tại.`);
-      Object.assign(body, { transaction_type: diff > 0 ? "VALUE_INCREASE" : "VALUE_DECREASE", amount: String(Math.abs(diff)) });
-    } else if (kind === "transfer") {
+    } else {
       const target = departments.find((dept) => [dept.code, dept.name].includes(String(row.toDept || "").trim()));
       if (!target) throw new FormDataError(`Phòng ban nhận "${row.toDept || ""}" chưa có trong cơ cấu tổ chức.`);
       Object.assign(body, { transaction_type: "TRANSFER", target_department: target.id });
-    } else {
-      // The backend only accepts the book value at the time of disposal; a partial one computes its own share.
-      Object.assign(body, { transaction_type: "DISPOSAL", amount: body.quantity ? "0" : String(num(asset.remaining_value)) });
     }
     const result = await createAndPost(w, path, body);
     messages.push(describeResult(`chứng từ ${asset.code}`, result));
@@ -3219,10 +3214,10 @@ export async function ingestSubledgerJournalEvent(w: ApiWriter, d: Row) {
       account: String(ln.account || "").trim() || undefined,
       debit_account: String(ln.debitAcc || ln.debit_account || "").trim() || undefined,
       credit_account: String(ln.creditAcc || ln.credit_account || "").trim() || undefined,
-      debit: ln.debit !== undefined ? cleanNum(ln.debit) : undefined,
-      credit: ln.credit !== undefined ? cleanNum(ln.credit) : undefined,
-      amount: ln.amount !== undefined ? cleanNum(ln.amount) : undefined,
-      foreign_amount: ln.foreignAmount !== undefined ? cleanNum(ln.foreignAmount) : undefined,
+       debit: ln.debit !== undefined ? num(ln.debit) : undefined,
+       credit: ln.credit !== undefined ? num(ln.credit) : undefined,
+       amount: ln.amount !== undefined ? num(ln.amount) : undefined,
+       foreign_amount: ln.foreignAmount !== undefined ? num(ln.foreignAmount) : undefined,
       description: String(ln.description || d.description || "").trim(),
       party: String(ln.party || d.party || "").trim() || undefined,
       department: String(ln.department || d.department || "").trim() || undefined,
@@ -3242,14 +3237,14 @@ export async function ingestSubledgerJournalEvent(w: ApiWriter, d: Row) {
     document_date: toApiDate(d.documentDate || d.document_date || d.postingDate),
     description: String(d.description || `Tiếp nhận bút toán ${sourceModule} - ${sourceDocumentNumber}`).trim(),
     currency: String(d.currency || "VND").trim().toUpperCase(),
-    exchange_rate: cleanNum(d.exchangeRate || d.exchange_rate, 1),
+    exchange_rate: num(d.exchangeRate || d.exchange_rate || 1),
     posting_mode: String(d.postingMode || d.posting_mode || "AUTO_POST").trim().toUpperCase(),
     party: String(d.party || "").trim() || undefined,
     department: String(d.department || "").trim() || undefined,
     project: String(d.project || "").trim() || undefined,
     cost_center: String(d.costCenter || d.cost_center || "").trim() || undefined,
-    amount: d.amount !== undefined ? cleanNum(d.amount) : undefined,
-    tax_amount: d.taxAmount !== undefined ? cleanNum(d.taxAmount) : undefined,
+    amount: d.amount !== undefined ? num(d.amount) : undefined,
+    tax_amount: d.taxAmount !== undefined ? num(d.taxAmount) : undefined,
     lines: normalizedLines.length > 0 ? normalizedLines : undefined,
     entry_groups: Array.isArray(d.entryGroups) && d.entryGroups.length > 0 ? d.entryGroups : undefined,
     use_default_rule: d.useDefaultRule !== undefined ? Boolean(d.useDefaultRule) : true,
@@ -3417,7 +3412,7 @@ export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) 
       description: String(r.desc || r.description || d.description || reason).trim(),
       debit_account: String(r.debitAcc || r.debit_account || "").trim(),
       credit_account: String(r.creditAcc || r.credit_account || "").trim(),
-      amount: String(cleanNum(r.amount)),
+      amount: String(num(r.amount)),
       debit_object_code: String(r.debitObject || r.debit_object_code || "").trim() || undefined,
       credit_object_code: String(r.creditObject || r.credit_object_code || "").trim() || undefined,
       department: String(r.department || "").trim() || undefined,
@@ -3458,10 +3453,10 @@ export async function reverseJournalEntry(w: ApiWriter, entryId: string, d: Row)
     description: String(d.description || "").trim() || undefined,
     reversal_method: String(d.reversalMethod || d.reversal_method || "SWAP_DEBIT_CREDIT").trim().toUpperCase(),
     reversal_amount: d.reversalAmount !== undefined || d.reversal_amount !== undefined
-      ? String(cleanNum(d.reversalAmount ?? d.reversal_amount))
+      ? String(num(d.reversalAmount ?? d.reversal_amount))
       : undefined,
     reversal_percent: d.reversalPercent !== undefined || d.reversal_percent !== undefined
-      ? String(cleanNum(d.reversalPercent ?? d.reversal_percent))
+      ? String(num(d.reversalPercent ?? d.reversal_percent))
       : undefined,
     auto_post: Boolean(d.autoPost || d.auto_post),
     idempotency_key: d.idempotencyKey || d.idempotency_key || undefined,
@@ -5474,94 +5469,96 @@ function buildFsBundleQueryParams(companyId: string | null | undefined, d: Row =
   return p.toString();
 }
 
-export async function fetchFinancialBundleTypesUcRpt02(w: ApiWriter, d: Row = {}) {
+export type FinancialBundleWriter = Pick<ApiWriter, "companyId" | "get" | "post" | "patch">;
+
+export async function fetchFinancialBundleTypesUcRpt02(w: FinancialBundleWriter, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}types/?${qs}`);
 }
 
-export async function fetchFinancialBundlesListUcRpt02(w: ApiWriter, d: Row = {}) {
+export async function fetchFinancialBundlesListUcRpt02(w: FinancialBundleWriter, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}?${qs}`);
 }
 
-export async function createFinancialBundleUcRpt02(w: ApiWriter, d: Row = {}) {
+export async function createFinancialBundleUcRpt02(w: FinancialBundleWriter, d: Row = {}) {
   return await w.post(RPT_FS_BUNDLES, {
     company_id: d.company_id || w.companyId,
     ...d,
   });
 }
 
-export async function fetchFinancialBundleDetailUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function fetchFinancialBundleDetailUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/?${qs}`);
 }
 
-export async function fetchFinancialBundleComponentsUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function fetchFinancialBundleComponentsUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/components/?${qs}`);
 }
 
-export async function fetchFinancialBundleValidationUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function fetchFinancialBundleValidationUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/validation/?${qs}`);
 }
 
-export async function validateFinancialBundleUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function validateFinancialBundleUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/validate/`, {
     company_id: d.company_id || w.companyId,
     ...d,
   });
 }
 
-export async function fetchFinancialBundleHistoryUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function fetchFinancialBundleHistoryUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/history/?${qs}`);
 }
 
-export async function fetchFinancialBundleSupportingReportsUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function fetchFinancialBundleSupportingReportsUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/supporting-reports/?${qs}`);
 }
 
-export async function submitFinancialBundleReviewUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function submitFinancialBundleReviewUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/submit-review/`, {
     company_id: d.company_id || w.companyId,
     ...d,
   });
 }
 
-export async function approveFinancialBundleUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function approveFinancialBundleUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/approve/`, {
     company_id: d.company_id || w.companyId,
     ...d,
   });
 }
 
-export async function exportFinancialBundleUcRpt02(w: ApiWriter, bundleId: string, d: Row = {}) {
+export async function exportFinancialBundleUcRpt02(w: FinancialBundleWriter, bundleId: string, d: Row = {}) {
   return await w.post(`${RPT_FS_BUNDLES}${encodeURIComponent(bundleId)}/export/`, {
     company_id: d.company_id || w.companyId,
     ...d,
   });
 }
 
-export async function generateFinancialStatementRunUcRpt02(w: ApiWriter, d: Row = {}) {
+export async function generateFinancialStatementRunUcRpt02(w: FinancialBundleWriter, d: Row = {}) {
   return await w.post(`${RPT_FS_STATEMENTS}generate/`, {
     company_id: d.company_id || w.companyId,
     ...d,
   });
 }
 
-export async function fetchFinancialStatementRunDetailUcRpt02(w: ApiWriter, runId: string, d: Row = {}) {
+export async function fetchFinancialStatementRunDetailUcRpt02(w: FinancialBundleWriter, runId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/?${qs}`);
 }
 
-export async function fetchFinancialStatementRunLinesUcRpt02(w: ApiWriter, runId: string, d: Row = {}) {
+export async function fetchFinancialStatementRunLinesUcRpt02(w: FinancialBundleWriter, runId: string, d: Row = {}) {
   const qs = buildFsBundleQueryParams(w.companyId, d);
   return await w.get(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/lines/?${qs}`);
 }
 
-export async function approveFinancialStatementRunUcRpt02(w: ApiWriter, runId: string, d: Row = {}) {
+export async function approveFinancialStatementRunUcRpt02(w: FinancialBundleWriter, runId: string, d: Row = {}) {
   return await w.post(`${RPT_FS_STATEMENTS}${encodeURIComponent(runId)}/approve/`, {
     company_id: d.company_id || w.companyId,
     ...d,
@@ -5569,7 +5566,7 @@ export async function approveFinancialStatementRunUcRpt02(w: ApiWriter, runId: s
 }
 
 export async function fetchFinancialStatementLineSourcesUcRpt02(
-  w: ApiWriter,
+  w: FinancialBundleWriter,
   runId: string,
   lineId: string,
   d: Row = {},

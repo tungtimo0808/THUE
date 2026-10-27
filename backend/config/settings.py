@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,6 +20,18 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'development-only-change-me')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
+
+if not DEBUG:
+    if SECRET_KEY in {'development-only-change-me', 'django-insecure-thue-erp-super-secret-key-2026'} or len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured('Set a unique SECRET_KEY of at least 50 characters for production.')
+    if not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS:
+        raise ImproperlyConfigured('Set explicit ALLOWED_HOSTS for production.')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 
 # Application definition
@@ -264,7 +277,10 @@ SPECTACULAR_SETTINGS = {
 
 
 # CORS Settings
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True' if DEBUG else 'False') == 'True'
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
+if not DEBUG and CORS_ALLOW_ALL_ORIGINS:
+    raise ImproperlyConfigured('CORS_ALLOW_ALL_ORIGINS must be False in production.')
 
 CATALOG_IMPORT_MAX_BYTES = int(os.getenv('CATALOG_IMPORT_MAX_BYTES', str(5 * 1024 * 1024)))
 CATALOG_IMPORT_MAX_ROWS = int(os.getenv('CATALOG_IMPORT_MAX_ROWS', '5000'))

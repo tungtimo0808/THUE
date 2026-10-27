@@ -11,7 +11,7 @@ from approval_workflows.submission import configured_snapshot
 from common_services.models import DocumentNumberingRule
 from common_services.period_services import determine_period_for_date
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import post as post_journal
+from general_ledger.services import post as post_journal, source_module_request
 from master_data.models import Party
 from . import models
 from .services import actor_for, audit
@@ -624,7 +624,7 @@ def post_purchase_cost(cost, request):
             party=cost.supplier,
         )
 
-        post_journal(journal, request)
+        post_journal(journal, source_module_request(request))
         cost.journal_entry = journal
 
         # Step 53: Payable for UNPAID (BR-PUR-CST-27)

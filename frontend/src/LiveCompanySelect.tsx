@@ -53,30 +53,31 @@ export default function LiveCompanySelect() {
   }, [restoring, token, navigate, params]);
 
   // Handle selecting a company and entering workspace
-  function handleSelectAndEnter(targetCompanyId: string) {
+  async function enterCompany(targetCompanyId: string, destination: string) {
     setEntering(true);
-    selectCompany(targetCompanyId);
-    if (token) {
-      void request("/api/v1/common/companies/switch/", token, {
+    setError("");
+    try {
+      if (!token) throw new Error("Vui lòng đăng nhập lại.");
+      await request("/api/v1/common/companies/switch/", token, {
         method: "POST",
-        body: JSON.stringify({ company_id: targetCompanyId }),
-      }).catch(() => {});
+        body: JSON.stringify({ company: targetCompanyId }),
+      });
+      selectCompany(targetCompanyId);
+      navigate(destination);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không chuyển được doanh nghiệp.");
+    } finally {
+      setEntering(false);
     }
+  }
 
-    setTimeout(() => {
-      const redirectTarget = params.get("redirect") || "/";
-      navigate(redirectTarget);
-    }, 450);
+  function handleSelectAndEnter(targetCompanyId: string) {
+    void enterCompany(targetCompanyId, params.get("redirect") || "/");
   }
 
   // Handle selecting a company and going straight to Company Admin
   function handleSelectAndGoAdmin(targetCompanyId: string) {
-    setEntering(true);
-    selectCompany(targetCompanyId);
-
-    setTimeout(() => {
-      navigate("/admin");
-    }, 450);
+    void enterCompany(targetCompanyId, "/admin");
   }
 
   // 1-Click Demo Company Quick Bootstrap

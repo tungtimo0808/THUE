@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -56,10 +56,7 @@ import {
   referenceTabs,
   settingsGroups,
 } from "./reference-config";
-import {
-  ReferenceDashboard,
-  ReferenceTransactions,
-} from "./ReferencePages";
+import { ReferenceTransactions } from "./ReferencePages";
 import {
   DirectoryWorkspace,
   IncomingInvoiceWorkspace,
@@ -72,67 +69,67 @@ import {
 import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
-import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
-import MisaInvoiceWorkspace from './MisaInvoiceWorkspace';
-import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
-import InvoiceLookupWorkspace from './InvoiceLookupWorkspace';
-import MisaCashWorkspace from "./MisaCashWorkspace";
-import MisaBankWorkspace from "./MisaBankWorkspace";
-import MisaPurchaseWorkspace from "./MisaPurchaseWorkspace";
-import MisaSupplierRiskWorkspace from "./MisaSupplierRiskWorkspace";
-import MisaSalesWorkspace from "./MisaSalesWorkspace";
-import MisaInventoryWorkspace from "./MisaInventoryWorkspace";
-import MisaToolsWorkspace from "./MisaToolsWorkspace";
-import MisaAssetsWorkspace from "./MisaAssetsWorkspace";
-import MisaPayrollWorkspace from "./MisaPayrollWorkspace";
-import MisaTaxWorkspace from "./MisaTaxWorkspace";
-import MisaCostWorkspace from "./MisaCostWorkspace";
-import MisaLedgerWorkspace from "./MisaLedgerWorkspace";
-import MisaBudgetWorkspace from "./MisaBudgetWorkspace";
-import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
-import MisaFinancialAnalysisWorkspace from "./MisaFinancialAnalysisWorkspace";
-import MisaOpeningBalanceWorkspace from "./MisaOpeningBalanceWorkspace";
-import MisaDashboardOverview from "./MisaDashboardOverview";
+const MisaDirectoryWorkspace = lazy(() => import("./MisaDirectoryWorkspace"));
+const MisaInvoiceWorkspace = lazy(() => import("./MisaInvoiceWorkspace"));
+const TaxInvoiceSyncPanel = lazy(() => import("./TaxInvoiceSyncPanel"));
+const InvoiceLookupWorkspace = lazy(() => import("./InvoiceLookupWorkspace"));
+const MisaCashWorkspace = lazy(() => import("./MisaCashWorkspace"));
+const MisaBankWorkspace = lazy(() => import("./MisaBankWorkspace"));
+const MisaPurchaseWorkspace = lazy(() => import("./MisaPurchaseWorkspace"));
+const MisaSupplierRiskWorkspace = lazy(() => import("./MisaSupplierRiskWorkspace"));
+const MisaSalesWorkspace = lazy(() => import("./MisaSalesWorkspace"));
+const MisaInventoryWorkspace = lazy(() => import("./MisaInventoryWorkspace"));
+const MisaToolsWorkspace = lazy(() => import("./MisaToolsWorkspace"));
+const MisaAssetsWorkspace = lazy(() => import("./MisaAssetsWorkspace"));
+const MisaPayrollWorkspace = lazy(() => import("./MisaPayrollWorkspace"));
+const MisaTaxWorkspace = lazy(() => import("./MisaTaxWorkspace"));
+const MisaCostWorkspace = lazy(() => import("./MisaCostWorkspace"));
+const MisaLedgerWorkspace = lazy(() => import("./MisaLedgerWorkspace"));
+const MisaBudgetWorkspace = lazy(() => import("./MisaBudgetWorkspace"));
+const MisaReportCenterWorkspace = lazy(() => import("./MisaReportCenterWorkspace"));
+const MisaFinancialAnalysisWorkspace = lazy(() => import("./MisaFinancialAnalysisWorkspace"));
+const MisaOpeningBalanceWorkspace = lazy(() => import("./MisaOpeningBalanceWorkspace"));
+const MisaDashboardOverview = lazy(() => import("./MisaDashboardOverview"));
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
-import LiveAccount from "./LiveAccount";
-import LiveJoin from "./LiveJoin";
-import LiveLogin from "./LiveLogin";
-import LiveCompanySelect from "./LiveCompanySelect";
-import LivePasswordReset from "./LivePasswordReset";
-import LiveProfile from "./LiveProfile";
-import LiveScope from "./LiveScope";
-import LiveCommonHub from "./LiveCommonHub";
-import LiveCompanyBootstrap from "./LiveCompanyBootstrap";
-import LiveCompanyProfile from "./LiveCompanyProfile";
-import LiveOrgStructure from "./LiveOrgStructure";
-import LiveJoinAdmin from "./LiveJoinAdmin";
-import LiveCompanyUsers from "./LiveCompanyUsers";
-import LiveRoles from "./LiveRoles";
-import LivePermissions from "./LivePermissions";
-import LiveDataScopes from "./LiveDataScopes";
-import LiveOrgAssignments from "./LiveOrgAssignments";
-import LiveWorkflows from "./LiveWorkflows";
-import LiveApprovalTasks from "./LiveApprovalTasks";
-import LiveModules from "./LiveModules";
-import LiveNumberingRules from "./LiveNumberingRules";
-import LiveFiscalPeriods from "./LiveFiscalPeriods";
-import LiveAccountingPolicies from "./LiveAccountingPolicies";
-import LiveAuditLogs from "./LiveAuditLogs";
-import LiveUserAccess from "./LiveUserAccess";
-import LiveCustomerDetails from "./LiveCustomerDetails";
-import LiveVendors from "./LiveVendors";
-import LiveEmployees from "./LiveEmployees";
-import LiveItems from "./LiveItems";
-import LiveVendorDetails from "./LiveVendorDetails";
-import LiveItemCategories from "./LiveItemCategories";
-import LiveUoms from "./LiveUoms";
-import LiveWarehouses from "./LiveWarehouses";
-import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
-import LiveAccounts from "./LiveAccounts";
-import LiveCatalogExtensions from "./LiveCatalogExtensions";
-import CompanyAdminWorkspace from "./CompanyAdminWorkspace";
-import SuperAdminWorkspace from "./SuperAdminWorkspace";
+const LiveAccount = lazy(() => import("./LiveAccount"));
+const LiveJoin = lazy(() => import("./LiveJoin"));
+const LiveLogin = lazy(() => import("./LiveLogin"));
+const LiveCompanySelect = lazy(() => import("./LiveCompanySelect"));
+const LivePasswordReset = lazy(() => import("./LivePasswordReset"));
+const LiveProfile = lazy(() => import("./LiveProfile"));
+const LiveScope = lazy(() => import("./LiveScope"));
+const LiveCommonHub = lazy(() => import("./LiveCommonHub"));
+const LiveCompanyBootstrap = lazy(() => import("./LiveCompanyBootstrap"));
+const LiveCompanyProfile = lazy(() => import("./LiveCompanyProfile"));
+const LiveOrgStructure = lazy(() => import("./LiveOrgStructure"));
+const LiveJoinAdmin = lazy(() => import("./LiveJoinAdmin"));
+const LiveCompanyUsers = lazy(() => import("./LiveCompanyUsers"));
+const LiveRoles = lazy(() => import("./LiveRoles"));
+const LivePermissions = lazy(() => import("./LivePermissions"));
+const LiveDataScopes = lazy(() => import("./LiveDataScopes"));
+const LiveOrgAssignments = lazy(() => import("./LiveOrgAssignments"));
+const LiveWorkflows = lazy(() => import("./LiveWorkflows"));
+const LiveApprovalTasks = lazy(() => import("./LiveApprovalTasks"));
+const LiveModules = lazy(() => import("./LiveModules"));
+const LiveNumberingRules = lazy(() => import("./LiveNumberingRules"));
+const LiveFiscalPeriods = lazy(() => import("./LiveFiscalPeriods"));
+const LiveAccountingPolicies = lazy(() => import("./LiveAccountingPolicies"));
+const LiveAuditLogs = lazy(() => import("./LiveAuditLogs"));
+const LiveUserAccess = lazy(() => import("./LiveUserAccess"));
+const LiveCustomerDetails = lazy(() => import("./LiveCustomerDetails"));
+const LiveVendors = lazy(() => import("./LiveVendors"));
+const LiveEmployees = lazy(() => import("./LiveEmployees"));
+const LiveItems = lazy(() => import("./LiveItems"));
+const LiveVendorDetails = lazy(() => import("./LiveVendorDetails"));
+const LiveItemCategories = lazy(() => import("./LiveItemCategories"));
+const LiveUoms = lazy(() => import("./LiveUoms"));
+const LiveWarehouses = lazy(() => import("./LiveWarehouses"));
+const LiveCompanyBankAccounts = lazy(() => import("./LiveCompanyBankAccounts"));
+const LiveAccounts = lazy(() => import("./LiveAccounts"));
+const LiveCatalogExtensions = lazy(() => import("./LiveCatalogExtensions"));
+const CompanyAdminWorkspace = lazy(() => import("./CompanyAdminWorkspace"));
+const SuperAdminWorkspace = lazy(() => import("./SuperAdminWorkspace"));
 import { MisaModuleApiExtensionPanel, MODULE_EXTENDED_APIS } from "./MisaModuleApiExtensionDrawer";
 import { request } from "./live-api";
 import "./App.css";
@@ -997,7 +994,6 @@ function ReferenceWorkspace() {
                     if (next) {
                       setTabOptionsOpen(false);
                       setTabMoreOpen(false);
-                      setActiveClusterPopover(null);
                     }
                     return next;
                   });
@@ -2105,7 +2101,9 @@ export default function App() {
     <BrowserRouter>
       <ApiSessionProvider>
         <ErrorBoundary>
-          <AppRoute />
+          <Suspense fallback={<main role="status" aria-live="polite" style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "#475569" }}>?ang t?i m?n h?nh?</main>}>
+            <AppRoute />
+          </Suspense>
         </ErrorBoundary>
       </ApiSessionProvider>
     </BrowserRouter>

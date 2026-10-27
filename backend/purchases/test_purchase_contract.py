@@ -304,8 +304,8 @@ class PurchaseContractTests(TestCase):
         res2 = self.client.post(
             self.url,
             self.contract_payload(
-                start_date=str(self.day + timedelta(days=10)),
-                end_date=str(self.day + timedelta(days=70)),
+                start_date=str(timezone.localdate() + timedelta(days=10)),
+                end_date=str(timezone.localdate() + timedelta(days=70)),
             ),
             format="json",
         )

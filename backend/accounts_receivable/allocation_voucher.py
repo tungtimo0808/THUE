@@ -407,6 +407,8 @@ def unpost(voucher, request):
                 "reason": reason, "period": str(period.pk),
                 "posting_date": voucher.allocation_date,
                 "number": f"REV-GL-{voucher.number}-{voucher.posting_count}",
+                "from_source_module": True,
+                "auto_post": True,
             },
             "META": request.META, "headers": request.headers,
             "method": request.method, "path": request.path,

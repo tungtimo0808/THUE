@@ -19,7 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import {
-  type ApiWriter,
+  type FinancialBundleWriter,
   approveFinancialBundleUcRpt02,
   approveFinancialStatementRunUcRpt02,
   createFinancialBundleUcRpt02,
@@ -114,7 +114,7 @@ export default function MisaFinancialBundleWorkspace({
   const [supportingPayload, setSupportingPayload] = useState<any>(null);
   const [exportPayload, setExportPayload] = useState<any>(null);
 
-  const getWriter = useCallback((): ApiWriter => {
+  const getWriter = useCallback((): FinancialBundleWriter => {
     const cid =
       companyId ||
       localStorage.getItem("active_company_id") ||

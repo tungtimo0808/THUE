@@ -215,8 +215,18 @@ def init_chart_of_accounts_from_template(
     Hỗ trợ đối chiếu bổ sung nếu doanh nghiệp đã có tài khoản (AF-01).
     Hỗ trợ phạm vi rút gọn cho doanh nghiệp nhỏ / một người (AF-02, AF-19, BR-COA-52).
     """
-    regime = (regime or "TT99").upper()
+    regime_aliases = {
+        "TT99": "TT99", "99": "TT99",
+        "TT200": "TT200", "CIRCULAR_200": "TT200", "200": "TT200",
+        "TT133": "TT133", "CIRCULAR_133": "TT133", "133": "TT133",
+    }
+    raw_regime = (regime or "TT99").upper()
+    if raw_regime not in regime_aliases:
+        raise ValidationError({"regime": "Chế độ kế toán không hợp lệ."})
+    regime = regime_aliases[raw_regime]
     scope = (scope or "FULL").upper()
+    if scope not in {"FULL", "ESSENTIAL"}:
+        raise ValidationError({"scope": "Phạm vi mẫu phải là FULL hoặc ESSENTIAL."})
     template_version_str = f"{regime}-{scope}-V1"
 
     # Lấy hoặc tạo ChartOfAccounts mặc định cho doanh nghiệp
@@ -236,7 +246,8 @@ def init_chart_of_accounts_from_template(
         )
     else:
         chart.template_version = template_version_str
-        chart.save(update_fields=["template_version"])
+        chart.accounting_regime = regime
+        chart.save(update_fields=["template_version", "accounting_regime"])
 
     # Lấy danh sách mẫu tài khoản
     template_items = get_template_accounts(regime=regime, scope=scope)

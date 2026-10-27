@@ -37,11 +37,8 @@ export default function LivePasswordReset() {
       if (result.challenge) setChallenge(result.challenge);
       if (result.dev_otp) setDevOtp(result.dev_otp);
       setMessage("Đã gửi lại mã xác thực đặt lại mật khẩu.");
-    } catch {
-      await request("/api/v1/common/auth/forgot-password/", undefined, {
-        method: "POST", body: JSON.stringify({ email: email.trim() }),
-      }).catch(() => {});
-      setMessage("Đã gửi lại yêu cầu xác thực.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không gửi lại được mã.");
     } finally { setBusy(false); }
   }
 
@@ -64,11 +61,7 @@ export default function LivePasswordReset() {
     try {
       await request<{ reset: boolean }>("/api/v1/common/auth/password-reset/confirm/", undefined, {
         method: "POST", body: JSON.stringify({ reset_token: resetToken, new_password: password, new_password_confirm: confirm }),
-      }).catch(() =>
-        request<{ reset: boolean }>("/api/v1/common/auth/reset-password/", undefined, {
-          method: "POST", body: JSON.stringify({ reset_token: resetToken, new_password: password, new_password_confirm: confirm }),
-        })
-      );
+      });
       setPassword(""); setConfirm(""); setResetToken(""); setStep("done");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không đặt lại được mật khẩu."); }
     finally { setBusy(false); }

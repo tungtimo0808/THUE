@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from rest_framework import mixins, serializers as drf_serializers, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -74,7 +74,9 @@ class ChartOfAccountsViewSet(AccountMasterViewSet, mixins.DestroyModelMixin):
 
 
 class AccountViewSet(AccountMasterViewSet):
-    queryset = Account.objects.select_related("chart_of_accounts", "account_class", "parent")
+    queryset = Account.objects.select_related(
+        "chart_of_accounts", "account_class", "parent"
+    ).annotate(_children_count=Count("children"))
     serializer_class = AccountSerializer
     action_permissions = {
         "list": "MD.ACCOUNT.VIEW",

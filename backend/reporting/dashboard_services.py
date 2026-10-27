@@ -61,6 +61,7 @@ class DashboardContext:
     warnings: list[dict[str, Any]] = field(default_factory=list)
     fail_widgets: set[str] = field(default_factory=set)
     is_before_start_date: bool = False
+    workflow_summary: dict[str, Any] | None = field(default=None, repr=False)
 
 
 def _to_decimal(val: Any) -> Decimal:
@@ -1283,6 +1284,9 @@ def compute_dash_03_cash_collected(ctx: DashboardContext) -> dict[str, Any]:
 # ==============================================================================
 
 def _collect_workflow_and_action_items(ctx: DashboardContext) -> dict[str, Any]:
+    if ctx.workflow_summary is not None:
+        return ctx.workflow_summary
+
     from accounts_payable.models import PayableDocument, PaymentRequest, SupplierInvoice
     from accounts_receivable.models import CustomerReceiptVoucher, ReceivableDocument
     from approval_workflows.models import ApprovalDelegation, ApprovalTask
@@ -1508,13 +1512,14 @@ def _collect_workflow_and_action_items(ctx: DashboardContext) -> dict[str, Any]:
     all_tasks.sort(key=lambda x: x["sort_tuple"])
     clean_tasks = [{k: v for k, v in item.items() if k != "sort_tuple"} for item in all_tasks]
 
-    return {
+    ctx.workflow_summary = {
         "pending_my_approval_count": len(my_tasks),
         "pending_company_approval_count": len(company_pending_keys),
         "needs_accounting_action_count": len(accounting_actions),
         "total_actionable_count": len(my_tasks) + len(accounting_actions),
         "tasks": clean_tasks,
     }
+    return ctx.workflow_summary
 
 
 def compute_dash_04_pending_documents(ctx: DashboardContext) -> dict[str, Any]:

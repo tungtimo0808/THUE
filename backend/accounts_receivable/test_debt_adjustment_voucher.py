@@ -549,7 +549,7 @@ class DebtAdjustmentVoucherTests(APITestCase):
 
         post_url = f"/api/v1/accounts-receivable/debt-adjustment-vouchers/{v_id}/post/?company_id={self.company.id}"
         post_res = self.client.post(post_url, {})
-        self.assertEqual(post_res.status_code, 200)
+        self.assertEqual(post_res.status_code, 200, post_res.data)
 
         self.schedule1.refresh_from_db()
         self.schedule2.refresh_from_db()
@@ -661,7 +661,7 @@ class DebtAdjustmentVoucherTests(APITestCase):
 
         post_url = f"/api/v1/accounts-receivable/debt-adjustment-vouchers/{v_id}/post/?company_id={self.company.id}"
         post_res = self.client.post(post_url, {})
-        self.assertEqual(post_res.status_code, 200)
+        self.assertEqual(post_res.status_code, 200, post_res.data)
 
         new_rec = Receivable.objects.filter(source_document_id=v_id).first()
         self.assertIsNotNone(new_rec)

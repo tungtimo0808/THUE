@@ -1324,7 +1324,7 @@ class TaxReportViewSet(ViewSet):
     def parameters(self, request, report_code=None):
         return Response(tax_report_services.get_tax_report_parameters_payload(report_code, request=request, user=request.user))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(tax_report_services.get_tax_report_schema_payload(report_code, request=request, user=request.user))
 
     def runs(self, request, report_code=None):
@@ -1384,7 +1384,7 @@ class PurchaseReportViewSet(ViewSet):
     def catalogue(self, request):
         return Response(purchase_report_services.get_purchase_catalogue_payload(request=request, user=request.user))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(purchase_report_services.get_purchase_report_schema_payload(report_code, request=request, user=request.user))
 
     def parameters(self, request, report_code=None):
@@ -1443,7 +1443,7 @@ class SalesReportViewSet(ViewSet):
     def catalogue(self, request):
         return Response(sales_report_services.get_sales_catalogue_payload(request=request, user=request.user))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(sales_report_services.get_sales_report_schema_payload(report_code, request=request, user=request.user))
 
     def parameters(self, request, report_code=None):
@@ -1507,7 +1507,7 @@ class DebtReportViewSet(ViewSet):
     def catalogue(self, request):
         return Response(debt_report_services.get_debt_catalogue_payload(request=request, user=request.user))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(debt_report_services.get_debt_report_schema_payload(report_code, request=request, user=request.user))
 
     def parameters(self, request, report_code=None):
@@ -1602,7 +1602,7 @@ class MoneyReportViewSet(ViewSet):
         company_id, _ = money_report_services.resolve_money_company_scope(request, {})
         return Response(money_report_services.get_money_report_catalogue_payload(company_id, user=request.user, request=request))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(money_report_services.get_money_report_schema_payload(report_code, user=request.user, request=request))
 
     def parameters(self, request, report_code=None):
@@ -1686,7 +1686,7 @@ class InventoryReportViewSet(ViewSet):
         company_id, _ = inventory_report_services.resolve_inventory_company_scope(request, {})
         return Response(inventory_report_services.get_inventory_report_catalogue_payload(company_id, user=request.user, request=request))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(inventory_report_services.get_inventory_report_schema_payload(report_code, user=request.user, request=request))
 
     def parameters(self, request, report_code=None):
@@ -1751,7 +1751,7 @@ class AssetReportViewSet(ViewSet):
         company_id, _ = asset_report_services.resolve_asset_company_scope(request, {})
         return Response(asset_report_services.get_asset_report_catalogue_payload(company_id, user=request.user, request=request))
 
-    def schema(self, request, report_code=None):
+    def report_schema(self, request, report_code=None):
         return Response(asset_report_services.get_asset_report_schema_payload(report_code, user=request.user, request=request))
 
     def parameters(self, request, report_code=None):

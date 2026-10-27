@@ -16,6 +16,7 @@ import {
   confirmFxRevaluation,
   confirmProfitLossClosing,
   createApiWriter,
+  type ApiWriter,
   decideAdvanceSettlementRequest,
   drilldownAccountBalance,
   errorText,
@@ -151,6 +152,7 @@ export type MisaLedgerWorkspaceProps = {
 // Formatter
 const formatVND = (num: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num);
+const formatVndNumber = (num: number) => new Intl.NumberFormat("vi-VN").format(num);
 
 export type GeneralVoucherType =
   | "1. Hạch toán thuế TNDN phải nộp"
@@ -187,7 +189,18 @@ export default function MisaLedgerWorkspace({
     departments: "/api/v1/organization/departments/",
   }, notify);
   const apiSave = useMisaApiSave(company.id, notify, reloadApi);
+  const apiSaveWithResult = async <T extends { message: string }>(
+    save: (writer: ApiWriter) => Promise<T>,
+  ): Promise<T | false> => {
+    let result: T | undefined;
+    const saved = await apiSave(async (activeWriter) => {
+      result = await save(activeWriter);
+      return result;
+    });
+    return saved && result ? result : false;
+  };
   const { token: apiToken } = useApiSession();
+  const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
   const currentTab = tab || "process";
 
   // --- Interactive Popovers on Workflow Nodes (Image 1 & 2) ---
@@ -778,7 +791,7 @@ export default function MisaLedgerWorkspace({
     setUc14Loading(true);
     try {
       if (apiConnected && apiToken) {
-        const writer = createApiWriter(company.id, apiToken);
+        const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
         const res = await queryAccountingBookUcGl14(writer, {
           book_type: bType,
           period: overrideParams?.period || uc14Period,
@@ -813,7 +826,7 @@ export default function MisaLedgerWorkspace({
 
     if (apiConnected && apiToken && typeof rowOrVoucher === "object" && rowOrVoucher?.entry_id && String(rowOrVoucher.entry_id).length === 36) {
       try {
-        const writer = createApiWriter(company.id, apiToken);
+        const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
         const res = await traceGlEntryAndVoucherUcGl14(writer, {
           entry_id: rowOrVoucher.entry_id,
           line_id: rowOrVoucher.line_id,
@@ -1009,7 +1022,7 @@ export default function MisaLedgerWorkspace({
   const handleExportReport = async (format: "XLSX" | "PDF" | "PRINT") => {
     try {
       if (apiConnected && apiToken) {
-        const writer = createApiWriter(company.id, apiToken);
+        const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
         const expRes = await exportAccountingBookUcGl14(writer, {
           book_type: uc14BookType,
           period: uc14Period,
@@ -1374,7 +1387,7 @@ export default function MisaLedgerWorkspace({
       let savedApiId = editingGeneralVoucherId || "";
 
       if (apiConnected) {
-        const saved = await apiSave((writer) =>
+        const saved = await apiSaveWithResult((writer) =>
           saveGeneralBusinessVoucher(writer, {
             id: editingGeneralVoucherId || undefined,
             number: savedNumber,
@@ -1467,8 +1480,8 @@ export default function MisaLedgerWorkspace({
       },
     ];
     if (apiConnected) {
-      const imported = await apiSave((writer) => importGeneralBusinessVouchersExcel(writer, sampleBatch));
-      if (imported?.record?.items?.length) {
+      const imported = await apiSaveWithResult((writer) => importGeneralBusinessVouchersExcel(writer, sampleBatch));
+      if (imported && imported.record?.items?.length) {
         setShowVoucherTable(true);
       }
       return;
@@ -1946,6 +1959,7 @@ export default function MisaLedgerWorkspace({
     const newRow = {
       id: correctionModal.newNumber || `${correctionModal.mode === "ADJUSTMENT" ? "DC" : "REV"}-${src.id}`,
       date: correctionModal.postingDate,
+      voucherDate: correctionModal.documentDate,
       docDate: correctionModal.documentDate,
       desc: `${correctionModal.description} (Lý do: ${reason})`,
       debitAcc: correctionModal.mode === "ADJUSTMENT" ? correctionModal.adjDebitAcc : src.creditAcc,
@@ -2666,13 +2680,13 @@ export default function MisaLedgerWorkspace({
 
   const handleFetchFxBalances = async () => {
     try {
-      const res = await fetchFxRevaluationBalances({
+      const res = await fetchFxRevaluationBalances(writer, {
         period: fxRevalPeriod,
         currency: fxRevalCurrency,
         account_scope: fxRevalAccountScope,
       });
-      if (res.ok && res.data?.source_fingerprint) {
-        setFxRevalSourceFingerprint(res.data.source_fingerprint);
+      if (res.record?.source_fingerprint) {
+        setFxRevalSourceFingerprint(res.record.source_fingerprint);
       } else {
         setFxRevalSourceFingerprint(`FP-FX-${fxRevalPeriod}-${fxRevalCurrency}-${Date.now()}`);
       }
@@ -2700,7 +2714,7 @@ export default function MisaLedgerWorkspace({
       return;
     }
     try {
-      await calculateFxRevaluation({
+      await calculateFxRevaluation(writer, {
         period: fxRevalPeriod,
         currency: fxRevalCurrency,
         exchange_rate: fxRevalExchangeRate,
@@ -2768,7 +2782,7 @@ export default function MisaLedgerWorkspace({
     const totalAccountingAmount = totalGain + totalLoss;
 
     try {
-      await confirmFxRevaluation({
+      await confirmFxRevaluation(writer, {
         period: fxRevalPeriod,
         currency: fxRevalCurrency,
         exchange_rate: fxRevalExchangeRate,
@@ -2778,6 +2792,7 @@ export default function MisaLedgerWorkspace({
         description: fxRevalDescription,
         source_fingerprint: fxRevalSourceFingerprint,
         idempotency_key: `IDEM-${fxRevalVoucherNo}-${fxRevalPeriod}-${fxRevalCurrency}`,
+        auto_post: autoPost,
       });
     } catch {
       // Local state update fallback
@@ -2866,10 +2881,10 @@ export default function MisaLedgerWorkspace({
     action: "POST" | "UNPOST" | "REVERSE" | "CANCEL",
   ) => {
     try {
-      if (action === "POST") await postFxRevaluationRun(runId);
-      if (action === "UNPOST") await unpostFxRevaluationRun(runId);
-      if (action === "REVERSE") await reverseFxRevaluationRun(runId, "Đảo bút toán đánh giá lại ngoại tệ để chạy lại");
-      if (action === "CANCEL") await cancelFxRevaluationRun(runId, "Hủy chứng từ đánh giá lại chưa ghi sổ");
+      if (action === "POST") await postFxRevaluationRun(writer, runId);
+      if (action === "UNPOST") await unpostFxRevaluationRun(writer, runId);
+      if (action === "REVERSE") await reverseFxRevaluationRun(writer, runId, { reason: "Đảo bút toán đánh giá lại ngoại tệ để chạy lại" });
+      if (action === "CANCEL") await cancelFxRevaluationRun(writer, runId, { reason: "Hủy chứng từ đánh giá lại chưa ghi sổ" });
     } catch {
       // Local state update fallback
     }
@@ -3510,13 +3525,13 @@ export default function MisaLedgerWorkspace({
 
   const handleRunBalanceAggregation = async () => {
     if (apiConnected) {
-      const saved = await apiSave((writer) =>
+      const saved = await apiSaveWithResult((writer) =>
         aggregatePeriodBalances(writer, {
           periodCode: balAggPeriodCode,
           accountScope: balAggAccountScope,
         }),
       );
-      if (saved?.record) {
+      if (saved && saved.record) {
         const rec: any = saved.record;
         setBalAggStatus((rec.status === "INVALID" ? "INVALID" : "VALID") as "VALID" | "INVALID");
         if (rec.source_watermark) setBalAggWatermark(String(rec.source_watermark));
@@ -3679,7 +3694,7 @@ export default function MisaLedgerWorkspace({
 
   const handleRunGlReconciliation = async (markAllMatched = false) => {
     if (apiConnected) {
-      const saved = await apiSave(async (writer) => {
+      const saved = await apiSaveWithResult(async (writer) => {
         try {
           await seedDefaultReconciliationRules(writer);
         } catch {
@@ -3690,7 +3705,7 @@ export default function MisaLedgerWorkspace({
           reconciliationType: glRecType,
         });
       });
-      if (saved?.record) {
+      if (saved && saved.record) {
         const rec: any = saved.record;
         setGlRecRunId(String(rec.id));
         setGlRecStatus((rec.status || "MATCHED") as any);

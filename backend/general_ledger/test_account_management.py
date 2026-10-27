@@ -5,7 +5,9 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -122,6 +124,30 @@ class AccountManagementTests(TestCase):
         self._grant_permissions("MD.ACCOUNT.VIEW")
         res = self.client.get(f"/api/v1/general-ledger/accounts/?company_id={self.company.id}")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_account_list_counts_children_without_per_row_queries(self):
+        self._grant_permissions("MD.ACCOUNT.VIEW")
+        parent = Account.objects.create(
+            company=self.company, chart_of_accounts=self.chart,
+            code="111", name="Parent", is_postable=False,
+        )
+        for number in range(30):
+            Account.objects.create(
+                company=self.company, chart_of_accounts=self.chart,
+                parent=parent, code=f"111{number:02d}", name=f"Child {number}",
+            )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(
+                f"/api/v1/general-ledger/accounts/?company_id={self.company.id}"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        rows = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        self.assertEqual(len(rows), 31)
+        self.assertEqual(next(row["children_count"] for row in rows if row["code"] == "111"), 30)
+        self.assertTrue(all(row["children_count"] == 0 for row in rows if row["code"] != "111"))
+        self.assertLess(len(queries), 20)
 
     def test_create_without_permission_denied(self):
         """User không có quyền MD.ACCOUNT.CREATE bị từ chối tạo mới (EF-03)."""

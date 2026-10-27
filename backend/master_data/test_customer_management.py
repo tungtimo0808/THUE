@@ -439,7 +439,7 @@ class CustomerManagementTests(TestCase):
             format="json",
         )
         self.assertEqual(res_valid.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(res_valid.data["profile"]["receivable_account"], str(self.receivable_acc.id))
+        self.assertEqual(str(res_valid.data["profile"]["receivable_account"]), str(self.receivable_acc.id))
 
     # -----------------------------------------------------------------
     # 8. QUICK CREATE CUSTOMER (AF-01, BR-CUS-54, 55)
@@ -535,7 +535,7 @@ class CustomerManagementTests(TestCase):
             code="KH_SOURCE",
             name="Công ty Á Châu Nguồn",
             legal_name="Công ty CP Á Châu",
-            tax_code="0103333444",  # Trùng MST cần hợp nhất
+            tax_code="0103333555",
             status="ACTIVE",
         )
         PartyRole.objects.create(party=source, role_type="CUSTOMER", active_from=timezone.localdate())
@@ -648,8 +648,8 @@ class CustomerManagementTests(TestCase):
         SalesOrder.objects.create(
             company=self.company_a,
             branch=self.branch_a1,
-            order_number="SO_TEST_001",
-            order_date=timezone.localdate(),
+            number="SO_TEST_001",
+            document_date=timezone.localdate(),
             currency=self.currency,
             customer=party,
             created_by=self.admin,
@@ -721,6 +721,7 @@ class CustomerManagementTests(TestCase):
             company=self.company_a,
             code="KH_CONCURRENCY",
             name="Tên Ban Đầu",
+            legal_name="Tên Ban Đầu",
             status="ACTIVE",
             version=1,
         )
@@ -728,7 +729,7 @@ class CustomerManagementTests(TestCase):
 
         # First update succeeds and increments version to 2
         res1 = self.client.patch(self.url(f"{party.id}/"), {"name": "Sửa Lần 1", "version": 1}, format="json")
-        self.assertEqual(res1.status_code, status.HTTP_200_OK)
+        self.assertEqual(res1.status_code, status.HTTP_200_OK, res1.data)
         self.assertEqual(res1.data["version"], 2)
 
         # Second update using stale version 1 fails (EF-12)

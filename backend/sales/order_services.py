@@ -848,6 +848,10 @@ def create_invoice_request_from_order(request, order, lines_payload, number=None
     if not isinstance(lines_payload, list) or not lines_payload:
         raise ValidationError({"lines": "Vui lòng chọn ít nhất một dòng hàng để đề nghị lập hóa đơn."})
 
+    if not number:
+        # Different orders can request invoices concurrently; serialize numbering per company.
+        from organization.models import Company
+        Company.objects.select_for_update().get(pk=order.company_id)
     req_number = number or f"DXHD-{timezone.localdate().strftime('%Y%m%d')}-{models.InvoiceRequest.objects.filter(company=order.company).count() + 1:04d}"
     inv_request = models.InvoiceRequest.objects.create(
         company=order.company,

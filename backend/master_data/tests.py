@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from audit_log.models import AuditLog
+from common_services.models import CompanyModuleConfig, ModuleCatalog, ModuleStatus
 from iam.models import (
     CompanyMembership, DataScopeBranch, DataScopeSet, DataScopeWarehouse, Permission,
     Role, RolePermission, UserRoleAssignment,
@@ -224,6 +225,11 @@ class CustomerApiTests(MasterDataFixture):
 
 class WarehouseScopeTests(MasterDataFixture):
     def test_warehouse_scope_filters_and_authorizes_each_warehouse(self):
+        inventory_module, _ = ModuleCatalog.objects.get_or_create(code="INV", defaults={"name": "Inventory"})
+        CompanyModuleConfig.objects.update_or_create(
+            company=self.company, module=inventory_module,
+            defaults={"status": ModuleStatus.ENABLED},
+        )
         warehouse_a = Warehouse.objects.create(company=self.company, branch=self.branch, code="A", name="Kho A")
         warehouse_b = Warehouse.objects.create(company=self.company, branch=self.branch, code="B", name="Kho B")
         viewer_auth = get_user_model().objects.create_user(username="store-viewer", password="password-123")
@@ -244,6 +250,6 @@ class WarehouseScopeTests(MasterDataFixture):
         denied = self.client.get(
             f"/api/v1/master-data/warehouses/?company_id={self.company.id}&warehouse_id={warehouse_b.id}"
         )
-        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(allowed.status_code, 200, allowed.data)
         self.assertEqual(len(allowed.data), 1)
         self.assertEqual(denied.status_code, 403)

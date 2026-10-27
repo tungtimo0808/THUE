@@ -39,12 +39,16 @@ class ChartOfAccountsSerializer(ValidatedModelSerializer):
 class AccountSerializer(ValidatedModelSerializer):
     parent_code = serializers.CharField(source="parent.code", read_only=True)
     parent_name = serializers.CharField(source="parent.name", read_only=True)
-    children_count = serializers.IntegerField(source="children.count", read_only=True)
+    children_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
         fields = "__all__"
         read_only_fields = ("version",)
+
+    def get_children_count(self, account):
+        count = getattr(account, "_children_count", None)
+        return count if count is not None else account.children.count()
 
     def validate_code(self, value):
         if self.instance and self.instance.code != value:

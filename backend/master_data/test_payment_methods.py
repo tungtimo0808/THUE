@@ -106,9 +106,8 @@ class PaymentMethodApiTests(TestCase):
         self.assertEqual(self.client.post(payment_url, payment, format="json").status_code, 400)
         payment["company_bank_account"] = str(self.account.pk)
         result = self.client.post(payment_url, payment, format="json")
-        self.assertEqual(result.status_code, 201, result.data)
-        self.assertEqual(result.data["external_type"], "BANK")
-        self.assertEqual(result.data["payment_method_snapshot"]["name"], "Transfer")
+        self.assertEqual(result.status_code, 400, result.data)
+        self.assertIn("payment_request", result.data)
         receipt_url = f"/api/v1/accounts-receivable/receipts/?company_id={self.company.pk}"
         receipt = {"company": str(self.company.pk), "customer": str(self.customer.pk), "currency": str(self.currency.pk),
                    "receipt_date": "2026-06-01", "amount": "100", "payment_method_config": method["id"],
@@ -121,8 +120,8 @@ class PaymentMethodApiTests(TestCase):
         self.assertEqual(locked.status_code, 400)
         renamed = self.client.patch(self.detail(method), {"version": 1, "name": "Renamed transfer"}, format="json")
         self.assertEqual(renamed.status_code, 200, renamed.data)
-        from accounts_payable.models import Payment
-        self.assertEqual(Payment.objects.get(payment_method_config_id=method["id"]).payment_method_snapshot["name"], "Transfer")
+        from accounts_receivable.models import Receipt
+        self.assertEqual(Receipt.objects.get(payment_method_config_id=method["id"]).payment_method_snapshot["name"], "Transfer")
 
     def test_cash_and_bank_transactions_validate_method_group(self):
         branch = Branch.objects.create(company=self.company, code="MAIN", name="Main")

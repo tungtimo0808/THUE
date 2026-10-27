@@ -382,6 +382,33 @@ class DashboardOverviewUcRpt01Tests(ReportingTestSetupMixin, TestCase):
     Covers TC-RPT-01-01 through TC-RPT-01-50 across all 12 widgets (DASH-01 .. DASH-12).
     """
 
+    def test_workflow_widgets_reuse_request_scoped_queries(self):
+        from unittest.mock import patch
+
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        from reporting import dashboard_services
+
+        original = dashboard_services.execute_widget_safely
+        query_counts = {}
+
+        def measure(ctx, code, calculate):
+            with CaptureQueriesContext(connection) as queries:
+                result = original(ctx, code, calculate)
+            query_counts[code] = len(queries)
+            return result
+
+        with patch.object(dashboard_services, "execute_widget_safely", measure):
+            response = self.client.get(
+                f"/api/v1/reports/dashboard/overview/?company_id={self.company.id}"
+                f"&fiscal_period_id={self.period_sep.id}&refresh_mode=FORCE_REFRESH"
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("DASH-04", query_counts)
+        self.assertLessEqual(query_counts["DASH-11"], 2)
+
     # ------------------------------------------------------------------
     # Nhóm A: Truy cập, quyền, Data Scope (TC-RPT-01-01 .. TC-RPT-01-06)
     # ------------------------------------------------------------------

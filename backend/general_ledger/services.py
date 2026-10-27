@@ -3,6 +3,7 @@ import json
 import uuid
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
+from types import SimpleNamespace
 
 from django.db import transaction
 from django.db.models import Count, F, Max, Q, Sum
@@ -42,6 +43,22 @@ def _extract_request_data(request):
         except Exception:
             return {}
     return {}
+
+
+def source_module_request(request, **data):
+    """Build GL input without reusing the source document's concurrency version."""
+    payload = dict(_extract_request_data(request))
+    for key in ("version", "expected_version", "original_version"):
+        payload.pop(key, None)
+    payload.update(data)
+    return SimpleNamespace(
+        user=request.user,
+        data=payload,
+        META=getattr(request, "META", {}),
+        headers=getattr(request, "headers", {}),
+        method=getattr(request, "method", "POST"),
+        path=getattr(request, "path", ""),
+    )
 
 
 def _validate_entry(entry):

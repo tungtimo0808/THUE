@@ -65,6 +65,31 @@ services:
     networks:
       - thue_erp_net
 
+  catalog_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-thue-erp-super-secret-key-2026}
+      DB_ENGINE: "postgres"
+      DB_NAME: ${DB_NAME:-thue_erp}
+      DB_USER: ${DB_USER:-thue_erp}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+    volumes:
+      - ./backend:/app
+      - /app/venv
+    command: >
+      sh -c "while true; do python manage.py process_catalog_imports; python manage.py process_catalog_exports; sleep 10; done"
+    networks:
+      - thue_erp_net
+
   frontend:
     build:
       context: ./frontend
