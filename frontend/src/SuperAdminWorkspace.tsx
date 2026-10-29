@@ -25,10 +25,8 @@ import {
   ChevronRight,
   Search,
   LayoutGrid,
-  List,
   Crown,
   UserX,
-  Briefcase,
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -131,7 +129,7 @@ export default function SuperAdminWorkspace() {
   const [userRoleFilter, setUserRoleFilter] = useState<"ALL" | "SUPER" | "COMPANY_ADMIN" | "STAFF" | "LOCKED">("ALL");
   const [sidebarCompanySearch, setSidebarCompanySearch] = useState<string>("");
   const [collapsedCompanyIds, setCollapsedCompanyIds] = useState<Record<string, boolean>>({});
-  const [showEmptyCompanies, setShowEmptyCompanies] = useState<boolean>(false);
+  const [showEmptyCompanies] = useState<boolean>(false);
 
   // Assign Admin Modal
   const [showAssignAdminModal, setShowAssignAdminModal] = useState<boolean>(false);
@@ -553,30 +551,10 @@ export default function SuperAdminWorkspace() {
       });
   }, [companies, normalizedUsers, sidebarCompanySearch]);
 
-  const unassignedFilteredUsers = useMemo(() => {
-    return filteredUsers.filter((u) => u.memberships.length === 0);
-  }, [filteredUsers]);
-
   const getUserInitials = (name: string) => {
     const parts = (name || "U").trim().split(/\s+/);
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
-  const toggleCompanyCollapse = (companyId: string) => {
-    setCollapsedCompanyIds((prev) => ({
-      ...prev,
-      [companyId]: !prev[companyId],
-    }));
-  };
-
-  const setAllCompaniesCollapsed = (collapsed: boolean) => {
-    const next: Record<string, boolean> = {};
-    for (const g of companyUserGroups) {
-      next[g.company.id] = collapsed;
-    }
-    next["__UNASSIGNED__"] = collapsed;
-    setCollapsedCompanyIds(next);
   };
 
   if (restoring) {
@@ -952,17 +930,17 @@ export default function SuperAdminWorkspace() {
           </div>
         )}
 
-        {/* ================= TAB 3: USERS (SMART COMPANY-GROUPED DIRECTORY) ================= */}
+        {/* ================= TAB 3: USERS (CLEAN MINIMALIST COMPANY DIRECTORY) ================= */}
         {activeTab === "users" && (
           <div className="admin-users-layout">
-            {/* LEFT SIDEBAR: COMPANY & GROUP DIRECTORY */}
+            {/* LEFT SIDEBAR: CLEAN DIRECTORY */}
             <aside className="admin-users-sidebar">
               <div className="admin-users-sidebar-header">
                 <span className="admin-users-sidebar-title">
-                  <Building2 size={15} /> Phân nhóm theo Công ty
+                  <Building2 size={16} style={{ color: "#2563eb" }} /> Danh mục Đơn vị
                 </span>
-                <span className="admin-badge admin-badge-purple" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>
-                  {companies.length} DN
+                <span style={{ fontSize: "0.74rem", color: "#64748b", fontWeight: 600 }}>
+                  {companies.length} công ty
                 </span>
               </div>
               <div className="admin-users-sidebar-search">
@@ -971,8 +949,8 @@ export default function SuperAdminWorkspace() {
                   <input
                     type="text"
                     className="admin-input"
-                    style={{ width: "100%", paddingLeft: 30, fontSize: "0.8rem" }}
-                    placeholder="Lọc nhanh mã hoặc tên công ty..."
+                    style={{ width: "100%", paddingLeft: 30, fontSize: "0.8rem", background: "#f8fafc" }}
+                    placeholder="Tìm công ty..."
                     value={sidebarCompanySearch}
                     onChange={(e) => setSidebarCompanySearch(e.target.value)}
                   />
@@ -989,7 +967,7 @@ export default function SuperAdminWorkspace() {
               </div>
 
               <div className="admin-users-sidebar-list admin-custom-scroll">
-                <div className="admin-users-sidebar-section-label">Nhóm tổng hợp</div>
+                <div className="admin-users-sidebar-section-label">Tổng quan</div>
                 <button
                   type="button"
                   className={`admin-users-nav-item ${selectedUserGroup === "ALL_COMPANIES" ? "active" : ""}`}
@@ -997,7 +975,7 @@ export default function SuperAdminWorkspace() {
                 >
                   <div className="admin-users-nav-item-main">
                     <LayoutGrid size={15} />
-                    <span className="admin-users-nav-name">Tất cả theo nhóm Công ty</span>
+                    <span className="admin-users-nav-name">Tất cả theo Công ty</span>
                   </div>
                   <span className="admin-users-nav-count">{userFilterCounts.all}</span>
                 </button>
@@ -1007,184 +985,122 @@ export default function SuperAdminWorkspace() {
                   onClick={() => setSelectedUserGroup("SUPER_ADMINS")}
                 >
                   <div className="admin-users-nav-item-main">
-                    <ShieldCheck size={15} style={{ color: "#7c3aed" }} />
-                    <span className="admin-users-nav-name">Ban Quản trị (Super Admin)</span>
+                    <ShieldCheck size={15} />
+                    <span className="admin-users-nav-name">Quản trị viên Hệ thống</span>
                   </div>
                   <span className="admin-users-nav-count">{userFilterCounts.superCount}</span>
                 </button>
-                <button
-                  type="button"
-                  className={`admin-users-nav-item ${selectedUserGroup === "UNASSIGNED" ? "active" : ""}`}
-                  onClick={() => setSelectedUserGroup("UNASSIGNED")}
-                >
-                  <div className="admin-users-nav-item-main">
-                    <UserX size={15} style={{ color: "#d97706" }} />
-                    <span className="admin-users-nav-name">Chưa tham gia Công ty</span>
-                  </div>
-                  <span className="admin-users-nav-count">{userFilterCounts.unassignedCount}</span>
-                </button>
+                {userFilterCounts.unassignedCount > 0 && (
+                  <button
+                    type="button"
+                    className={`admin-users-nav-item ${selectedUserGroup === "UNASSIGNED" ? "active" : ""}`}
+                    onClick={() => setSelectedUserGroup("UNASSIGNED")}
+                  >
+                    <div className="admin-users-nav-item-main">
+                      <UserX size={15} />
+                      <span className="admin-users-nav-name">Chưa thuộc công ty</span>
+                    </div>
+                    <span className="admin-users-nav-count">{userFilterCounts.unassignedCount}</span>
+                  </button>
+                )}
 
-                <div className="admin-users-sidebar-section-label" style={{ marginTop: "0.4rem" }}>
-                  Doanh nghiệp ({sidebarCompanies.length})
+                <div className="admin-users-sidebar-section-label" style={{ marginTop: "0.35rem" }}>
+                  Theo từng Doanh nghiệp
                 </div>
-                {sidebarCompanies.map((comp) => {
-                  const isSelected = selectedUserGroup === comp.id;
-                  return (
-                    <button
-                      key={comp.id}
-                      type="button"
-                      className={`admin-users-nav-item ${isSelected ? "active" : ""}`}
-                      onClick={() => setSelectedUserGroup(isSelected ? "ALL_COMPANIES" : comp.id)}
-                      title={`${comp.code} - ${comp.name} (${comp.actualUserCount} thành viên)`}
-                    >
-                      <div className="admin-users-nav-item-main">
-                        <span className="admin-users-nav-code">{comp.code}</span>
-                        <span className="admin-users-nav-name">{comp.name}</span>
-                      </div>
-                      <span className="admin-users-nav-count">{comp.actualUserCount}</span>
-                    </button>
-                  );
-                })}
+                {sidebarCompanies
+                  .filter((c) => sidebarCompanySearch.trim() || c.actualUserCount > 0)
+                  .map((comp) => {
+                    const isSelected = selectedUserGroup === comp.id;
+                    return (
+                      <button
+                        key={comp.id}
+                        type="button"
+                        className={`admin-users-nav-item ${isSelected ? "active" : ""}`}
+                        onClick={() => setSelectedUserGroup(isSelected ? "ALL_COMPANIES" : comp.id)}
+                        title={`${comp.name} (${comp.code})`}
+                      >
+                        <div className="admin-users-nav-company-info">
+                          <span className="admin-users-nav-name">{comp.name}</span>
+                          <span className="admin-users-nav-meta">
+                            Mã: {comp.code}
+                            {comp.tax_code ? ` · MST: ${comp.tax_code}` : ""}
+                          </span>
+                        </div>
+                        <span className="admin-users-nav-count">{comp.actualUserCount}</span>
+                      </button>
+                    );
+                  })}
               </div>
             </aside>
 
             {/* RIGHT MAIN CONTENT */}
             <div>
-              {/* SMART TOOLBAR */}
+              {/* SINGLE UNIFIED CLEAN TOOLBAR */}
               <div className="admin-users-toolbar">
-                <div className="admin-users-toolbar-row">
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                    <h3 style={{ margin: 0, fontSize: "1.02rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <Users size={18} style={{ color: "#6d28d9" }} />
-                      {selectedUserGroup === "ALL_COMPANIES"
-                        ? "Nhân sự Phân bổ theo Doanh nghiệp"
-                        : selectedUserGroup === "SUPER_ADMINS"
-                        ? "Danh sách Quản trị viên Tối cao (Super Admin)"
-                        : selectedUserGroup === "UNASSIGNED"
-                        ? "Tài khoản Chưa phân vào Doanh nghiệp"
-                        : `Nhân sự: ${companyById[selectedUserGroup]?.name || "Doanh nghiệp"}`}
-                    </h3>
-                    {selectedUserGroup !== "ALL_COMPANIES" && (
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn-secondary admin-btn-sm"
-                        onClick={() => setSelectedUserGroup("ALL_COMPANIES")}
-                      >
-                        <X size={12} /> Bỏ lọc đơn vị
-                      </button>
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                    <div className="admin-segmented-control">
-                      <button
-                        type="button"
-                        className={`admin-segmented-btn ${userViewMode === "by_company" ? "active" : ""}`}
-                        onClick={() => setUserViewMode("by_company")}
-                      >
-                        <LayoutGrid size={14} /> Nhóm theo Công ty
-                      </button>
-                      <button
-                        type="button"
-                        className={`admin-segmented-btn ${userViewMode === "flat" ? "active" : ""}`}
-                        onClick={() => setUserViewMode("flat")}
-                      >
-                        <List size={14} /> Bảng phẳng ({filteredUsers.length})
-                      </button>
-                    </div>
-
-                    {userViewMode === "by_company" && selectedUserGroup === "ALL_COMPANIES" && (
-                      <>
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn-secondary admin-btn-sm"
-                          onClick={() => setAllCompaniesCollapsed(false)}
-                          title="Mở rộng tất cả các nhóm công ty"
-                        >
-                          Mở hết
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn-secondary admin-btn-sm"
-                          onClick={() => setAllCompaniesCollapsed(true)}
-                          title="Thu gọn tất cả các nhóm công ty"
-                        >
-                          Thu gọn
-                        </button>
-                      </>
-                    )}
-
-                    <button type="button" className="admin-btn admin-btn-secondary admin-btn-sm" onClick={loadUsers}>
-                      <RefreshCw size={13} /> Làm mới
+                <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexWrap: "wrap" }}>
+                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>
+                    {selectedUserGroup === "ALL_COMPANIES"
+                      ? "Danh sách Nhân sự theo Doanh nghiệp"
+                      : selectedUserGroup === "SUPER_ADMINS"
+                      ? "Quản trị viên Hệ thống (Super Admin)"
+                      : selectedUserGroup === "UNASSIGNED"
+                      ? "Tài khoản Chưa thuộc Doanh nghiệp"
+                      : companyById[selectedUserGroup]?.name || "Doanh nghiệp"}
+                  </h3>
+                  {selectedUserGroup !== "ALL_COMPANIES" && (
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary admin-btn-sm"
+                      onClick={() => setSelectedUserGroup("ALL_COMPANIES")}
+                    >
+                      <X size={12} /> Xem tất cả công ty
                     </button>
-                  </div>
+                  )}
                 </div>
 
-                <div className="admin-users-toolbar-row">
-                  <div className="admin-filter-pills">
-                    <button
-                      type="button"
-                      className={`admin-filter-pill ${userRoleFilter === "ALL" ? "active" : ""}`}
-                      onClick={() => setUserRoleFilter("ALL")}
-                    >
-                      Tất cả ({userFilterCounts.all})
-                    </button>
-                    <button
-                      type="button"
-                      className={`admin-filter-pill ${userRoleFilter === "COMPANY_ADMIN" ? "active" : ""}`}
-                      onClick={() => setUserRoleFilter("COMPANY_ADMIN")}
-                    >
-                      <Crown size={12} /> Chủ sở hữu / Admin DN ({userFilterCounts.companyAdminCount})
-                    </button>
-                    <button
-                      type="button"
-                      className={`admin-filter-pill ${userRoleFilter === "STAFF" ? "active" : ""}`}
-                      onClick={() => setUserRoleFilter("STAFF")}
-                    >
-                      <Briefcase size={12} /> Nhân sự Kế toán ({userFilterCounts.staffCount})
-                    </button>
-                    <button
-                      type="button"
-                      className={`admin-filter-pill ${userRoleFilter === "SUPER" ? "active" : ""}`}
-                      onClick={() => setUserRoleFilter("SUPER")}
-                    >
-                      <ShieldCheck size={12} /> Super Admin ({userFilterCounts.superCount})
-                    </button>
-                    {userFilterCounts.lockedCount > 0 && (
-                      <button
-                        type="button"
-                        className={`admin-filter-pill ${userRoleFilter === "LOCKED" ? "active" : ""}`}
-                        onClick={() => setUserRoleFilter("LOCKED")}
-                      >
-                        <Lock size={12} /> Đang khóa ({userFilterCounts.lockedCount})
-                      </button>
-                    )}
-                  </div>
-
-                  <div style={{ position: "relative", minWidth: "290px", flex: "0 1 340px" }}>
-                    <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <div style={{ position: "relative", width: "260px" }}>
+                    <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                     <input
                       type="text"
                       className="admin-input"
-                      style={{ width: "100%", paddingLeft: 32 }}
-                      placeholder="Tìm theo Tên, Username/SĐT, Email, Vai trò..."
+                      style={{ width: "100%", paddingLeft: 30 }}
+                      placeholder="Tìm tên, username, email..."
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
                     />
-                    {userSearch && (
-                      <button
-                        type="button"
-                        onClick={() => setUserSearch("")}
-                        style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
                   </div>
+
+                  <select
+                    className="admin-select"
+                    value={userRoleFilter}
+                    onChange={(e) => setUserRoleFilter(e.target.value as any)}
+                  >
+                    <option value="ALL">Tất cả vai trò ({userFilterCounts.all})</option>
+                    <option value="COMPANY_ADMIN">Chủ sở hữu / Admin DN ({userFilterCounts.companyAdminCount})</option>
+                    <option value="STAFF">Nhân sự Kế toán ({userFilterCounts.staffCount})</option>
+                    <option value="SUPER">Super Admin ({userFilterCounts.superCount})</option>
+                    {userFilterCounts.lockedCount > 0 && (
+                      <option value="LOCKED">Tài khoản bị khóa ({userFilterCounts.lockedCount})</option>
+                    )}
+                  </select>
+
+                  <select
+                    className="admin-select"
+                    value={userViewMode}
+                    onChange={(e) => setUserViewMode(e.target.value as "by_company" | "flat")}
+                  >
+                    <option value="by_company">Hiển thị: Theo Công ty</option>
+                    <option value="flat">Hiển thị: Danh sách phẳng</option>
+                  </select>
+
+                  <button type="button" className="admin-btn admin-btn-secondary" onClick={loadUsers} title="Làm mới">
+                    <RefreshCw size={14} />
+                  </button>
                 </div>
               </div>
 
-              {/* VIEW MODE 1: GROUPED BY COMPANY */}
+              {/* VIEW MODE 1: GROUPED BY COMPANY (CLEAN ACCORDION CARDS) */}
               {userViewMode === "by_company" && selectedUserGroup !== "SUPER_ADMINS" && selectedUserGroup !== "UNASSIGNED" ? (
                 <div>
                   {companyUserGroups
@@ -1197,54 +1113,45 @@ export default function SuperAdminWorkspace() {
                       }
                       return showEmptyCompanies || g.members.length > 0;
                     })
-                    .map(({ company: comp, members }) => {
-                      const isCollapsed = Boolean(collapsedCompanyIds[comp.id]);
+                    .map(({ company: comp, members }, groupIdx) => {
+                      const defaultCollapsed =
+                        selectedUserGroup === "ALL_COMPANIES" && !userSearch.trim() && groupIdx >= 2;
+                      const isCollapsed =
+                        comp.id in collapsedCompanyIds ? Boolean(collapsedCompanyIds[comp.id]) : defaultCollapsed;
                       return (
                         <div key={comp.id} className="admin-company-group-card">
                           <div
                             className={`admin-company-group-header ${isCollapsed ? "is-collapsed" : ""}`}
-                            onClick={() => toggleCompanyCollapse(comp.id)}
+                            onClick={() =>
+                              setCollapsedCompanyIds((prev) => ({
+                                ...prev,
+                                [comp.id]: !isCollapsed,
+                              }))
+                            }
                           >
                             <div className="admin-company-group-title-wrap">
                               <span style={{ color: "#64748b", display: "inline-flex" }}>
-                                {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                                {isCollapsed ? <ChevronRight size={17} /> : <ChevronDown size={17} />}
                               </span>
                               <div className="admin-company-group-icon">
-                                <Building2 size={17} />
+                                <Building2 size={16} />
                               </div>
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                                  <span className="admin-company-group-code">{comp.code}</span>
-                                  <h4 className="admin-company-group-name">{comp.name}</h4>
-                                  <span
-                                    className={`admin-badge ${
-                                      comp.status === "ACTIVE"
-                                        ? "admin-badge-active"
-                                        : comp.status === "PENDING_SETUP"
-                                        ? "admin-badge-pending"
-                                        : "admin-badge-suspended"
-                                    }`}
-                                    style={{ fontSize: "0.68rem", padding: "1px 7px" }}
-                                  >
-                                    {comp.status}
-                                  </span>
-                                </div>
+                                <h4 className="admin-company-group-name">{comp.name}</h4>
                                 <div className="admin-company-group-sub">
-                                  {comp.tax_code && <span>MST: <strong>{comp.tax_code}</strong></span>}
-                                  <span>
-                                    Chủ sở hữu:{" "}
-                                    <strong>{comp.admin ? comp.admin.display_name : "Chưa chỉ định"}</strong>
-                                  </span>
+                                  <span>Mã: <strong>{comp.code}</strong></span>
+                                  {comp.tax_code && <span>· MST: {comp.tax_code}</span>}
+                                  {comp.admin && <span>· Quản trị: {comp.admin.display_name}</span>}
                                 </div>
                               </div>
                             </div>
 
                             <div
-                              style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}
+                              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <span className="admin-badge admin-badge-blue" style={{ textTransform: "none" }}>
-                                <Users size={12} /> {members.length} nhân sự
+                              <span className="admin-soft-pill admin-soft-pill-role">
+                                {members.length} thành viên
                               </span>
                               <button
                                 type="button"
@@ -1253,305 +1160,158 @@ export default function SuperAdminWorkspace() {
                                   if (selectCompany) selectCompany(comp.id);
                                   navigate("/admin");
                                 }}
-                                title="Mở trang Quản trị & Phân quyền của doanh nghiệp này"
                               >
-                                <ShieldCheck size={13} /> Quản trị DN
+                                Quản trị DN
                               </button>
                               <button
                                 type="button"
-                                className="admin-btn admin-btn-primary admin-btn-sm"
+                                className="admin-btn admin-btn-secondary admin-btn-sm"
                                 onClick={() => {
                                   if (selectCompany) selectCompany(comp.id);
                                   navigate("/");
                                 }}
-                                title="Vào Sổ kế toán của doanh nghiệp này"
                               >
-                                <ExternalLink size={13} /> Sổ kế toán
+                                Mở Sổ kế toán
                               </button>
                             </div>
                           </div>
 
                           {!isCollapsed && (
                             <div className="admin-table-container">
-                              {members.length === 0 ? (
-                                <div style={{ padding: "1.25rem", textAlign: "center", color: "#64748b", fontSize: "0.84rem" }}>
-                                  Doanh nghiệp này hiện chưa có nhân sự nào khớp bộ lọc.
-                                </div>
-                              ) : (
-                                <table className="admin-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Nhân sự & Tài khoản</th>
-                                      <th>Email liên hệ</th>
-                                      <th>Vai trò tại {comp.code}</th>
-                                      <th>Kiêm nhiệm DN khác</th>
-                                      <th>Trạng thái</th>
-                                      <th style={{ textAlign: "right" }}>Thao tác</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {members.map(({ user: u, membership: m }) => {
-                                      const otherMemberships = u.memberships.filter((om) => om.company_id !== comp.id);
-                                      const roles = m.roles || [];
-                                      return (
-                                        <tr key={`${comp.id}-${u.id}`}>
-                                          <td style={{ whiteSpace: "nowrap" }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
-                                              <span
-                                                className={`admin-user-avatar ${
-                                                  u.is_superuser ? "is-super" : m.is_company_admin ? "is-owner" : ""
-                                                }`}
-                                              >
-                                                {getUserInitials(u.display_name)}
-                                              </span>
-                                              <div>
-                                                <div style={{ fontWeight: 700, color: "#0f172a" }}>{u.display_name}</div>
-                                                <div style={{ fontSize: "0.74rem", color: "#64748b", display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                                                  <code>{u.username}</code>
-                                                  {u.phone && u.phone !== u.username && <span>· {u.phone}</span>}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </td>
-                                          <td>{u.email || "—"}</td>
-                                          <td>
-                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
-                                              {m.is_company_admin && (
-                                                <span className="admin-badge admin-badge-gold" style={{ textTransform: "none", fontSize: "0.72rem" }}>
-                                                  <Crown size={11} /> Quản trị viên DN
-                                                </span>
-                                              )}
-                                              {roles
-                                                .filter((r) => !r.is_admin)
-                                                .map((r) => (
-                                                  <span key={r.code} className="admin-badge-role">
-                                                    {r.name}
-                                                  </span>
-                                                ))}
-                                              {!m.is_company_admin && roles.length === 0 && (
-                                                <span className="admin-badge-role" style={{ color: "#64748b" }}>
-                                                  Thành viên
-                                                </span>
-                                              )}
-                                              {u.is_superuser && (
-                                                <span
-                                                  className="admin-badge admin-badge-super"
-                                                  style={{ backgroundColor: "#7c3aed", fontSize: "0.68rem", padding: "2px 7px" }}
-                                                >
-                                                  Super Admin
-                                                </span>
-                                              )}
-                                            </div>
-                                          </td>
-                                          <td>
-                                            {otherMemberships.length === 0 ? (
-                                              <span style={{ color: "#94a3b8", fontSize: "0.78rem" }}>Chỉ thuộc DN này</span>
-                                            ) : (
-                                              <div
-                                                style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem", alignItems: "center" }}
-                                                title={otherMemberships.map((om) => `${om.company_code || ""} - ${om.company_name}`).join("\n")}
-                                              >
-                                                {otherMemberships.slice(0, 2).map((om) => (
-                                                  <span key={om.company_id} className="admin-company-chip">
-                                                    <span className="admin-company-chip-code">{om.company_code || "DN"}</span>
-                                                    <span style={{ maxWidth: 105, overflow: "hidden", textOverflow: "ellipsis" }}>
-                                                      {om.company_name}
-                                                    </span>
-                                                  </span>
-                                                ))}
-                                                {otherMemberships.length > 2 && (
-                                                  <span className="admin-badge admin-badge-purple" style={{ textTransform: "none", fontSize: "0.7rem" }}>
-                                                    +{otherMemberships.length - 2} DN khác
+                              <table className="admin-table">
+                                <thead>
+                                  <tr>
+                                    <th style={{ width: "30%" }}>Nhân sự</th>
+                                    <th style={{ width: "24%" }}>Liên hệ</th>
+                                    <th style={{ width: "20%" }}>Vai trò & Quyền hạn</th>
+                                    <th style={{ width: "12%" }}>Trạng thái</th>
+                                    <th style={{ textAlign: "right", width: "14%" }}>Thao tác</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {members.map(({ user: u, membership: m }) => {
+                                    const otherCount = u.memberships.length - 1;
+                                    const roles = (m.roles || []).filter((r) => !r.is_admin);
+                                    return (
+                                      <tr key={`${comp.id}-${u.id}`}>
+                                        <td>
+                                          <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                                            <span
+                                              className={`admin-user-avatar ${
+                                                u.is_superuser ? "is-super" : m.is_company_admin ? "is-owner" : ""
+                                              }`}
+                                            >
+                                              {getUserInitials(u.display_name)}
+                                            </span>
+                                            <div>
+                                              <div style={{ fontWeight: 600, color: "#0f172a" }}>{u.display_name}</div>
+                                              <div style={{ fontSize: "0.74rem", color: "#64748b" }}>
+                                                @{u.username}
+                                                {otherCount > 0 && (
+                                                  <span
+                                                    title={u.memberships
+                                                      .filter((om) => om.company_id !== comp.id)
+                                                      .map((om) => `${om.company_code} - ${om.company_name}`)
+                                                      .join("\n")}
+                                                    style={{ color: "#94a3b8", cursor: "help" }}
+                                                  >
+                                                    {" "}· +{otherCount} DN khác
                                                   </span>
                                                 )}
                                               </div>
-                                            )}
-                                          </td>
-                                          <td style={{ whiteSpace: "nowrap" }}>
-                                            <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
-                                              {u.is_active ? "Đang mở" : "Bị khóa"}
-                                            </span>
-                                          </td>
-                                          <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                                            <div style={{ display: "inline-flex", gap: "0.35rem" }}>
-                                              <button
-                                                type="button"
-                                                className="admin-btn admin-btn-secondary admin-btn-sm"
-                                                onClick={() => handleToggleSuperuser(u)}
-                                                title={u.is_superuser ? "Gỡ quyền Super Admin" : "Cấp quyền Super Admin"}
-                                              >
-                                                <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
-                                              </button>
-                                              <button
-                                                type="button"
-                                                className="admin-btn admin-btn-secondary admin-btn-sm"
-                                                onClick={() => handleToggleActive(u)}
-                                                title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                                              >
-                                                {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
-                                              </button>
-                                              <button
-                                                type="button"
-                                                className="admin-btn admin-btn-secondary admin-btn-sm"
-                                                onClick={() => {
-                                                  setResetUser(u);
-                                                  setNewPassword("");
-                                                }}
-                                                title="Đặt lại mật khẩu"
-                                              >
-                                                <KeyRound size={13} /> Đổi MK
-                                              </button>
                                             </div>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              )}
+                                          </div>
+                                        </td>
+                                        <td>
+                                          <div style={{ color: "#334155" }}>{u.email || "—"}</div>
+                                          {u.phone && u.phone !== u.username && (
+                                            <div style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{u.phone}</div>
+                                          )}
+                                        </td>
+                                        <td>
+                                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                                            {m.is_company_admin && (
+                                              <span className="admin-soft-pill admin-soft-pill-owner">
+                                                <Crown size={11} /> Quản trị viên DN
+                                              </span>
+                                            )}
+                                            {roles.map((r) => (
+                                              <span key={r.code} className="admin-soft-pill admin-soft-pill-role">
+                                                {r.name}
+                                              </span>
+                                            ))}
+                                            {!m.is_company_admin && roles.length === 0 && !u.is_superuser && (
+                                              <span className="admin-soft-pill admin-soft-pill-role">
+                                                Thành viên
+                                              </span>
+                                            )}
+                                            {u.is_superuser && (
+                                              <span className="admin-soft-pill admin-soft-pill-super">
+                                                Super Admin
+                                              </span>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td>
+                                          <span className="admin-status-indicator">
+                                            <span className={`admin-status-dot ${u.is_active ? "" : "is-locked"}`} />
+                                            {u.is_active ? "Hoạt động" : "Đã khóa"}
+                                          </span>
+                                        </td>
+                                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                                          <div style={{ display: "inline-flex", gap: "0.35rem" }}>
+                                            <button
+                                              type="button"
+                                              className="admin-btn admin-btn-secondary admin-btn-sm"
+                                              onClick={() => handleToggleSuperuser(u)}
+                                              title={u.is_superuser ? "Gỡ quyền Super Admin" : "Cấp quyền Super Admin"}
+                                            >
+                                              {u.is_superuser ? "Hạ quyền" : "Lên Super"}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="admin-btn admin-btn-secondary admin-btn-sm"
+                                              onClick={() => {
+                                                setResetUser(u);
+                                                setNewPassword("");
+                                              }}
+                                              title="Đặt lại mật khẩu"
+                                            >
+                                              Đổi MK
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="admin-btn admin-btn-secondary admin-btn-sm"
+                                              onClick={() => handleToggleActive(u)}
+                                              title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                                            >
+                                              {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
                             </div>
                           )}
                         </div>
                       );
                     })}
-
-                  {/* UNASSIGNED USERS CARD AT BOTTOM OF GROUPED VIEW */}
-                  {selectedUserGroup === "ALL_COMPANIES" && unassignedFilteredUsers.length > 0 && (
-                    <div className="admin-company-group-card" style={{ borderColor: "#fde68a" }}>
-                      <div
-                        className={`admin-company-group-header ${collapsedCompanyIds["__UNASSIGNED__"] ? "is-collapsed" : ""}`}
-                        style={{ background: "linear-gradient(90deg, #fffbeb 0%, #ffffff 100%)" }}
-                        onClick={() => toggleCompanyCollapse("__UNASSIGNED__")}
-                      >
-                        <div className="admin-company-group-title-wrap">
-                          <span style={{ color: "#b45309", display: "inline-flex" }}>
-                            {collapsedCompanyIds["__UNASSIGNED__"] ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
-                          </span>
-                          <div className="admin-company-group-icon" style={{ background: "#fef3c7", color: "#d97706" }}>
-                            <UserX size={17} />
-                          </div>
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <span className="admin-company-group-code" style={{ background: "#b45309" }}>CHƯA GÁN DN</span>
-                              <h4 className="admin-company-group-name">Tài khoản Độc lập / Chưa tham gia Doanh nghiệp</h4>
-                            </div>
-                            <div className="admin-company-group-sub">
-                              Các tài khoản hệ thống chưa được liên kết với bất kỳ công ty nào
-                            </div>
-                          </div>
-                        </div>
-                        <span className="admin-badge admin-badge-pending" style={{ textTransform: "none" }}>
-                          {unassignedFilteredUsers.length} tài khoản
-                        </span>
-                      </div>
-                      {!collapsedCompanyIds["__UNASSIGNED__"] && (
-                        <div className="admin-table-container">
-                          <table className="admin-table">
-                            <thead>
-                              <tr>
-                                <th>Tên hiển thị</th>
-                                <th>Username / SĐT</th>
-                                <th>Email</th>
-                                <th>Quyền Hệ thống</th>
-                                <th>Trạng thái</th>
-                                <th style={{ textAlign: "right" }}>Thao tác</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {unassignedFilteredUsers.map((u) => (
-                                <tr key={u.id}>
-                                  <td>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
-                                      <span className={`admin-user-avatar ${u.is_superuser ? "is-super" : ""}`}>
-                                        {getUserInitials(u.display_name)}
-                                      </span>
-                                      <strong>{u.display_name}</strong>
-                                    </div>
-                                  </td>
-                                  <td><code>{u.username}</code></td>
-                                  <td>{u.email || "—"}</td>
-                                  <td>
-                                    {u.is_superuser ? (
-                                      <span className="admin-badge admin-badge-super" style={{ backgroundColor: "#7c3aed" }}>
-                                        Super Admin
-                                      </span>
-                                    ) : (
-                                      <span style={{ color: "var(--admin-text-muted)" }}>Người dùng thường</span>
-                                    )}
-                                  </td>
-                                  <td>
-                                    <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
-                                      {u.is_active ? "Đang mở" : "Bị khóa"}
-                                    </span>
-                                  </td>
-                                  <td style={{ textAlign: "right" }}>
-                                    <div style={{ display: "inline-flex", gap: "0.4rem" }}>
-                                      <button
-                                        type="button"
-                                        className="admin-btn admin-btn-secondary admin-btn-sm"
-                                        onClick={() => handleToggleSuperuser(u)}
-                                      >
-                                        <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="admin-btn admin-btn-secondary admin-btn-sm"
-                                        onClick={() => handleToggleActive(u)}
-                                      >
-                                        {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="admin-btn admin-btn-secondary admin-btn-sm"
-                                        onClick={() => {
-                                          setResetUser(u);
-                                          setNewPassword("");
-                                        }}
-                                      >
-                                        <KeyRound size={13} /> Đổi mật khẩu
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* TOGGLE FOR EMPTY COMPANIES */}
-                  {selectedUserGroup === "ALL_COMPANIES" &&
-                    !userSearch.trim() &&
-                    userRoleFilter === "ALL" &&
-                    companyUserGroups.some((g) => g.members.length === 0) && (
-                      <div style={{ textAlign: "center", marginTop: "0.75rem" }}>
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn-secondary admin-btn-sm"
-                          onClick={() => setShowEmptyCompanies((prev) => !prev)}
-                        >
-                          {showEmptyCompanies
-                            ? "Ẩn các doanh nghiệp chưa có nhân sự"
-                            : `Hiện thêm ${companyUserGroups.filter((g) => g.members.length === 0).length} doanh nghiệp chưa có nhân sự`}
-                        </button>
-                      </div>
-                    )}
                 </div>
               ) : (
-                /* VIEW MODE 2: FLAT GLOBAL TABLE (OR SUPER_ADMINS / UNASSIGNED FILTER) */
+                /* VIEW MODE 2: CLEAN FLAT GLOBAL TABLE */
                 <div className="admin-card">
                   <div className="admin-table-container">
                     <table className="admin-table">
                       <thead>
                         <tr>
                           <th>Nhân sự</th>
-                          <th>Username / SĐT</th>
-                          <th>Email</th>
+                          <th>Liên hệ</th>
+                          <th>Doanh nghiệp trực thuộc</th>
                           <th>Quyền Hệ thống</th>
                           <th>Trạng thái</th>
-                          <th>Doanh nghiệp & Vai trò tham gia (Đã khử trùng lặp)</th>
                           <th style={{ textAlign: "right" }}>Thao tác</th>
                         </tr>
                       </thead>
@@ -1559,73 +1319,62 @@ export default function SuperAdminWorkspace() {
                         {filteredUsers.map((u) => (
                           <tr key={u.id}>
                             <td>
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
                                 <span className={`admin-user-avatar ${u.is_superuser ? "is-super" : ""}`}>
                                   {getUserInitials(u.display_name)}
                                 </span>
-                                <strong>{u.display_name}</strong>
+                                <div>
+                                  <div style={{ fontWeight: 600, color: "#0f172a" }}>{u.display_name}</div>
+                                  <div style={{ fontSize: "0.74rem", color: "#64748b" }}>@{u.username}</div>
+                                </div>
                               </div>
                             </td>
-                            <td><code>{u.username}</code></td>
-                            <td>{u.email || "—"}</td>
                             <td>
-                              {u.is_superuser ? (
-                                <span className="admin-badge admin-badge-super" style={{ backgroundColor: "#7c3aed" }}>
-                                  Super Admin
-                                </span>
-                              ) : (
-                                <span style={{ color: "var(--admin-text-muted)" }}>Người dùng thường</span>
+                              <div style={{ color: "#334155" }}>{u.email || "—"}</div>
+                              {u.phone && u.phone !== u.username && (
+                                <div style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{u.phone}</div>
                               )}
-                            </td>
-                            <td>
-                              <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
-                                {u.is_active ? "Đang mở" : "Bị khóa"}
-                              </span>
                             </td>
                             <td>
                               {u.memberships.length > 0 ? (
-                                <div
-                                  style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}
-                                  title={u.memberships
-                                    .map((m) => `${m.company_code || "DN"} - ${m.company_name}`)
-                                    .join("\n")}
-                                >
-                                  {u.memberships.slice(0, 3).map((m) => (
-                                    <span key={m.company_id} className="admin-company-chip">
-                                      <span className="admin-company-chip-code">{m.company_code || "DN"}</span>
-                                      <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>
-                                        {m.company_name}
-                                      </span>
-                                      {m.is_company_admin && <Crown size={11} style={{ color: "#ca8a04" }} />}
-                                    </span>
-                                  ))}
-                                  {u.memberships.length > 3 && (
-                                    <span className="admin-badge admin-badge-purple" style={{ textTransform: "none", fontSize: "0.72rem" }}>
-                                      +{u.memberships.length - 3} DN khác
-                                    </span>
+                                <div>
+                                  <div style={{ fontWeight: 500, color: "#1e293b" }}>
+                                    {u.memberships[0].company_name}
+                                  </div>
+                                  {u.memberships.length > 1 && (
+                                    <div
+                                      style={{ fontSize: "0.74rem", color: "#64748b", cursor: "help" }}
+                                      title={u.memberships.map((m) => `${m.company_code} - ${m.company_name}`).join("\n")}
+                                    >
+                                      và +{u.memberships.length - 1} doanh nghiệp khác
+                                    </div>
                                   )}
                                 </div>
                               ) : (
-                                <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>Chưa tham gia công ty</span>
+                                <span style={{ color: "#94a3b8" }}>Chưa thuộc công ty</span>
                               )}
                             </td>
-                            <td style={{ textAlign: "right" }}>
-                              <div style={{ display: "inline-flex", gap: "0.4rem" }}>
+                            <td>
+                              {u.is_superuser ? (
+                                <span className="admin-soft-pill admin-soft-pill-super">Super Admin</span>
+                              ) : (
+                                <span className="admin-soft-pill admin-soft-pill-role">Người dùng thường</span>
+                              )}
+                            </td>
+                            <td>
+                              <span className="admin-status-indicator">
+                                <span className={`admin-status-dot ${u.is_active ? "" : "is-locked"}`} />
+                                {u.is_active ? "Hoạt động" : "Đã khóa"}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                              <div style={{ display: "inline-flex", gap: "0.35rem" }}>
                                 <button
                                   type="button"
                                   className="admin-btn admin-btn-secondary admin-btn-sm"
                                   onClick={() => handleToggleSuperuser(u)}
-                                  title={u.is_superuser ? "Gỡ quyền Super Admin" : "Cấp quyền Super Admin"}
                                 >
-                                  <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="admin-btn admin-btn-secondary admin-btn-sm"
-                                  onClick={() => handleToggleActive(u)}
-                                  title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                                >
-                                  {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
+                                  {u.is_superuser ? "Hạ quyền" : "Lên Super"}
                                 </button>
                                 <button
                                   type="button"
@@ -1634,9 +1383,15 @@ export default function SuperAdminWorkspace() {
                                     setResetUser(u);
                                     setNewPassword("");
                                   }}
-                                  title="Đặt lại mật khẩu"
                                 >
-                                  <KeyRound size={13} /> Đổi mật khẩu
+                                  Đổi MK
+                                </button>
+                                <button
+                                  type="button"
+                                  className="admin-btn admin-btn-secondary admin-btn-sm"
+                                  onClick={() => handleToggleActive(u)}
+                                >
+                                  {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
                                 </button>
                               </div>
                             </td>
