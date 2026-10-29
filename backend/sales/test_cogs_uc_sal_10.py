@@ -1,4 +1,5 @@
 from decimal import Decimal
+import calendar
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -116,10 +117,10 @@ class CostOfGoodsSoldUcSal10Tests(TestCase):
         self.period = AccountingPeriod.objects.create(
             company=self.company,
             code="PERIOD_2026_10",
-            fiscal_year=2026,
-            period_number=10,
+            fiscal_year=self.today.year,
+            period_number=self.today.month,
             start_date=self.today.replace(day=1),
-            end_date=self.today.replace(day=28),
+            end_date=self.today.replace(day=calendar.monthrange(self.today.year, self.today.month)[1]),
             status="OPEN",
         )
 

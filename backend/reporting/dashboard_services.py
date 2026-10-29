@@ -347,6 +347,12 @@ def resolve_dashboard_context(request, *, require_refresh_perm: bool = False) ->
             Q(id=fiscal_period_id) if len(str(fiscal_period_id)) == 36 else Q(code=str(fiscal_period_id))
         ).first()
         if not fiscal_period:
+            is_cross_company_uuid = (
+                len(str(fiscal_period_id)) == 36
+                and AccountingPeriod.objects.exclude(company=company).filter(id=fiscal_period_id).exists()
+            )
+            if not is_cross_company_uuid:
+                raise ValidationError({"fiscal_period_id": "Kỳ kế toán không tồn tại.", "code": "FISCAL_PERIOD_NOT_FOUND"})
             today = timezone.localdate()
             fiscal_period = (
                 AccountingPeriod.objects.filter(company=company, start_date__lte=today, end_date__gte=today).first()

@@ -75,8 +75,7 @@ import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
 import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
-import CompanyAdminWorkspace from "./CompanyAdminWorkspace";
-import SuperAdminWorkspace from "./SuperAdminWorkspace";
+import type { ComponentType } from "react";
 
 function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
   return lazy(() =>
@@ -91,6 +90,9 @@ function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ de
     })
   );
 }
+
+const CompanyAdminWorkspace = lazyWithRetry(() => import("./CompanyAdminWorkspace"));
+const SuperAdminWorkspace = lazyWithRetry(() => import("./SuperAdminWorkspace"));
 
 // Code-split heavy workspace modules for instant initial load (sub-second cold start)
 const MisaCashWorkspace = lazyWithRetry(() => import("./MisaCashWorkspace"));
