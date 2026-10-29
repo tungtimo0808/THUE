@@ -2956,4 +2956,3 @@ def export_sales_run_payload(run_id: int, params: dict[str, Any] | None = None, 
         "file_name": f"{run.report_code}_{run.company_id}_{run.fiscal_year}.{export_format.lower()}",
         "watermark": "DRAFT_OR_STALE" if (run.status in ("DRAFT", "STALE") or is_sales_run_stale(run)) else "OFFICIAL_SNAPSHOT",
     }
-

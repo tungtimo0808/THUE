@@ -37,11 +37,8 @@ export default function LivePasswordReset() {
       if (result.challenge) setChallenge(result.challenge);
       if (result.dev_otp) setDevOtp(result.dev_otp);
       setMessage("Đã gửi lại mã xác thực đặt lại mật khẩu.");
-    } catch {
-      await request("/api/v1/common/auth/forgot-password/", undefined, {
-        method: "POST", body: JSON.stringify({ email: email.trim() }),
-      }).catch(() => {});
-      setMessage("Đã gửi lại yêu cầu xác thực.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không gửi lại được mã.");
     } finally { setBusy(false); }
   }
 

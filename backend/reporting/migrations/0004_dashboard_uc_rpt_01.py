@@ -432,4 +432,3 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(seed_dashboard_uc_rpt_01, migrations.RunPython.noop),
     ]
-

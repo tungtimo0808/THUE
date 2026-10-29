@@ -202,6 +202,7 @@ class PlatformCompanyViewSet(ViewSet):
                 "representative_title": c.representative_title or "",
                 "address": c.address or "",
                 "accounting_regime": c.accounting_regime,
+                "bookkeeping_method": c.bookkeeping_method,
                 "accounting_currency": c.accounting_currency.code if c.accounting_currency else "VND",
                 "members_count": c.members_count,
                 "branches_count": c.branches_count,

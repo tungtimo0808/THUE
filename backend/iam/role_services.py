@@ -261,7 +261,7 @@ STANDARD_ROLE_DEFINITIONS = [
         "name": "Kế toán trưởng",
         "description": "Toàn quyền quản lý tài chính, kiểm soát sổ cái, phê duyệt chứng từ, khóa/mở kỳ kế toán.",
         "permission_prefixes": [
-            "GL.", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
+            "GL.", "OPENING_BALANCE_", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
         ],
     },
     {

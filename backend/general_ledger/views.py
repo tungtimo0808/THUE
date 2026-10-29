@@ -1,6 +1,9 @@
 from decimal import Decimal
+import io
+from openpyxl import Workbook
 
 from django.db.models import Count, Sum
+from django.db import transaction
 from rest_framework import mixins, serializers as drf_serializers, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -8,7 +11,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelViewSet
 
 from audit_log.services import record_audit
-from iam.permissions import HasIamPermission
+from iam.permissions import HasIamPermission, has_effective_permission, company_identifiers_agree
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
@@ -40,8 +45,15 @@ class AccountMasterViewSet(
         company_id = self.request.query_params.get("company_id")
         return super().get_queryset().filter(company_id=company_id) if company_id else super().get_queryset().none()
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        instance = serializer.save()
+        with transaction.atomic():
+            instance = serializer.save()
+            if isinstance(instance, Account) and instance.parent_id and instance.parent.is_postable:
+                parent = Account.objects.select_for_update().get(pk=instance.parent_id)
+                parent.is_postable = False
+                parent.version += 1
+                parent.save(update_fields=("is_postable", "version"))
         user_account = getattr(self.request.user, "iam_account", None)
         if user_account:
             record_audit(
@@ -50,6 +62,7 @@ class AccountMasterViewSet(
                 after=serializer.data, request=self.request,
             )
 
+    @transaction.atomic
     def perform_update(self, serializer):
         before = type(serializer)(serializer.instance).data
         instance = serializer.save(version=serializer.instance.version + 1)
@@ -74,7 +87,9 @@ class ChartOfAccountsViewSet(AccountMasterViewSet, mixins.DestroyModelMixin):
 
 
 class AccountViewSet(AccountMasterViewSet):
-    queryset = Account.objects.select_related("chart_of_accounts", "account_class", "parent")
+    queryset = Account.objects.select_related(
+        "chart_of_accounts", "account_class", "parent"
+    ).annotate(_children_count=Count("children"))
     serializer_class = AccountSerializer
     action_permissions = {
         "list": "MD.ACCOUNT.VIEW",
@@ -90,6 +105,8 @@ class AccountViewSet(AccountMasterViewSet):
         "init_from_template": "MD.ACCOUNT.CREATE",
         "convert_tt99": "MD.ACCOUNT.VIEW",
         "export_csv": "MD.ACCOUNT.EXPORT",
+        "export_xlsx": "MD.ACCOUNT.EXPORT",
+        "transfer": "MD.ACCOUNT.TRANSFER",
         "import_csv": "MD.ACCOUNT.IMPORT",
     }
 
@@ -97,12 +114,7 @@ class AccountViewSet(AccountMasterViewSet):
         company_id = self.request.query_params.get("company_id")
         if not company_id:
             return super().get_queryset().none()
-        qs = (
-            super()
-            .get_queryset()
-            .filter(company_id=company_id)
-            .annotate(annotated_children_count=Count("children"))
-        )
+        qs = super().get_queryset().filter(company_id=company_id)
         status_param = self.request.query_params.get("status")
         if status_param:
             qs = qs.filter(status=status_param.upper())
@@ -154,6 +166,23 @@ class AccountViewSet(AccountMasterViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["POST"], url_path="transfer")
+    def transfer(self, request, pk=None):
+        source = self.get_object()
+        target = get_object_or_404(Account, pk=request.data.get("target_id"), company=source.company, chart_of_accounts=source.chart_of_accounts)
+        if request.data.get("delete_source") is True and not request.user.is_superuser and not has_effective_permission(request.user.iam_account, source.company, "MD.ACCOUNT.DELETE"):
+            raise PermissionDenied("Bạn không có quyền xóa tài khoản kế toán.")
+        try:
+            result = account_services.transfer_account(
+                source=source, target=target, version=int(request.data.get("version")),
+                user=request.user, delete_source=request.data.get("delete_source") is True,
+            )
+        except (TypeError, ValueError):
+            return Response({"version": "Cần gửi phiên bản tài khoản hiện tại."}, status=400)
+        except DjangoValidationError as exc:
+            return Response({"detail": str(exc)}, status=409 if getattr(exc, "code", None) == "concurrency_conflict" else 400)
+        return Response(result)
 
     @action(detail=False, methods=["GET"], url_path="tree")
     def tree(self, request):
@@ -297,6 +326,33 @@ class AccountViewSet(AccountMasterViewSet):
         csv_content = account_services.export_accounts_to_csv(company, chart)
         response = HttpResponse(csv_content, content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="chart_of_accounts_{company.code}.csv"'
+        return response
+
+    @action(detail=False, methods=["GET"], url_path="export-xlsx")
+    def export_xlsx(self, request):
+        company_id = request.query_params.get("company_id")
+        chart_id = request.query_params.get("chart_of_accounts_id")
+        if not company_id or not chart_id:
+            return Response({"detail": "Cần chọn doanh nghiệp và bộ tài khoản."}, status=400)
+        chart = get_object_or_404(ChartOfAccounts, pk=chart_id, company_id=company_id)
+        book = Workbook()
+        sheet = book.active
+        sheet.title = "Hệ thống tài khoản"
+        sheet.append(["Số tài khoản", "Tên tài khoản", "Tên tiếng Anh", "Tính chất", "Theo dõi chi tiết theo", "Trạng thái", "Cấp"])
+        for account in Account.objects.filter(chart_of_accounts=chart).order_by("code"):
+            row = [account.code, account.name, account.name_en, account.normal_balance,
+                   ", ".join(f"{key}: {level}" for key, level in (account.dimension_requirements or {}).items()),
+                   account.status, account.account_level]
+            sheet.append(row)
+            sheet.cell(sheet.max_row, 1).number_format = "@"
+        output = io.BytesIO()
+        book.save(output)
+        actor = getattr(request.user, "iam_account", None)
+        if actor:
+            record_audit(company=chart.company, actor_user=actor, module_code="GL", action_code="ACCOUNT_EXPORT", entity=chart,
+                         after={"chart_id": str(chart.pk), "row_count": sheet.max_row - 1}, request=request)
+        response = HttpResponse(output.getvalue(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = 'attachment; filename="chart_of_accounts.xlsx"'
         return response
 
     @action(detail=False, methods=["POST"], url_path="import-csv")
@@ -646,9 +702,7 @@ class BalanceViewSet(ReadOnlyModelViewSet):
     action_permissions = {
         "trial_balance": "GL.BALANCE.VIEW",
         "ledger": "GL.LEDGER.VIEW",
-        "aggregate": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
-        "aggregate_period": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
-        "validate_balance": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
+        "aggregate": "GL.BALANCE.VIEW",
         "drilldown": "GL.BALANCE.VIEW",
     }
     filter_backends = (SearchFilter, OrderingFilter)
@@ -709,14 +763,6 @@ class BalanceViewSet(ReadOnlyModelViewSet):
         res = services.aggregate_and_validate_gl_balances(company, payload, request=request)
         return Response(res, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=("post",), url_path="aggregate-period")
-    def aggregate_period(self, request):
-        return self.aggregate(request)
-
-    @action(detail=False, methods=("post",), url_path="validate-balance")
-    def validate_balance(self, request):
-        return self.aggregate(request)
-
     @action(detail=False, methods=("get", "post"))
     def drilldown(self, request):
         company = self._resolve_company(request)
@@ -734,7 +780,7 @@ class BalanceAggregationRunViewSet(ReadOnlyModelViewSet):
     queryset = models.BalanceAggregationRun.objects.select_related("company", "period", "created_by")
     iam_permissions = {"GET": "GL.BALANCE.VIEW", "POST": "GL.BALANCE.VIEW"}
     action_permissions = {
-        "run": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
+        "run": "GL.BALANCE.VIEW",
     }
     filter_backends = (SearchFilter, OrderingFilter)
     search_fields = ("period__code", "status", "watermark")
@@ -1336,30 +1382,50 @@ class OpeningBalanceViewSet(GenericViewSet):
     in ấn, truy vấn chứng từ và đồng bộ Số dư ban đầu (10 nhóm A–J) theo Thông tư 99/2025/TT-BTC
     trực tiếp vào PostgreSQL (kết hợp CoreCompanySetting.configuration và bút toán đầu kỳ OPEN-2026-001 trên Sổ Cái).
     """
-    permission_classes = ()
+    permission_classes = (IsAuthenticated,)
+
+    def _required_permission(self, request):
+        if self.action in ("list", "vouchers", "check"):
+            return "OPENING_BALANCE_VIEW"
+        if self.action == "print_preview":
+            return "OPENING_BALANCE_PRINT"
+        if self.action == "import_excel":
+            return "OPENING_BALANCE_IMPORT"
+        if self.action == "delete_item":
+            return "OPENING_BALANCE_DELETE"
+        if self.action == "save_item" and (request.data.get("editing_id") or (request.data.get("item") or {}).get("editing_id")):
+            return "OPENING_BALANCE_EDIT"
+        if self.action == "create":
+            from common_services.models import CoreCompanySetting
+            company_id = request.query_params.get("company_id") or request.data.get("company_id")
+            setting = CoreCompanySetting.objects.filter(company_id=company_id).first()
+            regime = Company.objects.filter(pk=company_id).values_list("accounting_regime", flat=True).first()
+            saved = (setting.configuration or {}).get(f"opening_balances_{(regime or 'tt99').lower()}") if setting else {}
+            category = request.data.get("category")
+            if (category and (saved or {}).get(category)) or (saved and not category):
+                return "OPENING_BALANCE_EDIT"
+            return "OPENING_BALANCE_CREATE"
+        return "OPENING_BALANCE_CREATE"
 
     def _resolve_company(self, request):
+        if not company_identifiers_agree(request):
+            raise PermissionDenied("Doanh nghiệp trong yêu cầu không thống nhất.")
         company_id = (
             request.query_params.get("company_id")
             or request.data.get("company_id")
             or request.data.get("company")
-            or request.headers.get("X-Company-ID")
-            or request.headers.get("x-company-id")
         )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        if request.user and request.user.is_authenticated:
-            from common_services.models import UserPreference
-            pref = UserPreference.objects.filter(user__auth_user=request.user).select_related("current_company").first()
-            if pref and pref.current_company:
-                return pref.current_company
-            from iam.models import CompanyMembership, ActiveStatus
-            mem = CompanyMembership.objects.filter(user__auth_user=request.user, membership_status=ActiveStatus.ACTIVE).select_related("company").first()
-            if mem and mem.company:
-                return mem.company
-        return Company.objects.first()
+        if not company_id:
+            raise drf_serializers.ValidationError({"company_id": "Vui lòng chọn doanh nghiệp."})
+        comp = get_object_or_404(Company, pk=company_id)
+        account = getattr(request.user, "iam_account", None)
+        required = self._required_permission(request)
+        # UC-GL-15 EF-02/EF-03/EF-21 & BR-GL-OB-03/04: an explicit right per operation, admins included
+        if not account or not has_effective_permission(account, comp, "OPENING_BALANCE_VIEW"):
+            raise PermissionDenied("Bạn không có quyền truy cập Nhập số dư ban đầu.")
+        if not has_effective_permission(account, comp, required):
+            raise PermissionDenied("Bạn không có quyền thực hiện thao tác này.")
+        return comp
 
     def list(self, request):
         company = self._resolve_company(request)
@@ -1431,6 +1497,12 @@ class OpeningBalanceViewSet(GenericViewSet):
         )
         return Response(data)
 
+    @action(detail=False, methods=["get"], url_path="check")
+    def check(self, request):
+        """AF-16: Kiểm tra số dư đầu kỳ."""
+        company = self._resolve_company(request)
+        return Response(services.check_opening_balances_uc_gl_15(company, params=request.query_params, request=request))
+
     @action(detail=False, methods=["post"], url_path="print")
     def print_preview(self, request):
         company = self._resolve_company(request)
@@ -1439,25 +1511,6 @@ class OpeningBalanceViewSet(GenericViewSet):
         data = services.print_opening_balance_uc_gl_15(
             company,
             payload=request.data,
-            request=request,
-        )
-        return Response(data)
-
-    @action(detail=False, methods=["get", "post"], url_path="check")
-    def check_balances(self, request):
-        """
-        UC-GL-15 (AF-16): Kiểm tra cân đối Nợ/Có và đối chiếu 10 nhóm số dư đầu kỳ
-        với số dư các tài khoản Sổ Cái (GL), phát hiện chênh lệch và hiển thị trạng thái.
-        """
-        company = self._resolve_company(request)
-        if not company:
-            return Response({"detail": "Chưa có doanh nghiệp."}, status=status.HTTP_400_BAD_REQUEST)
-        params = request.query_params.dict() if hasattr(request, "query_params") else {}
-        if hasattr(request, "data") and isinstance(request.data, dict):
-            params.update(request.data)
-        data = services.check_opening_balances_uc_gl_15(
-            company,
-            params=params,
             request=request,
         )
         return Response(data)
@@ -2769,6 +2822,3 @@ class LedgerInquiryAndTraceViewSet(GenericViewSet):
         params = self._extract_params(request)
         res = services.export_accounting_book_uc_gl_14(company, params=params, request=request)
         return Response(res, status=status.HTTP_200_OK)
-
-
-

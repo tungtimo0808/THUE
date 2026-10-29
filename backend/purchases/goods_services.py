@@ -10,7 +10,7 @@ from approval_workflows.execution import approval_progress
 from common_services.period_services import determine_period_for_date
 from common_services.models import DocumentNumberingRule
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import post as post_journal
+from general_ledger.services import post as post_journal, source_module_request
 from general_ledger.services import _balance, _recalculate_closing
 from inventory.models import InventoryTransaction, InventoryTransactionLine
 from inventory.services import post as post_inventory
@@ -266,7 +266,7 @@ def post(purchase, request):
             currency=currency, party=purchase.supplier)
     if n == 0:
         raise ValidationError("Tổng thanh toán phải lớn hơn 0 để ghi sổ.")
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
     purchase.journal_entry = journal
     if purchase.payment_type == "UNPAID":
         Payable.objects.create(company=purchase.company, branch=purchase.branch, supplier=purchase.supplier,

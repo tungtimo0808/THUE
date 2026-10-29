@@ -1101,7 +1101,7 @@ export function MisaModuleApiExtensionPanel({
     setLoading(true);
     try {
       const writer = createApiWriter(companyId, (path, init) => request(path, token, init));
-      const data = await writer.get<any>(ep.path);
+      const data = await writer.get(ep.path);
       const list = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : data ? [data] : [];
       setRows(list);
     } catch {
@@ -1152,6 +1152,10 @@ export function MisaModuleApiExtensionPanel({
   };
 
   if (!activeEndpoint) return null;
+
+  const createFields: ApiEndpointField[] = activeEndpoint.createFields ??
+    activeEndpoint.columns.filter((column) => column.key !== "status")
+      .map((column) => ({ key: column.key, label: column.label }));
 
   return (
     <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", minHeight: 520, boxShadow: "0 4px 16px rgba(15, 23, 42, 0.06)" }}>
@@ -1335,7 +1339,7 @@ export function MisaModuleApiExtensionPanel({
               </button>
             </div>
             <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-              {(activeEndpoint.createFields || activeEndpoint.columns.filter((c) => c.key !== "status").map((c) => ({ key: c.key, label: c.label }))).map((field: any) => (
+              {createFields.map((field) => (
                 <label key={field.key} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
                   <span>{field.label}</span>
                   {field.type === "select" && field.options ? (

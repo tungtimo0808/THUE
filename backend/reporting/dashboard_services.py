@@ -63,6 +63,7 @@ class DashboardContext:
     warnings: list[dict[str, Any]] = field(default_factory=list)
     fail_widgets: set[str] = field(default_factory=set)
     is_before_start_date: bool = False
+    workflow_summary: dict[str, Any] | None = field(default=None, repr=False)
     # Audit 2026-10-27 (P1): memo trong phạm vi 1 request để không chạy lại cùng một phép tính/truy vấn.
     memo: dict[Any, Any] = field(default_factory=dict, repr=False, compare=False)
 

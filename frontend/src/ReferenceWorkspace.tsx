@@ -199,7 +199,7 @@ import LiveItemCategories from "./LiveItemCategories";
 import LiveUoms from "./LiveUoms";
 import LiveWarehouses from "./LiveWarehouses";
 import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
-import LiveAccounts from "./LiveAccounts";
+import LiveAccounts from "./AccountCatalogWorkspace";
 import LiveCatalogExtensions from "./LiveCatalogExtensions";
 import { MisaModuleApiExtensionPanel, MODULE_EXTENDED_APIS } from "./MisaModuleApiExtensionDrawer";
 import { request } from "./live-api";

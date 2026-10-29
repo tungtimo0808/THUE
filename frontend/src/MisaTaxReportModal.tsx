@@ -15,13 +15,12 @@ import {
   ChevronRight,
   Info,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import {
   createApiWriter,
   queryTaxReportUcRpt07,
-  openReportCellDrilldownUcRpt14,
+  openCellContextUcRpt14,
 } from "./misa-api-writes";
 
 export interface TaxReportModalProps {
@@ -158,12 +157,13 @@ export function MisaTaxReportModal({
   const headerGroups: any[] = reportData?.schema?.header_groups || [];
 
   // Export to Excel
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!reportData || !allRows.length) {
       notify?.("Không có dữ liệu để xuất");
       return;
     }
     try {
+      const XLSX = await import("xlsx");
       const exportRows = allRows.map((r, idx) => {
         const item: Record<string, any> = { STT: idx + 1 };
         columns.forEach((col) => {
@@ -186,9 +186,9 @@ export function MisaTaxReportModal({
   const handleCellClick = async (row: any, colKey: string, val: any) => {
     if (typeof val !== "number" || val === 0) return;
     try {
-      const res = await openReportCellDrilldownUcRpt14(writer, {
-        report_code: reportCode,
-        row_key: String(row.indicator_code || row.row_order || "0"),
+      const rowKey = String(row.indicator_code || row.row_order || "0");
+      const res = await openCellContextUcRpt14(writer, reportCode, rowKey, colKey, val, {
+        row_key: rowKey,
         column_key: colKey,
         display_value: val,
         parameters: { from_date: fromDate, to_date: toDate },
@@ -961,4 +961,3 @@ function generateMockTaxReportData(reportCode: string, reportName: string, fromD
     ],
   };
 }
-

@@ -1,8 +1,10 @@
+import re
 import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 class Status(models.TextChoices):
@@ -57,6 +59,7 @@ class Company(TimeStampedModel):
     accounting_currency = models.ForeignKey("master_data.Currency", on_delete=models.PROTECT, related_name="accounting_companies")
     legal_reporting_currency = models.ForeignKey("master_data.Currency", on_delete=models.PROTECT, related_name="reporting_companies")
     accounting_regime = models.CharField(max_length=30, default="TT99")
+    bookkeeping_method = models.CharField(max_length=20, choices=(("DOUBLE_ENTRY", "Ghi sổ kép"), ("SIMPLE", "Sổ đơn")), default="DOUBLE_ENTRY")
     fiscal_year_start_month = models.PositiveSmallIntegerField(default=1)
     timezone = models.CharField(max_length=80, default="Asia/Ho_Chi_Minh")
     default_locale = models.CharField(max_length=20, default="vi-VN")
@@ -292,6 +295,12 @@ class Employee(TimeStampedModel):
     position = models.ForeignKey(Position, on_delete=models.PROTECT, null=True, blank=True, related_name="employees")
     employee_code = models.CharField(max_length=30)
     full_name = models.CharField(max_length=255)
+    job_title = models.CharField(max_length=255, blank=True)
+    contract_type = models.CharField(max_length=30, blank=True, choices=(("RESIDENT_LONG", "Cư trú, HĐLĐ từ 3 tháng"), ("RESIDENT_SHORT", "Cư trú, không HĐLĐ hoặc dưới 3 tháng"), ("NON_RESIDENT", "Không cư trú")))
+    agreed_salary = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    salary_coefficient = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    insurance_salary = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    dependent_count = models.PositiveIntegerField(null=True, blank=True)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
@@ -350,6 +359,17 @@ class Employee(TimeStampedModel):
             errors["termination_date"] = "Ngày kết thúc không được trước ngày bắt đầu."
         if self.advance_limit is not None and self.advance_limit < 0:
             errors["advance_limit"] = "Hạn mức tạm ứng không được âm."
+        for field in ("agreed_salary", "salary_coefficient", "insurance_salary"):
+            if getattr(self, field) is not None and getattr(self, field) < 0:
+                errors[field] = "Giá trị không được âm."
+        if self.date_of_birth and self.date_of_birth > timezone.localdate():
+            errors["date_of_birth"] = "Ngày sinh không được trong tương lai."
+        if self.identity_number and not re.fullmatch(r"\d{12}", self.identity_number):
+            errors["identity_number"] = "Số CCCD phải gồm đúng 12 chữ số."
+        if self.phone and not re.fullmatch(r"\d{10}", self.phone):
+            errors["phone"] = "Số điện thoại phải gồm đúng 10 chữ số."
+        if self.personal_tax_code and not re.fullmatch(r"\d{10}(?:\d{3})?", self.personal_tax_code):
+            errors["personal_tax_code"] = "Mã số thuế phải gồm 10 hoặc 13 chữ số."
         if errors:
             raise ValidationError(errors)
 

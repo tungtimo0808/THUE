@@ -2209,16 +2209,3 @@ class DrilldownViewSet(ViewSet):
             return Response({"detail": str(pe)}, status=status.HTTP_403_FORBIDDEN)
         except ValidationError as ve:
             return Response({"detail": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
-
-
-
-
-
-
-
-

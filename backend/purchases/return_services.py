@@ -12,7 +12,7 @@ from approval_workflows.submission import configured_snapshot
 from common_services.models import DocumentNumberingRule
 from common_services.period_services import determine_period_for_date
 from general_ledger.models import AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import _balance, _recalculate_closing, post as post_journal
+from general_ledger.services import _balance, _recalculate_closing, post as post_journal, source_module_request
 from inventory.models import InventoryTransaction, InventoryTransactionLine, StockBalance
 from inventory.services import post as post_inventory, reverse as reverse_inventory
 from master_data.models import DocumentType
@@ -263,7 +263,7 @@ def post(document, request):
                 description="Giảm thuế GTGT đầu vào do trả lại hàng")
     if not n:
         raise ValidationError("Giá trị trả lại phải lớn hơn 0.")
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
     document.journal_entry = journal
     payable = Payable.objects.select_for_update().filter(goods_purchase=document.original_purchase).first()
     reduction = min(document.total_amount, payable.balance) if payable else Decimal("0")

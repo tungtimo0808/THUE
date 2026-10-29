@@ -39,6 +39,7 @@ import MisaBusinessResultReport from "./MisaBusinessResultReport";
 import MisaCashFlowDirectReport from "./MisaCashFlowDirectReport";
 import MisaCashFlowIndirectReport from "./MisaCashFlowIndirectReport";
 import MisaFinancialNotesReport from "./MisaFinancialNotesReport";
+import MisaTT133FinancialReport, { TT133_REPORTS } from "./MisaTT133FinancialReport";
 import MisaInterimFinancialPositionReport from "./MisaInterimFinancialPositionReport";
 import MisaInterimBusinessResultReport from "./MisaInterimBusinessResultReport";
 import MisaInterimCashFlowDirectReport from "./MisaInterimCashFlowDirectReport";
@@ -191,6 +192,18 @@ export const CATEGORY_STRUCTURES: Record<string, CategoryStructure> = {
           ["B02 - DN: Báo cáo kết quả hoạt động kinh doanh", "B03a - DN: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP trực tiếp)"],
           ["B03 - DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)", "B03a - DN - GT: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP gián tiếp)"],
           ["B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)", null],
+        ],
+      },
+      {
+        id: "financial_tt133",
+        title: "Báo cáo tài chính theo Thông tư 133",
+        collapsible: true,
+        defaultOpen: true,
+        rows: [
+          ["B01a-DNN: Báo cáo tình hình tài chính", "B01b-DNN: Báo cáo tình hình tài chính (ngắn hạn, dài hạn)"],
+          ["B02-DNN: Báo cáo kết quả hoạt động kinh doanh", "B03-DNN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)"],
+          ["B03-DNN-GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)", "B09-DNN: Thuyết minh báo cáo tài chính"],
+          ["F01-DNN: Bảng cân đối tài khoản", null],
         ],
       },
     ],
@@ -858,7 +871,7 @@ const REPORTS_BY_CATEGORY: Record<string, string[]> = {
 export default function MisaReportCenterWorkspace({ notify,initialCategory="favorites",initialReport=null,embedded=false }: MisaReportCenterWorkspaceProps) {
   // Subtabs: "all" (Tất cả) | "saved" (Báo cáo đã lưu) | "schedule" (Lịch gửi báo cáo định kỳ)
   const [activeSubtab, setActiveSubtab] = useState<"all" | "saved" | "schedule">("all");
-  
+
   // Left category active ID
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
 
@@ -1008,6 +1021,10 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
   const contractReportType = (Object.keys(CONTRACT_REPORT_TITLES) as Array<keyof typeof CONTRACT_REPORT_TITLES>).find(type => CONTRACT_REPORT_TITLES[type] === selectedReport);
   const salesSummaryType = (Object.keys(SALES_SUMMARY_TITLES) as Array<keyof typeof SALES_SUMMARY_TITLES>).find(type => SALES_SUMMARY_TITLES[type] === selectedReport);
+  const tt133Report = TT133_REPORTS.find(([code, label]) => selectedReport === `${code}: ${label}`);
+  if (tt133Report) {
+    return <MisaTT133FinancialReport key={tt133Report[0]} initialCode={tt133Report[0]} onBack={() => setSelectedReport(null)} />;
+  }
   if (salesSummaryType) {
     return <MisaSalesSummaryReports key={salesSummaryType} reportType={salesSummaryType} onBack={() => setSelectedReport(null)} notify={notify} />;
   }
@@ -2510,7 +2527,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-    
+
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Trình in thông minh mới của Sổ Việt ERP</h3>
               </div>
               <button
@@ -2558,5 +2575,3 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     </div>
   );
 }
-
-

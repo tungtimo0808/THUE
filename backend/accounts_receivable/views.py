@@ -40,6 +40,28 @@ class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveM
         before=self.get_serializer(serializer.instance).data;obj=serializer.save();services.audit(self.request,obj,"EDIT",before,serializer.data,getattr(obj,"reason",""))
 
 
+class BranchScopedViewSet(BaseViewSet):
+    """Apply the same branch grant used by the permission class to returned rows."""
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        branch_id = self.request.query_params.get("branch_id")
+        if branch_id:
+            qs = qs.filter(branch_id=branch_id)
+        if self.request.user.is_superuser:
+            return qs
+        company = Company.objects.filter(pk=self.request.query_params.get("company_id")).first()
+        if not company:
+            return qs.none()
+        from iam.permissions import has_effective_permission
+        code = self.action_permissions.get(getattr(self, "action", None)) or self.iam_permissions.get(self.request.method)
+        allowed = [
+            branch for branch in qs.values_list("branch_id", flat=True).distinct()
+            if has_effective_permission(self.request.user.iam_account, company, code, branch_id=branch)
+        ]
+        return qs.filter(branch_id__in=allowed)
+
+
 class DocumentViewSet(BaseViewSet):
     queryset=models.ReceivableDocument.objects.select_related("company","branch","customer","currency","sales_order","sales_contract","invoice_request","created_by")
     serializer_class=serializers.DocumentSerializer;iam_permissions=perms("AR.DOCUMENT")
@@ -793,7 +815,7 @@ class DebtAdjustmentVoucherViewSet(BaseViewSet):
         return Response(self.get_serializer(adjustment_voucher.unpost_voucher(self.get_object(),request)).data)
 
 
-class CustomerDebtReconciliationViewSet(BaseViewSet):
+class CustomerDebtReconciliationViewSet(BranchScopedViewSet):
     queryset = models.CustomerDebtReconciliation.objects.select_related(
         "company", "branch", "customer", "currency", "receivable_account",
         "sent_by", "responded_by", "cancelled_by", "created_by", "previous_reconciliation"
@@ -997,7 +1019,7 @@ class DueTrackingViewSet(GenericViewSet):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class CustomerPaymentReminderViewSet(BaseViewSet):
+class CustomerPaymentReminderViewSet(BranchScopedViewSet):
     queryset = models.CustomerPaymentReminder.objects.select_related(
         "company", "branch", "customer", "currency", "receivable_account",
         "company_bank_account", "company_bank_account__bank",

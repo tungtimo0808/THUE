@@ -24,6 +24,9 @@ class BaseViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         if not company_id: return super().get_queryset().none()
         qs = super().get_queryset().filter(company_id=company_id)
         if value := self.request.query_params.get("status"): qs = qs.filter(status=value)
+        if branch_id := self.request.query_params.get("branch_id"):
+            if any(field.name == "branch" for field in qs.model._meta.fields):
+                qs = qs.filter(branch_id=branch_id)
         return qs
     def perform_create(self, serializer):
         obj = serializer.save(created_by=services.actor(self.request)); services.audit(self.request, obj, "CREATE", after=serializer.data)

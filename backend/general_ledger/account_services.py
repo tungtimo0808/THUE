@@ -5,6 +5,7 @@ Implements BR-COA-01 through BR-COA-61.
 import csv
 import io
 import json
+from decimal import Decimal
 from datetime import date
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -105,6 +106,15 @@ def record_account_audit(
 # 2. IMPACT & USAGE ANALYSIS (BR-COA-16, 36, 37, 41, EF-18, 20, 21)
 # =====================================================================
 
+def account_reference_labels(account: Account, *, skip_journal_lines: bool = False) -> List[str]:
+    labels = []
+    for relation in Account._meta.related_objects:
+        if skip_journal_lines and relation.related_model is models.JournalLine and relation.field.name == "account":
+            continue
+        if relation.related_model._base_manager.filter(**{relation.field.name: account}).exists():
+            labels.append(f"{relation.related_model._meta.label}.{relation.field.name}")
+    return labels
+
 def get_account_impact(account: Account) -> Dict[str, Any]:
     """
     Phân tích tác động và kiểm tra mức độ sử dụng của tài khoản (Main Flow 2.3, 2.4, BR-COA-41).
@@ -156,14 +166,15 @@ def get_account_impact(account: Account) -> Dict[str, Any]:
         and budget_lines_count == 0
         and allocation_rules_count == 0
         and closing_rules_count == 0
+        and not account_reference_labels(account)
     )
 
     # Quy tắc ngừng sử dụng (BR-COA-41, EF-18, EF-20):
     # Không còn tài khoản con ACTIVE và không còn chứng từ Draft đang xử lý
-    can_deactivate = (
-        active_children_count == 0
-        and draft_journal_entries_count == 0
-    )
+    can_deactivate = draft_journal_entries_count == 0 and not models.JournalEntry.objects.filter(
+        lines__account__code__startswith=account.code, lines__account__chart_of_accounts=account.chart_of_accounts,
+        status="DRAFT",
+    ).exists()
 
     return {
         "id": str(account.id),
@@ -215,8 +226,18 @@ def init_chart_of_accounts_from_template(
     Hỗ trợ đối chiếu bổ sung nếu doanh nghiệp đã có tài khoản (AF-01).
     Hỗ trợ phạm vi rút gọn cho doanh nghiệp nhỏ / một người (AF-02, AF-19, BR-COA-52).
     """
-    regime = (regime or "TT99").upper()
+    regime_aliases = {
+        "TT99": "TT99", "99": "TT99",
+        "TT200": "TT200", "CIRCULAR_200": "TT200", "200": "TT200",
+        "TT133": "TT133", "CIRCULAR_133": "TT133", "133": "TT133",
+    }
+    raw_regime = (regime or "TT99").upper()
+    if raw_regime not in regime_aliases:
+        raise ValidationError({"regime": "Chế độ kế toán không hợp lệ."})
+    regime = regime_aliases[raw_regime]
     scope = (scope or "FULL").upper()
+    if scope not in {"FULL", "ESSENTIAL"}:
+        raise ValidationError({"scope": "Phạm vi mẫu phải là FULL hoặc ESSENTIAL."})
     template_version_str = f"{regime}-{scope}-V1"
 
     # Lấy hoặc tạo ChartOfAccounts mặc định cho doanh nghiệp
@@ -236,7 +257,8 @@ def init_chart_of_accounts_from_template(
         )
     else:
         chart.template_version = template_version_str
-        chart.save(update_fields=["template_version"])
+        chart.accounting_regime = regime
+        chart.save(update_fields=["template_version", "accounting_regime"])
 
     # Lấy danh sách mẫu tài khoản
     template_items = get_template_accounts(regime=regime, scope=scope)
@@ -349,16 +371,14 @@ def change_account_status(
     before_snap = get_account_snapshot(row)
 
     if new_status == AccountStatus.INACTIVE or new_status == "INACTIVE":
-        # EF-18: Tài khoản còn tài khoản con ACTIVE -> yêu cầu xử lý tài khoản con trước
-        active_children = row.children.filter(status__in=(AccountStatus.ACTIVE, "ACTIVE"))
-        if active_children.exists():
-            child_codes = list(active_children.values_list("code", flat=True)[:5])
-            raise ValidationError(
-                f"Tài khoản còn {active_children.count()} tài khoản con đang hoạt động ({', '.join(child_codes)}). Vui lòng ngừng tài khoản con trước."
-            )
-
-        # EF-20: Tài khoản còn chứng từ Draft đang xử lý
-        draft_entries = models.JournalEntry.objects.filter(lines__account=row, status="DRAFT").exists()
+        descendants = []
+        frontier = [row.pk]
+        while frontier:
+            children = list(Account.objects.select_for_update().filter(parent_id__in=frontier))
+            descendants.extend(children)
+            frontier = [child.pk for child in children]
+        affected = [row, *descendants]
+        draft_entries = models.JournalEntry.objects.filter(lines__account__in=affected, status="DRAFT").exists()
         if draft_entries:
             raise ValidationError("Tài khoản còn chứng từ nháp (Draft) chưa hoàn tất ghi sổ. Vui lòng xử lý trước.")
 
@@ -391,6 +411,18 @@ def change_account_status(
     row.version += 1
     row.save()
 
+    if new_status == AccountStatus.INACTIVE or new_status == "INACTIVE":
+        for child in descendants:
+            if child.status == AccountStatus.INACTIVE:
+                continue
+            child_before = get_account_snapshot(child)
+            child.status = AccountStatus.INACTIVE
+            child.end_date = row.end_date
+            child.inactive_reason = reason
+            child.version += 1
+            child.save(update_fields=("status", "end_date", "inactive_reason", "version"))
+            record_account_audit(child, "CHANGE_STATUS", before=child_before, after=get_account_snapshot(child), user=user, reason=reason)
+
     after_snap = get_account_snapshot(row)
     record_account_audit(
         account=row,
@@ -419,6 +451,10 @@ def delete_account(account: Account, user=None):
 
     if row.is_system:
         raise ValidationError("Không được xóa tài khoản hệ thống được bảo vệ theo chính sách.")
+
+    references = account_reference_labels(row)
+    if references:
+        raise ValidationError(f"Không thể xóa tài khoản vì còn dữ liệu liên quan: {', '.join(references[:5])}.")
 
     impact = get_account_impact(row)
     if not impact["can_delete"]:
@@ -454,6 +490,49 @@ def delete_account(account: Account, user=None):
         description=f"Xóa tài khoản kế toán {row_code} ({row_name})",
     )
     row.delete()
+
+
+@transaction.atomic
+def transfer_account(*, source: Account, target: Account, version: int, user=None, delete_source: bool = False):
+    """Move editable draft journal lines only after proving all other references absent."""
+    source = Account.objects.select_for_update().get(pk=source.pk)
+    target = Account.objects.select_for_update().get(pk=target.pk)
+    if source.pk == target.pk:
+        raise ValidationError("Tài khoản chuyển đi và tài khoản chuyển đến phải khác nhau.")
+    if source.version != version:
+        raise ValidationError("Dữ liệu tài khoản đã thay đổi. Vui lòng tải lại danh sách.", code="concurrency_conflict")
+    if source.company_id != target.company_id or source.chart_of_accounts_id != target.chart_of_accounts_id:
+        raise ValidationError("Hai tài khoản phải thuộc cùng bộ dữ liệu kế toán.")
+    if target.status != AccountStatus.ACTIVE or not target.is_postable or target.children.exists():
+        raise ValidationError("Tài khoản nhận không hoạt động hoặc không thể hạch toán trực tiếp.")
+    if (source.account_type, source.normal_balance, source.dimension_requirements, source.is_foreign_currency, source.default_currency) != (target.account_type, target.normal_balance, target.dimension_requirements, target.is_foreign_currency, target.default_currency):
+        raise ValidationError("Tài khoản nhận không phù hợp với dữ liệu cần chuyển.")
+    if source.balances.exists():
+        raise ValidationError("Tài khoản còn số dư. Không thể chuyển tự động.")
+    lines = list(source.journal_lines.select_related("entry__period").select_for_update())
+    if any(line.entry.status != "DRAFT" or line.entry.period.status != "OPEN" for line in lines):
+        raise ValidationError("Không thể chuyển tài khoản vì có dữ liệu thuộc kỳ đã khóa hoặc đã ghi sổ.")
+    # Other models hold business references. Reassigning them could alter posted documents.
+    # Require explicit workflows for those references rather than changing them here.
+    if account_reference_labels(source, skip_journal_lines=True):
+        raise ValidationError("Tài khoản còn tham chiếu nghiệp vụ cần xử lý riêng trước khi chuyển.")
+    debit_before = sum((line.debit for line in lines), Decimal("0"))
+    credit_before = sum((line.credit for line in lines), Decimal("0"))
+    for line in lines:
+        line.account = target
+        line.full_clean()
+        line.save(update_fields=("account",))
+    if source.journal_lines.exists() or target.journal_lines.filter(pk__in=[line.pk for line in lines]).count() != len(lines):
+        raise ValidationError("Đối chiếu số dòng hạch toán sau chuyển không khớp.")
+    if sum((line.debit for line in lines), Decimal("0")) != debit_before or sum((line.credit for line in lines), Decimal("0")) != credit_before:
+        raise ValidationError("Đối chiếu số tiền sau chuyển không khớp.")
+    before = get_account_snapshot(source)
+    source.version += 1
+    source.save(update_fields=("version",))
+    record_account_audit(source, "TRANSFER", before=before, after={"target_id": str(target.pk), "line_count": len(lines), "debit": str(debit_before), "credit": str(credit_before)}, user=user)
+    if delete_source:
+        delete_account(source, user=user)
+    return {"source_id": str(source.pk), "target_id": str(target.pk), "transferred_lines": len(lines), "deleted_source": delete_source}
 
 
 # =====================================================================

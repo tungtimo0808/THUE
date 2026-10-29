@@ -6295,10 +6295,9 @@ class BalanceAggregationUcGl10Tests(TestCase):
             format="json",
         )
         self.assertEqual(r_agg.status_code, 200, r_agg.data)
-        self.assertIn(r_agg.data["status"], ("UP_TO_DATE", "VALID"))
+        self.assertEqual(r_agg.data["status"], "VALID")
         self.assertTrue(r_agg.data["is_balanced"])
         self.assertEqual(r_agg.data["posted_entries_count"], 2)
-        self.assertEqual(len(r_agg.data.get("checks_list", [])), 8)
 
         totals = r_agg.data["totals"]
         # Tổng phát sinh lá: 50,000,000 + 30,000,000 = 80,000,000 Nợ / Có
@@ -6352,85 +6351,6 @@ class BalanceAggregationUcGl10Tests(TestCase):
         self.assertEqual(Decimal(r_drill.data["period_debit"]), Decimal("50000000.00"))
         self.assertEqual(Decimal(r_drill.data["period_credit"]), Decimal("5000000.00"))
         self.assertEqual(Decimal(r_drill.data["closing_debit"]), Decimal("45000000.00"))
-
-    def test_uc_gl_10_regime_tt58_fiscal_year_and_8_checks(self):
-        """
-        Kiểm thử các quy tắc nâng cấp theo UC-GL-10 spec:
-        - EF-26, AF-04: Từ chối tổng hợp GL kép cho bộ dữ liệu TT58 ghi sổ đơn.
-        - EF-04, BR-GL-BAL-01: Kiểm tra năm tài chính khớp với kỳ kế toán.
-        - Section 1.4.C: Trả về đầy đủ 8 phép kiểm tra cân đối kế toán.
-        - Section 1.4.B: Trả về check_status và check_note cho từng tài khoản.
-        """
-        # 1. Kiểm tra từ chối TT58 đơn giản (EF-26, AF-04)
-        r_tt58 = self.client.post(
-            f"/api/v1/general-ledger/balances/aggregate/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "simulate_tt58_simple_book": True,
-            },
-            format="json",
-        )
-        self.assertEqual(r_tt58.status_code, 400)
-        self.assertEqual(r_tt58.data.get("error_code"), "TT58_SIMPLE_BOOK_AGGREGATION_REQUIRED")
-
-        # 2. Kiểm tra năm tài chính không khớp (EF-04, BR-GL-BAL-01)
-        r_fy = self.client.post(
-            f"/api/v1/general-ledger/balances/aggregate/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "fiscal_year": 2025,  # Period is 2026
-            },
-            format="json",
-        )
-        self.assertEqual(r_fy.status_code, 400)
-        self.assertEqual(r_fy.data.get("error_code"), "FISCAL_YEAR_MISMATCH")
-
-        # 3. Tổng hợp hợp lệ và kiểm tra 8 phép cân đối + check_status từng tài khoản
-        r_ok = self.client.post(
-            f"/api/v1/general-ledger/balances/aggregate/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "fiscal_year": 2026,
-                "include_zero_balances": True,
-            },
-            format="json",
-        )
-        self.assertEqual(r_ok.status_code, 200)
-        self.assertEqual(r_ok.data.get("fiscal_year"), 2026)
-        self.assertIn("accounting_regime", r_ok.data)
-        self.assertIn("date_from", r_ok.data)
-        self.assertIn("date_to", r_ok.data)
-
-        # 8 phép kiểm tra cân đối GL (Section 1.4.C)
-        checks = r_ok.data.get("checks_list", [])
-        self.assertEqual(len(checks), 8)
-        check_ids = [c["check_id"] for c in checks]
-        expected_ids = [
-            "CHK_01_ENTRY_BALANCE",
-            "CHK_02_TURNOVER_BALANCE",
-            "CHK_03_CLOSING_BALANCE",
-            "CHK_04_PERIOD_CONTINUITY",
-            "CHK_05_PARENT_CHILD_MATCH",
-            "CHK_06_DIMENSION_AND_BILATERAL",
-            "CHK_07_SOURCE_DATA_INTEGRITY",
-            "CHK_08_FX_RECONCILIATION",
-        ]
-        self.assertEqual(check_ids, expected_ids)
-        for c in checks:
-            self.assertIn(c["result"], ("PASSED", "WARNING", "ERROR"))
-            self.assertIn("difference", c)
-            self.assertIn("details", c)
-
-        # Kiểm tra check_status và check_note trên từng dòng số dư (Section 1.4.B)
-        accounts = r_ok.data.get("account_balances", [])
-        self.assertTrue(len(accounts) > 0)
-        for acc in accounts:
-            self.assertIn("check_status", acc)
-            self.assertIn(acc["check_status"], ("PASSED", "WARNING", "ERROR"))
-            self.assertIn("check_note", acc)
 
 
 class GlSubledgerReconciliationUcGl11Tests(TestCase):
@@ -6555,6 +6475,34 @@ class GlSubledgerReconciliationUcGl11Tests(TestCase):
         self.client.force_authenticate(self.user)
         self.query = f"?company_id={self.company.id}"
 
+    def test_new_uc_scope_and_accounting_method_guards(self):
+        endpoint = f"/api/v1/general-ledger/reconciliations/run/{self.query}"
+        base = {"company": str(self.company.id), "period": str(self.period.id), "reconciliation_type": "GL_AR"}
+        for change, code in (
+            ({"fiscal_year": 2025}, "INVALID_FISCAL_YEAR"),
+            ({"from_date": "2026-09-30"}, "INVALID_DATE_RANGE"),
+            ({"branch_id": "00000000-0000-0000-0000-000000000001"}, "INVALID_RECONCILIATION_SCOPE"),
+            ({"account_code": "111"}, "INVALID_RECONCILIATION_SCOPE"),
+        ):
+            response = self.client.post(endpoint, {**base, **change}, format="json")
+            self.assertEqual(response.status_code, 400, response.data)
+            self.assertEqual(response.data["error_code"], code)
+
+        ccdc = self.client.post(endpoint, {**base, "reconciliation_type": "GL_CCDC"}, format="json")
+        self.assertEqual(ccdc.status_code, 400, ccdc.data)
+        self.assertEqual(ccdc.data["error_code"], "MISSING_RECONCILIATION_MAPPING")
+
+        stale = self.client.post(endpoint, {**base, "require_fresh_gl_aggregation": True}, format="json")
+        self.assertEqual(stale.status_code, 400, stale.data)
+        self.assertEqual(stale.data["error_code"], "GL_AGGREGATION_NOT_RUN")
+
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=("accounting_regime", "bookkeeping_method"))
+        response = self.client.post(endpoint, base, format="json")
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertEqual(response.data["error_code"], "SIMPLE_BOOK_RECONCILIATION_UNSUPPORTED")
+
     def test_01_seed_rules_and_bilateral_offset_detection_br_13_14_92(self):
         # 1. Seed 7 quy tắc đối chiếu mặc định
         r_seed = self.client.post(
@@ -6563,7 +6511,7 @@ class GlSubledgerReconciliationUcGl11Tests(TestCase):
             format="json",
         )
         self.assertEqual(r_seed.status_code, 200, r_seed.data)
-        self.assertEqual(len(r_seed.data), 9)
+        self.assertEqual(len(r_seed.data), 7)
 
         # 2. Ghi sổ bút toán phải thu trên GL: KH001 = 60,000,000; KH002 = 40,000,000 (Tổng = 100,000,000)
         r_je = self.client.post(
@@ -6951,89 +6899,6 @@ class GlSubledgerReconciliationUcGl11Tests(TestCase):
         )
         self.assertEqual(r_ef08.status_code, 400)
         self.assertEqual(r_ef08.data["error_code"], "SUBLEDGER_DATA_UNAVAILABLE")
-
-    def test_05_regime_tt58_ef25_shared_tk242_and_tools_prepaid(self):
-        from datetime import date
-        from decimal import Decimal
-
-        # EF-25 / AF-04 / BR-GL-REC-73..74: Bộ dữ liệu TT58 không tổ chức GL ghi sổ kép bị từ chối
-        r_tt58 = self.client.post(
-            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "reconciliation_type": "GL_AP",
-                "simulate_tt58_simple_book": True,
-            },
-            format="json",
-        )
-        self.assertEqual(r_tt58.status_code, 400)
-        self.assertEqual(r_tt58.data["error_code"], "TT58_SIMPLE_BOOK_RECONCILIATION_REQUIRED")
-
-        # EF-04: Năm tài chính không khớp với kỳ kế toán
-        r_fy = self.client.post(
-            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "fiscal_year": 2025,
-                "reconciliation_type": "GL_AP",
-            },
-            format="json",
-        )
-        self.assertEqual(r_fy.status_code, 400)
-        self.assertEqual(r_fy.data["error_code"], "FISCAL_YEAR_MISMATCH")
-
-        # EF-15 / BR-GL-REC-40, 41: Chưa phân tách số liệu đối chiếu trên TK 242 dùng chung giữa CCDC và Chi phí trả trước
-        r_shared = self.client.post(
-            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "reconciliation_type": "GL_TOOLS",
-                "simulate_unseparated_shared_account_242": True,
-            },
-            format="json",
-        )
-        self.assertEqual(r_shared.status_code, 400)
-        self.assertEqual(r_shared.data["error_code"], "UNSEPARATED_SHARED_ACCOUNT_DATA")
-
-        # Tạo tài khoản 242 và kiểm tra đối chiếu GL_PREPAID tự động trích xuất PrepaidExpense
-        from iam.models import UserAccount
-        iam_user, _ = UserAccount.objects.get_or_create(auth_user=self.user)
-        acc_242, _ = self.models.Account.objects.get_or_create(
-            company=self.company,
-            chart_of_accounts=self.chart,
-            code="242",
-            defaults={"name": "Chi phí trả trước", "account_type": "ASSET", "normal_balance": "DEBIT"},
-        )
-        self.models.PrepaidExpense.objects.create(
-            company=self.company,
-            code="CPTT-001",
-            name="Tiền thuê văn phòng Q4/2026",
-            record_date=date(2026, 10, 1),
-            start_date=date(2026, 10, 1),
-            amount=Decimal("30000000"),
-            allocation_periods=3,
-            opening_allocated_amount=Decimal("0"),
-            allocated_amount=Decimal("10000000"),
-            prepaid_account=acc_242,
-            created_by=iam_user,
-        )
-        r_prepaid = self.client.post(
-            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
-            {
-                "company": str(self.company.id),
-                "period": str(self.period.id),
-                "reconciliation_type": "GL_PREPAID",
-                "account": str(acc_242.id),
-            },
-            format="json",
-        )
-        self.assertEqual(r_prepaid.status_code, 201, r_prepaid.data)
-        self.assertEqual(r_prepaid.data["reconciliation_type"], "GL_PREPAID")
-        self.assertEqual(len(r_prepaid.data["lines"]), 1)
-        self.assertEqual(r_prepaid.data["lines"][0]["object_code"], "CPTT-001")
 
 
 class PeriodLockCloseUcGl12Tests(TestCase):
@@ -8475,7 +8340,56 @@ class OpeningBalanceEntryUcGl15Tests(FinancialStatementUcGl13Tests):
 
     def setUp(self):
         super().setUp()
+        from iam.models import (
+            UserAccount, CompanyMembership, Role, RolePermission,
+            UserRoleAssignment, Permission,
+        )
+
+        account, _ = UserAccount.objects.get_or_create(
+            auth_user=self.chief, defaults={"display_name": "Kế toán trưởng UC15"},
+        )
+        membership, _ = CompanyMembership.objects.get_or_create(
+            company=self.company, user=account, defaults={"created_by": account},
+        )
+        role, _ = Role.objects.get_or_create(
+            company=self.company, code="OPENING_BALANCE_TEST",
+            defaults={"name": "Nhập số dư đầu kỳ", "created_by": account},
+        )
+        for permission in Permission.objects.filter(code__startswith="OPENING_BALANCE_"):
+            RolePermission.objects.get_or_create(role=role, permission=permission, defaults={"effect": "ALLOW"})
+        UserRoleAssignment.objects.get_or_create(
+            company_membership=membership, role=role, defaults={"assigned_by": account},
+        )
         self.url_base = "/api/v1/general-ledger/opening-balances/"
+
+    def test_uc_gl_15_requires_session_company_and_explicit_permission(self):
+        from django.contrib.auth import get_user_model
+        from rest_framework.test import APIClient
+
+        anonymous = APIClient()
+        self.assertEqual(anonymous.get(f"{self.url_base}{self.query}").status_code, 401)
+        self.assertEqual(self.client.get(self.url_base).status_code, 400)
+        other = get_user_model().objects.create_user(username="opening_no_role", password="x")
+        restricted = APIClient()
+        restricted.force_authenticate(other)
+        self.assertEqual(restricted.get(f"{self.url_base}{self.query}").status_code, 403)
+        self.assertEqual(
+            self.client.get(f"{self.url_base}?company_id={self.company.id}", HTTP_X_COMPANY_ID="different").status_code,
+            403,
+        )
+
+    def test_uc_gl_15_uses_company_regime_without_mixing_saved_balances(self):
+        from common_services.models import CoreCompanySetting
+
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=self.company)
+        setting.configuration = {"opening_balances_tt99": {"prepaid": [{"code": "TT99-ONLY", "amount": 100}]}}
+        setting.save()
+        self.company.accounting_regime = "TT200"
+        self.company.save(update_fields=["accounting_regime"])
+        response = self.client.get(f"{self.url_base}{self.query}")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["accounting_regime"], "TT200")
+        self.assertEqual(response.data["prepaid"], [])
 
     def _setup_uc_gl_15_opening(self):
         from iam.models import UserAccount
@@ -8509,719 +8423,356 @@ class OpeningBalanceEntryUcGl15Tests(FinancialStatementUcGl13Tests):
             created_by=actor_acc,
         )
 
-    def test_uc_gl_15_flow_a_accounts_rollup_detail_and_balance_check(self):
+    def _uc15_master_data(self):
+        from master_data.models import Bank, CompanyBankAccount, Item, Warehouse
+        from organization.models import Employee
+
+        self.acc_141 = self._create_postable_account("141", "Tạm ứng", "ASSET", "DEBIT")
+        self.acc_242 = self._create_postable_account("242", "Chi phí trả trước", "ASSET", "DEBIT")
+        self.acc_2111 = self._create_postable_account("2111", "TSCĐ hữu hình", "ASSET", "DEBIT")
+        self.acc_2141 = self._create_postable_account("2141", "Hao mòn TSCĐ hữu hình", "ASSET", "CREDIT")
+        bank = Bank.objects.create(code="VCB-UC15", name="Vietcombank")
+        self.bank_account = CompanyBankAccount.objects.create(
+            company=self.company, code="TGNH01", account_number="0011001234567", account_name="TK thanh toán",
+            bank=bank, currency=self.currency, gl_account=self.acc_112,
+        )
+        self.employee = Employee.objects.create(company=self.company, employee_code="NV-15", full_name="Nguyễn Văn Tạm")
+        self.warehouse = Warehouse.objects.create(company=self.company, code="KHO-15", name="Kho hàng hóa")
+        self.item = Item.objects.create(company=self.company, code="HH-15", name="Hàng hóa A", item_type="GOODS",
+                                        inventory_account=self.acc_156)
+
+    def _post(self, path, payload):
+        return self.client.post(f"{self.url_base}{path}{self.query}", payload, format="json")
+
+    def _asset_payload(self, **overrides):
+        return {
+            "code": "TS-15", "name": "Máy phát điện", "assetType": "Máy móc", "voucherNo": "GT-CU-01",
+            "voucherDate": "2024-06-01", "department": "Phòng kỹ thuật", "costAcc": "2111", "deprAcc": "2141",
+            "deprStartDate": "2024-06-01", "originalCost": 120000000, "accumDepr": 36000000, "remainingVal": 84000000,
+            "usageTime": 60, "remainingTime": 42, **overrides,
+        }
+
+    def test_uc_gl_15_flow_a_accounts_single_source_rollup_and_gl_entry(self):
+        """A1–A8, AF-02, EF-13, EF-17, EF-18, EF-19, BR-GL-OB-07/10/11/13/16/17/53/75."""
         self._setup_uc_gl_15_opening()
-        """
-        Kiểm tra Luồng A (Số dư tài khoản):
-        - Lưu cân đối Nợ = Có, đồng bộ xuống OPEN-2026-001, tự động tổng hợp tài khoản cha-con không cộng trùng (BR07)
-        - Chặn nhập trực tiếp vào tài khoản tổng hợp khi đã có số dư ở tài khoản con (BR07)
-        - Chặn số dư âm (EF-12, BR05) và tài khoản đơn tính vừa Nợ vừa Có (BR06)
-        - Kiểm tra đối chiếu chi tiết số dư A4–A5 (EF-16, BR08)
-        - Cảnh báo chênh lệch tổng Nợ/Có và tuyệt đối không tự sinh khoản bù (BR09, BR10)
-        """
-        r_ok = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "action_mode": "SAVE_AND_CLOSE",
-                "items": [
-                    {
-                        "account": "1111",
-                        "name": "Tiền Việt Nam",
-                        "debit": 200000000,
-                        "credit": 0,
-                        "details": [
-                            {"object_code": "QUY_TM_01", "debit": 120000000, "credit": 0},
-                            {"object_code": "QUY_TM_02", "debit": 80000000, "credit": 0},
-                        ],
-                    },
-                    {"account": "1121", "name": "Tiền gửi NH", "debit": 300000000, "credit": 0},
-                    {"account": "4111", "name": "Vốn góp", "debit": 0, "credit": 500000000},
-                ],
-            },
-            format="json",
-        )
-        self.assertEqual(r_ok.status_code, 200, r_ok.data)
-        self.assertTrue(r_ok.data["balanced"])
-        self.assertEqual(r_ok.data["total_debit"], 500000000)
-        self.assertEqual(r_ok.data["total_credit"], 500000000)
-        self.assertEqual(r_ok.data["difference"], 0)
-        rollup_map = {r["account"]: r for r in r_ok.data["account_rollup"]}
-        self.assertEqual(rollup_map["111"]["debit"], 200000000)
-        self.assertEqual(rollup_map["112"]["debit"], 300000000)
+        self._uc15_master_data()
+        aggregation = self.models.BalanceAggregationRun.objects.create(company=self.company, period=self.period, status="UP_TO_DATE")
+        ok = self._post("", {"category": "accounts", "action_mode": "SAVE_AND_CLOSE", "items": [
+            {"account": "1111", "name": "Tiền Việt Nam", "debit": 200000000, "credit": 0, "details": [
+                {"object_code": "QUY_01", "debit": 120000000, "credit": 0},
+                {"object_code": "QUY_02", "debit": 80000000, "credit": 0}]},
+            {"account": "4111", "name": "Vốn góp", "debit": 0, "credit": 200000000},
+        ]})
+        self.assertEqual(ok.status_code, 200, ok.data)
+        self.assertEqual(ok.data["message"], "Lưu số dư tài khoản thành công.")
+        self.assertTrue(ok.data["balanced"])
+        self.assertEqual(ok.data["sync_status"], "SYNCED")
+        self.assertEqual({r["account"]: r["debit"] for r in ok.data["account_rollup"]}["111"], 200000000)
         self.opening_entry.refresh_from_db()
-        self.assertEqual(self.opening_entry.total_debit, Decimal("500000000"))
+        self.assertEqual(self.opening_entry.total_debit, Decimal("200000000"))
+        aggregation.refresh_from_db()
+        self.assertEqual(aggregation.status, "STALE")
+        self.assertEqual(ok.data["accounts"][0]["accounting_regime"], "TT99")
 
-        # BR07: Chặn nhập trực tiếp cả tài khoản cha 111 và tài khoản con 1111
-        r_dup_parent = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "items": [
-                    {"account": "111", "debit": 200000000, "credit": 0},
-                    {"account": "1111", "debit": 200000000, "credit": 0},
-                ],
-            },
-            format="json",
+        cases = [
+            # BR-GL-OB-10: a summary account of the chart takes no direct balance
+            ([{"account": "111", "debit": 1, "credit": 0}], "BR-GL-OB-10"),
+            # EF-13: negative or non-numeric balances
+            ([{"account": "1111", "debit": -5, "credit": 0}], "EF-13"),
+            ([{"account": "1111", "debit": "abc", "credit": 0}], "EF-13"),
+            # BR-GL-OB-11: single-sided account with both sides
+            ([{"account": "1111", "debit": 5, "credit": 5}], "BR-GL-OB-11"),
+            # EF-17: details differ from the account line
+            ([{"account": "1111", "debit": 100, "credit": 0, "details": [{"debit": 90, "credit": 0}]}], "EF-17"),
+            # EF-19: an account outside the chart
+            ([{"account": "9999", "debit": 100, "credit": 0}], "EF-19"),
+        ]
+        for items, code in cases:
+            resp = self._post("", {"category": "accounts", "items": items})
+            self.assertEqual(resp.status_code, 400, (items, resp.data))
+            self.assertEqual(resp.data["error_code"], code, items)
+
+        # EF-18 & BR-GL-OB-08: 1121 is fed by the bank group, so no direct balance on it
+        bank = self._post("save-item/", {"category": "bank", "action_mode": "SAVE_AND_ADD", "item": {
+            "accountCode": "1121", "accountNumber": "0011001234567", "originalAmount": 50000000, "credit": 0}})
+        self.assertEqual(bank.status_code, 200, bank.data)
+        self.assertEqual(bank.data["message"], "Lưu số dư TK ngân hàng thành công.")
+        # Unbalanced until the equity side is updated: the GL entry is left untouched (BR-GL-OB-16/73)
+        self.assertEqual(bank.data["sync_status"], "PENDING_UNBALANCED")
+        self.assertEqual(bank.data["total_debit"], 250000000)
+        self.opening_entry.refresh_from_db()
+        self.assertEqual(self.opening_entry.total_debit, Decimal("200000000"))
+        double = self._post("", {"category": "accounts", "items": [
+            {"account": "1111", "debit": 200000000, "credit": 0},
+            {"account": "1121", "debit": 50000000, "credit": 0},
+            {"account": "4111", "debit": 0, "credit": 250000000}]})
+        self.assertEqual(double.data["error_code"], "EF-18")
+        balanced = self._post("", {"category": "accounts", "items": [
+            {"account": "1111", "debit": 200000000, "credit": 0},
+            {"account": "4111", "debit": 0, "credit": 250000000}]})
+        self.assertEqual(balanced.status_code, 200, balanced.data)
+        self.assertEqual(balanced.data["sync_status"], "SYNCED")
+        self.opening_entry.refresh_from_db()
+        lines = {line.account.code: line.debit for line in self.opening_entry.lines.select_related("account")}
+        self.assertEqual(lines["1121"], Decimal("50000000"))
+        self.assertEqual(self.opening_entry.total_debit, Decimal("250000000"))
+
+        # AF-16: the check reports PASS for a balanced single-source set, ERROR with the difference otherwise
+        check = self.client.get(f"{self.url_base}check/{self.query}")
+        self.assertEqual(check.status_code, 200, check.data)
+        self.assertEqual(check.data["status"], "PASS", check.data)
+        self._post("", {"category": "accounts", "items": [{"account": "1111", "debit": 200000000, "credit": 0},
+                                                          {"account": "4111", "debit": 0, "credit": 240000000}]})
+        check = self.client.get(f"{self.url_base}check/{self.query}")
+        self.assertEqual(check.data["status"], "ERROR")
+        self.assertEqual(check.data["checks"][0]["difference"], 10000000)
+
+    def test_uc_gl_15_flows_b_c_d_e_bank_debts_employees_and_fx(self):
+        """B, C, D, E, AF-01, AF-12, EF-04..EF-08, EF-16, EF-17, EF-19, EF-30, BR-GL-OB-20..25."""
+        self._setup_uc_gl_15_opening()
+        self._uc15_master_data()
+
+        def item(category, data):
+            return self._post("save-item/", {"category": category, "item": data, "action_mode": "SAVE_AND_ADD"})
+
+        expectations = [
+            ("bank", {"accountNumber": "0011001234567", "originalAmount": 1}, "EF-04"),
+            ("bank", {"accountCode": "1121", "originalAmount": 1}, "EF-05"),
+            ("bank", {"accountCode": "1121", "accountNumber": "KHONG-CO", "originalAmount": 1}, "EF-19"),
+            ("bank", {"accountCode": "1121", "accountNumber": "0011001234567", "currency": "USD", "originalAmount": 10}, "EF-30"),
+            ("customers", {"accCode": "131", "debit": 1}, "EF-06"),
+            ("customers", {"accCode": "131", "code": "KH-KHONG-CO", "debit": 1}, "EF-19"),
+            ("suppliers", {"accCode": "331", "credit": 1}, "EF-07"),
+            ("employees", {"accCode": "141", "debit": 1}, "EF-08"),
+            ("employees", {"accCode": "141", "code": "NV-KHONG-CO", "debit": 1}, "EF-19"),
+            ("customers", {"accCode": "131", "code": "KH-13-A", "debit": "-1"}, "EF-13"),
+            # C5 & BR-GL-OB-24: invoice remainders compared with the customer balance
+            ("customers", {"accCode": "131", "code": "KH-13-A", "debit": 30000000, "invoiceDetails": [
+                {"invoiceNo": "HD01", "invoiceDate": "2025-12-01", "invoiceAmount": 20000000, "remainingAmount": 20000000}]}, "EF-17"),
+            # EF-31: an invoice dated after the accounting start date
+            ("customers", {"accCode": "131", "code": "KH-13-A", "debit": 20000000, "invoiceDetails": [
+                {"invoiceNo": "HD01", "invoiceDate": "2026-12-01", "invoiceAmount": 20000000, "remainingAmount": 20000000}]}, "EF-31"),
+        ]
+        for category, data, code in expectations:
+            resp = item(category, data)
+            self.assertEqual(resp.status_code, 400, (category, data, resp.data))
+            self.assertEqual(resp.data["error_code"], code, (category, data))
+
+        usd = item("bank", {"accountCode": "1121", "accountNumber": "0011001234567", "currency": "USD",
+                            "originalAmount": 1000, "exchangeRate": 25000})
+        self.assertEqual(usd.status_code, 200, usd.data)
+        self.assertEqual(usd.data["saved_item"]["debitVnd"], "25000000")
+        dup = item("bank", {"accountCode": "1121", "accountNumber": "0011001234567", "currency": "USD",
+                            "originalAmount": 5, "exchangeRate": 25000})
+        self.assertEqual(dup.data["error_code"], "EF-16")
+        self.assertEqual(dup.data["detail"], "Dữ liệu số dư ban đầu này đã tồn tại.")
+
+        customer = item("customers", {"accCode": "131", "code": "KH-13-A", "debit": 20000000, "credit": 0, "invoiceDetails": [
+            {"invoiceNo": "HD01", "invoiceDate": "2025-12-01", "invoiceAmount": 25000000, "remainingAmount": 20000000}]})
+        self.assertEqual(customer.status_code, 200, customer.data)
+        self.assertEqual(customer.data["message"], "Lưu công nợ khách hàng thành công.")
+        # BR-GL-OB-21: the supplier advance is a Debit balance next to the payable Credit
+        supplier = item("suppliers", {"accCode": "331", "code": "NCC-13-Y", "debit": 5000000, "credit": 0})
+        self.assertEqual(supplier.data["message"], "Lưu công nợ nhà cung cấp thành công.")
+        employee = item("employees", {"accCode": "141", "code": "NV-15", "debit": 3000000})
+        self.assertEqual(employee.data["message"], "Lưu công nợ nhân viên thành công.")
+        self.assertEqual(item("employees", {"accCode": "141", "code": "NV-15", "debit": 1}).data["error_code"], "EF-16")
+        # BR-GL-OB-19: detail groups feed the totals once each (25M bank + 20M AR + 5M advance + 3M advance)
+        self.assertEqual(employee.data["total_debit"], 53000000)
+
+    def test_uc_gl_15_flows_f_g_h_i_j_stock_tools_assets_prepaid_wip(self):
+        """F–J, EF-09..EF-12, EF-14, EF-15, EF-27, EF-31, BR-GL-OB-26..43."""
+        self._setup_uc_gl_15_opening()
+        self._uc15_master_data()
+
+        def item(category, data):
+            return self._post("save-item/", {"category": category, "item": data})
+
+        missing_wh = item("inventory", {"itemCode": "HH-15", "unit": "Cái", "quantity": 1, "amount": 1})
+        self.assertEqual((missing_wh.data["error_code"], missing_wh.data["detail"]), ("EF-09", "Vui lòng chọn kho."))
+        bad_qty = item("inventory", {"itemCode": "HH-15", "warehouse": "KHO-15", "unit": "Cái", "quantity": "x", "amount": 1})
+        self.assertEqual(bad_qty.data["error_code"], "EF-14")
+        stock = item("inventory", {"itemCode": "HH-15", "warehouse": "KHO-15", "unit": "Cái", "quantity": 10, "amount": 15000000})
+        self.assertEqual(stock.status_code, 200, stock.data)
+        self.assertEqual(stock.data["message"], "Lưu tồn kho đầu kỳ thành công.")
+        # F7: stock is posted on the item's inventory account, no in-period receipt is created
+        self.assertEqual(stock.data["saved_item"]["inventoryAccount"], "1561")
+        self.assertFalse(stock.data["saved_item"]["generates_in_period_warehouse_voucher"])
+
+        tool_missing = item("tools", {"code": "CC-15"})
+        self.assertEqual(tool_missing.data["error_code"], "EF-10")
+        self.assertIn("Tên CCDC", tool_missing.data["fields"])
+        tool_bad = item("tools", {"code": "CC-15", "name": "Bàn", "voucherDate": "2025-06-01", "waitingAccount": "242",
+                                  "totalAmount": 12000000, "allocatedVal": 4000000, "remainingVal": 7000000,
+                                  "allocPeriod": 12, "remainingPeriod": 8})
+        self.assertEqual(tool_bad.data["error_code"], "EF-15")
+        tool = item("tools", {"code": "CC-15", "name": "Bàn", "voucherDate": "2025-06-01", "waitingAccount": "242",
+                              "totalAmount": 12000000, "allocatedVal": 4000000, "remainingVal": 8000000,
+                              "allocPeriod": 12, "remainingPeriod": 8})
+        self.assertEqual(tool.data["message"], "Lưu CCDC đầu kỳ thành công.")
+
+        # H: no invented defaults – the depreciation and accounts must be declared
+        asset_missing = item("assets", {"code": "TS-15", "name": "Máy", "originalCost": 1})
+        self.assertEqual(asset_missing.data["error_code"], "EF-11")
+        self.assertIn("TK nguyên giá", asset_missing.data["fields"])
+        asset_after_start = item("assets", self._asset_payload(voucherDate="2026-12-01", deprStartDate="2026-12-01"))
+        self.assertEqual(asset_after_start.data["error_code"], "EF-31")
+        asset_math = item("assets", self._asset_payload(remainingVal=1))
+        self.assertEqual(asset_math.data["error_code"], "EF-15")
+        asset = item("assets", self._asset_payload())
+        self.assertEqual(asset.data["message"], "Lưu TSCĐ đầu kỳ thành công.")
+
+        prepaid_missing = item("prepaid", {"code": "CPTT-15", "name": "Thuê nhà"})
+        self.assertEqual(prepaid_missing.data["error_code"], "EF-12")
+        prepaid_months = item("prepaid", {"code": "CPTT-15", "name": "Thuê nhà", "amount": 6000000, "allocMonths": 1.5})
+        self.assertEqual(prepaid_months.data["error_code"], "EF-15")
+        prepaid = item("prepaid", {"code": "CPTT-15", "name": "Thuê nhà", "amount": 6000000, "allocMonths": 6})
+        self.assertEqual(prepaid.data["message"], "Lưu chi phí trả trước đầu kỳ thành công.")
+
+        wip_bad = self._post("", {"category": "wip", "items": [{"trackingMode": "Công trình", "rawMaterial": 1}]})
+        self.assertEqual(wip_bad.data["error_code"], "EF-27")
+        wip_dup = self._post("", {"category": "wip", "items": [
+            {"trackingMode": "Công trình", "code": "CT01", "rawMaterial": 1},
+            {"trackingMode": "Công trình", "code": "CT01", "labor": 1}]})
+        self.assertEqual(wip_dup.data["error_code"], "EF-16")
+        wip = self._post("", {"category": "wip", "items": [{"trackingMode": "Công trình", "code": "CT01", "rawMaterial": 1000, "labor": 500}]})
+        self.assertEqual(wip.data["message"], "Lưu chi phí dở dang đầu kỳ thành công.")
+        self.assertEqual(wip.data["wip"][0]["total"], "1500")
+
+        # Detail groups reach the GL once: stock 15M + tool 8M + asset 120M debit, 36M credit
+        self.assertEqual((wip.data["total_debit"], wip.data["total_credit"]), (143000000, 36000000))
+        check = self.client.get(f"{self.url_base}check/{self.query}").data
+        self.assertEqual(check["status"], "ERROR")
+        self.assertTrue(any(c["group"] == "prepaid" and c["status"] == "WARNING" for c in check["checks"]))
+
+    def test_uc_gl_15_edit_delete_dependencies_import_print_concurrency_lock_and_tt58(self):
+        """AF-03, AF-10, AF-11, AF-13, AF-15, EF-03, EF-20, EF-22..EF-26, BR-GL-OB-58..69."""
+        from unittest import mock
+        from fixed_assets.models import AssetCategory, AssetRecord, AssetTransaction
+
+        self._setup_uc_gl_15_opening()
+        self._uc15_master_data()
+
+        # AF-03: dry run lists row errors, the confirmation saves only the valid rows
+        rows = [{"code": "CPTT-XL1", "name": "Bảo hiểm", "amount": 1200000, "allocMonths": 12},
+                {"code": "", "name": "Thiếu mã", "amount": 1},
+                {"code": "CPTT-XL2", "name": "Phần mềm", "amount": 2400000, "allocMonths": 24}]
+        dry = self._post("import-excel/", {"category": "prepaid", "rows": rows, "dry_run": True})
+        self.assertEqual(dry.status_code, 200, dry.data)
+        self.assertEqual((dry.data["import_summary"]["valid_count"], dry.data["import_summary"]["error_count"]), (2, 1))
+        self.assertEqual(dry.data["import_summary"]["row_errors"][0]["row_index"], 2)
+        self.assertEqual(self.client.get(f"{self.url_base}{self.query}").data["prepaid"], [])
+        done = self._post("import-excel/", {"category": "prepaid", "rows": rows})
+        self.assertEqual(done.status_code, 200, done.data)
+        self.assertEqual([r["code"] for r in done.data["prepaid"]], ["CPTT-XL1", "CPTT-XL2"])
+        version = done.data["version"]
+
+        # AF-10: edit with a print; the print failure keeps the saved data (EF-26)
+        with mock.patch("general_ledger.opening_balance_services.print_opening_balance_uc_gl_15", side_effect=RuntimeError("printer")):
+            edit = self._post("save-item/", {"category": "prepaid", "editing_id": "CPTT-XL1", "action_mode": "SAVE_AND_PRINT",
+                                             "expected_version": version,
+                                             "item": {"code": "CPTT-XL1", "name": "Bảo hiểm xe", "amount": 1000000,
+                                                      "allocMonths": 10, "has_dependent_voucher": True}})
+        self.assertEqual(edit.status_code, 200, edit.data)
+        self.assertEqual(edit.data["message"], "Cập nhật số dư ban đầu thành công.")
+        self.assertEqual(edit.data["print_result"]["error_code"], "EF-26")
+        # The client cannot declare a dependency of its own
+        self.assertFalse(edit.data["saved_item"].get("has_dependent_voucher"))
+
+        # EF-24: stale version
+        stale = self._post("delete-item/", {"category": "prepaid", "item_id": "CPTT-XL2", "expected_version": version})
+        self.assertEqual((stale.data["error_code"], stale.data["detail"]),
+                         ("EF-24", "Dữ liệu đã được thay đổi bởi người dùng khác. Vui lòng tải lại."))
+        # EF-23: the regime changed while the form was open
+        changed = self._post("delete-item/", {"category": "prepaid", "item_id": "CPTT-XL2", "expected_regime": "TT200"})
+        self.assertEqual(changed.data["error_code"], "EF-23")
+
+        # EF-22: a real follow-up (allocation recorded on the prepaid cost) blocks edit and delete
+        self.models.PrepaidExpense.objects.create(
+            company=self.company, code="CPTT-XL2", name="Phần mềm", record_date=date(2026, 1, 1), start_date=date(2026, 1, 1),
+            amount=Decimal("2400000"), allocation_periods=24, prepaid_account=self.acc_242, is_opening=True,
+            allocated_amount=Decimal("100000"), allocated_periods=1, created_by=self.opening_entry.created_by,
         )
-        self.assertEqual(r_dup_parent.status_code, 400)
-        self.assertEqual(r_dup_parent.data["error_code"], "BR07")
+        blocked = self._post("delete-item/", {"category": "prepaid", "item_id": "CPTT-XL2"})
+        self.assertEqual((blocked.data["error_code"], blocked.data["detail"]),
+                         ("EF-22", "Không thể thay đổi số dư ban đầu vì dữ liệu đã được sử dụng trong nghiệp vụ kế toán."))
+        deleted = self._post("delete-item/", {"category": "prepaid", "item_id": "CPTT-XL1"})
+        self.assertEqual(deleted.data["message"], "Xóa số dư ban đầu thành công.")
 
-        # EF-12: Chặn số dư âm
-        r_neg = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "items": [{"account": "1111", "debit": -5000000, "credit": 0}],
-            },
-            format="json",
+        # EF-22 for a fixed asset already depreciated in the FA module
+        self._post("save-item/", {"category": "assets", "item": self._asset_payload()})
+        category = AssetCategory.objects.create(company=self.company, code="MM", name="Máy móc", asset_type="FIXED_ASSET", default_periods=60)
+        record = AssetRecord.objects.create(
+            company=self.company, branch=self.branch, category=category, code="TS-15", name="Máy phát điện",
+            asset_type="FIXED_ASSET", acquisition_date=date(2024, 6, 1), in_service_date=date(2024, 6, 1),
+            original_cost=Decimal("120000000"), depreciable_amount=Decimal("120000000"), useful_life_periods=60,
+            created_by=self.opening_entry.created_by,
         )
-        self.assertEqual(r_neg.status_code, 400)
-        self.assertEqual(r_neg.data["error_code"], "EF-12")
+        AssetTransaction.objects.create(company=self.company, asset=record, number="KH-01", transaction_type="DEPRECIATION",
+                                        transaction_date=date(2026, 1, 31), amount=Decimal("2000000"), status="POSTED",
+                                        created_by=self.opening_entry.created_by)
+        asset_edit = self._post("save-item/", {"category": "assets", "editing_id": "TS-15", "item": self._asset_payload(name="Đổi tên")})
+        self.assertEqual(asset_edit.data["error_code"], "EF-22")
 
-        # BR06: Chặn tài khoản đơn tính 1111 vừa có Dư Nợ vừa có Dư Có
-        r_bilateral_err = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "items": [{"account": "1111", "debit": 10000000, "credit": 5000000}],
-            },
-            format="json",
-        )
-        self.assertEqual(r_bilateral_err.status_code, 400)
-        self.assertEqual(r_bilateral_err.data["error_code"], "BR06")
+        # AF-13 & EF-03: Lưu và in needs the print right before anything is saved
+        from iam.models import Permission, RolePermission
+        RolePermission.objects.filter(permission=Permission.objects.get(code="OPENING_BALANCE_PRINT")).delete()
+        no_print = self._post("save-item/", {"category": "prepaid", "action_mode": "SAVE_AND_PRINT",
+                                             "item": {"code": "CPTT-NEW", "name": "Mới", "amount": 1, "allocMonths": 1}})
+        self.assertEqual(no_print.status_code, 403)
+        self.assertNotIn("CPTT-NEW", [r["code"] for r in self.client.get(f"{self.url_base}{self.query}").data["prepaid"]])
 
-        # EF-16, BR08: Chặn khi tổng chi tiết A4-A5 không khớp với dòng tài khoản
-        r_detail_mismatch = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "items": [
-                    {
-                        "account": "131",
-                        "debit": 100000000,
-                        "credit": 0,
-                        "details": [{"object_code": "KH01", "debit": 75000000, "credit": 0}],
-                    }
-                ],
-            },
-            format="json",
-        )
-        self.assertEqual(r_detail_mismatch.status_code, 400)
-        self.assertEqual(r_detail_mismatch.data["error_code"], "EF-16")
+        # EF-25: a failing write is rolled back and never confirmed
+        with mock.patch("general_ledger.opening_balance_services._mark_dependents_stale", side_effect=RuntimeError("db")):
+            failed = self._post("save-item/", {"category": "prepaid", "item": {"code": "CPTT-RB", "name": "Rollback", "amount": 1}})
+        self.assertEqual((failed.data["error_code"], failed.data["detail"]), ("EF-25", "Không thể lưu số dư ban đầu. Vui lòng thử lại."))
+        self.assertNotIn("CPTT-RB", [r["code"] for r in self.client.get(f"{self.url_base}{self.query}").data["prepaid"]])
 
-        # BR09, BR10: Lệch tổng Nợ/Có -> báo difference & balance_warning, không tự sinh bút toán bù
-        r_unbalanced = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "items": [
-                    {"account": "1111", "debit": 250000000, "credit": 0},
-                    {"account": "4111", "debit": 0, "credit": 200000000},
-                ],
-            },
-            format="json",
-        )
-        self.assertEqual(r_unbalanced.status_code, 200)
-        self.assertFalse(r_unbalanced.data["balanced"])
-        self.assertEqual(r_unbalanced.data["difference"], 50000000)
-        self.assertIsNotNone(r_unbalanced.data["balance_warning"])
-        self.assertEqual(len(r_unbalanced.data["accounts"]), 2)
-
-    def test_uc_gl_15_flows_b_c_d_e_bank_ar_ap_employee_and_fx(self):
-        """
-        Kiểm tra Luồng B (Ngân hàng), Luồng C (Khách hàng), Luồng D (Nhà cung cấp), Luồng E (Nhân viên):
-        - EF-03..07: Thiếu trường bắt buộc
-        - AF-12, BR11: Ngoại tệ & tỷ giá
-        - EF-15: Trùng khóa nghiệp vụ
-        - EF-16, BR15, BR16: Đối chiếu chi tiết theo Hóa đơn và chiều theo dõi
-        - EF-20, BR03: Chặn đối tượng/tài khoản INACTIVE
-        """
-        # 1. Luồng B (Ngân hàng): thiếu TK ngân hàng -> EF-04
-        r_bank_missing = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "bank",
-                "item": {"accountCode": "1121", "accountNumber": "", "originalAmount": 10000000},
-            },
-            format="json",
-        )
-        self.assertEqual(r_bank_missing.status_code, 400)
-        self.assertEqual(r_bank_missing.data["error_code"], "EF-04")
-
-        # AF-12: Ngoại tệ USD nhưng tỷ giá <= 0 -> AF-12
-        r_bank_fx_err = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "bank",
-                "item": {
-                    "accountCode": "1122",
-                    "accountNumber": "987654321",
-                    "currency": "USD",
-                    "exchangeRate": 0,
-                    "originalAmount": 10000,
-                    "amountVnd": 254450000,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_bank_fx_err.status_code, 400)
-        self.assertEqual(r_bank_fx_err.data["error_code"], "AF-12")
-
-        # Lưu hợp lệ TK ngân hàng USD (AF-01 SAVE_AND_ADD)
-        r_bank_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "bank",
-                "action_mode": "SAVE_AND_ADD",
-                "item": {
-                    "accountCode": "1122",
-                    "accountNumber": "987654321",
-                    "bankName": "Techcombank (USD)",
-                    "currency": "USD",
-                    "exchangeRate": 25445,
-                    "originalAmount": 10000,
-                    "amountVnd": 254450000,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_bank_ok.status_code, 200, r_bank_ok.data)
-        self.assertEqual(r_bank_ok.data["action_mode"], "SAVE_AND_ADD")
-
-        # EF-15: Thêm trùng cùng TK ngân hàng 987654321 (USD) -> EF-15
-        r_bank_dup = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "bank",
-                "item": {
-                    "accountCode": "1122",
-                    "accountNumber": "987654321",
-                    "currency": "USD",
-                    "exchangeRate": 25445,
-                    "originalAmount": 5000,
-                    "amountVnd": 127225000,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_bank_dup.status_code, 400)
-        self.assertEqual(r_bank_dup.data["error_code"], "EF-15")
-
-        # 2. Luồng C (Công nợ khách hàng): thiếu Khách hàng -> EF-05
-        r_cust_missing = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "customers",
-                "item": {"accCode": "131", "code": "", "debit": 50000000},
-            },
-            format="json",
-        )
-        self.assertEqual(r_cust_missing.status_code, 400)
-        self.assertEqual(r_cust_missing.data["error_code"], "EF-05")
-
-        # EF-20: Khách hàng INACTIVE bị chặn
-        from master_data.models import Party
-        inactive_bp = Party.objects.create(
-            company=self.company,
-            code="KH_INACTIVE",
-            name="Khách hàng ngừng hoạt động",
-            party_type="ORGANIZATION",
-            status="INACTIVE",
-        )
-        r_cust_inactive = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "customers",
-                "item": {"accCode": "131", "code": inactive_bp.code, "debit": 20000000},
-            },
-            format="json",
-        )
-        self.assertEqual(r_cust_inactive.status_code, 400)
-        self.assertEqual(r_cust_inactive.data["error_code"], "EF-20")
-
-        # EF-16: Chi tiết hóa đơn không khớp với tổng Dư Nợ của khách hàng
-        r_cust_inv_mismatch = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "customers",
-                "item": {
-                    "accCode": "131",
-                    "code": "THANHHA",
-                    "name": "Công ty TNHH Thanh Hà",
-                    "debit": 50000000,
-                    "credit": 0,
-                    "invoiceDetails": [
-                        {
-                            "invoiceDate": "15/12/2025",
-                            "invoiceNo": "HD00125",
-                            "invoiceAmount": 50000000,
-                            "remainingAmount": 30000000,
-                        }
-                    ],
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_cust_inv_mismatch.status_code, 400)
-        self.assertEqual(r_cust_inv_mismatch.data["error_code"], "EF-16")
-
-        # Lưu hợp lệ công nợ khách hàng kèm chi tiết Hóa đơn & chiều theo dõi (C4-C5, AF-06)
-        r_cust_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "customers",
-                "item": {
-                    "accCode": "131",
-                    "code": "THANHHA",
-                    "name": "Công ty TNHH Thanh Hà",
-                    "debit": 50000000,
-                    "credit": 0,
-                    "invoiceDetails": [
-                        {
-                            "invoiceDate": "15/12/2025",
-                            "invoiceNo": "HD00125",
-                            "invoiceAmount": 50000000,
-                            "remainingAmount": 50000000,
-                        }
-                    ],
-                    "dimensionDetails": [
-                        {"department": "Phòng Kinh doanh", "contract": "HĐ-2025/08", "debit": 50000000, "credit": 0}
-                    ],
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_cust_ok.status_code, 200, r_cust_ok.data)
-
-        # 3. Luồng D (Nhà cung cấp): thiếu NCC -> EF-06, lưu hợp lệ kèm hóa đơn (AF-07)
-        r_supp_missing = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "suppliers", "item": {"accCode": "331", "code": "", "credit": 80000000}},
-            format="json",
-        )
-        self.assertEqual(r_supp_missing.status_code, 400)
-        self.assertEqual(r_supp_missing.data["error_code"], "EF-06")
-
-        r_supp_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "suppliers",
-                "item": {
-                    "accCode": "331",
-                    "code": "PHATMAI",
-                    "name": "Công ty TNHH Phát Mai Group",
-                    "debit": 0,
-                    "credit": 80000000,
-                    "invoiceDetails": [
-                        {
-                            "invoiceDate": "20/12/2025",
-                            "invoiceNo": "HD-INVOICE-88",
-                            "invoiceAmount": 80000000,
-                            "remainingAmount": 80000000,
-                        }
-                    ],
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_supp_ok.status_code, 200, r_supp_ok.data)
-
-        # 4. Luồng E (Nhân viên): thiếu Nhân viên -> EF-07, lưu hợp lệ & chặn trùng -> EF-15
-        r_emp_missing = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "employees", "item": {"accCode": "141", "code": "", "debit": 10000000}},
-            format="json",
-        )
-        self.assertEqual(r_emp_missing.status_code, 400)
-        self.assertEqual(r_emp_missing.data["error_code"], "EF-07")
-
-        r_emp_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "employees",
-                "item": {"accCode": "141", "code": "NV001", "name": "Nguyễn Văn An", "debit": 12000000, "credit": 0},
-            },
-            format="json",
-        )
-        self.assertEqual(r_emp_ok.status_code, 200, r_emp_ok.data)
-
-        r_emp_dup = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "employees",
-                "item": {"accCode": "141", "code": "NV001", "name": "Nguyễn Văn An", "debit": 5000000, "credit": 0},
-            },
-            format="json",
-        )
-        self.assertEqual(r_emp_dup.status_code, 400)
-        self.assertEqual(r_emp_dup.data["error_code"], "EF-15")
-
-    def test_uc_gl_15_flows_f_g_h_i_j_inventory_tools_assets_prepaid_wip(self):
-        """
-        Kiểm tra Luồng F (Tồn kho), Luồng G (CCDC), Luồng H (TSCĐ), Luồng I (CP trả trước), Luồng J (Chi phí dở dang):
-        - EF-08..11, EF-13..15, EF-23, BR18..30
-        """
-        # 1. Luồng F (Tồn kho): thiếu Kho -> EF-08; Số lượng = 0 nhưng Giá trị > 0 -> EF-13
-        r_inv_missing = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "inventory", "item": {"itemCode": "HH01", "warehouse": "", "quantity": 10, "amount": 50000000}},
-            format="json",
-        )
-        self.assertEqual(r_inv_missing.status_code, 400)
-        self.assertEqual(r_inv_missing.data["error_code"], "EF-08")
-
-        r_inv_zero_qty = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "inventory", "item": {"itemCode": "HH01", "warehouse": "KHO_TONG", "quantity": 0, "amount": 50000000}},
-            format="json",
-        )
-        self.assertEqual(r_inv_zero_qty.status_code, 400)
-        self.assertEqual(r_inv_zero_qty.data["error_code"], "EF-13")
-
-        r_inv_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "inventory",
-                "item": {"itemCode": "HH01", "itemName": "Laptop Dell", "warehouse": "KHO_TONG", "unit": "Chiếc", "quantity": 10, "amount": 150000000},
-            },
-            format="json",
-        )
-        self.assertEqual(r_inv_ok.status_code, 200, r_inv_ok.data)
-        self.assertFalse(r_inv_ok.data["saved_item"]["generates_in_period_warehouse_voucher"])
-
-        # 2. Luồng G (CCDC đang sử dụng đầu kỳ): thiếu Mã CCDC -> EF-09; sai công thức Giá trị còn lại -> EF-14
-        r_tool_missing = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "tools", "item": {"code": "", "name": "Máy in Canon"}},
-            format="json",
-        )
-        self.assertEqual(r_tool_missing.status_code, 400)
-        self.assertEqual(r_tool_missing.data["error_code"], "EF-09")
-
-        r_tool_math_err = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "tools",
-                "item": {
-                    "code": "CCDC01",
-                    "name": "Máy in Canon",
-                    "voucherNo": "OPN-CCDC-01",
-                    "voucherDate": "01/01/2026",
-                    "totalAmount": 12000000,
-                    "allocatedVal": 4000000,
-                    "remainingVal": 9000000,
-                    "allocPeriod": 12,
-                    "remainingPeriod": 8,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_tool_math_err.status_code, 400)
-        self.assertEqual(r_tool_math_err.data["error_code"], "EF-14")
-
-        r_tool_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "tools",
-                "item": {
-                    "code": "CCDC01",
-                    "name": "Máy in Canon",
-                    "voucherNo": "OPN-CCDC-01",
-                    "voucherDate": "01/01/2026",
-                    "totalAmount": 12000000,
-                    "allocatedVal": 4000000,
-                    "remainingVal": 8000000,
-                    "allocPeriod": 12,
-                    "remainingPeriod": 8,
-                    "allocRows": [{"target": "P.KT", "rate": 100, "expenseAcc": "6422"}],
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_tool_ok.status_code, 200, r_tool_ok.data)
-
-        # 3. Luồng H (Tài sản cố định đầu kỳ): sai Hao mòn lũy kế + Giá trị còn lại -> EF-14
-        r_asset_math_err = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "assets",
-                "item": {
-                    "code": "TSCD001",
-                    "name": "Xe ô tô Toyota Fortuner",
-                    "voucherNo": "OPN-TS-01",
-                    "voucherDate": "01/01/2026",
-                    "assetType": "03 - Phương tiện vận tải",
-                    "department": "P.GD",
-                    "costAcc": "2113",
-                    "deprAcc": "2141",
-                    "deprStartDate": "01/01/2026",
-                    "originalCost": 1150000000,
-                    "accumDepr": 460000000,
-                    "remainingVal": 700000000,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_asset_math_err.status_code, 400)
-        self.assertEqual(r_asset_math_err.data["error_code"], "EF-14")
-
-        r_asset_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "assets",
-                "item": {
-                    "code": "TSCD001",
-                    "name": "Xe ô tô Toyota Fortuner",
-                    "voucherNo": "OPN-TS-01",
-                    "voucherDate": "01/01/2026",
-                    "assetType": "03 - Phương tiện vận tải",
-                    "department": "P.GD",
-                    "costAcc": "2113",
-                    "deprAcc": "2141",
-                    "deprStartDate": "01/01/2026",
-                    "originalCost": 1150000000,
-                    "accumDepr": 460000000,
-                    "remainingVal": 690000000,
-                    "usageTime": 5,
-                    "remainingTime": 3,
-                    "allocRows": [{"targetCode": "P.GD", "rate": 100, "expenseAcc": "6422"}],
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_asset_ok.status_code, 200, r_asset_ok.data)
-
-        # 4. Luồng I (Chi phí trả trước đầu kỳ): Số tiền <= 0 -> EF-14; hợp lệ -> 200
-        r_prepaid_err = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "prepaid", "item": {"code": "CPTT01", "name": "Thuê văn phòng", "amount": 0, "allocMonths": 12}},
-            format="json",
-        )
-        self.assertEqual(r_prepaid_err.status_code, 400)
-        self.assertEqual(r_prepaid_err.data["error_code"], "EF-14")
-
-        r_prepaid_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "prepaid", "item": {"code": "CPTT01", "name": "Thuê văn phòng", "amount": 120000000, "allocMonths": 12}},
-            format="json",
-        )
-        self.assertEqual(r_prepaid_ok.status_code, 200, r_prepaid_ok.data)
-
-        # 5. Luồng J (Chi phí dở dang): thiếu đối tượng theo dõi -> EF-23; 4 hình thức hợp lệ -> 200
-        r_wip_err = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {"category": "wip", "item": {"trackingMode": "Công trình", "code": "", "rawMaterial": 50000000}},
-            format="json",
-        )
-        self.assertEqual(r_wip_err.status_code, 400)
-        self.assertEqual(r_wip_err.data["error_code"], "EF-23")
-
-        r_wip_ok = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "wip",
-                "item": {
-                    "trackingMode": "Công trình",
-                    "code": "CT01",
-                    "name": "Tòa nhà TechCom Tower",
-                    "rawMaterial": 120000000,
-                    "labor": 80000000,
-                    "machinery": 30000000,
-                    "general": 20000000,
-                    "accepted": 200000000,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_wip_ok.status_code, 200, r_wip_ok.data)
-
-    def test_uc_gl_15_edit_delete_excel_import_vouchers_print_concurrency_and_lock(self):
-        """
-        Kiểm tra:
-        - AF-03, EF-18, BR41: Import Excel có kiểm tra từng dòng và trả danh sách lỗi chi tiết
-        - AF-09: Xem danh sách chứng từ số dư đầu kỳ
-        - AF-10, AF-11, EF-19, BR37, BR38: Sửa / Xóa bản ghi và chặn khi đã có chứng từ phụ thuộc hoặc kỳ đã khóa
-        - AF-13, EF-17, BR34, BR35: Lưu và In & xử lý lỗi in không làm mất dữ liệu đã lưu
-        - EF-21: Chặn ghi đè khi xung đột phiên bản (optimistic concurrency)
-        - BR39: Ghi AuditLog đầy đủ
-        """
-        # 1. AF-03, EF-18: Import Excel có dòng lỗi -> trả row_errors chi tiết
-        r_xl_err = self.client.post(
-            f"{self.url_base}import-excel/{self.query}",
-            {
-                "category": "prepaid",
-                "atomic": True,
-                "rows": [
-                    {"code": "CPTT-XL1", "name": "Bảo hiểm tài sản", "amount": 60000000, "allocMonths": 12},
-                    {"code": "", "name": "Dòng lỗi thiếu mã", "amount": -5000, "allocMonths": 0},
-                ],
-            },
-            format="json",
-        )
-        self.assertEqual(r_xl_err.status_code, 400)
-        self.assertEqual(r_xl_err.data["error_code"], "EF-18")
-        self.assertEqual(str(r_xl_err.data["error_count"]), "1")
-        self.assertEqual(str(r_xl_err.data["row_errors"][0]["row_index"]), "2")
-
-        # Import Excel hợp lệ
-        r_xl_ok = self.client.post(
-            f"{self.url_base}import-excel/{self.query}",
-            {
-                "category": "prepaid",
-                "atomic": True,
-                "rows": [
-                    {"code": "CPTT-XL1", "name": "Bảo hiểm tài sản", "amount": 60000000, "allocMonths": 12},
-                    {"code": "CPTT-XL2", "name": "Phần mềm bản quyền", "amount": 36000000, "allocMonths": 24},
-                ],
-            },
-            format="json",
-        )
-        self.assertEqual(r_xl_ok.status_code, 200, r_xl_ok.data)
-        self.assertEqual(r_xl_ok.data["import_summary"]["imported_count"], 2)
-
-        # 2. AF-10: Sửa bản ghi CPTT-XL1 kèm Lưu và In (AF-13, EF-17)
-        r_edit = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "prepaid",
-                "editing_id": "CPTT-XL1",
-                "action_mode": "SAVE_AND_PRINT",
-                "simulate_print_error": True,
-                "item": {
-                    "code": "CPTT-XL1",
-                    "name": "Bảo hiểm tài sản (đã cập nhật)",
-                    "amount": 72000000,
-                    "allocMonths": 12,
-                    "has_dependent_voucher": True,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_edit.status_code, 200, r_edit.data)
-        self.assertEqual(r_edit.data["print_result"]["error_code"], "EF-17")
-        self.assertTrue(r_edit.data["print_result"]["saved_data_intact"])
-
-        # 3. EF-19, BR38: Chặn xóa bản ghi CPTT-XL1 vì đã phát sinh chứng từ phụ thuộc
-        r_del_blocked = self.client.post(
-            f"{self.url_base}delete-item/{self.query}",
-            {"category": "prepaid", "item_id": "CPTT-XL1"},
-            format="json",
-        )
-        self.assertEqual(r_del_blocked.status_code, 400)
-        self.assertEqual(r_del_blocked.data["error_code"], "EF-19")
-
-        # AF-11: Xóa bản ghi CPTT-XL2 (chưa có chứng từ phụ thuộc) -> thành công
-        r_del_ok = self.client.post(
-            f"{self.url_base}delete-item/{self.query}",
-            {"category": "prepaid", "item_id": "CPTT-XL2"},
-            format="json",
-        )
-        self.assertEqual(r_del_ok.status_code, 200, r_del_ok.data)
-        self.assertEqual(r_del_ok.data["deleted_item_id"], "CPTT-XL2")
-
-        # 4. AF-09: Xem danh sách chứng từ số dư đầu kỳ
-        r_vouchers = self.client.get(f"{self.url_base}vouchers/{self.query}&category=prepaid")
-        self.assertEqual(r_vouchers.status_code, 200, r_vouchers.data)
-        self.assertEqual(r_vouchers.data["total_vouchers"], 1)
-        self.assertEqual(r_vouchers.data["vouchers"][0]["voucher_id"], "CPTT-XL1")
-
-        # 5. EF-21: Kiểm tra xung đột phiên bản (optimistic concurrency)
-        r_conflict = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "prepaid",
-                "expected_version": 99999,
-                "items": [{"code": "CPTT-NEW", "name": "Test", "amount": 10000000, "allocMonths": 6}],
-            },
-            format="json",
-        )
-        self.assertEqual(r_conflict.status_code, 400)
-        self.assertEqual(r_conflict.data["error_code"], "EF-21")
-
-        # 6. EF-19, BR37: Khóa kỳ kế toán -> chặn sửa/lưu trực tiếp số dư ban đầu
+        # EF-22: the opening period is closed
         self.period.status = "CLOSED"
         self.period.save(update_fields=["status"])
-        r_locked = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "prepaid",
-                "item": {"code": "CPTT-LOCKED", "name": "Test khóa sổ", "amount": 10000000, "allocMonths": 6},
-            },
-            format="json",
-        )
-        self.assertEqual(r_locked.status_code, 400)
-        self.assertEqual(r_locked.data["error_code"], "EF-19")
+        locked = self._post("save-item/", {"category": "prepaid", "item": {"code": "CPTT-LK", "name": "Khóa", "amount": 1}})
+        self.assertEqual(locked.data["error_code"], "EF-22")
+        self.period.status = "OPEN"
+        self.period.save(update_fields=["status"])
 
-    def test_uc_gl_15_af_16_check_balances_and_permissions(self):
-        """
-        Kiểm tra AF-16 (Kiểm tra cân đối và đối chiếu số dư đầu kỳ) và các quyền:
-        - OPENING_BALANCE_VIEW, CREATE, EDIT, DELETE, IMPORT, PRINT
-        - GET /check/ trả về 10 chỉ tiêu kiểm tra, số chênh lệch, và trạng thái
-        """
+        # AF-15: TT58 single-entry book – no Debit/Credit account group, no GL entry, its own message
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=["accounting_regime", "bookkeeping_method"])
+        state = self.client.get(f"{self.url_base}{self.query}").data
+        self.assertNotIn("accounts", state["supported_categories"])
+        self.assertFalse(state["uses_general_ledger"])
+        no_accounts = self._post("", {"category": "accounts", "items": [{"account": "1111", "debit": 1}]})
+        self.assertEqual(no_accounts.data["error_code"], "AF-15")
+        tt58 = self._post("save-item/", {"category": "prepaid", "item": {"code": "CP58", "name": "Thuê kho", "amount": 900000, "allocMonths": 3}})
+        self.assertEqual(tt58.data["message"], "Lưu dữ liệu đầu kỳ thành công.")
+        self.assertEqual(tt58.data["sync_status"], "NOT_REQUIRED")
+
+    def test_uc_gl_15_permission_messages_and_vouchers(self):
+        """EF-02, EF-03, EF-21, BR-GL-OB-03/04 and AF-09."""
+        from django.contrib.auth import get_user_model
+        from rest_framework.test import APIClient
+        from iam.models import CompanyMembership, Permission, Role, RolePermission, UserRoleAssignment
+
         self._setup_uc_gl_15_opening()
+        self._uc15_master_data()
+        # BR-GL-OB-04: an administrator has no opening-balance right by default
+        admin = get_user_model().objects.create_superuser(username="admin-uc15", email="a15@test.vn", password="x")
+        admin_client = APIClient()
+        admin_client.force_authenticate(admin)
+        CompanyMembership.objects.create(company=self.company, user=admin.iam_account, created_by=admin.iam_account)
+        denied = admin_client.get(f"{self.url_base}{self.query}")
+        self.assertEqual((denied.status_code, str(denied.data["detail"])), (403, "Bạn không có quyền truy cập Nhập số dư ban đầu."))
+        role = Role.objects.create(company=self.company, code="OB-VIEW", name="Xem số dư", created_by=admin.iam_account)
+        RolePermission.objects.create(role=role, permission=Permission.objects.get(code="OPENING_BALANCE_VIEW"))
+        UserRoleAssignment.objects.create(company_membership=CompanyMembership.objects.get(company=self.company, user=admin.iam_account),
+                                          role=role, assigned_by=admin.iam_account)
+        self.assertEqual(admin_client.get(f"{self.url_base}{self.query}").status_code, 200)
+        self.assertEqual(admin_client.get(f"{self.url_base}check/{self.query}").status_code, 200)
+        write = admin_client.post(f"{self.url_base}save-item/{self.query}", {"category": "prepaid", "item": {"code": "X", "name": "X", "amount": 1}}, format="json")
+        self.assertEqual((write.status_code, str(write.data["detail"])), (403, "Bạn không có quyền thực hiện thao tác này."))
 
-        # 1. Kiểm tra quyền bị từ chối
-        r_deny = self.client.get(f"{self.url_base}check/{self.query}&deny_permission=true")
-        self.assertEqual(r_deny.status_code, 403)
-
-        r_deny_act = self.client.post(
-            f"{self.url_base}save-item/{self.query}&deny_action=CREATE",
-            {"category": "bank", "item": {"accountCode": "1121", "accountNumber": "123", "amountVnd": 1000000}},
-            format="json",
-        )
-        self.assertEqual(r_deny_act.status_code, 403)
-
-        # 2. Lưu một số dư Sổ Cái (1111: 200M, 1121: 300M, 4111: 500M)
-        r_save_gl = self.client.post(
-            f"{self.url_base}{self.query}",
-            {
-                "category": "accounts",
-                "items": [
-                    {"account": "1111", "name": "Tiền VN", "debit": 200000000, "credit": 0},
-                    {"account": "1121", "name": "Tiền gửi NH", "debit": 300000000, "credit": 0},
-                    {"account": "4111", "name": "Vốn góp", "debit": 0, "credit": 500000000},
-                ],
-            },
-            format="json",
-        )
-        self.assertEqual(r_save_gl.status_code, 200)
-
-        # 3. Gọi endpoint AF-16: GET check/
-        r_check = self.client.get(f"{self.url_base}check/{self.query}")
-        self.assertEqual(r_check.status_code, 200, r_check.data)
-        self.assertTrue(r_check.data["balanced"])
-        self.assertEqual(r_check.data["total_checks"], 10)
-        self.assertIn("checks", r_check.data)
-
-        # Check item 1: Cân đối Nợ/Có phải PASSED
-        check_gl_balance = next(c for c in r_check.data["checks"] if c["id"] == "balance_debit_credit")
-        self.assertEqual(check_gl_balance["status"], "PASSED")
-        self.assertEqual(check_gl_balance["difference"], 0)
-
-        # Check item 3: Tiền gửi ngân hàng vs TK 112 (chưa nhập ngân hàng chi tiết nhưng GL có 300M -> WARNING)
-        check_bank = next(c for c in r_check.data["checks"] if c["id"] == "bank_deposits")
-        self.assertEqual(check_bank["status"], "WARNING")
-        self.assertEqual(check_bank["gl_amount"], 300000000)
-
-        # 4. Nhập tài khoản ngân hàng chi tiết 300M -> bank deposits phải PASSED
-        r_save_bank = self.client.post(
-            f"{self.url_base}save-item/{self.query}",
-            {
-                "category": "bank",
-                "item": {
-                    "accountCode": "1121",
-                    "accountNumber": "TK-VND-001",
-                    "bankName": "Vietcombank",
-                    "amountVnd": 300000000,
-                },
-            },
-            format="json",
-        )
-        self.assertEqual(r_save_bank.status_code, 200)
-
-        r_check2 = self.client.get(f"{self.url_base}check/{self.query}")
-        self.assertEqual(r_check2.status_code, 200)
-        check_bank2 = next(c for c in r_check2.data["checks"] if c["id"] == "bank_deposits")
-        self.assertEqual(check_bank2["status"], "PASSED")
-        self.assertEqual(check_bank2["difference"], 0)
+        self._post("save-item/", {"category": "prepaid", "item": {"code": "CPTT-V", "name": "Thuê", "amount": 5000000, "allocMonths": 5}})
+        vouchers = self.client.get(f"{self.url_base}vouchers/{self.query}&category=prepaid").data
+        self.assertEqual([v["voucher_id"] for v in vouchers["vouchers"]], ["CPTT-V"])

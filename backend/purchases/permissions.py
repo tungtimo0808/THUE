@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import has_effective_permission
+from iam.permissions import company_identifiers_agree, has_effective_permission
 from organization.models import Company
 
 
@@ -14,6 +14,8 @@ class PurchasePermission(BasePermission):
             return False
         if request.user.is_superuser:
             return True
+        if not company_identifiers_agree(request):
+            return False
         company_id = (
             request.query_params.get("company_id")
             or request.data.get("company")

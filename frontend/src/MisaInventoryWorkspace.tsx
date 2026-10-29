@@ -895,14 +895,14 @@ export default function MisaInventoryWorkspace({
   };
 
   // Handle Save Receipt
-  const handleSaveReceipt = async (data: any, post = false) => {
+  const handleSaveReceipt = async (data: any) => {
     if (apiConnected) {
       if (editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT") {
         notify("Chỉ phiếu nháp mới được sửa.");
         return false;
       }
       const saved = await apiSave((writer) => (receiptType.startsWith("3.") || !!editingOtherReceiptId)
-        ? saveOtherInventoryReceipt(writer, { ...data, id: editingOtherReceiptId }, post)
+        ? saveOtherInventoryReceipt(writer, { ...data, id: editingOtherReceiptId })
         : saveInventoryTransaction(writer, "receipt", data));
       if (saved) setShowReceiptModal(false);
       return saved;
@@ -1434,7 +1434,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
   // =========================================================================
   if (tab === "process") {
     return (
-      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "10px 16px", boxSizing: "border-box", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "16px", boxSizing: "border-box", overflow: "auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.2fr) minmax(320px, 1fr)", gap: 16 }}>
           {/* LEFT CARD: NGHIỆP VỤ KHO */}
           <div
@@ -5108,30 +5108,6 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                   >Lưu</button>
 
-                  {apiConnected && (
-                    <button
-                      type="button"
-                      disabled={!!editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT"}
-                      onClick={() => {
-                        const totalAmt = receiptRows.reduce((sum, r) => sum + (r.amount || 0), 0);
-                        const partnerName = receiptDeliveryPersonName || receiptCustomerName || "Đối tác giao hàng";
-                        handleSaveReceipt({
-                          code: receiptVoucherCode,
-                          lines: receiptRows,
-                          partnerCode: receiptCustomerCode,
-                          date: receiptVoucherDate,
-                          postingDate: receiptPostingDate,
-                          deliveryPerson: receiptDeliveryPersonName,
-                          warehouse: receiptRows[0]?.warehouse || "Kho Thành phẩm",
-                          partner: partnerName,
-                          description: receiptReason || `Nhập kho theo chứng từ ${receiptVoucherCode}`,
-                          amount: totalAmt,
-                        }, true);
-                      }}
-                      style={{ height: 32, padding: "0 20px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#047857", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-                    >Ghi sổ</button>
-                  )}
-
                   <div style={{ display: "flex" }}>
                     <button
                       type="button"
@@ -5215,11 +5191,10 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   </h2>
 
                   {/* Dropdown: Loại xuất kho */}
-                  <select
-                    aria-label="Loại xuất kho"
+                  <MisaDropdownSelect
                     value={issueType}
-                    onChange={(e) => {
-                      const newType = e.target.value as typeof issueType;
+                    onChange={(val) => {
+                      const newType = val as typeof issueType;
                       setIssueType(newType);
                       setIssueSaleId("");
                       if (newType === "1. Bán hàng") {
@@ -5233,23 +5208,24 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         setIssueRows((prev) => prev.map((r) => ({ ...r, debitAcc: "", creditAcc: "" })));
                       }
                     }}
-                    style={{
+                    title="LOẠI XUẤT KHO"
+                    options={[
+                      { value: "1. Bán hàng", label: "1. Bán hàng" },
+                      { value: "2. Sản xuất", label: "2. Sản xuất" },
+                      { value: "3. Khác (Xuất sử dụng, góp vốn, ...)", label: "3. Khác (Xuất sử dụng, góp vốn, ...)" },
+                    ]}
+                    buttonStyle={{
                       height: 28,
-                      padding: "0 8px",
+                      padding: "0 10px",
                       border: "1px solid #00a862",
                       borderRadius: 4,
-                      background: "#ffffff",
                       fontSize: 12.5,
                       fontWeight: 600,
                       color: "#0f172a",
-                      outline: "none",
-                      cursor: "pointer",
                     }}
-                  >
-                    <option value="1. Bán hàng">1. Bán hàng</option>
-                    <option value="2. Sản xuất">2. Sản xuất</option>
-                    <option value="3. Khác (Xuất sử dụng, góp vốn, ...)">3. Khác (Xuất sử dụng, góp vốn, ...)</option>
-                  </select>
+                    minWidth={280}
+                    ariaLabel="Loại xuất kho"
+                  />
 
                   {/* Search box for reference */}
                   <div style={{ position: "relative", width: 280, display: "flex", alignItems: "center" }}>
@@ -7804,7 +7780,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   </div>
                 </div>
 
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>

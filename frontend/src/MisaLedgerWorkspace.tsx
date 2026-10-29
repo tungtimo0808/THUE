@@ -16,6 +16,7 @@ import {
   confirmFxRevaluation,
   confirmProfitLossClosing,
   createApiWriter,
+  type ApiWriter,
   decideAdvanceSettlementRequest,
   drilldownAccountBalance,
   errorText,
@@ -49,7 +50,6 @@ import {
   saveGeneralBusinessVoucher,
   saveJournalVoucher,
   seedDefaultClosingRules,
-  seedDefaultReconciliationRules,
   toApiDate,
   toViDate,
   unpostAllocationRun,
@@ -76,7 +76,6 @@ import {
   queryAccountingBookUcGl14,
   traceGlEntryAndVoucherUcGl14,
   exportAccountingBookUcGl14,
-  listGlReconciliationsHistory,
 } from "./misa-api-writes";
 import { useApiSession } from "./ApiSession";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
@@ -152,7 +151,7 @@ export type MisaLedgerWorkspaceProps = {
 // Formatter
 const formatVND = (num: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(num);
-const formatVndNumber = (num: unknown) => Number(num || 0).toLocaleString("vi-VN");
+const formatVndNumber = (num: number) => new Intl.NumberFormat("vi-VN").format(num);
 
 export type GeneralVoucherType =
   | "1. Hạch toán thuế TNDN phải nộp"
@@ -189,8 +188,18 @@ export default function MisaLedgerWorkspace({
     departments: "/api/v1/organization/departments/",
   }, notify);
   const apiSave = useMisaApiSave(company.id, notify, reloadApi);
-  const { token: apiToken } = useApiSession();
-  const writer = apiToken ? createApiWriter(company.id, (path, init) => request(path, apiToken, init)) : null;
+  const apiSaveWithResult = async <T extends { message: string }>(
+    save: (writer: ApiWriter) => Promise<T>,
+  ): Promise<T | false> => {
+    let result: T | undefined;
+    const saved = await apiSave(async (activeWriter) => {
+      result = await save(activeWriter);
+      return result;
+    });
+    return saved && result ? result : false;
+  };
+  const { token: apiToken, companies: apiCompanies } = useApiSession();
+  const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
   const currentTab = tab || "process";
 
   // --- Interactive Popovers on Workflow Nodes (Image 1 & 2) ---
@@ -780,7 +789,8 @@ export default function MisaLedgerWorkspace({
 
     setUc14Loading(true);
     try {
-      if (apiConnected && apiToken && writer) {
+      if (apiConnected && apiToken) {
+        const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
         const res = await queryAccountingBookUcGl14(writer, {
           book_type: bType,
           period: overrideParams?.period || uc14Period,
@@ -813,8 +823,9 @@ export default function MisaLedgerWorkspace({
     const voucherNo = typeof rowOrVoucher === "string" ? rowOrVoucher : (rowOrVoucher.voucher_number || rowOrVoucher.number || "PT-2026-1001");
     const traceStatus = typeof rowOrVoucher === "object" && rowOrVoucher?.trace_status ? rowOrVoucher.trace_status : "TRACEABLE";
 
-    if (apiConnected && apiToken && writer && typeof rowOrVoucher === "object" && rowOrVoucher?.entry_id && String(rowOrVoucher.entry_id).length === 36) {
+    if (apiConnected && apiToken && typeof rowOrVoucher === "object" && rowOrVoucher?.entry_id && String(rowOrVoucher.entry_id).length === 36) {
       try {
+        const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
         const res = await traceGlEntryAndVoucherUcGl14(writer, {
           entry_id: rowOrVoucher.entry_id,
           line_id: rowOrVoucher.line_id,
@@ -1009,7 +1020,8 @@ export default function MisaLedgerWorkspace({
 
   const handleExportReport = async (format: "XLSX" | "PDF" | "PRINT") => {
     try {
-      if (apiConnected && apiToken && writer) {
+      if (apiConnected && apiToken) {
+        const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
         const expRes = await exportAccountingBookUcGl14(writer, {
           book_type: uc14BookType,
           period: uc14Period,
@@ -1374,7 +1386,7 @@ export default function MisaLedgerWorkspace({
       let savedApiId = editingGeneralVoucherId || "";
 
       if (apiConnected) {
-        const saved = await apiSave((writer) =>
+        const saved = await apiSaveWithResult((writer) =>
           saveGeneralBusinessVoucher(writer, {
             id: editingGeneralVoucherId || undefined,
             number: savedNumber,
@@ -1467,8 +1479,8 @@ export default function MisaLedgerWorkspace({
       },
     ];
     if (apiConnected) {
-      const imported = await apiSave((writer) => importGeneralBusinessVouchersExcel(writer, sampleBatch));
-      if (imported?.record?.items?.length) {
+      const imported = await apiSaveWithResult((writer) => importGeneralBusinessVouchersExcel(writer, sampleBatch));
+      if (imported && imported.record?.items?.length) {
         setShowVoucherTable(true);
       }
       return;
@@ -1563,7 +1575,7 @@ export default function MisaLedgerWorkspace({
           sourceBusinessType: row.source_business_type,
           sourceDocumentNumber: row.source_document_number,
           sourceEventId: row.source_event_id,
-          postingDate: apiDate(row.posting_date) || "22/10/2026",
+          postingDate: apiDate(row.posting_date, "22/10/2026"),
           description: row.description || "",
           totalDebit: apiNumber(row.total_debit),
           postingMode: row.posting_mode || "AUTO_POST",
@@ -1946,8 +1958,8 @@ export default function MisaLedgerWorkspace({
     const newRow = {
       id: correctionModal.newNumber || `${correctionModal.mode === "ADJUSTMENT" ? "DC" : "REV"}-${src.id}`,
       date: correctionModal.postingDate,
-      docDate: correctionModal.documentDate,
       voucherDate: correctionModal.documentDate,
+      docDate: correctionModal.documentDate,
       desc: `${correctionModal.description} (Lý do: ${reason})`,
       debitAcc: correctionModal.mode === "ADJUSTMENT" ? correctionModal.adjDebitAcc : src.creditAcc,
       creditAcc: correctionModal.mode === "ADJUSTMENT" ? correctionModal.adjCreditAcc : src.debitAcc,
@@ -2667,17 +2679,13 @@ export default function MisaLedgerWorkspace({
 
   const handleFetchFxBalances = async () => {
     try {
-      if (writer) {
-        const res = await fetchFxRevaluationBalances(writer, {
-          period: fxRevalPeriod,
-          currency: fxRevalCurrency,
-          account_scope: fxRevalAccountScope,
-        });
-        if (res.record?.source_fingerprint) {
-          setFxRevalSourceFingerprint(res.record.source_fingerprint);
-        } else {
-          setFxRevalSourceFingerprint(`FP-FX-${fxRevalPeriod}-${fxRevalCurrency}-${Date.now()}`);
-        }
+      const res = await fetchFxRevaluationBalances(writer, {
+        period: fxRevalPeriod,
+        currency: fxRevalCurrency,
+        account_scope: fxRevalAccountScope,
+      });
+      if (res.record?.source_fingerprint) {
+        setFxRevalSourceFingerprint(res.record.source_fingerprint);
       } else {
         setFxRevalSourceFingerprint(`FP-FX-${fxRevalPeriod}-${fxRevalCurrency}-${Date.now()}`);
       }
@@ -2705,14 +2713,12 @@ export default function MisaLedgerWorkspace({
       return;
     }
     try {
-      if (writer) {
-        await calculateFxRevaluation(writer, {
-          period: fxRevalPeriod,
-          currency: fxRevalCurrency,
-          exchange_rate: fxRevalExchangeRate,
-          account_scope: fxRevalAccountScope,
-        });
-      }
+      await calculateFxRevaluation(writer, {
+        period: fxRevalPeriod,
+        currency: fxRevalCurrency,
+        exchange_rate: fxRevalExchangeRate,
+        account_scope: fxRevalAccountScope,
+      });
     } catch {
       // Fallback local calculation when period UUID differs
     }
@@ -2775,19 +2781,18 @@ export default function MisaLedgerWorkspace({
     const totalAccountingAmount = totalGain + totalLoss;
 
     try {
-      if (writer) {
-        await confirmFxRevaluation(writer, {
-          period: fxRevalPeriod,
-          currency: fxRevalCurrency,
-          exchange_rate: fxRevalExchangeRate,
-          rate_source: fxRevalRateSource,
-          account_scope: fxRevalAccountScope,
-          number: fxRevalVoucherNo,
-          description: fxRevalDescription,
-          source_fingerprint: fxRevalSourceFingerprint,
-          idempotency_key: `IDEM-${fxRevalVoucherNo}-${fxRevalPeriod}-${fxRevalCurrency}`,
-        });
-      }
+      await confirmFxRevaluation(writer, {
+        period: fxRevalPeriod,
+        currency: fxRevalCurrency,
+        exchange_rate: fxRevalExchangeRate,
+        rate_source: fxRevalRateSource,
+        account_scope: fxRevalAccountScope,
+        number: fxRevalVoucherNo,
+        description: fxRevalDescription,
+        source_fingerprint: fxRevalSourceFingerprint,
+        idempotency_key: `IDEM-${fxRevalVoucherNo}-${fxRevalPeriod}-${fxRevalCurrency}`,
+        auto_post: autoPost,
+      });
     } catch {
       // Local state update fallback
     }
@@ -2875,12 +2880,10 @@ export default function MisaLedgerWorkspace({
     action: "POST" | "UNPOST" | "REVERSE" | "CANCEL",
   ) => {
     try {
-      if (writer) {
-        if (action === "POST") await postFxRevaluationRun(writer, runId);
-        if (action === "UNPOST") await unpostFxRevaluationRun(writer, runId);
-        if (action === "REVERSE") await reverseFxRevaluationRun(writer, runId, { reason: "Đảo bút toán đánh giá lại ngoại tệ để chạy lại" });
-        if (action === "CANCEL") await cancelFxRevaluationRun(writer, runId, { reason: "Hủy chứng từ đánh giá lại chưa ghi sổ" });
-      }
+      if (action === "POST") await postFxRevaluationRun(writer, runId);
+      if (action === "UNPOST") await unpostFxRevaluationRun(writer, runId);
+      if (action === "REVERSE") await reverseFxRevaluationRun(writer, runId, { reason: "Đảo bút toán đánh giá lại ngoại tệ để chạy lại" });
+      if (action === "CANCEL") await cancelFxRevaluationRun(writer, runId, { reason: "Hủy chứng từ đánh giá lại chưa ghi sổ" });
     } catch {
       // Local state update fallback
     }
@@ -3409,102 +3412,13 @@ export default function MisaLedgerWorkspace({
 
   // UC-GL-10: Tổng hợp phát sinh, số dư và kiểm tra cân đối GL state
   const [balanceAggregationModalOpen, setBalanceAggregationModalOpen] = useState(false);
-  const [balAggFiscalYear, setBalAggFiscalYear] = useState<number>(2026);
   const [balAggPeriodCode, setBalAggPeriodCode] = useState("2026-10");
-  const [balAggRegime, setBalAggRegime] = useState("TT200");
   const [balAggAccountScope, setBalAggAccountScope] = useState("ALL");
-  const [balAggBranch, setBalAggBranch] = useState("ALL");
-  const [balAggParty, setBalAggParty] = useState("");
-  const [balAggIncludeZero, setBalAggIncludeZero] = useState(false);
-  const [balAggActiveTab, setBalAggActiveTab] = useState<"ACCOUNTS" | "CHECKS">("ACCOUNTS");
   const [balAggStatus, setBalAggStatus] = useState<"VALID" | "STALE" | "INVALID">("VALID");
   const [balAggWatermark, setBalAggWatermark] = useState("WM-202610-9F8A31C4");
   const [balAggLastRunAt, setBalAggLastRunAt] = useState("31/10/2026 17:45:12");
   const [balAggDrilldownAccount, setBalAggDrilldownAccount] = useState<string | null>(null);
   const [balAggDrilldownRows, setBalAggDrilldownRows] = useState<any[]>([]);
-  const [balAggChecksList, setBalAggChecksList] = useState<
-    Array<{
-      check_id: string;
-      check_name: string;
-      result: "PASSED" | "WARNING" | "ERROR";
-      rule_reference: string;
-      total_debit?: string;
-      total_credit?: string;
-      difference: string;
-      details: string;
-    }>
-  >([
-    {
-      check_id: "CHK_01_ENTRY_BALANCE",
-      check_name: "1. Cân đối từng bút toán POSTED",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-18..20",
-      total_debit: "588,200,000",
-      total_credit: "588,200,000",
-      difference: "0",
-      details: "100% bút toán POSTED trong kỳ có Tổng Nợ = Tổng Có.",
-    },
-    {
-      check_id: "CHK_02_TURNOVER_BALANCE",
-      check_name: "2. Cân đối tổng phát sinh trong kỳ",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-21..24",
-      total_debit: "588,200,000",
-      total_credit: "588,200,000",
-      difference: "0",
-      details: "Tổng phát sinh Nợ toàn bộ tài khoản khớp 100% Tổng phát sinh Có.",
-    },
-    {
-      check_id: "CHK_03_CLOSING_BALANCE",
-      check_name: "3. Cân đối tổng số dư cuối kỳ",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-25..27",
-      total_debit: "408,200,000",
-      total_credit: "408,200,000",
-      difference: "0",
-      details: "Tổng dư Nợ cuối kỳ khớp bằng Tổng dư Có cuối kỳ (tính cả lưỡng tính).",
-    },
-    {
-      check_id: "CHK_04_PERIOD_CONTINUITY",
-      check_name: "4. Tính liên tục số dư giữa các kỳ",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-28..30",
-      difference: "0",
-      details: "Số dư đầu kỳ 2026-10 khớp 100% số dư cuối kỳ 2026-09 của từng tài khoản.",
-    },
-    {
-      check_id: "CHK_05_PARENT_CHILD_MATCH",
-      check_name: "5. Khớp tài khoản mẹ và tài khoản con",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-31..35",
-      difference: "0",
-      details: "Tổng số dư & phát sinh các tài khoản con khớp chính xác vào tài khoản mẹ.",
-    },
-    {
-      check_id: "CHK_06_DIMENSION_AND_BILATERAL",
-      check_name: "6. Kiểm tra công nợ lưỡng tính & chiều đối tượng",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, AF-10, BR-GL-BAL-36..38",
-      difference: "0",
-      details: "TK 131, 331 duy trì cả dư Nợ và dư Có theo từng đối tượng, không bù trừ gộp trái quy định.",
-    },
-    {
-      check_id: "CHK_07_SOURCE_DATA_INTEGRITY",
-      check_name: "7. Toàn vẹn dữ liệu nguồn & Dòng tiền",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-86..87",
-      difference: "0",
-      details: "Không có bút toán DRAFT hoặc trạng thái treo lọt vào số liệu tổng hợp.",
-    },
-    {
-      check_id: "CHK_08_FX_RECONCILIATION",
-      check_name: "8. Cân đối chênh lệch tỷ giá ngoại tệ",
-      result: "PASSED",
-      rule_reference: "Section 1.1.E, BR-GL-BAL-88..89",
-      difference: "0",
-      details: "Các nghiệp vụ ngoại tệ quy đổi ra VND cân đối và khớp tỷ giá quy định.",
-    },
-  ]);
   const [balAggRows, setBalAggRows] = useState<
     Array<{
       accountCode: string;
@@ -3517,8 +3431,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: number;
       closingDebit: number;
       closingCredit: number;
-      checkStatus?: "PASSED" | "WARNING" | "ERROR";
-      checkNote?: string;
       bilateralNote?: string;
     }>
   >([
@@ -3533,8 +3445,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: 195000000,
       closingDebit: 275000000,
       closingCredit: 0,
-      checkStatus: "PASSED",
-      checkNote: "Tài khoản tổng hợp (Cộng dồn từ tài khoản con chi tiết, khớp 100%).",
     },
     {
       accountCode: "1111",
@@ -3547,8 +3457,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: 195000000,
       closingDebit: 275000000,
       closingCredit: 0,
-      checkStatus: "PASSED",
-      checkNote: "Số dư và phát sinh hợp lệ (Đạt kiểm tra).",
     },
     {
       accountCode: "131",
@@ -3561,8 +3469,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: 140000000,
       closingDebit: 123200000,
       closingCredit: 15000000,
-      checkStatus: "PASSED",
-      checkNote: "Số dư lưỡng tính khớp chi tiết từng đối tượng (AF-10).",
       bilateralNote: "Dư Nợ KH01: 123.200.000 ₫ | Dư Có KH02 (Ứng trước): 15.000.000 ₫ (Không bù trừ trái quy tắc BR-GL-BAL-29)",
     },
     {
@@ -3576,8 +3482,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: 168400000,
       closingDebit: 10000000,
       closingCredit: 178400000,
-      checkStatus: "PASSED",
-      checkNote: "Số dư lưỡng tính khớp chi tiết từng đối tượng (AF-10).",
       bilateralNote: "Dư Nợ NCC02 (Trả trước): 10.000.000 ₫ | Dư Có NCC01: 178.400.000 ₫",
     },
     {
@@ -3591,8 +3495,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: 0,
       closingDebit: 0,
       closingCredit: 130000000,
-      checkStatus: "PASSED",
-      checkNote: "Số dư và phát sinh hợp lệ (Đạt kiểm tra).",
     },
     {
       accountCode: "421",
@@ -3605,8 +3507,6 @@ export default function MisaLedgerWorkspace({
       periodCredit: 84800000,
       closingDebit: 0,
       closingCredit: 84800000,
-      checkStatus: "PASSED",
-      checkNote: "Tài khoản tổng hợp (Cộng dồn từ tài khoản con chi tiết, khớp 100%).",
     },
     {
       accountCode: "4212",
@@ -3619,56 +3519,21 @@ export default function MisaLedgerWorkspace({
       periodCredit: 84800000,
       closingDebit: 0,
       closingCredit: 84800000,
-      checkStatus: "PASSED",
-      checkNote: "Số dư và phát sinh hợp lệ (Đạt kiểm tra).",
     },
   ]);
 
   const handleRunBalanceAggregation = async () => {
     if (apiConnected) {
-      const saved = await apiSave((writer) =>
+      const saved = await apiSaveWithResult((writer) =>
         aggregatePeriodBalances(writer, {
           periodCode: balAggPeriodCode,
-          fiscalYear: balAggFiscalYear,
           accountScope: balAggAccountScope,
-          includeZeroBalances: balAggIncludeZero,
-          branch: balAggBranch === "ALL" ? undefined : balAggBranch,
-          party: balAggParty || undefined,
         }),
       );
-      if (saved?.record) {
+      if (saved && saved.record) {
         const rec: any = saved.record;
-        const rawStatus = String(rec.run_status || rec.status || "UP_TO_DATE");
-        if (rawStatus === "UP_TO_DATE" || rawStatus === "VALID") {
-          setBalAggStatus("VALID");
-        } else if (rawStatus === "WARNING" || rawStatus === "STALE") {
-          setBalAggStatus("STALE");
-        } else {
-          setBalAggStatus("INVALID");
-        }
-        if (rec.accounting_regime) setBalAggRegime(rec.accounting_regime);
+        setBalAggStatus((rec.status === "INVALID" ? "INVALID" : "VALID") as "VALID" | "INVALID");
         if (rec.source_watermark) setBalAggWatermark(String(rec.source_watermark));
-        if (Array.isArray(rec.checks_list) && rec.checks_list.length > 0) {
-          setBalAggChecksList(rec.checks_list);
-        }
-        if (Array.isArray(rec.account_balances) && rec.account_balances.length > 0) {
-          setBalAggRows(
-            rec.account_balances.map((b: any) => ({
-              accountCode: b.account_code,
-              accountName: b.account_name,
-              isParent: Boolean(b.is_parent || b.is_summary),
-              isBilateral: Boolean(b.is_bilateral),
-              openingDebit: Number(b.opening_debit || 0),
-              openingCredit: Number(b.opening_credit || 0),
-              periodDebit: Number(b.period_debit || 0),
-              periodCredit: Number(b.period_credit || 0),
-              closingDebit: Number(b.closing_debit || 0),
-              closingCredit: Number(b.closing_credit || 0),
-              checkStatus: b.check_status || "PASSED",
-              checkNote: b.check_note || "",
-            }))
-          );
-        }
       }
       setBalAggLastRunAt(new Date().toLocaleString("vi-VN"));
       return;
@@ -3677,18 +3542,17 @@ export default function MisaLedgerWorkspace({
     setBalAggWatermark(`WM-${balAggPeriodCode.replace("-", "")}-${Math.random().toString(16).slice(2, 10).toUpperCase()}`);
     setBalAggLastRunAt(new Date().toLocaleString("vi-VN"));
     notify(
-      `Đã tổng hợp phát sinh Nợ/Có, số dư đầu kỳ/cuối kỳ và kiểm tra cân đối kỳ ${balAggPeriodCode} thành công (Trạng thái: UP_TO_DATE - UC-GL-10).`,
+      `Đã tổng hợp phát sinh Nợ/Có, số dư đầu kỳ/cuối kỳ và kiểm tra cân đối kỳ ${balAggPeriodCode} thành công (Trạng thái: VALID - UC-GL-10).`,
     );
   };
 
   const handleValidatePeriodBalance = async () => {
-    setBalAggActiveTab("CHECKS");
     if (apiConnected) {
       await apiSave((writer) => validatePeriodBalances(writer, { periodCode: balAggPeriodCode }));
       return;
     }
     notify(
-      `Kiểm tra cân đối kỳ ${balAggPeriodCode}: 8 nguyên tắc kiểm tra cân đối đạt 100% (BR-GL-BAL-18..89).`,
+      `Kiểm tra cân đối kỳ ${balAggPeriodCode}: Tổng phát sinh Nợ = Tổng phát sinh Có, Tổng dư đầu kỳ/cuối kỳ cân bằng, số dư liên tục với kỳ trước và khớp TK tổng hợp - chi tiết (BR-GL-BAL-18..35).`,
     );
   };
 
@@ -3731,31 +3595,35 @@ export default function MisaLedgerWorkspace({
     ]);
   };
 
-  // UC-GL-11: Đối chiếu số liệu GL với các phân hệ (GL <-> AP, AR, CASH, BANK, INV, FA, TAX, TOOLS, PREPAID)
+  // UC-GL-11: Đối chiếu số liệu GL với các phân hệ (GL <-> AP, AR, CASH, BANK, INV, FA, TAX)
   const [glReconciliationModalOpen, setGlReconciliationModalOpen] = useState(false);
-  const [glRecFiscalYear, setGlRecFiscalYear] = useState("2026");
-  const [glRecPeriodCode, setGlRecPeriodCode] = useState("2026-10");
+  const [glRecPeriodCode, setGlRecPeriodCode] = useState("");
+  const [glRecPeriods, setGlRecPeriods] = useState<any[]>([]);
+  const [glRecAccounts, setGlRecAccounts] = useState<any[]>([]);
+  const [glRecParties, setGlRecParties] = useState<any[]>([]);
+  const [glRecCurrencies, setGlRecCurrencies] = useState<any[]>([]);
+  const [glRecBranches, setGlRecBranches] = useState<any[]>([]);
+  const [glRecHistory, setGlRecHistory] = useState<any[]>([]);
+  const [glRecShowHistory, setGlRecShowHistory] = useState(false);
+  const [glRecBusy, setGlRecBusy] = useState(false);
+  const [glRecAccountCode, setGlRecAccountCode] = useState("");
+  const [glRecPartyCode, setGlRecPartyCode] = useState("");
+  const [glRecCurrencyCode, setGlRecCurrencyCode] = useState("");
+  const [glRecBranchId, setGlRecBranchId] = useState("");
   const [glRecType, setGlRecType] = useState<
-    "GL_AP" | "GL_AR" | "GL_CASH" | "GL_BANK" | "GL_INV" | "GL_FA" | "GL_TAX" | "GL_TOOLS" | "GL_PREPAID"
+    "GL_AP" | "GL_AR" | "GL_CASH" | "GL_BANK" | "GL_INV" | "GL_FA" | "GL_TAX" | "GL_CCDC" | "GL_PREPAID"
   >("GL_AR");
-  const [glRecAccountFilter, setGlRecAccountFilter] = useState("");
-  const [glRecBranchFilter, setGlRecBranchFilter] = useState("");
-  const [glRecPartyFilter, setGlRecPartyFilter] = useState("");
-  const [glRecCurrencyFilter, setGlRecCurrencyFilter] = useState("");
-  const [glRecViewMode, setGlRecViewMode] = useState<"INDICATOR_BREAKDOWN" | "SUMMARY">("INDICATOR_BREAKDOWN");
-  const [glRecHistoryModalOpen, setGlRecHistoryModalOpen] = useState(false);
-  const [glRecHistoryList, setGlRecHistoryList] = useState<any[]>([]);
-  const [glRecLoadingHistory, setGlRecLoadingHistory] = useState(false);
-
-  const [glRecStatus, setGlRecStatus] = useState<"MATCHED" | "DIFFERENCE" | "WARNING" | "ERROR">("DIFFERENCE");
-  const [glRecWatermark, setGlRecWatermark] = useState("WM-REC-202610-7B4E19A2");
-  const [glRecLastRunAt, setGlRecLastRunAt] = useState("31/10/2026 17:50:00");
+  const [glRecStatus, setGlRecStatus] = useState<"NOT_RUN" | "PROCESSING" | "MATCHED" | "DIFFERENCE" | "WARNING" | "ERROR">("NOT_RUN");
+  const [glRecWatermark, setGlRecWatermark] = useState("");
+  const [glRecMessages, setGlRecMessages] = useState<string[]>([]);
+  const [glRecLastRunAt, setGlRecLastRunAt] = useState("");
   const [glRecRunId, setGlRecRunId] = useState<string | null>(null);
   const [glRecSelectedLine, setGlRecSelectedLine] = useState<any | null>(null);
   const [glRecNoteInput, setGlRecNoteInput] = useState("");
   const [glRecLines, setGlRecLines] = useState<
     Array<{
       lineNo: number;
+      id?: string;
       reconciliationKey: string;
       accountCode: string;
       accountName: string;
@@ -3770,9 +3638,6 @@ export default function MisaLedgerWorkspace({
       subPeriodDebit: number;
       subPeriodCredit: number;
       subClosing: number;
-      diffOpening: number;
-      diffPeriodDebit: number;
-      diffPeriodCredit: number;
       diffClosing: number;
       status: "MATCHED" | "DIFFERENCE" | "WARNING" | "ERROR";
       discrepancyType: string;
@@ -3781,128 +3646,29 @@ export default function MisaLedgerWorkspace({
       subledgerVouchers: any[];
       note?: string;
     }>
-  >([
-    {
-      lineNo: 1,
-      reconciliationKey: "ACC:131|OBJ:KH001|CURR:VND",
-      accountCode: "131",
-      accountName: "Phải thu của khách hàng",
-      objectCode: "KH001",
-      objectName: "Công ty TNHH Thương mại Á Châu",
-      currencyCode: "VND",
-      glOpening: 50000000,
-      glPeriodDebit: 120000000,
-      glPeriodCredit: 70000000,
-      glClosing: 100000000,
-      subOpening: 50000000,
-      subPeriodDebit: 120000000,
-      subPeriodCredit: 70000000,
-      subClosing: 100000000,
-      diffOpening: 0,
-      diffPeriodDebit: 0,
-      diffPeriodCredit: 0,
-      diffClosing: 0,
-      status: "MATCHED",
-      discrepancyType: "NONE",
-      discrepancyReason: "Số liệu GL và phân hệ AR khớp hoàn toàn.",
-      glEntries: [
-        { entry_number: "BH00042", posting_date: "15/10/2026", debit: "120,000,000", credit: "0", status: "POSTED" },
-      ],
-      subledgerVouchers: [
-        { voucher_number: "HD-AR-0042", document_date: "15/10/2026", debit: "120,000,000", credit: "0", gl_status: "POSTED" },
-      ],
-    },
-    {
-      lineNo: 2,
-      reconciliationKey: "ACC:131|OBJ:KH002|CURR:VND",
-      accountCode: "131",
-      accountName: "Phải thu của khách hàng",
-      objectCode: "KH002",
-      objectName: "Công ty CP Giải pháp Số Minh Việt",
-      currencyCode: "VND",
-      glOpening: 30000000,
-      glPeriodDebit: 40000000,
-      glPeriodCredit: 46800000,
-      glClosing: 23200000,
-      subOpening: 30000000,
-      subPeriodDebit: 63200000,
-      subPeriodCredit: 46800000,
-      subClosing: 46400000,
-      diffOpening: 0,
-      diffPeriodDebit: -23200000,
-      diffPeriodCredit: 0,
-      diffClosing: -23200000,
-      status: "DIFFERENCE",
-      discrepancyType: "UNPOSTED_SUBLEDGER_VOUCHER",
-      discrepancyReason:
-        "Phát hiện chứng từ hóa đơn HD-AR-0089 (23.200.000 ₫) tại phân hệ AR đang ở trạng thái UNPOSTED chưa ghi sổ vào Sổ cái (BR-GL-REC-04, 46).",
-      glEntries: [
-        { entry_number: "BH00051", posting_date: "18/10/2026", debit: "40,000,000", credit: "0", status: "POSTED" },
-      ],
-      subledgerVouchers: [
-        { voucher_number: "HD-AR-0051", document_date: "18/10/2026", debit: "40,000,000", credit: "0", gl_status: "POSTED" },
-        { voucher_number: "HD-AR-0089", document_date: "29/10/2026", debit: "23,200,000", credit: "0", gl_status: "UNPOSTED" },
-      ],
-    },
-  ]);
+  >([]);
 
-  const handleOpenGlRecHistory = async () => {
-    setGlRecHistoryModalOpen(true);
-    setGlRecLoadingHistory(true);
-    try {
-      if (apiConnected) {
-        const writer = createApiWriter(company.id);
-        const res: any = await listGlReconciliationsHistory(writer, glRecPeriodCode, glRecType);
-        const items = Array.isArray(res) ? res : res?.results || [];
-        setGlRecHistoryList(items);
-      } else {
-        setGlRecHistoryList([
-          {
-            id: "rec-mock-01",
-            created_at: "31/10/2026 17:50:00",
-            created_by_name: "Kế toán tổng hợp",
-            period_code: glRecPeriodCode,
-            reconciliation_type: glRecType,
-            status: "DIFFERENCE",
-            total_difference_amount: 23200000,
-            difference_lines_count: 1,
-            matched_lines_count: 1,
-          },
-        ]);
-      }
-    } catch {
-      notify("Không thể tải lịch sử đối chiếu.");
-    } finally {
-      setGlRecLoadingHistory(false);
+  const showGlReconciliation = (rec: any) => {
+    const historicPeriod = glRecPeriods.find((p) => p.id === rec.period);
+    if (historicPeriod) setGlRecPeriodCode(historicPeriod.code);
+    if (rec.reconciliation_type) setGlRecType(rec.reconciliation_type);
+    if (rec.scope_filter) {
+      setGlRecAccountCode(rec.scope_filter.account_code || "");
+      setGlRecPartyCode(rec.scope_filter.party_code || "");
+      setGlRecCurrencyCode(rec.scope_filter.currency_code || "");
     }
-  };
-
-  const handleRunGlReconciliation = async (markAllMatched = false) => {
-    if (apiConnected) {
-      const saved = await apiSave(async (writer) => {
-        try {
-          await seedDefaultReconciliationRules(writer);
-        } catch {
-          // Ignore if already seeded
-        }
-        return await runGlSubledgerReconciliation(writer, {
-          fiscalYear: glRecFiscalYear,
-          periodCode: glRecPeriodCode,
-          reconciliationType: glRecType,
-          accountCode: glRecAccountFilter || undefined,
-          partyCode: glRecPartyFilter || undefined,
-          currencyCode: glRecCurrencyFilter || undefined,
-        });
-      });
-      if (saved?.record) {
-        const rec: any = saved.record;
-        setGlRecRunId(String(rec.id));
-        setGlRecStatus((rec.status || "MATCHED") as any);
-        if (rec.snapshot_watermark) setGlRecWatermark(String(rec.snapshot_watermark));
-        if (Array.isArray(rec.lines) && rec.lines.length > 0) {
-          setGlRecLines(
-            rec.lines.map((ln: any, idx: number) => ({
+    setGlRecBranchId(rec.branch || "");
+    setGlRecRunId(String(rec.id));
+    setGlRecStatus(rec.status || "ERROR");
+    setGlRecWatermark(String(rec.snapshot_watermark || ""));
+    setGlRecMessages([...(rec.warnings || []), ...(rec.errors || [])].map(String));
+    setGlRecLastRunAt(rec.completed_at ? new Date(rec.completed_at).toLocaleString("vi-VN") : "");
+    setGlRecSelectedLine(null);
+    setGlRecLines(
+      Array.isArray(rec.lines)
+        ? rec.lines.map((ln: any, idx: number) => ({
               lineNo: ln.line_no || idx + 1,
+              id: String(ln.id),
               reconciliationKey: ln.reconciliation_key,
               accountCode: ln.account_code,
               accountName: ln.account_name,
@@ -3917,9 +3683,6 @@ export default function MisaLedgerWorkspace({
               subPeriodDebit: Number(ln.sub_period_debit) || 0,
               subPeriodCredit: Number(ln.sub_period_credit) || 0,
               subClosing: Number(ln.sub_net_closing) || 0,
-              diffOpening: Number(ln.diff_opening) || 0,
-              diffPeriodDebit: Number(ln.diff_period_debit) || 0,
-              diffPeriodCredit: Number(ln.diff_period_credit) || 0,
               diffClosing: Number(ln.diff_closing) || 0,
               status: ln.status || "MATCHED",
               discrepancyType: ln.discrepancy_type || "NONE",
@@ -3927,38 +3690,72 @@ export default function MisaLedgerWorkspace({
               glEntries: Array.isArray(ln.gl_entries_refs) ? ln.gl_entries_refs : [],
               subledgerVouchers: Array.isArray(ln.subledger_vouchers_refs) ? ln.subledger_vouchers_refs : [],
               note: ln.note || "",
-            })),
-          );
-        }
-      }
-      setGlRecLastRunAt(new Date().toLocaleString("vi-VN"));
-      return;
-    }
+            }))
+        : [],
+    );
+  };
 
-    setGlRecLastRunAt(new Date().toLocaleString("vi-VN"));
-    setGlRecWatermark(`WM-REC-${glRecPeriodCode.replace("-", "")}-${Math.random().toString(16).slice(2, 10).toUpperCase()}`);
-    if (markAllMatched) {
-      setGlRecStatus("MATCHED");
-      setGlRecLines((prev) =>
-        prev.map((ln) => ({
-          ...ln,
-          glPeriodDebit: ln.subPeriodDebit,
-          glClosing: ln.subClosing,
-          diffPeriodDebit: 0,
-          diffClosing: 0,
-          status: "MATCHED",
-          discrepancyType: "NONE",
-          discrepancyReason: "Đã ghi sổ chứng từ nguồn và đối chiếu lại: Số liệu GL và phân hệ khớp 100% (AF-16).",
-        })),
-      );
-      notify(`Đã chạy đối chiếu lại ${glRecType} kỳ ${glRecPeriodCode}: Toàn bộ các dòng đã khớp (MATCHED - UC-GL-11)!`);
-    } else {
-      notify(
-        `Đã thực hiện đối chiếu ${glRecType} kỳ ${glRecPeriodCode}: Phát hiện ${
-          glRecLines.filter((l) => l.status === "DIFFERENCE").length
-        } dòng chênh lệch cần kiểm tra (UC-GL-11).`,
-      );
-    }
+  const clearGlRecResult = () => {
+    setGlRecRunId(null);
+    setGlRecLines([]);
+    setGlRecSelectedLine(null);
+    setGlRecStatus("NOT_RUN");
+    setGlRecWatermark("");
+    setGlRecMessages([]);
+    setGlRecLastRunAt("");
+  };
+
+  useEffect(() => {
+    if (!glReconciliationModalOpen || !apiConnected || !apiToken) return;
+    let cancelled = false;
+    Promise.allSettled([writer.list("glPeriods"), writer.list("/api/v1/general-ledger/reconciliations/"), writer.list("accounts"), writer.list("parties"), writer.list("currencies"), writer.list("branches")])
+      .then((results) => {
+        if (cancelled) return;
+        if (results[0].status === "rejected") notify(errorText(results[0].reason));
+        if (results[1].status === "rejected") notify(errorText(results[1].reason));
+        const [periods, history, accounts, parties, currencies, branches] = results.map((result) => result.status === "fulfilled" ? result.value : []);
+        setGlRecPeriods(periods);
+        setGlRecHistory(history);
+        setGlRecAccounts(accounts);
+        setGlRecParties(parties);
+        setGlRecCurrencies(currencies);
+        setGlRecBranches(branches);
+        if (!glRecPeriodCode && periods.length) setGlRecPeriodCode(String(periods[periods.length - 1].code));
+      })
+      .catch((error) => { if (!cancelled) notify(errorText(error)); });
+    return () => { cancelled = true; };
+  }, [glReconciliationModalOpen, apiConnected, apiToken, company.id]);
+
+  const handleRunGlReconciliation = async () => {
+    if (glRecBusy) return;
+    if (!apiConnected || !apiToken) { notify("Cần kết nối máy chủ để đối chiếu số liệu thật."); return; }
+    if (!glRecPeriodCode) { notify("Vui lòng chọn kỳ kế toán."); return; }
+    setGlRecBusy(true);
+    try {
+      const saved = await apiSaveWithResult((activeWriter) => runGlSubledgerReconciliation(activeWriter, {
+        periodCode: glRecPeriodCode,
+        reconciliationType: glRecType,
+        accountCode: glRecAccountCode,
+        partyCode: glRecPartyCode,
+        currencyCode: glRecCurrencyCode,
+        branchId: glRecBranchId,
+      }));
+      if (saved && saved.record) {
+        showGlReconciliation(saved.record);
+        const history = await writer.list("/api/v1/general-ledger/reconciliations/");
+        setGlRecHistory(history);
+      }
+    } finally { setGlRecBusy(false); }
+  };
+
+  const handleGlReconciliationDrilldown = async (line: (typeof glRecLines)[number]) => {
+    if (!glRecRunId || !apiConnected) return;
+    try {
+      const detail = await drilldownGlReconciliation(writer, glRecRunId, { lineId: line.id });
+      if (detail.is_snapshot_stale) notify("Dữ liệu nguồn đã thay đổi. Vui lòng đối chiếu lại.");
+      const item = detail.lines?.[0];
+      if (item) setGlRecSelectedLine({ ...line, glEntries: item.gl_entries || [], subledgerVouchers: item.subledger_vouchers || [] });
+    } catch (error) { notify(errorText(error)); }
   };
 
   const handleAnnotateGlReconciliationNote = async () => {
@@ -3966,26 +3763,16 @@ export default function MisaLedgerWorkspace({
       notify("Vui lòng nhập nội dung ghi chú nguyên nhân/hướng xử lý chênh lệch!");
       return;
     }
-    if (apiConnected && glRecRunId) {
-      await apiSave((writer) =>
-        annotateGlReconciliationNote(writer, glRecRunId, {
-          note: glRecNoteInput.trim(),
-        }),
-      );
-      setGlRecNoteInput("");
-      return;
-    }
-    if (glRecSelectedLine) {
-      setGlRecLines((prev) =>
-        prev.map((l) =>
-          l.reconciliationKey === glRecSelectedLine.reconciliationKey ? { ...l, note: glRecNoteInput.trim() } : l,
-        ),
-      );
-    }
-    setGlRecNoteInput("");
-    notify(
-      "Đã lưu ghi chú nguyên nhân chênh lệch (BR-GL-REC-56: Ghi chú không tự động đổi trạng thái thành MATCHED khi chưa đối chiếu lại).",
+    if (!apiConnected || !glRecRunId || !glRecSelectedLine?.id) return;
+    const saved = await apiSaveWithResult((activeWriter) =>
+      annotateGlReconciliationNote(activeWriter, glRecRunId, {
+        note: glRecNoteInput.trim(), lineId: glRecSelectedLine.id,
+      }),
     );
+    if (saved) {
+      showGlReconciliation(saved.record);
+      setGlRecNoteInput("");
+    }
   };
 
   const recomputeClosingSummaryFromRows = (rows: any[]) => {
@@ -5902,19 +5689,24 @@ export default function MisaLedgerWorkspace({
         display: "flex",
         flexDirection: "column",
         flex: 1,
-        minHeight: currentTab === "process" ? undefined : "100%", height: currentTab === "process" ? "100%" : undefined, overflow: currentTab === "process" ? "hidden" : undefined,
+        minHeight: "100%",
         background: "#f4f5f8",
         position: "relative",
       }}
       onClick={handleBackdropClick}
     >
       {/* Main Tab Body */}
-      <div className={currentTab === "process" ? "ref-process-wrapper" : ""} style={{ padding: currentTab === "process" ? "10px 16px" : "16px 20px 32px", display: "flex", flexDirection: "column", gap: currentTab === "process" ? 12 : 16, height: currentTab === "process" ? "100%" : undefined, overflow: currentTab === "process" ? "hidden" : undefined, boxSizing: "border-box" }}>
+      <div style={{ padding: "16px 20px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
         {/* ========================================================================= */}
         {/* TAB 1: QUY TRÌNH (Exact Image 1 & 2)                                      */}
         {/* ========================================================================= */}
         {currentTab === "process" && (
           <>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setGlReconciliationModalOpen(true)} style={{ padding: "8px 16px", border: "1px solid #0f766e", borderRadius: 6, background: "#ffffff", color: "#0f766e", fontWeight: 600, cursor: "pointer" }}>
+                Đối chiếu số liệu
+              </button>
+            </div>
             {/* Top Row: Two main cards (Left: Nghiệp vụ tổng hợp, Right: Báo cáo) */}
             <div
               style={{
@@ -6602,11 +6394,11 @@ export default function MisaLedgerWorkspace({
               </div>
             </div>
 
-            {/* Middle Row: 6 Action Cards (Hệ thống tài khoản, Mã thống kê, Khoản mục CP, Tiện ích, Ngoại tệ, Tùy chọn) */}
+            {/* Middle Row: 5 Action Cards (Hệ thống tài khoản, Mã thống kê, Khoản mục CP, Tiện ích, Tùy chọn) */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(5, 1fr)",
                 gap: 16,
               }}
             >
@@ -7668,15 +7460,15 @@ export default function MisaLedgerWorkspace({
                     <svg width="260" height="165" viewBox="0 0 260 165" fill="none" xmlns="http://www.w3.org/2000/svg">
                       {/* Desk shadow */}
                       <ellipse cx="130" cy="148" rx="85" ry="10" fill="#f1f5f9" />
-                      
+
                       {/* Desk */}
                       <path d="M78 142h104a4 4 0 0 1 4 4v2H74v-2a4 4 0 0 1 4-4z" fill="#e2e8f0" />
-                      
+
                       {/* Laptop */}
                       <rect x="108" y="116" width="44" height="26" rx="3" fill="#cbd5e1" />
                       <rect x="111" y="119" width="38" height="20" rx="2" fill="#f8fafc" />
                       <path d="M102 142h56l-3 4h-50l-3-4z" fill="#94a3b8" />
-                      
+
                       {/* Character */}
                       {/* Long Hair Back */}
                       <path d="M106 96c-6 4-12 12-14 26 5-2 10-6 12-12 2 8 6 18 10 24-2-12-3-26-8-38z" fill="#334155" />
@@ -7690,7 +7482,7 @@ export default function MisaLedgerWorkspace({
                       <circle cx="118" cy="98" r="9.5" fill="#fcd34d" />
                       {/* Front Hair */}
                       <path d="M108 96c2-8 10-12 18-9 4 2 6 6 6 10-3-4-8-5-12-3-4 2-8 2-12 2z" fill="#1e293b" />
-                      
+
                       {/* Faint dashed connection lines */}
                       <path d="M124 112 L112 74" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
                       <path d="M128 112 L142 56" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
@@ -8080,7 +7872,7 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <RefreshCw size={15} />
-                      <span>Đối chiếu GL ↔ Phân hệ ({glRecStatus})</span>
+                      <span>Đối chiếu số liệu ({glRecStatus})</span>
                     </button>
                   </div>
 
@@ -9811,7 +9603,7 @@ export default function MisaLedgerWorkspace({
                       )}
 
                       {/* Table of Prepared Financial Statements */}
-                      <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, overflowX: "auto" }}>
+                      <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                           <thead>
                             <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
@@ -12169,7 +11961,7 @@ export default function MisaLedgerWorkspace({
                     <h4 style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>
                       Chọn báo cáo tài chính
                     </h4>
-                    <div style={{ border: "1px solid #c2d6cb", borderRadius: 4, overflowX: "auto" }}>
+                    <div style={{ border: "1px solid #c2d6cb", borderRadius: 4, overflow: "hidden" }}>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                         <thead>
                           <tr style={{ background: "#d5e4dc", borderBottom: "1px solid #c2d6cb" }}>
@@ -12309,7 +12101,7 @@ export default function MisaLedgerWorkspace({
                   <h4 style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>
                     Chọn báo cáo tài chính
                   </h4>
-                  <div style={{ border: "1px solid #c2d6cb", borderRadius: 4, overflowX: "auto" }}>
+                  <div style={{ border: "1px solid #c2d6cb", borderRadius: 4, overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: "#d5e4dc", borderBottom: "1px solid #c2d6cb" }}>
@@ -13160,7 +12952,7 @@ export default function MisaLedgerWorkspace({
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
-                      
+
                     /></span>
                   </div>
                 </div>
@@ -14383,7 +14175,7 @@ export default function MisaLedgerWorkspace({
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
-                      
+
                     /></span>
                   </div>
                 </div>
@@ -17897,7 +17689,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>
                   Nhật ký tiếp nhận & Truy vết liên kết Chứng từ nguồn ↔ Bút toán Sổ cái ({subledgerIngestions.length})
                 </div>
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto" }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#f1f5f9", color: "#334155", textAlign: "left" }}>
@@ -18386,7 +18178,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b", marginBottom: 8 }}>
                   Bảng phân bổ chi phí cho các đối tượng nhận (TK nhận / Đơn vị / Dự án / Trung tâm CP)
                 </div>
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto" }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#f1f5f9", color: "#334155", textAlign: "left" }}>
@@ -18440,7 +18232,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b", marginBottom: 8 }}>
                   Lịch sử chứng từ phân bổ chi phí & Truy vết hai chiều ({allocRunsHistory.length})
                 </div>
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto" }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", color: "#334155", textAlign: "left" }}>
@@ -19718,23 +19510,10 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                    Tổng hợp phát sinh, số dư và Kiểm tra cân đối GL (UC-GL-10)
+                    Tổng hợp phát sinh, số dư và Kiểm tra cân đối Sổ cái (UC-GL-10)
                   </h3>
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      borderRadius: 999,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      background: "#ede9fe",
-                      color: "#6d28d9",
-                      border: "1px solid #ddd6fe",
-                    }}
-                  >
-                    Chế độ: {balAggRegime === "TT200" ? "Thông tư 200/2014/TT-BTC" : balAggRegime === "TT99" ? "Thông tư 99/2025/TT-BTC" : balAggRegime === "TT133" ? "Thông tư 133/2016/TT-BTC" : balAggRegime}
-                  </span>
                   <span
                     style={{
                       padding: "3px 10px",
@@ -19756,14 +19535,14 @@ export default function MisaLedgerWorkspace({
                     }}
                   >
                     {balAggStatus === "VALID"
-                      ? "UP_TO_DATE — Đã tổng hợp & Cân đối"
+                      ? "VALID — Đã tổng hợp & Cân đối"
                       : balAggStatus === "STALE"
-                      ? "WARNING — Cần tổng hợp lại"
-                      : "ERROR — Mất cân đối"}
+                      ? "STALE — Cần tổng hợp lại"
+                      : "INVALID — Mất cân đối"}
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                  Đơn vị: <strong>{company.name}</strong> | Nguồn: 100% bút toán <strong>POSTED</strong> (BR-GL-BAL-01) | Watermark:{" "}
+                  Chỉ tổng hợp từ bút toán <strong>POSTED</strong> (BR-GL-BAL-01) | Watermark nguồn:{" "}
                   <code>{balAggWatermark}</code> | Cập nhật lúc: {balAggLastRunAt}
                 </div>
               </div>
@@ -19782,476 +19561,236 @@ export default function MisaLedgerWorkspace({
               </button>
             </div>
 
-            {/* Section 1.4.A: Filter & Condition Bar */}
+            {/* Filter & Action Toolbar */}
             <div
               style={{
                 padding: "12px 20px",
                 background: "#ffffff",
                 borderBottom: "1px solid #e2e8f0",
                 display: "flex",
-                flexDirection: "column",
-                gap: 10,
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 12,
               }}
             >
-              {/* Row 1: Condition Controls */}
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
-                  Năm tài chính:
-                  <input
-                    type="number"
-                    value={balAggFiscalYear}
-                    onChange={(e) => setBalAggFiscalYear(Number(e.target.value) || 2026)}
-                    style={{
-                      marginLeft: 6,
-                      padding: "5px 8px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 6,
-                      fontSize: 12.5,
-                      width: 80,
-                    }}
-                  />
-                </label>
-                <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
                   Kỳ kế toán:
                   <input
                     type="text"
                     value={balAggPeriodCode}
                     onChange={(e) => setBalAggPeriodCode(e.target.value)}
-                    placeholder="YYYY-MM"
                     style={{
-                      marginLeft: 6,
-                      padding: "5px 8px",
+                      marginLeft: 8,
+                      padding: "6px 10px",
                       border: "1px solid #cbd5e1",
                       borderRadius: 6,
-                      fontSize: 12.5,
-                      width: 95,
+                      fontSize: 13,
+                      width: 110,
                     }}
                   />
                 </label>
-                <div style={{ fontSize: 12, color: "#64748b", background: "#f1f5f9", padding: "4px 8px", borderRadius: 4 }}>
-                  Thời gian: <strong>01/{balAggPeriodCode.slice(5) || "10"}/{balAggPeriodCode.slice(0, 4) || "2026"} – 31/{balAggPeriodCode.slice(5) || "10"}/{balAggPeriodCode.slice(0, 4) || "2026"}</strong>
-                </div>
-                <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
                   Phạm vi TK:
                   <select
                     value={balAggAccountScope}
                     onChange={(e) => setBalAggAccountScope(e.target.value)}
                     style={{
-                      marginLeft: 6,
-                      padding: "5px 8px",
+                      marginLeft: 8,
+                      padding: "6px 10px",
                       border: "1px solid #cbd5e1",
                       borderRadius: 6,
-                      fontSize: 12.5,
+                      fontSize: 13,
                     }}
                   >
                     <option value="ALL">Toàn bộ hệ thống tài khoản</option>
                     <option value="111">Nhóm 111 - Tiền mặt</option>
-                    <option value="112">Nhóm 112 - Tiền gửi ngân hàng</option>
                     <option value="131">Nhóm 131 - Phải thu khách hàng (Lưỡng tính)</option>
                     <option value="331">Nhóm 331 - Phải trả người bán (Lưỡng tính)</option>
-                    <option value="411">Nhóm 411 - Vốn đầu tư của chủ sở hữu</option>
                     <option value="421">Nhóm 421 - Lợi nhuận chưa phân phối</option>
                   </select>
                 </label>
-                <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
-                  Chi nhánh:
-                  <select
-                    value={balAggBranch}
-                    onChange={(e) => setBalAggBranch(e.target.value)}
-                    style={{
-                      marginLeft: 6,
-                      padding: "5px 8px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 6,
-                      fontSize: 12.5,
-                    }}
-                  >
-                    <option value="ALL">Toàn công ty</option>
-                    <option value="CN_HN">Chi nhánh Hà Nội</option>
-                    <option value="CN_HCM">Chi nhánh TP.HCM</option>
-                  </select>
-                </label>
-                <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
-                  Đối tượng:
-                  <input
-                    type="text"
-                    value={balAggParty}
-                    onChange={(e) => setBalAggParty(e.target.value)}
-                    placeholder="Mã KH/NCC..."
-                    style={{
-                      marginLeft: 6,
-                      padding: "5px 8px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 6,
-                      fontSize: 12.5,
-                      width: 110,
-                    }}
-                  />
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#475569", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={balAggIncludeZero}
-                    onChange={(e) => setBalAggIncludeZero(e.target.checked)}
-                  />
-                  <span>Hiển thị cả TK số dư = 0</span>
-                </label>
               </div>
 
-              {/* Row 2: Tabs & Actions */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, borderTop: "1px solid #f1f5f9", paddingTop: 8 }}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => setBalAggActiveTab("ACCOUNTS")}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: 6,
-                      border: "1px solid",
-                      borderColor: balAggActiveTab === "ACCOUNTS" ? "#00a862" : "#cbd5e1",
-                      background: balAggActiveTab === "ACCOUNTS" ? "#ecfdf5" : "#ffffff",
-                      color: balAggActiveTab === "ACCOUNTS" ? "#065f46" : "#475569",
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Bảng số dư & Phát sinh TK ({balAggRows.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBalAggActiveTab("CHECKS")}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: 6,
-                      border: "1px solid",
-                      borderColor: balAggActiveTab === "CHECKS" ? "#0284c7" : "#cbd5e1",
-                      background: balAggActiveTab === "CHECKS" ? "#f0f9ff" : "#ffffff",
-                      color: balAggActiveTab === "CHECKS" ? "#0369a1" : "#475569",
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    8 Phép kiểm tra cân đối GL ({balAggChecksList.filter((c) => c.result === "PASSED").length}/8 Đạt)
-                  </button>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleValidatePeriodBalance();
-                    }}
-                    style={{
-                      padding: "7px 14px",
-                      borderRadius: 6,
-                      border: "1px solid #0284c7",
-                      background: "#f0f9ff",
-                      color: "#0369a1",
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Kiểm tra 8 nguyên tắc cân đối (Section 1.4.C)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleRunBalanceAggregation();
-                    }}
-                    style={{
-                      padding: "7px 16px",
-                      borderRadius: 6,
-                      border: "none",
-                      background: "#00a862",
-                      color: "#ffffff",
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <RefreshCw size={14} />
-                    <span>Tổng hợp lại số dư (GL.BALANCE.RECALCULATE)</span>
-                  </button>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleValidatePeriodBalance();
+                  }}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 6,
+                    border: "1px solid #0284c7",
+                    background: "#f0f9ff",
+                    color: "#0369a1",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Kiểm tra 4 nguyên tắc cân đối (Bước 5-8)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleRunBalanceAggregation();
+                  }}
+                  style={{
+                    padding: "7px 16px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: "#00a862",
+                    color: "#ffffff",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <RefreshCw size={14} />
+                  <span>Tổng hợp lại số dư (AF-05)</span>
+                </button>
               </div>
             </div>
 
-            {/* Quick Metrics Banner */}
+            {/* 4 Core Balance Validation Banner */}
             <div
               style={{
-                padding: "8px 20px",
-                background: "#f8fafc",
-                borderBottom: "1px solid #e2e8f0",
+                padding: "10px 20px",
+                background: "#f0fdf4",
+                borderBottom: "1px solid #bbf7d0",
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
-                gap: 8,
-                fontSize: 11.5,
+                gap: 10,
+                fontSize: 12,
               }}
             >
-              <div style={{ background: "#ffffff", padding: "6px 10px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có</div>
-                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>588.200.000 ₫ = 588.200.000 ₫</div>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+                <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có (BR-18)</div>
+                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
+                  588.200.000 ₫ = 588.200.000 ₫ (Cân bằng)
+                </div>
               </div>
-              <div style={{ background: "#ffffff", padding: "6px 10px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK</div>
-                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>ĐK: 240.000.000 ₫ | CK: 408.200.000 ₫</div>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+                <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK (BR-19..20)</div>
+                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
+                  ĐK: 240.000.000 ₫ | CK: 408.200.000 ₫
+                </div>
               </div>
-              <div style={{ background: "#ffffff", padding: "6px 10px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước</div>
-                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>Khớp 100% CK trước = ĐK này</div>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+                <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước (BR-21..22)</div>
+                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
+                  Khớp 100% Dư CK trước = Dư ĐK này
+                </div>
               </div>
-              <div style={{ background: "#ffffff", padding: "6px 10px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>4. Khớp Mẹ - Con & Lưỡng tính</div>
-                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>131 / 331 duy trì 2 vế đối tượng</div>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+                <div style={{ color: "#64748b" }}>4. Khớp TK Cha-Con & Lưỡng tính (BR-23..29)</div>
+                <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
+                  131 / 331 tách Dư Nợ - Dư Có theo đối tượng
+                </div>
               </div>
             </div>
 
-            {/* Main Content Area */}
+            {/* Trial Balance Table */}
             <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px" }}>
-              {balAggActiveTab === "CHECKS" ? (
-                /* ========================================================= */
-                /* SECTION 1.4.C: 8 PHÉP KIỂM TRA CÂN ĐỐI GL                 */
-                /* ========================================================= */
-                <div>
-                  <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: 13, color: "#0f172a" }}>
-                      Báo cáo chi tiết 8 nguyên tắc kiểm tra cân đối GL (Section 1.4.C & BR-GL-BAL-01..89)
-                    </strong>
-                    <span style={{ fontSize: 12, color: "#059669", fontWeight: 600 }}>
-                      ✓ Hệ thống tự động xác thực và chặn kết chuyển/khóa sổ nếu có lỗi nghiêm trọng
-                    </span>
-                  </div>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "left", width: 220 }}>Tên phép kiểm tra</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "center", width: 100 }}>Kết quả</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 130 }}>Tổng Nợ</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 130 }}>Tổng Có</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Chênh lệch</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "left" }}>Chi tiết / Căn cứ quy tắc</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {balAggChecksList.map((chk) => (
-                        <tr key={chk.check_id} style={{ borderBottom: "1px solid #e2e8f0", background: "#ffffff" }}>
-                          <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", fontWeight: 600, color: "#0f172a" }}>
-                            {chk.check_name}
-                            <div style={{ fontSize: 10.5, color: "#64748b", marginTop: 2 }}>{chk.rule_reference}</div>
-                          </td>
-                          <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "center" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "left" }}>Số TK</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "left" }}>Tên tài khoản</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư Nợ ĐK</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư Có ĐK</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right" }}>Phát sinh Nợ</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right" }}>Phát sinh Có</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư Nợ CK</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư Có CK</th>
+                    <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "center" }}>Truy vết</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balAggRows
+                    .filter((r) => balAggAccountScope === "ALL" || r.accountCode.startsWith(balAggAccountScope))
+                    .map((row) => (
+                      <tr
+                        key={row.accountCode}
+                        style={{
+                          background: row.isParent ? "#f8fafc" : "#ffffff",
+                          fontWeight: row.isParent ? 700 : 400,
+                          borderBottom: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", color: "#0f172a" }}>
+                          {row.accountCode}
+                          {row.isBilateral && (
                             <span
                               style={{
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                background:
-                                  chk.result === "PASSED"
-                                    ? "#dcfce7"
-                                    : chk.result === "WARNING"
-                                    ? "#fef3c7"
-                                    : "#fee2e2",
-                                color:
-                                  chk.result === "PASSED"
-                                    ? "#166534"
-                                    : chk.result === "WARNING"
-                                    ? "#92400e"
-                                    : "#991b1b",
+                                marginLeft: 6,
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                                fontSize: 10,
+                                background: "#dbeafe",
+                                color: "#1d4ed8",
+                                fontWeight: 600,
                               }}
                             >
-                              {chk.result === "PASSED" ? "ĐẠT" : chk.result === "WARNING" ? "CẢNH BÁO" : "LỖI"}
+                              Lưỡng tính
                             </span>
-                          </td>
-                          <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
-                            {chk.total_debit || "-"}
-                          </td>
-                          <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
-                            {chk.total_credit || "-"}
-                          </td>
-                          <td
+                          )}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0" }}>
+                          <div>{row.accountName}</div>
+                          {row.bilateralNote && (
+                            <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>{row.bilateralNote}</div>
+                          )}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
+                          {formatVndNumber(row.openingDebit)}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
+                          {formatVndNumber(row.openingCredit)}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", color: "#0f766e" }}>
+                          {formatVndNumber(row.periodDebit)}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", color: "#b45309" }}>
+                          {formatVndNumber(row.periodCredit)}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
+                          {formatVndNumber(row.closingDebit)}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
+                          {formatVndNumber(row.closingCredit)}
+                        </td>
+                        <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleDrilldownBalanceAccount(row.accountCode);
+                            }}
                             style={{
-                              padding: "8px 10px",
-                              border: "1px solid #e2e8f0",
-                              textAlign: "right",
-                              fontWeight: chk.difference !== "0" ? 700 : 400,
-                              color: chk.difference !== "0" ? "#b91c1c" : "#15803d",
+                              padding: "4px 10px",
+                              borderRadius: 4,
+                              border: "1px solid #cbd5e1",
+                              background: "#ffffff",
+                              color: "#0284c7",
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              cursor: "pointer",
                             }}
                           >
-                            {chk.difference}
-                          </td>
-                          <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", color: "#334155" }}>
-                            {chk.details}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                /* ========================================================= */
-                /* SECTION 1.4.B: BẢNG SỐ DƯ & PHÁT SINH TÀI KHOẢN GL        */
-                /* ========================================================= */
-                <div>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
-                    <thead>
-                      <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "left", width: 110 }}>Số TK</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "left" }}>Tên tài khoản</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Dư Nợ ĐK</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Dư Có ĐK</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Phát sinh Nợ</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Phát sinh Có</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Dư Nợ CK</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "right", width: 110 }}>Dư Có CK</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "center", width: 90 }}>Trạng thái</th>
-                        <th style={{ padding: "8px 10px", border: "1px solid #cbd5e1", textAlign: "center", width: 90 }}>Thao tác</th>
+                            Drill-down
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {balAggRows
-                        .filter((r) => {
-                          const matchesScope = balAggAccountScope === "ALL" || r.accountCode.startsWith(balAggAccountScope);
-                          if (!matchesScope) return false;
-                          if (!balAggIncludeZero) {
-                            const isZero =
-                              r.openingDebit === 0 &&
-                              r.openingCredit === 0 &&
-                              r.periodDebit === 0 &&
-                              r.periodCredit === 0 &&
-                              r.closingDebit === 0 &&
-                              r.closingCredit === 0;
-                            if (isZero) return false;
-                          }
-                          return true;
-                        })
-                        .map((row) => (
-                          <tr
-                            key={row.accountCode}
-                            style={{
-                              background: row.isParent ? "#f8fafc" : "#ffffff",
-                              fontWeight: row.isParent ? 700 : 400,
-                              borderBottom: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", color: "#0f172a" }}>
-                              {row.accountCode}
-                              {row.isBilateral && (
-                                <span
-                                  style={{
-                                    marginLeft: 4,
-                                    padding: "1px 5px",
-                                    borderRadius: 4,
-                                    fontSize: 10,
-                                    background: "#dbeafe",
-                                    color: "#1d4ed8",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Lưỡng tính
-                                </span>
-                              )}
-                              {row.isParent && (
-                                <span
-                                  style={{
-                                    marginLeft: 4,
-                                    padding: "1px 5px",
-                                    borderRadius: 4,
-                                    fontSize: 10,
-                                    background: "#f1f5f9",
-                                    color: "#475569",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Tổng hợp
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0" }}>
-                              <div>{row.accountName}</div>
-                              {row.bilateralNote && (
-                                <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>{row.bilateralNote}</div>
-                              )}
-                              {row.checkNote && (
-                                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{row.checkNote}</div>
-                              )}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
-                              {formatVndNumber(row.openingDebit)}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
-                              {formatVndNumber(row.openingCredit)}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", color: "#0f766e" }}>
-                              {formatVndNumber(row.periodDebit)}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", color: "#b45309" }}>
-                              {formatVndNumber(row.periodCredit)}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
-                              {formatVndNumber(row.closingDebit)}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
-                              {formatVndNumber(row.closingCredit)}
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                              <span
-                                style={{
-                                  padding: "2px 7px",
-                                  borderRadius: 999,
-                                  fontSize: 10.5,
-                                  fontWeight: 700,
-                                  background:
-                                    row.checkStatus === "ERROR"
-                                      ? "#fee2e2"
-                                      : row.checkStatus === "WARNING"
-                                      ? "#fef3c7"
-                                      : "#dcfce7",
-                                  color:
-                                    row.checkStatus === "ERROR"
-                                      ? "#991b1b"
-                                      : row.checkStatus === "WARNING"
-                                      ? "#92400e"
-                                      : "#166534",
-                                }}
-                              >
-                                {row.checkStatus || "PASSED"}
-                              </span>
-                            </td>
-                            <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void handleDrilldownBalanceAccount(row.accountCode);
-                                }}
-                                style={{
-                                  padding: "4px 8px",
-                                  borderRadius: 4,
-                                  border: "1px solid #cbd5e1",
-                                  background: "#ffffff",
-                                  color: "#0284c7",
-                                  fontSize: 11,
-                                  fontWeight: 600,
-                                  cursor: "pointer",
-                                }}
-                              >
-                                Drill-down
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    ))}
+                </tbody>
+              </table>
 
-              {/* Section 1.4.B & 1.1.D: Drill-down Panel */}
+              {/* Drill-down Panel (BR-GL-BAL-39) */}
               {balAggDrilldownAccount && (
                 <div
                   style={{
@@ -20406,7 +19945,7 @@ export default function MisaLedgerWorkspace({
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                    Đối chiếu số liệu Sổ cái GL với các Phân hệ nghiệp vụ (UC-GL-11)
+                    Đối chiếu số liệu
                   </h3>
                   <span
                     style={{
@@ -20415,13 +19954,17 @@ export default function MisaLedgerWorkspace({
                       fontSize: 11.5,
                       fontWeight: 700,
                       background:
-                        glRecStatus === "MATCHED"
+                        glRecStatus === "NOT_RUN"
+                          ? "#e2e8f0"
+                          : glRecStatus === "MATCHED"
                           ? "#dcfce7"
                           : glRecStatus === "WARNING"
                           ? "#fef3c7"
                           : "#fee2e2",
                       color:
-                        glRecStatus === "MATCHED"
+                        glRecStatus === "NOT_RUN"
+                          ? "#475569"
+                          : glRecStatus === "MATCHED"
                           ? "#166534"
                           : glRecStatus === "WARNING"
                           ? "#92400e"
@@ -20432,12 +19975,14 @@ export default function MisaLedgerWorkspace({
                       ? "MATCHED — Khớp số liệu GL & Phân hệ"
                       : glRecStatus === "WARNING"
                       ? "WARNING — Có cảnh báo cần chú ý"
-                      : "DIFFERENCE — Có chênh lệch cần kiểm tra"}
+                      : glRecStatus === "DIFFERENCE"
+                      ? "DIFFERENCE — Có chênh lệch cần kiểm tra"
+                      : glRecStatus === "ERROR" ? "ERROR — Không thể đối chiếu tin cậy"
+                      : glRecStatus === "PROCESSING" ? "Đang đối chiếu" : "Chưa đối chiếu"}
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                  Chỉ phát hiện, phân loại nguyên nhân và hỗ trợ Drill-down 2 phía; tuyệt đối không tự động sửa số liệu nguồn (BR-GL-REC-50, 94) | Snapshot:{" "}
-                  <code>{glRecWatermark}</code> | Chạy lúc: {glRecLastRunAt}
+                  {company.name} | Chế độ kế toán: {apiCompanies.find((item) => item.id === company.id)?.accounting_regime || "—"} | Snapshot: <code>{glRecWatermark || "—"}</code> | Chạy lúc: {glRecLastRunAt || "—"}
                 </div>
               </div>
               <button
@@ -20455,241 +20000,112 @@ export default function MisaLedgerWorkspace({
               </button>
             </div>
 
-            {/* Section 1.3.A: Thông tin hệ thống (Read-only banner) */}
-            <div
-              style={{
-                padding: "8px 20px",
-                background: "#f1f5f9",
-                borderBottom: "1px solid #e2e8f0",
-                display: "flex",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 16,
-                fontSize: 12,
-                color: "#334155",
-              }}
-            >
-              <div>
-                <span style={{ color: "#64748b" }}>Doanh nghiệp:</span>{" "}
-                <strong style={{ color: "#0f172a" }}>{company.name || "Doanh nghiệp hiện tại"}</strong>
-              </div>
-              <div>
-                <span style={{ color: "#64748b" }}>Bộ dữ liệu:</span>{" "}
-                <code style={{ background: "#e2e8f0", padding: "1px 6px", borderRadius: 4, color: "#0369a1" }}>
-                  {company.short || company.id || "DEFAULT_DATASET"}
-                </code>
-              </div>
-              <div>
-                <span style={{ color: "#64748b" }}>Chế độ kế toán (Chỉ xem):</span>{" "}
-                <span
-                  style={{
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    fontWeight: 700,
-                    fontSize: 11,
-                    background: "#e0f2fe",
-                    color: "#0369a1",
-                  }}
-                >
-                  Thông tư 200 & TT99 (Áp dụng từ 01/01/2026)
-                </span>
-              </div>
-              <div>
-                <span style={{ color: "#64748b" }}>Trạng thái tổng hợp GL (UC-GL-10):</span>{" "}
-                <span style={{ color: "#166534", fontWeight: 600 }}>VALID (Đủ điều kiện đối chiếu)</span>
-              </div>
-            </div>
-
-            {/* Section 1.3.A: Điều kiện đối chiếu & Bộ lọc phạm vi */}
+            {/* Filter & Action Toolbar */}
             <div
               style={{
                 padding: "12px 20px",
                 background: "#ffffff",
                 borderBottom: "1px solid #e2e8f0",
                 display: "flex",
-                flexDirection: "column",
-                gap: 10,
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 12,
               }}
             >
-              {/* Row 1: Năm tài chính, Kỳ, Ngày bắt đầu - kết thúc, Loại đối chiếu */}
-              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
-                  Năm tài chính:
-                  <select
-                    value={glRecFiscalYear}
-                    onChange={(e) => setGlRecFiscalYear(e.target.value)}
-                    style={{
-                      marginLeft: 6,
-                      padding: "5px 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 6,
-                      fontSize: 13,
-                      background: "#ffffff",
-                    }}
-                  >
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                  </select>
-                </label>
-
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
                   Kỳ kế toán:
-                  <input
-                    type="text"
+                  <select
                     value={glRecPeriodCode}
-                    onChange={(e) => setGlRecPeriodCode(e.target.value)}
-                    placeholder="VD: 2026-10"
+                    onChange={(e) => { setGlRecPeriodCode(e.target.value); clearGlRecResult(); }}
                     style={{
-                      marginLeft: 6,
-                      padding: "5px 10px",
+                      marginLeft: 8,
+                      padding: "6px 10px",
                       border: "1px solid #cbd5e1",
                       borderRadius: 6,
                       fontSize: 13,
-                      width: 100,
+                      width: 110,
                     }}
-                  />
+                  ><option value="">Chọn kỳ</option>{glRecPeriods.map((p) => <option key={p.id} value={p.code}>{p.code}</option>)}</select>
                 </label>
-
-                <div style={{ fontSize: 12.5, color: "#475569", background: "#f8fafc", padding: "5px 10px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                  <span style={{ color: "#64748b" }}>Từ ngày – Đến ngày:</span>{" "}
-                  <strong>01/{glRecPeriodCode.split("-")[1] || "10"}/{glRecPeriodCode.split("-")[0] || "2026"} — 31/{glRecPeriodCode.split("-")[1] || "10"}/{glRecPeriodCode.split("-")[0] || "2026"}</strong>
-                </div>
-
                 <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
-                  Loại đối chiếu (9 phân hệ - Mục 1.6):
+                  Loại đối chiếu:
                   <select
                     value={glRecType}
-                    onChange={(e) => setGlRecType(e.target.value as any)}
+                    onChange={(e) => { setGlRecType(e.target.value as any); clearGlRecResult(); }}
                     style={{
-                      marginLeft: 6,
-                      padding: "5px 10px",
+                      marginLeft: 8,
+                      padding: "6px 10px",
                       border: "1px solid #cbd5e1",
                       borderRadius: 6,
                       fontSize: 13,
-                      fontWeight: 600,
-                      color: "#0f172a",
-                      background: "#ffffff",
                     }}
                   >
-                    <option value="GL_AP">1. Công nợ phải trả (GL ↔ AP - TK 331)</option>
-                    <option value="GL_AR">2. Công nợ phải thu (GL ↔ AR - TK 131)</option>
-                    <option value="GL_CASH">3. Tiền mặt / Sổ quỹ (GL ↔ CASH - TK 111)</option>
-                    <option value="GL_BANK">4. Tiền gửi ngân hàng (GL ↔ BANK - TK 112)</option>
-                    <option value="GL_INV">5. Hàng tồn kho (GL ↔ INV - TK 151, 152, 153, 155, 156, 157)</option>
-                    <option value="GL_FA">6. Tài sản cố định & Khấu hao (GL ↔ FA - TK 211, 214)</option>
-                    <option value="GL_TOOLS">7. Công cụ dụng cụ (GL ↔ CCDC - TK 242 riêng CCDC)</option>
-                    <option value="GL_PREPAID">8. Chi phí trả trước (GL ↔ PREPAID - TK 242 riêng CPTT)</option>
-                    <option value="GL_TAX">9. Dữ liệu thuế (GL ↔ TAX - TK 133, 333)</option>
+                    <option value="GL_AR">GL ↔ AR (Công nợ phải thu khách hàng - TK 131)</option>
+                    <option value="GL_AP">GL ↔ AP (Công nợ phải trả nhà cung cấp - TK 331)</option>
+                    <option value="GL_CASH">GL ↔ CASH (Tiền mặt / Sổ quỹ - TK 111)</option>
+                    <option value="GL_BANK">GL ↔ BANK (Tiền gửi ngân hàng - TK 112)</option>
+                    <option value="GL_INV">GL ↔ INV (Giá trị tồn kho - TK 152, 155, 156)</option>
+                    <option value="GL_FA">GL ↔ FA (Tài sản cố định & Khấu hao - TK 211, 214)</option>
+                    <option value="GL_TAX">GL ↔ TAX (Thuế GTGT / TNDN - TK 133, 333)</option>
+                    <option value="GL_CCDC">GL ↔ CCDC (cần mapping nguồn riêng)</option>
+                    <option value="GL_PREPAID">GL ↔ Chi phí trả trước (cần mapping nguồn riêng)</option>
                   </select>
                 </label>
               </div>
 
-              {/* Row 2: Bộ lọc phạm vi (Tài khoản, Đối tượng, Đơn vị, Tiền tệ) & Nút hành động */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>Bộ lọc tùy chọn:</span>
-                  <input
-                    type="text"
-                    placeholder="Lọc tài khoản (VD: 131, 242)..."
-                    value={glRecAccountFilter}
-                    onChange={(e) => setGlRecAccountFilter(e.target.value)}
-                    style={{ padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, width: 140 }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Lọc mã đối tượng (VD: KH001)..."
-                    value={glRecPartyFilter}
-                    onChange={(e) => setGlRecPartyFilter(e.target.value)}
-                    style={{ padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, width: 150 }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Chi nhánh / Đơn vị..."
-                    value={glRecBranchFilter}
-                    onChange={(e) => setGlRecBranchFilter(e.target.value)}
-                    style={{ padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, width: 130 }}
-                  />
-                  <select
-                    value={glRecCurrencyFilter}
-                    onChange={(e) => setGlRecCurrencyFilter(e.target.value)}
-                    style={{ padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12 }}
-                  >
-                    <option value="">Tất cả loại tiền</option>
-                    <option value="VND">VND</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input aria-label="Tài khoản" list="gl-rec-accounts" placeholder="Tài khoản (tất cả)" value={glRecAccountCode} onChange={(e) => { setGlRecAccountCode(e.target.value); clearGlRecResult(); }} />
+                <datalist id="gl-rec-accounts">{glRecAccounts.map((account) => <option key={account.id} value={account.code}>{account.name}</option>)}</datalist>
+                <input aria-label="Mã đối tượng" list="gl-rec-parties" placeholder="Đối tượng (tất cả)" value={glRecPartyCode} onChange={(e) => { setGlRecPartyCode(e.target.value); clearGlRecResult(); }} />
+                <datalist id="gl-rec-parties">{glRecParties.map((party) => <option key={party.id} value={party.code}>{party.name}</option>)}</datalist>
+                <select aria-label="Loại tiền" value={glRecCurrencyCode} onChange={(e) => { setGlRecCurrencyCode(e.target.value); clearGlRecResult(); }}><option value="">Mọi loại tiền</option>{glRecCurrencies.map((currency) => <option key={currency.id} value={currency.code}>{currency.code}</option>)}</select>
+                <select aria-label="Chi nhánh" value={glRecBranchId} onChange={(e) => { setGlRecBranchId(e.target.value); clearGlRecResult(); }}><option value="">Mọi chi nhánh</option>{glRecBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>
+              </div>
 
-                {/* 3 Nút Thao tác: Đối chiếu, Đối chiếu lại, Lịch sử đối chiếu */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleRunGlReconciliation(false);
-                    }}
-                    style={{
-                      padding: "7px 14px",
-                      borderRadius: 6,
-                      border: "1px solid #0284c7",
-                      background: "#f0f9ff",
-                      color: "#0369a1",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <Check size={14} />
-                    <span>Đối chiếu (MF-07)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleRunGlReconciliation(true);
-                    }}
-                    style={{
-                      padding: "7px 16px",
-                      borderRadius: 6,
-                      border: "none",
-                      background: "#00a862",
-                      color: "#ffffff",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <RefreshCw size={14} />
-                    <span>Đối chiếu lại (AF-16)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleOpenGlRecHistory();
-                    }}
-                    style={{
-                      padding: "7px 14px",
-                      borderRadius: 6,
-                      border: "1px solid #cbd5e1",
-                      background: "#ffffff",
-                      color: "#475569",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <FileText size={14} />
-                    <span>Lịch sử đối chiếu (AF-17)</span>
-                  </button>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleRunGlReconciliation();
+                  }}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 6,
+                    border: "1px solid #0284c7",
+                    background: "#f0f9ff",
+                    color: "#0369a1",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {glRecBusy ? "Đang đối chiếu..." : "Đối chiếu"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleRunGlReconciliation();
+                  }}
+                  style={{
+                    padding: "7px 16px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: "#00a862",
+                    color: "#ffffff",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <RefreshCw size={14} />
+                  <span>Đối chiếu lại</span>
+                </button>
+                <button type="button" onClick={() => setGlRecShowHistory((value) => !value)}>Lịch sử đối chiếu</button>
               </div>
             </div>
 
@@ -20724,7 +20140,7 @@ export default function MisaLedgerWorkspace({
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-                <div style={{ color: "#64748b" }}>Điều kiện Khóa sổ kỳ (UC-GL-12 / BR-81)</div>
+                <div style={{ color: "#64748b" }}>Trạng thái lần đối chiếu</div>
                 <div
                   style={{
                     fontWeight: 700,
@@ -20733,240 +20149,137 @@ export default function MisaLedgerWorkspace({
                     marginTop: 2,
                   }}
                 >
-                  {glRecStatus === "MATCHED" ? "Đủ điều kiện khóa kỳ" : "Chặn khóa kỳ (Còn lệch BLOCK)"}
+                  {glRecStatus}
                 </div>
               </div>
             </div>
 
-            {/* Section 1.3.B: Bảng Kết quả Đối chiếu (Hỗ trợ 2 chế độ xem: Theo Chỉ tiêu chi tiết vs Tổng hợp) */}
+            {/* Reconciliation Lines Table */}
             <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#1e293b" }}>
-                  Bảng chi tiết đối chiếu số liệu (Thành phần B - Mục 1.3):
+              {glRecPeriods.find((p) => p.code === glRecPeriodCode) && (
+                <div style={{ marginBottom: 10, fontSize: 12, color: "#475569" }}>
+                  Năm tài chính: {glRecPeriods.find((p) => p.code === glRecPeriodCode)?.fiscal_year} | Từ ngày: {toViDate(glRecPeriods.find((p) => p.code === glRecPeriodCode)?.start_date)} | Đến ngày: {toViDate(glRecPeriods.find((p) => p.code === glRecPeriodCode)?.end_date)}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                  <span style={{ color: "#64748b" }}>Chế độ hiển thị:</span>
-                  <button
-                    type="button"
-                    onClick={() => setGlRecViewMode("INDICATOR_BREAKDOWN")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: 4,
-                      border: "1px solid " + (glRecViewMode === "INDICATOR_BREAKDOWN" ? "#0284c7" : "#cbd5e1"),
-                      background: glRecViewMode === "INDICATOR_BREAKDOWN" ? "#e0f2fe" : "#ffffff",
-                      color: glRecViewMode === "INDICATOR_BREAKDOWN" ? "#0369a1" : "#475569",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Chi tiết theo Chỉ tiêu (Đầu kỳ / PS / Cuối kỳ)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGlRecViewMode("SUMMARY")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: 4,
-                      border: "1px solid " + (glRecViewMode === "SUMMARY" ? "#0284c7" : "#cbd5e1"),
-                      background: glRecViewMode === "SUMMARY" ? "#e0f2fe" : "#ffffff",
-                      color: glRecViewMode === "SUMMARY" ? "#0369a1" : "#475569",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Tổng hợp theo Đối tượng
-                  </button>
+              )}
+              {glRecMessages.map((message, index) => <div key={index} role="alert" style={{ marginBottom: 8, color: "#92400e" }}>{message}</div>)}
+              {glRecShowHistory && (
+                <div style={{ marginBottom: 16, padding: 12, border: "1px solid #cbd5e1", borderRadius: 6 }}>
+                  <strong>Lịch sử đối chiếu</strong>
+                  {glRecHistory.length === 0 && <p>Chưa có lần đối chiếu nào.</p>}
+                  {glRecHistory.map((run) => (
+                    <button key={run.id} type="button" onClick={() => showGlReconciliation(run)} style={{ display: "block", marginTop: 8 }}>
+                      {run.period_code || glRecPeriods.find((p) => p.id === run.period)?.code || "Kỳ"} · {run.reconciliation_type} · {run.status} · {run.completed_at ? new Date(run.completed_at).toLocaleString("vi-VN") : ""}
+                    </button>
+                  ))}
                 </div>
-              </div>
-
-              {glRecViewMode === "INDICATOR_BREAKDOWN" ? (
-                /* Chế độ 1: Bảng Chỉ tiêu chi tiết theo chuẩn Section 1.3.B */
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left", width: "24%" }}>Tài khoản / Đối tượng</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left", width: "16%" }}>Chỉ tiêu đối chiếu</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right", width: "12%" }}>Số liệu Sổ cái GL</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right", width: "12%" }}>Số liệu Phân hệ</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right", width: "12%" }}>Chênh lệch (GL - PH)</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center", width: "9%" }}>Trạng thái</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left", width: "15%" }}>Nguyên nhân & Truy vết</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {glRecLines.map((ln) => (
-                      <React.Fragment key={ln.reconciliationKey}>
-                        {/* Dòng 1: Số dư đầu kỳ */}
-                        <tr style={{ background: ln.status === "DIFFERENCE" ? "#fff1f2" : "#ffffff", borderTop: "2px solid #cbd5e1" }}>
-                          <td rowSpan={4} style={{ padding: "8px", border: "1px solid #e2e8f0", verticalAlign: "top" }}>
-                            <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                              TK {ln.accountCode} — {ln.objectCode}
-                            </div>
-                            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{ln.objectName}</div>
-                            <div style={{ fontSize: 11, color: "#0284c7", marginTop: 2 }}>Tiền tệ: {ln.currencyCode}</div>
-                            {ln.note && (
-                              <div style={{ fontSize: 11, color: "#0369a1", marginTop: 4, background: "#f0f9ff", padding: "2px 6px", borderRadius: 4 }}>
-                                Ghi chú: {ln.note}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", color: "#475569" }}>1. Số dư đầu kỳ</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glOpening)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subOpening)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: ln.diffOpening === 0 ? "#15803d" : "#dc2626" }}>
-                            {formatVndNumber(ln.diffOpening)}
-                          </td>
-                          <td rowSpan={4} style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center", verticalAlign: "middle" }}>
-                            <span
-                              style={{
-                                padding: "3px 8px",
-                                borderRadius: 999,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                background: ln.status === "MATCHED" ? "#dcfce7" : "#fee2e2",
-                                color: ln.status === "MATCHED" ? "#166534" : "#991b1b",
-                              }}
-                            >
-                              {ln.status}
-                            </span>
-                          </td>
-                          <td rowSpan={4} style={{ padding: "8px", border: "1px solid #e2e8f0", verticalAlign: "top" }}>
-                            <div style={{ fontWeight: 600, color: "#334155", fontSize: 11 }}>{ln.discrepancyType}</div>
-                            <div style={{ color: "#475569", fontSize: 11, marginTop: 2 }}>{ln.discrepancyReason}</div>
-                            <button
-                              type="button"
-                              onClick={() => setGlRecSelectedLine(ln)}
-                              style={{
-                                marginTop: 6,
-                                padding: "4px 10px",
-                                borderRadius: 4,
-                                border: "1px solid #cbd5e1",
-                                background: "#ffffff",
-                                color: "#0284c7",
-                                fontSize: 11,
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                width: "100%",
-                              }}
-                            >
-                              Drill-down truy vết 2 phía (AF-14)
-                            </button>
-                          </td>
-                        </tr>
-
-                        {/* Dòng 2: Phát sinh Nợ / Tăng */}
-                        <tr style={{ background: ln.status === "DIFFERENCE" ? "#fff1f2" : "#ffffff" }}>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", color: "#475569" }}>2. Phát sinh Nợ / Tăng trong kỳ</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glPeriodDebit)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subPeriodDebit)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: ln.diffPeriodDebit === 0 ? "#15803d" : "#dc2626" }}>
-                            {formatVndNumber(ln.diffPeriodDebit)}
-                          </td>
-                        </tr>
-
-                        {/* Dòng 3: Phát sinh Có / Giảm */}
-                        <tr style={{ background: ln.status === "DIFFERENCE" ? "#fff1f2" : "#ffffff" }}>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", color: "#475569" }}>3. Phát sinh Có / Giảm trong kỳ</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glPeriodCredit)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subPeriodCredit)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: ln.diffPeriodCredit === 0 ? "#15803d" : "#dc2626" }}>
-                            {formatVndNumber(ln.diffPeriodCredit)}
-                          </td>
-                        </tr>
-
-                        {/* Dòng 4: Số dư cuối kỳ */}
-                        <tr style={{ background: ln.status === "DIFFERENCE" ? "#ffe4e6" : "#f8fafc", fontWeight: 700 }}>
-                          <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", color: "#0f172a" }}>4. Số dư cuối kỳ</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{formatVndNumber(ln.glClosing)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right" }}>{formatVndNumber(ln.subClosing)}</td>
-                          <td style={{ padding: "6px 8px", border: "1px solid #cbd5e1", textAlign: "right", color: ln.diffClosing === 0 ? "#15803d" : "#dc2626" }}>
-                            {formatVndNumber(ln.diffClosing)}
-                          </td>
-                        </tr>
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                /* Chế độ 2: Bảng tổng hợp nhanh */
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>TK / Đối tượng</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Nợ GL</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Nợ Phân hệ</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư CK GL</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư CK Phân hệ</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Chênh lệch (GL - PH)</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Trạng thái</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>Nguyên nhân dự kiến (BR-GL-REC-46)</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Truy vết 2 phía</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {glRecLines.map((ln) => (
-                      <tr
-                        key={ln.reconciliationKey}
+              )}
+              {!glRecRunId && <p>Chọn kỳ và loại đối chiếu, sau đó nhấn Đối chiếu để xem số liệu thực tế.</p>}
+              {glRecRunId && glRecLines.length === 0 && <p>Lần đối chiếu này không có dòng kết quả.</p>}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>TK / Đối tượng</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư ĐK GL</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư ĐK Phân hệ</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Nợ GL</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Nợ Phân hệ</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Có GL</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Có Phân hệ</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư CK GL</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư CK Phân hệ</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Chênh lệch (GL - PH)</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Trạng thái</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>
+                      Nguyên nhân dự kiến (BR-GL-REC-46)
+                    </th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Truy vết 2 phía</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {glRecLines.map((ln) => (
+                    <tr
+                      key={ln.reconciliationKey}
+                      style={{
+                        background: ln.status === "DIFFERENCE" ? "#fff1f2" : "#ffffff",
+                        borderBottom: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>
+                        <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                          TK {ln.accountCode} — {ln.objectCode} ({ln.currencyCode})
+                        </div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>{ln.objectName}</div>
+                        {ln.note && (
+                          <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>Ghi chú: {ln.note}</div>
+                        )}
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glOpening)}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subOpening)}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>
+                        {formatVndNumber(ln.glPeriodDebit)}
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>
+                        {formatVndNumber(ln.subPeriodDebit)}
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glPeriodCredit)}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subPeriodCredit)}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
+                        {formatVndNumber(ln.glClosing)}
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
+                        {formatVndNumber(ln.subClosing)}
+                      </td>
+                      <td
                         style={{
-                          background: ln.status === "DIFFERENCE" ? "#fff1f2" : "#ffffff",
-                          borderBottom: "1px solid #e2e8f0",
+                          padding: "8px",
+                          border: "1px solid #e2e8f0",
+                          textAlign: "right",
+                          fontWeight: 700,
+                          color: ln.diffClosing === 0 ? "#15803d" : "#dc2626",
                         }}
                       >
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>
-                          <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                            TK {ln.accountCode} — {ln.objectCode}
-                          </div>
-                          <div style={{ fontSize: 11, color: "#64748b" }}>{ln.objectName}</div>
-                          {ln.note && <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>Ghi chú: {ln.note}</div>}
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glPeriodDebit)}</td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subPeriodDebit)}</td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVndNumber(ln.glClosing)}</td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVndNumber(ln.subClosing)}</td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: ln.diffClosing === 0 ? "#15803d" : "#dc2626" }}>
-                          {formatVndNumber(ln.diffClosing)}
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                          <span
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: ln.status === "MATCHED" ? "#dcfce7" : "#fee2e2",
-                              color: ln.status === "MATCHED" ? "#166534" : "#991b1b",
-                            }}
-                          >
-                            {ln.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>
-                          <div style={{ fontWeight: 600, color: "#334155", fontSize: 11 }}>{ln.discrepancyType}</div>
-                          <div style={{ color: "#475569", fontSize: 11.5, marginTop: 2 }}>{ln.discrepancyReason}</div>
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                          <button
-                            type="button"
-                            onClick={() => setGlRecSelectedLine(ln)}
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: 4,
-                              border: "1px solid #cbd5e1",
-                              background: "#ffffff",
-                              color: "#0284c7",
-                              fontSize: 11.5,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Drill-down (Bước 39)
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                        {formatVndNumber(ln.diffClosing)}
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: ln.status === "MATCHED" ? "#dcfce7" : "#fee2e2",
+                            color: ln.status === "MATCHED" ? "#166534" : "#991b1b",
+                          }}
+                        >
+                          {ln.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>
+                        <div style={{ fontWeight: 600, color: "#334155", fontSize: 11 }}>{ln.discrepancyType}</div>
+                        <div style={{ color: "#475569", fontSize: 11.5, marginTop: 2 }}>{ln.discrepancyReason}</div>
+                      </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => { void handleGlReconciliationDrilldown(ln); }}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: 4,
+                            border: "1px solid #cbd5e1",
+                            background: "#ffffff",
+                            color: "#0284c7",
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Drill-down (Bước 39)
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
               {/* 2-Sided Drilldown & Note Annotation Panel (Steps 39-44, BR-GL-REC-48, 49, 56, 93) */}
               {glRecSelectedLine && (
@@ -21139,210 +20452,6 @@ export default function MisaLedgerWorkspace({
               <button
                 type="button"
                 onClick={() => setGlReconciliationModalOpen(false)}
-                style={{
-                  padding: "7px 20px",
-                  borderRadius: 6,
-                  border: "1px solid #cbd5e1",
-                  background: "#ffffff",
-                  color: "#334155",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================================== */}
-      {/* MODAL 12-B: LỊCH SỬ ĐỐI CHIẾU SỐ LIỆU (AF-17, BR-GL-REC-58, 59)         */}
-      {/* ===================================================================== */}
-      {glRecHistoryModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.55)",
-            zIndex: 10000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 960,
-              maxHeight: "85vh",
-              background: "#ffffff",
-              borderRadius: 10,
-              boxShadow: "0 20px 50px rgba(0,0,0,0.28)",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                padding: "14px 20px",
-                background: "#f8fafc",
-                borderBottom: "1px solid #e2e8f0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Lịch sử các lần đối chiếu số liệu (AF-17, BR-GL-REC-58, 59)
-                </h3>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                  Danh sách lưu vết toàn bộ các lần chạy đối chiếu đã thực hiện | Kỳ: {glRecPeriodCode} | Phân hệ: {glRecType}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setGlRecHistoryModalOpen(false)}
-                style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b", padding: 4 }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-              {glRecLoadingHistory ? (
-                <div style={{ padding: 30, textAlign: "center", color: "#64748b" }}>Đang tải lịch sử đối chiếu...</div>
-              ) : glRecHistoryList.length === 0 ? (
-                <div style={{ padding: 30, textAlign: "center", color: "#64748b" }}>
-                  Chưa có lịch sử đối chiếu nào được lưu cho kỳ này.
-                </div>
-              ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>Thời gian chạy</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>Người thực hiện</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Kỳ kế toán</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Phân hệ</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Trạng thái</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Số dòng lệch</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Tổng chênh lệch</th>
-                      <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {glRecHistoryList.map((item: any, idx: number) => (
-                      <tr key={item.id || idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", fontWeight: 600 }}>
-                          {item.created_at ? new Date(item.created_at).toLocaleString("vi-VN") : item.created_at}
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>
-                          {item.created_by_name || item.created_by?.username || "Hệ thống"}
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                          {item.period_code || item.period?.code || glRecPeriodCode}
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                          <span style={{ fontWeight: 600 }}>{item.reconciliation_type || item.source_module}</span>
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                          <span
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: item.status === "MATCHED" ? "#dcfce7" : "#fee2e2",
-                              color: item.status === "MATCHED" ? "#166534" : "#991b1b",
-                            }}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>
-                          {item.difference_lines_count ?? (item.lines ? item.lines.filter((l: any) => l.status === "DIFFERENCE").length : 0)} dòng
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: (Number(item.total_difference_amount) || 0) === 0 ? "#15803d" : "#dc2626" }}>
-                          {formatVndNumber(item.total_difference_amount || item.difference || 0)} ₫
-                        </td>
-                        <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setGlRecRunId(String(item.id));
-                              setGlRecStatus((item.status || "MATCHED") as any);
-                              if (item.snapshot_watermark) setGlRecWatermark(String(item.snapshot_watermark));
-                              if (Array.isArray(item.lines) && item.lines.length > 0) {
-                                setGlRecLines(
-                                  item.lines.map((ln: any, i: number) => ({
-                                    lineNo: ln.line_no || i + 1,
-                                    reconciliationKey: ln.reconciliation_key,
-                                    accountCode: ln.account_code,
-                                    accountName: ln.account_name,
-                                    objectCode: ln.object_code || "ALL",
-                                    objectName: ln.object_name || "Tổng hợp tài khoản",
-                                    currencyCode: ln.currency_code || "VND",
-                                    glOpening: (Number(ln.gl_opening_debit) || 0) - (Number(ln.gl_opening_credit) || 0),
-                                    glPeriodDebit: Number(ln.gl_period_debit) || 0,
-                                    glPeriodCredit: Number(ln.gl_period_credit) || 0,
-                                    glClosing: Number(ln.gl_net_closing) || 0,
-                                    subOpening: (Number(ln.sub_opening_debit) || 0) - (Number(ln.sub_opening_credit) || 0),
-                                    subPeriodDebit: Number(ln.sub_period_debit) || 0,
-                                    subPeriodCredit: Number(ln.sub_period_credit) || 0,
-                                    subClosing: Number(ln.sub_net_closing) || 0,
-                                    diffOpening: Number(ln.diff_opening) || 0,
-                                    diffPeriodDebit: Number(ln.diff_period_debit) || 0,
-                                    diffPeriodCredit: Number(ln.diff_period_credit) || 0,
-                                    diffClosing: Number(ln.diff_closing) || 0,
-                                    status: ln.status || "MATCHED",
-                                    discrepancyType: ln.discrepancy_type || "NONE",
-                                    discrepancyReason: ln.discrepancy_reason || "",
-                                    glEntries: Array.isArray(ln.gl_entries_refs) ? ln.gl_entries_refs : [],
-                                    subledgerVouchers: Array.isArray(ln.subledger_vouchers_refs) ? ln.subledger_vouchers_refs : [],
-                                    note: ln.note || "",
-                                  }))
-                                );
-                              }
-                              setGlRecHistoryModalOpen(false);
-                              notify(`Đã nạp kết quả đối chiếu lưu từ lịch sử (${item.status})!`);
-                            }}
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: 4,
-                              border: "1px solid #0284c7",
-                              background: "#f0f9ff",
-                              color: "#0284c7",
-                              fontSize: 11,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Xem lại kết quả
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <div
-              style={{
-                padding: "12px 20px",
-                background: "#f8fafc",
-                borderTop: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setGlRecHistoryModalOpen(false)}
                 style={{
                   padding: "7px 20px",
                   borderRadius: 6,

@@ -7,6 +7,8 @@ from reporting.financial_position_services import seed_balance_sheet_uc_rpt_03
 
 
 class Migration(migrations.Migration):
+    # PostgreSQL refuses to index the new self FK while the deferred FK checks from the
+    # backfill are still pending in the same transaction; run each operation on its own.
     atomic = False
 
     dependencies = [
@@ -108,6 +110,5 @@ class Migration(migrations.Migration):
                 "ordering": ("-checked_at", "rule_code", "column_code"),
             },
         ),
-        migrations.RunPython(seed_balance_sheet_uc_rpt_03, migrations.RunPython.noop),
+        migrations.RunPython(seed_balance_sheet_uc_rpt_03, migrations.RunPython.noop, atomic=True),
     ]
-

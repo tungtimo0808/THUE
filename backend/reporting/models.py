@@ -2584,15 +2584,17 @@ class ReportSourceReference(models.Model):
         ]
 
 
+class TT133NoteText(models.Model):
+    """Accountant supplied narrative for one annual B09-DNN section."""
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey("organization.Company", on_delete=models.PROTECT)
+    year = models.PositiveSmallIntegerField()
+    section_code = models.CharField(max_length=10)
+    content = models.TextField(blank=True, default="")
+    updated_by = models.ForeignKey("iam.UserAccount", on_delete=models.PROTECT, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-
-
-
-
-
-
-
-
-
-
+    class Meta:
+        db_table = "rpt_tt133_note_text"
+        constraints = [models.UniqueConstraint(fields=("company", "year", "section_code"), name="uq_tt133_note_section")]

@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   cancelDepreciationVoucher,
+  createApiWriter,
   exportDepreciationAllocation,
+  FormDataError,
+  type ApiWriter,
   fetchFixedAssetHistory,
   fetchFixedAssetRegister,
   fetchFixedAssetReport,
@@ -11,8 +14,15 @@ import {
   loadBookAssetsForStocktakeUc08,
   postDepreciationVoucher,
   previewDepreciationPeriod,
+  fetchDefaultDepreciationPeriod,
   reconcileFixedAssetAccounting,
+  errorText,
+  REVALUATION_REASON_CODES,
+  reverseRevaluation,
+  saveRevaluation,
+  toViDate,
   saveAssetCount,
+  toApiDate,
   saveAssetMovement,
   saveDepreciation,
   saveDepreciationVoucher,
@@ -22,12 +32,6 @@ import {
   saveFixedAssetTransfer,
   unpostDepreciationVoucher,
   updateFixedAssetInfo,
-  updateStocktakeVoucherUc08,
-  errorText,
-  REVALUATION_REASON_CODES,
-  reverseRevaluation,
-  saveRevaluation,
-  toViDate,
 } from "./misa-api-writes";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -67,7 +71,7 @@ import {
 import { formatVND } from "./MisaPurchaseModals";
 
 export type MisaAssetsWorkspaceProps = {
-  company?: { id: string; name: string };
+  company?: { id: string; name: string; accounting_regime?: string; bookkeeping_method?: string };
   period?: string;
   tab?: string;
   href?: (path: string) => string;
@@ -278,17 +282,24 @@ export default function MisaAssetsWorkspace({
   notify,
 }: MisaAssetsWorkspaceProps) {
   const navigate = useNavigate();
+  const simpleAssetBook = _company.accounting_regime === "TT58" && _company.bookkeeping_method === "SIMPLE";
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
     assets: "/api/v1/fixed-assets/assets/",
     transactions: "/api/v1/fixed-assets/transactions/",
     calculations: "/api/v1/fixed-assets/calculations/",
     assetCounts: "/api/v1/fixed-assets/counts/?asset_type=FIXED_ASSET",
+    revaluations: "/api/v1/fixed-assets/revaluations/",
+    parties: "/api/v1/master-data/parties/",
     assetCategories: "/api/v1/fixed-assets/categories/?asset_type=FIXED_ASSET",
     departments: "/api/v1/organization/departments/",
     accounts: "/api/v1/general-ledger/accounts/",
     goodsPurchases: "/api/v1/purchases/goods-purchases/",
-    revaluations: "/api/v1/fixed-assets/revaluations/",
-    parties: "/api/v1/master-data/parties/",
+    // UC-FA-05 Steps 13–17: cost tracking catalogs of the transfer lines
+    salesContracts: "/api/v1/sales/contracts/",
+    salesOrders: "/api/v1/sales/orders/",
+    projects: "/api/v1/master-data/projects/",
+    expenseItems: "/api/v1/master-data/expense-items/",
+    costCenters: "/api/v1/master-data/cost-centers/",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
   // Navigation helper
@@ -373,6 +384,7 @@ export default function MisaAssetsWorkspace({
         serialNumber: row.serial_number || "",
         description: row.description || "",
         status: row.status || "ACTIVE",
+        disposedAt: row.disposed_at || "",
         statusDisplay: row.status_display || (row.status === "DISPOSED" ? "Đã ghi giảm" : row.status === "SUSPENDED" ? "Ngừng sử dụng" : "Đang sử dụng"),
         reconciliationStatus: row.accounting_reconciliation_status_display || "Chưa đối chiếu hạch toán",
         version: Number(row.version) || 1,
@@ -400,12 +412,16 @@ export default function MisaAssetsWorkspace({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
         assetName: row.asset_name || "", fromDept: row.before_snapshot?.department_name || "",
         toDept: row.target_department_name || "", reason: row.reason || "", status: row.status,
-      } as any)));
+        deliverer: row.deliverer_name || "", receiver: row.receiver_name || "",
+        reference: row.reference || "", contract: row.contract || "", order: row.order || "",
+        project: row.project || "", costItem: row.cost_item || "", costObj: row.cost_object || "",
+      })));
       setDecVouchers(movement(["DISPOSAL"]).map((row) => ({
         id: row.id, voucherNo: row.number, date: apiDate(row.transaction_date), assetCode: row.asset_code || "",
         assetName: row.asset_name || "", reason: row.reason || "",
-        originalCost: apiNumber(assetOf(row)?.original_cost), remainingValue: apiNumber(row.amount), status: row.status,
-      } as any)));
+        originalCost: apiNumber(row.before_snapshot?.original_cost ?? assetOf(row)?.original_cost),
+        remainingValue: apiNumber(row.before_snapshot?.remaining_value), status: row.status,
+      })));
     }
     if (apiRows.revaluations) setRevalVouchers(apiRows.revaluations.map((row) => ({
       id: row.id, voucherNo: row.number, date: apiDate(row.posting_date),
@@ -414,10 +430,9 @@ export default function MisaAssetsWorkspace({
       reason: row.reason_label || "", diffAmount: apiNumber(row.totals?.remaining_value), status: row.status_label || row.status,
     })));
     if (apiRows.assetCounts) setStocktakeVouchers(apiRows.assetCounts.map((row) => {
-      const lines = row.lines || [];
-      const matched = lines.filter((line: any) => apiNumber(line.actual_quantity) === apiNumber(line.book_quantity)).length;
-      return { voucherNo: row.number, date: apiDate(row.created_at), auditDate: apiDate(row.count_date), purpose: row.purpose,
-        totalAssets: lines.length, matchedAssets: matched, diffAssets: lines.length - matched, conclusion: row.conclusion, status: "Đã ghi sổ" };
+      const summary = row.summary || {};
+      return { id: row.id, voucherNo: row.number, date: row.report_datetime || apiDate(row.created_at), auditDate: apiDate(row.count_date), purpose: row.purpose,
+        totalAssets: Number(summary.book_assets_count || 0), matchedAssets: Number(summary.matched_count || 0), diffAssets: Number(summary.diff_count || 0), conclusion: row.conclusion, status: `${row.status_display || "Đã ghi nhận"}${row.recommendations_processed ? " · Đã xử lý kiến nghị" : ""}` };
     }));
     if (apiRows.calculations) setDeprVouchers(apiRows.calculations.map((row) => ({
       id: row.id,
@@ -460,13 +475,14 @@ export default function MisaAssetsWorkspace({
         allocatedAmount: apiNumber(al.allocated_amount),
         deductibleAmount: apiNumber(al.deductible_amount ?? al.allocated_amount),
         nonDeductibleAmount: apiNumber(al.non_deductible_amount ?? 0),
-        expenseAccount: al.expense_account_code || "6424",
-        costItem: al.cost_item || "Chi phí khấu hao TSCĐ",
+        expenseAccount: al.expense_account_code || al.expense_account || "",
+        costItem: al.cost_item || al.expense_item || "Chi phí khấu hao TSCĐ",
+        creditAccount: al.credit_account_code || "",
       })) : [],
       accountingEntries: Array.isArray(row.accounting_entries) ? row.accounting_entries.map((ae: any) => ({
         description: ae.description || "",
-        debitAccount: ae.debit_account_code || "6424",
-        creditAccount: ae.credit_account_code || "2141",
+        debitAccount: ae.debit_account_code || ae.debit_account || "",
+        creditAccount: ae.credit_account_code || ae.credit_account || "",
         amount: apiNumber(ae.amount),
         departmentName: ae.department_name || "",
         costItem: ae.cost_item || "Chi phí khấu hao TSCĐ",
@@ -479,7 +495,8 @@ export default function MisaAssetsWorkspace({
   const [filterDept, setFilterDept] = useState("all");
 
   // Tab views (Intro vs Table)
-  const [registerView, setRegisterView] = useState<"intro" | "table">("intro");
+  const [registerView, setRegisterView] = useState<"intro" | "table">("table");
+  const [registerActionCode, setRegisterActionCode] = useState<string | null>(null);
   const [increaseView, setIncreaseView] = useState<"intro" | "table">("intro");
   const [deprView, setDeprView] = useState<"intro" | "table">("intro");
   const [revalView, setRevalView] = useState<"intro" | "table">("intro");
@@ -510,9 +527,9 @@ export default function MisaAssetsWorkspace({
 
   // Revaluation state (Ảnh 1 & 2: Đánh giá lại TSCĐ ĐGL00001)
   const [revalVoucherNo, setRevalVoucherNo] = useState("ĐGL00001");
-  const [revalDate, setRevalDate] = useState("12/10/2026");
-  const [revalPostingDate, setRevalPostingDate] = useState("12/10/2026");
-  const [revalVoucherDate, setRevalVoucherDate] = useState("12/10/2026");
+  const [revalDate, setRevalDate] = useState("");
+  const [revalPostingDate, setRevalPostingDate] = useState("");
+  const [revalVoucherDate, setRevalVoucherDate] = useState("");
   const [revalReason, setRevalReason] = useState("Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản");
   const [revalReportNo, setRevalReportNo] = useState("");
   const [revalTab, setRevalTab] = useState<"adjust" | "accounting">("adjust");
@@ -545,7 +562,7 @@ export default function MisaAssetsWorkspace({
       revalAccount: "",
       // GTKH tháng sau điều chỉnh
       monthlyDeprAfter: 0,
-      monthlyDeprLawAfter: 0,
+      monthlyDeprLawAfter: null as number | null,
     }
   ]);
   const [revalAccountingRows, setRevalAccountingRows] = useState([
@@ -617,7 +634,7 @@ export default function MisaAssetsWorkspace({
     id: Date.now() + Math.round(Math.random() * 1e6), assetCode: "", assetName: "", dept: "",
     origBefore: 0, origAfter: 0, origDiff: 0, monthsBefore: 0, monthsAfter: 0, monthsDiff: 0,
     deprBefore: 0, deprAfter: 0, deprDiff: 0, costAccount: "", valBefore: 0, valAfter: 0, valDiff: 0,
-    revalAccount: "", monthlyDeprAfter: 0, monthlyDeprLawAfter: 0,
+    revalAccount: "", monthlyDeprAfter: 0, monthlyDeprLawAfter: null as number | null,
   });
   /** Step 28 / section 4.7: straight-line amount for a full month after the adjustment. */
   const suggestRevalMonthly = (row: { valAfter: number; deprAfter: number; monthsAfter: number }) =>
@@ -635,8 +652,6 @@ export default function MisaAssetsWorkspace({
     next.valDiff = next.valAfter - next.valBefore;
     if (["origAfter", "monthsAfter", "deprAfter", "valAfter"].some((key) => key in patch)) {
       const suggested = suggestRevalMonthly(next);
-      // AF18: the tax amount follows only while the user has not set it apart.
-      if (row.monthlyDeprLawAfter === row.monthlyDeprAfter) next.monthlyDeprLawAfter = suggested;
       next.monthlyDeprAfter = suggested;
     }
     return next;
@@ -653,14 +668,14 @@ export default function MisaAssetsWorkspace({
       valBefore: Number(asset.depreciable_value), valAfter: Number(asset.depreciable_value), valDiff: 0,
       // BR23/BR24: no default revaluation (412) or expense account; the user picks them for the case at hand.
       costAccount: "", revalAccount: "", monthlyDeprAfter: monthly,
-      monthlyDeprLawAfter: asset.tax_monthly_depreciation !== null && asset.tax_monthly_depreciation !== undefined ? Number(asset.tax_monthly_depreciation) : monthly,
+      monthlyDeprLawAfter: asset.tax_monthly_depreciation !== null && asset.tax_monthly_depreciation !== undefined ? Number(asset.tax_monthly_depreciation) : null,
     }));
   };
   /** Steps 34-35: proposed entries from the value differences and the reason; the user may change them. */
   const proposeRevalEntries = () => {
+    if (simpleAssetBook) { setRevalAccountingRows([]); return; }
     const proposals: typeof revalAccountingRows = [];
-    const revaluationAccount = (row: ReturnType<typeof emptyRevalRow>) =>
-      row.revalAccount || (["STATE_DECISION", "CONVERSION"].includes(revalReasonCode) ? "412" : "");
+    const revaluationAccount = (row: ReturnType<typeof emptyRevalRow>) => row.revalAccount;
     for (const row of revalRows.filter((entry) => entry.assetCode)) {
       const asset = revalCandidates.find((entry) => entry.code === row.assetCode) || {};
       const assetAccount = asset.asset_account_code || "211";
@@ -688,8 +703,15 @@ export default function MisaAssetsWorkspace({
   const openNewReval = () => {
     setEditingRevalId(""); setRevalRecord(null); setRevalReportNo(""); setRevalConclusion(""); setRevalMembers([]);
     setRevalReason("Nâng cấp TSCĐ làm tăng thời gian sử dụng hoặc giá trị tài sản"); setRevalTab("adjust");
-    const today = toViDate(new Date().toISOString().slice(0, 10));
-    setRevalDate(today); setRevalPostingDate(today); setRevalVoucherDate(today);
+    const periodMatch = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(_period);
+    const currentDate = new Date();
+    const workingDate = periodMatch
+      ? new Date(Number(periodMatch[1]), Number(periodMatch[2]) - 1,
+          currentDate.getFullYear() === Number(periodMatch[1]) && currentDate.getMonth() + 1 === Number(periodMatch[2])
+            ? currentDate.getDate() : new Date(Number(periodMatch[1]), Number(periodMatch[2]), 0).getDate())
+      : currentDate;
+    const workingDateVi = toViDate(`${workingDate.getFullYear()}-${String(workingDate.getMonth() + 1).padStart(2, "0")}-${String(workingDate.getDate()).padStart(2, "0")}`);
+    setRevalDate(workingDateVi); setRevalPostingDate(workingDateVi); setRevalVoucherDate(workingDateVi);
     setRevalRows([emptyRevalRow()]); setRevalAccountingRows(apiConnected ? [] : revalAccountingRows);
     setRevalReferences([]); setRevalReferenceDraft(null); setRevalCostBookedAtSource(false); setRevalSourceReference("");
     setRevalFiles([]); setRevalAttachments([]); setShowRevalPrintMenu(false);
@@ -719,7 +741,7 @@ export default function MisaAssetsWorkspace({
       deprDiff: Number(line.after_accumulated_depreciation) - Number(line.before_accumulated_depreciation),
       costAccount: line.expense_account_code || "", valBefore: Number(line.before_depreciable_value), valAfter: Number(line.after_depreciable_value),
       valDiff: Number(line.after_depreciable_value) - Number(line.before_depreciable_value), revalAccount: line.revaluation_account_code || "",
-      monthlyDeprAfter: Number(line.monthly_depreciation_after), monthlyDeprLawAfter: Number(line.tax_monthly_depreciation_after ?? line.monthly_depreciation_after),
+      monthlyDeprAfter: Number(line.monthly_depreciation_after), monthlyDeprLawAfter: line.tax_monthly_depreciation_after === null ? null : Number(line.tax_monthly_depreciation_after),
     })));
     setRevalAccountingRows((record.entries || []).map((entry: any, index: number) => ({
       id: index + 1, desc: entry.description, debitAccount: entry.debit_account_code, creditAccount: entry.credit_account_code,
@@ -871,6 +893,64 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [showTransferRefInput, setShowTransferRefInput] = useState(false);
   const [transferAttachments, setTransferAttachments] = useState<Array<{ name: string; size: number }>>([]);
   const [transferIsDirty, setTransferIsDirty] = useState(false);
+  // EF32 & BR49: one key per form so a resubmitted save cannot create a second voucher
+  const [transferIdempotencyKey, setTransferIdempotencyKey] = useState("");
+  const [transferProposedNo, setTransferProposedNo] = useState("");
+
+  // UC-FA-05 Steps 9–17: choices come from the company's own catalogs when connected.
+  const transferUnusableSales = ["DRAFT", "PENDING_APPROVAL", "REJECTED", "REVISION_REQUIRED", "EXPIRED", "CLOSED", "CANCELLED", "TERMINATED", "DECLINED"];
+  const transferDepartmentOptions = (apiRows.departments || [])
+    .filter((d: any) => !d.status || d.status === "ACTIVE")
+    .map((d: any) => ({ value: String(d.name || ""), label: d.code ? `${d.code} - ${d.name}` : String(d.name || "") }));
+  const transferContractOptions = (apiRows.salesContracts || [])
+    .filter((c: any) => !transferUnusableSales.includes(c.status))
+    .map((c: any) => ({ value: String(c.number || ""), label: c.title ? `${c.number} - ${c.title}` : String(c.number || ""), id: c.id }));
+  const transferOrderOptions = (contractNo: string) => {
+    const contract = transferContractOptions.find((c) => c.value === contractNo);
+    return (apiRows.salesOrders || [])
+      .filter((o: any) => !transferUnusableSales.includes(o.status))
+      // EF24 & BR21: an order tied to another contract is not offered
+      .filter((o: any) => !contract || !o.contract || String(o.contract) === String(contract.id))
+      .map((o: any) => ({ value: String(o.number || ""), label: String(o.number || "") }));
+  };
+  const activeCatalog = (rows: any[] | undefined) => (rows || [])
+    .filter((r: any) => !r.status || r.status === "ACTIVE")
+    .map((r: any) => ({ value: String(r.code || ""), label: `${r.code} - ${r.name}` }));
+  const transferProjectOptions = activeCatalog(apiRows.projects);
+  const transferExpenseItemOptions = activeCatalog(apiRows.expenseItems);
+  const transferCostObjectOptions = activeCatalog(apiRows.costCenters);
+  const transferEligibleAssets = (dateStr: string) => {
+    const at = parseDeprDateString(dateStr);
+    return assetsList.filter((a: any) => {
+      // Step 9 & BR11: recorded, not disposed, in use at the transfer date
+      if (a.status === "DISPOSED" || a.statusDisplay === "Đã ghi giảm" || (a.status && a.status !== "ACTIVE")) return false;
+      const acquired = parseDeprDateString(a.startDate || a.deprStartDate || "");
+      return !at || !acquired || acquired.getTime() <= at.getTime();
+    });
+  };
+  type TransferDimField = "contract" | "order" | "project" | "costItem" | "costObj";
+  const renderTransferDim = (idx: number, field: TransferDimField, options: { value: string; label: string }[], placeholder = "—") => {
+    const row: any = transferRows[idx];
+    const change = (value: string) => {
+      const updated: any[] = [...transferRows];
+      // EF24: a new contract invalidates the order chosen for the previous one
+      updated[idx] = { ...updated[idx], [field]: value, ...(field === "contract" ? { order: "" } : {}) };
+      setTransferRows(updated);
+      setTransferIsDirty(true);
+    };
+    const style = { width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 11.5, outline: "none", boxSizing: "border-box" as const, background: "#ffffff" };
+    if (!apiConnected) {
+      return <input type="text" value={row[field] || ""} onChange={(e) => change(e.target.value)} placeholder={placeholder} style={style} />;
+    }
+    const current = String(row[field] || "");
+    return (
+      <select data-testid={`transfer-${field}-${idx}`} value={current} onChange={(e) => change(e.target.value)} style={style}>
+        <option value=""></option>
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {current && !options.some((o) => o.value === current) && <option value={current}>{current}</option>}
+      </select>
+    );
+  };
   const [transferRows, setTransferRows] = useState([
     {
       id: 1,
@@ -888,7 +968,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
   const handleOpenNewTransferModal = () => {
     setTransferVoucherNo(suggestNextTransferVoucherNo(transferVouchers));
-    setTransferDate("15/10/2026");
+    setTransferDate(toViDate(new Date().toISOString().slice(0, 10)));
+    setTransferIdempotencyKey(`FA-TRF-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
     setTransferSender("");
     setTransferReceiver("");
     setTransferReason("");
@@ -906,24 +987,41 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         contract: "",
         order: "",
         project: "",
-        costItem: "Chi phí khấu hao TSCĐ",
+        costItem: "",
         costObj: "",
       },
     ]);
     setShowTransferModal(true);
 
     if (apiConnected && _company?.id) {
-      fetch(`/api/v1/fixed-assets/transactions/next-transfer-number/?company_id=${encodeURIComponent(_company.id)}`, {
-        credentials: "include",
-        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
-      })
-        .then((r) => (r.ok ? r.json() : null))
+      void request<{ voucher_no?: string }>(`/api/v1/fixed-assets/transactions/next-transfer-number/?company_id=${encodeURIComponent(_company.id)}`, apiToken)
         .then((data) => {
           if (data?.voucher_no) {
             setTransferVoucherNo(String(data.voucher_no));
+            setTransferProposedNo(String(data.voucher_no));
           }
         })
-        .catch(() => {});
+        .catch((cause) => notify(`Không lấy được số biên bản giao nhận: ${errorText(cause)}`));
+    }
+  };
+
+  // AF19 & BR53: Biên bản giao nhận TSCĐ printed from the official saved data
+  const printTransferRecord = (record: any) => {
+    const failed = () => notify("Đã lưu chứng từ điều chuyển nhưng không thể thực hiện in. Vui lòng thử in lại.");
+    if (!record) return failed();
+    try {
+      const cell = "border:1px solid #000;padding:4px 6px";
+      const td = (value: unknown) => `<td style="${cell}">${escapeHtml(String(value ?? ""))}</td>`;
+      const rows = (record.lines || []).map((l: any, i: number) => `<tr>${td(i + 1)}${td(l.asset_code)}${td(l.asset_name)}${td(l.from_department_name)}${td(l.to_department_name)}${td(l.sales_contract)}${td(l.sales_order)}${td(l.project)}${td(l.expense_item)}${td(l.cost_object)}</tr>`).join("");
+      openPrintFrame(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title>
+<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%;margin-top:8px}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>
+<div class="center"><h1>BIÊN BẢN GIAO NHẬN TÀI SẢN CỐ ĐỊNH</h1><div>Số: <strong>${escapeHtml(record.voucher_no)}</strong> &nbsp; Ngày: ${escapeHtml(toViDate(record.transaction_date))}</div></div>
+<p>- Người bàn giao: ${escapeHtml(record.deliverer)}<br>- Người tiếp nhận: ${escapeHtml(record.receiver)}<br>- Lý do điều chuyển: ${escapeHtml(record.reason)}${record.reference ? `<br>- Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p>
+<table><thead><tr>${["STT", "Mã tài sản", "Tên tài sản", "Từ đơn vị", "Đến đơn vị", "Hợp đồng bán", "Đơn đặt hàng", "Công trình", "Khoản mục CP", "Đối tượng THCP"].map((h) => `<th style="${cell}">${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
+<table style="margin-top:24px"><tr><td class="center"><strong>Người bàn giao</strong><br><span class="muted">(Ký, họ tên)</span></td><td class="center"><strong>Người tiếp nhận</strong><br><span class="muted">(Ký, họ tên)</span></td></tr></table></body></html>`,
+        `In ${record.voucher_no}`, failed);
+    } catch {
+      failed();
     }
   };
 
@@ -1041,9 +1139,12 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
 
     if (apiConnected) {
-      void apiSave((writer) =>
-        saveFixedAssetTransfer(writer, {
+      let savedRecord: any = null;
+      void apiSave(async (writer) => {
+        const result = await saveFixedAssetTransfer(writer, {
           voucherNo: trimmedNo,
+          proposedVoucherNo: transferProposedNo,
+          idempotencyKey: transferIdempotencyKey,
           date: transferDate,
           deliverer: trimmedDeliverer,
           receiver: trimmedReceiver,
@@ -1051,15 +1152,16 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
           reference: transferReference,
           attachments: transferAttachments,
           rows: filledRows,
-        })
-      ).then((saved) => {
+        });
+        savedRecord = result.record;
+        return result;
+      }).then((saved) => {
         if (saved) {
           setTransferIsDirty(false);
           setShowTransferModal(false);
           setTransferView("table");
-          if (printAfter && typeof window !== "undefined" && typeof window.print === "function") {
-            setTimeout(() => window.print(), 200);
-          }
+          // AF19 & BR53: print the handover record from the saved voucher; a print failure keeps the transfer
+          if (printAfter) printTransferRecord(savedRecord);
         }
       });
       return;
@@ -1156,11 +1258,28 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   // UC-FA-07: GHI GIẢM TÀI SẢN CỐ ĐỊNH (GGTS00001)
   // =========================================================================
   const [decVoucherNo, setDecVoucherNo] = useState("GGTS00001");
-  const [decDate, setDecDate] = useState("12/10/2026");
-  const [decPostingDate, setDecPostingDate] = useState("12/10/2026");
+  const [decDate, setDecDate] = useState("");
+  const [decPostingDate, setDecPostingDate] = useState("");
   const [decReason, setDecReason] = useState("Nhượng bán, thanh lý");
   const [decReference, setDecReference] = useState("");
+  const [decRecipientEntity, setDecRecipientEntity] = useState("");
+  const [decAgreedInvestmentValue, setDecAgreedInvestmentValue] = useState("");
+  const [decHasProcessingDecision, setDecHasProcessingDecision] = useState(false);
+  const [decCompensationAmount, setDecCompensationAmount] = useState("");
+  const [decIsWelfareAsset, setDecIsWelfareAsset] = useState(false);
+  const [decImmediateExpense, setDecImmediateExpense] = useState(false);
+  const [decAllocationPeriods, setDecAllocationPeriods] = useState("12");
+  const [decReferenceIds, setDecReferenceIds] = useState<string[]>([]);
+  const [showDecReferencePicker, setShowDecReferencePicker] = useState(false);
+  const [decReferenceRows, setDecReferenceRows] = useState<any[]>([]);
+  const [decReferenceSelected, setDecReferenceSelected] = useState<string[]>([]);
+  const [decReferenceSearch, setDecReferenceSearch] = useState("");
+  const [decReferenceType, setDecReferenceType] = useState("");
+  const [decReferenceFrom, setDecReferenceFrom] = useState("");
+  const [decReferenceTo, setDecReferenceTo] = useState("");
+  const [decIdempotencyKey, setDecIdempotencyKey] = useState("");
   const [decAttachments, setDecAttachments] = useState<Array<{ name: string; size: number; type: string }>>([]);
+  const [decFiles, setDecFiles] = useState<File[]>([]);
   const [decIsDirty, setDecIsDirty] = useState(false);
   const [showDecReasonDropdown, setShowDecReasonDropdown] = useState(false);
   const [decHoveredReason, setDecHoveredReason] = useState<string | null>(null);
@@ -1204,6 +1323,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
   // Step 4, 21, AF04–AF13, BR15, BR16: Propose TK Xử lý giá trị according to disposal reason
   const proposeDecHandlingAccount = (reason: string): string => {
+    if (simpleAssetBook) return "";
     switch (reason) {
       case "Nhượng bán, thanh lý":
         return "811";
@@ -1230,6 +1350,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     rowsList = decRows,
     reasonVal = decReason
   ): Array<{ id: string; assetCode: string; description: string; debitAcc: string; creditAcc: string; amount: number }> => {
+    if (simpleAssetBook) return [];
     const entries: Array<{ id: string; assetCode: string; description: string; debitAcc: string; creditAcc: string; amount: number }> = [];
     const filled = rowsList.filter((r) => String(r.assetCode || "").trim());
     for (const [idx, r] of filled.entries()) {
@@ -1237,7 +1358,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       const remAmt = Number(r.remainingValue) || 0;
       const costAcc = String(r.costAcc || "2112").trim();
       const accumAcc = String(r.accumulatedAcc || "2141").trim();
-      const handlingAcc = String(r.handlingAcc || proposeDecHandlingAccount(reasonVal)).trim();
+      const handlingAcc = reasonVal === "Nhượng bán, thanh lý" && decIsWelfareAsset ? "3532"
+        : reasonVal === "Chuyển TSCĐ thành CCDC" && (decImmediateExpense || Number(decAllocationPeriods) <= 1) ? "642"
+        : String(r.handlingAcc || proposeDecHandlingAccount(reasonVal)).trim();
 
       if (accumAmt > 0) {
         let deprDesc = `Ghi giảm hao mòn lũy kế TSCĐ (${reasonVal})`;
@@ -1261,10 +1384,19 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       }
 
       // AF18: Only generate 2nd line when remainingValue > 0
-      if (remAmt > 0) {
+      if (remAmt > 0 && reasonVal === "Phát hiện thiếu khi kiểm kê" && decHasProcessingDecision && decCompensationAmount !== "") {
+        const compensated = Math.min(remAmt, Number(decCompensationAmount) || 0);
+        if (compensated > 0) entries.push({ id: `dec-ae-${idx}-2`, assetCode: r.assetCode, description: "Ghi nhận khoản phải thu bồi thường TSCĐ thiếu", debitAcc: "1388", creditAcc: costAcc, amount: compensated });
+        if (remAmt > compensated) entries.push({ id: `dec-ae-${idx}-3`, assetCode: r.assetCode, description: "Ghi nhận phần tổn thất TSCĐ thiếu", debitAcc: "811", creditAcc: costAcc, amount: remAmt - compensated });
+      } else if ((reasonVal.startsWith("Góp vốn") || reasonVal === "Đầu tư dài hạn khác") && decAgreedInvestmentValue !== "") {
+        const agreed = Number(decAgreedInvestmentValue) || 0;
+        if (agreed > 0) entries.push({ id: `dec-ae-${idx}-2`, assetCode: r.assetCode, description: "Ghi nhận khoản đầu tư", debitAcc: handlingAcc, creditAcc: costAcc, amount: Math.min(agreed, remAmt) });
+        if (agreed > remAmt) entries.push({ id: `dec-ae-${idx}-3`, assetCode: r.assetCode, description: "Chênh lệch đánh giá tăng tài sản góp vốn", debitAcc: handlingAcc, creditAcc: "711", amount: agreed - remAmt });
+        if (agreed < remAmt) entries.push({ id: `dec-ae-${idx}-3`, assetCode: r.assetCode, description: "Chênh lệch đánh giá giảm tài sản góp vốn", debitAcc: "811", creditAcc: costAcc, amount: remAmt - agreed });
+      } else if (remAmt > 0) {
         let remDesc = `Ghi nhận giá trị còn lại của TSCĐ (${reasonVal})`;
         if (reasonVal === "Nhượng bán, thanh lý") {
-          remDesc = "Ghi nhận giá trị còn lại của TSCĐ vào chi phí khác";
+          remDesc = decIsWelfareAsset ? "Ghi giảm nguồn hình thành TSCĐ dùng cho phúc lợi" : "Ghi nhận giá trị còn lại của TSCĐ vào chi phí khác";
         } else if (reasonVal === "Phát hiện thiếu khi kiểm kê") {
           remDesc = "Ghi nhận giá trị còn lại của TSCĐ thiếu chờ xử lý";
         } else if (reasonVal === "Chuyển TSCĐ thành CCDC") {
@@ -1299,14 +1431,52 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     return `GGTS${String(nextSeq).padStart(5, "0")}`;
   };
 
+  const loadDecReferenceRows = async () => {
+    if (!apiToken) return;
+    if (decReferenceFrom && decReferenceTo && decReferenceFrom > decReferenceTo) {
+      notify("Ngày Từ không được lớn hơn ngày Đến.");
+      return;
+    }
+    const params = new URLSearchParams({ company_id: _company.id });
+    if (decReferenceFrom) params.set("from_date", decReferenceFrom);
+    if (decReferenceTo) params.set("to_date", decReferenceTo);
+    if (decReferenceSearch.trim()) params.set("number", decReferenceSearch.trim());
+    if (decReferenceType) params.set("entry_type", decReferenceType);
+    try {
+      setDecReferenceRows(await request<any[]>(`/api/v1/fixed-assets/transactions/disposal-references/?${params}`, apiToken));
+    } catch (error) {
+      notify(`Không lấy được chứng từ tham chiếu: ${errorText(error)}`);
+    }
+  };
+
   const handleOpenNewDecreaseModal = () => {
     const localSuggested = suggestNextDecreaseVoucherNo(decVouchers);
     setDecVoucherNo(localSuggested);
-    setDecDate("12/10/2026");
-    setDecPostingDate("12/10/2026");
+    const periodMatch = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(_period);
+    const today = new Date();
+    const workingDay = periodMatch
+      ? new Date(Number(periodMatch[1]), Number(periodMatch[2]) - 1,
+          today.getFullYear() === Number(periodMatch[1]) && today.getMonth() + 1 === Number(periodMatch[2])
+            ? today.getDate() : new Date(Number(periodMatch[1]), Number(periodMatch[2]), 0).getDate())
+      : today;
+    const workingDate = toViDate(`${workingDay.getFullYear()}-${String(workingDay.getMonth() + 1).padStart(2, "0")}-${String(workingDay.getDate()).padStart(2, "0")}`);
+    setDecDate(workingDate);
+    setDecPostingDate(workingDate);
     setDecReason("Nhượng bán, thanh lý");
     setDecReference("");
+    setDecRecipientEntity("");
+    setDecAgreedInvestmentValue("");
+    setDecHasProcessingDecision(false);
+    setDecCompensationAmount("");
+    setDecIsWelfareAsset(false);
+    setDecImmediateExpense(false);
+    setDecAllocationPeriods("12");
+    setDecReferenceIds([]);
+    setShowDecReferencePicker(false);
+    setDecReferenceSearch(""); setDecReferenceType(""); setDecReferenceFrom(""); setDecReferenceTo("");
+    setDecIdempotencyKey(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
     setDecAttachments([]);
+    setDecFiles([]);
     setDecIsDirty(false);
     setDecTab("asset");
     const initRows = [
@@ -1319,9 +1489,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         deprCost: 0,
         accumulatedDepr: 0,
         remainingValue: 0,
-        costAcc: "2112",
-        accumulatedAcc: "2141",
-        handlingAcc: "811",
+        costAcc: simpleAssetBook ? "" : "2112",
+        accumulatedAcc: simpleAssetBook ? "" : "2141",
+        handlingAcc: proposeDecHandlingAccount("Nhượng bán, thanh lý"),
       },
     ];
     setDecRows(initRows);
@@ -1330,17 +1500,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setShowDecreaseModal(true);
 
     if (apiConnected && _company?.id) {
-      fetch(`/api/v1/fixed-assets/transactions/next-disposal-number/?company_id=${encodeURIComponent(_company.id)}`, {
-        credentials: "include",
-        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
-      })
-        .then((r) => (r.ok ? r.json() : null))
+      void request<{ voucher_no?: string }>(`/api/v1/fixed-assets/transactions/next-disposal-number/?company_id=${encodeURIComponent(_company.id)}`, apiToken)
         .then((data) => {
           if (data?.voucher_no) {
             setDecVoucherNo(String(data.voucher_no));
           }
         })
-        .catch(() => {});
+        .catch((cause) => notify(`Không lấy được số chứng từ ghi giảm: ${errorText(cause)}`));
     }
   };
 
@@ -1371,8 +1537,17 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       nextList.push({ name: f.name, size: f.size, type: f.type || "application/octet-stream" });
     }
     setDecAttachments(nextList);
+    setDecFiles((current) => [...current, ...files]);
     setDecIsDirty(true);
     e.target.value = "";
+  };
+
+  const printSavedDecrease = (record: any) => {
+    const money = (value: unknown) => Number(value || 0).toLocaleString("vi-VN");
+    const cell = "border:1px solid #334155;padding:5px 7px";
+    const rows = (record.rows || []).map((row: any) => `<tr><td style="${cell}">${escapeHtml(row.asset_code)}</td><td style="${cell}">${escapeHtml(row.asset_name)}</td><td style="${cell}">${money(row.original_cost)}</td><td style="${cell}">${money(row.accumulated_depreciation)}</td><td style="${cell}">${money(row.remaining_value)}</td></tr>`).join("");
+    const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title><style>body{font-family:"Times New Roman",serif;margin:30px;color:#111827}table{border-collapse:collapse;width:100%}h1{text-align:center;font-size:20px}p{font-size:14px}</style></head><body><h1>CHỨNG TỪ GHI GIẢM TÀI SẢN CỐ ĐỊNH</h1><p>Số: ${escapeHtml(record.voucher_no)} &nbsp; Ngày hạch toán: ${escapeHtml(toViDate(record.posting_date))}</p><p>Lý do: ${escapeHtml(record.reason)}${record.reference ? ` &nbsp; Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p><table><thead><tr><th style="${cell}">Mã tài sản</th><th style="${cell}">Tên tài sản</th><th style="${cell}">Nguyên giá</th><th style="${cell}">Hao mòn lũy kế</th><th style="${cell}">Giá trị còn lại</th></tr></thead><tbody>${rows}</tbody></table><p>Tổng nguyên giá ghi giảm: <strong>${money(record.total_original_cost)}</strong></p></body></html>`;
+    openPrintFrame(html, `In ${record.voucher_no}`, () => notify("Đã lưu chứng từ nhưng không thể in. Vui lòng thử lại."));
   };
 
   // Steps 29–40, EF02–EF25, BR01–BR40: Validate and save disposal voucher
@@ -1425,6 +1600,18 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     if (filledRows.length === 0) {
       notify("Vui lòng chọn ít nhất một tài sản cần ghi giảm.");
       return;
+    }
+    if ((decAgreedInvestmentValue !== "" && (trimmedReason.startsWith("Góp vốn") || trimmedReason === "Đầu tư dài hạn khác")) || (decHasProcessingDecision && trimmedReason === "Phát hiện thiếu khi kiểm kê")) {
+      if (filledRows.length > 1) { notify("Vui lòng lập riêng chứng từ cho từng tài sản khi có giá trị góp vốn hoặc bồi thường."); return; }
+    }
+    if ((trimmedReason.startsWith("Góp vốn") || trimmedReason === "Đầu tư dài hạn khác") && decAgreedInvestmentValue !== "" && (!Number.isFinite(Number(decAgreedInvestmentValue)) || Number(decAgreedInvestmentValue) < 0)) {
+      notify("Giá trị góp vốn được chấp thuận không hợp lệ."); return;
+    }
+    if (trimmedReason === "Phát hiện thiếu khi kiểm kê" && decHasProcessingDecision && (decCompensationAmount === "" || !Number.isFinite(Number(decCompensationAmount)) || Number(decCompensationAmount) < 0 || Number(decCompensationAmount) > Number(filledRows[0].remainingValue))) {
+      notify("Số tiền bồi thường phải từ 0 đến giá trị còn lại của tài sản."); return;
+    }
+    if (trimmedReason === "Chuyển TSCĐ thành CCDC" && !decImmediateExpense && (!Number.isInteger(Number(decAllocationPeriods)) || Number(decAllocationPeriods) < 1)) {
+      notify("Số kỳ phân bổ phải là số nguyên dương."); return;
     }
 
     // Per-row validations (EF09–EF15, EF20, EF22, EF23)
@@ -1482,21 +1669,23 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       // EF22: Validate TK Nguyên giá & TK Hao mòn
       const costAcc = String(r.costAcc || "").trim();
       const accumAcc = String(r.accumulatedAcc || "").trim();
-      if (!/^(211|212|213)/.test(costAcc) || !/^214/.test(accumAcc)) {
+      if (!simpleAssetBook && (!/^(211|212|213)/.test(costAcc) || !/^214/.test(accumAcc))) {
         notify("Tài khoản nguyên giá hoặc hao mòn TSCĐ không hợp lệ.");
         return;
       }
 
       // EF20: Finance lease return check
-      if (trimmedReason === "Trả lại TSCĐ thuê tài chính" && !costAcc.startsWith("212") && !accumAcc.startsWith("2142")) {
+      if (trimmedReason === "Trả lại TSCĐ thuê tài chính" && !costAcc.startsWith("212") && !accumAcc.startsWith("2142") && !String((asset as any).costAccount || "").startsWith("212") && !String((asset as any).deprAccount || "").startsWith("2142")) {
         notify("Tài sản không thuộc loại TSCĐ thuê tài chính.");
         return;
       }
 
       // EF23: Validate TK Xử lý giá trị against reason
-      const handlingAcc = String(r.handlingAcc || "").trim();
+      const handlingAcc = trimmedReason === "Nhượng bán, thanh lý" && decIsWelfareAsset ? "3532"
+        : trimmedReason === "Chuyển TSCĐ thành CCDC" && (decImmediateExpense || Number(decAllocationPeriods) <= 1) ? "642"
+        : String(r.handlingAcc || "").trim();
       const allowedPrefs = allowedHandlingPrefixes[trimmedReason] || ["811"];
-      if (!handlingAcc || !allowedPrefs.some((p) => handlingAcc.startsWith(p))) {
+      if (!simpleAssetBook && (!handlingAcc || !allowedPrefs.some((p) => handlingAcc.startsWith(p)))) {
         notify("Tài khoản xử lý giá trị không phù hợp với lý do ghi giảm.");
         return;
       }
@@ -1522,32 +1711,45 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         totalAssetCredit += amt;
       }
     }
-    if (totalAssetCredit !== totalOrig) {
+    if (!simpleAssetBook && totalAssetCredit !== totalOrig) {
       notify("Số tiền ghi giảm nguyên giá không khớp với danh sách tài sản.");
       return;
     }
 
     if (apiConnected) {
-      void apiSave((writer) =>
-        saveFixedAssetDisposal(writer, {
+      let savedRecord: any = null;
+      void apiSave(async (writer) => {
+        const result = await saveFixedAssetDisposal(writer, {
           voucherNo: trimmedNo,
           postingDate: decPostingDate,
           voucherDate: decDate,
           date: decDate,
           reason: trimmedReason,
           reference: decReference,
+          recipientEntity: decRecipientEntity,
+          agreedInvestmentValue: decAgreedInvestmentValue,
+          hasProcessingDecision: decHasProcessingDecision,
+          compensationAmount: decCompensationAmount,
+          isWelfareAsset: decIsWelfareAsset,
+          immediateExpense: decImmediateExpense,
+          allocationPeriods: Number(decAllocationPeriods),
+          referenceJournalIds: decReferenceIds,
+          idempotencyKey: decIdempotencyKey,
+          simpleAssetBook,
           rows: filledRows,
           accountingRows: activeAccountingRows,
           attachments: decAttachments,
-        })
-      ).then((saved) => {
+          files: decFiles,
+        });
+        savedRecord = result.record;
+        return result;
+      }).then((saved) => {
         if (saved) {
           setDecIsDirty(false);
           setShowDecreaseModal(false);
+          setDecFiles([]);
           setDecreaseView("table");
-          if (printAfter && typeof window !== "undefined" && typeof window.print === "function") {
-            setTimeout(() => window.print(), 200);
-          }
+          if (printAfter && savedRecord) printSavedDecrease(savedRecord);
         }
       });
       return;
@@ -1570,7 +1772,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
     const newVoucherEntries = filledRows.map((r, idx) => ({
       voucherNo: idx === 0 ? trimmedNo : `${trimmedNo}-${String(idx + 1).padStart(2, "0")}`,
-      date: decDate || "12/10/2026",
+      date: decDate,
       assetCode: r.assetCode,
       assetName: r.assetName,
       reason: trimmedReason,
@@ -1654,10 +1856,24 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     currentQuality: string;
     recommendation: string;
     resolutionVoucherNo?: string;
+    resolutionResult?: string;
+    recommendationStatus?: string;
+    version?: number;
+    identityMismatch?: boolean;
     note: string;
   };
 
   const [stocktakeVoucherNo, setStocktakeVoucherNo] = useState("KKTS00002");
+  const [showStocktakeDatePicker, setShowStocktakeDatePicker] = useState(false);
+  const [showStocktakeReferencePicker, setShowStocktakeReferencePicker] = useState(false);
+  const [stocktakeReferenceRows, setStocktakeReferenceRows] = useState<any[]>([]);
+  const [stocktakeReferenceIds, setStocktakeReferenceIds] = useState<string[]>([]);
+  const [stocktakeReferenceSelected, setStocktakeReferenceSelected] = useState<string[]>([]);
+  const [stocktakeReferenceSearch, setStocktakeReferenceSearch] = useState("");
+  const [stocktakeReferenceType, setStocktakeReferenceType] = useState("");
+  const [stocktakeReferenceFrom, setStocktakeReferenceFrom] = useState("");
+  const [stocktakeReferenceTo, setStocktakeReferenceTo] = useState("");
+  const [stocktakeIdempotencyKey, setStocktakeIdempotencyKey] = useState("");
   const [stocktakeDate, setStocktakeDate] = useState("12/10/2026 11:23:21");
   const [stocktakeAuditDate, setStocktakeAuditDate] = useState("12/10/2026");
   const [stocktakePurpose, setStocktakePurpose] = useState("Kiểm kê tài sản cố định định kỳ");
@@ -1670,7 +1886,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [stocktakeRowsPerPage, setStocktakeRowsPerPage] = useState("50");
   const [stocktakeCurrentPage, setStocktakeCurrentPage] = useState(1);
   const [stocktakeAttachments, setStocktakeAttachments] = useState<Array<{ name: string; size: number }>>([]);
+  const [stocktakeFiles, setStocktakeFiles] = useState<File[]>([]);
+  const [stocktakeViewOnly, setStocktakeViewOnly] = useState(false);
+  const [stocktakeSavedRecord, setStocktakeSavedRecord] = useState<any>(null);
   const [stocktakeIsDirty, setStocktakeIsDirty] = useState(false);
+  // AF20: post-stocktake processing of a recorded voucher (links the processing vouchers only)
+  const [stocktakeProcessingMode, setStocktakeProcessingMode] = useState(false);
+  // BR13 & EF15: book rows as of the count date, reused when a row is added by hand (AF08)
+  const [stocktakeBookLines, setStocktakeBookLines] = useState<any[]>([]);
   const [stocktakeRows, setStocktakeRows] = useState<StocktakeRowItem[]>([
     {
       id: "1",
@@ -1735,6 +1958,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     let matchedCount = 0;
     let missingCount = 0;
     let deptMismatchCount = 0;
+    let otherMismatchCount = 0;
+    let bookDifferenceCount = 0;
     let qualityIssueCount = 0;
     let uncountedCount = 0;
     let totalCost = 0;
@@ -1744,7 +1969,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
     for (const r of bookRows) {
       const c = Number(r.cost || 0);
-      const dc = Number(r.deprCost || c);
+      const dc = Number(r.deprCost ?? c);
       const ac = Math.min(c, Math.max(0, Number(r.accumDepr || 0)));
       const rc = Math.max(0, c - ac);
       totalCost += c;
@@ -1760,11 +1985,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         verifiedExistingCount += 1;
         const bookDept = String(r.dept || "").trim();
         const actDept = String(r.actualDept || r.dept || "").trim();
-        if (bookDept && actDept && bookDept.toLowerCase() !== actDept.toLowerCase()) {
-          deptMismatchCount += 1;
-        } else {
-          matchedCount += 1;
-        }
+        const deptDiff = Boolean(bookDept && actDept && bookDept.toLowerCase() !== actDept.toLowerCase());
+        if (deptDiff) deptMismatchCount += 1;
+        if (r.identityMismatch) otherMismatchCount += 1;
+        if (deptDiff || r.identityMismatch) bookDifferenceCount += 1;
+        else matchedCount += 1;
         if (hasStocktakeQualityIssue(r.currentQuality)) {
           qualityIssueCount += 1;
         }
@@ -1778,13 +2003,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
 
     const surplusCount = surplusRows.length;
-    const diffCount = missingCount + surplusCount + deptMismatchCount;
+    const diffCount = missingCount + surplusCount + bookDifferenceCount;
     return {
       bookAssetsCount: bookRows.length,
       verifiedExistingCount,
       matchedCount,
       missingCount,
       deptMismatchCount,
+      otherMismatchCount,
       surplusCount,
       diffCount,
       qualityIssueCount,
@@ -1799,17 +2025,29 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const handleOpenNewStocktake = () => {
     const nextNo = computeNextStocktakeVoucherNo();
     setStocktakeVoucherNo(nextNo);
-    setStocktakeDate("12/10/2026 11:23:21");
-    setStocktakeAuditDate("12/10/2026");
+    const now = new Date();
+    const today = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+    setStocktakeDate(`${today} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`);
+    setStocktakeAuditDate(today);
     setStocktakePurpose("Kiểm kê tài sản cố định định kỳ");
     setStocktakeReference("");
+    setStocktakeReferenceIds([]);
+    setStocktakeReferenceRows([]);
+    setStocktakeReferenceSearch(""); setStocktakeReferenceType(""); setStocktakeReferenceFrom(""); setStocktakeReferenceTo("");
+    setStocktakeIdempotencyKey(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
     setStocktakeScopeDept("ALL");
     setStocktakeScopeCategory("ALL");
     setStocktakeConclusion("");
     setStocktakeProcessed(false);
+    setStocktakeMembers([]);
     setStocktakeMembersOpen(false);
     setStocktakeCurrentPage(1);
     setStocktakeAttachments([]);
+    setStocktakeFiles([]);
+    setStocktakeViewOnly(false);
+    setStocktakeProcessingMode(false);
+    setStocktakeBookLines([]);
+    setStocktakeSavedRecord(null);
     setStocktakeIsDirty(false);
     setStocktakeRows([
       {
@@ -1830,21 +2068,32 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         note: "",
       }
     ]);
-    setShowStocktakeModal(true);
+    setShowStocktakeDatePicker(true);
 
     if (apiConnected && _company?.id) {
-      fetch(`/api/v1/fixed-assets/counts/next-number/?company_id=${encodeURIComponent(_company.id)}&asset_type=FIXED_ASSET`, {
-        credentials: "include",
-        headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
-      })
-        .then((r) => (r.ok ? r.json() : null))
+      void request<{ voucher_no?: string }>(`/api/v1/fixed-assets/counts/next-number/?company_id=${encodeURIComponent(_company.id)}&asset_type=FIXED_ASSET`, apiToken)
         .then((data) => {
           if (data?.voucher_no) {
             setStocktakeVoucherNo(String(data.voucher_no));
           }
         })
-        .catch(() => {});
+        .catch((cause) => notify(`Không lấy được số biên bản kiểm kê: ${errorText(cause)}`));
     }
+  };
+
+  const loadStocktakeReferenceRows = async () => {
+    if (!apiToken) return;
+    if (stocktakeReferenceFrom && stocktakeReferenceTo && stocktakeReferenceFrom > stocktakeReferenceTo) {
+      notify("Ngày Từ không được lớn hơn ngày Đến."); return;
+    }
+    const params = new URLSearchParams({ company_id: _company.id });
+    if (stocktakeReferenceFrom) params.set("from_date", stocktakeReferenceFrom);
+    if (stocktakeReferenceTo) params.set("to_date", stocktakeReferenceTo);
+    if (stocktakeReferenceSearch.trim()) params.set("number", stocktakeReferenceSearch.trim());
+    if (stocktakeReferenceType) params.set("entry_type", stocktakeReferenceType);
+    try {
+      setStocktakeReferenceRows(await request<any[]>(`/api/v1/fixed-assets/counts/stocktake-references/?${params}`, apiToken));
+    } catch (error) { notify(`Không lấy được chứng từ tham chiếu: ${errorText(error)}`); }
   };
 
   const handleCloseStocktakeModal = () => {
@@ -1871,8 +2120,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
           departmentName: stocktakeScopeDept === "ALL" ? "" : stocktakeScopeDept,
           categoryName: stocktakeScopeCategory === "ALL" ? "" : stocktakeScopeCategory,
         });
-        const apiAssets = Array.isArray(res?.record?.assets) ? res.record.assets : [];
-        if (apiAssets.length > 0) {
+        const apiAssets = Array.isArray(res?.record?.lines) ? res.record.lines : [];
+        setStocktakeBookLines(apiAssets);
+        {
           const mappedApi: StocktakeRowItem[] = apiAssets.map((a: any, i: number) => ({
             id: String(i + 1),
             assetCode: String(a.asset_code || a.code || ""),
@@ -1880,7 +2130,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             dept: String(a.department_name || a.dept || ""),
             actualDept: String(a.actual_department_name || a.department_name || a.dept || ""),
             cost: Number(a.original_cost || a.cost || 0),
-            deprCost: Number(a.depreciable_cost || a.original_cost || 0),
+            deprCost: Number(a.depreciable_amount ?? a.original_cost ?? 0),
             accumDepr: Number(a.accumulated_depreciation || 0),
             remainCost: Number(a.remaining_value || 0),
             existenceStatus: "UNCOUNTED",
@@ -1889,6 +2139,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             currentQuality: "",
             recommendation: "",
             note: Number(a.remaining_value || 0) === 0 ? "Đã khấu hao hết, còn sử dụng" : "",
+            version: Number(a.version || 1),
           }));
           setStocktakeRows(mappedApi);
           setStocktakeCurrentPage(1);
@@ -1896,6 +2147,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         }
         return res;
       });
+      return;
     }
     const eligible = assetsList.filter((a: any) => {
       if (a.status === "DISPOSED" || a.statusDisplay === "Đã ghi giảm" || decVouchers.some((dv) => dv.assetCode === a.code)) {
@@ -1947,6 +2199,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
   // AF11, EF17, BR22, BR32: Bổ sung tài sản phát hiện thừa ngoài sổ kế toán
   const handleAddSurplusStocktakeRow = () => {
+    // BR20: preview of the temporary id; the backend assigns it on save, it is never an official asset code
     const surplusIdx = stocktakeRows.filter((r) => r.isSurplus).length + 1;
     const tempCode = `THUA-${String(surplusIdx).padStart(3, "0")}`;
     setStocktakeRows((prev) => [
@@ -1973,7 +2226,158 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setStocktakeIsDirty(true);
   };
 
+  // AF08, BR13, BR15: add a book asset with its figures as of the count date; never twice on one voucher
+  const handlePickStocktakeAsset = async (rowId: string, selectedCode: string) => {
+    if (selectedCode && stocktakeRows.some((x) => x.id !== rowId && !x.isSurplus && x.assetCode.toLowerCase() === selectedCode.toLowerCase())) {
+      notify(`Tài sản ${selectedCode} đã có trong bảng kiểm kê.`);
+      return;
+    }
+    let bookLine: any = stocktakeBookLines.find((l) => String(l.asset_code).toLowerCase() === selectedCode.toLowerCase());
+    if (!bookLine && selectedCode && apiConnected && _company?.id) {
+      try {
+        const params = new URLSearchParams({ company_id: _company.id, count_date: toApiDate(stocktakeAuditDate), asset_type: "FIXED_ASSET" });
+        const data = await request<any>(`/api/v1/fixed-assets/counts/load-book-assets/?${params}`, apiToken);
+        bookLine = (data?.lines || []).find((l: any) => String(l.asset_code).toLowerCase() === selectedCode.toLowerCase());
+      } catch (error) {
+        notify(errorText(error));
+        return;
+      }
+      if (!bookLine) {
+        notify(`Tài sản ${selectedCode} không thuộc danh sách tài sản đang theo dõi tại ngày kiểm kê.`);
+        return;
+      }
+    }
+    const found: any = assetsList.find((a) => a.code === selectedCode);
+    const orig = bookLine ? Number(bookLine.original_cost || 0) : found ? Number(found.originalCost || 0) : 0;
+    const accum = bookLine ? Number(bookLine.accumulated_depreciation || 0) : found ? Math.min(orig, Math.max(0, Number(found.depreciatedAmount || 0))) : 0;
+    setStocktakeRows((prev) =>
+      prev.map((x) =>
+        x.id === rowId
+          ? {
+              ...x,
+              assetCode: selectedCode,
+              assetName: bookLine ? String(bookLine.asset_name || "") : found ? found.name : "",
+              dept: bookLine ? String(bookLine.department_name || "") : found ? found.dept : "",
+              actualDept: bookLine ? String(bookLine.department_name || "") : found ? found.dept : "",
+              cost: orig,
+              deprCost: bookLine ? Number(bookLine.depreciable_amount ?? orig) : found ? Number(found.deprCostValue || orig) : 0,
+              accumDepr: accum,
+              remainCost: bookLine ? Number(bookLine.remaining_value || 0) : Math.max(0, orig - accum),
+              version: bookLine ? Number(bookLine.version || 1) : x.version,
+              existenceStatus: "UNCOUNTED",
+              exists: null,
+            }
+          : x
+      )
+    );
+    setStocktakeIsDirty(true);
+  };
+
   // UC-FA-08 Steps 34–46 & EF02–EF26: Xác thực và lưu biên bản kiểm kê TSCĐ
+  const printSavedStocktake = (record: any) => {
+    const cell = "border:1px solid #334155;padding:5px 7px";
+    const money = (value: unknown) => Number(value || 0).toLocaleString("vi-VN");
+    // BR40: a surplus asset has no book value, so its cells stay empty instead of 0
+    const bookMoney = (value: unknown) => (value === null || value === undefined ? "" : money(value));
+    const lines = (record.lines || []).map((line: any) => `<tr><td style="${cell}">${escapeHtml(line.asset_code)}</td><td style="${cell}">${escapeHtml(line.asset_name)}</td><td style="${cell}">${escapeHtml(line.book_department_name)}</td><td style="${cell}">${bookMoney(line.original_cost)}</td><td style="${cell}">${bookMoney(line.accumulated_depreciation)}</td><td style="${cell}">${escapeHtml(line.reconciliation_result_display)}</td><td style="${cell}">${escapeHtml(line.current_quality)}</td><td style="${cell}">${escapeHtml(line.recommendation)}</td><td style="${cell}">${escapeHtml(line.note)}</td></tr>`).join("");
+    const members = (record.members || []).map((m: any) => `<li>${escapeHtml(m.name)} – ${escapeHtml(m.position)} – ${escapeHtml(m.represent)} (${escapeHtml(m.role)})</li>`).join("");
+    const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title><style>body{font-family:"Times New Roman",serif;margin:30px;color:#111827}table{border-collapse:collapse;width:100%}h1{text-align:center;font-size:20px}p{font-size:14px}</style></head><body><h1>BIÊN BẢN KIỂM KÊ TÀI SẢN CỐ ĐỊNH</h1><p>Số: ${escapeHtml(record.voucher_no)} &nbsp; Kiểm kê đến ngày: ${escapeHtml(record.count_date_display)}</p><p>Mục đích: ${escapeHtml(record.purpose)}</p><p>Ngày lập: ${escapeHtml(record.report_datetime)}${record.reference ? ` &nbsp; Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p><p>Thành viên tham gia:</p><ul>${members}</ul><table><thead><tr><th style="${cell}">Mã tài sản</th><th style="${cell}">Tên tài sản</th><th style="${cell}">Đơn vị theo sổ</th><th style="${cell}">Nguyên giá</th><th style="${cell}">Hao mòn lũy kế</th><th style="${cell}">Kết quả</th><th style="${cell}">Chất lượng</th><th style="${cell}">Kiến nghị</th><th style="${cell}">Ghi chú</th></tr></thead><tbody>${lines}</tbody></table><p>Kết luận: ${escapeHtml(record.conclusion)}</p><p>Tổng số TSCĐ: ${Number(record.summary?.book_assets_count || 0)} &nbsp; Khớp: ${Number(record.summary?.matched_count || 0)} &nbsp; Chênh lệch: ${Number(record.summary?.diff_count || 0)}</p></body></html>`;
+    openPrintFrame(html, `In ${record.voucher_no}`, () => notify("Đã lưu biên bản nhưng không thể in. Vui lòng thử lại."));
+  };
+
+  const openSavedStocktake = async (voucher: any) => {
+    if (!apiConnected || !voucher.id) return;
+    try {
+      const record = await request<any>(`/api/v1/fixed-assets/counts/${voucher.id}/?company_id=${encodeURIComponent(_company.id)}`, apiToken);
+      setStocktakeSavedRecord(record);
+      setStocktakeVoucherNo(record.voucher_no || record.number);
+      setStocktakeDate(record.report_datetime || voucher.date);
+      setStocktakeAuditDate(record.count_date_display || toViDate(record.count_date));
+      setStocktakePurpose(record.purpose || "");
+      setStocktakeReference(record.reference || "");
+      setStocktakeReferenceIds(record.reference_journal_ids || []);
+      setStocktakeConclusion(record.conclusion || "");
+      setStocktakeProcessed(Boolean(record.recommendations_processed));
+      setStocktakeMembers((record.members || []).map((m: any, i: number) => ({ id: String(i + 1), name: m.name || "", position: m.position || "", represent: m.represent || "", role: m.role || "Thành viên" })));
+      setStocktakeAttachments(record.attachments || []);
+      setStocktakeFiles([]);
+      setStocktakeScopeDept(record.scope?.department_name || "ALL");
+      setStocktakeScopeCategory(record.scope?.category_name || "ALL");
+      setStocktakeRows((record.lines || []).map((line: any, i: number) => ({
+        id: String(i + 1), assetCode: line.asset_code || "", assetName: line.asset_name || "",
+        dept: line.book_department_name || "", actualDept: line.actual_department_name || "",
+        cost: Number(line.original_cost || 0), deprCost: Number(line.depreciable_amount || 0),
+        accumDepr: Number(line.accumulated_depreciation || 0), remainCost: Number(line.remaining_value || 0),
+        existenceStatus: line.existence_status || "EXISTS", exists: line.exists ?? true,
+        isSurplus: Boolean(line.is_surplus), identificationInfo: line.identification_info || "",
+        currentQuality: line.current_quality || "", recommendation: line.recommendation || "",
+        resolutionVoucherNo: line.resolution_voucher_no || "", resolutionResult: line.resolution_result || "",
+        recommendationStatus: line.recommendation_status || "NONE", note: line.note || "",
+        identityMismatch: Boolean(line.other_mismatch), version: line.version,
+      })));
+      setStocktakeProcessingMode(false);
+      setStocktakeViewOnly(true);
+      setStocktakeIsDirty(false);
+      setShowStocktakeModal(true);
+    } catch (error) { notify(`Không mở được biên bản kiểm kê: ${errorText(error)}`); }
+  };
+
+  const exportStocktakes = async () => {
+    if (!apiToken) return;
+    try {
+      const rows = await request<any[]>(`/api/v1/fixed-assets/counts/export-stocktakes/?company_id=${encodeURIComponent(_company.id)}`, apiToken);
+      const fields = ["number", "count_date", "purpose", "book_assets_count", "matched_count", "diff_count", "conclusion", "status"];
+      const labels = ["Số biên bản", "Ngày kiểm kê", "Mục đích", "Tổng số TSCĐ", "Số lượng khớp", "Chênh lệch", "Kết luận", "Trạng thái"];
+      const csv = [labels, ...rows.map((row) => fields.map((field) => String(row[field] ?? "")))].map((values) => values.map((value) => `"${value.replace(/"/g, '""')}"`).join(",")).join("\r\n");
+      const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+      const anchor = document.createElement("a"); anchor.href = url; anchor.download = "kiem-ke-tai-san.csv"; anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) { notify(`Không xuất được danh sách kiểm kê: ${errorText(error)}`); }
+  };
+
+  const downloadStocktakeAttachment = async (attachment: any) => {
+    if (!stocktakeSavedRecord?.id || !attachment?.id) return;
+    try {
+      const url = `/api/v1/fixed-assets/counts/${stocktakeSavedRecord.id}/stocktake-attachments/?company_id=${encodeURIComponent(_company.id)}&attachment_id=${encodeURIComponent(attachment.id)}`;
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${apiToken}` } });
+      if (!response.ok) throw new Error("Không tải được hồ sơ kiểm kê.");
+      const blobUrl = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a"); anchor.href = blobUrl; anchor.download = String(attachment.name || "ho-so-kiem-ke"); anchor.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) { notify(errorText(error)); }
+  };
+
+  // AF20 & BR62: update only the processing of a recorded voucher; the count results are resent unchanged
+  const handleSaveStocktakeProcessing = () => {
+    const record = stocktakeSavedRecord;
+    if (!record?.id) return;
+    let savedRecord: any = null;
+    void apiSave(async (writer) => {
+      const result = await saveAssetCount(writer, "FIXED_ASSET", {
+        countId: record.id,
+        voucherNo: record.voucher_no,
+        auditDate: stocktakeAuditDate,
+        reportDatetime: record.report_datetime,
+        purpose: record.purpose,
+        conclusion: record.conclusion,
+        referenceJournalIds: record.reference_journal_ids || [],
+        recommendationsProcessed: stocktakeProcessed,
+        scope: record.scope,
+        members: record.members || [],
+        attachments: record.attachments || [],
+        rows: stocktakeRows,
+      });
+      savedRecord = result.record;
+      return result;
+    }).then((saved) => {
+      if (saved && savedRecord) {
+        setStocktakeSavedRecord(savedRecord);
+        setStocktakeProcessingMode(false);
+        setStocktakeIsDirty(false);
+      }
+    });
+  };
+
   const handleSaveStocktake = (isPrint: boolean = false) => {
     // EF02: Mục đích kiểm kê
     const trimmedPurpose = String(stocktakePurpose || "").trim();
@@ -1989,22 +2393,27 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       return;
     }
 
-    // EF05: Ngày lập biên bản không được nhỏ hơn ngày kiểm kê
-    const reportDatePart = String(stocktakeDate || "").trim().split(" ")[0];
-    const reportDt = parseDeprDateString(reportDatePart);
-    if (!reportDt || reportDt.getTime() < auditDt.getTime()) {
-      notify("Ngày lập biên bản không phù hợp với ngày kiểm kê.");
+    // EF02: Kiểm kê đến ngày không được lớn hơn ngày hiện tại
+    if (auditDt.getTime() > Date.now()) {
+      notify("Ngày kiểm kê không được lớn hơn ngày hiện tại.");
       return;
     }
 
-    // EF06 & EF07: Số chứng từ kiểm kê
-    const trimmedNo = String(stocktakeVoucherNo || "").trim();
-    if (!trimmedNo || trimmedNo.length > 50 || !/^[A-Za-z0-9Đđ/_-]+$/.test(trimmedNo)) {
-      notify("Vui lòng nhập số chứng từ kiểm kê hợp lệ.");
+    // EF05: Ngày lập biên bản từ ngày kiểm kê đến ngày hiện tại
+    const reportDatePart = String(stocktakeDate || "").trim().split(" ")[0];
+    const reportDt = parseDeprDateString(reportDatePart);
+    if (!reportDt || reportDt.getTime() < auditDt.getTime() || reportDt.getTime() > Date.now()) {
+      notify("Ngày lập biên bản không hợp lệ.");
       return;
     }
-    if (stocktakeVouchers.some((v) => String(v.voucherNo || "").toLowerCase() === trimmedNo.toLowerCase())) {
-      notify("Số chứng từ kiểm kê đã tồn tại.");
+
+    // EF04: Số chứng từ kiểm kê
+    const trimmedNo = String(stocktakeVoucherNo || "").trim();
+    if (
+      !trimmedNo || trimmedNo.length > 50 || !/^[A-Za-z0-9Đđ/_-]+$/.test(trimmedNo)
+      || stocktakeVouchers.some((v) => String(v.voucherNo || "").toLowerCase() === trimmedNo.toLowerCase())
+    ) {
+      notify("Số chứng từ kiểm kê không hợp lệ hoặc đã tồn tại.");
       return;
     }
 
@@ -2026,6 +2435,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         seenMembers.add(key);
       }
     }
+    // EF06 & BR26: biên bản cần có ban kiểm kê
+    if (seenMembers.size === 0) {
+      notify("Vui lòng khai báo đầy đủ thành viên tham gia kiểm kê.");
+      return;
+    }
 
     // EF09: Danh sách tài sản kiểm kê
     const filledRows = stocktakeRows.filter((r) => Boolean(r.isSurplus || String(r.assetCode || r.assetName || "").trim()));
@@ -2042,7 +2456,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         if (
           !String(r.assetName || "").trim() ||
           !String(r.actualDept || r.dept || "").trim() ||
-          !String(r.identificationInfo || r.note || r.assetCode || "").trim()
+          !String(r.identificationInfo || r.note || "").trim()
         ) {
           notify("Vui lòng bổ sung thông tin nhận dạng tài sản thừa.");
           return;
@@ -2069,15 +2483,15 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         notify(`Tài sản ${code} không hợp lệ.`);
         return;
       }
-      if (foundAsset.status === "DISPOSED" || foundAsset.statusDisplay === "Đã ghi giảm") {
+      if ((foundAsset.status === "DISPOSED" || foundAsset.statusDisplay === "Đã ghi giảm") && (!foundAsset.disposedAt || new Date(foundAsset.disposedAt).getTime() <= auditDt.getTime())) {
         // EF12
         notify(`Tài sản ${code} không thuộc danh sách tài sản đang theo dõi tại ngày kiểm kê.`);
         return;
       }
 
       if (r.existenceStatus === "UNCOUNTED" || r.exists === null) {
-        // EF14
-        notify("Còn tài sản chưa được xác nhận kết quả kiểm kê. Vui lòng kiểm tra lại.");
+        // EF11
+        notify("Còn tài sản chưa được xác nhận kết quả kiểm kê.");
         return;
       }
 
@@ -2102,6 +2516,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
           notify(`Vui lòng bổ sung tình trạng và kiến nghị xử lý cho tài sản ${code}.`);
           return;
         }
+        if (r.identityMismatch && (!noteStr || !rec)) {
+          notify(`Vui lòng bổ sung tình trạng và kiến nghị xử lý cho tài sản ${code}.`);
+          return;
+        }
       }
     }
 
@@ -2114,7 +2532,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         conclusionLower.includes(p)
       )
     ) {
-      notify("Kết luận kiểm kê không khớp với kết quả đối chiếu. Vui lòng kiểm tra lại.");
+      notify("Kết luận kiểm kê không khớp với kết quả đối chiếu.");
       return;
     }
 
@@ -2125,48 +2543,34 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         const bDept = String(r.dept || "").trim();
         const aDept = String(r.actualDept || r.dept || "").trim();
         if (bDept && aDept && bDept.toLowerCase() !== aDept.toLowerCase()) return true;
+        if (r.identityMismatch) return true;
         if (hasStocktakeQualityIssue(r.currentQuality)) return true;
         return false;
       });
       for (const ar of actionableRows) {
         if (String(ar.recommendation || "").toLowerCase().includes("tiếp tục xác minh")) {
-          notify("Còn kiến nghị kiểm kê chưa được xử lý. Không thể xác nhận đã xử lý kiến nghị.");
+          notify("Còn kiến nghị kiểm kê chưa được xử lý.");
           return;
         }
       }
-      if (actionableRows.length > 0 && !String(stocktakeReference || "").trim()) {
-        const allHaveRowVoucher = actionableRows.every((ar) => Boolean(String(ar.resolutionVoucherNo || "").trim()));
-        if (!allHaveRowVoucher) {
-          notify("Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.");
-          return;
-        }
+      if (actionableRows.length > 0 && !actionableRows.every((ar) => Boolean(String(ar.resolutionVoucherNo || ar.resolutionResult || "").trim()))) {
+        notify("Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.");
+        return;
       }
     }
 
     // EF26: Tệp đính kèm (<= 5MB)
     for (const att of stocktakeAttachments) {
       if (Number(att.size || 0) > 5 * 1024 * 1024) {
-        notify("Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).");
+        notify("Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.");
         return;
       }
     }
 
     if (apiConnected) {
-      const existingCount = (apiRows.assetCounts || []).find(
-        (c: any) => String(c.number || c.voucher_no || "").toLowerCase() === trimmedNo.toLowerCase()
-      );
-      void apiSave((writer) =>
-        existingCount?.id
-          ? updateStocktakeVoucherUc08(writer, String(existingCount.id), {
-              auditDate: stocktakeAuditDate,
-              reportDatetime: stocktakeDate,
-              purpose: trimmedPurpose,
-              conclusion: conclusionStr,
-              recommendationsProcessed: stocktakeProcessed,
-              members: stocktakeMembers,
-              lines: filledRows,
-            })
-          : saveAssetCount(writer, "FIXED_ASSET", {
+      let savedRecord: any = null;
+      void apiSave(async (writer) => {
+          const result = await saveAssetCount(writer, "FIXED_ASSET", {
               voucherNo: trimmedNo,
               number: trimmedNo,
               auditDate: stocktakeAuditDate,
@@ -2175,6 +2579,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               purpose: trimmedPurpose,
               conclusion: conclusionStr,
               reference: stocktakeReference,
+              referenceJournalIds: stocktakeReferenceIds,
+              idempotencyKey: stocktakeIdempotencyKey,
               recommendationsProcessed: stocktakeProcessed,
               scope: {
                 department_name: stocktakeScopeDept === "ALL" ? "" : stocktakeScopeDept,
@@ -2182,13 +2588,19 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               },
               members: stocktakeMembers,
               attachments: stocktakeAttachments,
+              files: stocktakeFiles,
               rows: filledRows,
-            })
-      ).then((saved) => {
+            });
+          savedRecord = result.record;
+          return result;
+      }).then((saved) => {
         if (saved) {
           setStocktakeIsDirty(false);
           setShowStocktakeModal(false);
           setStocktakeView("table");
+          setStocktakeSavedRecord(savedRecord);
+          setStocktakeFiles([]);
+          if (isPrint && savedRecord) printSavedStocktake(savedRecord);
         }
       });
       return;
@@ -2204,7 +2616,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       matchedAssets: stocktakeSummary.matchedCount,
       diffAssets: stocktakeSummary.diffCount,
       conclusion: conclusionStr,
-      status: stocktakeProcessed ? "Đã xử lý kiến nghị" : "Đã hoàn tất",
+      status: stocktakeProcessed ? "Đã ghi nhận · Đã xử lý kiến nghị" : "Đã ghi nhận",
     };
     setStocktakeVouchers((prev) => [newV, ...prev]);
     setStocktakeIsDirty(false);
@@ -2247,6 +2659,12 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [showAvaReportModal, setShowAvaReportModal] = useState(false);
   const [avaReportQuery, setAvaReportQuery] = useState("");
   const [apiReportPayload, setApiReportPayload] = useState<any | null>(null);
+  // UC-FA-09 B03–B04: catalog served by the backend (regime, GL use and report rights)
+  const [apiReportCatalog, setApiReportCatalog] = useState<any[] | null>(null);
+  // UC-FA-09 Main Flow A: register rows computed by the backend (history, scope, TK NG)
+  const [apiRegister, setApiRegister] = useState<any | null>(null);
+  const [reportIncludeZeroRemaining, setReportIncludeZeroRemaining] = useState(false);
+  const [reportCountId, setReportCountId] = useState("");
 
   // =========================================================================
   // FORM GHI TĂNG TÀI SẢN CỐ ĐỊNH (UC-FA-01)
@@ -2261,12 +2679,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   };
 
   const [incVoucherNo, setIncVoucherNo] = useState(() => suggestNextIncreaseVoucherNo(SAMPLE_INCREASE_VOUCHERS));
-  const [incVoucherDate, setIncVoucherDate] = useState("30/12/2026");
+  const [incVoucherDate, setIncVoucherDate] = useState(() => new Date().toLocaleDateString("en-GB"));
   const [incCategory, setIncCategory] = useState("");
   const [incCode, setIncCode] = useState("");
   const [incDept, setIncDept] = useState("");
   const [incName, setIncName] = useState("");
   const [incNoDepr, setIncNoDepr] = useState(false);
+  const [incNoDeprReason, setIncNoDeprReason] = useState("");
   const [incSubTab, setIncSubTab] = useState<
     "depreciation" | "allocation" | "origin" | "components" | "accessories" | "others"
   >("depreciation");
@@ -2280,7 +2699,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [incDeprCostValue, setIncDeprCostValue] = useState<number>(0);
   const [incDeprMonthValue, setIncDeprMonthValue] = useState<number>(0);
   const [incDeprYearValue, setIncDeprYearValue] = useState<number>(0);
-  const [incStartDate, setIncStartDate] = useState("30/12/2026");
+  const [incStartDate, setIncStartDate] = useState(() => new Date().toLocaleDateString("en-GB"));
   const [incAccumulatedDepr, setIncAccumulatedDepr] = useState<number>(0);
   const [incRemainingValue, setIncRemainingValue] = useState<number>(0);
   const [incUseDuration, setIncUseDuration] = useState<number>(0);
@@ -2290,17 +2709,45 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [incTaxLawMonthValue, setIncTaxLawMonthValue] = useState<number>(0);
 
   // Sub-tab 2: Thiết lập phân bổ (AF09, AF10, BR22, BR23)
-  const [incAllocations, setIncAllocations] = useState<any[]>([]);
+  const [incAllocations, setIncAllocations] = useState<Array<{
+    id: string;
+    dept: string;
+    rate: number;
+    expenseAccount: string;
+    expenseItem: string;
+    costCenter: string;
+  }>>([]);
 
   // Sub-tab 3: Nguồn gốc hình thành (AF05, AF11, BR07, BR12, BR24, BR25)
-  const [incOrigins, setIncOrigins] = useState<any[]>([]);
+  const [incOrigins, setIncOrigins] = useState<Array<{
+    id: string;
+    originType: string;
+    documentNumber: string;
+    documentDate: string;
+    amount: number;
+    partnerCode: string;
+    partnerName: string;
+    sourceDocumentId: string;
+  }>>([]);
   const [incOriginVarianceReason, setIncOriginVarianceReason] = useState("");
 
   // Sub-tab 4: Bộ phận cấu thành (AF12, BR26)
-  const [incComponents, setIncComponents] = useState<any[]>([]);
+  const [incComponents, setIncComponents] = useState<Array<{
+    id: string;
+    name: string;
+    unit: string;
+    quantity: number;
+    value: number;
+  }>>([]);
 
   // Sub-tab 5: Dụng cụ, phụ tùng kèm theo (AF13, BR26)
-  const [incAccessories, setIncAccessories] = useState<any[]>([]);
+  const [incAccessories, setIncAccessories] = useState<Array<{
+    id: string;
+    name: string;
+    unit: string;
+    quantity: number;
+    value: number;
+  }>>([]);
 
   // Sub-tab 6: Thông tin khác (AF14)
   const [incCountryOfOrigin, setIncCountryOfOrigin] = useState("");
@@ -2308,29 +2755,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [incSerialNumber, setIncSerialNumber] = useState("");
   const [incDescription, setIncDescription] = useState("");
 
-  const purchaseSourceDocs: Array<{
-    documentNo: string;
-    documentDate: string;
-    amount: number;
-    supplier: string;
-  }> = ((apiRows as any).purchases || []).map((p: any) => ({
-    documentNo: String(p.document_number || p.voucher_no || p.invoice_no || p.code || "MH001"),
-    documentDate: String(p.document_date || p.voucher_date || "15/10/2026"),
-    amount: Number(p.total_amount || p.amount || 0),
-    supplier: String(p.partner_name || p.supplier_name || p.partner || "Công ty TNHH Thiết bị & Kỹ thuật"),
-  }));
-
   // AF04: Quick-Add Loại tài sản Modal state
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCatCode, setNewCatCode] = useState("");
   const [newCatName, setNewCatName] = useState("");
-  const [newCatCostAcc, setNewCatCostAcc] = useState("2111");
+  const [newCatAssetAcc, setNewCatAssetAcc] = useState("2111");
   const [newCatDeprAcc, setNewCatDeprAcc] = useState("2141");
   const [newCatExpAcc, setNewCatExpAcc] = useState("6424");
-  const [newCatLifeYears, setNewCatLifeYears] = useState(5);
-  const costAccountOptions = ["2111", "2112", "2113", "2114", "2118", "2131"];
-  const deprAccountOptions = ["2141", "2142", "2143", "2147"];
-  const expenseAccountOptions = ["6274", "6414", "6424", "154"];
+  const [newCatPeriods, setNewCatPeriods] = useState("60");
   const [localCategories, setLocalCategories] = useState<Array<{
     code: string;
     name: string;
@@ -2364,6 +2796,22 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
     return Array.from(map.values());
   })();
+  const costAccountOptions = (apiRows.accounts || [])
+    .filter((account) => /^(211|213)/.test(String(account.code || "")) && account.status === "ACTIVE" && account.is_postable)
+    .map((account) => String(account.code));
+  const deprAccountOptions = (apiRows.accounts || [])
+    .filter((account) => /^214/.test(String(account.code || "")) && account.status === "ACTIVE" && account.is_postable)
+    .map((account) => String(account.code));
+  const expenseAccountOptions = (apiRows.accounts || [])
+    .filter((account) => /^(627|641|642)/.test(String(account.code || "")) && account.status === "ACTIVE" && account.is_postable)
+    .map((account) => String(account.code));
+  const purchaseSourceDocs = (apiRows.goodsPurchases || []).map((purchase) => ({
+    id: String(purchase.id || ""),
+    documentNo: String(purchase.number || ""),
+    documentDate: toViDate(purchase.document_date || ""),
+    amount: Number(purchase.total_amount || 0),
+    supplier: String(purchase.supplier_name || ""),
+  })).filter((purchase) => purchase.documentNo);
 
   const departmentOptions = (() => {
     const names = new Set<string>([
@@ -2491,12 +2939,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
   const resetIncreaseForm = (nextVouchersList = increaseVouchers) => {
     setIncVoucherNo(suggestNextIncreaseVoucherNo(nextVouchersList));
-    setIncVoucherDate("30/12/2026");
+    setIncVoucherDate(new Date().toLocaleDateString("en-GB"));
     setIncCategory("");
     setIncCode("");
     setIncDept("");
     setIncName("");
     setIncNoDepr(false);
+    setIncNoDeprReason("");
     setIncSubTab("depreciation");
     setIncCostAcc("");
     setIncOriginalCost(0);
@@ -2506,7 +2955,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setIncDeprCostValue(0);
     setIncDeprMonthValue(0);
     setIncDeprYearValue(0);
-    setIncStartDate("30/12/2026");
+    setIncStartDate(new Date().toLocaleDateString("en-GB"));
     setIncAccumulatedDepr(0);
     setIncRemainingValue(0);
     setIncUseDuration(0);
@@ -2597,7 +3046,12 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       notify("Nguyên giá tài sản phải lớn hơn 0 và có căn cứ hợp lệ.");
       return;
     }
-    if (!incCostAcc.trim() || !/^(211|212|213)/.test(incCostAcc.trim())) {
+    if (incNoDepr && !incNoDeprReason.trim()) {
+      setIncSubTab("depreciation");
+      notify("Vui lòng nhập căn cứ không tính khấu hao.");
+      return;
+    }
+    if (!simpleAssetBook && (!incCostAcc.trim() || !/^(211|212|213)/.test(incCostAcc.trim()))) {
       setIncSubTab("depreciation");
       notify("Tài khoản nguyên giá không hợp lệ.");
       return;
@@ -2608,7 +3062,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       return;
     }
     if (!incNoDepr) {
-      if (!incDeprAcc.trim() || !/^214/.test(incDeprAcc.trim())) {
+      if (!simpleAssetBook && (!incDeprAcc.trim() || !/^214/.test(incDeprAcc.trim()))) {
         setIncSubTab("depreciation");
         notify("Vui lòng chọn tài khoản khấu hao hợp lệ.");
         return;
@@ -2639,7 +3093,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         notify("Tổng tỷ lệ phân bổ khấu hao phải bằng 100%.");
         return;
       }
-      if (incAllocations.some((r) => !r.dept.trim() || !r.expenseAccount.trim() || Number(r.rate) <= 0)) {
+      if (incAllocations.some((r) => !r.dept.trim() || (!simpleAssetBook && !r.expenseAccount.trim()) || Number(r.rate) <= 0)) {
         setIncSubTab("allocation");
         notify("Thông tin phân bổ chi phí khấu hao không hợp lệ.");
         return;
@@ -2665,6 +3119,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       category: incCategory,
       dept: incDept,
       noDepr: incNoDepr,
+      noDeprReason: incNoDeprReason.trim(),
+      simpleAssetBook,
       startDate: incVoucherDate,
       deprStartDate: incStartDate,
       years: yearsEquivalent,
@@ -2803,7 +3259,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         : []
     );
     const defaultOrigins =
-      Array.isArray(row.origins) && row.origins.length > 0
+      Array.isArray(row.origins)
         ? row.origins.map((o: any) => ({
             sourceType: String(o.sourceType || o.originType || o.origin_type || "Mua sắm mới trong nước"),
             documentNo: String(o.documentNo || o.documentNumber || o.document_number || row.voucherNo || ""),
@@ -2811,15 +3267,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             amount: Number(o.amount ?? row.originalCost ?? 0),
             supplier: String(o.supplier || o.partnerName || o.partner_name || ""),
           }))
-        : [
-            {
-              sourceType: "Mua sắm mới trong nước",
-              documentNo: String(row.voucherNo || `CT-${row.code}`),
-              documentDate: String(row.startDate || ""),
-              amount: Number(row.originalCost || 0),
-              supplier: "",
-            },
-          ];
+        : [];
     setEditOrigins(defaultOrigins);
     setEditUpdateReason("");
     setEditNameError(false);
@@ -2829,7 +3277,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   };
 
   // Bước 5 & AF03 & AF17 & EF01: Mở màn hình Chi tiết tài sản cố định ở chế độ chỉ đọc
-  const openAssetDetailModal = (assetCodeOrRow: string | any) => {
+  const openAssetDetailModal = (assetCodeOrRow: string | any, startEditing = false) => {
     const found =
       typeof assetCodeOrRow === "string"
         ? assetsList.find((a) => a.code === assetCodeOrRow)
@@ -2871,7 +3319,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     };
     setDetailAsset(enriched);
     populateEditStatesFromAsset(enriched);
-    setIsEditingAsset(false);
+    const editable = enriched.status === "ACTIVE" && !enriched.disposed_at && !decVouchers.some((d) => d.assetCode === enriched.code);
+    setIsEditingAsset(startEditing && editable);
+    if (startEditing && !editable) notify("Trạng thái tài sản không cho phép cập nhật trực tiếp.");
     setDetailSubTab("others");
     setShowAssetDetailModal(true);
 
@@ -2978,7 +3428,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
 
     const cleanComp = editComponents.filter((c) => c.name.trim());
-    const oldComp = Array.isArray(detailAsset.components) ? detailAsset.components : [];
+    const oldComp = Array.isArray(detailAsset.components) ? detailAsset.components.map((c: any) => ({
+      name: String(c.name || ""), unit: String(c.unit || "Cái"), quantity: Number(c.quantity) || 1, value: Number(c.value) || 0,
+    })) : [];
     if (JSON.stringify(cleanComp) !== JSON.stringify(oldComp)) {
       changes.push({
         fieldName: "components",
@@ -2989,7 +3441,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
 
     const cleanAcc = editAccessories.filter((a) => a.name.trim());
-    const oldAcc = Array.isArray(detailAsset.accessories) ? detailAsset.accessories : [];
+    const oldAcc = Array.isArray(detailAsset.accessories) ? detailAsset.accessories.map((a: any) => ({
+      name: String(a.name || ""), unit: String(a.unit || "Bộ"), quantity: Number(a.quantity) || 1, value: Number(a.value) || 0,
+    })) : [];
     if (JSON.stringify(cleanAcc) !== JSON.stringify(oldAcc)) {
       changes.push({
         fieldName: "accessories",
@@ -2999,18 +3453,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       });
     }
 
-    const oldOrigins =
-      Array.isArray(detailAsset.origins) && detailAsset.origins.length > 0
-        ? detailAsset.origins
-        : [
-            {
-              sourceType: "Mua sắm mới trong nước",
-              documentNo: String(detailAsset.voucherNo || `CT-${detailAsset.code}`),
-              documentDate: String(detailAsset.startDate || ""),
-              amount: Number(detailAsset.originalCost || 0),
-              supplier: "",
-            },
-          ];
+    const oldOrigins = Array.isArray(detailAsset.origins) ? detailAsset.origins.map((o: any) => ({
+      sourceType: String(o.sourceType || o.originType || o.origin_type || "Mua sắm mới trong nước"),
+      documentNo: String(o.documentNo || o.documentNumber || o.document_number || detailAsset.voucherNo || ""),
+      documentDate: String(o.documentDate || o.document_date || detailAsset.startDate || ""),
+      amount: Number(o.amount ?? detailAsset.originalCost ?? 0),
+      supplier: String(o.supplier || o.partnerName || o.partner_name || ""),
+    })) : [];
     if (JSON.stringify(editOrigins) !== JSON.stringify(oldOrigins)) {
       changes.push({
         fieldName: "origins",
@@ -3117,10 +3566,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
     // EF11 & AF07 & BR13: Kiểm tra tham chiếu nguồn gốc hình thành
     const originSum = editOrigins.reduce((s, o) => s + (Number(o.amount) || 0), 0);
-    if (
-      editOrigins.some((o) => !o.documentNo.trim()) ||
-      (editOrigins.length > 0 && originSum !== Number(detailAsset.originalCost || 0))
-    ) {
+    if (getAssetInfoChanges().some((c) => c.fieldName === "origins") && (editOrigins.some((o) => !o.documentNo.trim()) ||
+      (editOrigins.length > 0 && originSum !== Number(detailAsset.originalCost || 0)))) {
       setDetailSubTab("origin");
       notify("Thông tin nguồn gốc hình thành chưa hợp lệ. Vui lòng kiểm tra chứng từ liên quan.");
       return;
@@ -3133,13 +3580,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       return;
     }
 
-    // EF12 & Bước 11: Lý do cập nhật bắt buộc khi có thay đổi
+    // Lý do chỉ bắt buộc cho hiệu chỉnh có kiểm soát.
     const trimmedReason = editUpdateReason.trim();
-    if (!trimmedReason) {
-      setEditReasonError(true);
-      notify("Vui lòng nhập lý do cập nhật thông tin tài sản.");
-      return;
-    }
     setEditReasonError(false);
 
     const nextVersion = (Number(detailAsset.version) || 1) + 1;
@@ -3176,25 +3618,27 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     };
 
     if (apiConnected && detailAsset.id) {
-      void apiSave((writer) =>
-        updateFixedAssetInfo(writer, {
+      let saveResult: Awaited<ReturnType<typeof updateFixedAssetInfo>> | null = null;
+      void apiSave(async (writer) => {
+        saveResult = await updateFixedAssetInfo(writer, {
           id: detailAsset.id,
-          code: detailAsset.code,
-          name: trimmedName,
-          countryOfOrigin: editCountryOfOrigin.trim(),
-          manufactureYear: trimmedYear ? Number(trimmedYear) : null,
-          serialNumber: editSerialNumber.trim(),
-          description: editDescription.trim(),
-          components: editComponents.filter((c) => c.name.trim()),
-          accessories: editAccessories.filter((a) => a.name.trim()),
-          origins: editOrigins,
+          ...(changes.some((c) => c.fieldName === "name") ? { name: trimmedName } : {}),
+          ...(changes.some((c) => c.fieldName === "country_of_origin") ? { countryOfOrigin: editCountryOfOrigin.trim() } : {}),
+          ...(changes.some((c) => c.fieldName === "manufacture_year") ? { manufactureYear: trimmedYear ? Number(trimmedYear) : null } : {}),
+          ...(changes.some((c) => c.fieldName === "serial_number") ? { serialNumber: editSerialNumber.trim() } : {}),
+          ...(changes.some((c) => c.fieldName === "description") ? { description: editDescription.trim() } : {}),
+          ...(changes.some((c) => c.fieldName === "components") ? { components: editComponents.filter((c) => c.name.trim()) } : {}),
+          ...(changes.some((c) => c.fieldName === "accessories") ? { accessories: editAccessories.filter((a) => a.name.trim()) } : {}),
+          ...(changes.some((c) => c.fieldName === "origins") ? { origins: editOrigins } : {}),
           updateReason: trimmedReason,
           version: detailAsset.version || 1,
           expectedStatus: detailAsset.status || "ACTIVE",
-        })
-      ).then((saved) => {
+        });
+        return saveResult;
+      }).then((saved) => {
         if (!saved) return;
-        setDetailAsset(updatedAssetObj);
+        if (saveResult?.noChanges) return;
+        setDetailAsset({ ...updatedAssetObj, version: saveResult?.record?.version ?? nextVersion });
         setLocalAuditLogsByCode((prev) => ({
           ...prev,
           [detailAsset.code]: [newLogEntry, ...(prev[detailAsset.code] || [])],
@@ -3299,9 +3743,16 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   // =========================================================================
   // UC-FA-03: TÍNH KHẤU HAO TÀI SẢN CỐ ĐỊNH (STATE & BUSINESS LOGIC)
   // =========================================================================
-  const [deprMonth, setDeprMonth] = useState(10);
-  const [deprYear, setDeprYear] = useState(2026);
-  const [deprProrateByDays, setDeprProrateByDays] = useState(false);
+  // BR03: never a fixed sample period; the working period from the backend replaces it when the picker opens.
+  const [deprMonth, setDeprMonth] = useState(() => new Date().getMonth() + 1);
+  const [deprYear, setDeprYear] = useState(() => new Date().getFullYear());
+  // BR11 & AF05: a partial month is always depreciated by its actual eligible days.
+  const deprProrateByDays = true;
+  // AF17: TT58 single-entry books have no Debit/Credit lines.
+  const [deprUsesGl, setDeprUsesGl] = useState(true);
+  // EF25 & BR45: a resubmitted save of the same form must not create a second voucher.
+  const newDeprIdempotencyKey = () => `FA-DEPR-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const [deprIdempotencyKey, setDeprIdempotencyKey] = useState(newDeprIdempotencyKey);
   const [deprReference, setDeprReference] = useState("");
   const [deprCurrentRunId, setDeprCurrentRunId] = useState<string | null>(null);
   const [deprVoucherStatus, setDeprVoucherStatus] = useState<"Mới lập" | "Chưa ghi sổ" | "Đã ghi sổ" | "Đã hủy">("Mới lập");
@@ -3617,10 +4068,100 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const totalDeprAllocatedAmount = deprAllocationRows.reduce((sum, r) => sum + Number(r.allocatedAmount || 0), 0);
   const totalDeprAccountingAmount = deprAccountingRows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
+  // Steps 16–20: map the backend calculation to the three tabs.
+  const applyDeprPreviewData = (data: any) => {
+    const lines: DeprLineItem[] = (data.lines || []).map((l: any) => ({
+      assetId: l.asset_id,
+      assetCode: l.asset_code || "",
+      assetName: l.asset_name || "",
+      categoryName: l.category_name || "",
+      departmentName: l.department_name || "",
+      originalCost: apiNumber(l.original_cost),
+      depreciableAmount: apiNumber(l.depreciable_amount),
+      openingAccumulated: apiNumber(l.opening_accumulated_depreciation),
+      closingAccumulated: apiNumber(l.closing_accumulated_depreciation),
+      openingValue: apiNumber(l.opening_value),
+      closingValue: apiNumber(l.closing_value),
+      amount: apiNumber(l.amount),
+      deductibleAmount: apiNumber(l.deductible_amount),
+      nonDeductibleAmount: apiNumber(l.non_deductible_amount),
+      eligibleDays: Number(l.eligible_days || 0),
+      totalDaysInPeriod: Number(l.total_days_in_period || 0),
+    }));
+    const allocations: DeprAllocationRow[] = (data.allocations || []).map((al: any) => ({
+      assetCode: al.asset_code || "",
+      assetName: al.asset_name || "",
+      departmentName: al.department_name || "",
+      rate: apiNumber(al.rate ?? 100),
+      allocatedAmount: apiNumber(al.allocated_amount),
+      deductibleAmount: apiNumber(al.deductible_amount ?? al.allocated_amount),
+      nonDeductibleAmount: apiNumber(al.non_deductible_amount ?? 0),
+      expenseAccount: al.expense_account_code || "",
+      costItem: al.cost_item || al.expense_item || "Chi phí khấu hao TSCĐ",
+      creditAccount: al.credit_account_code || "",
+    }));
+    const entries: DeprAccountingRow[] = (data.accounting_entries || []).map((ae: any) => ({
+      description: ae.description || "",
+      debitAccount: ae.debit_account_code || "",
+      creditAccount: ae.credit_account_code || "",
+      amount: apiNumber(ae.amount),
+      departmentName: ae.department_name || "",
+      costItem: ae.cost_item || ae.expense_item || "Chi phí khấu hao TSCĐ",
+      assetCode: ae.asset_code || "",
+    }));
+    setDeprUsesGl(data.uses_general_ledger !== false);
+    setDeprLines(lines);
+    setDeprAllocationRows(allocations);
+    setDeprAccountingRows(entries);
+    return lines.length;
+  };
+
+  // Reads (preview, default period) need the response body, which apiSave does not return.
+  const deprApiRead = async <T,>(read: (writer: ApiWriter) => Promise<T>): Promise<T | null> => {
+    if (!apiToken) return null;
+    try {
+      return await read(createApiWriter(_company.id, (path, init) => request(path, apiToken, init)));
+    } catch (error) {
+      notify(error instanceof FormDataError ? error.message : errorText(error));
+      return null;
+    }
+  };
+
+  // Recalculate the open form for a period: the backend is authoritative when connected.
+  const refreshDeprData = (month: number, year: number) => {
+    if (apiConnected) {
+      void deprApiRead((writer) => previewDepreciationPeriod(writer, { month, year })).then((res) => {
+        const data: any = res?.record;
+        if (!data) return;
+        const count = applyDeprPreviewData(data);
+        setDeprIsDirty(true);
+        notify(`Đã tính lại dữ liệu khấu hao kỳ ${String(month).padStart(2, "0")}/${year} (${count} tài sản).`);
+      });
+      return;
+    }
+    const recomputed = computePeriodDepreciationData(month, year, deprProrateByDays);
+    setDeprLines(recomputed.lines);
+    setDeprAllocationRows(recomputed.allocations);
+    setDeprAccountingRows(recomputed.accountingEntries);
+    setDeprIsDirty(true);
+    notify(`Đã tính lại dữ liệu khấu hao kỳ ${String(month).padStart(2, "0")}/${year} (${recomputed.lines.length} tài sản).`);
+  };
+
+  // Step 3 & BR03: the period picker defaults to the company's working period.
+  useEffect(() => {
+    if (!showDeprModal || !apiConnected) return;
+    void deprApiRead((writer) => fetchDefaultDepreciationPeriod(writer)).then((period) => {
+      if (period?.month && period?.year) {
+        setDeprMonth(Number(period.month));
+        setDeprYear(Number(period.year));
+      }
+    });
+  }, [showDeprModal, apiConnected]);
+
   const handleOpenDeprPeriodVoucher = (targetMonth: number, targetYear: number, prorate = deprProrateByDays) => {
     // EF02: Validate month & year
     if (!targetMonth || targetMonth < 1 || targetMonth > 12 || !targetYear || targetYear < 1990 || targetYear > 2100) {
-      notify("Kỳ tính khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+      notify("Vui lòng chọn kỳ tính khấu hao hợp lệ.");
       return;
     }
 
@@ -3662,63 +4203,23 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     };
 
     if (apiConnected) {
-      void apiSave((writer) => previewDepreciationPeriod(writer, { month: targetMonth, year: targetYear, prorateByDays: prorate }))
-        .then((res: any) => {
-          if (!res) return;
-          const data = res;
-          const apiLines: DeprLineItem[] = (data.lines || []).map((l: any) => ({
-            assetId: l.asset_id,
-            assetCode: l.asset_code || "",
-            assetName: l.asset_name || "",
-            categoryName: l.category_name || "",
-            departmentName: l.department_name || "",
-            originalCost: apiNumber(l.original_cost),
-            depreciableAmount: apiNumber(l.depreciable_amount),
-            openingAccumulated: apiNumber(l.opening_accumulated_depreciation),
-            closingAccumulated: apiNumber(l.closing_accumulated_depreciation),
-            openingValue: apiNumber(l.opening_value),
-            closingValue: apiNumber(l.closing_value),
-            amount: apiNumber(l.amount),
-            deductibleAmount: apiNumber(l.deductible_amount),
-            nonDeductibleAmount: apiNumber(l.non_deductible_amount),
-            eligibleDays: Number(l.eligible_days || daysInMonth),
-            totalDaysInPeriod: Number(l.total_days_in_period || daysInMonth),
-          }));
-          const apiAllocs: DeprAllocationRow[] = (data.allocations || []).map((al: any) => ({
-            assetCode: al.asset_code || "",
-            assetName: al.asset_name || "",
-            departmentName: al.department_name || "",
-            rate: apiNumber(al.rate ?? 100),
-            allocatedAmount: apiNumber(al.allocated_amount),
-            deductibleAmount: apiNumber(al.deductible_amount),
-            nonDeductibleAmount: apiNumber(al.non_deductible_amount),
-            expenseAccount: al.expense_account_code || "6424",
-            costItem: al.cost_item || "Chi phí khấu hao TSCĐ",
-            creditAccount: al.credit_account_code || "2141",
-          }));
-          const apiEntries: DeprAccountingRow[] = (data.accounting_entries || []).map((ae: any) => ({
-            description: ae.description || "",
-            debitAccount: ae.debit_account_code || "6424",
-            creditAccount: ae.credit_account_code || "2141",
-            amount: apiNumber(ae.amount),
-            departmentName: ae.department_name || "",
-            costItem: ae.cost_item || "Chi phí khấu hao TSCĐ",
-            assetCode: ae.asset_code || "",
-          }));
-
+      void deprApiRead((writer) => previewDepreciationPeriod(writer, { month: targetMonth, year: targetYear }))
+        .then((res) => {
+          const data: any = res?.record;
+          if (!data) return;
+          applyDeprPreviewData(data);
           setDeprCurrentRunId(data.existing_run_id || null);
           setDeprVoucherStatus(data.existing_status === "POSTED" ? "Đã ghi sổ" : data.existing_status === "CALCULATED" ? "Chưa ghi sổ" : "Mới lập");
-          setDeprVoucherNo(data.suggested_voucher_no || candidateNo);
+          // Step 8: number, dates and description proposed by the backend numbering rule
+          setDeprVoucherNo(data.voucher_no || data.suggested_voucher_no || candidateNo);
           setDeprPostingDate(data.posting_date ? apiDate(data.posting_date) : dateStr);
           setDeprVoucherDate(data.voucher_date ? apiDate(data.voucher_date) : dateStr);
           setDeprReason(data.description || `Khấu hao TSCĐ tháng ${mStr} năm ${targetYear}`);
           setDeprReference("");
           setDeprVoucherMonth(targetMonth);
           setDeprVoucherYear(targetYear);
-          setDeprLines(apiLines);
-          setDeprAllocationRows(apiAllocs);
-          setDeprAccountingRows(apiEntries);
           setDeprAttachments([]);
+          setDeprIdempotencyKey(newDeprIdempotencyKey());
           setDeprIsDirty(false);
           setDeprActiveTab("depreciation");
           setShowDeprModal(false);
@@ -3737,34 +4238,34 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
     // EF02: Validate period
     if (!deprVoucherMonth || deprVoucherMonth < 1 || deprVoucherMonth > 12 || !deprVoucherYear || deprVoucherYear < 1990 || deprVoucherYear > 2100) {
-      notify("Kỳ tính khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+      notify("Vui lòng chọn kỳ tính khấu hao hợp lệ.");
       return;
     }
 
-    // EF07: Validate voucher_no
+    // EF04: Validate voucher_no
     const trimmedNo = String(deprVoucherNo || "").trim();
     if (!trimmedNo) {
-      notify("Vui lòng nhập số chứng từ tính khấu hao.");
+      notify("Vui lòng nhập số chứng từ.");
       return;
     }
 
-    // EF09: Validate postingDate & voucherDate
+    // EF06: Validate postingDate & voucherDate
     const parsedVoucherDt = parseDeprDateString(deprVoucherDate);
     const parsedPostingDt = parseDeprDateString(deprPostingDate);
     if (!parsedVoucherDt || !parsedPostingDt) {
-      notify("Ngày hạch toán hoặc ngày chứng từ không hợp lệ.");
+      notify("Vui lòng nhập ngày hợp lệ theo định dạng DD/MM/YYYY.");
       return;
     }
 
-    // EF10: Posting date vs voucher date
-    if (parsedPostingDt < parsedVoucherDt) {
-      notify("Ngày hạch toán không phù hợp với kỳ tính khấu hao hoặc ngày chứng từ.");
+    // EF07: Posting date must fall in the depreciation period
+    if (parsedPostingDt.getMonth() + 1 !== deprVoucherMonth || parsedPostingDt.getFullYear() !== deprVoucherYear) {
+      notify("Ngày hạch toán không phù hợp với kỳ tính khấu hao.");
       return;
     }
 
-    // EF04: Must have at least 1 eligible asset line
+    // AF13: never save a zero-value voucher
     if (deprLines.length === 0 || totalDeprMonthAmount <= 0) {
-      notify("Không có tài sản cố định đủ điều kiện tính khấu hao trong kỳ đã chọn.");
+      notify("Không có tài sản cố định cần tính khấu hao trong kỳ đã chọn.");
       return;
     }
 
@@ -3787,49 +4288,52 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       }
       const rateSum = assetAllocs.reduce((s, al) => s + Number(al.rate || 0), 0);
       if (Math.abs(rateSum - 100) > 0.05) {
-        notify("Thông tin phân bổ chi phí khấu hao không hợp lệ. Tổng tỷ lệ phân bổ phải bằng 100%.");
+        notify("Tổng tỷ lệ phân bổ khấu hao phải bằng 100%.");
         return;
       }
     }
 
-    // EF13 & EF14: Validate accounting accounts
-    for (const ae of deprAccountingRows) {
-      if (!String(ae.debitAccount || "").trim() || !String(ae.creditAccount || "").trim()) {
-        notify("Thiếu tài khoản hạch toán khấu hao. Vui lòng kiểm tra thiết lập tài khoản.");
-        return;
+    // EF14: Validate accounting accounts (AF17: not required for TT58 single-entry books)
+    if (deprUsesGl) {
+      for (const ae of deprAccountingRows) {
+        if (!String(ae.debitAccount || "").trim() || !String(ae.creditAccount || "").trim()) {
+          notify("Tài khoản hạch toán khấu hao không hợp lệ. Vui lòng kiểm tra lại.");
+          return;
+        }
       }
     }
 
-    // EF15: Validate accounting total matches depreciation total
-    if (Math.abs(totalDeprAccountingAmount - totalDeprMonthAmount) > 1 || Math.abs(totalDeprAllocatedAmount - totalDeprMonthAmount) > 1) {
-      notify("Tổng số tiền hạch toán không khớp với tổng khấu hao trong kỳ.");
+    // EF15 & BR39: depreciation == allocation (== accounting when the books use GL accounts)
+    if (Math.abs(totalDeprAllocatedAmount - totalDeprMonthAmount) > 1 || (deprUsesGl && Math.abs(totalDeprAccountingAmount - totalDeprMonthAmount) > 1)) {
+      notify("Số tiền khấu hao, phân bổ và hạch toán không khớp.");
       return;
     }
 
     const mStr = String(deprVoucherMonth).padStart(2, "0");
     const periodLabel = `Tháng ${mStr}/${deprVoucherYear}`;
 
-    // EF16: Check duplicate period voucher unless recalculating or updating current voucher
+    // EF16 (offline only): the backend skips assets already depreciated in the period, per asset (AF14).
     const existingPeriodVoucher = deprVouchers.find(
       (v) => v.period === periodLabel && v.status !== "Đã hủy" && v.voucherNo !== trimmedNo
     );
-    if (existingPeriodVoucher && !recalculate) {
-      notify("Kỳ tính khấu hao đã có chứng từ hợp lệ. Vui lòng kiểm tra trước khi thực hiện lại.");
+    if (!apiConnected && existingPeriodVoucher && !recalculate) {
+      notify("Tài sản đã được tính khấu hao trong kỳ đã chọn.");
       return;
     }
 
-    // EF08: Check duplicate voucher_no in another period
+    // EF05: Check duplicate voucher_no in another period
     const duplicateNoVoucher = deprVouchers.find(
       (v) => v.voucherNo === trimmedNo && v.period !== periodLabel && v.status !== "Đã hủy"
     );
     if (duplicateNoVoucher) {
-      notify("Số chứng từ tính khấu hao đã tồn tại. Vui lòng kiểm tra lại.");
+      notify("Số chứng từ đã tồn tại. Vui lòng nhập số khác.");
       return;
     }
 
     if (apiConnected) {
-      void apiSave((writer) =>
-        saveDepreciationVoucher(writer, {
+      let savedRecord: any = null;
+      void apiSave(async (writer) => {
+        const result = await saveDepreciationVoucher(writer, {
           month: deprVoucherMonth,
           year: deprVoucherYear,
           voucherNo: trimmedNo,
@@ -3868,14 +4372,19 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             asset_code: ae.assetCode,
           })),
           attachments: deprAttachments,
-        })
-      ).then((saved) => {
+          idempotencyKey: deprIdempotencyKey,
+        });
+        savedRecord = result.record;
+        return result;
+      }).then((saved) => {
         if (!saved) return;
+        setDeprIdempotencyKey(newDeprIdempotencyKey());
         setDeprIsDirty(false);
         setShowDeprVoucherModal(false);
         setDeprView("table");
+        // AF15: print from the saved voucher; a print failure never undoes the save (EF29).
         if (printAfter) {
-          handlePrintDeprVoucher(trimmedNo);
+          printDeprRun(savedRecord);
         }
       });
       return;
@@ -3933,7 +4442,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     setDeprIsDirty(false);
     setShowDeprVoucherModal(false);
     setDeprView("table");
-    notify(`Đã lưu chứng từ tính khấu hao ${trimmedNo} thành công!`);
+    notify("Lưu chứng từ tính khấu hao thành công.");
     if (printAfter) {
       handlePrintDeprVoucher(trimmedNo);
     }
@@ -4022,6 +4531,48 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       notify("Chứng từ khấu hao đã được ghi sổ.");
       return;
     }
+    if (currentStatus === "Đã hủy") {
+      // EF29
+      notify("Trạng thái chứng từ không cho phép ghi sổ.");
+      return;
+    }
+
+    // UC-FA-04: a saved "Chưa ghi sổ" voucher is posted by the backend from its stored result (BR01, BR02).
+    const savedRunId = vTarget ? vTarget.id : deprCurrentRunId;
+    if (apiConnected && savedRunId) {
+      if (!vTarget && deprIsDirty) {
+        // AF10: changes go through UC-FA-03 (Lưu = tính lại) before posting
+        notify("Chứng từ có thay đổi chưa lưu. Vui lòng Lưu lại chứng từ trước khi ghi sổ.");
+        return;
+      }
+      let postedRecord: any = null;
+      void apiSave(async (writer) => {
+        const result = await postDepreciationVoucher(writer, String(savedRunId), {
+          voucher_no: String(vTarget ? vTarget.voucherNo : deprVoucherNo || "").trim(),
+          voucher_date: vTarget ? vTarget.date : deprVoucherDate,
+          posting_date: vTarget ? vTarget.postingDate || vTarget.date : deprPostingDate,
+          description: vTarget ? vTarget.reason : deprReason,
+          reference: vTarget ? vTarget.reference : deprReference,
+        });
+        postedRecord = result.record;
+        return result;
+      }).then((posted) => {
+        if (!posted) return;
+        setDeprVoucherStatus("Đã ghi sổ");
+        setDeprIsDirty(false);
+        setShowDeprVoucherModal(false);
+        setDeprView("table");
+        if (printAfter) {
+          printDeprRun(postedRecord);
+        }
+      });
+      return;
+    }
+    if (apiConnected) {
+      // Not saved yet: UC-FA-03 saves and posts in one step, with its own checks.
+      handleSaveDeprVoucher({ postNow: true, printAfter, recalculate: false });
+      return;
+    }
 
     const trimmedNo = String(vTarget ? vTarget.voucherNo : deprVoucherNo || "").trim();
     if (!trimmedNo) {
@@ -4056,13 +4607,13 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const fallbackCalc = vTarget && (!Array.isArray(vTarget.lines) || vTarget.lines.length === 0)
       ? computePeriodDepreciationData(vMonth, vYear, false)
       : null;
-    const linesToValidate: any[] = vTarget
+    const linesToValidate: DeprLineItem[] = vTarget
       ? (Array.isArray(vTarget.lines) && vTarget.lines.length > 0 ? vTarget.lines : fallbackCalc?.lines || [])
       : deprLines;
-    const allocsToValidate: any[] = vTarget
+    const allocsToValidate: DeprAllocationRow[] = vTarget
       ? (Array.isArray(vTarget.allocations) && vTarget.allocations.length > 0 ? vTarget.allocations : fallbackCalc?.allocations || [])
       : deprAllocationRows;
-    const acctToValidate: any[] = vTarget
+    const acctToValidate: DeprAccountingRow[] = vTarget
       ? (Array.isArray(vTarget.accountingEntries) && vTarget.accountingEntries.length > 0 ? vTarget.accountingEntries : fallbackCalc?.accountingEntries || [])
       : deprAccountingRows;
 
@@ -4081,7 +4632,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       return py < vYear || (py === vYear && pm < vMonth);
     });
     if (hasUnpostedPrior) {
-      notify("Khấu hao kỳ trước chưa được ghi sổ. Vui lòng ghi sổ kỳ trước trước khi thực hiện.");
+      notify("Chưa hoàn tất ghi nhận khấu hao kỳ trước. Vui lòng kiểm tra lại.");
       return;
     }
 
@@ -4181,60 +4732,6 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     if (Math.abs(totalAcct - totalDepr) > 1) {
       // EF12
       notify("Số tiền hạch toán không khớp với số khấu hao của chứng từ.");
-      return;
-    }
-
-    const targetRunId = vTarget ? vTarget.id : deprCurrentRunId;
-    if (apiConnected) {
-      if (targetRunId) {
-        void apiSave((writer) =>
-          postDepreciationVoucher(writer, String(targetRunId), {
-            voucher_no: trimmedNo,
-            voucher_date: vDateStr,
-            posting_date: pDateStr,
-            month: vMonth,
-            year: vYear,
-            description: vTarget ? vTarget.reason : deprReason,
-            reference: vTarget ? vTarget.reference : deprReference,
-            allocations: allocsToValidate.map((al) => ({
-              asset_code: al.assetCode,
-              asset_name: al.assetName,
-              department_name: al.departmentName,
-              rate: al.rate,
-              allocated_amount: al.allocatedAmount,
-              deductible_amount: al.deductibleAmount,
-              non_deductible_amount: al.nonDeductibleAmount,
-              expense_account: al.expenseAccount,
-              expense_account_code: al.expenseAccount,
-              cost_item: al.costItem,
-              credit_account: al.creditAccount,
-            })),
-            accounting_entries: acctToValidate.map((ae) => ({
-              description: ae.description,
-              debit_account: ae.debitAccount,
-              debit_account_code: ae.debitAccount,
-              credit_account: ae.creditAccount,
-              credit_account_code: ae.creditAccount,
-              amount: ae.amount,
-              department_name: ae.departmentName,
-              cost_item: ae.costItem,
-              asset_code: ae.assetCode,
-            })),
-          })
-        ).then((posted) => {
-          if (!posted) return;
-          setDeprVoucherStatus("Đã ghi sổ");
-          setDeprIsDirty(false);
-          setShowDeprVoucherModal(false);
-          setDeprView("table");
-          if (printAfter) {
-            handlePrintDeprVoucher(trimmedNo);
-          }
-        });
-        return;
-      }
-      // If voucher was not saved yet, save and post now
-      handleSaveDeprVoucher({ postNow: true, printAfter, recalculate: false });
       return;
     }
 
@@ -4342,19 +4839,48 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
   };
 
-  const handlePrintDeprVoucher = (voucherNoArg?: string) => {
-    const vNo = voucherNoArg || deprVoucherNo;
-    notify(`Đang chuẩn bị bản in Bảng tính và phân bổ khấu hao TSCĐ (${vNo})...`);
-    if (typeof window !== "undefined" && typeof window.print === "function") {
-      setTimeout(() => {
-        try {
-          window.print();
-        } catch {
-          notify("Không thể in chứng từ tính khấu hao. Vui lòng thử lại.");
-        }
-      }, 250);
+  // AF15: printable depreciation voucher built from stored data (a saved run, or the voucher on screen).
+  const printDeprRun = (record?: any) => {
+    const failed = () => notify("Đã lưu chứng từ nhưng không thể thực hiện in. Vui lòng thử in lại.");
+    try {
+      const money = (value: unknown) => Math.round(Number(value || 0)).toLocaleString("vi-VN");
+      const cell = "border:1px solid #000;padding:4px 6px";
+      const number = record?.number ?? deprVoucherNo;
+      const month = record?.period_month ?? deprVoucherMonth;
+      const year = record?.period_year ?? deprVoucherYear;
+      const lines = record
+        ? (record.lines || []).map((l: any) => ({ code: l.asset_code, name: l.asset_name, dept: l.department_name, amount: l.amount, ded: l.deductible_amount, nonDed: l.non_deductible_amount }))
+        : deprLines.map((l) => ({ code: l.assetCode, name: l.assetName, dept: l.departmentName, amount: l.amount, ded: l.deductibleAmount, nonDed: l.nonDeductibleAmount }));
+      const allocations = record
+        ? (record.allocations_snapshot || []).map((a: any) => ({ code: a.asset_code, dept: a.department_name, rate: a.rate, amount: a.allocated_amount, account: a.expense_account_code, item: a.cost_item || a.expense_item }))
+        : deprAllocationRows.map((a) => ({ code: a.assetCode, dept: a.departmentName, rate: a.rate, amount: a.allocatedAmount, account: a.expenseAccount, item: a.costItem }));
+      const entries = record
+        ? (record.accounting_entries || []).map((e: any) => ({ desc: e.description, debit: e.debit_account_code || e.debit_account, credit: e.credit_account_code || e.credit_account, amount: e.amount }))
+        : deprAccountingRows.map((e) => ({ desc: e.description, debit: e.debitAccount, credit: e.creditAccount, amount: e.amount }));
+      const total = record?.total_amount ?? totalDeprMonthAmount;
+      const th = (labels: string[]) => `<tr>${labels.map((label) => `<th style="${cell}">${label}</th>`).join("")}</tr>`;
+      const td = (value: unknown, cls = "") => `<td style="${cell}"${cls ? ` class="${cls}"` : ""}>${escapeHtml(String(value ?? ""))}</td>`;
+      const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(String(number))}</title>
+<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%;margin-top:8px}.num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}h2{font-size:14px;margin:16px 0 0}.muted{font-style:italic}</style></head><body>
+<div class="center"><h1>BẢNG TÍNH VÀ PHÂN BỔ KHẤU HAO TSCĐ</h1><div>Tháng ${escapeHtml(String(month))} năm ${escapeHtml(String(year))}</div>
+<div>Số: <strong>${escapeHtml(String(number))}</strong> &nbsp; Ngày chứng từ: ${escapeHtml(record ? toViDate(record.voucher_date) : deprVoucherDate)} &nbsp; Ngày hạch toán: ${escapeHtml(record ? toViDate(record.posting_date) : deprPostingDate)}</div></div>
+<p>- Diễn giải: ${escapeHtml(String(record?.description ?? deprReason))}</p>
+<h2>1. Tính khấu hao</h2><table><thead>${th(["Mã tài sản", "Tên tài sản", "Đơn vị sử dụng", "Giá trị KH tháng", "CP hợp lý", "CP không hợp lý"])}</thead><tbody>
+${lines.map((l: any) => `<tr>${td(l.code)}${td(l.name)}${td(l.dept)}${td(money(l.amount), "num")}${td(money(l.ded), "num")}${td(money(l.nonDed), "num")}</tr>`).join("")}
+<tr><td style="${cell}" colspan="3"><strong>Tổng khấu hao tháng</strong></td>${td(money(total), "num")}${td("")}${td("")}</tr></tbody></table>
+<h2>2. Phân bổ</h2><table><thead>${th(["Mã tài sản", "Đơn vị sử dụng", "Tỷ lệ PB (%)", "Giá trị KH phân bổ", "TK chi phí", "Khoản mục CP"])}</thead><tbody>
+${allocations.map((a: any) => `<tr>${td(a.code)}${td(a.dept)}${td(a.rate, "num")}${td(money(a.amount), "num")}${td(a.account, "center")}${td(a.item)}</tr>`).join("")}</tbody></table>
+${entries.length
+  ? `<h2>3. Hạch toán</h2><table><thead>${th(["Diễn giải", "TK Nợ", "TK Có", "Số tiền"])}</thead><tbody>${entries.map((e: any) => `<tr>${td(e.desc)}${td(e.debit, "center")}${td(e.credit, "center")}${td(money(e.amount), "num")}</tr>`).join("")}</tbody></table>`
+  : `<p class="muted">Bộ dữ liệu không sử dụng hệ thống tài khoản: không phát sinh bút toán Nợ/Có.</p>`}
+<table style="margin-top:24px"><tr><td class="center"><strong>Người lập</strong><br><span class="muted">(Ký, họ tên)</span></td><td class="center"><strong>Kế toán trưởng</strong><br><span class="muted">(Ký, họ tên)</span></td></tr></table></body></html>`;
+      openPrintFrame(html, `In ${number}`, failed);
+    } catch {
+      failed();
     }
   };
+
+  const handlePrintDeprVoucher = (_voucherNoArg?: string) => printDeprRun();
 
 
   // Check URL params for action
@@ -4375,7 +4901,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     } else if (action === "transfer") {
       setShowTransferModal(true);
     } else if (action === "decrease") {
-      setShowDecreaseModal(true);
+      handleOpenNewDecreaseModal();
     } else if (action === "stocktake") {
       setShowStocktakeModal(true);
     }
@@ -4484,7 +5010,51 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
   const registerAsOfDtObj = parseDeprDateString(registerAsOfDate);
 
-  const filteredAssets = (() => {
+  // A03–A13, BR07–BR15: in live mode the register comes from the backend over the whole filtered set
+  useEffect(() => {
+    if (!apiConnected || !_company?.id || tab !== "register") return;
+    if (registerAsOfDate.trim() && !registerAsOfDtObj) return;
+    const params = new URLSearchParams({ company_id: _company.id, page_size: "100000" });
+    if (registerAsOfDate.trim()) params.set("as_of_date", registerAsOfDate.trim());
+    if (searchRegister.trim()) params.set("search", searchRegister.trim());
+    if (filterDept !== "all") params.set("department_name", filterDept);
+    if (registerCategoryFilter !== "all") params.set("category_name", registerCategoryFilter);
+    if (registerIncludeDisposed) params.set("include_disposed", "true");
+    let cancelled = false;
+    request<any>(`/api/v1/fixed-assets/assets/register/?${params}`, apiToken)
+      .then((data) => { if (!cancelled) setApiRegister(data); })
+      .catch((cause) => {
+        if (cancelled) return;
+        setApiRegister(null);
+        notify(errorText(cause) || "Không thể tải danh sách tài sản cố định. Vui lòng thử lại.");
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiConnected, _company?.id, tab, registerAsOfDate, searchRegister, filterDept, registerCategoryFilter, registerIncludeDisposed]);
+
+  const apiRegisterRows: any[] | null = apiConnected && apiRegister && Array.isArray(apiRegister.items)
+    ? apiRegister.items.map((it: any) => ({
+        // A14: keep the full asset card so the detail / edit form (UC-FA-02) still opens from the row
+        ...(assetsList.find((a: any) => a.code === it.code) || {}),
+        id: it.id,
+        code: it.code,
+        name: it.name,
+        category: it.category_name,
+        dept: it.department_name,
+        startDate: it.acquisition_date_display,
+        originalCost: Number(it.original_cost || 0),
+        depreciatedAmount: Number(it.accumulated_depreciation || 0),
+        remainingAmount: Number(it.remaining_value || 0),
+        rateDisplay: it.depreciation_rate_display,
+        costAccount: it.asset_account_code || "",
+        statusDisplay: it.status_display,
+        reconciliationStatus: it.accounting_reconciliation_status_display,
+      }))
+    : null;
+  // BR17: TK NG only for books kept on accounts
+  const registerShowsCostAccount = !(apiConnected && apiRegister && apiRegister.uses_general_ledger === false);
+
+  const localFilteredAssets = (() => {
     const seenCodes = new Set<string>();
     const result: any[] = [];
     const kw = String(searchRegister || "").trim().toLowerCase();
@@ -4526,6 +5096,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     return result;
   })();
 
+  const filteredAssets: any[] = apiRegisterRows ?? localFilteredAssets;
+
   // Steps 19–22 & AF07 & AF08: Summary metrics across the ENTIRE filtered dataset
   const totalOriginalCost = filteredAssets.reduce((s, a) => s + Number(a.originalCost || 0), 0);
   const totalDepreciated = filteredAssets.reduce((s, a) => s + Number(a.depreciatedAmount || 0), 0);
@@ -4545,19 +5117,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       notify("Ngày xem số liệu không hợp lệ. Vui lòng nhập theo định dạng DD/MM/YYYY.");
       return;
     }
-    if (apiConnected) {
-      void apiSave(async (writer) => {
-        await fetchFixedAssetRegister(writer, {
-          asOfDate: registerAsOfDate,
-          search: searchRegister,
-          departmentName: filterDept === "all" ? "" : filterDept,
-          categoryName: registerCategoryFilter === "all" ? "" : registerCategoryFilter,
-          includeDisposed: registerIncludeDisposed,
-          exportExcel: true,
-        });
-        return { message: "" };
-      });
-    }
+    // A17–A18 & EF05: the file holds exactly the filtered list (all pages), never a partial one
+    try {
     if (typeof window !== "undefined" && typeof Blob !== "undefined") {
       const headers = [
         "STT",
@@ -4570,7 +5131,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         "Hao mòn lũy kế",
         "Giá trị còn lại",
         "Tỷ lệ KH",
-        "TK NG",
+        ...(registerShowsCostAccount ? ["TK NG"] : []),
         "Trạng thái TS",
       ];
       const csvRows = [
@@ -4587,7 +5148,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             r.depreciatedAmount,
             r.remainingAmount,
             `"${String(r.rateDisplay || `${r.rateYear}%`)}"`,
-            `"${String(r.costAccount || "2111")}"`,
+            ...(registerShowsCostAccount ? [`"${String(r.costAccount || "")}"`] : []),
             `"${String(r.statusDisplay || "Đang sử dụng")}"`,
           ].join(",")
         ),
@@ -4602,7 +5163,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
           totalDepreciated,
           totalRemaining,
           "",
-          "",
+          ...(registerShowsCostAccount ? [""] : []),
           "",
         ].join(","),
       ];
@@ -4615,6 +5176,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+    } catch {
+      notify("Xuất khẩu danh sách tài sản thất bại. Vui lòng thử lại.");
+      return;
     }
     notify(`Đã xuất khẩu Sổ tài sản cố định tại ngày ${registerAsOfDate} ra file Excel thành công.`);
   };
@@ -4677,6 +5242,52 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     },
   ];
 
+  type ReportDef = (typeof UC09_REPORT_CATALOG)[number] & Record<string, any>;
+  const reportCatalog: ReportDef[] = apiReportCatalog ?? UC09_REPORT_CATALOG;
+
+  // B02–B04, AF07–AF11: catalog with the reports this data set and this user may open
+  useEffect(() => {
+    if (!apiConnected || !_company?.id || tab !== "reports") return;
+    let cancelled = false;
+    const params = new URLSearchParams({ company_id: _company.id, include_hidden: "true", lang: reportLang });
+    request<any>(`/api/v1/fixed-assets/assets/report-catalog/?${params}`, apiToken)
+      .then((data) => {
+        if (cancelled) return;
+        setApiReportCatalog((data?.reports || []).map((r: any) => ({
+          ...r,
+          id: r.ui_id,
+          group: r.group_code === "RECONCILE_REPORTS" ? "RECONCILE" : "ASSET",
+          formCode: r.form_code,
+          titleVi: r.title_vi,
+          titleEn: r.title_en,
+          keywords: r.keywords || [],
+        })));
+        setHiddenReportIds((data?.hidden_report_codes || []).map((c: string) => {
+          const match = (data?.reports || []).find((r: any) => r.code === c || r.ui_id === c);
+          return match ? match.ui_id : c;
+        }));
+      })
+      .catch((cause) => { if (!cancelled) notify(errorText(cause)); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiConnected, _company?.id, tab, reportLang]);
+
+  const reportParams = (def: ReportDef) => ({
+    reportCode: def.code,
+    year: reportYear,
+    fromDate: reportFromDate,
+    toDate: reportToDate,
+    departmentName: reportDeptFilter === "all" ? "" : reportDeptFilter,
+    categoryName: reportCategoryFilter === "all" ? "" : reportCategoryFilter,
+    assetCode: reportAssetCodeFilter === "all" ? "" : reportAssetCodeFilter,
+    accountCode: reportAccountFilter === "all" ? "" : reportAccountFilter,
+    onlyDifferences: reportOnlyDifferences,
+    excludeDisposedInPeriod: reportExcludeDisposed,
+    includeZeroRemaining: reportIncludeZeroRemaining,
+    countId: reportCountId,
+    lang: reportLang,
+  });
+
   const handleSelectReportPeriodPreset = (preset: string) => {
     setReportPeriodPreset(preset);
     const y = reportYear || 2026;
@@ -4701,40 +5312,28 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
   };
 
-  const handleOpenReportByDef = (def: (typeof UC09_REPORT_CATALOG)[number]) => {
+  const handleOpenReportByDef = (def: ReportDef) => {
     setPreviewReportCode(def.code);
     setPreviewReportName(reportLang === "en" ? def.titleEn : def.titleVi);
     setApiReportPayload(null);
-    if (apiConnected) {
-      void apiSave(async (writer) => {
-        const res = await fetchFixedAssetReport(writer, {
-          reportCode: def.code,
-          year: reportYear,
-          fromDate: reportFromDate,
-          toDate: reportToDate,
-          departmentName: reportDeptFilter === "all" ? "" : reportDeptFilter,
-          categoryName: reportCategoryFilter === "all" ? "" : reportCategoryFilter,
-          assetCode: reportAssetCodeFilter === "all" ? "" : reportAssetCodeFilter,
-          accountCode: reportAccountFilter === "all" ? "" : reportAccountFilter,
-          onlyDifferences: reportOnlyDifferences,
-          excludeDisposedInPeriod: reportExcludeDisposed,
-          lang: reportLang,
-        });
-        setApiReportPayload(res);
-        return { message: "" };
-      });
-    }
+    // B05: opening a report shows its parameters; the figures come on "Xem báo cáo"
   };
 
   // Step 7 & Step 11: Kiểm tra tham số báo cáo (Từ ngày <= Đến ngày) và tổng hợp dữ liệu
   const handleApplyReportParams = () => {
     const fDt = parseDeprDateString(reportFromDate);
     const tDt = parseDeprDateString(reportToDate);
-    if (!fDt || !tDt) {
-      notify("Từ ngày hoặc Đến ngày không hợp lệ. Vui lòng nhập theo định dạng DD/MM/YYYY.");
+    const activeParamsDef = reportCatalog.find((d) => d.code === previewReportCode);
+    const usesPeriod = activeParamsDef?.supports_period ?? true;
+    if (usesPeriod && (!fDt || !tDt)) {
+      notify("Khoảng thời gian báo cáo không hợp lệ.");
       return;
     }
-    if (fDt.getTime() > tDt.getTime()) {
+    if (!usesPeriod && !(reportYear >= 1900)) {
+      notify("Vui lòng nhập đầy đủ tham số báo cáo. (Năm)");
+      return;
+    }
+    if (usesPeriod && fDt && tDt && fDt.getTime() > tDt.getTime()) {
       notify("Từ ngày không được lớn hơn Đến ngày.");
       return;
     }
@@ -4745,25 +5344,15 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         return;
       }
     }
-    const def = UC09_REPORT_CATALOG.find((d) => d.code === previewReportCode);
+    const def = reportCatalog.find((d) => d.code === previewReportCode);
     if (def && apiConnected) {
+      // B11–B17: the backend checks rights, parameters and regime and builds the figures
       void apiSave(async (writer) => {
-        const res = await fetchFixedAssetReport(writer, {
-          reportCode: def.code,
-          year: reportYear,
-          fromDate: reportFromDate,
-          toDate: reportToDate,
-          departmentName: reportDeptFilter === "all" ? "" : reportDeptFilter,
-          categoryName: reportCategoryFilter === "all" ? "" : reportCategoryFilter,
-          assetCode: reportAssetCodeFilter === "all" ? "" : reportAssetCodeFilter,
-          accountCode: reportAccountFilter === "all" ? "" : reportAccountFilter,
-          onlyDifferences: reportOnlyDifferences,
-          excludeDisposedInPeriod: reportExcludeDisposed,
-          lang: reportLang,
-        });
+        const res = await fetchFixedAssetReport(writer, reportParams(def));
         setApiReportPayload(res);
         return { message: "" };
       });
+      return;
     }
     notify(`Đã tổng hợp dữ liệu báo cáo kỳ ${reportFromDate} - ${reportToDate}.`);
   };
@@ -4779,21 +5368,21 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         <rect x="49" y="37" width="3" height="3" fill="#ffffff"/>
         <circle cx="34" cy="30" r="5" fill="#10b981"/>
         <path d="M32 30H36M34 28V32" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round"/>
-        
+
         <path d="M78 40H94" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3 3"/>
         <path d="M91 36L96 40L91 44" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        
+
         <rect x="100" y="26" width="34" height="34" rx="4" fill="#00a862"/>
         <rect x="106" y="32" width="6" height="6" rx="1" fill="#d1fae5"/>
         <rect x="122" y="32" width="6" height="6" rx="1" fill="#d1fae5"/>
         <path d="M112 60V50C112 47.79 113.79 46 116 46H118C120.21 46 122 47.79 122 50V60H112Z" fill="#ffffff"/>
-        
+
         <circle cx="140" cy="22" r="7" fill="#34d399"/>
         <text x="140" y="25.5" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#ffffff">$</text>
-        
+
         <circle cx="156" cy="36" r="9" fill="#10b981"/>
         <text x="156" y="39.5" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#ffffff">$</text>
-        
+
         <circle cx="145" cy="46" r="6" fill="#059669"/>
         <text x="145" y="49" textAnchor="middle" fontSize="7.5" fontWeight="bold" fill="#ffffff">$</text>
 
@@ -4805,7 +5394,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         <path d="M145 74C145 66 148 64 152 64C156 64 159 66 159 74H145Z" fill="#00a862"/>
         <path d="M136 74L140 65H150L154 74H136Z" fill="#cbd5e1"/>
         <rect x="134" y="73" width="22" height="2.5" rx="1" fill="#94a3b8"/>
-        
+
         <path d="M92 20V24M90 22H94" stroke="#00a862" strokeWidth="1.2" strokeLinecap="round"/>
         <circle cx="94" cy="54" r="1.5" fill="#10b981"/>
         <circle cx="168" cy="52" r="1.5" fill="#34d399"/>
@@ -4827,11 +5416,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         <rect x="49" y="52" width="3" height="3" fill="#ffffff"/>
         <rect x="54" y="52" width="3" height="3" fill="#ffffff"/>
         <path d="M51 64V58H55V64" fill="#ffffff"/>
-        
+
         {/* Arrow from building to clipboard */}
         <path d="M68 48H84" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3 3"/>
         <path d="M81 44L86 48L81 52" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        
+
         {/* Clipboard Center */}
         <rect x="94" y="32" width="28" height="38" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5"/>
         <path d="M102 30H114V34H102V30Z" fill="#00a862"/>
@@ -4876,14 +5465,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
         {/* Garage Building Left */}
         <path d="M44 65V46L60 38L76 46V65H44Z" fill="#00a862" />
-        
+
         {/* Downward Arrow on roof */}
         <path d="M60 26V34" stroke="#007a46" strokeWidth="2.5" strokeLinecap="round" />
         <path d="M57 32L60 35L63 32" stroke="#007a46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        
+
         {/* Garage Doorway Arch */}
         <path d="M50 65V51C50 49.5 51.5 48.5 53 48.5H67C68.5 48.5 70 49.5 70 51V65H50Z" fill="#007a46" />
-        
+
         {/* White Car Front Silhouette */}
         <path d="M53.5 64C53.5 60.5 55.5 59 60 59C64.5 59 66.5 60.5 66.5 64H53.5Z" fill="#ffffff" />
         <rect x="55.5" y="55" width="9" height="4.5" rx="1.5" fill="#ffffff" />
@@ -4899,7 +5488,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
         {/* Folded Top-Right Corner */}
         <path d="M152 34V42H162" fill="#10b981" />
         <path d="M152 34L162 44H152V34Z" fill="#007a46" />
-        
+
         {/* Document horizontal lines */}
         <rect x="138" y="47" width="16" height="2.5" rx="1" fill="#00a862" />
         <rect x="138" y="53" width="12" height="2" rx="1" fill="#94a3b8" />
@@ -5343,6 +5932,12 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     </label>
                   </div>
                 </div>
+                {incNoDepr && (
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, marginBottom: 3 }}>Căn cứ không tính khấu hao *</label>
+                    <input value={incNoDeprReason} onChange={(e) => setIncNoDeprReason(e.target.value)} maxLength={500} placeholder="Nhập căn cứ áp dụng cho tài sản" style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, boxSizing: "border-box" }} />
+                  </div>
+                )}
               </div>
 
               {/* Sub-Tabs Navigation (6 Sub-tabs chuẩn Ảnh 2 mới) */}
@@ -5385,10 +5980,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     <div style={{ display: "grid", gridTemplateColumns: "110px 130px 105px 105px", gap: 10 }}>
                       <div>
                         <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 3 }}>
-                          TK nguyên giá <span style={{ color: "#ef4444" }}>*</span>
+                          TK nguyên giá {!simpleAssetBook && <span style={{ color: "#ef4444" }}>*</span>}
                         </label>
                         <select
                           value={incCostAcc}
+                          disabled={simpleAssetBook}
                           onChange={(e) => setIncCostAcc(e.target.value)}
                           style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", background: "#ffffff" }}
                         >
@@ -5448,11 +6044,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     <div style={{ display: "grid", gridTemplateColumns: "110px 130px 105px 105px", gap: 10 }}>
                       <div>
                         <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 3 }}>
-                          TK khấu hao {!incNoDepr && <span style={{ color: "#ef4444" }}>*</span>}
+                          TK khấu hao {!incNoDepr && !simpleAssetBook && <span style={{ color: "#ef4444" }}>*</span>}
                         </label>
                         <select
                           value={incDeprAcc}
-                          disabled={incNoDepr}
+                          disabled={incNoDepr || simpleAssetBook}
                           onChange={(e) => setIncDeprAcc(e.target.value)}
                           style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", background: incNoDepr ? "#f1f5f9" : "#ffffff" }}
                         >
@@ -5575,7 +6171,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <select
                           value={incUseDurationUnit}
                           disabled={incNoDepr}
-                          onChange={(e) => handleIncUseDurationUnitChange(e.target.value as "Năm" | "Tháng")}
+                           onChange={(e) => handleIncUseDurationUnitChange(e.target.value === "Tháng" ? "Tháng" : "Năm")}
                           style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", background: incNoDepr ? "#f1f5f9" : "#ffffff" }}
                         >
                           <option value="Năm">Năm</option>
@@ -5677,7 +6273,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                         <th style={{ padding: "8px", textAlign: "left" }}>Đơn vị sử dụng *</th>
                         <th style={{ padding: "8px", textAlign: "right", width: 130 }}>Tỷ lệ phân bổ (%) *</th>
-                        <th style={{ padding: "8px", textAlign: "center", width: 120 }}>TK chi phí *</th>
+                        <th style={{ padding: "8px", textAlign: "center", width: 120 }}>TK chi phí {!simpleAssetBook && "*"}</th>
                         <th style={{ padding: "8px", textAlign: "left", width: 180 }}>Khoản mục chi phí</th>
                         <th style={{ padding: "8px", textAlign: "left", width: 160 }}>Đối tượng THCP</th>
                         <th style={{ padding: "8px", textAlign: "center", width: 42 }}></th>
@@ -5688,10 +6284,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ padding: "6px 8px" }}>
                             <select
-                              value={row.department}
+                              value={row.dept}
                               onChange={(e) => {
                                 const next = [...incAllocations];
-                                next[idx] = { ...next[idx], department: e.target.value };
+                                next[idx] = { ...next[idx], dept: e.target.value };
                                 setIncAllocations(next);
                               }}
                               style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, background: "#ffffff" }}
@@ -5718,6 +6314,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <select
                               value={row.expenseAccount}
+                              disabled={simpleAssetBook}
                               onChange={(e) => {
                                 const next = [...incAllocations];
                                 next[idx] = { ...next[idx], expenseAccount: e.target.value };
@@ -5747,10 +6344,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <input
                               type="text"
-                              value={row.costObject}
+                              value={row.costCenter}
                               onChange={(e) => {
                                 const next = [...incAllocations];
-                                next[idx] = { ...next[idx], costObject: e.target.value };
+                                next[idx] = { ...next[idx], costCenter: e.target.value };
                                 setIncAllocations(next);
                               }}
                               placeholder="Đối tượng THCP..."
@@ -5782,7 +6379,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const fallbackExp = incAllocations[0]?.expenseAccount || "";
                         setIncAllocations([
                           ...incAllocations,
-                          { department: "", rate: remRate, expenseAccount: fallbackExp, expenseItem: "Chi phí khấu hao TSCĐ", costObject: "" },
+                          { id: `alloc-${Date.now()}`, dept: "", rate: remRate, expenseAccount: fallbackExp, expenseItem: "Chi phí khấu hao TSCĐ", costCenter: "" },
                         ]);
                       }}
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
@@ -5809,14 +6406,15 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           if (!docNo) return;
                           const found = purchaseSourceDocs.find((p) => p.documentNo === docNo);
                           if (!found) return;
-                          if (incOrigins.some((o) => o.documentNo.trim().toUpperCase() === found.documentNo.trim().toUpperCase())) {
+                           if (incOrigins.some((o) => o.documentNumber.trim().toUpperCase() === found.documentNo.trim().toUpperCase())) {
                             notify("Chứng từ nguồn đã được gắn cho tài sản khác hoặc bị trùng lặp.");
                             e.target.value = "";
                             return;
                           }
-                          const next = incOrigins.length === 1 && !incOrigins[0].documentNo
-                            ? [{ sourceType: "Mua sắm mới trong nước", documentNo: found.documentNo, documentDate: found.documentDate, amount: found.amount, supplier: found.supplier }]
-                            : [...incOrigins, { sourceType: "Mua sắm mới trong nước", documentNo: found.documentNo, documentDate: found.documentDate, amount: found.amount, supplier: found.supplier }];
+                           const origin = { id: `origin-${Date.now()}`, originType: "Mua sắm mới trong nước", documentNumber: found.documentNo, documentDate: found.documentDate, amount: found.amount, partnerCode: "", partnerName: found.supplier, sourceDocumentId: found.id };
+                           const next = incOrigins.length === 1 && !incOrigins[0].documentNumber
+                             ? [origin]
+                             : [...incOrigins, origin];
                           setIncOrigins(next);
                           const totalOriginAmt = next.reduce((s, r) => s + (Number(r.amount) || 0), 0);
                           if (totalOriginAmt > 0) {
@@ -5851,10 +6449,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ padding: "6px 8px" }}>
                             <select
-                              value={row.sourceType}
+                               value={row.originType}
                               onChange={(e) => {
                                 const next = [...incOrigins];
-                                next[idx] = { ...next[idx], sourceType: e.target.value };
+                                 next[idx] = { ...next[idx], originType: e.target.value };
                                 setIncOrigins(next);
                               }}
                               style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, background: "#ffffff" }}
@@ -5869,10 +6467,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <input
                               type="text"
-                              value={row.documentNo}
+                               value={row.documentNumber}
                               onChange={(e) => {
                                 const next = [...incOrigins];
-                                next[idx] = { ...next[idx], documentNo: e.target.value };
+                                 next[idx] = { ...next[idx], documentNumber: e.target.value };
                                 setIncOrigins(next);
                               }}
                               placeholder="Số CT / Hóa đơn..."
@@ -5908,10 +6506,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           <td style={{ padding: "6px 8px" }}>
                             <input
                               type="text"
-                              value={row.supplier}
+                               value={row.partnerName}
                               onChange={(e) => {
                                 const next = [...incOrigins];
-                                next[idx] = { ...next[idx], supplier: e.target.value };
+                                 next[idx] = { ...next[idx], partnerName: e.target.value };
                                 setIncOrigins(next);
                               }}
                               placeholder="Nhà cung cấp / Đối tác..."
@@ -5940,7 +6538,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       onClick={() =>
                         setIncOrigins([
                           ...incOrigins,
-                          { sourceType: "Chi phí vận chuyển, lắp đặt, chạy thử", documentNo: "", documentDate: incVoucherDate, amount: 0, supplier: "" },
+                           { id: `origin-${Date.now()}`, originType: "Chi phí vận chuyển, lắp đặt, chạy thử", documentNumber: "", documentDate: incVoucherDate, amount: 0, partnerCode: "", partnerName: "", sourceDocumentId: "" },
                         ])
                       }
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
@@ -6047,7 +6645,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   <div>
                     <button
                       type="button"
-                      onClick={() => setIncComponents([...incComponents, { name: "", unit: "Cái", quantity: 1, value: 0 }])}
+                      onClick={() => setIncComponents([...incComponents, { id: crypto.randomUUID(), name: "", unit: "Cái", quantity: 1, value: 0 }])}
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm bộ phận cấu thành
@@ -6146,7 +6744,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   <div>
                     <button
                       type="button"
-                      onClick={() => setIncAccessories([...incAccessories, { name: "", unit: "Bộ", quantity: 1, value: 0 }])}
+                      onClick={() => setIncAccessories([...incAccessories, { id: crypto.randomUUID(), name: "", unit: "Bộ", quantity: 1, value: 0 }])}
                       style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dụng cụ, phụ tùng kèm theo
@@ -6324,7 +6922,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>TK nguyên giá</label>
-                  <select value={newCatCostAcc} onChange={(e) => setNewCatCostAcc(e.target.value)} style={{ width: "100%", height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}>
+                  <select value={newCatAssetAcc} onChange={(e) => setNewCatAssetAcc(e.target.value)} style={{ width: "100%", height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}>
                     {costAccountOptions.map((a) => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
@@ -6345,8 +6943,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Thời gian sử dụng mặc định (Năm)</label>
                 <input
                   type="number"
-                  value={newCatLifeYears}
-                  onChange={(e) => setNewCatLifeYears(Number(e.target.value) || 5)}
+                  value={Number(newCatPeriods) / 12}
+                  onChange={(e) => setNewCatPeriods(String((Number(e.target.value) || 5) * 12))}
                   style={{ width: 140, height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}
                 />
               </div>
@@ -6365,12 +6963,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   const catObj = {
                     code: newCatCode.trim().toUpperCase(),
                     name: newCatName.trim(),
-                    assetAccount: newCatCostAcc,
-                    costAccount: newCatCostAcc,
+                    assetAccount: newCatAssetAcc,
                     deprAccount: newCatDeprAcc,
                     expenseAccount: newCatExpAcc,
-                    defaultPeriods: Number(newCatLifeYears || 0) * 12,
-                    lifeYears: newCatLifeYears,
+                    defaultPeriods: Number(newCatPeriods),
                   };
                   if (apiConnected) {
                     void apiSave((writer) => saveFixedAssetCategory(writer, catObj)).then((saved) => {
@@ -6739,11 +7335,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   )}
                 </div>
 
-                {/* Row 4: Lý do cập nhật (Step 11, EF12 - Mandatory in Edit Mode) */}
+                {/* Lý do tùy chọn cho cập nhật thông tin quản lý thông thường. */}
                 {isEditingAsset ? (
                   <div>
                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                      Lý do cập nhật <span style={{ color: "#ef4444" }}>*</span>
+                      Lý do cập nhật
                     </label>
                     <input
                       type="text"
@@ -6752,7 +7348,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         setEditUpdateReason(e.target.value);
                         if (e.target.value.trim()) setEditReasonError(false);
                       }}
-                      placeholder="Nhập lý do hoặc căn cứ cập nhật thông tin tài sản (bắt buộc khi lưu thay đổi)..."
+                      placeholder="Nhập lý do hoặc căn cứ nếu có..."
                       style={{
                         width: "100%",
                         height: 32,
@@ -7628,7 +8224,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         cursor: "pointer",
                       }}
                     >
-                      Cất
+                      Lưu
                     </button>
                   </>
                 )}
@@ -8452,8 +9048,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             <div style={{ padding: "20px 22px 20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Tháng</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Tháng <span style={{ color: "#dc2626" }}>*</span></label>
                   <select
+                    data-testid="depr-period-month"
                     value={deprMonth}
                     onChange={(e) => setDeprMonth(Number(e.target.value))}
                     style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #00a862", borderRadius: 4, fontSize: 13, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
@@ -8464,8 +9061,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Năm</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Năm <span style={{ color: "#dc2626" }}>*</span></label>
                   <input
+                    data-testid="depr-period-year"
                     type="number"
                     value={deprYear}
                     onChange={(e) => setDeprYear(Number(e.target.value))}
@@ -8474,15 +9072,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 </div>
               </div>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155", cursor: "pointer", userSelect: "none" }}>
-                <input
-                  type="checkbox"
-                  checked={deprProrateByDays}
-                  onChange={(e) => setDeprProrateByDays(e.target.checked)}
-                  style={{ width: 14, height: 14, accentColor: "#00a862" }}
-                />
-                <span>Tính khấu hao theo số ngày sử dụng thực tế trong tháng (AF05)</span>
-              </label>
+              <span style={{ fontSize: 12, color: "#64748b" }}>
+                Khấu hao theo phương pháp đường thẳng; tài sản chỉ đủ điều kiện một phần tháng được tính theo số ngày thực tế.
+              </span>
             </div>
 
             {/* Footer */}
@@ -8496,6 +9088,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               </button>
               <button
                 type="button"
+                data-testid="depr-period-confirm"
                 onClick={() => handleOpenDeprPeriodVoucher(deprMonth, deprYear, deprProrateByDays)}
                 style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
               >
@@ -8698,10 +9291,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           setDeprPostingDate(dStr);
                           setDeprVoucherDate(dStr);
                           setDeprReason(`Khấu hao TSCĐ tháng ${mStr} năm ${deprVoucherYear}`);
-                          const recomputed = computePeriodDepreciationData(newM, deprVoucherYear, deprProrateByDays);
-                          setDeprLines(recomputed.lines);
-                          setDeprAllocationRows(recomputed.allocations);
-                          setDeprAccountingRows(recomputed.accountingEntries);
+                          refreshDeprData(newM, deprVoucherYear);
                         }
                       }}
                       style={{
@@ -8736,10 +9326,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           setDeprPostingDate(dStr);
                           setDeprVoucherDate(dStr);
                           setDeprReason(`Khấu hao TSCĐ tháng ${mStr} năm ${newY}`);
-                          const recomputed = computePeriodDepreciationData(deprVoucherMonth, newY, deprProrateByDays);
-                          setDeprLines(recomputed.lines);
-                          setDeprAllocationRows(recomputed.allocations);
-                          setDeprAccountingRows(recomputed.accountingEntries);
+                          refreshDeprData(deprVoucherMonth, newY);
                         }
                       }}
                       style={{
@@ -8928,14 +9515,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               {deprVoucherStatus !== "Đã ghi sổ" && (
                 <button
                   type="button"
-                  onClick={() => {
-                    const recomputed = computePeriodDepreciationData(deprVoucherMonth, deprVoucherYear, deprProrateByDays);
-                    setDeprLines(recomputed.lines);
-                    setDeprAllocationRows(recomputed.allocations);
-                    setDeprAccountingRows(recomputed.accountingEntries);
-                    setDeprIsDirty(true);
-                    notify(`Đã tính lại dữ liệu khấu hao kỳ ${String(deprVoucherMonth).padStart(2, "0")}/${deprVoucherYear} (${recomputed.lines.length} tài sản).`);
-                  }}
+                  onClick={() => refreshDeprData(deprVoucherMonth, deprVoucherYear)}
                   style={{
                     height: 26,
                     padding: "0 10px",
@@ -8963,7 +9543,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               {deprActiveTab === "depreciation" && (
                 <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
                   <div style={{ flex: 1, overflow: "auto" }}>
-                    <table style={{ width: "100%", minWidth: 1150, borderCollapse: "collapse", fontSize: 12.5 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                       <thead>
                         <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
@@ -9230,7 +9810,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               {/* TAB 2: PHÂN BỔ (Bước 19–20, AF10, AF11, Mục 4.5) */}
               {deprActiveTab === "allocation" && (
                 <div style={{ flex: 1, overflow: "auto" }}>
-                  <table style={{ width: "100%", minWidth: 1150, borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
@@ -9379,7 +9959,12 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               )}
 
               {/* TAB 3: HẠCH TOÁN (Bước 17–19 UC-FA-04, AF05, Mục 4.3, 4.7) */}
-              {deprActiveTab === "accounting" && (
+              {deprActiveTab === "accounting" && !deprUsesGl && (
+                <div data-testid="depr-no-gl-note" style={{ flex: 1, padding: 16, fontSize: 12.5, color: "#475569" }}>
+                  Bộ dữ liệu áp dụng TT58 theo phương pháp ghi sổ không sử dụng hệ thống tài khoản: kết quả khấu hao được ghi vào sổ theo dõi TSCĐ (S4b-DNSN), không phát sinh bút toán Nợ/Có.
+                </div>
+              )}
+              {deprActiveTab === "accounting" && deprUsesGl && (
                 <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
                   {deprVoucherStatus !== "Đã ghi sổ" && (
                     <div
@@ -9415,7 +10000,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       </button>
                     </div>
                   )}
-                  <table style={{ width: "100%", minWidth: 1050, borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
@@ -9691,6 +10276,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     )}
                     <button
                       type="button"
+                      data-testid="depr-save"
                       onClick={() => handleSaveDeprVoucher({ postNow: false, recalculate: deprVoucherStatus === "Chưa ghi sổ" })}
                       style={{
                         height: 32,
@@ -9703,13 +10289,33 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         color: "#334155",
                         cursor: "pointer",
                       }}
-                      title="Cất chứng từ ở trạng thái Chưa ghi sổ (UC-FA-03)"
+                      title="Lưu chứng từ ở trạng thái Chưa ghi sổ (UC-FA-03 AF20)"
                     >
-                      Cất
+                      Lưu
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="depr-save-print"
+                      onClick={() => handleSaveDeprVoucher({ postNow: false, printAfter: true, recalculate: deprVoucherStatus === "Chưa ghi sổ" })}
+                      style={{
+                        height: 32,
+                        padding: "0 16px",
+                        background: "#ffffff",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#334155",
+                        cursor: "pointer",
+                      }}
+                      title="Lưu chứng từ và in bảng tính khấu hao (UC-FA-03 AF15)"
+                    >
+                      Lưu và in
                     </button>
 
                     <button
                       type="button"
+                      data-testid="depr-post"
                       onClick={() => handlePostDeprVoucher({ printAfter: false })}
                       style={{
                         height: 32,
@@ -9924,8 +10530,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", paddingTop: 2 }}>
                   <span style={{ fontSize: 12, color: "#475569", fontWeight: 600 }}>Tổng tiền</span>
                   {/* Step 33: value differences only (cost and accumulated depreciation); months are not money. */}
-                  <span data-testid="reval-total" title="Chênh lệch giá trị còn lại = Chênh lệch nguyên giá - Chênh lệch hao mòn lũy kế" style={{ fontSize: 28, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>
-                    {revalRows.reduce((s, r) => s + (r.origDiff || 0) - (r.deprDiff || 0), 0).toLocaleString("vi-VN")}
+                  <span data-testid="reval-total" title={simpleAssetBook ? "Tổng biến động nguyên giá và hao mòn trên sổ tài sản" : "Tổng các khoản điều chỉnh thực tế cần hạch toán"} style={{ fontSize: 28, fontWeight: 700, color: "#1e293b", letterSpacing: 0.5 }}>
+                    {(simpleAssetBook
+                      ? revalRows.reduce((s, r) => s + (revalCostBookedAtSource ? 0 : Math.abs(r.origDiff || 0)) + Math.abs(r.deprDiff || 0), 0)
+                      : revalAccountingRows.reduce((s, r) => s + (r.amount || 0), 0)).toLocaleString("vi-VN")}
                   </span>
                 </div>
               </div>
@@ -9941,7 +10549,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 </div>
                 {revalMembersOpen && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflowX: "auto" }}>
+                    <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflow: "hidden" }}>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
                           <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -10060,7 +10668,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     type="button"
                     onClick={() => {
                       setRevalTab("accounting");
-                      if (apiConnected && !revalReadOnly && !revalAccountingRows.length) proposeRevalEntries();
+                      if (apiConnected && !simpleAssetBook && !revalReadOnly && !revalAccountingRows.length) proposeRevalEntries();
                     }}
                     style={{
                       padding: "6px 2px",
@@ -10127,15 +10735,16 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                   aria-label={`Mã tài sản dòng ${idx + 1}`}
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
-                                    const codeVal = e.target.value;
-                                    if (codeVal && revalRows.some((other, i) => i !== idx && other.assetCode === codeVal)) {
-                                      notify(`Tài sản ${codeVal} đã được chọn trong chứng từ.`);
-                                      return;
-                                    }
                                     if (apiConnected) {
-                                      selectRevalAsset(idx, codeVal);
+                                      // EF14: one line per asset.
+                                      if (e.target.value && revalRows.some((other, i) => i !== idx && other.assetCode === e.target.value)) {
+                                        notify(`Tài sản ${e.target.value} đã được chọn trong chứng từ.`);
+                                        return;
+                                      }
+                                      selectRevalAsset(idx, e.target.value);
                                       return;
                                     }
+                                    const codeVal = e.target.value;
                                     const selected = assetsList.find(a => a.code === codeVal);
                                     const updated = [...revalRows];
                                     updated[idx].assetCode = codeVal;
@@ -10376,7 +10985,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
-                                    updated[idx].monthlyDeprLawAfter = Number(e.target.value);
+                                    updated[idx].monthlyDeprLawAfter = e.target.value === "" ? null : Number(e.target.value);
                                     setRevalRows(updated);
                                   }}
                                   placeholder=""
@@ -10477,7 +11086,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 {/* Tab 2: Hạch toán */}
                 {revalTab === "accounting" && (
                   <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflowX: "auto", maxWidth: "100%" }}>
-                    <table style={{ width: "100%", minWidth: 1400, borderCollapse: "collapse", fontSize: 12 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                       <thead>
                         <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 38, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
@@ -10825,7 +11434,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   const firstAsset = validRows[0];
                   const newV = {
                     voucherNo: vNo,
-                    date: revalPostingDate || revalDate || "12/10/2026",
+                    date: revalPostingDate || revalDate,
                     assetCode: firstAsset?.assetCode || "TSCD001",
                     assetName: firstAsset?.assetName || "Xe ô tô Toyota Camry 2.5Q - BKS 29A-888.88",
                     reason: revalReason,
@@ -10840,7 +11449,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const newOrig = matched.origAfter || a.originalCost;
                         const newDepr = matched.deprAfter ?? a.depreciatedAmount;
                         const newRem = Math.max(0, newOrig - newDepr);
-                        const newMDepr = matched.monthlyDeprAfter || (a as any).deprMonthValue || 0;
+                         const newMDepr = matched.monthlyDeprAfter || ("deprMonthValue" in a ? Number(a.deprMonthValue) : 0);
                         return {
                           ...a,
                           originalCost: newOrig,
@@ -10872,7 +11481,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 }}
                 disabled={apiConnected && revalReadOnly}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
-              >{apiConnected ? "Cất" : "Lưu"}</button>
+              >Lưu</button>
               <button
                 type="button"
                 onClick={() => {
@@ -10898,7 +11507,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   const firstAsset = validRows[0];
                   const newV = {
                     voucherNo: vNo,
-                    date: revalPostingDate || revalDate || "12/10/2026",
+                    date: revalPostingDate || revalDate,
                     assetCode: firstAsset?.assetCode || "TSCD001",
                     assetName: firstAsset?.assetName || "Xe ô tô Toyota Camry 2.5Q - BKS 29A-888.88",
                     reason: revalReason,
@@ -10913,7 +11522,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const newOrig = matched.origAfter || a.originalCost;
                         const newDepr = matched.deprAfter ?? a.depreciatedAmount;
                         const newRem = Math.max(0, newOrig - newDepr);
-                        const newMDepr = matched.monthlyDeprAfter || (a as any).deprMonthValue || 0;
+                         const newMDepr = matched.monthlyDeprAfter || ("deprMonthValue" in a ? Number(a.deprMonthValue) : 0);
                         return {
                           ...a,
                           originalCost: newOrig,
@@ -10943,7 +11552,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 disabled={apiConnected && revalReadOnly}
                 style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>{apiConnected ? "Cất và In" : "Lưu và In"}</span>
+                <span>Lưu và in</span>
               </button>
               {apiConnected && (
                 <div style={{ position: "relative" }}>
@@ -10976,7 +11585,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       {/* 6. MODAL ĐIỀU CHUYỂN TÀI SẢN CỐ ĐỊNH (ẢNH 4 MỚI CỦA NGƯỜI DÙNG: ĐCTS00001) */}
       {showTransferModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 10 }}>
-          <div style={{ width: "98vw", maxWidth: 1400, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "98vw", maxWidth: 1120, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {/* Header */}
             <div style={{ height: 44, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -11119,21 +11728,21 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               </div>
 
               {/* Table */}
-              <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
-                <table style={{ width: "100%", minWidth: 1650, tableLayout: "fixed", borderCollapse: "collapse", fontSize: 12 }}>
+              <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                      <th style={{ width: 40, padding: "8px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                      <th style={{ width: 180, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
-                      <th style={{ width: 230, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
-                      <th style={{ width: 170, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Từ đơn vị</th>
-                      <th style={{ width: 200, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đến đơn vị</th>
-                      <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Hợp đồng bán</th>
-                      <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn đặt hàng</th>
-                      <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Công trình</th>
-                      <th style={{ width: 190, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
-                      <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng THCP</th>
-                      <th style={{ width: 40, padding: "8px 4px", textAlign: "center" }}></th>
+                      <th style={{ width: 36, padding: "8px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                      <th style={{ width: 110, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
+                      <th style={{ minWidth: 190, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
+                      <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Từ đơn vị</th>
+                      <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đến đơn vị</th>
+                      <th style={{ width: 115, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Hợp đồng bán</th>
+                      <th style={{ width: 115, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn đặt hàng</th>
+                      <th style={{ width: 115, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Công trình</th>
+                      <th style={{ width: 125, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
+                      <th style={{ width: 125, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng THCP</th>
+                      <th style={{ width: 36, padding: "8px 4px", textAlign: "center" }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -11142,6 +11751,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <select
+                            data-testid={`transfer-asset-${idx}`}
                             value={row.assetCode}
                             onChange={(e) => {
                               const sel = assetsList.find(a => a.code === e.target.value);
@@ -11150,9 +11760,6 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                               if (sel) {
                                 updated[idx].assetName = sel.name;
                                 updated[idx].fromDept = sel.dept;
-                                if (!updated[idx].costItem) {
-                                  updated[idx].costItem = "Chi phí khấu hao TSCĐ";
-                                }
                               }
                               setTransferRows(updated);
                               setTransferIsDirty(true);
@@ -11160,8 +11767,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff" }}
                           >
                             <option value=""></option>
-                            {assetsList.map(a => (
-                              <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
+                            {transferEligibleAssets(transferDate).map(a => (
+                              <option key={a.code} value={a.code}>{a.code} - {a.name.slice(0, 20)}...</option>
                             ))}
                           </select>
                         </td>
@@ -11169,6 +11776,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.fromDept}</td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <select
+                            data-testid={`transfer-toDept-${idx}`}
                             value={row.toDept}
                             onChange={(e) => {
                               const updated = [...transferRows];
@@ -11179,86 +11787,28 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff" }}
                           >
                             <option value=""></option>
-                            <option value="Ban Giám đốc">Ban Giám đốc</option>
-                            <option value="Khối Văn phòng">Khối Văn phòng</option>
-                            <option value="Phòng Công nghệ & IT">Phòng Công nghệ & IT</option>
-                            <option value="Phòng Kỹ thuật">Phòng Kỹ thuật</option>
-                            <option value="Ban Quản lý Công trình">Ban Quản lý Công trình</option>
-                            <option value="Phòng Kế toán">Phòng Kế toán</option>
-                            <option value="Phòng Kinh doanh & Marketing">Phòng Kinh doanh & Marketing</option>
-                            <option value="Phân xưởng Sản xuất 1">Phân xưởng Sản xuất 1</option>
-                            <option value="Đội Vận tải & Kho vận">Đội Vận tải & Kho vận</option>
+                            {(apiConnected
+                              ? transferDepartmentOptions
+                              : ["Ban Giám đốc", "Khối Văn phòng", "Phòng Công nghệ & IT", "Phòng Kỹ thuật", "Ban Quản lý Công trình", "Phòng Kế toán", "Phòng Kinh doanh & Marketing", "Phân xưởng Sản xuất 1", "Đội Vận tải & Kho vận"].map((name) => ({ value: name, label: name }))
+                            )
+                              .filter((o) => o.value !== row.fromDept)
+                              .map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </select>
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.contract || ""}
-                            onChange={(e) => {
-                              const updated = [...transferRows];
-                              updated[idx].contract = e.target.value;
-                              setTransferRows(updated);
-                              setTransferIsDirty(true);
-                            }}
-                            placeholder="—"
-                            style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 11.5, outline: "none", boxSizing: "border-box" }}
-                          />
+                          {renderTransferDim(idx, "contract", transferContractOptions)}
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.order || ""}
-                            onChange={(e) => {
-                              const updated = [...transferRows];
-                              updated[idx].order = e.target.value;
-                              setTransferRows(updated);
-                              setTransferIsDirty(true);
-                            }}
-                            placeholder="—"
-                            style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 11.5, outline: "none", boxSizing: "border-box" }}
-                          />
+                          {renderTransferDim(idx, "order", transferOrderOptions(String(row.contract || "")))}
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.project || ""}
-                            onChange={(e) => {
-                              const updated = [...transferRows];
-                              updated[idx].project = e.target.value;
-                              setTransferRows(updated);
-                              setTransferIsDirty(true);
-                            }}
-                            placeholder="VD: Công trình A"
-                            style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 11.5, outline: "none", boxSizing: "border-box" }}
-                          />
+                          {renderTransferDim(idx, "project", transferProjectOptions, "VD: Công trình A")}
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.costItem || ""}
-                            onChange={(e) => {
-                              const updated = [...transferRows];
-                              updated[idx].costItem = e.target.value;
-                              setTransferRows(updated);
-                              setTransferIsDirty(true);
-                            }}
-                            placeholder="Chi phí khấu hao TSCĐ"
-                            style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 11.5, outline: "none", boxSizing: "border-box" }}
-                          />
+                          {renderTransferDim(idx, "costItem", transferExpenseItemOptions)}
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
-                          <input
-                            type="text"
-                            value={row.costObj || ""}
-                            onChange={(e) => {
-                              const updated = [...transferRows];
-                              updated[idx].costObj = e.target.value;
-                              setTransferRows(updated);
-                              setTransferIsDirty(true);
-                            }}
-                            placeholder="—"
-                            style={{ width: "100%", height: 24, padding: "0 6px", border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 11.5, outline: "none", boxSizing: "border-box" }}
-                          />
+                          {renderTransferDim(idx, "costObj", transferCostObjectOptions)}
                         </td>
                         <td style={{ textAlign: "center", padding: "4px" }}>
                           <button
@@ -11397,7 +11947,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       {/* 6. MODAL GHI GIẢM TÀI SẢN CỐ ĐỊNH (UC-FA-07: GGTS00001) */}
       {showDecreaseModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 10 }}>
-          <div style={{ width: "98vw", maxWidth: 1400, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "98vw", maxWidth: 1120, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {/* Header */}
             <div style={{ height: 44, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -11480,9 +12030,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                 }));
                                 setDecReason(reason);
                                 setDecRows(updatedRows);
-                                if (!decAccountingCustomEdited) {
-                                  setDecAccountingRows(buildDecAccountingRows(updatedRows, reason));
-                                }
+                                setDecAccountingRows([]);
+                                setDecAccountingCustomEdited(false);
                                 setDecIsDirty(true);
                                 setShowDecReasonDropdown(false);
                               }}
@@ -11510,20 +12059,86 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     )}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span onClick={() => notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap" }}>
-                      Tham chiếu <span style={{ color: "#00a862" }}>...</span>
-                    </span>
+                    <button type="button" onClick={() => { setDecReferenceSelected(decReferenceIds); setShowDecReferencePicker(true); void loadDecReferenceRows(); }}
+                      style={{ border: "none", background: "transparent", fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      Tham chiếu (...)
+                    </button>
                     <input
                       type="text"
                       value={decReference}
                       onChange={(e) => {
                         setDecReference(e.target.value);
+                        setDecReferenceIds([]);
                         setDecIsDirty(true);
                       }}
                       placeholder="Số QĐ thanh lý / Biên bản kiểm kê / Hợp đồng góp vốn..."
                       style={{ flex: 1, height: 26, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none" }}
                     />
                   </div>
+                  {(decReason.startsWith("Góp vốn") || decReason === "Đầu tư dài hạn khác") && (
+                    <>
+                      <label style={{ fontSize: 12, color: "#334155" }}>Bên nhận góp vốn / khoản đầu tư
+                        <input type="text" value={decRecipientEntity} onChange={(e) => { setDecRecipientEntity(e.target.value); setDecIsDirty(true); }}
+                          style={{ display: "block", width: "100%", height: 28, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 8px", boxSizing: "border-box" }} />
+                      </label>
+                      <label style={{ fontSize: 12, color: "#334155" }}>Giá trị góp vốn được chấp thuận (để trống nếu bằng giá trị còn lại)
+                        <input type="number" min="0" value={decAgreedInvestmentValue} onChange={(e) => { setDecAgreedInvestmentValue(e.target.value); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }}
+                          style={{ display: "block", width: "100%", height: 28, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 8px", boxSizing: "border-box" }} />
+                      </label>
+                    </>
+                  )}
+                  {decReason === "Phát hiện thiếu khi kiểm kê" && <>
+                    <label style={{ fontSize: 12 }}><input type="checkbox" checked={decHasProcessingDecision} onChange={(e) => { setDecHasProcessingDecision(e.target.checked); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} /> Đã có quyết định xử lý tài sản thiếu</label>
+                    {decHasProcessingDecision && <label style={{ fontSize: 12 }}>Số tiền phải bồi thường
+                      <input type="number" min="0" value={decCompensationAmount} onChange={(e) => { setDecCompensationAmount(e.target.value); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} style={{ display: "block", width: "100%", height: 28, boxSizing: "border-box" }} />
+                    </label>}
+                  </>}
+                  {decReason === "Nhượng bán, thanh lý" && <label style={{ fontSize: 12 }}><input type="checkbox" checked={decIsWelfareAsset} onChange={(e) => { setDecIsWelfareAsset(e.target.checked); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} /> Tài sản dùng cho phúc lợi</label>}
+                  {decReason === "Chuyển TSCĐ thành CCDC" && <>
+                    <label style={{ fontSize: 12 }}><input type="checkbox" checked={decImmediateExpense} onChange={(e) => { setDecImmediateExpense(e.target.checked); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} /> Ghi chi phí ngay</label>
+                    {!decImmediateExpense && <label style={{ fontSize: 12 }}>Số kỳ phân bổ
+                      <input type="number" min="1" step="1" value={decAllocationPeriods} onChange={(e) => { setDecAllocationPeriods(e.target.value); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} style={{ display: "block", width: "100%", height: 28, boxSizing: "border-box" }} />
+                    </label>}
+                  </>}
+                  {showDecReferencePicker && (
+                    <div role="dialog" aria-label="Chọn chứng từ tham chiếu" style={{ position: "fixed", inset: 0, zIndex: 1300, background: "rgba(15,23,42,.45)", display: "grid", placeItems: "center" }}>
+                      <div style={{ width: "min(800px, 95vw)", maxHeight: "85vh", overflow: "auto", background: "white", borderRadius: 6, padding: 20, boxShadow: "0 18px 40px rgba(0,0,0,.2)" }}>
+                        <h3 style={{ margin: "0 0 14px", fontSize: 16 }}>Chọn chứng từ tham chiếu</h3>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end", marginBottom: 10 }}>
+                          <label style={{ fontSize: 12 }}>Tìm theo<br/><select aria-label="Loại chứng từ tham chiếu" value={decReferenceType} onChange={(e) => setDecReferenceType(e.target.value)}><option value="">Tất cả loại chứng từ</option><option value="MANUAL">Chứng từ kế toán</option><option value="SUBLEDGER">Từ phân hệ</option><option value="ALLOCATION">Phân bổ</option><option value="ADJUSTMENT">Điều chỉnh</option><option value="OPENING">Số dư đầu kỳ</option></select></label>
+                          <label style={{ fontSize: 12 }}>Khoảng thời gian<br/><select aria-label="Khoảng thời gian tham chiếu" onChange={(e) => {
+                            if (e.target.value === "month") {
+                              const match = /^(\d{4})-(\d{2})$/.exec(_period);
+                              const year = match ? Number(match[1]) : new Date().getFullYear();
+                              const month = match ? Number(match[2]) : new Date().getMonth() + 1;
+                              setDecReferenceFrom(`${year}-${String(month).padStart(2, "0")}-01`);
+                              setDecReferenceTo(`${year}-${String(month).padStart(2, "0")}-${new Date(year, month, 0).getDate()}`);
+                            } else { setDecReferenceFrom(""); setDecReferenceTo(""); }
+                          }}><option value="all">Tất cả</option><option value="month">Kỳ làm việc</option></select></label>
+                          <label style={{ fontSize: 12 }}>Từ<br/><input type="date" aria-label="Từ ngày tham chiếu" value={decReferenceFrom} onChange={(e) => setDecReferenceFrom(e.target.value)} /></label>
+                          <label style={{ fontSize: 12 }}>Đến<br/><input type="date" aria-label="Đến ngày tham chiếu" value={decReferenceTo} onChange={(e) => setDecReferenceTo(e.target.value)} /></label>
+                          <label style={{ fontSize: 12 }}>Tìm theo số chứng từ<br/><input aria-label="Tìm số chứng từ tham chiếu" value={decReferenceSearch} onChange={(e) => setDecReferenceSearch(e.target.value)} /></label>
+                          <button type="button" onClick={() => void loadDecReferenceRows()}>Lấy dữ liệu</button>
+                        </div>
+                        <div style={{ maxHeight: 280, overflow: "auto", border: "1px solid #cbd5e1" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}><thead><tr><th>Chọn</th><th>Ngày hạch toán</th><th>Ngày chứng từ</th><th>Số chứng từ</th><th>Diễn giải</th></tr></thead><tbody>
+                            {decReferenceRows.map((entry) => <tr key={entry.id}><td><input type="checkbox" aria-label={`Chọn chứng từ ${entry.number}`} checked={decReferenceSelected.includes(entry.id)} onChange={(e) => setDecReferenceSelected((ids) => e.target.checked ? [...ids, entry.id] : ids.filter((id) => id !== entry.id))} /></td><td>{entry.posting_date}</td><td>{entry.document_date}</td><td>{entry.number}</td><td>{entry.description}</td></tr>)}
+                            {!decReferenceRows.length && <tr><td colSpan={5} style={{ padding: 12, textAlign: "center" }}>Không tìm thấy chứng từ phù hợp.</td></tr>}
+                          </tbody></table>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+                          <button type="button" onClick={() => setShowDecReferencePicker(false)}>Hủy</button>
+                          <button type="button" onClick={() => {
+                            const chosen = decReferenceRows.filter((entry) => decReferenceSelected.includes(entry.id));
+                            setDecReferenceIds(chosen.map((entry) => entry.id));
+                            setDecReference(chosen.map((entry) => entry.number).join(", "));
+                            setDecIsDirty(true);
+                            setShowDecReferencePicker(false);
+                          }}>Đồng ý</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right Fields */}
@@ -11624,8 +12239,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
               {/* Table under Tab Tài sản */}
               {decTab === "asset" ? (
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
-                  <table style={{ width: "100%", minWidth: 1500, borderCollapse: "collapse", fontSize: 12 }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 120, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>
@@ -11671,8 +12286,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                   updated[idx].deprCost = Number((selected as any).deprCostValue) || orig;
                                   updated[idx].accumulatedDepr = accum;
                                   updated[idx].remainingValue = rem;
-                                  updated[idx].costAcc = selected.costAccount || "2112";
-                                  updated[idx].accumulatedAcc = selected.deprAccount || "2141";
+                                  updated[idx].costAcc = simpleAssetBook ? "" : selected.costAccount || "2112";
+                                  updated[idx].accumulatedAcc = simpleAssetBook ? "" : selected.deprAccount || "2141";
                                   updated[idx].handlingAcc = proposeDecHandlingAccount(decReason);
                                 }
                                 setDecRows(updated);
@@ -11701,6 +12316,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             <input
                               type="text"
                               value={row.costAcc}
+                              disabled={simpleAssetBook}
                               onChange={(e) => {
                                 const updated = [...decRows];
                                 updated[idx] = { ...updated[idx], costAcc: e.target.value };
@@ -11717,6 +12333,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             <input
                               type="text"
                               value={row.accumulatedAcc}
+                              disabled={simpleAssetBook}
                               onChange={(e) => {
                                 const updated = [...decRows];
                                 updated[idx] = { ...updated[idx], accumulatedAcc: e.target.value };
@@ -11733,6 +12350,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             <input
                               type="text"
                               value={row.handlingAcc}
+                              disabled={simpleAssetBook}
                               onChange={(e) => {
                                 const updated = [...decRows];
                                 updated[idx] = { ...updated[idx], handlingAcc: e.target.value };
@@ -11752,7 +12370,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                 const nextRows =
                                   decRows.length > 1
                                     ? decRows.filter((_, i) => i !== idx)
-                                    : [{ id: 1, assetCode: "", assetName: "", dept: "", originalCost: 0, deprCost: 0, accumulatedDepr: 0, remainingValue: 0, costAcc: "2112", accumulatedAcc: "2141", handlingAcc: proposeDecHandlingAccount(decReason) }];
+                                    : [{ id: 1, assetCode: "", assetName: "", dept: "", originalCost: 0, deprCost: 0, accumulatedDepr: 0, remainingValue: 0, costAcc: simpleAssetBook ? "" : "2112", accumulatedAcc: simpleAssetBook ? "" : "2141", handlingAcc: proposeDecHandlingAccount(decReason) }];
                                 setDecRows(nextRows);
                                 if (!decAccountingCustomEdited) {
                                   setDecAccountingRows(buildDecAccountingRows(nextRows, decReason));
@@ -11781,7 +12399,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 </div>
               ) : (
                 /* Hạch toán sub-tab (Steps 24–27, AF18, AF21, AF22, Section 4.6–4.9) */
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -11857,7 +12475,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       {(decAccountingRows.length > 0 ? decAccountingRows : buildDecAccountingRows(decRows, decReason)).length === 0 && (
                         <tr>
                           <td colSpan={5} style={{ padding: "14px", textAlign: "center", color: "#94a3b8" }}>
-                            Chọn tài sản tại tab Tài sản để hệ thống tự động sinh bút toán hạch toán ghi giảm.
+                            {simpleAssetBook ? "TT58 sổ đơn không phát sinh bút toán Nợ/Có." : "Chọn tài sản tại tab Tài sản để hệ thống tự động sinh bút toán hạch toán ghi giảm."}
                           </td>
                         </tr>
                       )}
@@ -11882,8 +12500,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         deprCost: 0,
                         accumulatedDepr: 0,
                         remainingValue: 0,
-                        costAcc: "2112",
-                        accumulatedAcc: "2141",
+                        costAcc: simpleAssetBook ? "" : "2112",
+                        accumulatedAcc: simpleAssetBook ? "" : "2141",
                         handlingAcc: proposeDecHandlingAccount(decReason),
                       },
                     ];
@@ -11907,8 +12525,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         deprCost: 0,
                         accumulatedDepr: 0,
                         remainingValue: 0,
-                        costAcc: "2112",
-                        accumulatedAcc: "2141",
+                        costAcc: simpleAssetBook ? "" : "2112",
+                        accumulatedAcc: simpleAssetBook ? "" : "2141",
                         handlingAcc: proposeDecHandlingAccount(decReason),
                       },
                     ];
@@ -11945,7 +12563,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         <span>{att.name} ({Math.round(att.size / 1024)} KB)</span>
                         <button
                           type="button"
-                          onClick={() => setDecAttachments(decAttachments.filter((_, idx) => idx !== i))}
+                          onClick={() => { setDecAttachments(decAttachments.filter((_, idx) => idx !== i)); setDecFiles(decFiles.filter((_, idx) => idx !== i)); }}
                           style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", padding: 0 }}
                         >
                           ×
@@ -11971,20 +12589,37 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 onClick={() => handleSaveDecrease(false)}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
               >
-                Cất
+                Lưu
               </button>
               <button
                 type="button"
                 onClick={() => handleSaveDecrease(true)}
                 style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
+                <span>Lưu và in</span>
                 <ChevronDown size={14} />
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {showStocktakeDatePicker && <div role="dialog" aria-label="Chọn thời điểm kiểm kê" style={{ position: "fixed", inset: 0, zIndex: 1250, background: "rgba(15,23,42,.45)", display: "grid", placeItems: "center" }}>
+        <div style={{ background: "white", padding: 20, borderRadius: 6, minWidth: 310, display: "grid", gap: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16 }}>Chọn thời điểm kiểm kê</h3>
+          <label>Kiểm kê đến ngày <input aria-label="Kiểm kê đến ngày" type="date" value={stocktakeAuditDate.split("/").reverse().join("-")} onChange={(e) => setStocktakeAuditDate(toViDate(e.target.value))} /></label>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <button type="button" onClick={() => setShowStocktakeDatePicker(false)}>Hủy</button>
+            <button type="button" onClick={() => {
+              const date = parseDeprDateString(stocktakeAuditDate);
+              if (!date || date.getTime() > new Date().getTime()) { notify("Ngày kiểm kê không được lớn hơn ngày hiện tại."); return; }
+              setShowStocktakeDatePicker(false);
+              setShowStocktakeModal(true);
+              handleLoadBookAssetsForStocktake();
+            }}>Đồng ý</button>
+          </div>
+        </div>
+      </div>}
 
       {/* 7. MODAL BẢNG KIỂM KÊ TÀI SẢN CỐ ĐỊNH KKTS00001 (UC-FA-08 – KIỂM KÊ TÀI SẢN) */}
       {showStocktakeModal && (
@@ -12017,7 +12652,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             </div>
 
             {/* Modal Scrollable Body */}
-            <div style={{ padding: "14px 18px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 12, background: "#f2f5f8" }}>
+            <fieldset disabled={stocktakeViewOnly} style={{ margin: 0, border: 0, minWidth: 0, padding: "14px 18px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 12, background: "#f2f5f8" }}>
               {/* Master Info (Top Form) */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 24, alignItems: "flex-start" }}>
                 {/* Left Column */}
@@ -12103,24 +12738,42 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       value={stocktakeReference}
                       onChange={(e) => {
                         setStocktakeReference(e.target.value);
+                        setStocktakeReferenceIds([]);
                         setStocktakeIsDirty(true);
                       }}
                       placeholder="Nhập QĐ kiểm kê, kế hoạch hoặc chứng từ xử lý (VD: QĐ-KK/2026, GGTS00001)..."
                       style={{ width: 380, height: 28, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, background: "#ffffff", outline: "none" }}
                     />
-                    <span
-                      onClick={() => {
-                        const nextRef = stocktakeReference ? `${stocktakeReference}; QĐ-KK-2026/01` : "QĐ-KK-2026/01";
-                        setStocktakeReference(nextRef);
-                        setStocktakeIsDirty(true);
-                        notify("Đã liên kết quyết định/chứng từ tham chiếu kiểm kê.");
-                      }}
+                    <button type="button"
+                      onClick={() => { setStocktakeReferenceSelected(stocktakeReferenceIds); setShowStocktakeReferencePicker(true); void loadStocktakeReferenceRows(); }}
+                      aria-label="Chọn chứng từ tham chiếu"
                       style={{ fontSize: 12.5, color: "#00a862", cursor: "pointer", fontWeight: 600, userSelect: "none" }}
                       title="Chọn chứng từ tham chiếu"
                     >
                       ...
-                    </span>
+                    </button>
                   </div>
+                  {showStocktakeReferencePicker && <div role="dialog" aria-label="Chọn chứng từ tham chiếu kiểm kê" style={{ position: "fixed", inset: 0, zIndex: 1300, background: "rgba(15,23,42,.45)", display: "grid", placeItems: "center" }}>
+                    <div style={{ width: "min(820px,95vw)", maxHeight: "85vh", overflow: "auto", background: "white", padding: 20, borderRadius: 6 }}>
+                      <h3 style={{ marginTop: 0 }}>Chọn chứng từ tham chiếu</h3>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "end" }}>
+                        <label>Tìm theo<br/><select aria-label="Loại chứng từ kiểm kê" value={stocktakeReferenceType} onChange={(e) => setStocktakeReferenceType(e.target.value)}><option value="">Tất cả</option><option value="MANUAL">Chứng từ kế toán</option><option value="SUBLEDGER">Từ phân hệ</option><option value="ALLOCATION">Phân bổ</option><option value="ADJUSTMENT">Điều chỉnh</option></select></label>
+                        <label>Khoảng thời gian<br/><select aria-label="Khoảng thời gian kiểm kê" onChange={(e) => {
+                          if (e.target.value === "month") { const d = parseDeprDateString(stocktakeAuditDate) || new Date(); const y = d.getFullYear(); const m = d.getMonth() + 1; setStocktakeReferenceFrom(`${y}-${String(m).padStart(2,"0")}-01`); setStocktakeReferenceTo(`${y}-${String(m).padStart(2,"0")}-${new Date(y,m,0).getDate()}`); }
+                          else { setStocktakeReferenceFrom(""); setStocktakeReferenceTo(""); }
+                        }}><option value="all">Tất cả</option><option value="month">Tháng kiểm kê</option></select></label>
+                        <label>Từ<br/><input type="date" aria-label="Từ ngày chứng từ kiểm kê" value={stocktakeReferenceFrom} onChange={(e) => setStocktakeReferenceFrom(e.target.value)} /></label>
+                        <label>Đến<br/><input type="date" aria-label="Đến ngày chứng từ kiểm kê" value={stocktakeReferenceTo} onChange={(e) => setStocktakeReferenceTo(e.target.value)} /></label>
+                        <label>Số chứng từ<br/><input aria-label="Tìm số chứng từ kiểm kê" value={stocktakeReferenceSearch} onChange={(e) => setStocktakeReferenceSearch(e.target.value)} /></label>
+                        <button type="button" onClick={() => void loadStocktakeReferenceRows()}>Lấy dữ liệu</button>
+                      </div>
+                      <div style={{ maxHeight: 280, overflow: "auto", marginTop: 10 }}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th>Chọn</th><th>Ngày hạch toán</th><th>Ngày chứng từ</th><th>Số chứng từ</th><th>Diễn giải</th></tr></thead><tbody>
+                        {stocktakeReferenceRows.map((entry) => <tr key={entry.id}><td><input type="checkbox" aria-label={`Chọn chứng từ ${entry.number}`} checked={stocktakeReferenceSelected.includes(entry.id)} onChange={(e) => setStocktakeReferenceSelected((ids) => e.target.checked ? [...ids, entry.id] : ids.filter((id) => id !== entry.id))} /></td><td>{entry.posting_date}</td><td>{entry.document_date}</td><td>{entry.number}</td><td>{entry.description}</td></tr>)}
+                        {!stocktakeReferenceRows.length && <tr><td colSpan={5}>Không tìm thấy chứng từ phù hợp.</td></tr>}
+                      </tbody></table></div>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}><button type="button" onClick={() => setShowStocktakeReferencePicker(false)}>Hủy</button><button type="button" onClick={() => { const chosen = stocktakeReferenceRows.filter((e) => stocktakeReferenceSelected.includes(e.id)); setStocktakeReferenceIds(chosen.map((e) => e.id)); setStocktakeReference(chosen.map((e) => e.number).join(", ")); setStocktakeIsDirty(true); setShowStocktakeReferencePicker(false); }}>Đồng ý</button></div>
+                    </div>
+                  </div>}
                 </div>
 
                 {/* Right Column */}
@@ -12196,6 +12849,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                             <td style={{ padding: "4px 8px", border: "1px solid #cbd5e1" }}>
                               <input
                                 type="text"
+                                data-testid={`stocktake-member-name-${idx}`}
                                 value={m.name}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -12230,16 +12884,21 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                               />
                             </td>
                             <td style={{ padding: "4px 8px", border: "1px solid #cbd5e1" }}>
-                              <input
-                                type="text"
+                              {/* 1.4.B: vai trò theo hồ sơ tổ chức kiểm kê */}
+                              <select
+                                data-testid={`stocktake-member-role-${idx}`}
                                 value={m.role}
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   setStocktakeMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, role: val } : x)));
                                   setStocktakeIsDirty(true);
                                 }}
-                                style={{ width: "100%", border: "none", outline: "none", fontSize: 12.5 }}
-                              />
+                                style={{ width: "100%", border: "none", outline: "none", fontSize: 12.5, background: "transparent" }}
+                              >
+                                {["Trưởng ban", "Thư ký", "Thành viên", ...(["Trưởng ban", "Thư ký", "Thành viên"].includes(m.role) ? [] : [m.role])].map((role) => (
+                                  <option key={role} value={role}>{role}</option>
+                                ))}
+                              </select>
                             </td>
                             <td style={{ textAlign: "center", padding: "4px", border: "1px solid #cbd5e1" }}>
                               <button
@@ -12451,50 +13110,23 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                       <input
                                         type="text"
                                         value={r.assetCode}
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          setStocktakeRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, assetCode: val } : x)));
-                                          setStocktakeIsDirty(true);
-                                        }}
-                                        placeholder="Mã tạm (THUA-001)"
+                                        readOnly
+                                        title="Mã nhận diện kiểm kê tạm do hệ thống cấp khi lưu"
                                         style={{ width: "100%", height: 26, border: "1px solid #818cf8", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none", background: "#ffffff" }}
                                       />
                                     ) : (
                                       <select
                                         value={r.assetCode}
-                                        onChange={(e) => {
-                                          const selectedCode = e.target.value;
-                                          const found: any = assetsList.find((a) => a.code === selectedCode);
-                                          const orig = found ? Number(found.originalCost || 0) : 0;
-                                          const accum = found ? Math.min(orig, Math.max(0, Number(found.depreciatedAmount || 0))) : 0;
-                                          const rem = Math.max(0, orig - accum);
-                                          setStocktakeRows((prev) =>
-                                            prev.map((x) =>
-                                              x.id === r.id
-                                                ? {
-                                                    ...x,
-                                                    assetCode: selectedCode,
-                                                    assetName: found ? found.name : "",
-                                                    dept: found ? found.dept : "",
-                                                    actualDept: found ? found.dept : "",
-                                                    cost: orig,
-                                                    deprCost: found ? Number(found.deprCostValue || orig) : 0,
-                                                    accumDepr: accum,
-                                                    remainCost: rem,
-                                                    existenceStatus: "UNCOUNTED",
-                                                    exists: null,
-                                                  }
-                                                : x
-                                            )
-                                          );
-                                          setStocktakeIsDirty(true);
-                                        }}
+                                        data-testid={`stocktake-asset-${globalIdx}`}
+                                        onChange={(e) => void handlePickStocktakeAsset(r.id, e.target.value)}
                                         style={{ width: "100%", height: 26, border: "1px solid #e2e8f0", borderRadius: 3, fontSize: 12, outline: "none", background: "#ffffff" }}
                                       >
                                         <option value="">-- Chọn tài sản --</option>
-                                        {assetsList.map((a) => (
-                                          <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
-                                        ))}
+                                        {assetsList
+                                          .filter((a) => a.code === r.assetCode || !stocktakeRows.some((x) => !x.isSurplus && x.assetCode === a.code))
+                                          .map((a) => (
+                                            <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
+                                          ))}
                                       </select>
                                     )}
                                   </td>
@@ -12518,17 +13150,18 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                   <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>
                                     {r.isSurplus ? <span style={{ color: "#6366f1", fontStyle: "italic" }}>Ngoài sổ kế toán</span> : r.dept || ""}
                                   </td>
+                                  {/* BR14 & BR40: book figures are read-only; a surplus asset has none (not 0) */}
                                   <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#1e293b" }}>
-                                    {r.cost > 0 ? formatVND(r.cost) : "0"}
+                                    {r.isSurplus ? "—" : r.cost > 0 ? formatVND(r.cost) : "0"}
                                   </td>
                                   <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
-                                    {r.deprCost > 0 ? formatVND(r.deprCost) : "0"}
+                                    {r.isSurplus ? "—" : r.deprCost > 0 ? formatVND(r.deprCost) : "0"}
                                   </td>
                                   <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>
-                                    {r.accumDepr > 0 ? formatVND(r.accumDepr) : "0"}
+                                    {r.isSurplus ? "—" : r.accumDepr > 0 ? formatVND(r.accumDepr) : "0"}
                                   </td>
                                   <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>
-                                    {r.remainCost > 0 ? formatVND(r.remainCost) : "0"}
+                                    {r.isSurplus ? "—" : r.remainCost > 0 ? formatVND(r.remainCost) : "0"}
                                   </td>
                                   {/* 3-State Existence Status (Step 24, BR14, BR19) */}
                                   <td style={{ textAlign: "center", padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
@@ -12657,6 +13290,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                                       placeholder={r.isSurplus ? "Đặc điểm nhận dạng / Số serial *" : "Ghi chú"}
                                       style={{ width: "100%", height: 24, border: "1px solid #e2e8f0", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none" }}
                                     />
+                                    {!r.isSurplus && r.existenceStatus === "EXISTS" && <label style={{ display: "block", fontSize: 11 }}><input type="checkbox" checked={Boolean(r.identityMismatch)} onChange={(e) => { setStocktakeRows((prev) => prev.map((x) => x.id === r.id ? { ...x, identityMismatch: e.target.checked } : x)); setStocktakeIsDirty(true); }} /> Sai thông tin nhận dạng</label>}
                                   </td>
                                   <td style={{ textAlign: "center", padding: "4px" }}>
                                     <button
@@ -12807,7 +13441,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         const files = Array.from(e.target.files || []);
                         for (const f of files) {
                           if (f.size > 5 * 1024 * 1024) {
-                            notify("Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).");
+                            notify("Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.");
                             return;
                           }
                         }
@@ -12815,7 +13449,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           ...prev,
                           ...files.map((f) => ({ name: f.name, size: f.size })),
                         ]);
+                        setStocktakeFiles((prev) => [...prev, ...files]);
                         setStocktakeIsDirty(true);
+                        e.target.value = "";
                       }}
                     />
                     <Upload size={18} style={{ color: "#64748b" }} />
@@ -12833,7 +13469,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           {att.name} ({Math.round(att.size / 1024)} KB)
                           <button
                             type="button"
-                            onClick={() => setStocktakeAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                            onClick={() => { setStocktakeAttachments((prev) => prev.filter((_, idx) => idx !== i)); setStocktakeFiles((prev) => prev.filter((_, idx) => idx !== i)); setStocktakeIsDirty(true); }}
                             style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", padding: 0 }}
                           >
                             ×
@@ -12844,7 +13480,28 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   )}
                 </div>
               </div>
-            </div>
+            </fieldset>
+
+            {/* AF20: xử lý kiến nghị sau kiểm kê – chỉ liên kết chứng từ/kết quả xử lý, không sửa kết quả kiểm kê */}
+            {stocktakeViewOnly && stocktakeProcessingMode && (
+              <div data-testid="stocktake-processing" style={{ padding: "10px 18px", borderTop: "1px solid #e2e8f0", background: "#ffffff", display: "grid", gap: 6, maxHeight: 220, overflowY: "auto" }}>
+                <strong style={{ fontSize: 13 }}>Xử lý kiến nghị sau kiểm kê</strong>
+                {stocktakeRows.filter((r) => (r.recommendationStatus || "NONE") !== "NONE").map((r, i) => (
+                  <div key={r.id} style={{ display: "grid", gridTemplateColumns: "minmax(140px,1fr) minmax(160px,1.4fr) 150px minmax(160px,1fr)", gap: 8, alignItems: "center", fontSize: 12.5 }}>
+                    <span>{r.assetCode} – {r.assetName}</span>
+                    <span style={{ color: "#64748b" }}>{r.recommendation}</span>
+                    <input data-testid={`stocktake-resolution-voucher-${i}`} placeholder="Số chứng từ xử lý" value={r.resolutionVoucherNo || ""}
+                      onChange={(e) => { const val = e.target.value; setStocktakeRows((prev) => prev.map((x) => x.id === r.id ? { ...x, resolutionVoucherNo: val } : x)); setStocktakeIsDirty(true); }} />
+                    <input placeholder="Kết quả xử lý" value={r.resolutionResult || ""}
+                      onChange={(e) => { const val = e.target.value; setStocktakeRows((prev) => prev.map((x) => x.id === r.id ? { ...x, resolutionResult: val } : x)); setStocktakeIsDirty(true); }} />
+                  </div>
+                ))}
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <input type="checkbox" data-testid="stocktake-processed" checked={stocktakeProcessed} onChange={(e) => { setStocktakeProcessed(e.target.checked); setStocktakeIsDirty(true); }} />
+                  <span>Đã xử lý kiến nghị</span>
+                </label>
+              </div>
+            )}
 
             {/* Modal Footer matching UC-FA-08 Steps 34–38 */}
             <div style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 18px", gap: 10, flexShrink: 0 }}>
@@ -12853,23 +13510,32 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 onClick={handleCloseStocktakeModal}
                 style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#334155", cursor: "pointer" }}
               >
-                Hủy
+                {stocktakeViewOnly ? "Đóng" : "Hủy"}
               </button>
+              {stocktakeViewOnly && stocktakeSavedRecord && <button type="button" onClick={() => printSavedStocktake(stocktakeSavedRecord)}>In biên bản</button>}
+              {stocktakeViewOnly && stocktakeSavedRecord && apiConnected && stocktakeSavedRecord.status !== "DRAFT" && !stocktakeProcessingMode && (
+                <button type="button" onClick={() => setStocktakeProcessingMode(true)}>Xử lý kiến nghị</button>
+              )}
+              {stocktakeViewOnly && stocktakeProcessingMode && (
+                <button type="button" onClick={handleSaveStocktakeProcessing}>Lưu xử lý kiến nghị</button>
+              )}
+              {stocktakeViewOnly && (stocktakeSavedRecord?.attachments || []).filter((a: any) => a.id).map((attachment: any) => <button type="button" key={attachment.id} onClick={() => void downloadStocktakeAttachment(attachment)}>Tải {attachment.name}</button>)}
+              {!stocktakeViewOnly && <>
               <button
                 type="button"
                 onClick={() => handleSaveStocktake(false)}
                 style={{ height: 32, padding: "0 22px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 500, color: "#334155", cursor: "pointer" }}
               >
-                Cất
+                Lưu
               </button>
               <button
                 type="button"
                 onClick={() => handleSaveStocktake(true)}
                 style={{ height: 32, padding: "0 18px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
-                <span>Cất và In</span>
-                <ChevronDown size={14} />
+                <span>Lưu và in</span>
               </button>
+              </>}
             </div>
           </div>
         </div>
@@ -12878,7 +13544,71 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       {/* 8. MODAL PREVIEW BÁO CÁO & THIẾT LẬP THAM SỐ (UC-FA-09 Steps 5–24, AF13, AF15, AF16) */}
       {previewReportName && (() => {
         const isEn = reportLang === "en";
-        const activeDef = UC09_REPORT_CATALOG.find((d) => d.code === previewReportCode) || UC09_REPORT_CATALOG[1];
+        const activeDef: ReportDef = reportCatalog.find((d) => d.code === previewReportCode) || reportCatalog[0] || UC09_REPORT_CATALOG[1];
+        const apiReport: any = apiConnected ? apiReportPayload?.record ?? null : null;
+        // BR21: only the parameters the selected report supports
+        const showPeriod = activeDef.supports_period ?? true;
+        const showYear = activeDef.supports_year !== undefined ? Boolean(activeDef.supports_year) && !showPeriod : false;
+        const showDept = activeDef.supports_department ?? true;
+        const showCategory = Boolean(activeDef.supports_category) && apiConnected;
+        const cellText = (value: unknown) => (value === null || value === undefined ? "" : String(value));
+        const isMoneyKey = (key: string) => /cost|depreciation|value|balance|amount|diff_|month_|increase|decrease/.test(key) && !/rate|display|label|voucher/.test(key);
+        const fmtCell = (key: string, value: unknown) =>
+          value === null || value === undefined || value === "" ? "" : isMoneyKey(key) && !Number.isNaN(Number(value)) ? formatVND(Number(value)) : String(value);
+        // B20 & BR53–BR54: totals only under summable columns
+        const totalsCells = (cols: any[], totals: any) => cols.map((c: any, i: number) =>
+          i === 0 ? (isEn ? "Total" : "Tổng cộng") : totals && totals[c.key] !== undefined && c.key !== "stt" ? fmtCell(c.key, totals[c.key]) : "");
+        const buildReportHtml = (rep: any) => {
+          const cell = "border:1px solid #000;padding:4px 6px";
+          const head = rep.columns.map((c: any) => `<th style="${cell}">${escapeHtml(c.label)}</th>`).join("");
+          const body = rep.rows.map((r: any) => `<tr>${rep.columns.map((c: any) => `<td style="${cell}">${escapeHtml(fmtCell(c.key, r[c.key]))}</td>`).join("")}</tr>`).join("");
+          const totalRow = rep.rows.length ? `<tr>${totalsCells(rep.columns, rep.totals).map((v: string) => `<td style="${cell};font-weight:bold">${escapeHtml(v)}</td>`).join("")}</tr>` : "";
+          const sig = rep.signatures || {};
+          return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(rep.title)}</title><style>body{font-family:"Times New Roman",serif;font-size:12px}table{border-collapse:collapse;width:100%}</style></head><body>
+<table style="border:0"><tr><td><strong>${escapeHtml(rep.header.company_name)}</strong><br>${escapeHtml(rep.header.company_address || "")}</td><td style="text-align:right"><strong>${escapeHtml(rep.form_version || rep.form_code)}</strong></td></tr></table>
+<h2 style="text-align:center">${escapeHtml(String(rep.title).toUpperCase())}</h2><p style="text-align:center">${escapeHtml(rep.header.period_label)} – ${isEn ? "Currency" : "Đơn vị tính"}: ${escapeHtml(rep.header.currency)}</p>
+<table><thead><tr>${head}</tr></thead><tbody>${body}${totalRow}</tbody></table>
+${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
+<table style="margin-top:28px;border:0;text-align:center"><tr><td><strong>${escapeHtml(sig.prepared_by_label || "")}</strong><br><em>(Ký, họ tên)</em></td><td><strong>${escapeHtml(sig.chief_accountant_label || "")}</strong><br><em>(Ký, họ tên)</em></td><td><strong>${escapeHtml(sig.director_label || "")}</strong><br><em>(Ký, họ tên, đóng dấu)</em></td></tr></table></body></html>`;
+        };
+        const downloadBlob = (content: BlobPart[], type: string, name: string) => {
+          const url = URL.createObjectURL(new Blob(content, { type }));
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        };
+        // AF20 & BR55–BR57: data layout keeps raw numbers/codes/dates; print layout keeps the template
+        const exportApiReport = (mode: "data" | "print") => {
+          if (!apiReport) return;
+          try {
+            const base = String(apiReport.export_data?.filename || apiReport.report_code).replace(/\.xlsx$/i, "");
+            if (mode === "data") {
+              const q = (v: unknown) => `"${cellText(v).replace(/"/g, '""')}"`;
+              const lines = [
+                apiReport.columns.map((c: any) => q(c.label)).join(","),
+                ...apiReport.rows.map((r: any) => apiReport.columns.map((c: any) => q(r[c.key])).join(",")),
+              ];
+              downloadBlob(["\uFEFF", lines.join("\r\n")], "text/csv;charset=utf-8", `${base}.csv`);
+            } else {
+              downloadBlob([buildReportHtml(apiReport)], "application/vnd.ms-excel;charset=utf-8", `${base}.xls`);
+            }
+          } catch {
+            notify("Xuất Excel thất bại. Vui lòng thử lại.");
+          }
+        };
+        const printApiReport = () => {
+          if (!apiReport) return;
+          try {
+            // BR58: the print uses the figures already built, no new calculation
+            openPrintFrame(buildReportHtml(apiReport), `In ${apiReport.title}`, () => notify("Không thể tạo bản in báo cáo. Vui lòng thử lại."));
+          } catch {
+            notify("Không thể tạo bản in báo cáo. Vui lòng thử lại.");
+          }
+        };
         const rCode = activeDef.code;
         const fDt = parseDeprDateString(reportFromDate);
         const tDt = parseDeprDateString(reportToDate);
@@ -12940,7 +13670,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1050, padding: 10 }}>
-            <div style={{ width: "96vw", maxWidth: 1400, maxHeight: "92vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ width: "96vw", maxWidth: 1180, maxHeight: "92vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               {/* Modal Header */}
               <div style={{ height: 46, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -12956,6 +13686,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
               {/* Parameter Setup Toolbar (Steps 5–11) */}
               <div style={{ padding: "10px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12.5 }}>
+                {showYear && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: "#475569", fontWeight: 500 }}>{isEn ? "Year:" : "Năm:"}</span>
+                    <input data-testid="report-year" type="number" value={reportYear || ""} onChange={(e) => setReportYear(Number(e.target.value))}
+                      style={{ width: 80, height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12 }} />
+                  </label>
+                )}
+                {showPeriod && <>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ color: "#475569", fontWeight: 500 }}>{isEn ? "Period:" : "Kỳ báo cáo:"}</span>
                   <select
@@ -12997,8 +13735,40 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     style={{ width: 92, height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12 }}
                   />
                 </div>
+                </>}
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {showCategory && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: "#475569" }}>{isEn ? "Category:" : "Loại TSCĐ:"}</span>
+                    <select value={reportCategoryFilter} onChange={(e) => setReportCategoryFilter(e.target.value)}
+                      style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, background: "#ffffff" }}>
+                      <option value="all">{isEn ? "All categories" : "Tất cả loại TSCĐ"}</option>
+                      {categoryOptions.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {rCode === "RECONCILE_STOCKTAKE_FA" && apiConnected && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: "#475569" }}>{isEn ? "Stocktake:" : "Biên bản kiểm kê:"}</span>
+                    <select data-testid="report-count" value={reportCountId} onChange={(e) => setReportCountId(e.target.value)}
+                      style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, background: "#ffffff" }}>
+                      <option value="">{isEn ? "All in period" : "Tất cả trong kỳ"}</option>
+                      {stocktakeVouchers.filter((v: any) => v.id && !String(v.status || "").startsWith("Chưa")).map((v: any) => (
+                        <option key={v.id} value={v.id}>{v.voucherNo} – {v.auditDate}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {rCode === "ANNUAL_DEPRECIATION_SCHEDULE" && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#334155", fontSize: 12 }}>
+                    <input type="checkbox" checked={reportIncludeZeroRemaining} onChange={(e) => setReportIncludeZeroRemaining(e.target.checked)} />
+                    <span>{isEn ? "Include in-use assets with zero net book value" : "Lấy TSCĐ còn sử dụng và có giá trị còn lại bằng 0"}</span>
+                  </label>
+                )}
+
+                {showDept && <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ color: "#475569" }}>{isEn ? "Dept:" : "Đơn vị:"}</span>
                   <select
                     value={reportDeptFilter}
@@ -13010,7 +13780,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
-                </div>
+                </div>}
 
                 {rCode === "ASSET_CARD" && (
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -13054,7 +13824,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   </label>
                 )}
 
-                {(rCode === "S21_DN" || rCode === "ASSET_REGISTER") && (
+                {(rCode === "S21_DN" || rCode === "S09_DNN" || rCode === "S4B_DNSN" || rCode === "ASSET_REGISTER") && (
                   <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", color: "#334155", fontSize: 12 }}>
                     <input
                       type="checkbox"
@@ -13070,12 +13840,75 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   onClick={handleApplyReportParams}
                   style={{ height: 28, padding: "0 14px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                 >
-                  {isEn ? "Apply" : "Đồng ý"}
+                  {isEn ? "View report" : "Xem báo cáo"}
                 </button>
               </div>
 
               {/* Report Body */}
               <div style={{ padding: "20px 24px", overflowY: "auto", flex: 1 }}>
+                {apiConnected ? (
+                  /* B17–B21: the report exactly as built by the backend */
+                  !apiReport ? (
+                    <div style={{ padding: 30, textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                      {isEn ? "Set the parameters and choose View report." : "Thiết lập tham số và nhấn Xem báo cáo."}
+                    </div>
+                  ) : (
+                    <div data-testid="api-report">
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 12, color: "#334155" }}>
+                        <div>
+                          <div style={{ fontWeight: 700 }}>{apiReport.header.company_name}</div>
+                          {apiReport.header.company_address && <div style={{ color: "#64748b" }}>{apiReport.header.company_address}</div>}
+                        </div>
+                        <div style={{ textAlign: "right", fontWeight: 700 }}>{apiReport.form_version || apiReport.form_code}</div>
+                      </div>
+                      <div style={{ textAlign: "center", marginBottom: 18 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#1e293b" }}>{String(apiReport.title).toUpperCase()}</h3>
+                        <p style={{ fontSize: 12.5, color: "#64748b", margin: "4px 0 0 0" }}>
+                          {apiReport.header.period_label} – {isEn ? "Currency" : "Đơn vị tính"}: {apiReport.header.currency}
+                        </p>
+                      </div>
+                      {apiReport.is_empty ? (
+                        <div data-testid="api-report-empty" style={{ padding: 24, textAlign: "center", color: "#64748b", border: "1px dashed #cbd5e1", borderRadius: 4 }}>{apiReport.empty_message}</div>
+                      ) : (
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                            <thead>
+                              <tr style={{ background: "#e6ebe6" }}>
+                                {apiReport.columns.map((c: any) => <th key={c.key} style={{ padding: 6, border: "1px solid #cbd5e1", textAlign: "left" }}>{c.label}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {apiReport.rows.map((r: any, i: number) => (
+                                <tr key={i} style={{ background: r.has_difference ? "#fff7ed" : undefined }}>
+                                  {apiReport.columns.map((c: any) => (
+                                    <td key={c.key} style={{ padding: 6, border: "1px solid #e2e8f0", textAlign: isMoneyKey(c.key) ? "right" : "left" }}>{fmtCell(c.key, r[c.key])}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                              <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
+                                {totalsCells(apiReport.columns, apiReport.totals).map((v: string, i: number) => (
+                                  <td key={i} style={{ padding: 6, border: "1px solid #e2e8f0", textAlign: i === 0 ? "left" : "right" }}>{v}</td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {(apiReport.extra_sections?.cards || []).map((card: any) => (
+                        <div key={card.code} style={{ marginTop: 14, fontSize: 12 }}>
+                          <strong>{card.code} – {card.name}</strong>
+                          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6 }}>
+                            <tbody>
+                              {(card.history_rows || []).map((h: any, i: number) => (
+                                <tr key={i}>{Object.values(h).slice(0, 8).map((v: any, j: number) => <td key={j} style={{ padding: 4, border: "1px solid #e2e8f0" }}>{cellText(v)}</td>)}</tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : <>
                 {/* Company & Form Header (Step 16) */}
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 12, color: "#334155" }}>
                   <div>
@@ -13340,6 +14173,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   </table>
                 )}
 
+                </>}
                 {/* Report Signatures Block (Steps 16 & 23) */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", marginTop: 28, textAlign: "center", fontSize: 12.5, color: "#334155" }}>
                   <div>
@@ -13360,12 +14194,20 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               {/* Modal Footer (Steps 22–24) */}
               <div style={{ height: 48, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
                 <span style={{ fontSize: 12, color: "#64748b" }}>
-                  {isEn ? `Total records: ${reportAssets.length}` : `Số lượng bản ghi: ${reportAssets.length} tài sản`}
+                  {apiConnected
+                    ? (isEn ? `Total records: ${apiReport?.rows?.length ?? 0}` : `Số dòng: ${apiReport?.rows?.length ?? 0}`)
+                    : (isEn ? `Total records: ${reportAssets.length}` : `Số lượng bản ghi: ${reportAssets.length} tài sản`)}
                 </span>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {apiConnected && (
+                    <button type="button" disabled={!apiReport} onClick={() => exportApiReport("print")}
+                      style={{ height: 32, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer" }}>
+                      {isEn ? "Export Excel (print layout)" : "Xuất Excel dạng mẫu in"}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={handlePrintCurrentReport}
+                    onClick={apiConnected ? printApiReport : handlePrintCurrentReport}
                     style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Printer size={14} style={{ color: "#0284c7" }} />
@@ -13373,11 +14215,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                   </button>
                   <button
                     type="button"
-                    onClick={handleExportCurrentReportExcel}
+                    onClick={apiConnected ? () => exportApiReport("data") : handleExportCurrentReportExcel}
                     style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <FileSpreadsheet size={14} style={{ color: "#16a34a" }} />
-                    <span>{isEn ? "Export Excel" : "Xuất Excel"}</span>
+                    <span>{apiConnected ? (isEn ? "Export Excel (data)" : "Xuất Excel dạng dữ liệu") : (isEn ? "Export Excel" : "Xuất Excel")}</span>
                   </button>
                   <button type="button" onClick={() => setPreviewReportName(null)} style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}>
                     {isEn ? "Close" : "Đóng"}
@@ -13410,13 +14252,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               />
               <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontWeight: 600 }}>Báo cáo gợi ý phù hợp:</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {UC09_REPORT_CATALOG.filter((r) => {
+                {/* AF09 & BR04: AVA only suggests reports the user may open */}
+                {reportCatalog.filter((r) => {
                   const q = avaReportQuery.trim().toLowerCase();
                   if (!q) return true;
                   return (
                     r.titleVi.toLowerCase().includes(q) ||
                     r.titleEn.toLowerCase().includes(q) ||
-                    r.keywords.some((kw) => kw.includes(q) || q.includes(kw))
+                    (r.keywords || []).some((kw: string) => kw.includes(q) || q.includes(kw))
                   );
                 }).map((r) => (
                   <div
@@ -13449,7 +14292,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               <button type="button" onClick={() => setShowHideReportsModal(false)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer" }}><X size={17} /></button>
             </div>
             <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
-              {UC09_REPORT_CATALOG.map((r) => {
+              {reportCatalog.map((r) => {
                 const isVisible = !hiddenReportIds.includes(r.id);
                 return (
                   <label key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer" }}>
@@ -13508,8 +14351,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   // =========================================================================
   if (tab === "process") {
     return (
-      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "10px 16px", overflow: "hidden", boxSizing: "border-box" }}>
-        <div style={{ flex: 1, padding: "8px 0", display: "grid", gridTemplateColumns: "1fr 340px", gap: 16, overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
+        <div style={{ flex: 1, padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 340px", gap: 16, overflowY: "auto" }}>
           <div
             style={{
               background: "#ffffff",
@@ -14026,16 +14869,17 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 <th style={{ width: 140, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Hao mòn lũy kế</th>
                 <th style={{ width: 140, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị còn lại</th>
                 <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Tỷ lệ KH</th>
-                <th style={{ width: 80, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK NG</th>
+                {registerShowsCostAccount && <th style={{ width: 80, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK NG</th>}
                 <th style={{ width: 125, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Trạng thái TS</th>
                 <th style={{ width: 165, padding: "8px", textAlign: "center" }}>Đối chiếu kế toán</th>
+                <th style={{ width: 70, padding: "8px", textAlign: "center" }}>Chức năng</th>
               </tr>
             </thead>
             <tbody>
               {filteredAssets.length === 0 ? (
                 <tr>
-                  <td colSpan={13} style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", background: "#f8fafc", fontSize: 13 }}>
-                    Không có tài sản cố định phù hợp với điều kiện tìm kiếm.
+                  <td colSpan={14} style={{ padding: "28px 16px", textAlign: "center", color: "#64748b", background: "#f8fafc", fontSize: 13 }}>
+                    {apiRegister?.empty_message || "Không có tài sản cố định phù hợp với điều kiện tìm kiếm."}
                   </td>
                 </tr>
               ) : (
@@ -14067,7 +14911,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(row.depreciatedAmount)}</td>
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{formatVND(row.remainingAmount)}</td>
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{(row as any).rateDisplay || `${row.rateYear}%`}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{row.costAccount}</td>
+                    {registerShowsCostAccount && <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{row.costAccount}</td>}
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                       <span style={{ padding: "2px 8px", borderRadius: 10, background: assetStatus === "Đang sử dụng" ? "#dcfce7" : "#f1f5f9", color: assetStatus === "Đang sử dụng" ? "#166534" : "#475569", fontSize: 11.5, fontWeight: 500 }}>
                         {assetStatus}
@@ -14086,6 +14930,14 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       >
                         {reconStatus}
                       </span>
+                    </td>
+                    <td style={{ padding: "8px", textAlign: "center", position: "relative" }}>
+                      <button type="button" aria-label={`Chức năng tài sản ${row.code}`} aria-expanded={registerActionCode === row.code} onClick={() => setRegisterActionCode(registerActionCode === row.code ? null : row.code)} style={{ border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", padding: "3px 8px", cursor: "pointer" }}>▾</button>
+                      {registerActionCode === row.code && (
+                        <div style={{ position: "absolute", right: 8, top: 34, zIndex: 10, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, boxShadow: "0 4px 12px #0002", minWidth: 80 }}>
+                          <button type="button" aria-label={`Sửa tài sản ${row.code}`} onClick={() => { setRegisterActionCode(null); openAssetDetailModal(row, true); }} style={{ width: "100%", border: 0, background: "transparent", padding: "7px 12px", textAlign: "left", cursor: "pointer" }}>Sửa</button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                   );
@@ -14539,8 +15391,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                         ? v.status
                         : "Đã ghi sổ"
                     );
-                    if (Array.isArray(v.lines) && v.lines.length > 0) {
-                      setDeprLines(v.lines);
+                    // UC-FA-04 Steps 5–8 & AF20: show what was stored by UC-FA-03; nothing is recalculated here.
+                    setDeprUsesGl(!(Array.isArray(v.lines) && v.lines.length > 0 && (v.accountingEntries || []).length === 0));
+                    if ((Array.isArray(v.lines) && v.lines.length > 0) || apiConnected) {
+                      setDeprLines(v.lines || []);
                       setDeprAllocationRows(v.allocations || []);
                       setDeprAccountingRows(v.accountingEntries || []);
                     } else {
@@ -14612,8 +15466,10 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           setDeprVoucherMonth(vMonth);
                           setDeprVoucherYear(vYear);
                           setDeprVoucherStatus(v.status);
-                          if (Array.isArray(v.lines) && v.lines.length > 0) {
-                            setDeprLines(v.lines);
+                          // UC-FA-04 Steps 5–8 & AF20: show what was stored by UC-FA-03; nothing is recalculated here.
+                          setDeprUsesGl(!(Array.isArray(v.lines) && v.lines.length > 0 && (v.accountingEntries || []).length === 0));
+                          if ((Array.isArray(v.lines) && v.lines.length > 0) || apiConnected) {
+                            setDeprLines(v.lines || []);
                             setDeprAllocationRows(v.allocations || []);
                             setDeprAccountingRows(v.accountingEntries || []);
                           } else {
@@ -15159,11 +16015,11 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu danh sách biên bản kiểm kê TSCĐ ra Excel...")}
+              onClick={() => void exportStocktakes()}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
-              <span>Xuất khẩu</span>
+              <span>Xuất CSV</span>
             </button>
           </div>
         </div>
@@ -15189,14 +16045,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 <tr key={v.voucherNo} style={{ borderBottom: "1px solid #e2e8f0" }}>
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
                   <td
-                    onClick={() => {
-                      setStocktakeVoucherNo(v.voucherNo);
-                      setStocktakeDate(v.date);
-                      if ((v as any).auditDate) setStocktakeAuditDate((v as any).auditDate);
-                      if (v.purpose) setStocktakePurpose(v.purpose);
-                      if (v.conclusion) setStocktakeConclusion(v.conclusion);
-                      setShowStocktakeModal(true);
-                    }}
+                    onClick={() => void openSavedStocktake(v)}
                     style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {v.voucherNo}
@@ -15234,7 +16083,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   if (tab === "reports") {
     const isEn = reportLang === "en";
     const kw = reportSearch.trim().toLowerCase();
-    const visibleCatalog = UC09_REPORT_CATALOG.filter((r) => {
+    const visibleCatalog = reportCatalog.filter((r) => {
       if (hiddenReportIds.includes(r.id)) return false;
       if (!kw) return true;
       return (
@@ -15248,7 +16097,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const reconcileReportsList = visibleCatalog.filter((r) => r.group === "RECONCILE");
 
     return (
-      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "10px 16px", overflow: "hidden", boxSizing: "border-box" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
         {/* Top bar matching Image 5 & UC-FA-09 AF10–AF14 */}
         <div style={{ padding: "10px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

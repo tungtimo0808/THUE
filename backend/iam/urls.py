@@ -68,4 +68,3 @@ urlpatterns = [
     path("members/assign-role/", assign_member_role_view, name="assign-member-role"),
     path("members/create-staff/", create_staff_member_view, name="create-staff-member"),
 ] + router.urls
-

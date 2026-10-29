@@ -5,6 +5,19 @@ from rest_framework.permissions import BasePermission
 from .models import ActiveStatus, CompanyMembership, RoleStatus, UserPermissionOverride, UserRoleAssignment
 
 
+def company_identifiers_agree(request):
+    """Reject conflicting company or branch context before permission checks."""
+    data = request.data if hasattr(request.data, "get") else {}
+    for values in (
+        (request.headers.get("X-Company-ID"), request.query_params.get("company_id"),
+         data.get("company"), data.get("company_id")),
+        (request.query_params.get("branch_id"), data.get("branch"), data.get("branch_id")),
+    ):
+        if len({str(value).strip().lower() for value in values if value}) > 1:
+            return False
+    return True
+
+
 def is_platform_admin_user(user_account):
     if not user_account:
         return False
@@ -218,6 +231,8 @@ class HasIamPermission(BasePermission):
             return False
         if request.user.is_superuser:
             return True
+        if not company_identifiers_agree(request):
+            return False
         permission_map = getattr(view, "iam_permissions", {})
         permission_code = getattr(view, "action_permissions", {}).get(getattr(view, "action", None)) or permission_map.get(request.method)
         if not permission_code:
@@ -238,13 +253,14 @@ class HasIamPermission(BasePermission):
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError):
             return False
-        has_specific_scope = bool(
-            request.query_params.get("warehouse_id")
-            or (isinstance(request.data, dict) and request.data.get("warehouse"))
-            or request.query_params.get("branch_id")
-            or (isinstance(request.data, dict) and request.data.get("branch"))
+        explicit_scope = any(request.query_params.get(field) for field in (
+            "branch_id", "department_id", "warehouse_id", "bank_account_id",
+            "project_id", "cost_center_id",
+        )) or (
+            isinstance(request.data, dict)
+            and any(request.data.get(field) for field in ("warehouse", "branch", "department", "company_bank_account", "project", "cost_center"))
         )
-        if getattr(view, "allow_scoped_list_permission", False) and not has_specific_scope:
+        if getattr(view, "allow_scoped_list_permission", False) and not explicit_scope:
             if _setting(company).get("direct_user_permissions_enabled", False):
                 now = timezone.now()
                 if UserPermissionOverride.objects.filter(

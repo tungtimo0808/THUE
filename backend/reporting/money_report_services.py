@@ -1991,4 +1991,3 @@ def export_money_report_run_payload(run_id: str, fmt: str = "XLSX", user=None, r
         "download_url": f"/api/v1/reports/money/runs/{run.id}/download/?format={fmt.lower()}",
         "target_uc_code": "UC-RPT-15",
     }
-

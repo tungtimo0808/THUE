@@ -2638,4 +2638,3 @@ def export_asset_report_run_payload(run_id: str, fmt: str = "XLSX", user=None, r
         "file_name": f"{run.report_code}_{run.run_number}.{fmt.lower()}",
         "download_url": export_url,
     }
-

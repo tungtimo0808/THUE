@@ -257,7 +257,7 @@ class CustomerManagementTests(TestCase):
         }
         res2 = self.client.post(self.url(), payload_2, format="json")
         self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("tax_code" in res2.data or "non_field_errors" in res2.data)
+        self.assertIn("tax_code", res2.data)
 
         # Invalid tax_code format (EF-05)
         payload_invalid_tax = {
@@ -535,7 +535,7 @@ class CustomerManagementTests(TestCase):
             code="KH_SOURCE",
             name="Công ty Á Châu Nguồn",
             legal_name="Công ty CP Á Châu",
-            tax_code="0103333445",
+            tax_code="0103333555",
             status="ACTIVE",
         )
         PartyRole.objects.create(party=source, role_type="CUSTOMER", active_from=timezone.localdate())
@@ -721,7 +721,7 @@ class CustomerManagementTests(TestCase):
             company=self.company_a,
             code="KH_CONCURRENCY",
             name="Tên Ban Đầu",
-            legal_name="Công ty Ban Đầu",
+            legal_name="Tên Ban Đầu",
             status="ACTIVE",
             version=1,
         )
@@ -729,7 +729,7 @@ class CustomerManagementTests(TestCase):
 
         # First update succeeds and increments version to 2
         res1 = self.client.patch(self.url(f"{party.id}/"), {"name": "Sửa Lần 1", "version": 1}, format="json")
-        self.assertEqual(res1.status_code, status.HTTP_200_OK)
+        self.assertEqual(res1.status_code, status.HTTP_200_OK, res1.data)
         self.assertEqual(res1.data["version"], 2)
 
         # Second update using stale version 1 fails (EF-12)
