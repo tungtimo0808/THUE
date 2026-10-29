@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 
 export interface CommercialInvoiceItem {
   id: string;
@@ -1816,43 +1817,15 @@ export function SaleCommercialInvoiceModal({
           >Lưu</button>
 
           {/* Solid Green Split Button: Lưu và Đóng ▾ */}
-          <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
-            <button
-              type="button"
-              onClick={() => handleSave(true)}
-              style={{
-                height: 30,
-                padding: "0 16px",
-                border: "none",
-                background: "#00a862",
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                color: "#ffffff",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              Lưu và Đóng
-            </button>
-            <button
-              type="button"
-              onClick={() => notify("Tùy chọn Lưu khác: Lưu và In, Lưu và Thêm mới")}
-              style={{
-                height: 30,
-                padding: "0 8px",
-                border: "none",
-                borderLeft: "1px solid rgba(255, 255, 255, 0.25)",
-                background: "#00a862",
-                color: "#ffffff",
-                cursor: "pointer",
-                display: "grid",
-                placeItems: "center",
-              }}
-            >
-              <ChevronDown size={14} />
-            </button>
-          </div>
+          <MisaSaveSplitButton
+            defaultMode="save_and_close"
+            height={30}
+            onSaveAndClose={() => handleSave(true)}
+            onSaveAndAdd={() => {
+              void handleSave(false);
+              handleClearAllRows();
+            }}
+          />
         </footer>
       </div>
     </div>

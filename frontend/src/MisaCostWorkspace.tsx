@@ -1,4 +1,5 @@
 import { useState, useId, useEffect } from "react";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   acceptCostObjects, acceptCostPeriod, costObjectCatalog, createApiWriter, postSalarySheet, saveCostObjectSettings, saveCostPeriod, saveDepreciation,
@@ -15817,27 +15818,13 @@ if (apiConnected) {
                   cursor: "pointer",
                 }}
               >Lưu</button>
-              <button
-                type="button"
-                onClick={() => handleSaveEstimate(true)}
-                style={{
-                  height: 30,
-                  padding: "0 14px",
-                  background: "#00a862",
-                  border: "none",
-                  borderRadius: 3,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#ffffff",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <span>Lưu và Đóng</span>
-                <ChevronDown size={14} />
-              </button>
+              <MisaSaveSplitButton
+                defaultMode="save_and_close"
+                showPrint={false}
+                height={30}
+                onSaveAndClose={() => handleSaveEstimate(true)}
+                onSaveAndAdd={() => handleSaveEstimate(false)}
+              />
             </div>
           </div>
         </div>

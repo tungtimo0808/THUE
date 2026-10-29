@@ -24,6 +24,8 @@ import {
   Paperclip,
 } from "lucide-react";
 
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
+
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
@@ -2528,15 +2530,12 @@ export function PurchaseContractModal({
             Hủy
           </button>
           <button type="button" className="misa-invoice-btn-cancel" onClick={() => handleSave(false)}>Lưu</button>
-          <button
-            type="button"
-            className="misa-invoice-btn-submit"
-            onClick={() => handleSave(true)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <span>Lưu và Đóng</span>
-            <ChevronDown size={14} />
-          </button>
+          <MisaSaveSplitButton
+            defaultMode="save_and_close"
+            height={30}
+            onSaveAndClose={() => handleSave(true)}
+            onSaveAndAdd={() => handleSave(false)}
+          />
         </footer>
       </div>
     </div>
@@ -4750,64 +4749,13 @@ export function PurchaseVoucherModal({
           <div style={{ display: "flex", gap: 8, position: "relative" }}>
             <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>Hủy</button>
             <button type="button" className="misa-invoice-btn-cancel" disabled={readOnlyRecord || saving} onClick={() => handleSave(false)}>Lưu</button>
-            <div style={{ position: "relative" }}>
-              <button
-                type="button"
-                className="misa-invoice-btn-submit"
-                disabled={readOnlyRecord || saving}
-                onClick={() => handleSave(true)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                <span>Lưu và Đóng</span>
-                <span
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowSaveDropdown(!showSaveDropdown);
-                  }}
-                  style={{ display: "grid", placeItems: "center", paddingLeft: 4 }}
-                >
-                  <ChevronDown size={14} />
-                </span>
-              </button>
-
-              {showSaveDropdown && (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "calc(100% + 4px)",
-                    right: 0,
-                    background: "#ffffff",
-                    borderRadius: 4,
-                    border: "1px solid #cbd5e1",
-                    boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-                    zIndex: 100,
-                    width: 140,
-                    overflow: "hidden",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowSaveDropdown(false);
-                      handleSave(false, true);
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "none",
-                      background: "transparent",
-                      textAlign: "left",
-                      fontSize: 12.5,
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  >
-                    Lưu và Thêm
-                  </button>
-                </div>
-              )}
-            </div>
+            <MisaSaveSplitButton
+              defaultMode="save_and_close"
+              disabled={readOnlyRecord || saving}
+              height={30}
+              onSaveAndClose={() => handleSave(true)}
+              onSaveAndAdd={() => handleSave(false, true)}
+            />
           </div>
         </footer>
 
@@ -8204,23 +8152,12 @@ export function SupplierModal({
               fontWeight: 500,
             }}
           >Lưu</button>
-          <button
-            type="button"
-            onClick={() => handleSave(true)}
-            style={{
-              height: 32,
-              padding: "0 18px",
-              background: "#00a862",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 13,
-              color: "#ffffff",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Lưu và Thêm
-          </button>
+          <MisaSaveSplitButton
+            defaultMode="save_and_add"
+            height={32}
+            onSaveAndClose={() => handleSave(false)}
+            onSaveAndAdd={() => handleSave(true)}
+          />
         </footer>
       </div>
     </div>
@@ -11920,15 +11857,12 @@ export function PurchaseMultiInvoiceModal({
               className="misa-invoice-btn-cancel"
               onClick={() => handleSave(false)}
             >Lưu</button>
-            <button
-              type="button"
-              className="misa-invoice-btn-submit"
-              onClick={() => handleSave(true)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              <span>Lưu và Đóng</span>
-              <ChevronDown size={14} />
-            </button>
+            <MisaSaveSplitButton
+              defaultMode="save_and_close"
+              height={30}
+              onSaveAndClose={() => handleSave(true)}
+              onSaveAndAdd={() => handleSave(false)}
+            />
           </div>
         </footer>
       </div>

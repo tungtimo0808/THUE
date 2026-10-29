@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import {
   X,
   HelpCircle,
@@ -1690,23 +1691,13 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
             }}
           >Lưu</button>
 
-          <button
-            type="button"
-            onClick={() => handleSaveInternal(true)}
-            style={{
-              height: 32,
-              padding: "0 20px",
-              border: "none",
-              background: "#00a862",
-              borderRadius: 4,
-              fontSize: 13,
-              color: "#ffffff",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Lưu và Thêm
-          </button>
+          <MisaSaveSplitButton
+            defaultMode="save_and_add"
+            showPrint={false}
+            height={32}
+            onSaveAndClose={() => handleSaveInternal(false)}
+            onSaveAndAdd={() => handleSaveInternal(true)}
+          />
         </div>
       </div>
     </div>

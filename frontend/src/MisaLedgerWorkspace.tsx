@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   adjustGeneralBusinessVoucher,
@@ -14985,36 +14986,12 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >Lưu</button>
-                <div style={{ display: "flex", borderRadius: 6, overflow: "hidden" }}>
-                  <button
-                    type="button"
-                    onClick={() => { void handleSaveAdvanceSettlement(true); }}
-                    style={{
-                      padding: "7px 18px",
-                      background: "#00a862",
-                      color: "#ffffff",
-                      border: "none",
-                      fontWeight: 600,
-                      fontSize: 13,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Lưu và Thêm
-                  </button>
-                  <button
-                    type="button"
-                    style={{
-                      padding: "7px 8px",
-                      background: "#009153",
-                      color: "#ffffff",
-                      border: "none",
-                      borderLeft: "1px solid rgba(255,255,255,0.2)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <ChevronDown size={14} />
-                  </button>
-                </div>
+                <MisaSaveSplitButton
+                  defaultMode="save_and_add"
+                  height={32}
+                  onSaveAndClose={() => { void handleSaveAdvanceSettlement(false); }}
+                  onSaveAndAdd={() => { void handleSaveAdvanceSettlement(true); }}
+                />
               </div>
             </div>
           </div>

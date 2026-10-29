@@ -1,4 +1,5 @@
 import {useNavigate} from "react-router-dom";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import DirectoryChoiceField from "./DirectoryChoiceField";
 import VoucherDateField from "./VoucherDateField";
 import { useEffect, useRef, useState } from "react";
@@ -719,9 +720,13 @@ export default function MisaDirectoryWorkspace({
             <footer>
               <button onClick={() => closeEditor()}>Hủy</button>
               <button onClick={() => save()}>Lưu</button>
-              <button className="md-primary" onClick={() => save(true)}>
-                Lưu và Thêm
-              </button>
+              <MisaSaveSplitButton
+                defaultMode="save_and_add"
+                showPrint={false}
+                height={32}
+                onSaveAndClose={() => save(false)}
+                onSaveAndAdd={() => save(true)}
+              />
             </footer>
           </div>
         </div>

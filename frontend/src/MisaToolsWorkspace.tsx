@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import {
   Search,
   Plus,
@@ -12360,12 +12361,41 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
                 >Lưu</button>
-                <button
-                  type="button"
-                  onClick={() => {
+                <MisaSaveSplitButton
+                  defaultMode="save_and_add"
+                  showPrint={false}
+                  height={32}
+                  onSaveAndClose={() => {
                     if (apiConnected) {
                       void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows, sourceDocs: form1SourceDocs }, false))
                         .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
+                    const newItem = {
+                      code: form1Code,
+                      name: form1Name || "Chi phí trả trước mới",
+                      totalAmount: form1Amount,
+                      allocationMonths: form1AllocMonths,
+                      allocatedAmount: 0,
+                      remainingAmount: form1Amount,
+                      costAccount: form1Rows[0]?.costAccount || "6422",
+                      dept: form1Rows[0]?.targetName || "Khối Văn phòng",
+                      startDate: form1StartDate,
+                    };
+                    setPrepaidExpensesList([newItem, ...prepaidExpensesList.filter((x) => x.code !== form1Code)]);
+                    setShowPrepaidItemModal(false);
+                    notify(`Đã lưu chi phí trả trước ${form1Code} thành công.`);
+                  }}
+                  onSaveAndAdd={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows, sourceDocs: form1SourceDocs }, false))
+                        .then((saved) => {
+                          if (saved) {
+                            setForm1Code(`CPTT00${prepaidExpensesList.length + 2}`);
+                            setForm1Name("");
+                            setForm1Amount(0);
+                          }
+                        });
                       return;
                     }
                     const newItem = {
@@ -12385,10 +12415,7 @@ export default function MisaToolsWorkspace({
                     setForm1Amount(0);
                     notify(`Đã lưu chi phí trả trước ${form1Code} và mở biểu mẫu thêm mới`);
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
-                >
-                  Lưu và Thêm
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -14420,9 +14447,10 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
                 >Lưu</button>
-                <button
-                  type="button"
-                  onClick={() => {
+                <MisaSaveSplitButton
+                  defaultMode="save_and_close"
+                  height={32}
+                  onSaveAndClose={() => {
                     if (apiConnected) {
                       void apiSave((writer) => savePrepaidDecreaseUc14(writer, {
                         voucherNo: prepaidDecreaseVoucherNo,
@@ -14467,11 +14495,10 @@ export default function MisaToolsWorkspace({
                     setPrepaidDecreaseViewMode("list");
                     notify(`Đã lưu chứng từ ghi giảm chi phí trả trước ${prepaidDecreaseVoucherNo} thành công.`);
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-                >
-                  <span>Lưu và Đóng</span>
-                  <ChevronDown size={14} />
-                </button>
+                  onSaveAndAdd={() => {
+                    notify(`Đã lưu chứng từ ghi giảm chi phí trả trước ${prepaidDecreaseVoucherNo} và mở thêm mới.`);
+                  }}
+                />
               </div>
             </div>
           </div>

@@ -19,6 +19,7 @@ import {
   Minus,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 
 // Real catalog items for sales from Company ABC (TT99/2025/TT-BTC)
 export const SAMPLE_SALE_ITEMS = [
@@ -1354,24 +1355,12 @@ export function SaleQuoteModal({
               }}
             >Lưu</button>
 
-            <button
-              type="button"
-              onClick={() => handleSave(true)}
-              style={{
-                height: 30,
-                padding: "0 18px",
-                border: "none",
-                background: "#00a862",
-                borderRadius: 4,
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: "#ffffff",
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-              }}
-            >
-              Lưu và Thêm
-            </button>
+            <MisaSaveSplitButton
+              defaultMode="save_and_add"
+              height={30}
+              onSaveAndClose={() => handleSave(false)}
+              onSaveAndAdd={() => handleSave(true)}
+            />
           </div>
         </footer>
       </div>
@@ -3217,24 +3206,12 @@ export function SaleOrderModal({
               }}
             >Lưu</button>
 
-            <button
-              type="button"
-              onClick={() => handleSave(true)}
-              style={{
-                height: 30,
-                padding: "0 18px",
-                border: "none",
-                background: "#00a862",
-                borderRadius: 4,
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: "#ffffff",
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-              }}
-            >
-              Lưu và Thêm
-            </button>
+            <MisaSaveSplitButton
+              defaultMode="save_and_add"
+              height={30}
+              onSaveAndClose={() => handleSave(false)}
+              onSaveAndAdd={() => handleSave(true)}
+            />
           </div>
         </footer>
       </div>
@@ -4892,29 +4869,12 @@ export function SaleContractModal({
             }}
           >Lưu</button>
 
-          <div style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden" }}>
-            <button
-              type="button"
-              onClick={() => handleSave(true)}
-              style={{
-                height: 30,
-                padding: "0 14px",
-                border: "none",
-                background: "#00a862",
-                color: "#ffffff",
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-              }}
-            >
-              <span>Lưu và Thêm</span>
-              <ChevronDown size={13} />
-            </button>
-          </div>
+          <MisaSaveSplitButton
+            defaultMode="save_and_add"
+            height={30}
+            onSaveAndClose={() => handleSave(false)}
+            onSaveAndAdd={() => handleSave(true)}
+          />
         </footer>
       </div>
     </div>

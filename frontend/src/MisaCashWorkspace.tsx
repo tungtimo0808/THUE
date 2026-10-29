@@ -1,5 +1,6 @@
 import LedgerAccountField from "./LedgerAccountField";
 import MisaDropdownSelect from "./MisaDropdownSelect";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import VoucherDateField from "./VoucherDateField";
 import {SupplierModal} from "./MisaPurchaseModals";
 import MisaDirectoryWorkspace from "./MisaDirectoryWorkspace";
@@ -5294,15 +5295,13 @@ export function CreateVoucherModal({
               Lưu và In
             </button>}
 
-            <button
-              type="button"
-              className="misa-voucher-btn-green"
+            <MisaSaveSplitButton
+              defaultMode="save_and_add"
               disabled={saving}
-              onClick={() => handleSave(true, false)}
-            >
-              <span>Lưu và Thêm</span>
-              <ChevronDown size={14} />
-            </button>
+              onSaveAndClose={() => handleSave(false, false)}
+              onSaveAndAdd={() => handleSave(true, false)}
+              onSaveAndPrint={() => handleSave(false, true)}
+            />
           </div>
         </footer>
 
