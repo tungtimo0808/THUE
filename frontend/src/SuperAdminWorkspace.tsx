@@ -21,6 +21,14 @@ import {
   Power,
   Database,
   ArrowUpRight,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  LayoutGrid,
+  List,
+  Crown,
+  UserX,
+  Briefcase,
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -59,6 +67,22 @@ interface PlatformCompany {
   updated_at: string;
 }
 
+interface PlatformUserRole {
+  code: string;
+  name: string;
+  is_admin?: boolean;
+}
+
+interface PlatformUserMembership {
+  company_id: string;
+  company_code?: string;
+  company_name: string;
+  company_status?: string;
+  status: string;
+  roles?: PlatformUserRole[];
+  is_company_admin?: boolean;
+}
+
 interface PlatformUser {
   id: string;
   username: string;
@@ -69,7 +93,7 @@ interface PlatformUser {
   is_superuser: boolean;
   date_joined: string;
   last_login: string | null;
-  memberships: { company_id: string; company_name: string; status: string }[];
+  memberships: PlatformUserMembership[];
 }
 
 interface RecentLog {
@@ -102,6 +126,12 @@ export default function SuperAdminWorkspace() {
   const [companySearch, setCompanySearch] = useState<string>("");
   const [companyStatusFilter, setCompanyStatusFilter] = useState<string>("");
   const [userSearch, setUserSearch] = useState<string>("");
+  const [userViewMode, setUserViewMode] = useState<"by_company" | "flat">("by_company");
+  const [selectedUserGroup, setSelectedUserGroup] = useState<string>("ALL_COMPANIES");
+  const [userRoleFilter, setUserRoleFilter] = useState<"ALL" | "SUPER" | "COMPANY_ADMIN" | "STAFF" | "LOCKED">("ALL");
+  const [sidebarCompanySearch, setSidebarCompanySearch] = useState<string>("");
+  const [collapsedCompanyIds, setCollapsedCompanyIds] = useState<Record<string, boolean>>({});
+  const [showEmptyCompanies, setShowEmptyCompanies] = useState<boolean>(false);
 
   // Assign Admin Modal
   const [showAssignAdminModal, setShowAssignAdminModal] = useState<boolean>(false);
@@ -341,18 +371,213 @@ export default function SuperAdminWorkspace() {
     });
   }, [companies, companySearch, companyStatusFilter]);
 
+  const companyById = useMemo(() => {
+    const map: Record<string, PlatformCompany> = {};
+    for (const c of companies) {
+      map[c.id] = c;
+    }
+    return map;
+  }, [companies]);
+
+  const normalizedUsers = useMemo(() => {
+    return users.map((u) => {
+      const dedupMap = new Map<string, PlatformUserMembership>();
+      for (const m of u.memberships || []) {
+        const comp = companyById[m.company_id];
+        const code = m.company_code || comp?.code || "";
+        const existing = dedupMap.get(m.company_id);
+        const isCompAdmin =
+          Boolean(m.is_company_admin) ||
+          Boolean(comp?.admin && (comp.admin.email === u.email || comp.admin.display_name === u.display_name));
+        if (!existing) {
+          dedupMap.set(m.company_id, {
+            ...m,
+            company_code: code,
+            company_name: m.company_name || comp?.name || "Doanh nghiệp",
+            company_status: m.company_status || comp?.status || "ACTIVE",
+            roles: m.roles || [],
+            is_company_admin: isCompAdmin,
+          });
+        } else {
+          if (isCompAdmin) existing.is_company_admin = true;
+          const existingCodes = new Set((existing.roles || []).map((r) => r.code));
+          for (const r of m.roles || []) {
+            if (!existingCodes.has(r.code)) {
+              existing.roles = [...(existing.roles || []), r];
+            }
+          }
+        }
+      }
+      return {
+        ...u,
+        memberships: Array.from(dedupMap.values()),
+      };
+    });
+  }, [users, companyById]);
+
+  const userFilterCounts = useMemo(() => {
+    let superCount = 0;
+    let companyAdminCount = 0;
+    let staffCount = 0;
+    let lockedCount = 0;
+    let unassignedCount = 0;
+    for (const u of normalizedUsers) {
+      if (u.is_superuser) superCount++;
+      if (!u.is_active) lockedCount++;
+      if (u.memberships.length === 0) unassignedCount++;
+      const hasAdminRole = u.memberships.some((m) => m.is_company_admin);
+      if (hasAdminRole) companyAdminCount++;
+      if (u.memberships.length > 0 && !u.is_superuser) staffCount++;
+    }
+    return {
+      all: normalizedUsers.length,
+      superCount,
+      companyAdminCount,
+      staffCount,
+      lockedCount,
+      unassignedCount,
+    };
+  }, [normalizedUsers]);
+
   const filteredUsers = useMemo(() => {
     const q = userSearch.toLowerCase().trim();
-    return users.filter((u) => {
+    return normalizedUsers.filter((u) => {
+      if (userRoleFilter === "SUPER" && !u.is_superuser) return false;
+      if (userRoleFilter === "COMPANY_ADMIN" && !u.memberships.some((m) => m.is_company_admin)) return false;
+      if (userRoleFilter === "STAFF" && (u.memberships.length === 0 || u.is_superuser)) return false;
+      if (userRoleFilter === "LOCKED" && u.is_active) return false;
+
+      if (selectedUserGroup === "SUPER_ADMINS" && !u.is_superuser) return false;
+      if (selectedUserGroup === "UNASSIGNED" && u.memberships.length > 0) return false;
+      if (
+        selectedUserGroup !== "ALL_COMPANIES" &&
+        selectedUserGroup !== "SUPER_ADMINS" &&
+        selectedUserGroup !== "UNASSIGNED"
+      ) {
+        if (!u.memberships.some((m) => m.company_id === selectedUserGroup)) return false;
+      }
+
       if (!q) return true;
-      return (
+      const matchBasic =
         u.username.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
         u.display_name.toLowerCase().includes(q) ||
-        u.phone.includes(q)
+        (u.phone && u.phone.includes(q));
+      if (matchBasic) return true;
+      return u.memberships.some(
+        (m) =>
+          m.company_name.toLowerCase().includes(q) ||
+          (m.company_code && m.company_code.toLowerCase().includes(q)) ||
+          (m.roles || []).some((r) => r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q)),
       );
     });
-  }, [users, userSearch]);
+  }, [normalizedUsers, userSearch, userRoleFilter, selectedUserGroup]);
+
+  const companyUserGroups = useMemo(() => {
+    const groupsMap = new Map<
+      string,
+      {
+        company: PlatformCompany;
+        members: { user: PlatformUser; membership: PlatformUserMembership }[];
+      }
+    >();
+
+    for (const c of companies) {
+      groupsMap.set(c.id, { company: c, members: [] });
+    }
+
+    for (const u of filteredUsers) {
+      for (const m of u.memberships) {
+        let group = groupsMap.get(m.company_id);
+        if (!group) {
+          const fallbackCompany: PlatformCompany = {
+            id: m.company_id,
+            code: m.company_code || "DN",
+            name: m.company_name,
+            tax_code: "",
+            status: m.company_status || "ACTIVE",
+            legal_representative: "",
+            members_count: 1,
+            branches_count: 1,
+            employees_count: 0,
+            created_at: "",
+            updated_at: "",
+          };
+          group = { company: fallbackCompany, members: [] };
+          groupsMap.set(m.company_id, group);
+        }
+        group.members.push({ user: u, membership: m });
+      }
+    }
+
+    const allGroups = Array.from(groupsMap.values());
+    for (const g of allGroups) {
+      g.members.sort((a, b) => {
+        const aOwner = a.membership.is_company_admin ? 1 : 0;
+        const bOwner = b.membership.is_company_admin ? 1 : 0;
+        if (aOwner !== bOwner) return bOwner - aOwner;
+        const aSuper = a.user.is_superuser ? 1 : 0;
+        const bSuper = b.user.is_superuser ? 1 : 0;
+        if (aSuper !== bSuper) return bSuper - aSuper;
+        return a.user.display_name.localeCompare(b.user.display_name, "vi");
+      });
+    }
+
+    allGroups.sort((a, b) => {
+      if (b.members.length !== a.members.length) {
+        return b.members.length - a.members.length;
+      }
+      return a.company.code.localeCompare(b.company.code, "vi");
+    });
+
+    return allGroups;
+  }, [companies, filteredUsers]);
+
+  const sidebarCompanies = useMemo(() => {
+    const q = sidebarCompanySearch.toLowerCase().trim();
+    const countsByCompany: Record<string, number> = {};
+    for (const u of normalizedUsers) {
+      for (const m of u.memberships) {
+        countsByCompany[m.company_id] = (countsByCompany[m.company_id] || 0) + 1;
+      }
+    }
+    return [...companies]
+      .map((c) => ({
+        ...c,
+        actualUserCount: countsByCompany[c.id] || 0,
+      }))
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || (c.tax_code && c.tax_code.includes(q)))
+      .sort((a, b) => {
+        if (b.actualUserCount !== a.actualUserCount) return b.actualUserCount - a.actualUserCount;
+        return a.code.localeCompare(b.code, "vi");
+      });
+  }, [companies, normalizedUsers, sidebarCompanySearch]);
+
+  const unassignedFilteredUsers = useMemo(() => {
+    return filteredUsers.filter((u) => u.memberships.length === 0);
+  }, [filteredUsers]);
+
+  const getUserInitials = (name: string) => {
+    const parts = (name || "U").trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const toggleCompanyCollapse = (companyId: string) => {
+    setCollapsedCompanyIds((prev) => ({
+      ...prev,
+      [companyId]: !prev[companyId],
+    }));
+  };
+
+  const setAllCompaniesCollapsed = (collapsed: boolean) => {
+    const next: Record<string, boolean> = {};
+    for (const g of companyUserGroups) {
+      next[g.company.id] = collapsed;
+    }
+    next["__UNASSIGNED__"] = collapsed;
+    setCollapsedCompanyIds(next);
+  };
 
   if (restoring) {
     return (
@@ -727,98 +952,701 @@ export default function SuperAdminWorkspace() {
           </div>
         )}
 
-        {/* ================= TAB 3: USERS ================= */}
+        {/* ================= TAB 3: USERS (SMART COMPANY-GROUPED DIRECTORY) ================= */}
         {activeTab === "users" && (
-          <div>
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h3>
-                  <Users size={18} /> Danh sách Người dùng Toàn cục (Global Users)
-                </h3>
-                <div className="admin-search-bar">
+          <div className="admin-users-layout">
+            {/* LEFT SIDEBAR: COMPANY & GROUP DIRECTORY */}
+            <aside className="admin-users-sidebar">
+              <div className="admin-users-sidebar-header">
+                <span className="admin-users-sidebar-title">
+                  <Building2 size={15} /> Phân nhóm theo Công ty
+                </span>
+                <span className="admin-badge admin-badge-purple" style={{ fontSize: "0.7rem", padding: "2px 8px" }}>
+                  {companies.length} DN
+                </span>
+              </div>
+              <div className="admin-users-sidebar-search">
+                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                  <Search size={14} style={{ position: "absolute", left: 10, color: "#94a3b8" }} />
                   <input
                     type="text"
                     className="admin-input"
-                    placeholder="Tìm theo Username, Email, Tên..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
+                    style={{ width: "100%", paddingLeft: 30, fontSize: "0.8rem" }}
+                    placeholder="Lọc nhanh mã hoặc tên công ty..."
+                    value={sidebarCompanySearch}
+                    onChange={(e) => setSidebarCompanySearch(e.target.value)}
                   />
-                  <button className="admin-btn admin-btn-secondary admin-btn-sm" onClick={loadUsers}>
-                    <RefreshCw size={13} /> Làm mới
-                  </button>
+                  {sidebarCompanySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setSidebarCompanySearch("")}
+                      style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="admin-table-container">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Tên hiển thị</th>
-                      <th>Username / SĐT</th>
-                      <th>Email</th>
-                      <th>Quyền Super Admin</th>
-                      <th>Trạng thái</th>
-                      <th>Doanh nghiệp tham gia</th>
-                      <th style={{ textAlign: "right" }}>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((u) => (
-                      <tr key={u.id}>
-                        <td><strong>{u.display_name}</strong></td>
-                        <td><code>{u.username}</code></td>
-                        <td>{u.email || "—"}</td>
-                        <td>
-                          {u.is_superuser ? (
-                            <span className="admin-badge admin-badge-super" style={{ backgroundColor: "#7c3aed" }}>
-                              Super Admin
-                            </span>
-                          ) : (
-                            <span style={{ color: "var(--admin-text-muted)" }}>Người dùng thường</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
-                            {u.is_active ? "Đang mở" : "Bị khóa"}
-                          </span>
-                        </td>
-                        <td>
-                          {u.memberships.length > 0
-                            ? u.memberships.map((m) => m.company_name).join(", ")
-                            : "Chưa tham gia công ty"}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "inline-flex", gap: "0.4rem" }}>
-                            <button
-                              className="admin-btn admin-btn-secondary admin-btn-sm"
-                              onClick={() => handleToggleSuperuser(u)}
-                              title={u.is_superuser ? "Gỡ quyền Super Admin" : "Cấp quyền Super Admin"}
-                            >
-                              <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
-                            </button>
-                            <button
-                              className="admin-btn admin-btn-secondary admin-btn-sm"
-                              onClick={() => handleToggleActive(u)}
-                              title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                            >
-                              {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
-                            </button>
-                            <button
-                              className="admin-btn admin-btn-secondary admin-btn-sm"
-                              onClick={() => {
-                                setResetUser(u);
-                                setNewPassword("");
-                              }}
-                              title="Đặt lại mật khẩu"
-                            >
-                              <KeyRound size={13} /> Đổi mật khẩu
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              <div className="admin-users-sidebar-list admin-custom-scroll">
+                <div className="admin-users-sidebar-section-label">Nhóm tổng hợp</div>
+                <button
+                  type="button"
+                  className={`admin-users-nav-item ${selectedUserGroup === "ALL_COMPANIES" ? "active" : ""}`}
+                  onClick={() => setSelectedUserGroup("ALL_COMPANIES")}
+                >
+                  <div className="admin-users-nav-item-main">
+                    <LayoutGrid size={15} />
+                    <span className="admin-users-nav-name">Tất cả theo nhóm Công ty</span>
+                  </div>
+                  <span className="admin-users-nav-count">{userFilterCounts.all}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`admin-users-nav-item ${selectedUserGroup === "SUPER_ADMINS" ? "active" : ""}`}
+                  onClick={() => setSelectedUserGroup("SUPER_ADMINS")}
+                >
+                  <div className="admin-users-nav-item-main">
+                    <ShieldCheck size={15} style={{ color: "#7c3aed" }} />
+                    <span className="admin-users-nav-name">Ban Quản trị (Super Admin)</span>
+                  </div>
+                  <span className="admin-users-nav-count">{userFilterCounts.superCount}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`admin-users-nav-item ${selectedUserGroup === "UNASSIGNED" ? "active" : ""}`}
+                  onClick={() => setSelectedUserGroup("UNASSIGNED")}
+                >
+                  <div className="admin-users-nav-item-main">
+                    <UserX size={15} style={{ color: "#d97706" }} />
+                    <span className="admin-users-nav-name">Chưa tham gia Công ty</span>
+                  </div>
+                  <span className="admin-users-nav-count">{userFilterCounts.unassignedCount}</span>
+                </button>
+
+                <div className="admin-users-sidebar-section-label" style={{ marginTop: "0.4rem" }}>
+                  Doanh nghiệp ({sidebarCompanies.length})
+                </div>
+                {sidebarCompanies.map((comp) => {
+                  const isSelected = selectedUserGroup === comp.id;
+                  return (
+                    <button
+                      key={comp.id}
+                      type="button"
+                      className={`admin-users-nav-item ${isSelected ? "active" : ""}`}
+                      onClick={() => setSelectedUserGroup(isSelected ? "ALL_COMPANIES" : comp.id)}
+                      title={`${comp.code} - ${comp.name} (${comp.actualUserCount} thành viên)`}
+                    >
+                      <div className="admin-users-nav-item-main">
+                        <span className="admin-users-nav-code">{comp.code}</span>
+                        <span className="admin-users-nav-name">{comp.name}</span>
+                      </div>
+                      <span className="admin-users-nav-count">{comp.actualUserCount}</span>
+                    </button>
+                  );
+                })}
               </div>
+            </aside>
+
+            {/* RIGHT MAIN CONTENT */}
+            <div>
+              {/* SMART TOOLBAR */}
+              <div className="admin-users-toolbar">
+                <div className="admin-users-toolbar-row">
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.02rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <Users size={18} style={{ color: "#6d28d9" }} />
+                      {selectedUserGroup === "ALL_COMPANIES"
+                        ? "Nhân sự Phân bổ theo Doanh nghiệp"
+                        : selectedUserGroup === "SUPER_ADMINS"
+                        ? "Danh sách Quản trị viên Tối cao (Super Admin)"
+                        : selectedUserGroup === "UNASSIGNED"
+                        ? "Tài khoản Chưa phân vào Doanh nghiệp"
+                        : `Nhân sự: ${companyById[selectedUserGroup]?.name || "Doanh nghiệp"}`}
+                    </h3>
+                    {selectedUserGroup !== "ALL_COMPANIES" && (
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-secondary admin-btn-sm"
+                        onClick={() => setSelectedUserGroup("ALL_COMPANIES")}
+                      >
+                        <X size={12} /> Bỏ lọc đơn vị
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                    <div className="admin-segmented-control">
+                      <button
+                        type="button"
+                        className={`admin-segmented-btn ${userViewMode === "by_company" ? "active" : ""}`}
+                        onClick={() => setUserViewMode("by_company")}
+                      >
+                        <LayoutGrid size={14} /> Nhóm theo Công ty
+                      </button>
+                      <button
+                        type="button"
+                        className={`admin-segmented-btn ${userViewMode === "flat" ? "active" : ""}`}
+                        onClick={() => setUserViewMode("flat")}
+                      >
+                        <List size={14} /> Bảng phẳng ({filteredUsers.length})
+                      </button>
+                    </div>
+
+                    {userViewMode === "by_company" && selectedUserGroup === "ALL_COMPANIES" && (
+                      <>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn-secondary admin-btn-sm"
+                          onClick={() => setAllCompaniesCollapsed(false)}
+                          title="Mở rộng tất cả các nhóm công ty"
+                        >
+                          Mở hết
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn-secondary admin-btn-sm"
+                          onClick={() => setAllCompaniesCollapsed(true)}
+                          title="Thu gọn tất cả các nhóm công ty"
+                        >
+                          Thu gọn
+                        </button>
+                      </>
+                    )}
+
+                    <button type="button" className="admin-btn admin-btn-secondary admin-btn-sm" onClick={loadUsers}>
+                      <RefreshCw size={13} /> Làm mới
+                    </button>
+                  </div>
+                </div>
+
+                <div className="admin-users-toolbar-row">
+                  <div className="admin-filter-pills">
+                    <button
+                      type="button"
+                      className={`admin-filter-pill ${userRoleFilter === "ALL" ? "active" : ""}`}
+                      onClick={() => setUserRoleFilter("ALL")}
+                    >
+                      Tất cả ({userFilterCounts.all})
+                    </button>
+                    <button
+                      type="button"
+                      className={`admin-filter-pill ${userRoleFilter === "COMPANY_ADMIN" ? "active" : ""}`}
+                      onClick={() => setUserRoleFilter("COMPANY_ADMIN")}
+                    >
+                      <Crown size={12} /> Chủ sở hữu / Admin DN ({userFilterCounts.companyAdminCount})
+                    </button>
+                    <button
+                      type="button"
+                      className={`admin-filter-pill ${userRoleFilter === "STAFF" ? "active" : ""}`}
+                      onClick={() => setUserRoleFilter("STAFF")}
+                    >
+                      <Briefcase size={12} /> Nhân sự Kế toán ({userFilterCounts.staffCount})
+                    </button>
+                    <button
+                      type="button"
+                      className={`admin-filter-pill ${userRoleFilter === "SUPER" ? "active" : ""}`}
+                      onClick={() => setUserRoleFilter("SUPER")}
+                    >
+                      <ShieldCheck size={12} /> Super Admin ({userFilterCounts.superCount})
+                    </button>
+                    {userFilterCounts.lockedCount > 0 && (
+                      <button
+                        type="button"
+                        className={`admin-filter-pill ${userRoleFilter === "LOCKED" ? "active" : ""}`}
+                        onClick={() => setUserRoleFilter("LOCKED")}
+                      >
+                        <Lock size={12} /> Đang khóa ({userFilterCounts.lockedCount})
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ position: "relative", minWidth: "290px", flex: "0 1 340px" }}>
+                    <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <input
+                      type="text"
+                      className="admin-input"
+                      style={{ width: "100%", paddingLeft: 32 }}
+                      placeholder="Tìm theo Tên, Username/SĐT, Email, Vai trò..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                    />
+                    {userSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setUserSearch("")}
+                        style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* VIEW MODE 1: GROUPED BY COMPANY */}
+              {userViewMode === "by_company" && selectedUserGroup !== "SUPER_ADMINS" && selectedUserGroup !== "UNASSIGNED" ? (
+                <div>
+                  {companyUserGroups
+                    .filter((g) => {
+                      if (selectedUserGroup !== "ALL_COMPANIES") {
+                        return g.company.id === selectedUserGroup;
+                      }
+                      if (userSearch.trim() || userRoleFilter !== "ALL") {
+                        return g.members.length > 0;
+                      }
+                      return showEmptyCompanies || g.members.length > 0;
+                    })
+                    .map(({ company: comp, members }) => {
+                      const isCollapsed = Boolean(collapsedCompanyIds[comp.id]);
+                      return (
+                        <div key={comp.id} className="admin-company-group-card">
+                          <div
+                            className={`admin-company-group-header ${isCollapsed ? "is-collapsed" : ""}`}
+                            onClick={() => toggleCompanyCollapse(comp.id)}
+                          >
+                            <div className="admin-company-group-title-wrap">
+                              <span style={{ color: "#64748b", display: "inline-flex" }}>
+                                {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                              </span>
+                              <div className="admin-company-group-icon">
+                                <Building2 size={17} />
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                                  <span className="admin-company-group-code">{comp.code}</span>
+                                  <h4 className="admin-company-group-name">{comp.name}</h4>
+                                  <span
+                                    className={`admin-badge ${
+                                      comp.status === "ACTIVE"
+                                        ? "admin-badge-active"
+                                        : comp.status === "PENDING_SETUP"
+                                        ? "admin-badge-pending"
+                                        : "admin-badge-suspended"
+                                    }`}
+                                    style={{ fontSize: "0.68rem", padding: "1px 7px" }}
+                                  >
+                                    {comp.status}
+                                  </span>
+                                </div>
+                                <div className="admin-company-group-sub">
+                                  {comp.tax_code && <span>MST: <strong>{comp.tax_code}</strong></span>}
+                                  <span>
+                                    Chủ sở hữu:{" "}
+                                    <strong>{comp.admin ? comp.admin.display_name : "Chưa chỉ định"}</strong>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div
+                              style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="admin-badge admin-badge-blue" style={{ textTransform: "none" }}>
+                                <Users size={12} /> {members.length} nhân sự
+                              </span>
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn-secondary admin-btn-sm"
+                                onClick={() => {
+                                  if (selectCompany) selectCompany(comp.id);
+                                  navigate("/admin");
+                                }}
+                                title="Mở trang Quản trị & Phân quyền của doanh nghiệp này"
+                              >
+                                <ShieldCheck size={13} /> Quản trị DN
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn-primary admin-btn-sm"
+                                onClick={() => {
+                                  if (selectCompany) selectCompany(comp.id);
+                                  navigate("/");
+                                }}
+                                title="Vào Sổ kế toán của doanh nghiệp này"
+                              >
+                                <ExternalLink size={13} /> Sổ kế toán
+                              </button>
+                            </div>
+                          </div>
+
+                          {!isCollapsed && (
+                            <div className="admin-table-container">
+                              {members.length === 0 ? (
+                                <div style={{ padding: "1.25rem", textAlign: "center", color: "#64748b", fontSize: "0.84rem" }}>
+                                  Doanh nghiệp này hiện chưa có nhân sự nào khớp bộ lọc.
+                                </div>
+                              ) : (
+                                <table className="admin-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Nhân sự & Tài khoản</th>
+                                      <th>Email liên hệ</th>
+                                      <th>Vai trò tại {comp.code}</th>
+                                      <th>Kiêm nhiệm DN khác</th>
+                                      <th>Trạng thái</th>
+                                      <th style={{ textAlign: "right" }}>Thao tác</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {members.map(({ user: u, membership: m }) => {
+                                      const otherMemberships = u.memberships.filter((om) => om.company_id !== comp.id);
+                                      const roles = m.roles || [];
+                                      return (
+                                        <tr key={`${comp.id}-${u.id}`}>
+                                          <td style={{ whiteSpace: "nowrap" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                                              <span
+                                                className={`admin-user-avatar ${
+                                                  u.is_superuser ? "is-super" : m.is_company_admin ? "is-owner" : ""
+                                                }`}
+                                              >
+                                                {getUserInitials(u.display_name)}
+                                              </span>
+                                              <div>
+                                                <div style={{ fontWeight: 700, color: "#0f172a" }}>{u.display_name}</div>
+                                                <div style={{ fontSize: "0.74rem", color: "#64748b", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                                                  <code>{u.username}</code>
+                                                  {u.phone && u.phone !== u.username && <span>· {u.phone}</span>}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </td>
+                                          <td>{u.email || "—"}</td>
+                                          <td>
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}>
+                                              {m.is_company_admin && (
+                                                <span className="admin-badge admin-badge-gold" style={{ textTransform: "none", fontSize: "0.72rem" }}>
+                                                  <Crown size={11} /> Quản trị viên DN
+                                                </span>
+                                              )}
+                                              {roles
+                                                .filter((r) => !r.is_admin)
+                                                .map((r) => (
+                                                  <span key={r.code} className="admin-badge-role">
+                                                    {r.name}
+                                                  </span>
+                                                ))}
+                                              {!m.is_company_admin && roles.length === 0 && (
+                                                <span className="admin-badge-role" style={{ color: "#64748b" }}>
+                                                  Thành viên
+                                                </span>
+                                              )}
+                                              {u.is_superuser && (
+                                                <span
+                                                  className="admin-badge admin-badge-super"
+                                                  style={{ backgroundColor: "#7c3aed", fontSize: "0.68rem", padding: "2px 7px" }}
+                                                >
+                                                  Super Admin
+                                                </span>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td>
+                                            {otherMemberships.length === 0 ? (
+                                              <span style={{ color: "#94a3b8", fontSize: "0.78rem" }}>Chỉ thuộc DN này</span>
+                                            ) : (
+                                              <div
+                                                style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem", alignItems: "center" }}
+                                                title={otherMemberships.map((om) => `${om.company_code || ""} - ${om.company_name}`).join("\n")}
+                                              >
+                                                {otherMemberships.slice(0, 2).map((om) => (
+                                                  <span key={om.company_id} className="admin-company-chip">
+                                                    <span className="admin-company-chip-code">{om.company_code || "DN"}</span>
+                                                    <span style={{ maxWidth: 105, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                      {om.company_name}
+                                                    </span>
+                                                  </span>
+                                                ))}
+                                                {otherMemberships.length > 2 && (
+                                                  <span className="admin-badge admin-badge-purple" style={{ textTransform: "none", fontSize: "0.7rem" }}>
+                                                    +{otherMemberships.length - 2} DN khác
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </td>
+                                          <td style={{ whiteSpace: "nowrap" }}>
+                                            <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
+                                              {u.is_active ? "Đang mở" : "Bị khóa"}
+                                            </span>
+                                          </td>
+                                          <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                                            <div style={{ display: "inline-flex", gap: "0.35rem" }}>
+                                              <button
+                                                type="button"
+                                                className="admin-btn admin-btn-secondary admin-btn-sm"
+                                                onClick={() => handleToggleSuperuser(u)}
+                                                title={u.is_superuser ? "Gỡ quyền Super Admin" : "Cấp quyền Super Admin"}
+                                              >
+                                                <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="admin-btn admin-btn-secondary admin-btn-sm"
+                                                onClick={() => handleToggleActive(u)}
+                                                title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                                              >
+                                                {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="admin-btn admin-btn-secondary admin-btn-sm"
+                                                onClick={() => {
+                                                  setResetUser(u);
+                                                  setNewPassword("");
+                                                }}
+                                                title="Đặt lại mật khẩu"
+                                              >
+                                                <KeyRound size={13} /> Đổi MK
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                  {/* UNASSIGNED USERS CARD AT BOTTOM OF GROUPED VIEW */}
+                  {selectedUserGroup === "ALL_COMPANIES" && unassignedFilteredUsers.length > 0 && (
+                    <div className="admin-company-group-card" style={{ borderColor: "#fde68a" }}>
+                      <div
+                        className={`admin-company-group-header ${collapsedCompanyIds["__UNASSIGNED__"] ? "is-collapsed" : ""}`}
+                        style={{ background: "linear-gradient(90deg, #fffbeb 0%, #ffffff 100%)" }}
+                        onClick={() => toggleCompanyCollapse("__UNASSIGNED__")}
+                      >
+                        <div className="admin-company-group-title-wrap">
+                          <span style={{ color: "#b45309", display: "inline-flex" }}>
+                            {collapsedCompanyIds["__UNASSIGNED__"] ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                          </span>
+                          <div className="admin-company-group-icon" style={{ background: "#fef3c7", color: "#d97706" }}>
+                            <UserX size={17} />
+                          </div>
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <span className="admin-company-group-code" style={{ background: "#b45309" }}>CHƯA GÁN DN</span>
+                              <h4 className="admin-company-group-name">Tài khoản Độc lập / Chưa tham gia Doanh nghiệp</h4>
+                            </div>
+                            <div className="admin-company-group-sub">
+                              Các tài khoản hệ thống chưa được liên kết với bất kỳ công ty nào
+                            </div>
+                          </div>
+                        </div>
+                        <span className="admin-badge admin-badge-pending" style={{ textTransform: "none" }}>
+                          {unassignedFilteredUsers.length} tài khoản
+                        </span>
+                      </div>
+                      {!collapsedCompanyIds["__UNASSIGNED__"] && (
+                        <div className="admin-table-container">
+                          <table className="admin-table">
+                            <thead>
+                              <tr>
+                                <th>Tên hiển thị</th>
+                                <th>Username / SĐT</th>
+                                <th>Email</th>
+                                <th>Quyền Hệ thống</th>
+                                <th>Trạng thái</th>
+                                <th style={{ textAlign: "right" }}>Thao tác</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {unassignedFilteredUsers.map((u) => (
+                                <tr key={u.id}>
+                                  <td>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                                      <span className={`admin-user-avatar ${u.is_superuser ? "is-super" : ""}`}>
+                                        {getUserInitials(u.display_name)}
+                                      </span>
+                                      <strong>{u.display_name}</strong>
+                                    </div>
+                                  </td>
+                                  <td><code>{u.username}</code></td>
+                                  <td>{u.email || "—"}</td>
+                                  <td>
+                                    {u.is_superuser ? (
+                                      <span className="admin-badge admin-badge-super" style={{ backgroundColor: "#7c3aed" }}>
+                                        Super Admin
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: "var(--admin-text-muted)" }}>Người dùng thường</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
+                                      {u.is_active ? "Đang mở" : "Bị khóa"}
+                                    </span>
+                                  </td>
+                                  <td style={{ textAlign: "right" }}>
+                                    <div style={{ display: "inline-flex", gap: "0.4rem" }}>
+                                      <button
+                                        type="button"
+                                        className="admin-btn admin-btn-secondary admin-btn-sm"
+                                        onClick={() => handleToggleSuperuser(u)}
+                                      >
+                                        <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="admin-btn admin-btn-secondary admin-btn-sm"
+                                        onClick={() => handleToggleActive(u)}
+                                      >
+                                        {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="admin-btn admin-btn-secondary admin-btn-sm"
+                                        onClick={() => {
+                                          setResetUser(u);
+                                          setNewPassword("");
+                                        }}
+                                      >
+                                        <KeyRound size={13} /> Đổi mật khẩu
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TOGGLE FOR EMPTY COMPANIES */}
+                  {selectedUserGroup === "ALL_COMPANIES" &&
+                    !userSearch.trim() &&
+                    userRoleFilter === "ALL" &&
+                    companyUserGroups.some((g) => g.members.length === 0) && (
+                      <div style={{ textAlign: "center", marginTop: "0.75rem" }}>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn-secondary admin-btn-sm"
+                          onClick={() => setShowEmptyCompanies((prev) => !prev)}
+                        >
+                          {showEmptyCompanies
+                            ? "Ẩn các doanh nghiệp chưa có nhân sự"
+                            : `Hiện thêm ${companyUserGroups.filter((g) => g.members.length === 0).length} doanh nghiệp chưa có nhân sự`}
+                        </button>
+                      </div>
+                    )}
+                </div>
+              ) : (
+                /* VIEW MODE 2: FLAT GLOBAL TABLE (OR SUPER_ADMINS / UNASSIGNED FILTER) */
+                <div className="admin-card">
+                  <div className="admin-table-container">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Nhân sự</th>
+                          <th>Username / SĐT</th>
+                          <th>Email</th>
+                          <th>Quyền Hệ thống</th>
+                          <th>Trạng thái</th>
+                          <th>Doanh nghiệp & Vai trò tham gia (Đã khử trùng lặp)</th>
+                          <th style={{ textAlign: "right" }}>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((u) => (
+                          <tr key={u.id}>
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                                <span className={`admin-user-avatar ${u.is_superuser ? "is-super" : ""}`}>
+                                  {getUserInitials(u.display_name)}
+                                </span>
+                                <strong>{u.display_name}</strong>
+                              </div>
+                            </td>
+                            <td><code>{u.username}</code></td>
+                            <td>{u.email || "—"}</td>
+                            <td>
+                              {u.is_superuser ? (
+                                <span className="admin-badge admin-badge-super" style={{ backgroundColor: "#7c3aed" }}>
+                                  Super Admin
+                                </span>
+                              ) : (
+                                <span style={{ color: "var(--admin-text-muted)" }}>Người dùng thường</span>
+                              )}
+                            </td>
+                            <td>
+                              <span className={`admin-badge ${u.is_active ? "admin-badge-active" : "admin-badge-suspended"}`}>
+                                {u.is_active ? "Đang mở" : "Bị khóa"}
+                              </span>
+                            </td>
+                            <td>
+                              {u.memberships.length > 0 ? (
+                                <div
+                                  style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}
+                                  title={u.memberships
+                                    .map((m) => `${m.company_code || "DN"} - ${m.company_name}`)
+                                    .join("\n")}
+                                >
+                                  {u.memberships.slice(0, 3).map((m) => (
+                                    <span key={m.company_id} className="admin-company-chip">
+                                      <span className="admin-company-chip-code">{m.company_code || "DN"}</span>
+                                      <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        {m.company_name}
+                                      </span>
+                                      {m.is_company_admin && <Crown size={11} style={{ color: "#ca8a04" }} />}
+                                    </span>
+                                  ))}
+                                  {u.memberships.length > 3 && (
+                                    <span className="admin-badge admin-badge-purple" style={{ textTransform: "none", fontSize: "0.72rem" }}>
+                                      +{u.memberships.length - 3} DN khác
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>Chưa tham gia công ty</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: "right" }}>
+                              <div style={{ display: "inline-flex", gap: "0.4rem" }}>
+                                <button
+                                  type="button"
+                                  className="admin-btn admin-btn-secondary admin-btn-sm"
+                                  onClick={() => handleToggleSuperuser(u)}
+                                  title={u.is_superuser ? "Gỡ quyền Super Admin" : "Cấp quyền Super Admin"}
+                                >
+                                  <ShieldCheck size={13} /> {u.is_superuser ? "Hạ quyền" : "Lên Super"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="admin-btn admin-btn-secondary admin-btn-sm"
+                                  onClick={() => handleToggleActive(u)}
+                                  title={u.is_active ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                                >
+                                  {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="admin-btn admin-btn-secondary admin-btn-sm"
+                                  onClick={() => {
+                                    setResetUser(u);
+                                    setNewPassword("");
+                                  }}
+                                  title="Đặt lại mật khẩu"
+                                >
+                                  <KeyRound size={13} /> Đổi mật khẩu
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

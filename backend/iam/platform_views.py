@@ -445,7 +445,14 @@ class PlatformUserViewSet(ViewSet):
 
     def list(self, request):
         require_superuser(request)
-        users = User.objects.select_related("iam_account").prefetch_related("iam_account__memberships__company").order_by("-date_joined")
+        users = (
+            User.objects.select_related("iam_account")
+            .prefetch_related(
+                "iam_account__memberships__company",
+                "iam_account__memberships__role_assignments__role",
+            )
+            .order_by("-date_joined")
+        )
 
         q = request.query_params.get("q", "").strip().lower()
         is_active_param = request.query_params.get("is_active")
@@ -464,12 +471,42 @@ class PlatformUserViewSet(ViewSet):
                 if not (q in u.username.lower() or q in u.email.lower() or q in display_name.lower() or q in phone):
                     continue
 
-            memberships = []
+            memberships_by_company = {}
             if hasattr(u, "iam_account"):
-                memberships = [
-                    {"company_id": str(m.company_id), "company_name": m.company.name, "status": m.membership_status}
-                    for m in u.iam_account.memberships.all()
-                ]
+                for m in u.iam_account.memberships.all():
+                    cid = str(m.company_id)
+                    role_items = []
+                    is_comp_admin = False
+                    for ra in m.role_assignments.all():
+                        if ra.status == ActiveStatus.ACTIVE and ra.role:
+                            is_role_admin = bool(ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                            if is_role_admin:
+                                is_comp_admin = True
+                            role_items.append({
+                                "code": ra.role.code,
+                                "name": ra.role.name,
+                                "is_admin": is_role_admin,
+                            })
+                    if cid not in memberships_by_company:
+                        memberships_by_company[cid] = {
+                            "company_id": cid,
+                            "company_code": m.company.code,
+                            "company_name": m.company.name,
+                            "company_status": m.company.status,
+                            "status": m.membership_status,
+                            "roles": role_items,
+                            "is_company_admin": is_comp_admin,
+                        }
+                    else:
+                        existing = memberships_by_company[cid]
+                        existing_codes = {r["code"] for r in existing["roles"]}
+                        for r in role_items:
+                            if r["code"] not in existing_codes:
+                                existing["roles"].append(r)
+                        if is_comp_admin:
+                            existing["is_company_admin"] = True
+
+            memberships = list(memberships_by_company.values())
 
             result.append({
                 "id": str(u.id),
