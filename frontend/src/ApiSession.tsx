@@ -90,7 +90,8 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
               if (Array.isArray(fresh) && fresh.length > 0) {
                 setCompanies(fresh);
                 if (!cId || !fresh.some((c) => c.id === cId)) {
-                  setCompanyId(fresh[0].id);
+                  const preferred = fresh.find((c) => c.status === "ACTIVE" || !c.status) || fresh[0];
+                  setCompanyId(preferred.id);
                 }
               }
             })
@@ -183,7 +184,11 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
 
       let initialCompanyId = "";
       if (fetchedCompanies.length > 0) {
-        initialCompanyId = fetchedCompanies[0].id;
+        const preferred =
+          fetchedCompanies.find((c) => c.code === "ABC") ||
+          fetchedCompanies.find((c) => c.status === "ACTIVE" || !c.status) ||
+          fetchedCompanies[0];
+        initialCompanyId = preferred.id;
         setCompanyId(initialCompanyId);
         localStorage.setItem("erp_company_id", initialCompanyId);
       }

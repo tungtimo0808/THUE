@@ -29,6 +29,49 @@ def require_superuser(request):
         raise PermissionDenied("Chỉ Super Admin mới có quyền truy cập chức năng này.")
 
 
+def _get_or_create_all_company_scope(company, creator):
+    from .models import DataScopeSet
+    scope_set = DataScopeSet.objects.filter(company=company, allow_all_company_data=True).first()
+    if not scope_set:
+        scope_set, _ = DataScopeSet.objects.get_or_create(
+            company=company,
+            code="ALL_COMPANY",
+            defaults={
+                "name": "Phạm vi Toàn doanh nghiệp",
+                "allow_all_company_data": True,
+                "allow_owned_records": True,
+                "created_by": creator,
+            },
+        )
+    return scope_set
+
+
+def _resolve_user_account(user_id):
+    if not user_id:
+        return None
+    val = str(user_id).strip()
+    try:
+        uuid_val = uuid.UUID(val)
+        acc = UserAccount.objects.select_related("auth_user").filter(pk=uuid_val).first()
+        if acc:
+            return acc
+    except (ValueError, TypeError):
+        pass
+    if val.isdigit():
+        u = User.objects.filter(pk=int(val)).first()
+    else:
+        u = User.objects.filter(Q(username=val) | Q(email=val)).first()
+    if u:
+        acc, _ = UserAccount.objects.get_or_create(
+            auth_user=u,
+            defaults={
+                "display_name": f"{u.first_name} {u.last_name}".strip() or u.username,
+            },
+        )
+        return acc
+    return None
+
+
 class PlatformStatsView(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -105,12 +148,48 @@ class PlatformCompanyViewSet(ViewSet):
         q = request.query_params.get("q", "").strip().lower()
         status_filter = request.query_params.get("status", "").strip().upper()
 
+        companies_list = list(companies)
+        company_ids = [c.id for c in companies_list]
+
+        admin_by_company = {}
+        for assignment in (
+            UserRoleAssignment.objects.filter(
+                company_membership__company_id__in=company_ids,
+                role__is_system_admin=True,
+                status=ActiveStatus.ACTIVE,
+            )
+            .select_related("company_membership__user__auth_user")
+            .order_by("assigned_at")
+        ):
+            cid = assignment.company_membership.company_id
+            if cid not in admin_by_company and assignment.company_membership.user:
+                admin_by_company[cid] = assignment.company_membership.user
+
+        first_member_by_company = {}
+        for mem in (
+            CompanyMembership.objects.filter(company_id__in=company_ids)
+            .select_related("user__auth_user")
+            .order_by("joined_at")
+        ):
+            if mem.company_id not in first_member_by_company and mem.user:
+                first_member_by_company[mem.company_id] = mem.user
+
         data = []
-        for c in companies:
+        for c in companies_list:
             if status_filter and c.status != status_filter:
                 continue
             if q and not (q in c.name.lower() or q in c.code.lower() or q in (c.tax_code or "").lower()):
                 continue
+
+            u = admin_by_company.get(c.id) or first_member_by_company.get(c.id)
+            admin_info = None
+            if u:
+                admin_info = {
+                    "id": str(u.id),
+                    "display_name": u.display_name or u.auth_user.get_username(),
+                    "email": u.auth_user.email,
+                    "phone": u.phone,
+                }
 
             data.append({
                 "id": str(c.id),
@@ -127,6 +206,7 @@ class PlatformCompanyViewSet(ViewSet):
                 "members_count": c.members_count,
                 "branches_count": c.branches_count,
                 "employees_count": c.employees_count,
+                "admin": admin_info,
                 "created_at": c.created_at.isoformat() if hasattr(c, "created_at") and c.created_at else None,
                 "updated_at": c.updated_at.isoformat() if hasattr(c, "updated_at") and c.updated_at else None,
             })
@@ -187,6 +267,63 @@ class PlatformCompanyViewSet(ViewSet):
 
         return Response({"id": str(company.id), "status": company.status, "message": f"Đã chuyển trạng thái doanh nghiệp thành {new_status}"})
 
+    @action(detail=True, methods=("post",), url_path="assign-company-admin")
+    def assign_company_admin(self, request, pk=None):
+        require_superuser(request)
+        company = get_object_or_404(Company, pk=pk)
+        user_id = request.data.get("user_id")
+        if not user_id:
+            raise ValidationError({"user_id": "Vui lòng chọn người dùng làm Admin/Chủ sở hữu."})
+        target_account = _resolve_user_account(user_id)
+        if not target_account:
+            raise ValidationError({"user_id": "Không tìm thấy người dùng được chọn."})
+        actor_account = getattr(request.user, "iam_account", None)
+
+        from iam.role_services import seed_standard_roles_for_company
+        from .models import DataScopeSet
+        seed_standard_roles_for_company(company, actor_account)
+
+        admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
+        if not admin_role:
+            admin_role = Role.objects.filter(company=company, is_system_admin=True).first()
+
+        with transaction.atomic():
+            membership, _ = CompanyMembership.objects.get_or_create(
+                company=company,
+                user=target_account,
+                defaults={
+                    "membership_status": ActiveStatus.ACTIVE,
+                    "created_by": actor_account or target_account,
+                },
+            )
+            if membership.membership_status != ActiveStatus.ACTIVE:
+                membership.membership_status = ActiveStatus.ACTIVE
+                membership.save(update_fields=("membership_status", "updated_at"))
+
+            scope_set = _get_or_create_all_company_scope(company, actor_account or target_account)
+
+            if admin_role:
+                UserRoleAssignment.objects.get_or_create(
+                    company_membership=membership,
+                    role=admin_role,
+                    defaults={
+                        "data_scope_set": scope_set,
+                        "status": ActiveStatus.ACTIVE,
+                        "assigned_by": actor_account or target_account,
+                        "assign_reason": "Super Admin chỉ định Chủ sở hữu Doanh nghiệp",
+                    },
+                )
+
+        return Response({
+            "message": f"Đã gán '{target_account.display_name}' làm Quản trị viên/Chủ sở hữu của {company.name}.",
+            "company_id": str(company.id),
+            "admin": {
+                "id": str(target_account.id),
+                "display_name": target_account.display_name,
+                "email": target_account.auth_user.email,
+            },
+        })
+
     @action(detail=False, methods=("post",), url_path="create-company")
     def create_company(self, request):
         require_superuser(request)
@@ -196,6 +333,7 @@ class PlatformCompanyViewSet(ViewSet):
         tax_code = (data.get("tax_code") or "").strip()
         accounting_regime = data.get("accounting_regime", "TT99")
         legal_representative = (data.get("legal_representative") or "").strip()
+        admin_user_id = data.get("admin_user_id")
 
         if not code or not name:
             raise ValidationError({"message": "Cần nhập đầy đủ Mã và Tên doanh nghiệp."})
@@ -204,6 +342,12 @@ class PlatformCompanyViewSet(ViewSet):
             raise ValidationError({"code": f"Mã doanh nghiệp {code} đã tồn tại."})
 
         with transaction.atomic():
+            from master_data.models import Currency
+            from organization.models import Branch
+            currency, _ = Currency.objects.get_or_create(
+                code="VND",
+                defaults={"name": "Đồng Việt Nam", "symbol": "₫", "decimal_places": 0, "is_base_currency": True},
+            )
             company = Company.objects.create(
                 code=code,
                 name=name,
@@ -211,32 +355,87 @@ class PlatformCompanyViewSet(ViewSet):
                 tax_code=tax_code,
                 accounting_regime=accounting_regime,
                 legal_representative=legal_representative,
-                status=CompanyStatus.PENDING_SETUP,
+                accounting_currency=currency,
+                legal_reporting_currency=currency,
+                status=CompanyStatus.ACTIVE,
                 address=data.get("address", ""),
+            )
+            branch = Branch.objects.create(
+                company=company,
+                code="HQ",
+                name=f"Trụ sở chính - {company.name}"[:255],
+                tax_code=tax_code,
+                address=data.get("address", ""),
+                is_head_office=True,
             )
 
             actor = getattr(request.user, "iam_account", None)
-            if actor:
-                CompanyMembership.objects.create(
+            if not actor and request.user and request.user.is_authenticated:
+                actor, _ = UserAccount.objects.get_or_create(
+                    auth_user=request.user,
+                    defaults={
+                        "display_name": request.user.get_full_name() or request.user.get_username(),
+                        "can_create_company": True,
+                    },
+                )
+            target_admin = actor
+            if admin_user_id:
+                admin_acc = _resolve_user_account(admin_user_id)
+                if admin_acc:
+                    target_admin = admin_acc
+
+            membership = None
+            if target_admin:
+                membership, _ = CompanyMembership.objects.get_or_create(
+                    company=company,
+                    user=target_admin,
+                    defaults={
+                        "membership_status": ActiveStatus.ACTIVE,
+                        "join_source": "BOOTSTRAP",
+                        "created_by": actor or target_admin,
+                    },
+                )
+            actor_membership = membership
+            if actor and actor != target_admin:
+                actor_membership, _ = CompanyMembership.objects.get_or_create(
                     company=company,
                     user=actor,
-                    membership_status=ActiveStatus.ACTIVE,
-                    created_by=actor,
+                    defaults={
+                        "membership_status": ActiveStatus.ACTIVE,
+                        "join_source": "BOOTSTRAP",
+                        "created_by": actor,
+                    },
                 )
 
-            # Auto run basic setup
-            if actor:
-                try:
-                    complete_company_setup(company, actor, request)
-                except Exception:
-                    pass
+            # Auto run full company setup (COA, numbering, periods, roles, modules)
+            setup_actor = target_admin or actor
+            if setup_actor:
+                from .models import DataScopeBranch
+                complete_company_setup(company, setup_actor, request)
+                scope_set = _get_or_create_all_company_scope(company, actor or setup_actor)
+                DataScopeBranch.objects.get_or_create(
+                    data_scope_set=scope_set,
+                    branch=branch,
+                    defaults={"include_descendants": True},
+                )
+                admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
+                if admin_role:
+                    for m in {m for m in (membership, actor_membership) if m is not None}:
+                        UserRoleAssignment.objects.get_or_create(
+                            company_membership=m,
+                            role=admin_role,
+                            defaults={
+                                "data_scope_set": scope_set,
+                                "assigned_by": actor or setup_actor,
+                            },
+                        )
 
         return Response({
             "id": str(company.id),
             "code": company.code,
             "name": company.name,
             "status": company.status,
-            "message": "Đã tạo doanh nghiệp mới thành công.",
+            "message": "Đã tạo doanh nghiệp mới và khởi tạo không gian làm việc hoàn chỉnh.",
         }, status=status.HTTP_201_CREATED)
 
 
@@ -451,6 +650,7 @@ def assign_member_role_view(request):
         raise ValidationError({"role": "Không tìm thấy vai trò tương ứng trong doanh nghiệp."})
 
     with transaction.atomic():
+        scope_set = _get_or_create_all_company_scope(company, actor or membership.user)
         UserRoleAssignment.objects.filter(
             company_membership=membership,
             status=ActiveStatus.ACTIVE,
@@ -459,6 +659,7 @@ def assign_member_role_view(request):
         assignment = UserRoleAssignment.objects.create(
             company_membership=membership,
             role=role,
+            data_scope_set=scope_set,
             status=ActiveStatus.ACTIVE,
             assigned_by=actor or membership.user,
             assign_reason=data.get("reason", f"Phân công vai trò {role.name}"),
@@ -471,3 +672,143 @@ def assign_member_role_view(request):
         "role_name": role.name,
         "assignment_id": str(assignment.id),
     })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_staff_member_view(request):
+    """Creates an Employee + UserAccount + CompanyMembership (and optional Role assignment) in one atomic step."""
+    data = request.data
+    company_id = data.get("company_id") or data.get("company") or request.query_params.get("company_id")
+    if not company_id:
+        raise ValidationError({"company_id": "Vui lòng chọn doanh nghiệp."})
+
+    company = get_object_or_404(Company, pk=company_id)
+    actor = getattr(request.user, "iam_account", None)
+
+    if not request.user.is_superuser:
+        if not actor:
+            raise PermissionDenied("Tài khoản chưa liên kết IAM.")
+        is_admin = CompanyMembership.objects.filter(
+            company=company,
+            user=actor,
+            membership_status=ActiveStatus.ACTIVE,
+        ).exists()
+        if not is_admin:
+            raise PermissionDenied("Bạn không có quyền thêm nhân sự trong doanh nghiệp này.")
+
+    emp_code = (data.get("employee_code") or data.get("code") or "").strip().upper()
+    full_name = (data.get("full_name") or "").strip()
+    email = (data.get("email") or "").strip().lower()
+    phone = (data.get("phone") or "").strip()
+    department_id = data.get("department") or data.get("department_id") or None
+    position_id = data.get("position") or data.get("position_id") or None
+    role_code = (data.get("role_code") or "").strip()
+
+    if not emp_code or not full_name:
+        raise ValidationError({"message": "Vui lòng nhập Mã nhân viên và Họ tên."})
+
+    if not email:
+        email = f"{emp_code.lower()}.{company.code.lower()}@soviet.local"
+
+    with transaction.atomic():
+        branch = Branch.objects.filter(company=company, status="ACTIVE").order_by("-is_head_office", "created_at").first()
+        if not branch:
+            branch = Branch.objects.create(
+                company=company,
+                code="HQ",
+                name=f"Trụ sở chính - {company.name}"[:255],
+                tax_code=company.tax_code or "",
+                address=company.address or "",
+                is_head_office=True,
+            )
+
+        dept = Department.objects.filter(company=company, pk=department_id).first() if department_id else None
+        if dept and dept.branch_id and dept.branch_id != branch.id:
+            branch = dept.branch
+
+        employee, _ = Employee.objects.update_or_create(
+            company=company,
+            employee_code=emp_code,
+            defaults={
+                "branch": branch,
+                "department_id": dept.id if dept else None,
+                "position_id": position_id or None,
+                "full_name": full_name,
+                "email": email,
+                "phone": phone,
+                "status": "ACTIVE",
+            },
+        )
+
+        auth_user = User.objects.filter(email__iexact=email).first()
+        if not auth_user:
+            base_username = email.split("@")[0]
+            candidate = base_username
+            suffix = 1
+            while User.objects.filter(username__iexact=candidate).exists():
+                candidate = f"{base_username}_{company.code.lower()}_{suffix}"
+                suffix += 1
+            auth_user = User.objects.create_user(
+                username=candidate,
+                email=email,
+                password=data.get("password") or "Soviet@123456",
+            )
+
+        user_account, _ = UserAccount.objects.get_or_create(
+            auth_user=auth_user,
+            defaults={
+                "display_name": full_name,
+                "phone": phone,
+            },
+        )
+        if user_account.display_name != full_name or (phone and user_account.phone != phone):
+            user_account.display_name = full_name
+            if phone:
+                user_account.phone = phone
+            user_account.save(update_fields=("display_name", "phone", "updated_at"))
+
+        membership, _ = CompanyMembership.objects.get_or_create(
+            company=company,
+            user=user_account,
+            defaults={
+                "employee": employee,
+                "membership_status": ActiveStatus.ACTIVE,
+                "join_source": "ADMIN_INVITE",
+                "internal_display_name": full_name,
+                "created_by": actor or user_account,
+            },
+        )
+        if membership.employee_id != employee.id or membership.membership_status != ActiveStatus.ACTIVE:
+            membership.employee = employee
+            membership.membership_status = ActiveStatus.ACTIVE
+            membership.save(update_fields=("employee", "membership_status", "updated_at"))
+
+        assigned_role_name = None
+        if role_code:
+            role = Role.objects.filter(company=company, code=role_code).first()
+            if role:
+                scope_set = _get_or_create_all_company_scope(company, actor or user_account)
+                UserRoleAssignment.objects.filter(
+                    company_membership=membership,
+                    status=ActiveStatus.ACTIVE,
+                ).delete()
+                UserRoleAssignment.objects.create(
+                    company_membership=membership,
+                    role=role,
+                    data_scope_set=scope_set,
+                    status=ActiveStatus.ACTIVE,
+                    assigned_by=actor or user_account,
+                    assign_reason=f"Khởi tạo nhân sự với vai trò {role.name}",
+                )
+                assigned_role_name = role.name
+
+    return Response({
+        "id": str(employee.id),
+        "membership_id": str(membership.id),
+        "employee_code": employee.employee_code,
+        "full_name": employee.full_name,
+        "email": email,
+        "role_name": assigned_role_name,
+        "message": f"Đã thêm nhân viên {full_name} ({emp_code}) và tạo tài khoản phân quyền thành công.",
+    }, status=status.HTTP_201_CREATED)

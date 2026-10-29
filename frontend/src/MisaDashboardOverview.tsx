@@ -105,6 +105,13 @@ export function MisaDashboardOverview({
       .then((res) => {
         if (!active) return;
         setConfigData(res);
+        if (Array.isArray(res?.periods) && res.periods.length > 0) {
+          const exists = res.periods.some((p: any) => p.period_code === selectedPeriod);
+          if (!exists) {
+            const fallback = res.default_period_code || res.periods[0].period_code;
+            if (fallback) setSelectedPeriod(fallback);
+          }
+        }
       })
       .catch(() => {
         // Non-fatal; overview endpoint still resolves context
@@ -396,7 +403,8 @@ export function MisaDashboardOverview({
                 border: "1px solid #cbd5e1",
                 fontSize: 12.5,
                 background: "#fff",
-                maxWidth: 160,
+                minWidth: 230,
+                maxWidth: 320,
               }}
             >
               {periodsList.map((p) => (
@@ -479,7 +487,7 @@ export function MisaDashboardOverview({
             className="ref-button teal"
             disabled={loading || refreshing}
             onClick={() => void loadDashboardOverview({ forceRefresh: true })}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0, borderRadius: 6 }}
           >
             <RefreshCw size={14} className={loading || refreshing ? "spin" : ""} />
             <span>{refreshing ? "Đang làm mới…" : "Làm mới"}</span>
@@ -488,7 +496,7 @@ export function MisaDashboardOverview({
           <Link
             to={href("/reports")}
             className="ref-button"
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0, borderRadius: 6 }}
           >
             <span>Trung tâm báo cáo</span>
             <ExternalLink size={13} />
@@ -521,6 +529,7 @@ export function MisaDashboardOverview({
           <button
             type="button"
             className="ref-button"
+            style={{ borderRadius: 6 }}
             onClick={() => void loadDashboardOverview({ forceRefresh: true })}
           >
             Thử lại

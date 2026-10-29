@@ -1432,13 +1432,15 @@ export default function MisaSalesWorkspace({
   if (tab === "process") {
     return (
       <div
+        className="ref-process-wrapper"
         style={{
           display: "flex",
           flexDirection: "column",
-          minHeight: "100%",
+          height: "100%",
           background: "#f4f5f8",
-          padding: "16px 18px 24px 18px",
+          padding: "10px 16px",
           boxSizing: "border-box",
+          overflow: "hidden",
           fontFamily: "Inter, system-ui, -apple-system, sans-serif",
         }}
       >

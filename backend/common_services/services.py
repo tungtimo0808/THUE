@@ -900,6 +900,16 @@ def create_company(data, request):
 
 
 def require_membership(account, company):
+    if getattr(account.auth_user, "is_superuser", False):
+        membership, _ = CompanyMembership.objects.get_or_create(
+            user=account,
+            company=company,
+            defaults={
+                "membership_status": ActiveStatus.ACTIVE,
+                "created_by": account,
+            },
+        )
+        return membership
     membership = CompanyMembership.objects.filter(user=account, company=company, membership_status=ActiveStatus.ACTIVE).first()
     if not membership:
         raise PermissionDenied("Bạn không có Membership ACTIVE tại doanh nghiệp này.")
@@ -952,6 +962,20 @@ def switch_scope(account, company, branch=None, all_branches=False, request=None
     require_membership(account, company)
     if company.status != "ACTIVE":
         raise ValidationError("Doanh nghiệp không còn hoạt động.")
+    if getattr(account.auth_user, "is_superuser", False):
+        preference, _ = UserPreference.objects.select_for_update().get_or_create(user=account)
+        before = {"company": str(preference.current_company_id or ""), "branch": str(preference.current_branch_id or ""), "all_branches": preference.all_branches}
+        preference.current_company = company
+        preference.current_branch = branch
+        preference.all_branches = True if not branch else False
+        preference.save(update_fields=("current_company", "current_branch", "all_branches", "updated_at"))
+        record_audit(
+            company=company, actor_user=account, module_code="COM", action_code="SCOPE_SWITCH",
+            entity=preference, before=before,
+            after={"company": str(company.id), "branch": str(branch.id) if branch else "", "all_branches": preference.all_branches},
+            summary=f"Super Admin chuyển phạm vi làm việc sang doanh nghiệp {company.code}",
+        )
+        return preference
     options = next((item for item in available_scopes(account) if item["company"]["id"] == str(company.id)), None)
     if not options:
         raise PermissionDenied("Bạn không có phạm vi làm việc hợp lệ tại doanh nghiệp này.")

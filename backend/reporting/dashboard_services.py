@@ -3,6 +3,8 @@ from __future__ import annotations
 import calendar
 import hashlib
 import json
+import copy
+import functools
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -61,6 +63,38 @@ class DashboardContext:
     warnings: list[dict[str, Any]] = field(default_factory=list)
     fail_widgets: set[str] = field(default_factory=set)
     is_before_start_date: bool = False
+    # Audit 2026-10-27 (P1): memo trong phạm vi 1 request để không chạy lại cùng một phép tính/truy vấn.
+    memo: dict[Any, Any] = field(default_factory=dict, repr=False, compare=False)
+
+
+def _ctx_memoized(func):
+    """Cache kết quả theo (hàm, tham số) trên ctx.memo; trả deepcopy để caller sửa kết quả không ảnh hưởng memo."""
+
+    @functools.wraps(func)
+    def wrapper(ctx, *args):
+        memo = getattr(ctx, "memo", None)
+        if memo is None:
+            return func(ctx, *args)
+        key = (func.__name__, args)
+        if key not in memo:
+            memo[key] = func(ctx, *args)
+        return copy.deepcopy(memo[key])
+
+    return wrapper
+
+
+def _metric_catalog(ctx: DashboardContext, metric_code: str):
+    """Nạp toàn bộ DashboardMetricCatalog một lần cho mỗi request thay vì 1 truy vấn/widget."""
+    memo = getattr(ctx, "memo", None)
+    if memo is None:
+        return DashboardMetricCatalog.objects.filter(metric_code=metric_code).first()
+    catalog_map = memo.get("__metric_catalog__")
+    if catalog_map is None:
+        catalog_map = {}
+        for item in DashboardMetricCatalog.objects.all().order_by("pk"):
+            catalog_map.setdefault(item.metric_code, item)
+        memo["__metric_catalog__"] = catalog_map
+    return catalog_map.get(metric_code)
 
 
 def _to_decimal(val: Any) -> Decimal:
@@ -312,9 +346,25 @@ def resolve_dashboard_context(request, *, require_refresh_perm: bool = False) ->
             Q(id=fiscal_period_id) if len(str(fiscal_period_id)) == 36 else Q(code=str(fiscal_period_id))
         ).first()
         if not fiscal_period:
-            raise ValidationError({"fiscal_period_id": "Kỳ kế toán không tồn tại.", "code": "FISCAL_PERIOD_NOT_FOUND"})
-        from_date = fiscal_period.start_date
-        to_date = fiscal_period.end_date
+            today = timezone.localdate()
+            fiscal_period = (
+                AccountingPeriod.objects.filter(company=company, start_date__lte=today, end_date__gte=today).first()
+                or AccountingPeriod.objects.filter(company=company, status="OPEN").order_by("-start_date").first()
+                or AccountingPeriod.objects.filter(company=company).order_by("-start_date").first()
+            )
+            if fiscal_period:
+                warnings.append({
+                    "code": "PERIOD_FALLBACK",
+                    "message": f"Kỳ kế toán '{fiscal_period_id}' không thuộc doanh nghiệp, hệ thống đã tự động chuyển sang kỳ {fiscal_period.code}.",
+                })
+            elif params.get("require_fiscal_period") in ("1", "true", "True", True):
+                raise ValidationError({"fiscal_period_id": "Kỳ kế toán không tồn tại.", "code": "FISCAL_PERIOD_NOT_FOUND"})
+        if fiscal_period:
+            from_date = fiscal_period.start_date
+            to_date = fiscal_period.end_date
+        else:
+            from_date = date(today.year, today.month, 1)
+            to_date = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
     elif period_type == "CUSTOM":
         if not from_date or not to_date:
             raise ValidationError({"from_date": "Chế độ tùy chọn ngày (CUSTOM) yêu cầu đầy đủ from_date và to_date.", "code": "CUSTOM_DATES_REQUIRED"})
@@ -474,7 +524,7 @@ def is_widget_permitted(ctx: DashboardContext, metric_code: str) -> bool:
 
 
 def build_drilldown_meta(ctx: DashboardContext, metric_code: str, extra_filters: dict[str, Any] | None = None) -> dict[str, Any]:
-    catalog = DashboardMetricCatalog.objects.filter(metric_code=metric_code).first()
+    catalog = _metric_catalog(ctx, metric_code)
     target_uc = catalog.target_uc_code if catalog else "UC-RPT-02"
     target_report = catalog.target_report_code if catalog else ""
     target_perm = catalog.target_report_permission if catalog else ""
@@ -575,6 +625,7 @@ def _filter_branches(qs, branch_field: str, branch_ids: list[str] | None):
 # DASH-01: Doanh thu bán hàng (Pre-VAT Net Revenue)
 # ==============================================================================
 
+@_ctx_memoized
 def _calculate_revenue_for_range(ctx: DashboardContext, start_date: date, end_date: date) -> dict[str, Any]:
     from sales.models import GoodsSale, SalesAllowance, SalesReturn, ServiceSale
 
@@ -1282,6 +1333,7 @@ def compute_dash_03_cash_collected(ctx: DashboardContext) -> dict[str, Any]:
 # DASH-04: Chứng từ chờ xử lý & DASH-11: Danh sách công việc cần xử lý
 # ==============================================================================
 
+@_ctx_memoized
 def _collect_workflow_and_action_items(ctx: DashboardContext) -> dict[str, Any]:
     from accounts_payable.models import PayableDocument, PaymentRequest, SupplierInvoice
     from accounts_receivable.models import CustomerReceiptVoucher, ReceivableDocument

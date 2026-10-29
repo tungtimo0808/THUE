@@ -7,6 +7,7 @@ from .platform_views import (
     PlatformUserViewSet,
     seed_standard_roles_view,
     assign_member_role_view,
+    create_staff_member_view,
 )
 
 from .views import (
@@ -65,5 +66,6 @@ urlpatterns = [
     path("platform/stats/", PlatformStatsView.as_view(), name="platform-stats"),
     path("roles/seed-standard/", seed_standard_roles_view, name="seed-standard-roles"),
     path("members/assign-role/", assign_member_role_view, name="assign-member-role"),
+    path("members/create-staff/", create_staff_member_view, name="create-staff-member"),
 ] + router.urls
 

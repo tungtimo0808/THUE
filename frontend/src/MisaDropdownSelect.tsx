@@ -114,6 +114,7 @@ export default function MisaDropdownSelect({
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
         aria-label={ariaLabel || (typeof renderedLabel === "string" ? renderedLabel : "Chọn")}
+        title={typeof renderedLabel === "string" ? renderedLabel : undefined}
         aria-expanded={open}
         style={{
           height: 32,
@@ -155,7 +156,7 @@ export default function MisaDropdownSelect({
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
-            maxWidth: 220,
+            maxWidth: 360,
           }}
         >
           {renderedLabel}
@@ -179,7 +180,8 @@ export default function MisaDropdownSelect({
             top: "calc(100% + 4px)",
             [align === "right" ? "right" : "left"]: 0,
             minWidth: typeof minWidth === "number" ? `${minWidth}px` : minWidth,
-            maxWidth: 320,
+            width: "max-content",
+            maxWidth: "min(480px, calc(100vw - 32px))",
             background: "#ffffff",
             border: "1px solid #e2e8f0",
             borderRadius: 8,
@@ -267,13 +269,14 @@ export default function MisaDropdownSelect({
                       e.currentTarget.style.color = "#334155";
                     }
                   }}
+                  title={itemLabel}
                 >
                   <span
                     style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      whiteSpace: "normal",
+                      overflowWrap: "break-word",
                       flex: 1,
+                      minWidth: 0,
                     }}
                   >
                     {itemLabel}

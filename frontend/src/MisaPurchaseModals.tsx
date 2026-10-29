@@ -8049,7 +8049,7 @@ export function SupplierModal({
                 </button>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", maxHeight: 220, overflowY: "auto" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", maxHeight: 220, overflowY: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", position: "sticky", top: 0 }}>

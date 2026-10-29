@@ -113,12 +113,27 @@ export async function refreshAccessToken(): Promise<string> {
 }
 
 const inFlightRequests = new Map<string, Promise<any>>();
+const getResponseCache = new Map<string, { data: any; timestamp: number }>();
+const GET_CACHE_TTL_MS = 12_000;
+
+export function clearLiveApiGetCache() {
+  getResponseCache.clear();
+}
 
 export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {
   const method = (options?.method || "GET").toUpperCase();
   const isGet = method === "GET";
   const effectiveToken = token || localStorage.getItem("erp_token") || "";
   const dedupeKey = isGet ? `${path}::${effectiveToken}` : null;
+
+  if (!isGet) {
+    getResponseCache.clear();
+  } else if (dedupeKey) {
+    const cached = getResponseCache.get(dedupeKey);
+    if (cached && Date.now() - cached.timestamp < GET_CACHE_TTL_MS) {
+      return cached.data as T;
+    }
+  }
 
   if (dedupeKey && inFlightRequests.has(dedupeKey)) {
     return inFlightRequests.get(dedupeKey)! as Promise<T>;
@@ -167,6 +182,13 @@ export async function request<T>(path: string, token?: string, options?: Request
         ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : (typeof value === "object" ? JSON.stringify(value) : String(value))}`).join("; ")
         : `Yêu cầu thất bại (HTTP ${response.status}).`;
       throw new ApiError(detail, response.status);
+    }
+    if (dedupeKey) {
+      getResponseCache.set(dedupeKey, { data: body, timestamp: Date.now() });
+      if (getResponseCache.size > 150) {
+        const oldestKey = getResponseCache.keys().next().value;
+        if (oldestKey) getResponseCache.delete(oldestKey);
+      }
     }
     return body as T;
   })();

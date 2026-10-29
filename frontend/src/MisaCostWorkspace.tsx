@@ -1342,7 +1342,16 @@ if (apiConnected) {
     }).format(val);
 
   return (
-    <div className="misa-cost-workspace" style={{ background: "#f8fafc", minHeight: "100%", padding: 16 }}>
+    <div
+      className={`misa-cost-workspace ${currentTab === "process" ? "ref-process-wrapper" : ""}`}
+      style={{
+        background: "#f8fafc",
+        height: currentTab === "process" ? "100%" : undefined,
+        minHeight: currentTab === "process" ? undefined : "100%",
+        padding: currentTab === "process" ? "10px 16px" : 16,
+        overflow: currentTab === "process" ? "hidden" : undefined,
+      }}
+    >
       {/* ==================================================================== */}
       {/* 1. PROCESS TAB (QUY TRÌNH) - MATCHES SCREENSHOT 2 */}
       {/* ==================================================================== */}
@@ -11373,7 +11382,7 @@ if (apiConnected) {
                 </div>
 
                 {/* Table with light mint green header */}
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 140 }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 140 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -12025,7 +12034,7 @@ if (apiConnected) {
                 </div>
 
                 {/* Table with pale mint green header */}
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 140 }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 140 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -12243,7 +12252,7 @@ if (apiConnected) {
             </div>
 
             <div style={{ padding: "16px 20px", overflowY: "auto" }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4" }}>
@@ -12395,7 +12404,7 @@ if (apiConnected) {
                 Quy trình sản xuất gồm các công đoạn kế tiếp nhau, trong đó nửa thành phẩm công đoạn trước là đối tượng chế biến của công đoạn sau.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -13802,7 +13811,7 @@ if (apiConnected) {
             </div>
 
             <div style={{ padding: "16px 20px", overflowY: "auto" }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4" }}>
@@ -13996,7 +14005,7 @@ if (apiConnected) {
                 </div>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["c621", "Dở dang 621", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c621 ?? settingOf(code)?.opening_wip], ["c622", "Dở dang 622", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c622 ?? 0], ["c627", "Dở dang 627", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c627 ?? 0]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14152,7 +14161,7 @@ if (apiConnected) {
                 Thiết lập hệ số hoặc tỷ lệ giữa các thành phẩm sản xuất trong cùng một phân xưởng quy về sản phẩm chuẩn.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["coefficient", "Hệ số giá thành", (code) => settingOf(code)?.coefficient ?? 1]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14304,7 +14313,7 @@ if (apiConnected) {
                 Thiết lập tiêu thức phân bổ chi phí chung và chi phí nhân công cho các đối tượng tập hợp chi phí.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14448,7 +14457,7 @@ if (apiConnected) {
                 Giá thành kế hoạch được sử dụng làm căn cứ tính tỷ lệ giá thành và phân bổ chi phí sản xuất thực tế.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["plannedCost", "Giá thành kế hoạch", (code) => settingOf(code)?.planned_cost ?? 0]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14731,7 +14740,7 @@ if (apiConnected) {
               </div>
 
               {/* Table */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 140 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 140 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -15139,7 +15148,7 @@ if (apiConnected) {
                 </div>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -15321,7 +15330,7 @@ if (apiConnected) {
                 />
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -15957,7 +15966,7 @@ if (apiConnected) {
                 </button>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 120 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 120 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -16616,7 +16625,7 @@ if (apiConnected) {
                 </button>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 120 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 120 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -16809,7 +16818,7 @@ if (apiConnected) {
             </div>
 
             <div style={{ padding: "16px 20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>

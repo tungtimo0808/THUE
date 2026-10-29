@@ -895,14 +895,14 @@ export default function MisaInventoryWorkspace({
   };
 
   // Handle Save Receipt
-  const handleSaveReceipt = async (data: any) => {
+  const handleSaveReceipt = async (data: any, post = false) => {
     if (apiConnected) {
       if (editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT") {
         notify("Chỉ phiếu nháp mới được sửa.");
         return false;
       }
       const saved = await apiSave((writer) => (receiptType.startsWith("3.") || !!editingOtherReceiptId)
-        ? saveOtherInventoryReceipt(writer, { ...data, id: editingOtherReceiptId })
+        ? saveOtherInventoryReceipt(writer, { ...data, id: editingOtherReceiptId }, post)
         : saveInventoryTransaction(writer, "receipt", data));
       if (saved) setShowReceiptModal(false);
       return saved;
@@ -1434,7 +1434,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
   // =========================================================================
   if (tab === "process") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "16px", boxSizing: "border-box", overflow: "auto" }}>
+      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "10px 16px", boxSizing: "border-box", overflow: "hidden" }}>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.2fr) minmax(320px, 1fr)", gap: 16 }}>
           {/* LEFT CARD: NGHIỆP VỤ KHO */}
           <div
@@ -5108,6 +5108,30 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0f172a", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                   >Lưu</button>
 
+                  {apiConnected && (
+                    <button
+                      type="button"
+                      disabled={!!editingOtherReceiptId && apiRows.transactions?.find((row: any) => row.id === editingOtherReceiptId)?.status !== "DRAFT"}
+                      onClick={() => {
+                        const totalAmt = receiptRows.reduce((sum, r) => sum + (r.amount || 0), 0);
+                        const partnerName = receiptDeliveryPersonName || receiptCustomerName || "Đối tác giao hàng";
+                        handleSaveReceipt({
+                          code: receiptVoucherCode,
+                          lines: receiptRows,
+                          partnerCode: receiptCustomerCode,
+                          date: receiptVoucherDate,
+                          postingDate: receiptPostingDate,
+                          deliveryPerson: receiptDeliveryPersonName,
+                          warehouse: receiptRows[0]?.warehouse || "Kho Thành phẩm",
+                          partner: partnerName,
+                          description: receiptReason || `Nhập kho theo chứng từ ${receiptVoucherCode}`,
+                          amount: totalAmt,
+                        }, true);
+                      }}
+                      style={{ height: 32, padding: "0 20px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#047857", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                    >Ghi sổ</button>
+                  )}
+
                   <div style={{ display: "flex" }}>
                     <button
                       type="button"
@@ -7780,7 +7804,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   </div>
                 </div>
 
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>

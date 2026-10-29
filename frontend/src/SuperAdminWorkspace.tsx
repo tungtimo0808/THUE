@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Globe,
   Building2,
@@ -54,6 +54,7 @@ interface PlatformCompany {
   members_count: number;
   branches_count: number;
   employees_count: number;
+  admin?: { id: string; display_name: string; email: string; phone: string } | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,7 +82,8 @@ interface RecentLog {
 }
 
 export default function SuperAdminWorkspace() {
-  const { token, session, restoring } = useApiSession();
+  const navigate = useNavigate();
+  const { token, session, restoring, selectCompany } = useApiSession();
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [_loading, setLoading] = useState<boolean>(false);
@@ -101,6 +103,11 @@ export default function SuperAdminWorkspace() {
   const [companyStatusFilter, setCompanyStatusFilter] = useState<string>("");
   const [userSearch, setUserSearch] = useState<string>("");
 
+  // Assign Admin Modal
+  const [showAssignAdminModal, setShowAssignAdminModal] = useState<boolean>(false);
+  const [assignAdminCompany, setAssignAdminCompany] = useState<PlatformCompany | null>(null);
+  const [selectedAdminUserId, setSelectedAdminUserId] = useState<string>("");
+
   // Create Company Modal
   const [showCreateCompanyModal, setShowCreateCompanyModal] = useState<boolean>(false);
   const [companyForm, setCompanyForm] = useState({
@@ -110,16 +117,30 @@ export default function SuperAdminWorkspace() {
     legal_representative: "",
     accounting_regime: "TT99",
     address: "",
+    admin_user_id: "",
   });
 
   // Password Reset Modal
   const [resetUser, setResetUser] = useState<PlatformUser | null>(null);
   const [newPassword, setNewPassword] = useState<string>("");
 
-  // Load Platform Stats
+  const resolveToken = () => {
+    if (token) return token;
+    const direct = localStorage.getItem("erp_token");
+    if (direct) return direct;
+    try {
+      const raw = localStorage.getItem("erp_api_session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return parsed.token || parsed.access || "";
+      }
+    } catch {}
+    return "";
+  };
+
   // Load Platform Stats
   const loadPlatformStats = async () => {
-    const t = token || localStorage.getItem("erp_token") || "";
+    const t = resolveToken();
     if (!t) return;
     setLoading(true);
     setAlertMsg(null);
@@ -137,7 +158,7 @@ export default function SuperAdminWorkspace() {
 
   // Load Companies
   const loadCompanies = async () => {
-    const t = token || localStorage.getItem("erp_token") || "";
+    const t = resolveToken();
     if (!t) return;
     try {
       const res: any = await request("/api/v1/iam/platform/companies/", t);
@@ -149,7 +170,7 @@ export default function SuperAdminWorkspace() {
 
   // Load Users
   const loadUsers = async () => {
-    const t = token || localStorage.getItem("erp_token") || "";
+    const t = resolveToken();
     if (!t) return;
     try {
       const res: any = await request("/api/v1/iam/platform/users/", t);
@@ -160,16 +181,52 @@ export default function SuperAdminWorkspace() {
   };
 
   useEffect(() => {
-    loadPlatformStats();
-    loadCompanies();
-    loadUsers();
-  }, [token]);
+    if (restoring) return;
+    const t = resolveToken();
+    if (!t) {
+      navigate("/login?next=/super-admin");
+      return;
+    }
+    let active = true;
+    setLoading(true);
+    setAlertMsg(null);
+    void Promise.allSettled([
+      request<any>("/api/v1/iam/platform/stats/", t),
+      request<any>("/api/v1/iam/platform/companies/", t),
+      request<any>("/api/v1/iam/platform/users/", t),
+    ]).then(([statsRes, compRes, userRes]) => {
+      if (!active) return;
+      if (statsRes.status === "fulfilled") {
+        setMetrics(statsRes.value.metrics);
+        setRecentLogs(statsRes.value.recent_logs || []);
+        setServerTime(statsRes.value.server_time || "");
+      } else {
+        setAlertMsg({
+          type: "error",
+          text: statsRes.reason?.message || "Không thể tải dữ liệu Nền tảng Super Admin.",
+        });
+      }
+      if (compRes.status === "fulfilled") {
+        const val = compRes.value;
+        setCompanies(Array.isArray(val) ? val : val.results || []);
+      }
+      if (userRes.status === "fulfilled") {
+        const val = userRes.value;
+        setUsers(Array.isArray(val) ? val : val.results || []);
+      }
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [token, restoring]);
 
   // Set Company Status
   const handleSetCompanyStatus = async (companyId: string, newStatus: string) => {
-    if (!token) return;
+    const t = resolveToken();
+    if (!t) return;
     try {
-      const res: any = await request(`/api/v1/iam/platform/companies/${companyId}/set-status/`, token, {
+      const res: any = await request(`/api/v1/iam/platform/companies/${companyId}/set-status/`, t, {
         method: "POST",
         body: JSON.stringify({ status: newStatus }),
       });
@@ -181,18 +238,38 @@ export default function SuperAdminWorkspace() {
     }
   };
 
+  // Assign Company Admin / Owner
+  const handleAssignAdminSubmit = async () => {
+    const t = resolveToken();
+    if (!t || !assignAdminCompany || !selectedAdminUserId) return;
+    try {
+      const res: any = await request(`/api/v1/iam/platform/companies/${assignAdminCompany.id}/assign-company-admin/`, t, {
+        method: "POST",
+        body: JSON.stringify({ user_id: selectedAdminUserId }),
+      });
+      setAlertMsg({ type: "success", text: res.message || "Đã phân công Quản trị viên Doanh nghiệp thành công." });
+      setShowAssignAdminModal(false);
+      setAssignAdminCompany(null);
+      setSelectedAdminUserId("");
+      loadCompanies();
+    } catch (err: any) {
+      setAlertMsg({ type: "error", text: err.message || "Không thể phân công Quản trị viên." });
+    }
+  };
+
   // Create Company
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
+    const t = resolveToken();
+    if (!t) return;
     try {
-      const res: any = await request("/api/v1/iam/platform/companies/create-company/", token, {
+      const res: any = await request("/api/v1/iam/platform/companies/create-company/", t, {
         method: "POST",
         body: JSON.stringify(companyForm),
       });
       setAlertMsg({ type: "success", text: res.message || "Tạo doanh nghiệp mới thành công." });
       setShowCreateCompanyModal(false);
-      setCompanyForm({ code: "", name: "", tax_code: "", legal_representative: "", accounting_regime: "TT99", address: "" });
+      setCompanyForm({ code: "", name: "", tax_code: "", legal_representative: "", accounting_regime: "TT99", address: "", admin_user_id: "" });
       loadCompanies();
       loadPlatformStats();
     } catch (err: any) {
@@ -202,9 +279,10 @@ export default function SuperAdminWorkspace() {
 
   // Toggle Superuser
   const handleToggleSuperuser = async (user: PlatformUser) => {
-    if (!token) return;
+    const t = resolveToken();
+    if (!t) return;
     try {
-      const res: any = await request(`/api/v1/iam/platform/users/${user.id}/toggle-superuser/`, token, {
+      const res: any = await request(`/api/v1/iam/platform/users/${user.id}/toggle-superuser/`, t, {
         method: "POST",
       });
       setAlertMsg({ type: "success", text: res.message || "Đã cập nhật quyền Super Admin." });
@@ -217,9 +295,10 @@ export default function SuperAdminWorkspace() {
 
   // Toggle Active/Lock
   const handleToggleActive = async (user: PlatformUser) => {
-    if (!token) return;
+    const t = resolveToken();
+    if (!t) return;
     try {
-      const res: any = await request(`/api/v1/iam/platform/users/${user.id}/toggle-active/`, token, {
+      const res: any = await request(`/api/v1/iam/platform/users/${user.id}/toggle-active/`, t, {
         method: "POST",
       });
       setAlertMsg({ type: "success", text: res.message || "Đã cập nhật trạng thái tài khoản." });
@@ -233,9 +312,10 @@ export default function SuperAdminWorkspace() {
   // Reset Password
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !resetUser) return;
+    const t = resolveToken();
+    if (!t || !resetUser) return;
     try {
-      const res: any = await request(`/api/v1/iam/platform/users/${resetUser.id}/reset-password/`, token, {
+      const res: any = await request(`/api/v1/iam/platform/users/${resetUser.id}/reset-password/`, t, {
         method: "POST",
         body: JSON.stringify({ new_password: newPassword.trim() }),
       });
@@ -549,9 +629,8 @@ export default function SuperAdminWorkspace() {
                       <th>Mã</th>
                       <th>Tên Doanh nghiệp</th>
                       <th>Mã số thuế</th>
-                      <th>Đại diện pháp luật</th>
+                      <th>Chủ sở hữu (Admin)</th>
                       <th>Thành viên</th>
-                      <th>Chi nhánh</th>
                       <th>Trạng thái</th>
                       <th style={{ textAlign: "right" }}>Thao tác</th>
                     </tr>
@@ -562,9 +641,17 @@ export default function SuperAdminWorkspace() {
                         <td><strong>{c.code}</strong></td>
                         <td><strong>{c.name}</strong></td>
                         <td>{c.tax_code || "—"}</td>
-                        <td>{c.legal_representative || "—"}</td>
+                        <td>
+                          {c.admin ? (
+                            <div>
+                              <strong style={{ color: "#0369a1" }}>{c.admin.display_name}</strong>
+                              <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{c.admin.email || c.admin.phone}</div>
+                            </div>
+                          ) : (
+                            <span style={{ color: "#94a3b8", fontSize: "0.82rem" }}>Chưa chỉ định</span>
+                          )}
+                        </td>
                         <td>{c.members_count} người</td>
-                        <td>{c.branches_count} chi nhánh</td>
                         <td>
                           <span
                             className={`admin-badge ${
@@ -579,7 +666,38 @@ export default function SuperAdminWorkspace() {
                           </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "inline-flex", gap: "0.4rem" }}>
+                          <div style={{ display: "inline-flex", gap: "0.4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                              className="admin-btn admin-btn-primary admin-btn-sm"
+                              onClick={() => {
+                                if (selectCompany) selectCompany(c.id);
+                                navigate("/");
+                              }}
+                              title="Vào không gian làm việc kế toán của doanh nghiệp này"
+                            >
+                              <ExternalLink size={13} /> Vào Workspace
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-secondary admin-btn-sm"
+                              onClick={() => {
+                                if (selectCompany) selectCompany(c.id);
+                                navigate("/admin");
+                              }}
+                              title="Quản trị phân quyền doanh nghiệp này"
+                            >
+                              <ShieldCheck size={13} /> Quản trị
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-secondary admin-btn-sm"
+                              onClick={() => {
+                                setAssignAdminCompany(c);
+                                setSelectedAdminUserId(c.admin?.id || "");
+                                setShowAssignAdminModal(true);
+                              }}
+                              title="Chỉ định Chủ sở hữu (Company Admin)"
+                            >
+                              <Users size={13} /> Đổi Admin
+                            </button>
                             {c.status !== "ACTIVE" && (
                               <button
                                 className="admin-btn admin-btn-success admin-btn-sm"
@@ -825,6 +943,24 @@ export default function SuperAdminWorkspace() {
                     onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                   />
                 </div>
+                <div className="admin-form-group">
+                  <label>Chỉ định Quản trị viên (Chủ sở hữu Workspace)</label>
+                  <select
+                    className="admin-select"
+                    value={companyForm.admin_user_id}
+                    onChange={(e) => setCompanyForm({ ...companyForm, admin_user_id: e.target.value })}
+                  >
+                    <option value="">-- Mặc định (Tài khoản Super Admin hiện tại) --</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.display_name} ({u.username} - {u.email || "Chưa có email"})
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{ color: "var(--admin-text-muted)", marginTop: "0.25rem", display: "block" }}>
+                    Người dùng được chọn sẽ được gán vai trò Chủ sở hữu và toàn quyền quản trị workspace này.
+                  </small>
+                </div>
               </div>
               <div className="admin-modal-footer">
                 <button
@@ -839,6 +975,56 @@ export default function SuperAdminWorkspace() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Chỉ định Quản trị viên Doanh nghiệp */}
+      {showAssignAdminModal && assignAdminCompany && (
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal">
+            <div className="admin-modal-header">
+              <h3>Chỉ định Quản trị viên / Chủ sở hữu Doanh nghiệp</h3>
+              <button className="admin-modal-close" onClick={() => setShowAssignAdminModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="admin-modal-body">
+              <p style={{ fontSize: "0.85rem", color: "var(--admin-text-muted)", marginBottom: "1rem" }}>
+                Doanh nghiệp: <strong>{assignAdminCompany.name} ({assignAdminCompany.code})</strong>
+              </p>
+              <div className="admin-form-group">
+                <label>Chọn người dùng làm Quản trị viên (Chủ sở hữu Workspace) (*)</label>
+                <select
+                  className="admin-select"
+                  value={selectedAdminUserId}
+                  onChange={(e) => setSelectedAdminUserId(e.target.value)}
+                >
+                  <option value="">-- Chọn người dùng --</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.display_name} ({u.username} - {u.email || "Chưa có email"})
+                    </option>
+                  ))}
+                </select>
+                <small style={{ color: "var(--admin-text-muted)", marginTop: "0.4rem", display: "block" }}>
+                  Người dùng được chọn sẽ được gán quyền Quản trị viên doanh nghiệp (COMPANY_ADMIN) và sở hữu toàn quyền không gian làm việc này.
+                </small>
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setShowAssignAdminModal(false)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="admin-btn admin-btn-primary"
+                disabled={!selectedAdminUserId}
+                onClick={handleAssignAdminSubmit}
+              >
+                Xác nhận gán Admin
+              </button>
+            </div>
           </div>
         </div>
       )}

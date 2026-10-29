@@ -1873,7 +1873,7 @@ export default function MisaInterimFinancialPositionReport({
                 </label>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", marginTop: 4 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", marginTop: 4 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#e2f0d9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", textAlign: "left" }}>

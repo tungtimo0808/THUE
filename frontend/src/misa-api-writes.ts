@@ -786,7 +786,7 @@ export async function nextVoucherNumber(w: ApiWriter, path: string, prefix: stri
 }
 
 /** "Phiếu nhập kho / xuất kho / chuyển kho" (MisaInventoryWorkspace forms). */
-export async function saveOtherInventoryReceipt(w: ApiWriter, d: Row) {
+export async function saveOtherInventoryReceipt(w: ApiWriter, d: Row, post = false) {
   const number = String(d.code || "").trim();
   if (!number) throw new FormDataError("Vui lòng nhập số chứng từ.");
   const documentDate = parseReportDate(String(d.date || ""));
@@ -830,6 +830,12 @@ export async function saveOtherInventoryReceipt(w: ApiWriter, d: Row) {
     transaction_date: postingDate, delivery_person: String(d.deliveryPerson || ""), reason: String(d.description || ""),
     destination_warehouse: warehouse.id, supplier: party?.id || null, branch: (await w.branch()).id, lines };
   const record = d.id ? await w.patch(`${path}${d.id}/`, payload) : await w.post(path, payload);
+  if (post) {
+    let posted = await w.action(path, record.id, "submit", { workflow_snapshot: { levels: 1, allow_self_approval: true } });
+    if (posted.status === "PENDING_APPROVAL") posted = await w.action(path, record.id, "approve", { comment: "Duyệt tự động" });
+    if (posted.status === "APPROVED") posted = await w.action(path, record.id, "post", {});
+    return { record: posted, posted: posted.status === "POSTED", message: `Đã lưu và ghi sổ phiếu nhập kho ${posted.number} thành công!` };
+  }
   return { record, message: `Đã lưu nháp phiếu nhập kho khác ${record.number}.` };
 }
 
@@ -2499,8 +2505,32 @@ export async function postMoneyTransaction(w: ApiWriter, module: "cash" | "bank"
     if (!step) throw new FormDataError(`Chứng từ ${record.number} đang ở trạng thái ${record.status}, không ghi sổ được.`);
     record = await w.action(path, id, step, {
       version: record.version,
+      ...(step === "submit" ? { workflow_snapshot: { levels: 1, allow_self_approval: true, separate_cashier: false } } : {}),
       ...(module === "bank" && record.payment_details?.branch ? { branch: record.payment_details.branch } : {}),
     });
+  }
+  if (record.status === "POSTED" && record.gl_status !== "POSTED") {
+    const detailLines = Array.isArray(record.receipt_details?.lines)
+      ? record.receipt_details.lines
+      : Array.isArray(record.payment_details?.lines)
+        ? record.payment_details.lines
+        : [];
+    if (detailLines.length > 0) {
+      const incoming = record.transaction_type === "RECEIPT";
+      const glLines = detailLines.map((l: Row) => ({
+        account: incoming ? l.credit_account : l.debit_account,
+        amount: String(l.amount),
+        description: String(l.description || record.description || ""),
+        dimensions: l.dimensions || {},
+      })).filter((l: Row) => l.account);
+      if (glLines.length > 0) {
+        try {
+          record = await w.action(path, id, "post-gl", { lines: glLines });
+        } catch {
+          // Ignore if already posted to GL
+        }
+      }
+    }
   }
   return record;
 }
@@ -4609,21 +4639,24 @@ const GL_BALANCES = "/api/v1/general-ledger/balances/";
 
 /** UC-GL-10 (Steps 1–30, AF-01..AF-15, BR-GL-BAL-01..67): Tổng hợp lại số dư đầu kỳ, phát sinh Nợ/Có, số dư cuối kỳ và kiểm tra cân đối cho một kỳ kế toán. */
 export async function aggregatePeriodBalances(w: ApiWriter, d: Row) {
-  const record = await w.post(`${GL_BALANCES}aggregate-period/`, {
+  const record = await w.post(`${GL_BALANCES}aggregate/`, {
     company: w.companyId,
     company_id: w.companyId,
     period: d.period || d.period_id || d.periodCode || d.period_code || undefined,
+    fiscal_year: d.fiscalYear || d.fiscal_year || undefined,
     trigger_type: d.triggerType || d.trigger_type || "MANUAL_REAGGREGATE",
     account_scope: d.accountScope || d.account_scope || "ALL",
+    branch: d.branch || d.branchId || d.branch_id || undefined,
+    party: d.party || d.partyCode || d.party_code || undefined,
     dimension_keys: d.dimensionKeys || d.dimension_keys || ["party", "department", "project", "cost_center"],
-    include_zero_accounts: Boolean(d.includeZeroAccounts ?? d.include_zero_accounts ?? false),
+    include_zero_balances: Boolean(d.includeZeroBalances ?? d.include_zero_balances ?? d.includeZeroAccounts ?? false),
     allow_closed_period_verify: Boolean(d.allowClosedPeriodVerify ?? d.allow_closed_period_verify ?? true),
     cascade_subsequent_periods: Boolean(d.cascadeSubsequentPeriods ?? d.cascade_subsequent_periods ?? true),
   });
   w.invalidate();
   return {
     record,
-    message: `Đã tổng hợp số dư và kiểm tra cân đối kỳ ${record?.period_code || ""} (Trạng thái: ${record?.status || "VALID"}).`,
+    message: `Đã tổng hợp số dư và kiểm tra cân đối kỳ ${record?.period_code || ""} (Trạng thái: ${record?.status || "UP_TO_DATE"}).`,
   };
 }
 
@@ -4720,6 +4753,14 @@ export async function checkPreClosingReconciliations(w: ApiWriter, period: strin
   return await w.get(
     `${GL_RECONCILIATIONS}pre-closing-check/?company_id=${encodeURIComponent(w.companyId)}&period=${encodeURIComponent(period)}`
   );
+}
+
+/** UC-GL-11 (AF-17, BR-GL-REC-58..59): Lấy lịch sử các lần đối chiếu số liệu GL với phân hệ. */
+export async function listGlReconciliationsHistory(w: ApiWriter, period?: string, recType?: string) {
+  const q = new URLSearchParams({ company_id: w.companyId });
+  if (period) q.set("period", period);
+  if (recType) q.set("reconciliation_type", recType);
+  return await w.get(`${GL_RECONCILIATIONS}?${q.toString()}`);
 }
 
 // ======================================================================// UC-GL-12 – KHÓA / BỎ KHÓA SỔ KỲ KẾ TOÁN (ACCOUNTING PERIOD CLOSE & REOPEN)

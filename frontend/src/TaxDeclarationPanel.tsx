@@ -76,7 +76,7 @@ export default function TaxDeclarationPanel({ companyId, token, notify }: {
       <button type="button" onClick={() => void load()} style={{ padding: "7px 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "white" }}>Tải lại</button>
     </div>
     {!periods.length && <p style={{ fontSize: 13, color: "#64748b" }}>Chưa có kỳ thuế GTGT. Tạo kỳ ở màn Khấu trừ thuế GTGT trước khi lập tờ khai.</p>}
-    <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+    <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead><tr style={{ background: "#e2ede6", height: 36 }}>
           <th style={{ textAlign: "left", padding: 8 }}>Mẫu</th><th>Kỳ</th><th>Phiên bản</th><th>Trạng thái chuẩn bị</th><th>Số phải nộp</th><th></th>

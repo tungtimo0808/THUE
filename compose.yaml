@@ -29,10 +29,13 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DEBUG: "True"
+      DEBUG: ${DEBUG:-True}
       SECRET_KEY: ${SECRET_KEY:-django-insecure-thue-erp-super-secret-key-2026}
-      ALLOWED_HOSTS: "*"
-      CORS_ALLOW_ALL_ORIGINS: "True"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      CORS_ALLOW_ALL_ORIGINS: ${CORS_ALLOW_ALL_ORIGINS:-True}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-True}
       DB_ENGINE: "postgres"
       DB_NAME: ${DB_NAME:-thue_erp}
       DB_USER: ${DB_USER:-thue_erp}
@@ -62,13 +65,51 @@ services:
     ports:
       - "8080:8080"
     command: >
-      sh -c "python manage.py migrate && python manage.py sync_company_setup && python manage.py seed_exercise_data && gunicorn config.wsgi:application --bind 0.0.0.0:8080 --workers 4 --threads 4 --timeout 60"
+      sh -c "python manage.py migrate --noinput
+      && python manage.py collectstatic --noinput
+      && python manage.py sync_company_setup
+      && if [ \"$${SEED_DEMO_DATA}\" = \"True\" ]; then python manage.py seed_exercise_data; fi
+      && gunicorn config.wsgi:application --bind 0.0.0.0:8080 --workers $${GUNICORN_WORKERS:-4} --threads $${GUNICORN_THREADS:-4} --timeout $${GUNICORN_TIMEOUT:-60}"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/docs/', timeout=4)"]
       interval: 5s
       timeout: 3s
       retries: 20
       start_period: 15s
+    networks:
+      - thue_erp_net
+
+  # Audit 2026-10-27 (P1): xử lý import/export lớn đang QUEUED (không cần Celery/broker).
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: thue_erp_worker
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DEBUG: ${DEBUG:-True}
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-thue-erp-super-secret-key-2026}
+      DB_ENGINE: "postgres"
+      DB_NAME: ${DB_NAME:-thue_erp}
+      DB_USER: ${DB_USER:-thue_erp}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.locmem.EmailBackend}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@example.local}
+      EMAIL_HOST: ${EMAIL_HOST:-localhost}
+      EMAIL_PORT: ${EMAIL_PORT:-25}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-False}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
+    volumes:
+      - ./backend:/app
+      - /app/venv
+    command: ["python", "manage.py", "run_catalog_worker", "--interval", "15"]
     networks:
       - thue_erp_net
 

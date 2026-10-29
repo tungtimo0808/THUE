@@ -4749,7 +4749,7 @@ export default function MisaToolsWorkspace({
 
               {/* Table Container */}
               <div style={{ flex: 1, overflow: "auto", padding: "10px 18px", background: "#f8fafc" }}>
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       {/* Row 1 Header */}
@@ -5490,7 +5490,7 @@ export default function MisaToolsWorkspace({
 
             {/* Table Container */}
             <div style={{ flex: 1, overflow: "auto", padding: "10px 18px", background: "#f8fafc" }}>
-              <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -6180,7 +6180,7 @@ export default function MisaToolsWorkspace({
 
             {/* Table Container */}
             <div style={{ flex: 1, overflow: "auto", padding: "10px 18px", background: "#f8fafc" }}>
-              <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -6939,7 +6939,7 @@ export default function MisaToolsWorkspace({
             {/* Table Container */}
             <div style={{ flex: 1, overflow: "auto", padding: "10px 18px", background: "#f8fafc" }}>
               {stocktakeTab === "detail" ? (
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -7071,7 +7071,7 @@ export default function MisaToolsWorkspace({
                 </div>
               ) : (
                 /* Tab 2: Ban kiểm kê */
-                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -7726,7 +7726,7 @@ export default function MisaToolsWorkspace({
 
   if (tab === "process") {
     return (
-      <div style={{ background: "#f1f5f9", minHeight: "100%", padding: "30px 24px", boxSizing: "border-box" }}>
+      <div className="ref-process-wrapper" style={{ background: "#f1f5f9", height: "100%", padding: "10px 16px", boxSizing: "border-box", overflow: "hidden" }}>
         <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 340px", gap: 24, alignItems: "start" }}>
           
           <div style={{ background: "#ffffff", borderRadius: 10, border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)", overflow: "hidden" }}>
@@ -14176,7 +14176,7 @@ export default function MisaToolsWorkspace({
 
                 {/* Table: Chi tiết ghi giảm */}
                 <div style={{ background: "#ffffff", padding: "16px 20px 8px 20px" }}>
-                  <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                       <thead>
                         <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>

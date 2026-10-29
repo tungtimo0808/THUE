@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from django.db import transaction
 from decimal import Decimal
-from drf_spectacular.utils import extend_schema_serializer
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 
 from . import models
 from .models import Account, AccountClass, ChartOfAccounts
@@ -39,12 +39,20 @@ class ChartOfAccountsSerializer(ValidatedModelSerializer):
 class AccountSerializer(ValidatedModelSerializer):
     parent_code = serializers.CharField(source="parent.code", read_only=True)
     parent_name = serializers.CharField(source="parent.name", read_only=True)
-    children_count = serializers.IntegerField(source="children.count", read_only=True)
+    children_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
         fields = "__all__"
         read_only_fields = ("version",)
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_children_count(self, obj) -> int:
+        # Audit 2026-10-27 (P1): AccountViewSet annotate sẵn để tránh N+1 COUNT theo từng dòng.
+        annotated = getattr(obj, "annotated_children_count", None)
+        if annotated is not None:
+            return annotated
+        return obj.children.count()
 
     def validate_code(self, value):
         if self.instance and self.instance.code != value:

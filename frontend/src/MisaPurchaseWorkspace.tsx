@@ -4672,9 +4672,9 @@ export default function MisaPurchaseWorkspace({
       className="ref-process-wrapper"
       style={{
         background: "#f1f5f9",
-        minHeight: "100%",
-        padding: "24px 28px",
-        overflowY: "auto",
+        height: "100%",
+        padding: "10px 16px",
+        overflow: "hidden",
       }}
     >
       <div

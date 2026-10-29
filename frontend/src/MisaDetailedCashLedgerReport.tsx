@@ -4,7 +4,9 @@ import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateRange,cashDateValue,isCashDateInRange} from './cash-date';
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { request } from "./live-api";
+import { useApiSession } from "./ApiSession";
 import {
   ChevronLeft,
   Printer,
@@ -139,9 +141,52 @@ export default function MisaDetailedCashLedgerReport({
   // Subtitle period text matching Screenshot 5
   const periodSubtitle = useMemo(()=>cashPeriodSubtitle(fromDate,toDate),[fromDate,toDate]);
 
+  const { token, company } = useApiSession();
+  const [liveRows, setLiveRows] = useState<DetailedCashLedgerRow[] | null>(null);
+
+  useEffect(() => {
+    if (!company?.id) return;
+    let cancelled = false;
+    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(company.id)}`, token)
+      .then((res) => {
+        if (cancelled) return;
+        const cl = res?.cash_ledger;
+        if (!cl) return;
+        const openBal = Number(cl.opening_balance || 0);
+        const rows: DetailedCashLedgerRow[] = [
+          {
+            description: "Số dư đầu kỳ",
+            account: "111",
+            balance: openBal,
+            isOpening: true,
+          },
+          ...(Array.isArray(cl.rows) ? cl.rows : []).map((r: any) => ({
+            postDate: String(r.postingDate || ""),
+            voucherDate: String(r.voucherDate || ""),
+            receiptNo: String(r.receiptNo || ""),
+            paymentNo: String(r.paymentNo || ""),
+            description: String(r.description || ""),
+            account: String(r.account || "1111"),
+            correspAccount: String(r.contraAccount || ""),
+            debitAmount: Number(r.receipt || 0) || undefined,
+            creditAmount: Number(r.payment || 0) || undefined,
+            balance: Number(r.balance || 0),
+            recipientPayer: String(r.partnerName || ""),
+          })),
+        ];
+        setLiveRows(rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [company?.id, token]);
+
+  const effectiveData = liveRows !== null ? liveRows : data;
+
   // Filter rows
   const filteredRows = useMemo(() => {
-    const periodRows=data.filter(r=>isCashDateInRange(r.postDate||r.voucherDate||'',fromDate,toDate)&&r.account.startsWith(selectedAccCode));
+    const periodRows=effectiveData.filter(r=>(r.isOpening||isCashDateInRange(r.postDate||r.voucherDate||'',fromDate,toDate))&&r.account.startsWith(selectedAccCode));
     if (!searchKeyword.trim()) return periodRows;
     const kw = searchKeyword.toLowerCase();
     return periodRows.filter(
@@ -150,7 +195,7 @@ export default function MisaDetailedCashLedgerReport({
         (r.paymentNo && r.paymentNo.toLowerCase().includes(kw)) ||
         (r.recipientPayer && r.recipientPayer.toLowerCase().includes(kw))
     );
-  }, [searchKeyword,fromDate,toDate,data,selectedAccCode]);
+  }, [searchKeyword,fromDate,toDate,effectiveData,selectedAccCode]);
 
   const totalCredit = useMemo(() => {
     return filteredRows.reduce((acc, r) => acc + (r.creditAmount || 0), 0);

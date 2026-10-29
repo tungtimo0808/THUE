@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition, memo, type ReactNode } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -74,29 +74,43 @@ import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
 import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
+import CompanyAdminWorkspace from "./CompanyAdminWorkspace";
+import SuperAdminWorkspace from "./SuperAdminWorkspace";
+
+function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return lazy(() =>
+    factory().catch((err) => {
+      const key = "sv_chunk_reload_ts";
+      const last = Number(sessionStorage.getItem(key) || "0");
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+      }
+      throw err;
+    })
+  );
+}
 
 // Code-split heavy workspace modules for instant initial load (sub-second cold start)
-const MisaCashWorkspace = lazy(() => import("./MisaCashWorkspace"));
-const MisaBankWorkspace = lazy(() => import("./MisaBankWorkspace"));
-const MisaPurchaseWorkspace = lazy(() => import("./MisaPurchaseWorkspace"));
-const MisaSupplierRiskWorkspace = lazy(() => import("./MisaSupplierRiskWorkspace"));
-const MisaSalesWorkspace = lazy(() => import("./MisaSalesWorkspace"));
-const MisaInventoryWorkspace = lazy(() => import("./MisaInventoryWorkspace"));
-const MisaToolsWorkspace = lazy(() => import("./MisaToolsWorkspace"));
-const MisaAssetsWorkspace = lazy(() => import("./MisaAssetsWorkspace"));
-const MisaPayrollWorkspace = lazy(() => import("./MisaPayrollWorkspace"));
-const MisaTaxWorkspace = lazy(() => import("./MisaTaxWorkspace"));
-const MisaCostWorkspace = lazy(() => import("./MisaCostWorkspace"));
-const MisaLedgerWorkspace = lazy(() => import("./MisaLedgerWorkspace"));
-const MisaBudgetWorkspace = lazy(() => import("./MisaBudgetWorkspace"));
-const MisaReportCenterWorkspace = lazy(() => import("./MisaReportCenterWorkspace"));
-const MisaFinancialAnalysisWorkspace = lazy(() => import("./MisaFinancialAnalysisWorkspace"));
-const MisaOpeningBalanceWorkspace = lazy(() => import("./MisaOpeningBalanceWorkspace"));
-const MisaDashboardOverview = lazy(() => import("./MisaDashboardOverview"));
-const MisaInvoiceWorkspace = lazy(() => import("./MisaInvoiceWorkspace"));
-const InvoiceLookupWorkspace = lazy(() => import("./InvoiceLookupWorkspace"));
-const CompanyAdminWorkspace = lazy(() => import("./CompanyAdminWorkspace"));
-const SuperAdminWorkspace = lazy(() => import("./SuperAdminWorkspace"));
+const MisaCashWorkspace = lazyWithRetry(() => import("./MisaCashWorkspace"));
+const MisaBankWorkspace = lazyWithRetry(() => import("./MisaBankWorkspace"));
+const MisaPurchaseWorkspace = lazyWithRetry(() => import("./MisaPurchaseWorkspace"));
+const MisaSupplierRiskWorkspace = lazyWithRetry(() => import("./MisaSupplierRiskWorkspace"));
+const MisaSalesWorkspace = lazyWithRetry(() => import("./MisaSalesWorkspace"));
+const MisaInventoryWorkspace = lazyWithRetry(() => import("./MisaInventoryWorkspace"));
+const MisaToolsWorkspace = lazyWithRetry(() => import("./MisaToolsWorkspace"));
+const MisaAssetsWorkspace = lazyWithRetry(() => import("./MisaAssetsWorkspace"));
+const MisaPayrollWorkspace = lazyWithRetry(() => import("./MisaPayrollWorkspace"));
+const MisaTaxWorkspace = lazyWithRetry(() => import("./MisaTaxWorkspace"));
+const MisaCostWorkspace = lazyWithRetry(() => import("./MisaCostWorkspace"));
+const MisaLedgerWorkspace = lazyWithRetry(() => import("./MisaLedgerWorkspace"));
+const MisaBudgetWorkspace = lazyWithRetry(() => import("./MisaBudgetWorkspace"));
+const MisaReportCenterWorkspace = lazyWithRetry(() => import("./MisaReportCenterWorkspace"));
+const MisaFinancialAnalysisWorkspace = lazyWithRetry(() => import("./MisaFinancialAnalysisWorkspace"));
+const MisaOpeningBalanceWorkspace = lazyWithRetry(() => import("./MisaOpeningBalanceWorkspace"));
+const MisaDashboardOverview = lazyWithRetry(() => import("./MisaDashboardOverview"));
+const MisaInvoiceWorkspace = lazyWithRetry(() => import("./MisaInvoiceWorkspace"));
+const InvoiceLookupWorkspace = lazyWithRetry(() => import("./InvoiceLookupWorkspace"));
 
 const WorkspaceLoader = () => (
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 360, gap: 12, width: "100%" }}>
@@ -104,6 +118,50 @@ const WorkspaceLoader = () => (
     <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải dữ liệu phân hệ...</span>
     <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
   </div>
+);
+
+const KeepAliveModuleSlot = memo(
+  function KeepAliveModuleSlot({
+    isCurrent,
+    renderContent,
+  }: {
+    mId: string;
+    isCurrent: boolean;
+    activeTab: string;
+    companyId: string;
+    period: string;
+    childTab: string | null;
+    directoryParam: string | null;
+    payrollOption: string;
+    renderContent: () => ReactNode;
+  }) {
+    return (
+      <div
+        style={
+          isCurrent
+            ? { display: "contents" }
+            : { display: "none", contentVisibility: "hidden", contain: "layout style paint" }
+        }
+        aria-hidden={!isCurrent}
+      >
+        <Suspense fallback={<WorkspaceLoader />}>{renderContent()}</Suspense>
+      </div>
+    );
+  },
+  (prev, next) => {
+    if (!prev.isCurrent && !next.isCurrent) {
+      return prev.companyId === next.companyId && prev.period === next.period;
+    }
+    return (
+      prev.isCurrent === next.isCurrent &&
+      prev.activeTab === next.activeTab &&
+      prev.companyId === next.companyId &&
+      prev.period === next.period &&
+      prev.childTab === next.childTab &&
+      prev.directoryParam === next.directoryParam &&
+      prev.payrollOption === next.payrollOption
+    );
+  },
 );
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
@@ -301,6 +359,22 @@ function ReferenceWorkspace() {
   const activeTabNode = referenceTabHierarchy[moduleId]?.find(
     (item) => item.id === tab,
   );
+
+  const isProcessTab = (optimisticTab || tab) === "process";
+
+  useEffect(() => {
+    if (isProcessTab) {
+      document.body.classList.add("ref-process-scroll-lock");
+      document.documentElement.classList.add("ref-process-scroll-lock");
+    } else {
+      document.body.classList.remove("ref-process-scroll-lock");
+      document.documentElement.classList.remove("ref-process-scroll-lock");
+    }
+    return () => {
+      document.body.classList.remove("ref-process-scroll-lock");
+      document.documentElement.classList.remove("ref-process-scroll-lock");
+    };
+  }, [isProcessTab]);
 
   const [configuredTabs, setConfiguredTabs] = useState<Record<string, string[]>>(() => {
     try {
@@ -1025,7 +1099,7 @@ function ReferenceWorkspace() {
   }
 
   return (
-    <div className={`reference-app ${collapsed ? "ref-collapsed" : ""}`}>
+    <div className={`reference-app ${collapsed ? "ref-collapsed" : ""} ${isProcessTab ? "ref-process-locked" : ""}`}>
       <a href="#reference-main" className="skip-link">
         Đến nội dung chính
       </a>
@@ -1522,7 +1596,7 @@ function ReferenceWorkspace() {
           </button>
         </div>
       </aside>
-      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""}`} tabIndex={-1}>
+      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""} ${isProcessTab ? "ref-process-fixed" : ""}`} tabIndex={-1}>
         <span className="sr-only">
           Phân hệ {module?.label || "Không tìm thấy"}
         </span>
@@ -1858,22 +1932,26 @@ function ReferenceWorkspace() {
           </div>
         </div>
         )}
-        <Suspense fallback={<WorkspaceLoader />}>
-          {displayModules.map((mId) => {
-            const isCurrent = mId === moduleId;
-            return (
-              <div
-                key={`keepalive-${mId}-${company.id}-${period}`}
-                style={{
-                  display: isCurrent ? "contents" : "none",
-                }}
-                aria-hidden={!isCurrent}
-              >
-                {renderWorkspaceContentForModule(mId, isCurrent ? (optimisticTab || tab) : undefined)}
-              </div>
-            );
-          })}
-        </Suspense>
+        {displayModules.map((mId) => {
+          const isCurrent = mId === moduleId;
+          const activeTabForSlot = isCurrent
+            ? optimisticTab || tab
+            : referenceTabs[mId]?.[0]?.[0] || "process";
+          return (
+            <KeepAliveModuleSlot
+              key={`keepalive-${mId}-${company.id}-${period}`}
+              mId={mId}
+              isCurrent={isCurrent}
+              activeTab={activeTabForSlot}
+              companyId={company.id}
+              period={period}
+              childTab={isCurrent ? childTab : null}
+              directoryParam={isCurrent ? params.get("directory") : null}
+              payrollOption={payrollOption}
+              renderContent={() => renderWorkspaceContentForModule(mId, activeTabForSlot)}
+            />
+          );
+        })}
       </main>
       {panel === "settings" && (
         <Modal

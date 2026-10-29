@@ -354,6 +354,17 @@ class MyCompaniesView(APIView):
 
     @extend_schema(responses=CompanySummarySerializer(many=True))
     def get(self, request):
+        if request.user.is_superuser:
+            companies = Company.objects.all().order_by("name")
+            return Response([
+                {
+                    "id": str(x.id),
+                    "code": x.code,
+                    "name": x.name,
+                    "status": x.status,
+                }
+                for x in companies
+            ])
         memberships = CompanyMembership.objects.filter(user=services.iam_user(request), membership_status=ActiveStatus.ACTIVE).select_related("company")
         return Response([
             {

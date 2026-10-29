@@ -29,10 +29,14 @@ class GeneralLedgerPermission(BasePermission):
         code = code or getattr(view, "iam_permissions", {}).get(request.method)
         if not code:
             return False
-        return has_effective_permission(
-            request.user.iam_account, company, code,
-            branch_id=request.query_params.get("branch_id") or request.data.get("branch"),
-            department_id=request.query_params.get("department_id") or request.data.get("department"),
-            project_id=request.query_params.get("project_id") or request.data.get("project"),
-            cost_center_id=request.query_params.get("cost_center_id") or request.data.get("cost_center"),
+        codes = [code] if isinstance(code, str) else list(code)
+        return any(
+            has_effective_permission(
+                request.user.iam_account, company, c,
+                branch_id=request.query_params.get("branch_id") or request.data.get("branch"),
+                department_id=request.query_params.get("department_id") or request.data.get("department"),
+                project_id=request.query_params.get("project_id") or request.data.get("project"),
+                cost_center_id=request.query_params.get("cost_center_id") or request.data.get("cost_center"),
+            )
+            for c in codes
         )

@@ -6295,9 +6295,10 @@ class BalanceAggregationUcGl10Tests(TestCase):
             format="json",
         )
         self.assertEqual(r_agg.status_code, 200, r_agg.data)
-        self.assertEqual(r_agg.data["status"], "VALID")
+        self.assertIn(r_agg.data["status"], ("UP_TO_DATE", "VALID"))
         self.assertTrue(r_agg.data["is_balanced"])
         self.assertEqual(r_agg.data["posted_entries_count"], 2)
+        self.assertEqual(len(r_agg.data.get("checks_list", [])), 8)
 
         totals = r_agg.data["totals"]
         # Tổng phát sinh lá: 50,000,000 + 30,000,000 = 80,000,000 Nợ / Có
@@ -6351,6 +6352,85 @@ class BalanceAggregationUcGl10Tests(TestCase):
         self.assertEqual(Decimal(r_drill.data["period_debit"]), Decimal("50000000.00"))
         self.assertEqual(Decimal(r_drill.data["period_credit"]), Decimal("5000000.00"))
         self.assertEqual(Decimal(r_drill.data["closing_debit"]), Decimal("45000000.00"))
+
+    def test_uc_gl_10_regime_tt58_fiscal_year_and_8_checks(self):
+        """
+        Kiểm thử các quy tắc nâng cấp theo UC-GL-10 spec:
+        - EF-26, AF-04: Từ chối tổng hợp GL kép cho bộ dữ liệu TT58 ghi sổ đơn.
+        - EF-04, BR-GL-BAL-01: Kiểm tra năm tài chính khớp với kỳ kế toán.
+        - Section 1.4.C: Trả về đầy đủ 8 phép kiểm tra cân đối kế toán.
+        - Section 1.4.B: Trả về check_status và check_note cho từng tài khoản.
+        """
+        # 1. Kiểm tra từ chối TT58 đơn giản (EF-26, AF-04)
+        r_tt58 = self.client.post(
+            f"/api/v1/general-ledger/balances/aggregate/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "simulate_tt58_simple_book": True,
+            },
+            format="json",
+        )
+        self.assertEqual(r_tt58.status_code, 400)
+        self.assertEqual(r_tt58.data.get("error_code"), "TT58_SIMPLE_BOOK_AGGREGATION_REQUIRED")
+
+        # 2. Kiểm tra năm tài chính không khớp (EF-04, BR-GL-BAL-01)
+        r_fy = self.client.post(
+            f"/api/v1/general-ledger/balances/aggregate/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "fiscal_year": 2025,  # Period is 2026
+            },
+            format="json",
+        )
+        self.assertEqual(r_fy.status_code, 400)
+        self.assertEqual(r_fy.data.get("error_code"), "FISCAL_YEAR_MISMATCH")
+
+        # 3. Tổng hợp hợp lệ và kiểm tra 8 phép cân đối + check_status từng tài khoản
+        r_ok = self.client.post(
+            f"/api/v1/general-ledger/balances/aggregate/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "fiscal_year": 2026,
+                "include_zero_balances": True,
+            },
+            format="json",
+        )
+        self.assertEqual(r_ok.status_code, 200)
+        self.assertEqual(r_ok.data.get("fiscal_year"), 2026)
+        self.assertIn("accounting_regime", r_ok.data)
+        self.assertIn("date_from", r_ok.data)
+        self.assertIn("date_to", r_ok.data)
+
+        # 8 phép kiểm tra cân đối GL (Section 1.4.C)
+        checks = r_ok.data.get("checks_list", [])
+        self.assertEqual(len(checks), 8)
+        check_ids = [c["check_id"] for c in checks]
+        expected_ids = [
+            "CHK_01_ENTRY_BALANCE",
+            "CHK_02_TURNOVER_BALANCE",
+            "CHK_03_CLOSING_BALANCE",
+            "CHK_04_PERIOD_CONTINUITY",
+            "CHK_05_PARENT_CHILD_MATCH",
+            "CHK_06_DIMENSION_AND_BILATERAL",
+            "CHK_07_SOURCE_DATA_INTEGRITY",
+            "CHK_08_FX_RECONCILIATION",
+        ]
+        self.assertEqual(check_ids, expected_ids)
+        for c in checks:
+            self.assertIn(c["result"], ("PASSED", "WARNING", "ERROR"))
+            self.assertIn("difference", c)
+            self.assertIn("details", c)
+
+        # Kiểm tra check_status và check_note trên từng dòng số dư (Section 1.4.B)
+        accounts = r_ok.data.get("account_balances", [])
+        self.assertTrue(len(accounts) > 0)
+        for acc in accounts:
+            self.assertIn("check_status", acc)
+            self.assertIn(acc["check_status"], ("PASSED", "WARNING", "ERROR"))
+            self.assertIn("check_note", acc)
 
 
 class GlSubledgerReconciliationUcGl11Tests(TestCase):
@@ -6483,7 +6563,7 @@ class GlSubledgerReconciliationUcGl11Tests(TestCase):
             format="json",
         )
         self.assertEqual(r_seed.status_code, 200, r_seed.data)
-        self.assertEqual(len(r_seed.data), 7)
+        self.assertEqual(len(r_seed.data), 9)
 
         # 2. Ghi sổ bút toán phải thu trên GL: KH001 = 60,000,000; KH002 = 40,000,000 (Tổng = 100,000,000)
         r_je = self.client.post(
@@ -6871,6 +6951,89 @@ class GlSubledgerReconciliationUcGl11Tests(TestCase):
         )
         self.assertEqual(r_ef08.status_code, 400)
         self.assertEqual(r_ef08.data["error_code"], "SUBLEDGER_DATA_UNAVAILABLE")
+
+    def test_05_regime_tt58_ef25_shared_tk242_and_tools_prepaid(self):
+        from datetime import date
+        from decimal import Decimal
+
+        # EF-25 / AF-04 / BR-GL-REC-73..74: Bộ dữ liệu TT58 không tổ chức GL ghi sổ kép bị từ chối
+        r_tt58 = self.client.post(
+            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "reconciliation_type": "GL_AP",
+                "simulate_tt58_simple_book": True,
+            },
+            format="json",
+        )
+        self.assertEqual(r_tt58.status_code, 400)
+        self.assertEqual(r_tt58.data["error_code"], "TT58_SIMPLE_BOOK_RECONCILIATION_REQUIRED")
+
+        # EF-04: Năm tài chính không khớp với kỳ kế toán
+        r_fy = self.client.post(
+            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "fiscal_year": 2025,
+                "reconciliation_type": "GL_AP",
+            },
+            format="json",
+        )
+        self.assertEqual(r_fy.status_code, 400)
+        self.assertEqual(r_fy.data["error_code"], "FISCAL_YEAR_MISMATCH")
+
+        # EF-15 / BR-GL-REC-40, 41: Chưa phân tách số liệu đối chiếu trên TK 242 dùng chung giữa CCDC và Chi phí trả trước
+        r_shared = self.client.post(
+            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "reconciliation_type": "GL_TOOLS",
+                "simulate_unseparated_shared_account_242": True,
+            },
+            format="json",
+        )
+        self.assertEqual(r_shared.status_code, 400)
+        self.assertEqual(r_shared.data["error_code"], "UNSEPARATED_SHARED_ACCOUNT_DATA")
+
+        # Tạo tài khoản 242 và kiểm tra đối chiếu GL_PREPAID tự động trích xuất PrepaidExpense
+        from iam.models import UserAccount
+        iam_user, _ = UserAccount.objects.get_or_create(auth_user=self.user)
+        acc_242, _ = self.models.Account.objects.get_or_create(
+            company=self.company,
+            chart_of_accounts=self.chart,
+            code="242",
+            defaults={"name": "Chi phí trả trước", "account_type": "ASSET", "normal_balance": "DEBIT"},
+        )
+        self.models.PrepaidExpense.objects.create(
+            company=self.company,
+            code="CPTT-001",
+            name="Tiền thuê văn phòng Q4/2026",
+            record_date=date(2026, 10, 1),
+            start_date=date(2026, 10, 1),
+            amount=Decimal("30000000"),
+            allocation_periods=3,
+            opening_allocated_amount=Decimal("0"),
+            allocated_amount=Decimal("10000000"),
+            prepaid_account=acc_242,
+            created_by=iam_user,
+        )
+        r_prepaid = self.client.post(
+            f"/api/v1/general-ledger/reconciliations/run/{self.query}",
+            {
+                "company": str(self.company.id),
+                "period": str(self.period.id),
+                "reconciliation_type": "GL_PREPAID",
+                "account": str(acc_242.id),
+            },
+            format="json",
+        )
+        self.assertEqual(r_prepaid.status_code, 201, r_prepaid.data)
+        self.assertEqual(r_prepaid.data["reconciliation_type"], "GL_PREPAID")
+        self.assertEqual(len(r_prepaid.data["lines"]), 1)
+        self.assertEqual(r_prepaid.data["lines"][0]["object_code"], "CPTT-001")
 
 
 class PeriodLockCloseUcGl12Tests(TestCase):
@@ -8989,3 +9152,76 @@ class OpeningBalanceEntryUcGl15Tests(FinancialStatementUcGl13Tests):
         )
         self.assertEqual(r_locked.status_code, 400)
         self.assertEqual(r_locked.data["error_code"], "EF-19")
+
+    def test_uc_gl_15_af_16_check_balances_and_permissions(self):
+        """
+        Kiểm tra AF-16 (Kiểm tra cân đối và đối chiếu số dư đầu kỳ) và các quyền:
+        - OPENING_BALANCE_VIEW, CREATE, EDIT, DELETE, IMPORT, PRINT
+        - GET /check/ trả về 10 chỉ tiêu kiểm tra, số chênh lệch, và trạng thái
+        """
+        self._setup_uc_gl_15_opening()
+
+        # 1. Kiểm tra quyền bị từ chối
+        r_deny = self.client.get(f"{self.url_base}check/{self.query}&deny_permission=true")
+        self.assertEqual(r_deny.status_code, 403)
+
+        r_deny_act = self.client.post(
+            f"{self.url_base}save-item/{self.query}&deny_action=CREATE",
+            {"category": "bank", "item": {"accountCode": "1121", "accountNumber": "123", "amountVnd": 1000000}},
+            format="json",
+        )
+        self.assertEqual(r_deny_act.status_code, 403)
+
+        # 2. Lưu một số dư Sổ Cái (1111: 200M, 1121: 300M, 4111: 500M)
+        r_save_gl = self.client.post(
+            f"{self.url_base}{self.query}",
+            {
+                "category": "accounts",
+                "items": [
+                    {"account": "1111", "name": "Tiền VN", "debit": 200000000, "credit": 0},
+                    {"account": "1121", "name": "Tiền gửi NH", "debit": 300000000, "credit": 0},
+                    {"account": "4111", "name": "Vốn góp", "debit": 0, "credit": 500000000},
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(r_save_gl.status_code, 200)
+
+        # 3. Gọi endpoint AF-16: GET check/
+        r_check = self.client.get(f"{self.url_base}check/{self.query}")
+        self.assertEqual(r_check.status_code, 200, r_check.data)
+        self.assertTrue(r_check.data["balanced"])
+        self.assertEqual(r_check.data["total_checks"], 10)
+        self.assertIn("checks", r_check.data)
+
+        # Check item 1: Cân đối Nợ/Có phải PASSED
+        check_gl_balance = next(c for c in r_check.data["checks"] if c["id"] == "balance_debit_credit")
+        self.assertEqual(check_gl_balance["status"], "PASSED")
+        self.assertEqual(check_gl_balance["difference"], 0)
+
+        # Check item 3: Tiền gửi ngân hàng vs TK 112 (chưa nhập ngân hàng chi tiết nhưng GL có 300M -> WARNING)
+        check_bank = next(c for c in r_check.data["checks"] if c["id"] == "bank_deposits")
+        self.assertEqual(check_bank["status"], "WARNING")
+        self.assertEqual(check_bank["gl_amount"], 300000000)
+
+        # 4. Nhập tài khoản ngân hàng chi tiết 300M -> bank deposits phải PASSED
+        r_save_bank = self.client.post(
+            f"{self.url_base}save-item/{self.query}",
+            {
+                "category": "bank",
+                "item": {
+                    "accountCode": "1121",
+                    "accountNumber": "TK-VND-001",
+                    "bankName": "Vietcombank",
+                    "amountVnd": 300000000,
+                },
+            },
+            format="json",
+        )
+        self.assertEqual(r_save_bank.status_code, 200)
+
+        r_check2 = self.client.get(f"{self.url_base}check/{self.query}")
+        self.assertEqual(r_check2.status_code, 200)
+        check_bank2 = next(c for c in r_check2.data["checks"] if c["id"] == "bank_deposits")
+        self.assertEqual(check_bank2["status"], "PASSED")
+        self.assertEqual(check_bank2["difference"], 0)

@@ -744,7 +744,7 @@ export function LoanContractModal({
               </div>
 
               {/* Grid Table */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", textAlign: "left" }}>
@@ -1792,7 +1792,7 @@ export function BorrowingContractModal({
               </div>
 
               {/* Grid Table */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", textAlign: "left" }}>
@@ -2453,7 +2453,7 @@ export function CreditContractModal({
           </h4>
 
           {/* Table */}
-          <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
+          <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", marginBottom: 12 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
               <thead>
                 <tr style={{ background: "#dbece2", borderBottom: "1px solid #cbd5e1" }}>

@@ -1223,7 +1223,8 @@ class GlReconciliationRule(models.Model):
         ("GL_INV", "GL ↔ INV (Hàng tồn kho)"),
         ("GL_FA", "GL ↔ FA (Tài sản cố định & Khấu hao)"),
         ("GL_TAX", "GL ↔ TAX (Thuế GTGT / TNDN / Khác)"),
-        ("GL_TOOLS", "GL ↔ TOOLS (Công cụ dụng cụ / Chi phí trả trước)"),
+        ("GL_TOOLS", "GL ↔ TOOLS (Công cụ dụng cụ)"),
+        ("GL_PREPAID", "GL ↔ PREPAID (Chi phí trả trước)"),
         ("GL_PAYROLL", "GL ↔ PAYROLL (Tiền lương & Bảo hiểm)"),
         ("GL_COST", "GL ↔ COST (Giá thành sản xuất)"),
     )

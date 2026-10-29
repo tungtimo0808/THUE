@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from rest_framework import mixins, serializers as drf_serializers, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -97,7 +97,12 @@ class AccountViewSet(AccountMasterViewSet):
         company_id = self.request.query_params.get("company_id")
         if not company_id:
             return super().get_queryset().none()
-        qs = super().get_queryset().filter(company_id=company_id)
+        qs = (
+            super()
+            .get_queryset()
+            .filter(company_id=company_id)
+            .annotate(annotated_children_count=Count("children"))
+        )
         status_param = self.request.query_params.get("status")
         if status_param:
             qs = qs.filter(status=status_param.upper())
@@ -641,7 +646,9 @@ class BalanceViewSet(ReadOnlyModelViewSet):
     action_permissions = {
         "trial_balance": "GL.BALANCE.VIEW",
         "ledger": "GL.LEDGER.VIEW",
-        "aggregate": "GL.BALANCE.VIEW",
+        "aggregate": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
+        "aggregate_period": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
+        "validate_balance": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
         "drilldown": "GL.BALANCE.VIEW",
     }
     filter_backends = (SearchFilter, OrderingFilter)
@@ -702,6 +709,14 @@ class BalanceViewSet(ReadOnlyModelViewSet):
         res = services.aggregate_and_validate_gl_balances(company, payload, request=request)
         return Response(res, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=("post",), url_path="aggregate-period")
+    def aggregate_period(self, request):
+        return self.aggregate(request)
+
+    @action(detail=False, methods=("post",), url_path="validate-balance")
+    def validate_balance(self, request):
+        return self.aggregate(request)
+
     @action(detail=False, methods=("get", "post"))
     def drilldown(self, request):
         company = self._resolve_company(request)
@@ -719,7 +734,7 @@ class BalanceAggregationRunViewSet(ReadOnlyModelViewSet):
     queryset = models.BalanceAggregationRun.objects.select_related("company", "period", "created_by")
     iam_permissions = {"GET": "GL.BALANCE.VIEW", "POST": "GL.BALANCE.VIEW"}
     action_permissions = {
-        "run": "GL.BALANCE.VIEW",
+        "run": ("GL.BALANCE.RECALCULATE", "GL.BALANCE.AGGREGATE", "GL.BALANCE.VIEW"),
     }
     filter_backends = (SearchFilter, OrderingFilter)
     search_fields = ("period__code", "status", "watermark")
@@ -1328,11 +1343,22 @@ class OpeningBalanceViewSet(GenericViewSet):
             request.query_params.get("company_id")
             or request.data.get("company_id")
             or request.data.get("company")
+            or request.headers.get("X-Company-ID")
+            or request.headers.get("x-company-id")
         )
         if company_id:
             comp = Company.objects.filter(pk=company_id).first()
             if comp:
                 return comp
+        if request.user and request.user.is_authenticated:
+            from common_services.models import UserPreference
+            pref = UserPreference.objects.filter(user__auth_user=request.user).select_related("current_company").first()
+            if pref and pref.current_company:
+                return pref.current_company
+            from iam.models import CompanyMembership, ActiveStatus
+            mem = CompanyMembership.objects.filter(user__auth_user=request.user, membership_status=ActiveStatus.ACTIVE).select_related("company").first()
+            if mem and mem.company:
+                return mem.company
         return Company.objects.first()
 
     def list(self, request):
@@ -1413,6 +1439,25 @@ class OpeningBalanceViewSet(GenericViewSet):
         data = services.print_opening_balance_uc_gl_15(
             company,
             payload=request.data,
+            request=request,
+        )
+        return Response(data)
+
+    @action(detail=False, methods=["get", "post"], url_path="check")
+    def check_balances(self, request):
+        """
+        UC-GL-15 (AF-16): Kiểm tra cân đối Nợ/Có và đối chiếu 10 nhóm số dư đầu kỳ
+        với số dư các tài khoản Sổ Cái (GL), phát hiện chênh lệch và hiển thị trạng thái.
+        """
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=status.HTTP_400_BAD_REQUEST)
+        params = request.query_params.dict() if hasattr(request, "query_params") else {}
+        if hasattr(request, "data") and isinstance(request.data, dict):
+            params.update(request.data)
+        data = services.check_opening_balances_uc_gl_15(
+            company,
+            params=params,
             request=request,
         )
         return Response(data)

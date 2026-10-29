@@ -8963,7 +8963,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               {deprActiveTab === "depreciation" && (
                 <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
                   <div style={{ flex: 1, overflow: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                    <table style={{ width: "100%", minWidth: 1150, borderCollapse: "collapse", fontSize: 12.5 }}>
                       <thead>
                         <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
@@ -9230,7 +9230,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               {/* TAB 2: PHÂN BỔ (Bước 19–20, AF10, AF11, Mục 4.5) */}
               {deprActiveTab === "allocation" && (
                 <div style={{ flex: 1, overflow: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <table style={{ width: "100%", minWidth: 1150, borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
@@ -9415,7 +9415,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                       </button>
                     </div>
                   )}
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <table style={{ width: "100%", minWidth: 1050, borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
@@ -9941,7 +9941,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 </div>
                 {revalMembersOpen && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflowX: "auto" }}>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
                           <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -10477,7 +10477,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 {/* Tab 2: Hạch toán */}
                 {revalTab === "accounting" && (
                   <div style={{ border: "1px solid #cbd5e1", borderRadius: 3, overflowX: "auto", maxWidth: "100%" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <table style={{ width: "100%", minWidth: 1400, borderCollapse: "collapse", fontSize: 12 }}>
                       <thead>
                         <tr style={{ background: "#e2eae5", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 38, padding: "6px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
@@ -10976,7 +10976,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       {/* 6. MODAL ĐIỀU CHUYỂN TÀI SẢN CỐ ĐỊNH (ẢNH 4 MỚI CỦA NGƯỜI DÙNG: ĐCTS00001) */}
       {showTransferModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 10 }}>
-          <div style={{ width: "98vw", maxWidth: 1120, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "98vw", maxWidth: 1400, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {/* Header */}
             <div style={{ height: 44, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -11119,21 +11119,21 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
               </div>
 
               {/* Table */}
-              <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
+                <table style={{ width: "100%", minWidth: 1650, tableLayout: "fixed", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                      <th style={{ width: 36, padding: "8px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                      <th style={{ width: 110, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
-                      <th style={{ minWidth: 190, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
-                      <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Từ đơn vị</th>
-                      <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đến đơn vị</th>
-                      <th style={{ width: 115, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Hợp đồng bán</th>
-                      <th style={{ width: 115, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn đặt hàng</th>
-                      <th style={{ width: 115, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Công trình</th>
-                      <th style={{ width: 125, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
-                      <th style={{ width: 125, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng THCP</th>
-                      <th style={{ width: 36, padding: "8px 4px", textAlign: "center" }}></th>
+                      <th style={{ width: 40, padding: "8px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
+                      <th style={{ width: 180, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
+                      <th style={{ width: 230, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
+                      <th style={{ width: 170, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Từ đơn vị</th>
+                      <th style={{ width: 200, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đến đơn vị</th>
+                      <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Hợp đồng bán</th>
+                      <th style={{ width: 140, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn đặt hàng</th>
+                      <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Công trình</th>
+                      <th style={{ width: 190, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Khoản mục CP</th>
+                      <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đối tượng THCP</th>
+                      <th style={{ width: 40, padding: "8px 4px", textAlign: "center" }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -11161,7 +11161,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                           >
                             <option value=""></option>
                             {assetsList.map(a => (
-                              <option key={a.code} value={a.code}>{a.code} - {a.name.slice(0, 20)}...</option>
+                              <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
                             ))}
                           </select>
                         </td>
@@ -11397,7 +11397,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       {/* 6. MODAL GHI GIẢM TÀI SẢN CỐ ĐỊNH (UC-FA-07: GGTS00001) */}
       {showDecreaseModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1100, padding: 10 }}>
-          <div style={{ width: "98vw", maxWidth: 1120, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "98vw", maxWidth: 1400, maxHeight: "94vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {/* Header */}
             <div style={{ height: 44, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -11624,8 +11624,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
               {/* Table under Tab Tài sản */}
               {decTab === "asset" ? (
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
+                  <table style={{ width: "100%", minWidth: 1500, borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 120, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>
@@ -11781,7 +11781,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
                 </div>
               ) : (
                 /* Hạch toán sub-tab (Steps 24–27, AF18, AF21, AF22, Section 4.6–4.9) */
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -12940,7 +12940,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", backdropFilter: "blur(2px)", display: "grid", placeItems: "center", zIndex: 1050, padding: 10 }}>
-            <div style={{ width: "96vw", maxWidth: 1180, maxHeight: "92vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ width: "96vw", maxWidth: 1400, maxHeight: "92vh", background: "#ffffff", borderRadius: 6, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               {/* Modal Header */}
               <div style={{ height: 46, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -13508,8 +13508,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   // =========================================================================
   if (tab === "process") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
-        <div style={{ flex: 1, padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 340px", gap: 16, overflowY: "auto" }}>
+      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "10px 16px", overflow: "hidden", boxSizing: "border-box" }}>
+        <div style={{ flex: 1, padding: "8px 0", display: "grid", gridTemplateColumns: "1fr 340px", gap: 16, overflow: "hidden" }}>
           <div
             style={{
               background: "#ffffff",
@@ -15248,7 +15248,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const reconcileReportsList = visibleCatalog.filter((r) => r.group === "RECONCILE");
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
+      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "10px 16px", overflow: "hidden", boxSizing: "border-box" }}>
         {/* Top bar matching Image 5 & UC-FA-09 AF10–AF14 */}
         <div style={{ padding: "10px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

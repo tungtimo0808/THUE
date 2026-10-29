@@ -1037,7 +1037,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
                   </div>
                 </div>
 
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
                       <tr style={{ background: "#e2f0d9" }}>

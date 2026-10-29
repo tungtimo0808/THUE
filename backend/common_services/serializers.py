@@ -440,34 +440,88 @@ class ProfileSerializer(serializers.Serializer):
         return attrs
 
 
+# UC-SYS-01: Danh mục đơn vị hành chính Tỉnh / Thành phố Việt Nam (34 tỉnh thành và các địa giới hành chính hiện hành)
+VIETNAM_PROVINCES = {
+    "hà nội", "tp. hồ chí minh", "hồ chí minh", "tp hồ chí minh", "hải phòng", "đà nẵng", "cần thơ",
+    "an giang", "bà rịa - vũng tàu", "bà rịa vũng tàu", "bắc giang", "bắc kạn", "bạc liêu", "bắc ninh",
+    "bến tre", "bình định", "bình dương", "bình phước", "bình thuận", "cà mau", "cao bằng",
+    "đắk lắk", "đắk nông", "điện biên", "đồng nai", "đồng tháp", "gia lai", "hà giang",
+    "hà nam", "hà tĩnh", "hải dương", "hậu giang", "hòa bình", "hưng yên", "khánh hòa",
+    "kiên giang", "kon tum", "lai châu", "lâm đồng", "lạng sơn", "lào cai", "long an",
+    "nam định", "nghệ an", "ninh bình", "ninh thuận", "phú thọ", "phú yên", "quảng bình",
+    "quảng nam", "quảng ngãi", "quảng ninh", "quảng trị", "sóc trăng", "sơn la", "tây ninh",
+    "thái bình", "thái nguyên", "thanh hóa", "thừa thiên huế", "huế", "tiền giang", "trà vinh",
+    "tuyên quang", "vĩnh long", "vĩnh phúc", "yên bái"
+}
+
+
 class CompanyBootstrapSerializer(serializers.Serializer):
-    code = serializers.RegexField(r"^[A-Za-z0-9_-]+$", max_length=30, required=False)
+    """
+    UC-SYS-01: Khởi tạo doanh nghiệp.
+    Xác thực thông tin đầu vào theo Mục 1.1 và các Exception Flow EF-03..EF-14.
+    """
+    code = serializers.RegexField(
+        r"^[A-Za-z0-9_-]+$", max_length=30, required=False,
+        error_messages={"invalid": "Mã doanh nghiệp chỉ gồm chữ in hoa, chữ thường, số hoặc dấu gạch dưới/ngang."}
+    )
     name = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    legal_name = serializers.CharField(max_length=255)
-    tax_code = serializers.CharField(max_length=30)
-    business_type = serializers.ChoiceField(choices=BusinessType.choices)
-    address = serializers.CharField(max_length=500)
-    province = serializers.CharField(max_length=100)
-    legal_representative = serializers.CharField(max_length=255)
+    legal_name = serializers.CharField(
+        max_length=255,
+        error_messages={"required": "Vui lòng nhập Tên doanh nghiệp.", "blank": "Vui lòng nhập Tên doanh nghiệp."}
+    )
+    tax_code = serializers.CharField(
+        max_length=30,
+        error_messages={"required": "Vui lòng nhập Mã số thuế.", "blank": "Vui lòng nhập Mã số thuế."}
+    )
+    business_type = serializers.ChoiceField(
+        choices=BusinessType.choices,
+        error_messages={"required": "Vui lòng chọn Loại hình doanh nghiệp.", "invalid_choice": "Vui lòng chọn Loại hình doanh nghiệp."}
+    )
+    address = serializers.CharField(
+        max_length=500,
+        error_messages={"required": "Vui lòng nhập Địa chỉ đăng ký.", "blank": "Vui lòng nhập Địa chỉ đăng ký."}
+    )
+    province = serializers.CharField(
+        max_length=100,
+        error_messages={"required": "Vui lòng chọn Tỉnh/Thành phố hợp lệ.", "blank": "Vui lòng chọn Tỉnh/Thành phố hợp lệ."}
+    )
+    legal_representative = serializers.CharField(
+        max_length=255,
+        error_messages={"required": "Vui lòng nhập Người đại diện theo pháp luật.", "blank": "Vui lòng nhập Người đại diện theo pháp luật."}
+    )
     phone = serializers.CharField(max_length=30, required=False, allow_blank=True)
-    email = serializers.EmailField(required=False, allow_blank=True, error_messages={"invalid": "Email không đúng định dạng."})
+    email = serializers.EmailField(
+        required=False, allow_blank=True,
+        error_messages={"invalid": "Email không đúng định dạng."}
+    )
     logo = serializers.FileField(required=False, allow_null=True)
-    confirmed_authority = serializers.BooleanField(write_only=True)
+    confirmed_authority = serializers.BooleanField(required=False, default=False)
+    confirm_creation_right = serializers.BooleanField(required=False, default=False)
     accounting_currency = serializers.UUIDField(required=False)
     accounting_regime = serializers.CharField(max_length=30, default="TT99")
     fiscal_year_start_month = serializers.IntegerField(min_value=1, max_value=12, default=1)
     timezone = serializers.CharField(max_length=80, default="Asia/Ho_Chi_Minh")
 
     def validate_tax_code(self, value):
-        value = re.sub(r"\s+", "", value)
-        if not re.fullmatch(r"\d{10}(?:-\d{3})?", value):
+        # EF-03, EF-05, BR04: Chuẩn hóa khoảng trắng và kiểm tra 10 số hoặc 13 số
+        clean_value = re.sub(r"\s+", "", str(value or ""))
+        if not clean_value:
+            raise serializers.ValidationError("Vui lòng nhập Mã số thuế.")
+        if not re.fullmatch(r"^\d{10}(?:-\d{3})?$|^\d{13}$", clean_value):
             raise serializers.ValidationError("Mã số thuế không đúng định dạng.")
-        return value
+        return clean_value
 
     def validate_phone(self, value):
-        return validate_phone_format(value)
+        # EF-12, BR10: Số điện thoại không hợp lệ nếu có nhập mà sai định dạng
+        if not value:
+            return value
+        try:
+            return validate_phone_format(value)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError("Số điện thoại không hợp lệ.") from exc
 
     def validate_email(self, value):
+        # EF-11, BR10: Email đúng định dạng nếu được nhập
         if value:
             try:
                 return validate_and_normalize_email(value)
@@ -476,39 +530,61 @@ class CompanyBootstrapSerializer(serializers.Serializer):
         return value
 
     def validate_logo(self, value):
+        # EF-13, BR11: Chỉ nhận JPG/JPEG/PNG và dung lượng <= 5 MB
         if value is None:
             return value
         if value.size > 5 * 1024 * 1024:
-            raise serializers.ValidationError("Logo không được vượt quá 5 MB.")
+            raise serializers.ValidationError("Dung lượng ảnh không được vượt quá 5 MB.")
         extension = value.name.rsplit(".", 1)[-1].lower() if "." in value.name else ""
         header = value.read(12)
         value.seek(0)
         valid_jpeg = extension in {"jpg", "jpeg"} and header.startswith(b"\xff\xd8\xff")
         valid_png = extension == "png" and header.startswith(b"\x89PNG\r\n\x1a\n")
         if not (valid_jpeg or valid_png):
-            raise serializers.ValidationError("Logo phải là file .jpg, .jpeg hoặc .png hợp lệ.")
+            raise serializers.ValidationError("Định dạng tệp không hợp lệ. Vui lòng chọn ảnh JPG, JPEG hoặc PNG.")
         return value
 
-    def validate_confirmed_authority(self, value):
-        if not value:
-            raise serializers.ValidationError("Bạn phải xác nhận có quyền tạo và quản lý doanh nghiệp.")
-        return value
+    def validate_province(self, value):
+        # EF-09, BR09: Kiểm tra Tỉnh/Thành phố thuộc danh mục hợp lệ
+        val_clean = " ".join(str(value or "").strip().split())
+        if not val_clean:
+            raise serializers.ValidationError("Vui lòng chọn Tỉnh/Thành phố hợp lệ.")
+        val_lower = val_clean.lower()
+        # Loại bỏ tiền tố TP./Thành phố/Tỉnh khi so khớp
+        val_normalized = re.sub(r"^(tp\.?|thành phố|tỉnh)\s+", "", val_lower).strip()
+        if val_lower not in VIETNAM_PROVINCES and val_normalized not in VIETNAM_PROVINCES:
+            raise serializers.ValidationError("Vui lòng chọn Tỉnh/Thành phố hợp lệ.")
+        return val_clean
 
     def validate(self, attrs):
-        attrs["legal_name"] = " ".join(attrs["legal_name"].split())
+        attrs["legal_name"] = " ".join(attrs.get("legal_name", "").split())
         attrs["name"] = " ".join(attrs.get("name", "").split()) or attrs["legal_name"]
-        attrs["address"] = " ".join(attrs["address"].split())
-        attrs["province"] = " ".join(attrs["province"].split())
-        attrs["legal_representative"] = " ".join(attrs["legal_representative"].split())
-        required_text = {
-            "legal_name": "Tên pháp lý là bắt buộc.",
-            "address": "Địa chỉ đăng ký là bắt buộc.",
-            "province": "Tỉnh/Thành phố là bắt buộc.",
-            "legal_representative": "Người đại diện theo pháp luật là bắt buộc.",
-        }
-        errors = {field: message for field, message in required_text.items() if not attrs[field]}
-        if errors:
-            raise serializers.ValidationError(errors)
+        attrs["address"] = " ".join(attrs.get("address", "").split())
+        attrs["legal_representative"] = " ".join(attrs.get("legal_representative", "").split())
+
+        # EF-06, EF-08, EF-10
+        if not attrs.get("legal_name"):
+            raise serializers.ValidationError({"legal_name": "Vui lòng nhập Tên doanh nghiệp."})
+        if not attrs.get("address"):
+            raise serializers.ValidationError({"address": "Vui lòng nhập Địa chỉ đăng ký."})
+        if not attrs.get("legal_representative"):
+            raise serializers.ValidationError({"legal_representative": "Vui lòng nhập Người đại diện theo pháp luật."})
+
+        # EF-14, BR12: Xác nhận quyền tạo doanh nghiệp
+        confirmed = attrs.get("confirmed_authority") or attrs.get("confirm_creation_right")
+        if not confirmed:
+            raise serializers.ValidationError({
+                "confirmed_authority": "Vui lòng xác nhận quyền tạo và quản lý doanh nghiệp.",
+                "confirm_creation_right": "Vui lòng xác nhận quyền tạo và quản lý doanh nghiệp.",
+            })
+        attrs["confirmed_authority"] = True
+
+        # BR13: Mã doanh nghiệp nội bộ phải khác MST
+        code = attrs.get("code")
+        tax_code = attrs.get("tax_code")
+        if code and tax_code and code.strip().upper() == tax_code.strip().upper():
+            raise serializers.ValidationError({"code": "Mã doanh nghiệp nội bộ phải khác với Mã số thuế."})
+
         return attrs
 
 

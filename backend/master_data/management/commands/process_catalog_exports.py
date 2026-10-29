@@ -21,10 +21,19 @@ class Command(BaseCommand):
         )
         for batch_id in queued_ids:
             try:
-                batch = CatalogExportBatch.objects.get(pk=batch_id)
-                if batch.status != "QUEUED":
-                    continue
-                execute_export_batch(batch)
+                with transaction.atomic():
+                    # Audit 2026-10-27 (P1): khóa dòng để nhiều worker không xử lý trùng một batch.
+                    batch = (
+                        CatalogExportBatch.objects.select_for_update(skip_locked=True)
+                        .filter(pk=batch_id, status="QUEUED")
+                        .first()
+                    )
+                    if batch is None:
+                        continue
+                    execute_export_batch(batch)
                 self.stdout.write(f"Processed export batch {batch_id}: {batch.status}")
             except Exception as exc:
+                CatalogExportBatch.objects.filter(pk=batch_id, status="QUEUED").update(
+                    status="FAILED", error_message=str(exc)[:2000], finished_at=timezone.now()
+                )
                 self.stderr.write(f"Failed export batch {batch_id}: {exc}")
