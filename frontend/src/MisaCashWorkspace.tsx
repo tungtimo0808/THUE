@@ -55,6 +55,7 @@ import {
   ZoomIn,
   ZoomOut,
   ClipboardList,
+  Calculator,
   Coins,
   HelpCircle,
   MessageSquare,
@@ -9476,13 +9477,13 @@ export default function MisaCashWorkspace({
             <svg
               className="ref-flow-lines"
               viewBox="0 0 600 300"
-              preserveAspectRatio="none"
               aria-hidden="true"
               style={{
                 position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
+                top: 0,
+                left: 0,
+                width: 660,
+                height: 280,
                 pointerEvents: "none",
                 overflow: "visible",
               }}
@@ -9511,13 +9512,13 @@ export default function MisaCashWorkspace({
 
               {/* 2. Vertical T-junction line between Thu tiền and Chi tiền */}
               <path
-                d="M 245 92 L 245 188"
+                d="M 295 75 L 295 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
               <path
-                d="M 240 92 L 250 92 M 240 188 L 250 188"
+                d="M 285 75 L 295 75 M 285 188 L 295 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -9525,16 +9526,16 @@ export default function MisaCashWorkspace({
 
               {/* 3. Horizontal branch from midpoint between Thu and Chi to Kiểm kê quỹ */}
               <path
-                d="M 245 140 L 350 140"
+                d="M 295 136 L 365 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-cash)"
               />
 
-              {/* 4. Horizontal arrow going right from Kiểm kê quỹ */}
+              {/* 4. Horizontal arrow going right from Kiểm kê quỹ to Dự báo dòng tiền */}
               <path
-                d="M 450 140 L 525 140"
+                d="M 460 136 L 535 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -9565,10 +9566,7 @@ export default function MisaCashWorkspace({
                 zIndex: 2,
               }}
               onClick={() => {
-                if (href) {
-                  window.location.hash = href("/reference/cash/payment-requests");
-                }
-                notify("Đã mở phân hệ Đề nghị chi tiền.");
+                navigate(href ? href("/cash/payment-requests") : "/reference/cash/payment-requests");
               }}
               title="Lập giấy đề nghị chi tiền"
             >
@@ -9953,7 +9951,7 @@ export default function MisaCashWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 350,
+                left: 365,
                 top: 96,
                 width: 100,
                 display: "flex",
@@ -9964,19 +9962,14 @@ export default function MisaCashWorkspace({
                 zIndex: 2,
               }}
               onClick={() => {
-                if (href) {
-                  window.location.hash = href("/reference/cash/inventory");
-                }
-                notify("Đã mở phân hệ Kiểm kê quỹ tiền mặt.");
+                navigate(href ? href("/cash/inventory") : "/reference/cash/inventory");
               }}
               role="button"
               tabIndex={0}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  if (href) {
-                    window.location.hash = href("/reference/cash/inventory");
-                  }
+                  navigate(href ? href("/cash/inventory") : "/reference/cash/inventory");
                 }
               }}
               title="Kiểm kê quỹ tiền mặt"
@@ -10001,6 +9994,48 @@ export default function MisaCashWorkspace({
               </span>
               <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3 }}>
                 Kiểm kê quỹ
+              </span>
+            </div>
+
+            {/* Node 5: Dự báo dòng tiền (Right, connected to arrow) */}
+            <div
+              style={{
+                position: "absolute",
+                left: 535,
+                top: 96,
+                width: 110,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                cursor: "pointer",
+                textAlign: "center",
+                zIndex: 2,
+              }}
+              onClick={() => {
+                navigate(href ? href("/cash/cashflow") : "/reference/cash/cashflow");
+              }}
+              title="Dự báo dòng tiền"
+            >
+              <span className="ref-business-icon forecast" style={{ marginBottom: 6 }}>
+                <span
+                  className="ref-document-sheet"
+                  style={{
+                    background: "linear-gradient(90deg, #10b981, #059669)",
+                    border: "1px solid #34d399",
+                  }}
+                >
+                  <b style={{ color: "#ffffff", fontWeight: 800 }}>DB</b>
+                  <i /><i /><i />
+                </span>
+                <span
+                  className="ref-gold-icon"
+                  style={{ background: "#0284c7", borderColor: "#38bdf8" }}
+                >
+                  <Calculator size={14} strokeWidth={2.2} />
+                </span>
+              </span>
+              <span style={{ fontSize: 11.5, color: "#334155", fontWeight: 500, lineHeight: 1.3 }}>
+                Dự báo dòng tiền
               </span>
             </div>
           </div>

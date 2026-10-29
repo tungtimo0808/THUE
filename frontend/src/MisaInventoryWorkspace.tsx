@@ -1731,21 +1731,21 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Vật tư hàng hóa</span>
               </div>
               <div
-                onClick={() => notify("Đã mở danh mục Đơn vị tính: Mét, Cái, Bộ, Quả...")}
+                onClick={() => navigate((href ? href("/directory") : "/reference/directory") + "?directory=" + encodeURIComponent("Đơn vị tính"))}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
                 <Boxes size={20} style={{ color: "#00a862" }} />
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Đơn vị tính</span>
               </div>
               <div
-                onClick={() => notify("Các tiện ích kho: Nhập số dư đầu kỳ, In mã vạch...")}
+                onClick={() => navigate(href ? href("/opening") : "/reference/opening")}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
                 <Lightbulb size={20} style={{ color: "#00a862" }} />
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Tiện ích</span>
               </div>
               <div
-                onClick={() => notify("Tùy chọn thiết lập phương pháp tính giá và kiểm kê kho")}
+                onClick={() => navigate("/admin?tab=config")}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
                 <SlidersHorizontal size={20} style={{ color: "#00a862" }} />

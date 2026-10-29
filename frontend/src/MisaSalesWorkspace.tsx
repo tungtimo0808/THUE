@@ -1924,7 +1924,7 @@ export default function MisaSalesWorkspace({
               <li>
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
-                  onClick={() => notify("Mở Sổ chi tiết bán hàng...")}
+                  onClick={() => navigateTo("reports")}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
@@ -1934,7 +1934,7 @@ export default function MisaSalesWorkspace({
               <li>
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
-                  onClick={() => notify("Mở Chi tiết công nợ phải thu khách hàng...")}
+                  onClick={() => navigateTo("receivables")}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
@@ -1944,7 +1944,7 @@ export default function MisaSalesWorkspace({
               <li>
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
-                  onClick={() => notify("Mở Báo cáo tổng hợp bán hàng theo mặt hàng...")}
+                  onClick={() => navigateTo("reports")}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
@@ -1954,7 +1954,7 @@ export default function MisaSalesWorkspace({
               <li>
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
-                  onClick={() => notify("Mở Báo cáo tổng hợp công nợ phải thu khách hàng...")}
+                  onClick={() => navigateTo("receivables")}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
@@ -1964,7 +1964,7 @@ export default function MisaSalesWorkspace({
               <li>
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
-                  onClick={() => notify("Mở Báo cáo chi tiết lãi lỗ theo đơn hàng...")}
+                  onClick={() => navigateTo("reports")}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
@@ -1976,7 +1976,7 @@ export default function MisaSalesWorkspace({
             <div style={{ marginTop: "auto", padding: "14px 16px", borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
               <span
                 style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
-                onClick={() => notify("Mở tất cả báo cáo bán hàng...")}
+                onClick={() => navigateTo("reports")}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
               >
@@ -2035,7 +2035,7 @@ export default function MisaSalesWorkspace({
               fontSize: 12.5,
               color: "#334155",
             }}
-            onClick={() => notify("Xem danh mục Hàng hóa, dịch vụ")}
+            onClick={() => navigateTo("inventory-items")}
           >
             <Package size={20} style={{ color: "#10b981" }} />
             <span>Hàng hóa, dịch vụ</span>
@@ -2077,7 +2077,7 @@ export default function MisaSalesWorkspace({
               fontSize: 12.5,
               color: "#334155",
             }}
-            onClick={() => notify("Mở danh sách tiện ích phân hệ Bán hàng...")}
+            onClick={() => navigateTo("reconciliation")}
           >
             <Lightbulb size={20} style={{ color: "#10b981" }} />
             <span>Tiện ích</span>
@@ -2097,7 +2097,7 @@ export default function MisaSalesWorkspace({
               fontSize: 12.5,
               color: "#334155",
             }}
-            onClick={() => notify("Tùy chọn thiết lập phân hệ Bán hàng...")}
+            onClick={() => navigate("/admin?tab=config")}
           >
             <SlidersHorizontal size={20} style={{ color: "#64748b" }} />
             <span>Tùy chọn</span>

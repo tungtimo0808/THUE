@@ -50,6 +50,7 @@ import {
   type Transaction,
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
+import { MisaSystemUtilitiesModal } from "./MisaSystemUtilitiesModal";
 import {
   referenceNav,
   referenceTabHierarchy,
@@ -215,49 +216,49 @@ export type ReferenceHref = (
 
 const quickCreateGroups: {
   title: string;
-  items: { label: string; kind?: Kind }[];
+  items: { label: string; kind?: Kind; path: string }[];
 }[] = [
     {
       title: "TIỀN MẶT",
       items: [
-        { label: "Thu tiền mặt", kind: "receipt" },
-        { label: "Chi tiền mặt", kind: "payment" },
+        { label: "Thu tiền mặt", kind: "receipt", path: "/cash/transactions" },
+        { label: "Chi tiền mặt", kind: "payment", path: "/cash/transactions" },
       ],
     },
     {
       title: "TIỀN GỬI",
       items: [
-        { label: "Thu tiền gửi", kind: "bank" },
-        { label: "Chi tiền gửi", kind: "payment" },
+        { label: "Thu tiền gửi", kind: "bank", path: "/bank/transactions" },
+        { label: "Chi tiền gửi", kind: "payment", path: "/bank/transactions" },
       ],
     },
     {
       title: "KHO",
       items: [
-        { label: "Nhập kho" },
-        { label: "Xuất kho" },
-        { label: "Chuyển kho" },
+        { label: "Nhập kho", path: "/inventory/receipts" },
+        { label: "Xuất kho", path: "/inventory/issues" },
+        { label: "Chuyển kho", path: "/inventory/transfers" },
       ],
     },
     {
       title: "MUA HÀNG",
       items: [
-        { label: "Mua hàng", kind: "purchase" },
-        { label: "Mua dịch vụ", kind: "purchase" },
+        { label: "Mua hàng", kind: "purchase", path: "/purchases/transactions" },
+        { label: "Mua dịch vụ", kind: "purchase", path: "/purchases/service-purchases" },
       ],
     },
     {
       title: "BÁN HÀNG",
       items: [
-        { label: "Bán hàng", kind: "sale" },
-        { label: "Bán dịch vụ", kind: "sale" },
+        { label: "Bán hàng", kind: "sale", path: "/sales/transactions" },
+        { label: "Bán dịch vụ", kind: "sale", path: "/sales/invoices" },
       ],
     },
     {
       title: "TỔNG HỢP",
       items: [
-        { label: "Chứng từ nghiệp vụ khác" },
-        { label: "Quyết toán tạm ứng" },
+        { label: "Chứng từ nghiệp vụ khác", path: "/ledger/transactions" },
+        { label: "Quyết toán tạm ứng", path: "/ledger/advance-settlement-request" },
       ],
     },
   ];
@@ -345,7 +346,8 @@ function ReferenceWorkspace() {
     }
   }, [apiRestoring, apiToken, apiCompanies.length, navigate]);
 
-  const pathParts = location.pathname.split("/");
+  const normalizedPathname = location.pathname.replace(/^\/reference(?=\/|$)/, "") || "/";
+  const pathParts = normalizedPathname.split("/");
   const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
@@ -657,6 +659,7 @@ function ReferenceWorkspace() {
     [detailId, setDetailId] = useState<string | null>(null);
   const [notice, setNotice] = useState(""),
     [info, setInfo] = useState(""),
+    [settingsSearch, setSettingsSearch] = useState(""),
     [query, setQuery] = useState(""),
     [workMode, setWorkMode] = useState("Kế toán");
   const href: ReferenceHref = (path, extra) =>
@@ -793,18 +796,47 @@ function ReferenceWorkspace() {
       setNotice("Không thể lưu. Vui lòng kiểm tra dung lượng trình duyệt.");
     }
   };
+  const quickAccessRoutes: Record<string, string> = {
+    "Quản lý danh mục": href("/directory"),
+    "Nhập số dư ban đầu": href("/opening"),
+    "Cập nhật số dư dữ liệu năm trước": href("/opening"),
+    "Nhập dữ liệu": href("/opening"),
+    "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế": href("/purchases/invoice-processing/supplier-risk"),
+    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/sync"),
+    "Kiểm soát hồ sơ và hạch toán": href("/invoices/unposted"),
+    "Nhật ký truy cập": "/audit-logs",
+    "Thông tin công ty": "/admin?tab=overview",
+    "Quản lý người dùng và phân quyền": "/admin?tab=personnel",
+    "Quản lý dữ liệu": "/fiscal-periods",
+    "Tùy chọn": "/admin?tab=config",
+    "Ngày hạch toán": "/fiscal-periods",
+    "Thiết lập kết nối Ngân hàng điện tử (mBank)": href("/bank/ebanking"),
+    "Thiết lập ký số từ xa (SmartCA / eSign)": href("/invoices/meinvoice"),
+    "Nhập kho": href("/inventory/receipts"),
+    "Xuất kho": href("/inventory/issues"),
+    "Chuyển kho": href("/inventory/transfers"),
+    "Chứng từ nghiệp vụ khác": href("/ledger/transactions"),
+    "Quyết toán tạm ứng": href("/ledger/advance-settlement-request"),
+    "Kiểm tra đối chiếu": href("/ledger/process"),
+  };
+
   const infoAction = (name: string) => {
     setPanel(null);
-    if (name === "Thông tin công ty" || name === "Quản lý người dùng và phân quyền" || name === "Quản lý dữ liệu") {
-      navigate("/admin");
+    if (name === "Thiết lập màu sắc và hiển thị") {
+      setPanel("mode");
       return;
     }
-    if (name === "Nhật ký truy cập") {
-      navigate("/audit-logs");
+    if (name === "Gợi ý, nhắc nhở thông minh") {
+      setPanel("notifications");
       return;
     }
-    if (name === "Tùy chọn") {
-      navigate("/admin?tab=config");
+    if (name === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán") {
+      setAiOpen(true);
+      return;
+    }
+    const targetRoute = quickAccessRoutes[name];
+    if (targetRoute) {
+      navigate(targetRoute);
       return;
     }
     setInfo(name);
@@ -1955,24 +1987,93 @@ function ReferenceWorkspace() {
       </main>
       {panel === "settings" && (
         <Modal
-          title="Các tiện ích và thiết lập"
-          onClose={() => setPanel(null)}
+          title="Các tiện ích và thiết lập (Truy cập nhanh)"
+          onClose={() => {
+            setPanel(null);
+            setSettingsSearch("");
+          }}
           wide
         >
+          <div style={{ padding: "12px 20px 0 20px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#f8fafc",
+                border: "1px solid #cbd5e1",
+                borderRadius: 8,
+                padding: "7px 12px",
+              }}
+            >
+              <Search size={15} style={{ color: "#64748b" }} />
+              <input
+                type="search"
+                placeholder="Tìm nhanh tiện ích, danh mục, số dư đầu kỳ, thiết lập..."
+                value={settingsSearch}
+                onChange={(e) => setSettingsSearch(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  width: "100%",
+                  fontSize: 13,
+                  color: "#0f172a",
+                }}
+              />
+            </div>
+          </div>
           <div className="ref-mega-menu">
-            {settingsGroups.map((g, i) => (
-              <section
-                className={`ref-settings-group group-${i}`}
-                key={g.title}
-              >
-                <h3>{g.title}</h3>
-                {g.items.map((label) => (
-                  <button key={label} onClick={() => infoAction(label)}>
-                    {label}
-                  </button>
-                ))}
-              </section>
-            ))}
+            {settingsGroups.map((g, i) => {
+              const filteredItems = g.items.filter(
+                (label) =>
+                  !settingsSearch.trim() ||
+                  label.toLowerCase().includes(settingsSearch.trim().toLowerCase())
+              );
+              return (
+                <section
+                  className={`ref-settings-group group-${i}`}
+                  key={g.title}
+                >
+                  <h3>{g.title}</h3>
+                  {filteredItems.map((label) => {
+                    const isQuickRoute =
+                      Boolean(quickAccessRoutes[label]) ||
+                      label === "Thiết lập màu sắc và hiển thị" ||
+                      label === "Gợi ý, nhắc nhở thông minh" ||
+                      label === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán";
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => infoAction(label)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          width: "100%",
+                        }}
+                      >
+                        <span>{label}</span>
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                            background: isQuickRoute ? "#e0f2fe" : "#dcfce7",
+                            color: isQuickRoute ? "#0369a1" : "#15803d",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {isQuickRoute ? "Mở →" : "API"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </section>
+              );
+            })}
           </div>
         </Modal>
       )}
@@ -2016,9 +2117,10 @@ function ReferenceWorkspace() {
                     {group.items.map((item) => (
                       <button
                         key={item.label}
-                        onClick={() =>
-                          item.kind ? create(item.kind) : infoAction(item.label)
-                        }
+                        onClick={() => {
+                          setPanel(null);
+                          navigate(href(item.path));
+                        }}
                       >
                         <Plus size={15} />
                         {item.label}
@@ -2031,42 +2133,55 @@ function ReferenceWorkspace() {
               <>
                 <p>
                   Chọn phân hệ bên trái, sau đó chọn Quy trình hoặc danh sách
-                  giao dịch trên thanh tab.
+                  giao dịch trên thanh tab để thao tác trực tiếp với dữ liệu kế toán.
                 </p>
                 <ol className="help-list">
-                  <li>Nhấn Thu tiền hoặc Chi tiền để mở các nghiệp vụ.</li>
+                  <li>Nhấn vào các nút trên sơ đồ Quy trình để chuyển nhanh đến màn hình nghiệp vụ tương ứng.</li>
                   <li>
-                    Dùng bộ lọc để tìm chứng từ theo trạng thái và thời gian.
+                    Mở <strong>Các tiện ích và thiết lập</strong> (biểu tượng bánh răng) để truy cập nhanh Danh mục, Số dư ban đầu, Ghi sổ theo lô, Bảo trì dữ liệu và Thiết lập hệ thống.
                   </li>
-                  <li>Chọn một chứng từ để xem chi tiết phía dưới bảng.</li>
+                  <li>Sử dụng phím tắt <code>Ctrl + K</code> để tìm kiếm nhanh chứng từ trên toàn hệ thống.</li>
                 </ol>
-                <p className="info-note">
-                  Bản trải nghiệm lưu nháp trên trình duyệt. Chưa kết nối API kế
-                  toán, phân quyền và thuế.
-                </p>
               </>
             ) : panel === "module" ? (
               <div className="module-quick-menu">
                 <section>
-                  <h3>NGHIỆP VỤ</h3>
-                  {tabs.slice(0, 6).map(([, label]) => (
-                    <button key={label} onClick={() => infoAction(label)}>
+                  <h3>NGHIỆP VỤ ({module?.label?.toUpperCase()})</h3>
+                  {tabs.slice(0, 8).map(([tabId, label]) => (
+                    <button
+                      key={tabId}
+                      onClick={() => {
+                        setPanel(null);
+                        navigate(href(`/${moduleId}/${tabId}`));
+                      }}
+                    >
                       {label}
                     </button>
                   ))}
                 </section>
                 <section>
-                  <h3>TIỆN ÍCH</h3>
-                  <button onClick={() => infoAction("Kiểm tra đối chiếu")}>
-                    Kiểm tra đối chiếu
+                  <h3>TIỆN ÍCH TRUY CẬP NHANH</h3>
+                  <button onClick={() => infoAction("Kiểm tra đối chiếu chứng từ, sổ sách")}>
+                    Kiểm tra đối chiếu sổ sách
                   </button>
-                  <button onClick={() => infoAction("Nhập dữ liệu")}>
-                    Nhập dữ liệu
+                  <button onClick={() => infoAction("Nhập số dư ban đầu")}>
+                    Nhập số dư ban đầu
+                  </button>
+                  <button onClick={() => infoAction("Quản lý danh mục")}>
+                    Quản lý danh mục
+                  </button>
+                  <button onClick={() => infoAction("Ghi sổ/Bỏ ghi theo lô")}>
+                    Ghi sổ / Bỏ ghi theo lô
                   </button>
                 </section>
                 <section>
                   <h3>BÁO CÁO</h3>
-                  <button onClick={() => navigate(href("/reports"))}>
+                  <button
+                    onClick={() => {
+                      setPanel(null);
+                      navigate(href("/reports"));
+                    }}
+                  >
                     Mở trung tâm báo cáo
                   </button>
                 </section>
@@ -2291,14 +2406,15 @@ function ReferenceWorkspace() {
         </Modal>
       )}
       {info && (
-        <Modal title={info} onClose={() => setInfo("")}>
-          <div className="modal-body">
-            <p className="info-note">
-              Chức năng “{info}” chưa kết nối dữ liệu nghiệp vụ. Bản giao diện
-              hiện hỗ trợ tạo nháp, xem chứng từ, tìm kiếm, lọc và xuất CSV.
-            </p>
-          </div>
-        </Modal>
+        <MisaSystemUtilitiesModal
+          utilityName={info}
+          companyId={company.id}
+          companyName={company.name}
+          token={apiToken}
+          onClose={() => setInfo("")}
+          onNavigate={(url) => navigate(url)}
+          notify={setNotice}
+        />
       )}
       {createKind && (
         <DocumentForm

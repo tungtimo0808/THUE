@@ -14489,7 +14489,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               </div>
 
               <div
-                onClick={() => notify("Nghiệp vụ: Chuyển tài sản thuê tài chính thành tài sản sở hữu")}
+                onClick={() => navigateTo("register")}
                 style={{ position: "absolute", left: "76%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", maxWidth: 140, textAlign: "center" }}
               >
                 <span className="ref-business-icon lease" style={{ marginBottom: 6 }}>
@@ -14595,11 +14595,11 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </div>
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #f1f5f9", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", textAlign: "center" }}>
-              <div onClick={() => notify("Danh mục: Cơ cấu tổ chức và phòng ban quản lý tài sản")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0", borderRight: "1px solid #e2e8f0" }}>
+              <div onClick={() => navigate((href ? href("/directory") : "/reference/directory") + "?directory=" + encodeURIComponent("Cơ cấu tổ chức"))} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0", borderRight: "1px solid #e2e8f0" }}>
                 <GitBranch size={16} style={{ color: "#00a862" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Cơ cấu tổ chức</span>
               </div>
-              <div onClick={() => notify("Danh mục: Loại tài sản cố định chuẩn quy định kế toán")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0", borderRight: "1px solid #e2e8f0" }}>
+              <div onClick={() => navigate((href ? href("/directory") : "/reference/directory") + "?directory=" + encodeURIComponent("Loại tài sản cố định"))} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0", borderRight: "1px solid #e2e8f0" }}>
                 <Car size={16} style={{ color: "#00a862" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Loại tài sản</span>
               </div>
