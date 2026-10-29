@@ -6975,8 +6975,11 @@ export async function fetchReportExportJobArtifactsUcRpt15(w: ApiWriter, jobId: 
   return await w.get(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/artifacts/`);
 }
 
-export async function cancelReportExportJobUcRpt15(w: ApiWriter, jobId: string) {
-  return await w.post(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/cancel/`, {});
+export async function cancelReportExportJobUcRpt15(w: ApiWriter, jobId: string, d: Row = {}) {
+  return await w.post(`${RPT_EXPORT}jobs/${encodeURIComponent(jobId)}/cancel/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
 }
 
 export async function retryReportExportJobUcRpt15(w: ApiWriter, jobId: string, d: Row = {}) {
@@ -6986,8 +6989,11 @@ export async function retryReportExportJobUcRpt15(w: ApiWriter, jobId: string, d
   });
 }
 
-export async function requestReportExportDownloadAccessUcRpt15(w: ApiWriter, artifactId: string) {
-  return await w.post(`${RPT_EXPORT}artifacts/${encodeURIComponent(artifactId)}/download-access/`, {});
+export async function requestReportExportDownloadAccessUcRpt15(w: ApiWriter, artifactId: string, d: Row = {}) {
+  return await w.post(`${RPT_EXPORT}artifacts/${encodeURIComponent(artifactId)}/download-access/`, {
+    company_id: d.company_id || w.companyId,
+    ...d,
+  });
 }
 
 export async function fetchReportExportHistoryUcRpt15(w: ApiWriter, d: Row = {}) {
@@ -7001,6 +7007,126 @@ export async function exportReportDetailUcRpt15(w: ApiWriter, d: Row = {}) {
     company_id: d.company_id || w.companyId,
     ...d,
   });
+}
+
+/**
+ * 4-step UC-RPT-15 flow:
+ * 1. GET /api/v1/reports/{reportCode}/export-capabilities/ & /export-templates/
+ * 2. POST /api/v1/reports/export/jobs/
+ * 3. GET /api/v1/reports/export/jobs/{jobId}/artifacts/ -> POST .../artifacts/{id}/download-access/
+ * 4. GET /api/v1/reports/export/artifacts/{id}/download/?token=... (triggers real browser download or print)
+ */
+export async function executeReportExportUcRpt15(w: ApiWriter, d: Row = {}, authToken?: string) {
+  const reportCode = String(d.report_code || "RPT-CENTER").trim();
+  const outputFormat = String(d.output_format || "XLSX").toUpperCase();
+
+  // Step 1: Capabilities & Templates
+  const [capRes, tplRes] = await Promise.allSettled([
+    fetchReportExportCapabilitiesUcRpt15(w, reportCode),
+    fetchReportExportTemplatesUcRpt15(w, reportCode),
+  ]);
+  const capabilities = capRes.status === "fulfilled" ? capRes.value : null;
+  const templates = tplRes.status === "fulfilled" ? tplRes.value : null;
+  const defaultTemplateCode =
+    d.template_code ||
+    templates?.templates?.find((t: any) => t.is_default)?.template_code ||
+    templates?.templates?.[0]?.template_code ||
+    undefined;
+
+  // Step 2: Create Export Job
+  const job = await createReportExportJobUcRpt15(w, {
+    company_id: d.company_id || w.companyId,
+    report_code: reportCode,
+    title: d.title || reportCode,
+    output_format: outputFormat,
+    export_scope: d.export_scope || "CURRENT_VIEW",
+    ...(defaultTemplateCode ? { template_code: defaultTemplateCode } : {}),
+    columns: d.columns || [],
+    rows: d.rows || [],
+    parameters: d.parameters || {},
+  });
+
+  const jobId = String(job?.export_job_id || job?.id || "");
+  if (!jobId) {
+    throw new FormDataError("Không tạo được lệnh xuất báo cáo (thiếu export_job_id).");
+  }
+
+  // Step 3: Get Job Artifacts & Download Access Token
+  const artifactsRes = await fetchReportExportJobArtifactsUcRpt15(w, jobId);
+  const artifact = artifactsRes?.artifacts?.[0] || job?.artifact;
+  const artifactId = String(artifact?.artifact_id || "");
+  if (!artifactId) {
+    throw new FormDataError("Không tìm thấy file kết quả xuất báo cáo (artifact_id).");
+  }
+
+  const access = await requestReportExportDownloadAccessUcRpt15(w, artifactId, {
+    company_id: d.company_id || w.companyId,
+  });
+
+  const downloadUrl =
+    access?.download_url ||
+    `${RPT_EXPORT}artifacts/${encodeURIComponent(artifactId)}/download/?token=${encodeURIComponent(
+      String(access?.download_token || artifact?.download_token || ""),
+    )}`;
+  const fileName = String(
+    access?.file_name ||
+      artifact?.file_name ||
+      `${reportCode.toLowerCase()}.${outputFormat === "PRINT" ? "html" : outputFormat.toLowerCase()}`,
+  );
+
+  // Step 4: Download binary/HTML artifact
+  const token =
+    authToken ||
+    (typeof localStorage !== "undefined" ? localStorage.getItem("erp_token") || "" : "");
+  const response = await fetch(downloadUrl, {
+    method: "GET",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    throw new FormDataError(`Tải file báo cáo thất bại (HTTP ${response.status}).`);
+  }
+
+  const blob = await response.blob();
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    if (outputFormat === "PRINT") {
+      const htmlText = await blob.text();
+      const printWin = window.open("", "_blank", "width=960,height=720");
+      if (printWin) {
+        printWin.document.open();
+        printWin.document.write(htmlText);
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => {
+          try {
+            printWin.print();
+          } catch {
+            // ignore print close error
+          }
+        }, 250);
+      } else {
+        window.print();
+      }
+    } else {
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    }
+  }
+
+  return {
+    job,
+    capabilities,
+    templates,
+    artifactId,
+    access,
+    fileName,
+    blob,
+  };
 }
 
 // ============================================================================

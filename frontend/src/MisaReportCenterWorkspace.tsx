@@ -30,6 +30,9 @@ import {
 } from "lucide-react";
 import "./misa-reports.css";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
+import { createApiWriter, executeReportExportUcRpt15, errorText } from "./misa-api-writes";
 
 import MisaTrialBalanceManagementReport from "./MisaTrialBalanceManagementReport";
 import MisaStateObligationsReport from "./MisaStateObligationsReport";
@@ -891,6 +894,122 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const [reportVisibilityMode, setReportVisibilityMode] = useState(false);
   const [reportVisibilityDraft, setReportVisibilityDraft] = useState<Record<string, boolean>>({});
   const [selectedReport, setSelectedReport] = useState<string | null>(initialReport);
+  const [previewPeriod, setPreviewPeriod] = useState<string>("Năm nay (2026)");
+  const [previewUnit, setPreviewUnit] = useState<string>("Công ty Cổ phần Giải pháp Số Việt");
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null);
+  const { token: sessionToken, companyId: sessionCompanyId } = useApiSession();
+
+  const deriveReportCode = (name: string | null): string => {
+    const text = String(name || "").trim();
+    if (!text) return "RPT-CENTER";
+    const codeMatch = text.match(/^([A-Z0-9]+(?:\s*-\s*[A-Z0-9]+)+)/i);
+    if (codeMatch) return codeMatch[1].replace(/\s+/g, "").toUpperCase();
+    if (/thuyết minh|b09/i.test(text)) return "RPT-B09";
+    if (/tài sản cố định/i.test(text)) return "S21-DN";
+    if (/chi phí sản xuất/i.test(text)) return "S36-DN";
+    if (/giá thành/i.test(text)) return "S37-DN";
+    return "RPT-CENTER";
+  };
+
+  const handleExportPreviewReport = async (format: "XLSX" | "PDF" | "CSV" | "DOCX" | "PRINT") => {
+    if (!selectedReport || exportingFormat) return;
+    setExportingFormat(format);
+    const reportCode = deriveReportCode(selectedReport);
+    const previewColumns = [
+      { key: "item_code", label: "Mã hàng / Đối tượng", type: "code" },
+      { key: "item_name", label: "Tên mặt hàng / Đối tượng", type: "text" },
+      { key: "unit", label: "ĐVT", type: "text" },
+      { key: "quantity", label: "Số lượng", type: "quantity" },
+      { key: "unit_price", label: "Đơn giá", type: "amount" },
+      { key: "amount", label: "Thành tiền", type: "amount" },
+    ];
+    const previewRows = [
+      {
+        item_code: "HH001",
+        item_name: "Máy tính để bàn Dell Vostro",
+        unit: "Bộ",
+        quantity: 15,
+        unit_price: 14500000,
+        amount: 217500000,
+      },
+      {
+        item_code: "HH002",
+        item_name: "Màn hình LG 27 inch 4K",
+        unit: "Chiếc",
+        quantity: 20,
+        unit_price: 6200000,
+        amount: 124000000,
+      },
+      {
+        item_code: "DV001",
+        item_name: "Phần mềm bản quyền Microsoft Office 365",
+        unit: "Gói",
+        quantity: 50,
+        unit_price: 1800000,
+        amount: 90000000,
+      },
+      {
+        item_code: "TOTAL",
+        item_name: "TỔNG CỘNG",
+        unit: "",
+        quantity: 85,
+        unit_price: "",
+        amount: 431500000,
+        row_type: "TOTAL",
+      },
+    ];
+    try {
+      const writer = createApiWriter(sessionCompanyId || "", (path, init) =>
+        request(path, sessionToken || undefined, init),
+      );
+      const res = await executeReportExportUcRpt15(
+        writer,
+        {
+          report_code: reportCode,
+          title: selectedReport,
+          output_format: format,
+          export_scope: "CURRENT_VIEW",
+          columns: previewColumns,
+          rows: previewRows,
+          parameters: {
+            period: previewPeriod,
+            unit: previewUnit,
+            language: reportLang,
+          },
+        },
+        sessionToken || undefined,
+      );
+      if (format === "PRINT") {
+        notify?.(`Đã chuẩn bị bản in báo cáo (${res.fileName}).`);
+      } else {
+        const label = format === "XLSX" ? "Excel" : format;
+        notify?.(`Đã xuất khẩu báo cáo ra ${label} (${res.fileName}) thành công.`);
+      }
+    } catch (err) {
+      if (format === "PRINT") {
+        window.print();
+        notify?.("Đang chuẩn bị dữ liệu in báo cáo...");
+      } else {
+        // Fallback client-side CSV download if offline
+        const headerLine = previewColumns.map((c) => `"${c.label}"`).join(";");
+        const dataLines = previewRows.map((r) =>
+          previewColumns.map((c) => `"${String((r as any)[c.key] ?? "")}"`).join(";"),
+        );
+        const csvContent = [headerLine, ...dataLines].join("\r\n");
+        const url = URL.createObjectURL(
+          new Blob(["\uFEFF", csvContent], { type: "text/csv;charset=utf-8;" }),
+        );
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${reportCode.toLowerCase()}.csv`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+        notify?.(`Đã xuất khẩu báo cáo (${errorText(err)} — tải bản dự phòng).`);
+      }
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   // Print Announcement Modal
   const [isPrintBannerModalOpen, setIsPrintBannerModalOpen] = useState<boolean>(false);
@@ -2345,7 +2464,11 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             <div style={{ padding: "12px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ color: "#475569" }}>Kỳ báo cáo:</span>
-                <select style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}>
+                <select
+                  style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}
+                  value={previewPeriod}
+                  onChange={(e) => setPreviewPeriod(e.target.value)}
+                >
                   <option>Năm nay (2026)</option>
                   <option>Quý này (Quý 3/2026)</option>
                   <option>Tháng này (Tháng 09/2026)</option>
@@ -2354,7 +2477,11 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ color: "#475569" }}>Đơn vị:</span>
-                <select style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}>
+                <select
+                  style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}
+                  value={previewUnit}
+                  onChange={(e) => setPreviewUnit(e.target.value)}
+                >
                   <option>Tung</option>
                   <option>Công ty Cổ phần Giải pháp Số Việt</option>
                   <option>Văn phòng Tổng công ty</option>
@@ -2436,6 +2563,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             >
               <button
                 type="button"
+                disabled={Boolean(exportingFormat)}
                 style={{
                   height: 34,
                   padding: "0 16px",
@@ -2448,15 +2576,17 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  cursor: "pointer",
+                  cursor: exportingFormat ? "wait" : "pointer",
+                  opacity: exportingFormat ? 0.7 : 1,
                 }}
-                onClick={() => notify?.("Đã xuất khẩu báo cáo ra Excel thành công.")}
+                onClick={() => void handleExportPreviewReport("XLSX")}
               >
                 <Download size={14} />
-                <span>Xuất Excel</span>
+                <span>{exportingFormat === "XLSX" ? "Đang xuất Excel..." : "Xuất Excel"}</span>
               </button>
               <button
                 type="button"
+                disabled={Boolean(exportingFormat)}
                 style={{
                   height: 34,
                   padding: "0 16px",
@@ -2469,12 +2599,36 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  cursor: "pointer",
+                  cursor: exportingFormat ? "wait" : "pointer",
+                  opacity: exportingFormat ? 0.7 : 1,
                 }}
-                onClick={() => notify?.("Đang chuẩn bị dữ liệu in báo cáo...")}
+                onClick={() => void handleExportPreviewReport("PDF")}
+              >
+                <Download size={14} />
+                <span>{exportingFormat === "PDF" ? "Đang xuất PDF..." : "Xuất PDF"}</span>
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(exportingFormat)}
+                style={{
+                  height: 34,
+                  padding: "0 16px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#334155",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: exportingFormat ? "wait" : "pointer",
+                  opacity: exportingFormat ? 0.7 : 1,
+                }}
+                onClick={() => void handleExportPreviewReport("PRINT")}
               >
                 <Printer size={14} />
-                <span>In báo cáo</span>
+                <span>{exportingFormat === "PRINT" ? "Đang chuẩn bị in..." : "In báo cáo"}</span>
               </button>
               <button
                 type="button"

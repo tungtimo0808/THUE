@@ -34,6 +34,9 @@ import MisaSalesInventoryPrinted from "./MisaSalesInventoryPrinted";
 import MisaStockGroupsPrinted from "./MisaStockGroupsPrinted";
 import MisaUninvoicedPurchasesPrinted from "./MisaUninvoicedPurchasesPrinted";
 import MisaGeneralLedgerPrinted from "./MisaGeneralLedgerPrinted";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
+import { createApiWriter, executeReportExportUcRpt15 } from "./misa-api-writes";
 import "./misa-purchase-contract-reports.css";
 import "./audited-reports.css";
 
@@ -82,6 +85,7 @@ export default function AuditedReportWorkspace({
   const [groupingDialogOpen, setGroupingDialogOpen] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
   const [saved, setSaved] = useState(() => readPresets(definition));
+  const { token: sessionToken, companyId: sessionCompanyId } = useApiSession();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const columns = useMemo(
     () => reportColumns(definition.headers),
@@ -119,8 +123,45 @@ export default function AuditedReportWorkspace({
       notify?.("Đã lưu báo cáo cho lần xem này.");
     }
   };
-  const exportReport = () => {
+  const exportReport = async () => {
     const visible = columns.filter((column) => !hidden.includes(column.id));
+    if (sessionToken) {
+      try {
+        const writer = createApiWriter(sessionCompanyId || "", (path, init) =>
+          request(path, sessionToken || undefined, init),
+        );
+        const exportColumns = visible.map((col, idx) => ({
+          key: idx === 0 ? "item_code" : idx === visible.length - 1 ? "amount" : `col_${col.id}`,
+          label: col.path || col.label,
+          type: idx === visible.length - 1 ? "amount" : "text",
+        }));
+        const exportRows = rows.map((row) => {
+          const obj: Record<string, any> = {};
+          visible.forEach((col, idx) => {
+            const key = idx === 0 ? "item_code" : idx === visible.length - 1 ? "amount" : `col_${col.id}`;
+            obj[key] = row.cells[Number(col.id)] ?? "";
+          });
+          return obj;
+        });
+        const res = await executeReportExportUcRpt15(
+          writer,
+          {
+            report_code: "RPT-AUDITED",
+            title: definition.name,
+            output_format: "XLSX",
+            export_scope: "CURRENT_VIEW",
+            columns: exportColumns,
+            rows: exportRows,
+            parameters: applied.fields,
+          },
+          sessionToken,
+        );
+        notify?.(`Đã xuất khẩu báo cáo ra Excel (${res.fileName}) thành công.`);
+        return;
+      } catch {
+        // Fallback to local CSV below
+      }
+    }
     const quote = (value: string) => `"${value.replaceAll('"', '""')}"`;
     const content = [
       visible.map((column) => quote(column.path)).join(";"),
