@@ -153,6 +153,7 @@ class AssetRecord(models.Model):
     custodian = models.ForeignKey("organization.Employee", on_delete=models.PROTECT, null=True, blank=True, related_name="assets_in_custody")
     acquisition_voucher_no = models.CharField(max_length=80, blank=True, default="")
     is_depreciable = models.BooleanField(default=True)
+    no_depreciation_reason = models.CharField(max_length=500, blank=True, default="")
     asset_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="fixed_assets_cost")
     accumulated_account = models.ForeignKey("general_ledger.Account", on_delete=models.PROTECT, null=True, blank=True, related_name="fixed_assets_accumulated")
     depreciable_amount = models.DecimalField(max_digits=24, decimal_places=4, default=0)

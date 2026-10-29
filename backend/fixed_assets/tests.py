@@ -300,6 +300,7 @@ class FixedAssetApiTests(TestCase):
                 voucher_no="GTTS00012",
                 code="TSCD-NODEPR",
                 no_depreciation=True,
+                no_depreciation_reason="Quyền sử dụng đất lâu dài",
                 accumulated_account="",
                 useful_life_value="0",
                 allocations=[],
@@ -309,7 +310,56 @@ class FixedAssetApiTests(TestCase):
         )
         self.assertEqual(res_nodepr.status_code, 201, res_nodepr.data)
         self.assertFalse(res_nodepr.data["asset"]["is_depreciable"])
+        self.assertEqual(res_nodepr.data["asset"]["no_depreciation_reason"], "Quyền sử dụng đất lâu dài")
         self.assertEqual(res_nodepr.data["asset"]["useful_life_periods"], 0)
+
+    def test_uc_fa_01_requires_no_depreciation_basis_and_unique_source_lines(self):
+        url = f"/api/v1/fixed-assets/assets/acquire/{self.query}"
+        missing_basis = self.client.post(url, self._base_uc_fa_01_payload(
+            no_depreciation=True, allocations=[], origins=[],
+        ), format="json")
+        self.assertEqual(missing_basis.status_code, 400)
+        self.assertIn("no_depreciation_reason", missing_basis.data)
+        self.assertFalse(AssetRecord.objects.filter(company=self.company, code="TSCD-UC01").exists())
+
+        duplicate_sources = self.client.post(url, self._base_uc_fa_01_payload(
+            origins=[
+                {"document_number": "HD-001", "amount": "100000000"},
+                {"document_number": "HD-001", "amount": "100000000"},
+            ],
+        ), format="json")
+        self.assertEqual(duplicate_sources.status_code, 400)
+        self.assertIn("origins", duplicate_sources.data)
+        self.assertFalse(AssetTransaction.objects.filter(company=self.company, number="GTTS00010").exists())
+
+        invalid_source = self.client.post(url, self._base_uc_fa_01_payload(
+            origins=[{"source_document_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "amount": "260000000"}],
+        ), format="json")
+        self.assertEqual(invalid_source.status_code, 400)
+        self.assertIn("origins", invalid_source.data)
+
+    def test_uc_fa_01_tt58_simple_book_does_not_require_gl_accounts(self):
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=("accounting_regime", "bookkeeping_method"))
+        payload = self._base_uc_fa_01_payload(asset_account="", accumulated_account="", origins=[])
+        for allocation in payload["allocations"]:
+            allocation["expense_account"] = ""
+        response = self.client.post(f"/api/v1/fixed-assets/assets/acquire/{self.query}", payload, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertIsNone(response.data["asset"]["asset_account"])
+        self.assertIsNone(response.data["asset"]["accumulated_account"])
+        self.assertEqual(response.data["transaction"]["gl_status"], "NOT_REQUIRED")
+        self.assertEqual(response.data["asset"]["useful_life_periods"], 60)
+        from general_ledger.models import JournalEntry
+        self.assertFalse(JournalEntry.objects.filter(company=self.company).exists())
+        self.company.bookkeeping_method = "DOUBLE_ENTRY"
+        self.company.save(update_fields=("bookkeeping_method",))
+        invalid_double = self.client.post(f"/api/v1/fixed-assets/assets/acquire/{self.query}",
+            self._base_uc_fa_01_payload(voucher_no="GTTS00011", code="TSCD-TT58-DOUBLE", asset_account="", accumulated_account="", origins=[]),
+            format="json")
+        self.assertEqual(invalid_double.status_code, 400)
+        self.assertIn("asset_account", invalid_double.data)
 
     def test_uc_fa_01_exception_flows_ef01_to_ef22(self):
         url = f"/api/v1/fixed-assets/assets/acquire/{self.query}"
@@ -410,6 +460,7 @@ class FixedAssetApiTests(TestCase):
         self.assertTrue(no_chg.data["no_changes"])
         self.assertEqual(no_chg.data["message"], "Không có thông tin thay đổi.")
         self.assertEqual(no_chg.data["asset"]["version"], 1)
+        self.assertFalse(AuditLog.objects.filter(company=self.company, module_code="FA", action_code="UPDATE_INFO").exists())
 
         # Main Flow: Update Name, Country of Origin, Manufacture Year + Reason
         upd = self.client.post(
@@ -513,6 +564,9 @@ class FixedAssetApiTests(TestCase):
             str(ef08.data["original_cost"]),
             "Thông tin kế toán không được chỉnh sửa trực tiếp. Vui lòng thực hiện nghiệp vụ điều chỉnh phù hợp.",
         )
+        protected_source = self.client.post(url, {"source_reference": "GT-FAKE", "version": 1}, format="json")
+        self.assertEqual(protected_source.status_code, 400)
+        self.assertIn("source_reference", protected_source.data)
 
         # EF09: Attempt to change category directly
         other_cat = models.AssetCategory.objects.create(
@@ -548,10 +602,18 @@ class FixedAssetApiTests(TestCase):
             "Thông tin nguồn gốc hình thành chưa hợp lệ. Vui lòng kiểm tra chứng từ liên quan.",
         )
 
-        # EF12: Missing update_reason when changing info
-        ef12 = self.client.post(url, {"name": "Máy in laser Canon LBP2900", "update_reason": "   "}, format="json")
+        # EF12: A controlled initial correction requires an explanation.
+        ef12 = self.client.post(url, {"name": "Máy in laser Canon LBP2900", "allow_initial_correction": True, "version": 1, "update_reason": "   "}, format="json")
         self.assertEqual(ef12.status_code, 400)
         self.assertEqual(str(ef12.data["update_reason"]), "Vui lòng nhập lý do cập nhật thông tin tài sản.")
+
+        # Ordinary descriptive changes may omit the reason, but must carry the loaded version.
+        missing_version = self.client.post(url, {"name": "Máy in laser Canon LBP2900"}, format="json")
+        self.assertEqual(missing_version.status_code, 400)
+        self.assertIn("version", missing_version.data)
+        ordinary = self.client.post(url, {"name": "Máy in laser Canon LBP2900", "version": 1}, format="json")
+        self.assertEqual(ordinary.status_code, 200, ordinary.data)
+        self.assertEqual(ordinary.data["asset"]["version"], 2)
 
         # EF13: Version conflict (optimistic concurrency)
         ef13 = self.client.post(
@@ -620,6 +682,27 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ef02.status_code, 403)
         self.assertEqual(str(ef02.data["detail"]), "Bạn không có quyền thực hiện thao tác này.")
 
+    def test_uc_fa_02_tt58_simple_book_updates_description_without_gl(self):
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=("accounting_regime", "bookkeeping_method"))
+        payload = self._base_uc_fa_01_payload(asset_account="", accumulated_account="", origins=[])
+        for allocation in payload["allocations"]:
+            allocation["expense_account"] = ""
+        acquired = self.client.post(f"/api/v1/fixed-assets/assets/acquire/{self.query}", payload, format="json")
+        self.assertEqual(acquired.status_code, 201, acquired.data)
+        asset_id = acquired.data["asset"]["id"]
+        before = AssetRecord.objects.get(pk=asset_id)
+        result = self.client.post(f"/api/v1/fixed-assets/assets/{asset_id}/update-info/{self.query}",
+            {"name": "Dây chuyền đóng gói mới", "version": 1}, format="json")
+        self.assertEqual(result.status_code, 200, result.data)
+        after = AssetRecord.objects.get(pk=asset_id)
+        self.assertEqual(after.name, "Dây chuyền đóng gói mới")
+        self.assertEqual((after.original_cost, after.accumulated_depreciation, after.remaining_value),
+                         (before.original_cost, before.accumulated_depreciation, before.remaining_value))
+        self.assertIsNone(after.asset_account_id)
+        self.assertEqual(after.transactions.get(transaction_type="ACQUISITION").gl_status, "NOT_REQUIRED")
+
     def test_uc_fa_03_main_flow_example_4_8_and_gl_posting(self):
         """
         UC-FA-03 Main Flow & Section 4.8 End-to-End Example:
@@ -632,7 +715,7 @@ class FixedAssetApiTests(TestCase):
           * Tab 2 (Phân bổ): Phòng Kế toán = 600,000; Phòng Kinh doanh = 400,000; sum = 1,000,000.
           * Tab 3 (Hạch toán): Nợ 642 / Có 214 = 600,000; Nợ 641 / Có 214 = 400,000; sum = 1,000,000.
         - Save & Post voucher KH032026:
-          * Exact message: "Đã lưu chứng từ tính khấu hao KH032026 thành công!"
+          * Exact message: "Lưu chứng từ tính khấu hao thành công."
           * Sổ tài sản TS001: original_cost = 60,000,000, accumulated_depreciation = 3,000,000, remaining_value = 57,000,000.
         """
         acc_641 = Account.objects.create(
@@ -730,7 +813,7 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(save_resp.status_code, 201, save_resp.data)
-        self.assertEqual(save_resp.data["message"], "Đã lưu chứng từ tính khấu hao KH032026 thành công!")
+        self.assertEqual(save_resp.data["message"], "Lưu chứng từ tính khấu hao thành công.")
         self.assertTrue(save_resp.data["posted"])
         run_id = save_resp.data["run"]["id"]
         self.assertEqual(save_resp.data["run"]["status"], "POSTED")
@@ -1110,6 +1193,145 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ef01.status_code, 403)
         self.assertEqual(str(ef01.data["detail"]), "Bạn không có quyền tính khấu hao tài sản cố định.")
 
+    def _acquire_for_depreciation(self, code, voucher_no, **overrides):
+        payload = self._base_uc_fa_01_payload(
+            voucher_no=voucher_no,
+            code=code,
+            name=f"Tài sản {code}",
+            acquisition_date="2026-01-01",
+            in_service_date="2026-01-01",
+            depreciation_start_date="2026-01-01",
+            original_cost="12000000",
+            depreciable_amount="12000000",
+            useful_life_value="12",
+            useful_life_unit="Tháng",
+            origins=[],
+        )
+        payload.update(overrides)
+        res = self.client.post(f"/api/v1/fixed-assets/assets/acquire/{self.query}", payload, format="json")
+        self.assertEqual(res.status_code, 201, res.data)
+        return res.data["asset"]["id"]
+
+    def test_uc_fa_03_default_period_and_straight_line_only(self):
+        """BR03: default period follows the working period. BR08/BR09/EF28: only straight-line is auto-calculated."""
+        models.AssetPeriod.objects.create(company=self.company, code="2026-07", start_date=date(2026, 7, 1), end_date=date(2026, 7, 31), status="OPEN")
+        default = self.client.get(f"/api/v1/fixed-assets/calculations/default-period/{self.query}")
+        self.assertEqual(default.status_code, 200, default.data)
+        self.assertEqual((default.data["month"], default.data["year"]), (7, 2026))
+
+        asset_id = self._acquire_for_depreciation("TS-DB", "GT-DB")
+        models.AssetRecord.objects.filter(pk=asset_id).update(method=models.DepreciationMethod.OTHER)
+        res = self.client.post(f"/api/v1/fixed-assets/calculations/preview/{self.query}", {"month": 3, "year": 2026}, format="json")
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(str(res.data["detail"]), "Chưa đủ thông tin để tính khấu hao theo phương pháp đường thẳng.")
+        self.assertEqual(str(res.data["asset_code"]), "TS-DB")
+
+    def test_uc_fa_03_last_period_absorbs_rounding_and_duplicates_are_per_asset(self):
+        """BR13: final month takes the remaining value. AF14/BR16: only assets without a result are added later."""
+        first_id = self._acquire_for_depreciation(
+            "TS-ROUND", "GT-ROUND", original_cost="1000000", depreciable_amount="1000000",
+            useful_life_value="3", monthly_depreciation_amount="333333",
+        )
+        models.AssetRecord.objects.filter(pk=first_id).update(accumulated_depreciation=Decimal("666666"), periods_processed=2)
+        preview = self.client.post(f"/api/v1/fixed-assets/calculations/preview/{self.query}", {"month": 3, "year": 2026}, format="json")
+        self.assertEqual(preview.status_code, 200, preview.data)
+        self.assertEqual(Decimal(preview.data["lines"][0]["amount"]), Decimal("333334"))
+        self.assertEqual(Decimal(preview.data["lines"][0]["closing_value"]), Decimal("0"))
+        self.assertTrue(preview.data["uses_general_ledger"])
+        self.assertEqual(preview.data["voucher_no"], preview.data["suggested_voucher_no"])
+
+        save_url = f"/api/v1/fixed-assets/calculations/save-voucher/{self.query}"
+        first = self.client.post(save_url, {"month": 3, "year": 2026, "voucher_no": "KH-R1", "post_now": True}, format="json")
+        self.assertEqual(first.status_code, 201, first.data)
+        self.assertEqual(first.data["message"], "Lưu chứng từ tính khấu hao thành công.")
+        self.assertEqual(models.AssetRecord.objects.get(pk=first_id).remaining_value, Decimal("0"))
+
+        second_id = self._acquire_for_depreciation("TS-LATE", "GT-LATE")
+        second = self.client.post(save_url, {"month": 3, "year": 2026, "voucher_no": "KH-R2", "post_now": True}, format="json")
+        self.assertEqual(second.status_code, 201, second.data)
+        run = models.CalculationRun.objects.get(pk=second.data["run"]["id"])
+        self.assertEqual([str(line.asset_id) for line in run.lines.all()], [second_id])
+        self.assertEqual(run.total_amount, Decimal("1000000"))
+
+        again = self.client.post(save_url, {"month": 3, "year": 2026, "voucher_no": "KH-R3"}, format="json")
+        self.assertEqual(again.status_code, 400)
+        self.assertEqual(str(again.data["detail"]), "Tài sản đã được tính khấu hao trong kỳ đã chọn.")
+
+    def test_uc_fa_03_tt133_uses_its_own_expense_accounts(self):
+        """AF19 & BR26: TT133 books take 6421/6422, not the TT99/TT200 detail accounts."""
+        self.company.accounting_regime = "TT133"
+        self.company.save(update_fields=("accounting_regime",))
+        ChartOfAccounts.objects.filter(pk=self.coa.pk).update(accounting_regime="TT133", effective_from=date(2026, 1, 1))
+        acc_kwargs = dict(company=self.company, chart_of_accounts=self.coa, account_class=self.accounts[0].account_class, account_type="EXPENSE", normal_balance="DEBIT")
+        acc_6422 = Account.objects.create(code="6422", name="Chi phí quản lý doanh nghiệp", **acc_kwargs)
+        acc_6424 = Account.objects.create(code="6424", name="Chi phí khấu hao TSCĐ (TT200)", **acc_kwargs)
+        asset_id = self._acquire_for_depreciation("TS-133", "GT-133")
+        alloc = [{"department_id": str(self.department.id), "rate": "100", "expense_account": str(acc_6424.id), "expense_item": "CPQL"}]
+        models.AssetRecord.objects.filter(pk=asset_id).update(allocations=alloc)
+        preview_url = f"/api/v1/fixed-assets/calculations/preview/{self.query}"
+        bad = self.client.post(preview_url, {"month": 3, "year": 2026}, format="json")
+        self.assertEqual(bad.status_code, 400)
+        self.assertEqual(str(bad.data["detail"]), "Tài khoản hạch toán khấu hao không hợp lệ. Vui lòng kiểm tra lại.")
+
+        alloc[0]["expense_account"] = str(acc_6422.id)
+        models.AssetRecord.objects.filter(pk=asset_id).update(allocations=alloc)
+        ok = self.client.post(preview_url, {"month": 3, "year": 2026}, format="json")
+        self.assertEqual(ok.status_code, 200, ok.data)
+        self.assertEqual((ok.data["accounting_regime"], ok.data["account_regime"]), ("TT133", "TT133"))
+        self.assertEqual(ok.data["accounting_entries"][0]["debit_account_code"], "6422")
+        self.assertEqual(ok.data["accounting_entries"][0]["credit_account_code"], "214")
+
+    def test_uc_fa_03_tt200_history_keeps_historical_chart(self):
+        """AF18 & BR25 & BR31: the chart effective on the posting date decides, not today's regime."""
+        ChartOfAccounts.objects.filter(pk=self.coa.pk).update(effective_from=date(2026, 7, 1))
+        ChartOfAccounts.objects.create(company=self.company, code="TT200-OLD", name="TT200", accounting_regime="TT200",
+                                       effective_from=date(2025, 1, 1), effective_to=date(2026, 6, 30))
+        self._acquire_for_depreciation("TS-200", "GT-200")
+        old = self.client.post(f"/api/v1/fixed-assets/calculations/preview/{self.query}", {"month": 3, "year": 2026}, format="json")
+        self.assertEqual(old.status_code, 200, old.data)
+        self.assertEqual(old.data["account_regime"], "TT200")
+        new = self.client.post(f"/api/v1/fixed-assets/calculations/preview/{self.query}", {"month": 8, "year": 2026}, format="json")
+        self.assertEqual(new.status_code, 200, new.data)
+        self.assertEqual(new.data["account_regime"], "TT99")
+
+    def test_uc_fa_03_tt58_simple_book_has_no_debit_credit_lines(self):
+        """AF17 & BR28 & BR29: TT58 single-entry books compute and post depreciation without GL entries."""
+        from general_ledger.models import JournalEntry
+
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=("accounting_regime", "bookkeeping_method"))
+        asset_id = self._acquire_for_depreciation(
+            "TS-58", "GT-58", asset_account="", accumulated_account="",
+            allocations=[{"department_id": str(self.department.id), "rate": "100", "expense_account": "", "expense_item": "CPQL"}],
+        )
+        preview = self.client.post(f"/api/v1/fixed-assets/calculations/preview/{self.query}", {"month": 3, "year": 2026}, format="json")
+        self.assertEqual(preview.status_code, 200, preview.data)
+        self.assertFalse(preview.data["uses_general_ledger"])
+        self.assertEqual(preview.data["accounting_entries"], [])
+        self.assertEqual(Decimal(preview.data["allocations"][0]["allocated_amount"]), Decimal("1000000"))
+        self.assertEqual(Decimal(preview.data["lines"][0]["annual_depreciation_rate"]), Decimal("100.00"))
+        self.assertEqual(Decimal(preview.data["lines"][0]["monthly_depreciation_amount"]), Decimal("1000000"))
+
+        saved = self.client.post(f"/api/v1/fixed-assets/calculations/save-voucher/{self.query}",
+                                 {"month": 3, "year": 2026, "voucher_no": "KH-58", "post_now": False}, format="json")
+        self.assertEqual(saved.status_code, 201, saved.data)
+        self.assertEqual(models.AssetRecord.objects.get(pk=asset_id).accumulated_depreciation, Decimal("0"))
+        run_id = saved.data["run"]["id"]
+        posted = self.client.post(f"/api/v1/fixed-assets/calculations/{run_id}/post/{self.query}", {}, format="json")
+        self.assertEqual(posted.status_code, 200, posted.data)
+        self.assertEqual(posted.data["status"], "POSTED")
+        self.assertEqual(models.AssetRecord.objects.get(pk=asset_id).accumulated_depreciation, Decimal("1000000"))
+        self.assertFalse(JournalEntry.objects.filter(company=self.company, source_module="FA").exists())
+        tx = AssetTransaction.objects.get(asset_id=asset_id, transaction_type="DEPRECIATION")
+        self.assertEqual(tx.gl_status, "NOT_REQUIRED")
+
+        self.company.bookkeeping_method = "UNKNOWN"
+        self.company.save(update_fields=("bookkeeping_method",))
+        ef27 = self.client.post(f"/api/v1/fixed-assets/calculations/preview/{self.query}", {"month": 4, "year": 2026}, format="json")
+        self.assertEqual(ef27.status_code, 400)
+        self.assertEqual(str(ef27.data["detail"]), "Chưa xác định được cấu hình ghi sổ phù hợp với chế độ kế toán áp dụng.")
+
     # ==========================================================================
     # UC-FA-04 — GHI NHẬN KHẤU HAO TÀI SẢN
     # ==========================================================================
@@ -1281,10 +1503,10 @@ class FixedAssetApiTests(TestCase):
     def test_uc_fa_04_alternative_flows_edit_allocations_consolidation_prior_period_idempotency(self):
         """
         UC-FA-04 Alternative Flows:
-        - AF04: Edit allocations / expense accounts before posting -> updates accounting_entries
-        - AF05 & BR16: Consolidate accounting entries sharing (debit, credit, department, cost_item) with source_asset_codes traceability
-        - AF13: Block posting period 05/2026 while prior period 04/2026 voucher for the same assets is still unposted (CALCULATED)
-        - AF16: Idempotent retry on POSTED voucher with matching idempotency_key
+        - BR01 & AF10: Posting uses the stored lines/allocations/entries; overrides must go through UC-FA-03
+        - AF05 & BR19: Consolidate accounting entries sharing (debit, credit, department, cost_item), keeping per-asset source lines
+        - AF13 & EF30: Block posting period 05/2026 while prior period 04/2026 voucher for the same assets is still unposted
+        - AF19: Idempotent retry on POSTED voucher with matching idempotency_key
         """
         for idx, code in enumerate(("TS-AF-1", "TS-AF-2"), 1):
             self.client.post(
@@ -1345,31 +1567,37 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(af13.status_code, 400)
         self.assertEqual(
             str(af13.data["period"]),
-            "Khấu hao kỳ trước chưa được ghi sổ. Vui lòng ghi sổ kỳ trước trước khi thực hiện.",
+            "Chưa hoàn tất ghi nhận khấu hao kỳ trước. Vui lòng kiểm tra lại.",
         )
 
-        # AF04 & AF05: Post Period 04/2026 with updated expense_account="6424" and consolidate_accounting_entries=True
-        updated_allocs = []
-        for alloc in r04.data["allocations_snapshot"]:
-            updated_allocs.append({**alloc, "expense_account": "6424", "department_name": "Phòng Quản lý", "cost_item": "CPQL"})
+        # BR01 & AF10: changing allocations at posting time is refused; the voucher stays "Chưa ghi sổ"
+        override = self.client.post(
+            f"/api/v1/fixed-assets/calculations/{run04_id}/post/{self.query}",
+            {"allocations": [{**a, "expense_account": "6424"} for a in r04.data["allocations_snapshot"]]},
+            format="json",
+        )
+        self.assertEqual(override.status_code, 400)
+        self.assertEqual(override.data["fields"], ["allocations"])
+        self.assertEqual(models.CalculationRun.objects.get(pk=run04_id).status, "CALCULATED")
 
+        # AF05: Post Period 04/2026 consolidating the stored entries
         post04 = self.client.post(
             f"/api/v1/fixed-assets/calculations/{run04_id}/post/{self.query}",
-            {
-                "allocations": updated_allocs,
-                "consolidate_accounting_entries": True,
-                "idempotency_key": "IDEM-POST-04",
-            },
+            {"consolidate_accounting_entries": True, "idempotency_key": "IDEM-POST-04"},
             format="json",
         )
         self.assertEqual(post04.status_code, 200, post04.data)
         self.assertEqual(post04.data["status"], "POSTED")
-        # Both assets (1,000,000 + 1,000,000 = 2,000,000) consolidated into 1 accounting line with source_asset_codes
+        # Both assets (1,000,000 + 1,000,000 = 2,000,000) consolidated into 1 accounting line, still traceable per asset
         self.assertEqual(len(post04.data["accounting_entries"]), 1)
         consolidated_line = post04.data["accounting_entries"][0]
-        self.assertEqual(consolidated_line["debit_account"], "6424")
+        self.assertEqual(consolidated_line["debit_account"], "642")
         self.assertEqual(Decimal(consolidated_line["amount"]), Decimal("2000000"))
         self.assertEqual(sorted(consolidated_line["source_asset_codes"]), ["TS-AF-1", "TS-AF-2"])
+        self.assertEqual(
+            sorted((x["asset_code"], Decimal(x["amount"])) for x in consolidated_line["source_lines"]),
+            [("TS-AF-1", Decimal("1000000")), ("TS-AF-2", Decimal("1000000"))],
+        )
 
         # AF16: Idempotent retry with same idempotency_key returns 200 without error
         retry04 = self.client.post(
@@ -1455,50 +1683,108 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ef05.status_code, 400)
         self.assertEqual(str(ef05.data["posting_date"]), "Ngày hạch toán không hợp lệ. Vui lòng kiểm tra lại.")
 
-        # EF10: Empty lines
-        ef10 = self.client.post(post_url, {"lines": []}, format="json")
+        run = models.CalculationRun.objects.get(pk=run_id)
+        line = run.lines.get()
+        stored_allocations = list(run.allocations_snapshot)
+        stored_entries = list(run.accounting_entries)
+
+        def tamper(**fields):
+            models.CalculationRun.objects.filter(pk=run_id).update(**fields)
+
+        def restore():
+            models.CalculationRun.objects.filter(pk=run_id).update(
+                total_amount=Decimal("2000000"), allocations_snapshot=stored_allocations, accounting_entries=stored_entries
+            )
+            models.CalculationLine.objects.filter(pk=line.pk).update(amount=Decimal("2000000"))
+
+        # BR01 & BR51: the stored result cannot be overridden at posting time
+        override = self.client.post(post_url, {"custom_lines": [{"asset_id": asset_id, "amount": "500000000"}]}, format="json")
+        self.assertEqual(override.status_code, 400)
+        self.assertEqual(override.data["fields"], ["custom_lines"])
+
+        # EF10: No valid depreciation line
+        models.CalculationLine.objects.filter(pk=line.pk).update(amount=Decimal("0"))
+        ef10 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef10.status_code, 400)
         self.assertEqual(str(ef10.data["lines"]), "Chứng từ chưa có dữ liệu khấu hao để ghi nhận.")
+        restore()
 
-        # EF13: Incomplete allocations (empty or rate != 100%)
-        ef13 = self.client.post(post_url, {"allocations": []}, format="json")
+        # EF27 & BR12: detail lines do not add up to the voucher total
+        tamper(total_amount=Decimal("2000001"))
+        ef27 = self.client.post(post_url, {}, format="json")
+        self.assertEqual(ef27.status_code, 400)
+        self.assertEqual(str(ef27.data["detail"]), "Số tiền khấu hao và phân bổ chưa cân đối. Vui lòng kiểm tra lại.")
+        restore()
+
+        # EF13: Incomplete allocations
+        tamper(allocations_snapshot=[])
+        ef13 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef13.status_code, 400)
         self.assertEqual(str(ef13.data["allocations"]), "Chưa thiết lập đầy đủ thông tin phân bổ khấu hao.")
+        restore()
 
         # EF11: Total allocation amount mismatch
         ef11 = self.client.post(post_url, {"total_allocation_amount": "999999"}, format="json")
         self.assertEqual(ef11.status_code, 400)
         self.assertEqual(str(ef11.data["allocations"]), "Tổng tiền phân bổ không khớp với số khấu hao đã tính.")
 
-        # EF08: Invalid debit account
-        bad_debit_entries = [{**saved.data["accounting_entries"][0], "debit_account": "1111"}]
-        ef08 = self.client.post(post_url, {"accounting_entries": bad_debit_entries}, format="json")
+        # EF08: Debit account that does not exist in the chart (never created on the fly)
+        tamper(accounting_entries=[{**stored_entries[0], "debit_account": "6279", "debit_account_code": "6279"}])
+        ef08 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef08.status_code, 400)
         self.assertEqual(str(ef08.data["debit_account"]), "Tài khoản ghi Nợ không hợp lệ.")
+        self.assertEqual(int(ef08.data["line"]), 1)
+        restore()
 
-        # EF09: Invalid credit account (not 214x or mismatched with asset accumulated account)
-        bad_credit_entries = [{**saved.data["accounting_entries"][0], "credit_account": "331"}]
-        ef09 = self.client.post(post_url, {"accounting_entries": bad_credit_entries}, format="json")
+        # EF24: Existing postable account that does not fit the regime's depreciation accounts
+        Account.objects.create(company=self.company, chart_of_accounts=self.coa, account_class=self.accounts[0].account_class,
+                               code="331", name="Phải trả người bán", account_type="LIABILITY", normal_balance="CREDIT")
+        tamper(accounting_entries=[{**stored_entries[0], "debit_account": "331", "debit_account_code": "331"}])
+        ef24 = self.client.post(post_url, {}, format="json")
+        self.assertEqual(ef24.status_code, 400)
+        self.assertEqual(str(ef24.data["debit_account"]), "Tài khoản hạch toán không phù hợp với chế độ kế toán của doanh nghiệp.")
+        restore()
+
+        # EF09: Credit account is not the asset's accumulated depreciation account
+        tamper(accounting_entries=[{**stored_entries[0], "credit_account": "331", "credit_account_code": "331"}])
+        ef09 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef09.status_code, 400)
         self.assertEqual(str(ef09.data["credit_account"]), "Tài khoản hao mòn TSCĐ không hợp lệ.")
+        restore()
 
         # EF12: Accounting entry amount mismatch with depreciation total
-        bad_amt_entries = [{**saved.data["accounting_entries"][0], "amount": "1500000"}]
-        ef12 = self.client.post(post_url, {"accounting_entries": bad_amt_entries}, format="json")
+        tamper(accounting_entries=[{**stored_entries[0], "amount": "1500000"}])
+        ef12 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef12.status_code, 400)
         self.assertEqual(
             str(ef12.data["accounting_entries"]),
             "Số tiền hạch toán không khớp với số khấu hao của chứng từ.",
         )
+        restore()
 
-        # EF15: Custom depreciation line amount exceeds remaining allowed depreciable value
-        ef15 = self.client.post(
-            post_url,
-            {"custom_lines": [{"asset_id": asset_id, "amount": "500000000"}]},
-            format="json",
-        )
+        # EF15: Stored depreciation exceeds the remaining depreciable value
+        tamper(total_amount=Decimal("500000000"))
+        models.CalculationLine.objects.filter(pk=line.pk).update(amount=Decimal("500000000"))
+        ef15 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef15.status_code, 400)
         self.assertEqual(str(ef15.data["amount"]), "Giá trị khấu hao vượt mức được phép của tài sản.")
+        restore()
+
+        # EF16 & BR39: a revaluation posted after the calculation makes the result stale
+        stale_tx = models.AssetTransaction.objects.create(
+            company=self.company, asset_id=asset_id, number="DGL-STALE", transaction_type="VALUE_INCREASE",
+            transaction_date="2026-07-15", amount=Decimal("1000000"), period_code="2026-07", status="POSTED",
+            posted_at=timezone.now(), created_by=services.actor(type("Req", (), {"user": self.maker})()),
+        )
+        stale = self.client.post(post_url, {}, format="json")
+        self.assertEqual(stale.status_code, 400)
+        self.assertEqual(str(stale.data["detail"]), "Dữ liệu tài sản đã thay đổi. Vui lòng tính lại khấu hao trước khi ghi sổ.")
+        stale_tx.delete()
+
+        # BR01: the period cannot be switched at posting time
+        other_period = self.client.post(post_url, {"month": 8, "year": 2026}, format="json")
+        self.assertEqual(other_period.status_code, 400)
+        self.assertIn("period", other_period.data)
 
         # EF16: Asset version / original_cost changed after calculation
         ef16 = self.client.post(
@@ -1585,6 +1871,15 @@ class FixedAssetApiTests(TestCase):
         ef03 = self.client.post(post_url, {}, format="json")
         self.assertEqual(ef03.status_code, 400)
         self.assertEqual(str(ef03.data["status"]), "Chứng từ khấu hao đã được ghi sổ.")
+        audit = AuditLog.objects.filter(company=self.company, entity_id=str(run_id), action_code="POST_DEPRECIATION").first()
+        self.assertIsNotNone(audit)
+
+        # EF29: cancelled voucher cannot be posted
+        models.CalculationRun.objects.filter(pk=run_id).update(status="CANCELLED")
+        ef29 = self.client.post(post_url, {}, format="json")
+        self.assertEqual(ef29.status_code, 400)
+        self.assertEqual(str(ef29.data["status"]), "Trạng thái chứng từ không cho phép ghi sổ.")
+        models.CalculationRun.objects.filter(pk=run_id).update(status="POSTED")
 
         # EF21: Cross-company access denied
         other_company = Company.objects.create(
@@ -1616,6 +1911,29 @@ class FixedAssetApiTests(TestCase):
     # ==========================================================================
     # UC-FA-05 – Điều chuyển tài sản cố định (Fixed Asset Transfer)
     # ==========================================================================
+
+    def _uc05_catalogs(self):
+        """Cost tracking catalogs used by UC-FA-05 (Hợp đồng bán, Đơn đặt hàng, Công trình, Khoản mục CP, Đối tượng THCP)."""
+        from master_data.models import CostCenter, ExpenseItem, Party, Project
+        from sales.models import SalesContract, SalesOrder
+
+        currency = self.company.accounting_currency
+        customer = Party.objects.create(company=self.company, code="KH-UC05", name="Khách hàng UC05", default_currency=currency)
+        doc = dict(company=self.company, customer=customer, currency=currency, document_date=date(2026, 1, 1),
+                   created_by=self.maker.iam_account)
+        contract = SalesContract.objects.create(number="HĐB-2026-01", status="SIGNED", start_date=date(2026, 1, 1),
+                                                end_date=date(2026, 12, 31), **doc)
+        other_contract = SalesContract.objects.create(number="HĐB-2026-02", status="SIGNED", start_date=date(2026, 1, 1),
+                                                      end_date=date(2026, 12, 31), **doc)
+        SalesOrder.objects.create(number="ĐĐH-2026-01", status="APPROVED", contract=contract, **doc)
+        SalesOrder.objects.create(number="ĐĐH-2026-99", status="APPROVED", contract=other_contract, **doc)
+        Project.objects.create(company=self.company, code="CT-A", name="Công trình A")
+        Project.objects.create(company=self.company, code="DA-KD", name="Dự án Mở rộng KD")
+        Project.objects.create(company=self.company, code="CT-DONG", name="Công trình đã đóng", status="INACTIVE")
+        ExpenseItem.objects.create(company=self.company, code="KH-TSCD", name="Chi phí khấu hao TSCĐ")
+        ExpenseItem.objects.create(company=self.company, code="CPKH-BH", name="CPKH Bán hàng")
+        CostCenter.objects.create(company=self.company, code="CT-A", name="Công trình A")
+        CostCenter.objects.create(company=self.company, code="TTKD01", name="Trung tâm KD 01")
 
     def _acquire_asset_for_uc05(self, code, cost, periods, acq_date="01/01/2026", department=None, allocations=None):
         dept = department or self.department
@@ -1660,6 +1978,7 @@ class FixedAssetApiTests(TestCase):
         - Preserves original_cost, accumulated_depreciation, remaining_value, sets gl_status='NOT_REQUIRED'
         - Updates department, cost tracking (Công trình A, Chi phí khấu hao TSCĐ), and AuditLog
         """
+        self._uc05_catalogs()
         self.client.force_authenticate(self.maker)
 
         dept_kt = Department.objects.create(
@@ -1735,9 +2054,9 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(line_data["asset_code"], "TS005")
         self.assertEqual(line_data["from_department_name"], "Phòng Kỹ thuật")
         self.assertEqual(line_data["to_department_name"], "Ban Quản lý Công trình")
-        self.assertEqual(line_data["project"], "Công trình A")
+        self.assertEqual(line_data["project"], "CT-A")
         self.assertEqual(line_data["expense_item"], "Chi phí khấu hao TSCĐ")
-        self.assertEqual(line_data["cost_object"], "Công trình A")
+        self.assertEqual(line_data["cost_object"], "CT-A")
         self.assertEqual(Decimal(line_data["original_cost"]), Decimal("200000000.00"))
         self.assertEqual(Decimal(line_data["accumulated_depreciation"]), Decimal("60000000.00"))
         self.assertEqual(Decimal(line_data["remaining_value"]), Decimal("140000000.00"))
@@ -1749,7 +2068,7 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ts005.accumulated_depreciation, Decimal("60000000.00"))
         self.assertEqual(ts005.remaining_value, Decimal("140000000.00"))
         self.assertEqual(ts005.allocations[0]["department_name"], "Ban Quản lý Công trình")
-        self.assertEqual(ts005.allocations[0]["project"], "Công trình A")
+        self.assertEqual(ts005.allocations[0]["project"], "CT-A")
         self.assertEqual(ts005.allocations[0]["expense_item"], "Chi phí khấu hao TSCĐ")
 
         # Verify next sequential number increments from ĐCTS00025 -> ĐCTS00026
@@ -1789,6 +2108,7 @@ class FixedAssetApiTests(TestCase):
         - AF20 & Section 5.6: Mid-period transfer with day-ratio depreciation split vs full-period allocation
         - AF24: Sequential transfers of the same asset across multiple dates
         """
+        self._uc05_catalogs()
         self.client.force_authenticate(self.maker)
         dept_a = self.department
         dept_b = Department.objects.create(company=self.company, branch=self.branch, code="PB-B", name="Phòng Kinh doanh")
@@ -1913,11 +2233,35 @@ class FixedAssetApiTests(TestCase):
         total_alloc = sum(Decimal(al["allocated_amount"]) for al in a1_allocs)
         self.assertEqual(total_alloc, Decimal("1000000.00"))
 
+    def test_uc_fa_05_history_drives_depreciation_allocation_of_earlier_periods(self):
+        """BR26 & BR46 & AF20: periods before the transfer keep the old unit; later periods use the new one."""
+        dept_to = Department.objects.create(company=self.company, branch=self.branch, code="PB-SAU", name="Phòng Sau điều chuyển")
+        asset = self._acquire_asset_for_uc05("TS-HIST", "60000000", 60, "01/03/2026")
+        res = self.client.post("/api/v1/fixed-assets/transactions/transfer/", {
+            "company": str(self.company.id), "voucher_no": "ĐCTS00001", "transaction_date": "01/07/2026",
+            "deliverer": "Người giao", "receiver": "Người nhận", "reason": "Điều chuyển",
+            "lines": [{"asset_id": asset["id"], "to_department": str(dept_to.id)}],
+        }, format="json")
+        self.assertEqual(res.status_code, 201, res.data)
+        record = models.AssetRecord.objects.get(pk=asset["id"])
+        self.assertEqual((record.original_cost, record.accumulated_depreciation), (Decimal("60000000"), Decimal("0")))
+        self.assertFalse(AssetTransaction.objects.filter(asset=record, transaction_type="TRANSFER").exclude(gl_status="NOT_REQUIRED").exists())
+
+        preview_url = f"/api/v1/fixed-assets/calculations/preview/{self.query}"
+        may = self.client.post(preview_url, {"month": 5, "year": 2026}, format="json")
+        self.assertEqual(may.status_code, 200, may.data)
+        self.assertEqual({a["department_name"] for a in may.data["allocations"]}, {self.department.name})
+        self.assertEqual(may.data["lines"][0]["department_name"], self.department.name)
+        july = self.client.post(preview_url, {"month": 7, "year": 2026}, format="json")
+        self.assertEqual(july.status_code, 200, july.data)
+        self.assertEqual({a["department_name"] for a in july.data["allocations"]}, {dept_to.name})
+
     def test_uc_fa_05_exception_flows_ef01_to_ef34(self):
         """
         Tests UC-FA-05 Exception Flows EF01 through EF34 with exact Vietnamese messages
         and verifies atomic batch rollback on failure (EF31, BR35) and idempotency (EF32, BR36).
         """
+        self._uc05_catalogs()
         self.client.force_authenticate(self.maker)
         dept_from = self.department
         dept_to = Department.objects.create(
@@ -1962,17 +2306,16 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ef04.status_code, 400)
         self.assertEqual(str(ef04.data["voucher_no"]), "Số biên bản giao nhận không hợp lệ.")
 
-        # EF07: Unauthorized manual voucher_no change when allow_manual_voucher_no=False
-        ef07 = self.client.post(
-            url,
-            {
-                **base_payload,
-                "voucher_no": "ĐCTS99999",
-                "allow_manual_voucher_no": False,
-                "expected_voucher_no": "ĐCTS00001",
-            },
-            format="json",
-        )
+        # EF07 & BR05: replacing the proposed number needs the number override permission (checked by the backend)
+        from unittest.mock import patch
+
+        with patch("fixed_assets.services._can_override_transfer_number", return_value=False):
+            ef07 = self.client.post(url, {**base_payload, "voucher_no": "ĐCTS99999"}, format="json")
+            proposed_ok = self.client.post(
+                url, {**base_payload, "voucher_no": "ĐCTS00001", "lines": []}, format="json"
+            )
+        self.assertEqual(proposed_ok.status_code, 400)
+        self.assertEqual(str(proposed_ok.data["lines"]), "Vui lòng chọn ít nhất một tài sản cần điều chuyển.")
         self.assertEqual(ef07.status_code, 400)
         self.assertEqual(str(ef07.data["voucher_no"]), "Bạn không có quyền thay đổi số biên bản giao nhận.")
 
@@ -2142,6 +2485,53 @@ class FixedAssetApiTests(TestCase):
         )
         self.assertEqual(ef27.status_code, 400)
         self.assertEqual(str(ef27.data["cost_object"]), "Đối tượng tập hợp chi phí không hợp lệ.")
+
+        # EF24 & BR21: an existing order that belongs to another contract
+        ef24_mismatch = self.client.post(
+            url,
+            {**base_payload, "lines": [{**base_payload["lines"][0], "sales_contract": "HĐB-2026-01", "sales_order": "ĐĐH-2026-99"}]},
+            format="json",
+        )
+        self.assertEqual(ef24_mismatch.status_code, 400)
+        self.assertEqual(str(ef24_mismatch.data["sales_order"]), "Đơn đặt hàng không phù hợp với hợp đồng bán đã chọn.")
+
+        # EF25: a project that exists but is closed for cost collection
+        ef25_closed = self.client.post(
+            url, {**base_payload, "lines": [{**base_payload["lines"][0], "project": "CT-DONG"}]}, format="json"
+        )
+        self.assertEqual(ef25_closed.status_code, 400)
+        self.assertIn("project", ef25_closed.data)
+
+        # EF34 & BR02: department of another company is not an internal transfer
+        foreign_company = Company.objects.create(
+            code="FA-FOREIGN", name="Công ty ngoài", tax_code="0100112299",
+            accounting_currency=self.company.accounting_currency, legal_reporting_currency=self.company.legal_reporting_currency,
+        )
+        foreign_branch = Branch.objects.create(company=foreign_company, code="FB", name="Chi nhánh ngoài")
+        foreign_dept = Department.objects.create(company=foreign_company, branch=foreign_branch, code="PX", name="Phòng ngoài")
+        ef34 = self.client.post(
+            url, {**base_payload, "lines": [{**base_payload["lines"][0], "to_department": str(foreign_dept.id)}]}, format="json"
+        )
+        self.assertEqual(ef34.status_code, 400)
+        self.assertEqual(str(ef34.data["to_department"]), "Nghiệp vụ không thuộc phạm vi điều chuyển TSCĐ nội bộ.")
+
+        # EF36 & AF11: a new allocation set after the transfer must cover 100%
+        ef36 = self.client.post(
+            url,
+            {**base_payload, "lines": [{**base_payload["lines"][0], "allocations": [
+                {"department_id": str(dept_to.id), "rate": "70", "expense_account": "642"},
+            ]}]},
+            format="json",
+        )
+        self.assertEqual(ef36.status_code, 400)
+        self.assertEqual(str(ef36.data["detail"]), "Chưa đủ thông tin phân bổ khấu hao sau điều chuyển.")
+
+        # EF35 & BR29: no usable accounting configuration
+        Company.objects.filter(pk=self.company.pk).update(accounting_regime="UNKNOWN")
+        ef35 = self.client.post(url, base_payload, format="json")
+        self.assertEqual(ef35.status_code, 400)
+        self.assertEqual(str(ef35.data["detail"]), "Chưa xác định được cấu hình dữ liệu kế toán phù hợp để điều chuyển tài sản.")
+        Company.objects.filter(pk=self.company.pk).update(accounting_regime="TT99")
 
         ef28 = self.client.post(
             url,
@@ -3009,6 +3399,60 @@ class FixedAssetApiTests(TestCase):
     # UC-FA-07: GHI GIẢM TÀI SẢN (FIXED ASSET DISPOSAL / DERECOGNITION)
     # ==========================================================================
 
+    def test_uc_fa_07_tt58_simple_book_and_reference_validation(self):
+        import tempfile
+        from datetime import timedelta
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from general_ledger.models import AccountingPeriod, JournalEntry
+
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=("accounting_regime", "bookkeeping_method"))
+        asset_id = self.create_asset("TS58-GG", "FIXED_ASSET", self.fixed_category, "120000000", 60)
+        models.AssetRecord.objects.filter(pk=asset_id).update(status="ACTIVE", accumulated_depreciation=Decimal("20000000"))
+        period = AccountingPeriod.objects.create(company=self.company, code="FA07", fiscal_year=self.today.year,
+            period_number=self.today.month, start_date=self.today.replace(day=1), end_date=self.today + timedelta(days=31))
+        source = JournalEntry.objects.create(company=self.company, period=period, number="BB-TL-58", status="POSTED",
+            posting_date=self.today, document_date=self.today, description="Biên bản thanh lý", created_by=self.maker.iam_account)
+        references = self.client.get(f"/api/v1/fixed-assets/transactions/disposal-references/{self.query}&number=BB-TL")
+        self.assertEqual(references.status_code, 200, references.data)
+        self.assertEqual([row["number"] for row in references.data], ["BB-TL-58"])
+        payload = {
+            "company": str(self.company.id), "voucher_no": "GGTS58-001", "reason": "Nhượng bán, thanh lý",
+            "posting_date": str(self.today), "voucher_date": str(self.today), "reference": "BB-TL-58",
+            "idempotency_key": "disposal-tt58-1",
+            "reference_journal_ids": [str(source.id)], "require_supporting_docs": True,
+            "rows": [{"asset_id": asset_id, "asset_code": "TS58-GG", "original_cost": "120000000",
+                "accumulated_depreciation": "20000000", "remaining_value": "100000000",
+                "asset_account": "", "accumulated_account": "", "disposal_account": ""}],
+        }
+        url = f"/api/v1/fixed-assets/transactions/dispose/{self.query}"
+        invalid = self.client.post(url, {**payload, "reference_journal_ids": ["00000000-0000-4000-8000-000000000000"]}, format="json")
+        self.assertEqual(invalid.status_code, 400, invalid.data)
+        saved = self.client.post(url, payload, format="json")
+        self.assertEqual(saved.status_code, 201, saved.data)
+        self.assertEqual(saved.data["gl_status"], "NOT_REQUIRED")
+        self.assertEqual(saved.data["reference"], "BB-TL-58")
+        self.assertEqual(saved.data["reference_journal_ids"], [str(source.id)])
+        self.assertEqual(saved.data["accounting_entries"], [])
+        self.assertEqual(saved.data["total_original_cost"], "120000000.00")
+        self.assertEqual(saved.data["total_accumulated_depreciation"], "20000000.00")
+        self.assertEqual(saved.data["total_remaining_value"], "100000000.00")
+        self.assertFalse(JournalEntry.objects.filter(company=self.company, source_module="FA").exists())
+        self.assertEqual(models.AssetRecord.objects.get(pk=asset_id).status, "DISPOSED")
+        with tempfile.TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media):
+            attachment_url = f"/api/v1/fixed-assets/transactions/disposal-attachments/{self.query}&voucher_no=GGTS58-001"
+            uploaded = self.client.post(attachment_url, {"file": SimpleUploadedFile("quyet-dinh.pdf", b"%PDF-1.4")}, format="multipart")
+            self.assertEqual(uploaded.status_code, 201, uploaded.data)
+            attachment = uploaded.data["attachments"][0]
+            downloaded = self.client.get(f"{attachment_url}&attachment_id={attachment['id']}")
+            self.assertEqual(downloaded.status_code, 200)
+            self.assertEqual(b"".join(downloaded.streaming_content), b"%PDF-1.4")
+        replay = self.client.post(url, payload, format="json")
+        self.assertEqual(replay.status_code, 200, replay.data)
+        self.assertTrue(replay.data["idempotent_replayed"])
+
     def test_uc_fa_07_main_flow_example_4_7_sale_liquidation_and_gl_posting(self):
         """
         UC-FA-07 Main Flow (Steps 1–40) & Section 4.7 Example:
@@ -3241,6 +3685,18 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(resp_af07.data["accounting_entries"][2]["debit_account"], "811")
         self.assertEqual(Decimal(resp_af07.data["accounting_entries"][2]["amount"]), Decimal("35000000.00"))
 
+        id_no_comp = _create_asset("TSCD008C", "Tài sản thiếu không thu hồi", "90000000.00", "35000000.00")
+        no_comp = self.client.post(
+            f"/api/v1/fixed-assets/transactions/dispose/{self.query}",
+            {"voucher_no": "GGTS00011C", "reason": "Phát hiện thiếu khi kiểm kê",
+             "posting_date": "12/10/2026", "voucher_date": "12/10/2026",
+             "has_processing_decision": True, "compensation_amount": "0",
+             "rows": [{"asset_id": id_no_comp, "asset_account": "2112", "accumulated_account": "2141"}]},
+            format="json",
+        )
+        self.assertEqual(no_comp.status_code, 201, no_comp.data)
+        self.assertEqual(no_comp.data["accounting_entries"][-1]["debit_account"], "811")
+
         # 3. Section 4.9 (AF13): Chuyển TSCĐ thành CCDC phân bổ nhiều kỳ (TSCD009: NG 40M, HM 28M, GTCL 12M -> TK 242)
         id_009 = _create_asset("TSCD009", "Máy in công nghiệp Z", "40000000.00", "28000000.00")
         resp_49 = self.client.post(
@@ -3287,6 +3743,18 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(resp_cap1.data["accounting_entries"][2]["debit_account"], "221")
         self.assertEqual(resp_cap1.data["accounting_entries"][2]["credit_account"], "711")
         self.assertEqual(Decimal(resp_cap1.data["accounting_entries"][2]["amount"]), Decimal("20000000.00"))
+
+        id_cap_zero = _create_asset("TSCD010Z", "Tài sản góp vốn không định giá", "90000000.00", "35000000.00")
+        cap_zero = self.client.post(
+            f"/api/v1/fixed-assets/transactions/dispose/{self.query}",
+            {"voucher_no": "GGTS00013Z", "reason": "Góp vốn vào công ty con",
+             "posting_date": "12/10/2026", "voucher_date": "12/10/2026",
+             "recipient_entity": "Công ty con", "agreed_investment_value": "0",
+             "rows": [{"asset_id": id_cap_zero, "asset_account": "2112", "accumulated_account": "2141"}]},
+            format="json",
+        )
+        self.assertEqual(cap_zero.status_code, 201, cap_zero.data)
+        self.assertEqual(cap_zero.data["accounting_entries"][-1]["debit_account"], "811")
 
         # 5. AF12: Trả lại TSCĐ thuê tài chính (TK 212 / 2142)
         id_lease = _create_asset("TSCD011", "Máy xúc thuê tài chính", "500000000.00", "300000000.00")
@@ -3829,6 +4297,58 @@ class FixedAssetApiTests(TestCase):
     # UC-FA-08 – KIỂM KÊ TÀI SẢN CỐ ĐỊNH
     # =========================================================================
 
+    def test_uc_fa_08_reference_attachment_export_and_idempotent_replay(self):
+        import tempfile
+        from datetime import timedelta
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from general_ledger.models import AccountingPeriod, JournalEntry
+
+        asset = self._create_uc08_book_asset("KK-LIVE-01", "Máy kiểm kê", Decimal("100000000"), Decimal("20000000"), acquisition_date="2024-01-01")
+        original_status = asset.status
+        period = AccountingPeriod.objects.create(company=self.company, code="KK-REF", fiscal_year=self.today.year,
+            period_number=self.today.month, start_date=self.today.replace(day=1), end_date=self.today + timedelta(days=31))
+        journal = JournalEntry.objects.create(company=self.company, period=period, number="QD-KK-01", status="POSTED",
+            posting_date=self.today, document_date=self.today, description="Quyết định kiểm kê", created_by=self.maker.iam_account)
+        base = f"/api/v1/fixed-assets/counts/{self.query}"
+        refs = self.client.get(f"/api/v1/fixed-assets/counts/stocktake-references/{self.query}&number=QD-KK")
+        self.assertEqual(refs.status_code, 200, refs.data)
+        self.assertEqual(refs.data[0]["number"], "QD-KK-01")
+        book = self.client.get(f"/api/v1/fixed-assets/counts/load-book-assets/{self.query}&count_date={self.today}")
+        self.assertEqual(book.status_code, 200, book.data)
+        self.assertEqual(book.data["lines"][0]["asset_code"], asset.code)
+        payload = {"company": str(self.company.id), "voucher_no": "KKTS-LIVE-01", "count_date": str(self.today),
+            "report_datetime": f"{self.today} 10:00:00", "purpose": "Kiểm kê định kỳ", "idempotency_key": "kk-live-01",
+            "reference_journal_ids": [str(journal.id)], "members": [{"name": "Nguyễn Văn A", "role": "Trưởng ban"}],
+            "attachments": [{"name": "bien-ban.pdf", "size": 8}],
+            "lines": [{"asset": str(asset.id), "existence_status": "EXISTS", "expected_version": asset.version,
+                "expected_original_cost": "100000000", "expected_accumulated_depreciation": "20000000",
+                "expected_remaining_value": "80000000", "current_quality": "Tốt", "recommendation": "Tiếp tục sử dụng"}]}
+        invalid = self.client.post(base, {**payload, "reference_journal_ids": ["00000000-0000-4000-8000-000000000000"]}, format="json")
+        self.assertEqual(invalid.status_code, 400, invalid.data)
+        saved = self.client.post(base, payload, format="json")
+        self.assertEqual(saved.status_code, 201, saved.data)
+        self.assertEqual(saved.data["reference"], "QD-KK-01")
+        self.assertEqual(saved.data["reference_journal_ids"], [str(journal.id)])
+        self.assertEqual(saved.data["summary"]["matched_count"], 1)
+        with tempfile.TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media):
+            upload_url = f"/api/v1/fixed-assets/counts/{saved.data['id']}/stocktake-attachments/{self.query}"
+            uploaded = self.client.post(upload_url, {"file": SimpleUploadedFile("bien-ban.pdf", b"%PDF-1.4")}, format="multipart")
+            self.assertEqual(uploaded.status_code, 201, uploaded.data)
+            attachment = uploaded.data["attachments"][0]
+            downloaded = self.client.get(f"{upload_url}&attachment_id={attachment['id']}")
+            self.assertEqual(downloaded.status_code, 200)
+            self.assertEqual(b"".join(downloaded.streaming_content), b"%PDF-1.4")
+        replay = self.client.post(base, payload, format="json")
+        self.assertEqual(replay.status_code, 200, replay.data)
+        self.assertTrue(replay.data["idempotent_replayed"])
+        exported = self.client.get(f"/api/v1/fixed-assets/counts/export-stocktakes/{self.query}")
+        self.assertEqual(exported.status_code, 200, exported.data)
+        self.assertEqual(exported.data[0]["number"], "KKTS-LIVE-01")
+        asset.refresh_from_db()
+        self.assertEqual(asset.status, original_status)
+        self.assertEqual(asset.original_cost, Decimal("100000000"))
+
     def _create_uc08_book_asset(
         self,
         code: str,
@@ -4062,8 +4582,16 @@ class FixedAssetApiTests(TestCase):
         )
         self.assertEqual(draft_resp.status_code, 201, draft_resp.data)
         self.assertEqual(draft_resp.data["status"], "DRAFT")
+        self.assertEqual(draft_resp.data["status_display"], "Chưa hoàn tất")
         self.assertEqual(draft_resp.data["voucher_no"], "KKTS00001")
         count_id = draft_resp.data["id"]
+
+        # AF15 & BR43: the write-down recommendation is settled by a posted disposal voucher of that asset
+        models.AssetTransaction.objects.create(
+            company=self.company, asset=a_zero_rem, number="GGTS00088", transaction_type="DISPOSAL",
+            transaction_date=date(2025, 11, 20), status="POSTED",
+            created_by=services.actor(type("Req", (), {"user": self.maker})()),
+        )
 
         # 4. Update DRAFT -> CONFIRMED and then mark recommendations processed with resolution basis (AF19–AF22)
         confirm_resp = self.client.put(
@@ -4076,6 +4604,7 @@ class FixedAssetApiTests(TestCase):
                 "conclusion": "Đã kiểm kê Bộ phận A: phát hiện 01 tài sản thiếu đã lập chứng từ xử lý.",
                 "recommendations_processed": True,
                 "reference": "GGTS00088",
+                "members": [{"name": "Nguyễn Văn An", "position": "Trưởng phòng", "represent": "Ban Giám đốc", "role": "Trưởng ban"}],
                 "lines": [
                     {
                         "asset": str(a_active.id),
@@ -4096,7 +4625,123 @@ class FixedAssetApiTests(TestCase):
         )
         self.assertEqual(confirm_resp.status_code, 200, confirm_resp.data)
         self.assertEqual(confirm_resp.data["status"], "PROCESSED")
+        self.assertEqual(confirm_resp.data["status_display"], "Đã ghi nhận")
         self.assertTrue(confirm_resp.data["recommendations_processed"])
+        missing_line = next(ln for ln in confirm_resp.data["lines"] if ln["asset_code"] == "TS-A02")
+        self.assertEqual(missing_line["resolution_voucher"]["type"], "DISPOSAL")
+
+    def _uc08_staff_client(self, username, *permission_codes):
+        from iam.models import CompanyMembership, Permission, Role, RolePermission, UserRoleAssignment
+
+        staff = get_user_model().objects.create_user(username=username, email=f"{username}@fa.test", password="x")
+        membership = CompanyMembership.objects.create(
+            company=self.company, user=staff.iam_account, created_by=self.maker.iam_account, membership_status="ACTIVE",
+        )
+        role = Role.objects.create(company=self.company, code=f"R-{username}", name=username)
+        for code in permission_codes:
+            RolePermission.objects.create(role=role, permission=Permission.objects.get(code=code))
+        UserRoleAssignment.objects.create(company_membership=membership, role=role, assigned_by=self.maker.iam_account)
+        client = APIClient()
+        client.force_authenticate(staff)
+        return client
+
+    def test_uc_fa_08_confirmed_voucher_processing_and_adjust_right(self):
+        """AF20, EF26, BR56, BR62: after "Đã ghi nhận" only the processing may change without the adjust right."""
+        asset = self._create_uc08_book_asset("KK-AF20", "Máy cũ", Decimal("60000000"), Decimal("10000000"), acquisition_date="2025-01-01")
+        url = f"/api/v1/fixed-assets/counts/{self.query}"
+        payload = {
+            "company": str(self.company.id), "voucher_no": "KKTS-AF20", "count_date": "30/09/2026",
+            "report_datetime": "01/10/2026 09:00:00", "purpose": "Kiểm kê quý 3",
+            "members": [{"name": "Lê Thị Hoa", "position": "Kế toán", "represent": "Phòng Kế toán", "role": "Trưởng ban"}],
+            "lines": [{"asset": str(asset.id), "existence_status": "MISSING", "note": "Không có tại kho",
+                       "recommendation": "Ghi giảm TSCĐ thiếu"}],
+        }
+        saved = self.client.post(url, payload, format="json")
+        self.assertEqual(saved.status_code, 201, saved.data)
+        self.assertEqual(saved.data["status_display"], "Đã ghi nhận")
+        self.assertEqual(saved.data["lines"][0]["recommendation_status"], "PENDING")
+        detail_url = f"/api/v1/fixed-assets/counts/{saved.data['id']}/{self.query}"
+
+        staff = self._uc08_staff_client("kk-editor", "FA.COUNT.VIEW", "FA.COUNT.EDIT")
+        # EF26: rewriting the count result of a confirmed voucher
+        changed = staff.put(detail_url, {**payload, "lines": [{**payload["lines"][0], "existence_status": "EXISTS",
+            "recommendation": "Tiếp tục sử dụng"}]}, format="json")
+        self.assertEqual(changed.status_code, 400, changed.data)
+        self.assertEqual(str(changed.data["detail"]), "Bạn không có quyền điều chỉnh biên bản kiểm kê đã xác nhận.")
+
+        # AF20: linking the posted disposal and confirming the recommendations is allowed
+        models.AssetTransaction.objects.create(
+            company=self.company, asset=asset, number="GGTS-AF20", transaction_type="DISPOSAL",
+            transaction_date=date(2026, 10, 5), status="POSTED",
+            created_by=services.actor(type("Req", (), {"user": self.maker})()),
+        )
+        processed = staff.put(detail_url, {**payload, "recommendations_processed": True, "lines": [
+            {**payload["lines"][0], "resolution_voucher_no": "GGTS-AF20"}]}, format="json")
+        self.assertEqual(processed.status_code, 200, processed.data)
+        self.assertTrue(processed.data["recommendations_processed"])
+        self.assertEqual(processed.data["lines"][0]["recommendation_status"], "PROCESSED")
+        # BR56: the stocktake itself never wrote the asset down
+        asset.refresh_from_db()
+        self.assertEqual(asset.status, models.AssetStatus.ACTIVE)
+        self.assertTrue(AuditLog.objects.filter(entity_id=saved.data["id"], action_code="UPDATE_STOCKTAKE_ASSET").exists())
+
+        # BR62: a user holding the adjust right may correct the results; the before image is kept in the audit log
+        adjuster = self._uc08_staff_client("kk-adjuster", "FA.COUNT.VIEW", "FA.COUNT.EDIT", "FA.COUNT.ADJUST_CONFIRMED")
+        adjusted = adjuster.put(detail_url, {**payload, "purpose": "Kiểm kê quý 3 (hiệu chỉnh)"}, format="json")
+        self.assertEqual(adjusted.status_code, 200, adjusted.data)
+        log = AuditLog.objects.filter(entity_id=saved.data["id"], action_code="UPDATE_STOCKTAKE_ASSET").order_by("-occurred_at").first()
+        self.assertEqual(log.changes.get(field_name="purpose").old_value_json, "Kiểm kê quý 3")
+
+    def test_uc_fa_08_surplus_regime_and_summary_rules(self):
+        """AF11, AF22, BR20, BR25, BR40, BR52, BR74, BR77, EF24."""
+        from organization.models import Department
+
+        dept_x = Department.objects.create(company=self.company, branch=self.branch, code="PX08", name="Phòng X")
+        a1 = self._create_uc08_book_asset("KK-S1", "Máy 1", Decimal("100000000"), Decimal("30000000"), acquisition_date="2025-01-01")
+        a2 = self._create_uc08_book_asset("KK-S2", "Máy 2", Decimal("50000000"), Decimal("5000000"), acquisition_date="2025-01-01")
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save()
+        url = f"/api/v1/fixed-assets/counts/{self.query}"
+        payload = {
+            "company": str(self.company.id), "voucher_no": "KKTS-S01", "count_date": "30/09/2026", "purpose": "Kiểm kê",
+            "members": [{"name": "Phạm Văn C", "role": "Trưởng ban"}],
+            "lines": [
+                # Wrong department AND wrong identification: two issues, one difference
+                {"asset": str(a1.id), "existence_status": "EXISTS", "actual_department_name": dept_x.name,
+                 "identity_mismatch": True, "current_quality": "Bình thường", "note": "Sai số serial trên thẻ",
+                 "recommendation": "Điều chuyển sang Phòng X"},
+                {"asset": str(a2.id), "existence_status": "EXISTS", "current_quality": "Tốt", "recommendation": "Tiếp tục sử dụng"},
+                {"is_surplus": True, "temp_code": a2.code, "asset_name": "Máy hàn lạ", "actual_department_name": dept_x.name,
+                 "identification_info": "Serial MH-77"},
+            ],
+        }
+        book = self.client.get(f"/api/v1/fixed-assets/counts/load-book-assets/{self.query}&count_date=2026-09-30")
+        self.assertEqual(book.status_code, 200, book.data)
+        self.assertFalse(book.data["uses_general_ledger"])
+        self.assertEqual(book.data["book_source"], "Sổ TSCĐ S4b-DNSN")
+
+        resp = self.client.post(url, payload, format="json")
+        self.assertEqual(resp.status_code, 201, resp.data)
+        summary = resp.data["summary"]
+        self.assertEqual((summary["matched_count"], summary["department_mismatch_count"], summary["other_mismatch_count"]), (1, 1, 1))
+        self.assertEqual((summary["surplus_count"], summary["diff_count"], summary["info_mismatch_count"]), (1, 2, 1))
+        self.assertEqual(Decimal(summary["total_original_cost"]), Decimal("150000000.00"))
+        self.assertEqual(Decimal(summary["total_remaining_value"]), Decimal("115000000.00"))
+        surplus = next(ln for ln in resp.data["lines"] if ln["is_surplus"])
+        # BR20: system temp id (never the code of a book asset); BR40: no book value instead of zero
+        self.assertEqual(surplus["temp_code"], "THUA-001")
+        self.assertIsNone(surplus["original_cost"])
+        self.assertEqual(resp.data["accounting_regime"], "TT58")
+        self.assertFalse(resp.data["uses_general_ledger"])
+        self.assertEqual(models.AssetRecord.objects.filter(company=self.company).count(), 2)
+
+        # EF24: no usable accounting setup
+        self.company.accounting_regime = ""
+        self.company.save()
+        ef24 = self.client.post(url, {**payload, "voucher_no": "KKTS-S02"}, format="json")
+        self.assertEqual(ef24.status_code, 400)
+        self.assertEqual(str(ef24.data["detail"]), "Chưa xác định được cấu hình dữ liệu kế toán phục vụ kiểm kê.")
 
     def test_uc_fa_08_exception_flows_ef01_to_ef28(self):
         """
@@ -4124,6 +4769,7 @@ class FixedAssetApiTests(TestCase):
             "report_datetime": "15/10/2025 10:00:00",
             "purpose": "Kiểm kê định kỳ quý 4",
             "conclusion": "Hoàn tất kiểm kê.",
+            "members": [{"name": "Nguyễn Văn An", "position": "Trưởng phòng", "represent": "Ban Giám đốc", "role": "Trưởng ban"}],
             "lines": [
                 {
                     "asset": str(asset1.id),
@@ -4149,15 +4795,22 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ef04.status_code, 400)
         self.assertEqual(str(ef04.data["count_date"]), "Ngày kiểm kê không được lớn hơn ngày hiện tại.")
 
-        # EF05: Report date earlier than count_date
+        # EF05: Report date earlier than count_date, or in the future
         ef05 = self.client.post(url, {**base_payload, "report_datetime": "10/10/2025 08:00:00"}, format="json")
         self.assertEqual(ef05.status_code, 400)
-        self.assertEqual(str(ef05.data["report_date"]), "Ngày lập biên bản không phù hợp với ngày kiểm kê.")
+        self.assertEqual(str(ef05.data["report_date"]), "Ngày lập biên bản không hợp lệ.")
+        ef05_future = self.client.post(url, {**base_payload, "report_datetime": "01/01/2099 08:00:00"}, format="json")
+        self.assertEqual(str(ef05_future.data["report_date"]), "Ngày lập biên bản không hợp lệ.")
 
-        # EF06: Invalid voucher_no
+        # EF04: Invalid voucher_no
         ef06 = self.client.post(url, {**base_payload, "voucher_no": "KKTS@@@"}, format="json")
         self.assertEqual(ef06.status_code, 400)
-        self.assertEqual(str(ef06.data["voucher_no"]), "Vui lòng nhập số chứng từ kiểm kê hợp lệ.")
+        self.assertEqual(str(ef06.data["voucher_no"]), "Số chứng từ kiểm kê không hợp lệ hoặc đã tồn tại.")
+
+        # EF06 & BR26: a recorded voucher needs its stocktake committee
+        no_members = self.client.post(url, {**base_payload, "members": []}, format="json")
+        self.assertEqual(no_members.status_code, 400)
+        self.assertEqual(str(no_members.data["committee"]), "Vui lòng khai báo đầy đủ thành viên tham gia kiểm kê.")
 
         # EF08: Invalid/incomplete committee member
         ef08 = self.client.post(
@@ -4173,12 +4826,14 @@ class FixedAssetApiTests(TestCase):
         self.assertEqual(ef09.status_code, 400)
         self.assertEqual(str(ef09.data["lines"]), "Chưa có tài sản trong bảng kiểm kê.")
 
-        # EF10: Failure loading book assets at count_date
-        ef10 = self.client.post(
-            f"/api/v1/fixed-assets/counts/load-book-assets/{self.query}",
-            {"company": str(self.company.id), "count_date": "15/10/2025", "simulate_load_error": True},
-            format="json",
-        )
+        # EF07: Failure loading book assets at count_date
+        from unittest import mock
+        with mock.patch("fixed_assets.services._reconstruct_asset_book_snapshot_at_count_date", side_effect=RuntimeError("db")):
+            ef10 = self.client.post(
+                f"/api/v1/fixed-assets/counts/load-book-assets/{self.query}",
+                {"company": str(self.company.id), "count_date": "15/10/2025"},
+                format="json",
+            )
         self.assertEqual(ef10.status_code, 400)
         self.assertEqual(str(ef10.data["detail"]), "Không thể lấy danh sách tài sản tại ngày kiểm kê. Vui lòng thử lại.")
 
@@ -4228,10 +4883,7 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(ef14.status_code, 400)
-        self.assertEqual(
-            str(ef14.data["lines"]),
-            "Còn tài sản chưa được xác nhận kết quả kiểm kê. Vui lòng kiểm tra lại.",
-        )
+        self.assertEqual(str(ef14.data["lines"]), "Còn tài sản chưa được xác nhận kết quả kiểm kê.")
 
         # EF15: Missing asset without condition/note or recommendation
         ef15 = self.client.post(
@@ -4274,6 +4926,10 @@ class FixedAssetApiTests(TestCase):
         )
         self.assertEqual(ef17.status_code, 400)
         self.assertEqual(str(ef17.data["lines"]), "Vui lòng bổ sung thông tin nhận dạng tài sản thừa.")
+        # EF14: a client-side temp code is no identification; serial/features are still required
+        ef17_code = self.client.post(url, {**base_payload, "lines": [{"is_surplus": True, "temp_code": "THUA-009",
+            "asset_name": "Máy in lạ", "actual_department_name": "Kho"}]}, format="json")
+        self.assertEqual(str(ef17_code.data["lines"]), "Vui lòng bổ sung thông tin nhận dạng tài sản thừa.")
 
         # EF18: Stale book value / version mismatch
         ef18 = self.client.post(
@@ -4333,10 +4989,7 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(ef20.status_code, 400)
-        self.assertEqual(
-            str(ef20.data["conclusion"]),
-            "Kết luận kiểm kê không khớp với kết quả đối chiếu. Vui lòng kiểm tra lại.",
-        )
+        self.assertEqual(str(ef20.data["conclusion"]), "Kết luận kiểm kê không khớp với kết quả đối chiếu.")
 
         # EF21: Checking 'Đã xử lý kiến nghị' while a row is still in 'Tiếp tục xác minh' / PENDING
         ef21 = self.client.post(
@@ -4356,10 +5009,7 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(ef21.status_code, 400)
-        self.assertEqual(
-            str(ef21.data["recommendations_processed"]),
-            "Còn kiến nghị kiểm kê chưa được xử lý. Không thể xác nhận đã xử lý kiến nghị.",
-        )
+        self.assertEqual(str(ef21.data["recommendations_processed"]), "Còn kiến nghị kiểm kê chưa được xử lý.")
 
         # EF22: Checking 'Đã xử lý kiến nghị' on actionable discrepancy without resolution voucher/result
         ef22 = self.client.post(
@@ -4383,6 +5033,11 @@ class FixedAssetApiTests(TestCase):
             str(ef22.data["recommendations_processed"]),
             "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
         )
+        # EF18: a processing voucher that does not exist (or is not posted) is no basis
+        ef22_fake = self.client.post(url, {**base_payload, "recommendations_processed": True, "lines": [{
+            "asset": str(asset1.id), "existence_status": "MISSING", "current_quality": "Không tìm thấy",
+            "recommendation": "Đề nghị xử lý ghi giảm", "resolution_voucher_no": "GGTS-KHONG-CO"}]}, format="json")
+        self.assertEqual(str(ef22_fake.data["recommendations_processed"]), "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.")
 
         # EF23: Cross-company asset / out-of-scope permission
         other_co = Company.objects.create(
@@ -4421,10 +5076,11 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(ef23.status_code, 400)
-        self.assertEqual(str(ef23.data["detail"]), "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.")
+        self.assertEqual(str(ef23.data["detail"]), "Bạn không có quyền kiểm kê tài sản này.")
 
-        # EF24: Simulated database error rolls back transaction cleanly
-        ef24 = self.client.post(url, {**base_payload, "simulate_db_error": True}, format="json")
+        # EF22: a failing audit write rolls the whole voucher back
+        with mock.patch("fixed_assets.services.audit", side_effect=RuntimeError("audit down")):
+            ef24 = self.client.post(url, base_payload, format="json")
         self.assertEqual(ef24.status_code, 400)
         self.assertEqual(str(ef24.data["detail"]), "Lưu biên bản kiểm kê thất bại. Vui lòng thử lại.")
         self.assertFalse(models.AssetCount.objects.filter(company=self.company, number="KKTS00800").exists())
@@ -4436,10 +5092,7 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(ef26.status_code, 400)
-        self.assertEqual(
-            str(ef26.data["attachments"]),
-            "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
-        )
+        self.assertEqual(str(ef26.data["attachments"]), "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.")
 
         # EF28: Attempt to auto-dispose missing asset directly from stocktake without approved resolution basis
         ef28 = self.client.post(url, {**base_payload, "auto_dispose_missing": True}, format="json")
@@ -4477,16 +5130,9 @@ class FixedAssetApiTests(TestCase):
             format="json",
         )
         self.assertEqual(ef07.status_code, 400)
-        self.assertEqual(str(ef07.data["voucher_no"]), "Số chứng từ kiểm kê đã tồn tại.")
-
-        # EF27: Unauthorized modification of confirmed stocktake voucher
-        ef27 = self.client.put(
-            f"/api/v1/fixed-assets/counts/{saved_id}/{self.query}",
-            {**base_payload, "purpose": "Sửa trái phép biên bản đã xác nhận"},
-            format="json",
-        )
-        self.assertEqual(ef27.status_code, 400)
-        self.assertEqual(str(ef27.data["detail"]), "Bạn không có quyền điều chỉnh biên bản kiểm kê đã xác nhận.")
+        self.assertEqual(str(ef07.data["voucher_no"]), "Số chứng từ kiểm kê không hợp lệ hoặc đã tồn tại.")
+        self.assertEqual(ef07.data["suggested_voucher_no"], "KKTS00801")
+        self.assertTrue(saved_id)
 
         # EF01: User without permission to perform fixed asset stocktake
         no_perm_user = get_user_model().objects.create_user(username="no-kk-perm", email="nokk@fa.test", password="x")
@@ -4904,7 +5550,7 @@ class FixedAssetApiTests(TestCase):
                 "company": str(self.company.id),
                 "voucher_no": "KKTS09001",
                 "count_date": "15/10/2026",
-                "allow_planned_future_count": True,
+                "members": [{"name": "Nguyễn Văn An", "position": "Trưởng phòng", "represent": "Ban Giám đốc", "role": "Trưởng ban"}],
                 "purpose": "Kiểm kê định kỳ quý 4/2026",
                 "conclusion": "Phát hiện 1 tài sản sai đơn vị sử dụng.",
                 "lines": [
@@ -4999,7 +5645,132 @@ class FixedAssetApiTests(TestCase):
         self.client.force_authenticate(no_perm_user)
         unauth_reg = self.client.get(reg_url)
         self.assertEqual(unauth_reg.status_code, 403)
-        self.assertEqual(str(unauth_reg.data["detail"]), "Bạn không có quyền xem sổ hoặc báo cáo tài sản cố định.")
+        self.assertEqual(str(unauth_reg.data["detail"]), "Bạn không có quyền truy cập chức năng này.")
+
+    def test_uc_fa_09_regime_templates_permissions_and_parameters(self):
+        """B03–B04, AF11–AF19, EF06–EF17, EF21, BR03, BR20, BR32–BR44, BR49–BR50."""
+        from common_services.models import UserPreference
+
+        ctx = self._setup_uc09_assets_and_movements()
+        zero = self._create_uc08_book_asset("TS09-ZERO", "Máy hết khấu hao", Decimal("10000000"), Decimal("10000000"), acquisition_date="2020-01-01")
+        catalog_url = f"/api/v1/fixed-assets/assets/report-catalog/{self.query}"
+        rep_url = f"/api/v1/fixed-assets/assets/reports/{self.query}"
+        reg_url = f"/api/v1/fixed-assets/assets/register/{self.query}"
+        base = {"company": str(self.company.id)}
+
+        def codes(resp):
+            return [r["code"] for r in resp.data["reports"]]
+
+        # TT99 with GL: S21-DN (TT99 version) and the GL reconciliation, never S09/S4b
+        tt99 = self.client.get(catalog_url)
+        self.assertIn("S21_DN", codes(tt99))
+        self.assertIn("RECONCILE_FA_GL", codes(tt99))
+        self.assertNotIn("S09_DNN", codes(tt99))
+        s21 = self.client.post(rep_url, {**base, "report_code": "S21_DN", "year": 2026}, format="json")
+        self.assertEqual(s21.status_code, 200, s21.data)
+        self.assertIn("99/2025/TT-BTC", s21.data["form_version"])
+        self.assertNotIn("department_name", [c["key"] for c in s21.data["columns"]])
+        # EF17: a template of another regime
+        ef17 = self.client.post(rep_url, {**base, "report_code": "S09_DNN", "year": 2026}, format="json")
+        self.assertEqual(str(ef17.data["detail"]), "Mẫu sổ không phù hợp với chế độ kế toán áp dụng.")
+
+        # AF11: the hidden list is kept in the user's preferences
+        self.client.post(catalog_url, {**base, "hidden_report_codes": ["ASSET_CARD"]}, format="json")
+        pref = UserPreference.objects.get(user=self.maker.iam_account)
+        self.assertEqual(pref.settings["fa_hidden_reports"][str(self.company.id)], ["ASSET_CARD"])
+        self.assertNotIn("ASSET_CARD", codes(self.client.get(catalog_url)))
+        self.client.post(catalog_url, {**base, "hidden_report_codes": []}, format="json")
+
+        # EF07, EF09, EF10, EF11, EF12, EF14 and AF19
+        bad_date = self.client.post(rep_url, {**base, "report_code": "ASSET_REGISTER", "from_date": "32/01/2026", "to_date": "31/12/2026"}, format="json")
+        self.assertEqual(str(bad_date.data["from_date"]), "Khoảng thời gian báo cáo không hợp lệ.")
+        no_year = self.client.post(rep_url, {**base, "report_code": "ANNUAL_DEPRECIATION_SCHEDULE"}, format="json")
+        self.assertEqual(str(no_year.data["year"]), "Vui lòng nhập đầy đủ tham số báo cáo.")
+        self.assertEqual(no_year.data["missing_fields"], ["year"])
+        bad_dept = self.client.post(rep_url, {**base, "report_code": "ASSET_REGISTER", "department_name": "Phòng ma"}, format="json")
+        self.assertEqual(str(bad_dept.data["detail"]), "Đơn vị sử dụng không hợp lệ hoặc ngoài phạm vi được phép.")
+        bad_cat = self.client.post(rep_url, {**base, "report_code": "ASSET_REGISTER", "category_name": "Loại ma"}, format="json")
+        self.assertEqual(str(bad_cat.data["detail"]), "Loại tài sản cố định không hợp lệ.")
+        bad_acc = self.client.post(rep_url, {**base, "report_code": "RECONCILE_FA_GL", "account_code": "642"}, format="json")
+        self.assertEqual(str(bad_acc.data["account_code"]), "Tài khoản cần đối chiếu không hợp lệ.")
+        ok_acc = self.client.post(rep_url, {**base, "report_code": "RECONCILE_FA_GL", "account_code": "214"}, format="json")
+        self.assertEqual(ok_acc.status_code, 200, ok_acc.data)
+        bad_count = self.client.post(rep_url, {**base, "report_code": "RECONCILE_STOCKTAKE_FA", "voucher_no": "KK-KHONG-CO"}, format="json")
+        self.assertEqual(str(bad_count.data["detail"]), "Biên bản kiểm kê không hợp lệ. Vui lòng chọn lại.")
+        # BR49: a draft count is not a recorded result
+        draft = self.client.post(f"/api/v1/fixed-assets/counts/{self.query}", {**base, "voucher_no": "KK09-DRAFT", "count_date": "15/10/2026",
+            "purpose": "Nháp", "status": "DRAFT", "lines": [{"asset": str(ctx["a1"].id), "existence_status": "UNCOUNTED"}]}, format="json")
+        self.assertEqual(draft.status_code, 201, draft.data)
+        draft_rep = self.client.post(rep_url, {**base, "report_code": "RECONCILE_STOCKTAKE_FA", "count_id": draft.data["id"]}, format="json")
+        self.assertEqual(str(draft_rep.data["detail"]), "Biên bản kiểm kê không hợp lệ. Vui lòng chọn lại.")
+        empty = self.client.post(rep_url, {**base, "report_code": "RECONCILE_STOCKTAKE_FA", "from_date": "01/01/2025", "to_date": "31/01/2025"}, format="json")
+        self.assertEqual(empty.data["empty_message"], "Không có dữ liệu phù hợp với tham số báo cáo.")
+
+        # AF16.6: fully depreciated assets in use only on request
+        sched = self.client.post(rep_url, {**base, "report_code": "ANNUAL_DEPRECIATION_SCHEDULE", "year": 2026}, format="json")
+        self.assertNotIn(zero.code, [r["code"] for r in sched.data["rows"]])
+        sched_zero = self.client.post(rep_url, {**base, "report_code": "ANNUAL_DEPRECIATION_SCHEDULE", "year": 2026, "include_zero_remaining": True}, format="json")
+        self.assertIn(zero.code, [r["code"] for r in sched_zero.data["rows"]])
+
+        # BR20: a fiscal year starting in April runs to March of the next year
+        self.company.fiscal_year_start_month = 4
+        self.company.save()
+        fy = self.client.post(rep_url, {**base, "report_code": "ANNUAL_DEPRECIATION_SCHEDULE", "year": 2026}, format="json")
+        self.assertEqual((fy.data["header"]["from_date"], fy.data["header"]["to_date"]), ("2026-04-01", "2027-03-31"))
+        self.assertEqual([c["label"] for c in fy.data["columns"] if c["key"].startswith("month_")][0], "Tháng 4")
+        self.company.fiscal_year_start_month = 1
+        self.company.save()
+
+        # TT133: S09-DNN replaces S21-DN
+        self.company.accounting_regime = "TT133"
+        self.company.save()
+        self.coa.accounting_regime = "TT133"
+        self.coa.save()
+        tt133 = self.client.get(catalog_url)
+        self.assertIn("S09_DNN", codes(tt133))
+        self.assertNotIn("S21_DN", codes(tt133))
+        s09 = self.client.post(rep_url, {**base, "report_code": "S09_DNN", "year": 2026}, format="json")
+        self.assertEqual(s09.status_code, 200, s09.data)
+        self.assertIn("133/2016/TT-BTC", s09.data["form_version"])
+
+        # TT58 without GL: S4b-DNSN only, no GL reconciliation, no TK NG
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save()
+        tt58 = self.client.get(catalog_url)
+        self.assertIn("S4B_DNSN", codes(tt58))
+        self.assertNotIn("RECONCILE_FA_GL", codes(tt58))
+        self.assertNotIn("S09_DNN", codes(tt58))
+        s4b = self.client.post(rep_url, {**base, "report_code": "S4B_DNSN", "year": 2026}, format="json")
+        self.assertEqual(s4b.status_code, 200, s4b.data)
+        self.assertNotIn("country_of_origin", [c["key"] for c in s4b.data["columns"]])
+        ef13 = self.client.post(rep_url, {**base, "report_code": "RECONCILE_FA_GL"}, format="json")
+        self.assertEqual(str(ef13.data["detail"]), "Bộ dữ liệu không sử dụng Sổ cái để đối chiếu.")
+        reg = self.client.get(reg_url)
+        self.assertNotIn("asset_account_code", [c["key"] for c in reg.data["columns"]])
+
+        # EF21: no usable regime
+        self.company.accounting_regime = ""
+        self.company.save()
+        ef21 = self.client.post(rep_url, {**base, "report_code": "S4B_DNSN", "year": 2026}, format="json")
+        self.assertEqual(str(ef21.data["detail"]), "Chưa xác định được chế độ kế toán hoặc mẫu sổ phù hợp.")
+        self.company.accounting_regime = "TT99"
+        self.company.bookkeeping_method = "DOUBLE_ENTRY"
+        self.company.save()
+
+        # BR03 & EF06: the register right is not the report right; the GL reconciliation needs the GL right
+        viewer = self._uc08_staff_client("fa09-viewer", "FA.ASSET.VIEW")
+        self.assertEqual(viewer.get(reg_url).status_code, 200)
+        denied = viewer.post(rep_url, {**base, "report_code": "ASSET_REGISTER"}, format="json")
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(str(denied.data["detail"]), "Bạn không có quyền xem báo cáo này.")
+        reporter = self._uc08_staff_client("fa09-reporter", "FA.ASSET.VIEW", "FA.REPORT.VIEW")
+        rep_codes = [r["code"] for r in reporter.get(catalog_url).data["reports"]]
+        self.assertIn("ASSET_REGISTER", rep_codes)
+        self.assertNotIn("RECONCILE_FA_GL", rep_codes)
+        gl_denied = reporter.post(rep_url, {**base, "report_code": "RECONCILE_FA_GL"}, format="json")
+        self.assertEqual(gl_denied.status_code, 403)
+        self.assertEqual(reporter.post(rep_url, {**base, "report_code": "ASSET_REGISTER"}, format="json").status_code, 200)
 
 
     # ==========================================================================

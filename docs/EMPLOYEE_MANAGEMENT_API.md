@@ -14,15 +14,18 @@ API dùng JWT tại `/api/v1/organization/employees/`. Các thao tác đọc c�
 | Lịch sử | `GET /employees/{id}/history/?company_id=...` | `VIEW` |
 | Phân công đơn vị/chức vụ | `POST /api/v1/organization/employee-assignments/` | `EDIT` ở cả đơn vị cũ và mới |
 | Nhập/xuất CSV | `POST /employees/import-csv/`, `GET /employees/export-csv/?company_id=...` | `IMPORT`/`EXPORT`, theo từng dòng và Data Scope |
+| Xuất Excel | `GET /employees/export-xlsx/?company_id=...` | `EXPORT`, theo từng dòng và Data Scope |
 
 Khi sửa hoặc đổi trạng thái, gửi `version` từ `updated_at` của hồ sơ đã đọc. Xung đột trả HTTP 409. Trạng thái `TERMINATED` yêu cầu `termination_date`. Nếu còn tài sản đang quản lý, thao tác ngừng yêu cầu `confirm_assets: true` sau khi kiểm tra bàn giao; thao tác này không tự chuyển tài sản hay quyết toán công nợ.
+
+UC-MD-03 yêu cầu `contract_type` khi lưu hồ sơ `ACTIVE`: `RESIDENT_LONG`, `RESIDENT_SHORT`, hoặc `NON_RESIDENT`. Form Danh mục → Nhân viên gửi thêm `job_title`, `date_of_birth`, `gender`, các trường lương (`agreed_salary`, `salary_coefficient`, `insurance_salary`, `dependent_count`), liên hệ và `bank_account`. Các trường số bỏ trống lưu `NULL`. `bank_account` là đối tượng tùy chọn gồm `account_number`, `bank_name`, `account_holder`, `bank_branch`; nếu khai báo thì ba trường đầu bắt buộc. Hồ sơ và tài khoản được lưu cùng một giao dịch. Dữ liệu CCCD, lương, địa chỉ và ngân hàng cần quyền `VIEW_SENSITIVE`; tệp Excel chỉ xuất số tài khoản trên những dòng được cấp quyền này.
 
 Ví dụ tạo:
 
 ```json
-{"company":"<company-uuid>","branch":"<branch-uuid>","employee_code":"NV001","full_name":"Nguyễn Văn A","status":"ACTIVE"}
+{"company":"<company-uuid>","branch":"<branch-uuid>","employee_code":"NV001","full_name":"Nguyễn Văn A","contract_type":"RESIDENT_LONG"}
 ```
 
-CSV import cần cột `employee_code,full_name,branch_id`; thêm `email,phone` nếu có. Mỗi dòng được kiểm tra riêng và kết quả trả danh sách `created` cùng `errors`. Export chỉ gồm các hồ sơ được phép xem; trường nhạy cảm chỉ có giá trị trên dòng được cấp quyền `VIEW_SENSITIVE`.
+CSV import cần cột `employee_code,full_name,branch_id,contract_type`; thêm `email,phone` nếu có. Mỗi dòng được kiểm tra riêng và kết quả trả danh sách `created` cùng `errors`. Export chỉ gồm các hồ sơ được phép xem; trường nhạy cảm chỉ có giá trị trên dòng được cấp quyền `VIEW_SENSITIVE`.
 
-Chạy kiểm thử với SQLite: `$env:DB_ENGINE='sqlite'; .\venv\Scripts\python.exe manage.py test organization.tests organization.test_employee_management`.
+Chạy migration `python manage.py migrate` trước khi sử dụng màn hình. Kiểm thử với SQLite từ thư mục `backend`: `$env:DB_ENGINE='sqlite'; $env:DEBUG='True'; ..\venv\Scripts\python.exe manage.py test organization.tests organization.test_employee_management`.

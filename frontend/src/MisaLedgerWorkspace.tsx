@@ -50,7 +50,6 @@ import {
   saveGeneralBusinessVoucher,
   saveJournalVoucher,
   seedDefaultClosingRules,
-  seedDefaultReconciliationRules,
   toApiDate,
   toViDate,
   unpostAllocationRun,
@@ -199,7 +198,7 @@ export default function MisaLedgerWorkspace({
     });
     return saved && result ? result : false;
   };
-  const { token: apiToken } = useApiSession();
+  const { token: apiToken, companies: apiCompanies } = useApiSession();
   const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
   const currentTab = tab || "process";
 
@@ -3598,19 +3597,33 @@ export default function MisaLedgerWorkspace({
 
   // UC-GL-11: Đối chiếu số liệu GL với các phân hệ (GL <-> AP, AR, CASH, BANK, INV, FA, TAX)
   const [glReconciliationModalOpen, setGlReconciliationModalOpen] = useState(false);
-  const [glRecPeriodCode, setGlRecPeriodCode] = useState("2026-10");
+  const [glRecPeriodCode, setGlRecPeriodCode] = useState("");
+  const [glRecPeriods, setGlRecPeriods] = useState<any[]>([]);
+  const [glRecAccounts, setGlRecAccounts] = useState<any[]>([]);
+  const [glRecParties, setGlRecParties] = useState<any[]>([]);
+  const [glRecCurrencies, setGlRecCurrencies] = useState<any[]>([]);
+  const [glRecBranches, setGlRecBranches] = useState<any[]>([]);
+  const [glRecHistory, setGlRecHistory] = useState<any[]>([]);
+  const [glRecShowHistory, setGlRecShowHistory] = useState(false);
+  const [glRecBusy, setGlRecBusy] = useState(false);
+  const [glRecAccountCode, setGlRecAccountCode] = useState("");
+  const [glRecPartyCode, setGlRecPartyCode] = useState("");
+  const [glRecCurrencyCode, setGlRecCurrencyCode] = useState("");
+  const [glRecBranchId, setGlRecBranchId] = useState("");
   const [glRecType, setGlRecType] = useState<
-    "GL_AP" | "GL_AR" | "GL_CASH" | "GL_BANK" | "GL_INV" | "GL_FA" | "GL_TAX"
+    "GL_AP" | "GL_AR" | "GL_CASH" | "GL_BANK" | "GL_INV" | "GL_FA" | "GL_TAX" | "GL_CCDC" | "GL_PREPAID"
   >("GL_AR");
-  const [glRecStatus, setGlRecStatus] = useState<"MATCHED" | "DIFFERENCE" | "WARNING" | "ERROR">("DIFFERENCE");
-  const [glRecWatermark, setGlRecWatermark] = useState("WM-REC-202610-7B4E19A2");
-  const [glRecLastRunAt, setGlRecLastRunAt] = useState("31/10/2026 17:50:00");
+  const [glRecStatus, setGlRecStatus] = useState<"NOT_RUN" | "PROCESSING" | "MATCHED" | "DIFFERENCE" | "WARNING" | "ERROR">("NOT_RUN");
+  const [glRecWatermark, setGlRecWatermark] = useState("");
+  const [glRecMessages, setGlRecMessages] = useState<string[]>([]);
+  const [glRecLastRunAt, setGlRecLastRunAt] = useState("");
   const [glRecRunId, setGlRecRunId] = useState<string | null>(null);
   const [glRecSelectedLine, setGlRecSelectedLine] = useState<any | null>(null);
   const [glRecNoteInput, setGlRecNoteInput] = useState("");
   const [glRecLines, setGlRecLines] = useState<
     Array<{
       lineNo: number;
+      id?: string;
       reconciliationKey: string;
       accountCode: string;
       accountName: string;
@@ -3633,87 +3646,29 @@ export default function MisaLedgerWorkspace({
       subledgerVouchers: any[];
       note?: string;
     }>
-  >([
-    {
-      lineNo: 1,
-      reconciliationKey: "ACC:131|OBJ:KH001|CURR:VND",
-      accountCode: "131",
-      accountName: "Phải thu của khách hàng",
-      objectCode: "KH001",
-      objectName: "Công ty TNHH Thương mại Á Châu",
-      currencyCode: "VND",
-      glOpening: 50000000,
-      glPeriodDebit: 120000000,
-      glPeriodCredit: 70000000,
-      glClosing: 100000000,
-      subOpening: 50000000,
-      subPeriodDebit: 120000000,
-      subPeriodCredit: 70000000,
-      subClosing: 100000000,
-      diffClosing: 0,
-      status: "MATCHED",
-      discrepancyType: "NONE",
-      discrepancyReason: "Số liệu GL và phân hệ AR khớp hoàn toàn.",
-      glEntries: [
-        { entry_number: "BH00042", posting_date: "15/10/2026", debit: "120,000,000", credit: "0", status: "POSTED" },
-      ],
-      subledgerVouchers: [
-        { voucher_number: "HD-AR-0042", document_date: "15/10/2026", debit: "120,000,000", credit: "0", gl_status: "POSTED" },
-      ],
-    },
-    {
-      lineNo: 2,
-      reconciliationKey: "ACC:131|OBJ:KH002|CURR:VND",
-      accountCode: "131",
-      accountName: "Phải thu của khách hàng",
-      objectCode: "KH002",
-      objectName: "Công ty CP Giải pháp Số Minh Việt",
-      currencyCode: "VND",
-      glOpening: 30000000,
-      glPeriodDebit: 40000000,
-      glPeriodCredit: 46800000,
-      glClosing: 23200000,
-      subOpening: 30000000,
-      subPeriodDebit: 63200000,
-      subPeriodCredit: 46800000,
-      subClosing: 46400000,
-      diffClosing: -23200000,
-      status: "DIFFERENCE",
-      discrepancyType: "UNPOSTED_SUBLEDGER_VOUCHER",
-      discrepancyReason:
-        "Phát hiện chứng từ hóa đơn HD-AR-0089 (23.200.000 ₫) tại phân hệ AR đang ở trạng thái UNPOSTED chưa ghi sổ vào Sổ cái (BR-GL-REC-04, 46).",
-      glEntries: [
-        { entry_number: "BH00051", posting_date: "18/10/2026", debit: "40,000,000", credit: "0", status: "POSTED" },
-      ],
-      subledgerVouchers: [
-        { voucher_number: "HD-AR-0051", document_date: "18/10/2026", debit: "40,000,000", credit: "0", gl_status: "POSTED" },
-        { voucher_number: "HD-AR-0089", document_date: "29/10/2026", debit: "23,200,000", credit: "0", gl_status: "UNPOSTED" },
-      ],
-    },
-  ]);
+  >([]);
 
-  const handleRunGlReconciliation = async (markAllMatched = false) => {
-    if (apiConnected) {
-      const saved = await apiSaveWithResult(async (writer) => {
-        try {
-          await seedDefaultReconciliationRules(writer);
-        } catch {
-          // Ignore if already seeded
-        }
-        return await runGlSubledgerReconciliation(writer, {
-          periodCode: glRecPeriodCode,
-          reconciliationType: glRecType,
-        });
-      });
-      if (saved && saved.record) {
-        const rec: any = saved.record;
-        setGlRecRunId(String(rec.id));
-        setGlRecStatus((rec.status || "MATCHED") as any);
-        if (rec.snapshot_watermark) setGlRecWatermark(String(rec.snapshot_watermark));
-        if (Array.isArray(rec.lines) && rec.lines.length > 0) {
-          setGlRecLines(
-            rec.lines.map((ln: any, idx: number) => ({
+  const showGlReconciliation = (rec: any) => {
+    const historicPeriod = glRecPeriods.find((p) => p.id === rec.period);
+    if (historicPeriod) setGlRecPeriodCode(historicPeriod.code);
+    if (rec.reconciliation_type) setGlRecType(rec.reconciliation_type);
+    if (rec.scope_filter) {
+      setGlRecAccountCode(rec.scope_filter.account_code || "");
+      setGlRecPartyCode(rec.scope_filter.party_code || "");
+      setGlRecCurrencyCode(rec.scope_filter.currency_code || "");
+    }
+    setGlRecBranchId(rec.branch || "");
+    setGlRecRunId(String(rec.id));
+    setGlRecStatus(rec.status || "ERROR");
+    setGlRecWatermark(String(rec.snapshot_watermark || ""));
+    setGlRecMessages([...(rec.warnings || []), ...(rec.errors || [])].map(String));
+    setGlRecLastRunAt(rec.completed_at ? new Date(rec.completed_at).toLocaleString("vi-VN") : "");
+    setGlRecSelectedLine(null);
+    setGlRecLines(
+      Array.isArray(rec.lines)
+        ? rec.lines.map((ln: any, idx: number) => ({
               lineNo: ln.line_no || idx + 1,
+              id: String(ln.id),
               reconciliationKey: ln.reconciliation_key,
               accountCode: ln.account_code,
               accountName: ln.account_name,
@@ -3735,37 +3690,72 @@ export default function MisaLedgerWorkspace({
               glEntries: Array.isArray(ln.gl_entries_refs) ? ln.gl_entries_refs : [],
               subledgerVouchers: Array.isArray(ln.subledger_vouchers_refs) ? ln.subledger_vouchers_refs : [],
               note: ln.note || "",
-            })),
-          );
-        }
-      }
-      setGlRecLastRunAt(new Date().toLocaleString("vi-VN"));
-      return;
-    }
+            }))
+        : [],
+    );
+  };
 
-    setGlRecLastRunAt(new Date().toLocaleString("vi-VN"));
-    setGlRecWatermark(`WM-REC-${glRecPeriodCode.replace("-", "")}-${Math.random().toString(16).slice(2, 10).toUpperCase()}`);
-    if (markAllMatched) {
-      setGlRecStatus("MATCHED");
-      setGlRecLines((prev) =>
-        prev.map((ln) => ({
-          ...ln,
-          glPeriodDebit: ln.subPeriodDebit,
-          glClosing: ln.subClosing,
-          diffClosing: 0,
-          status: "MATCHED",
-          discrepancyType: "NONE",
-          discrepancyReason: "Đã ghi sổ chứng từ nguồn và đối chiếu lại: Số liệu GL và phân hệ khớp 100% (AF-17).",
-        })),
-      );
-      notify(`Đã chạy đối chiếu lại ${glRecType} kỳ ${glRecPeriodCode}: Toàn bộ các dòng đã khớp (MATCHED - UC-GL-11)!`);
-    } else {
-      notify(
-        `Đã thực hiện đối chiếu ${glRecType} kỳ ${glRecPeriodCode}: Phát hiện ${
-          glRecLines.filter((l) => l.status === "DIFFERENCE").length
-        } dòng chênh lệch cần kiểm tra (UC-GL-11).`,
-      );
-    }
+  const clearGlRecResult = () => {
+    setGlRecRunId(null);
+    setGlRecLines([]);
+    setGlRecSelectedLine(null);
+    setGlRecStatus("NOT_RUN");
+    setGlRecWatermark("");
+    setGlRecMessages([]);
+    setGlRecLastRunAt("");
+  };
+
+  useEffect(() => {
+    if (!glReconciliationModalOpen || !apiConnected || !apiToken) return;
+    let cancelled = false;
+    Promise.allSettled([writer.list("glPeriods"), writer.list("/api/v1/general-ledger/reconciliations/"), writer.list("accounts"), writer.list("parties"), writer.list("currencies"), writer.list("branches")])
+      .then((results) => {
+        if (cancelled) return;
+        if (results[0].status === "rejected") notify(errorText(results[0].reason));
+        if (results[1].status === "rejected") notify(errorText(results[1].reason));
+        const [periods, history, accounts, parties, currencies, branches] = results.map((result) => result.status === "fulfilled" ? result.value : []);
+        setGlRecPeriods(periods);
+        setGlRecHistory(history);
+        setGlRecAccounts(accounts);
+        setGlRecParties(parties);
+        setGlRecCurrencies(currencies);
+        setGlRecBranches(branches);
+        if (!glRecPeriodCode && periods.length) setGlRecPeriodCode(String(periods[periods.length - 1].code));
+      })
+      .catch((error) => { if (!cancelled) notify(errorText(error)); });
+    return () => { cancelled = true; };
+  }, [glReconciliationModalOpen, apiConnected, apiToken, company.id]);
+
+  const handleRunGlReconciliation = async () => {
+    if (glRecBusy) return;
+    if (!apiConnected || !apiToken) { notify("Cần kết nối máy chủ để đối chiếu số liệu thật."); return; }
+    if (!glRecPeriodCode) { notify("Vui lòng chọn kỳ kế toán."); return; }
+    setGlRecBusy(true);
+    try {
+      const saved = await apiSaveWithResult((activeWriter) => runGlSubledgerReconciliation(activeWriter, {
+        periodCode: glRecPeriodCode,
+        reconciliationType: glRecType,
+        accountCode: glRecAccountCode,
+        partyCode: glRecPartyCode,
+        currencyCode: glRecCurrencyCode,
+        branchId: glRecBranchId,
+      }));
+      if (saved && saved.record) {
+        showGlReconciliation(saved.record);
+        const history = await writer.list("/api/v1/general-ledger/reconciliations/");
+        setGlRecHistory(history);
+      }
+    } finally { setGlRecBusy(false); }
+  };
+
+  const handleGlReconciliationDrilldown = async (line: (typeof glRecLines)[number]) => {
+    if (!glRecRunId || !apiConnected) return;
+    try {
+      const detail = await drilldownGlReconciliation(writer, glRecRunId, { lineId: line.id });
+      if (detail.is_snapshot_stale) notify("Dữ liệu nguồn đã thay đổi. Vui lòng đối chiếu lại.");
+      const item = detail.lines?.[0];
+      if (item) setGlRecSelectedLine({ ...line, glEntries: item.gl_entries || [], subledgerVouchers: item.subledger_vouchers || [] });
+    } catch (error) { notify(errorText(error)); }
   };
 
   const handleAnnotateGlReconciliationNote = async () => {
@@ -3773,26 +3763,16 @@ export default function MisaLedgerWorkspace({
       notify("Vui lòng nhập nội dung ghi chú nguyên nhân/hướng xử lý chênh lệch!");
       return;
     }
-    if (apiConnected && glRecRunId) {
-      await apiSave((writer) =>
-        annotateGlReconciliationNote(writer, glRecRunId, {
-          note: glRecNoteInput.trim(),
-        }),
-      );
-      setGlRecNoteInput("");
-      return;
-    }
-    if (glRecSelectedLine) {
-      setGlRecLines((prev) =>
-        prev.map((l) =>
-          l.reconciliationKey === glRecSelectedLine.reconciliationKey ? { ...l, note: glRecNoteInput.trim() } : l,
-        ),
-      );
-    }
-    setGlRecNoteInput("");
-    notify(
-      "Đã lưu ghi chú nguyên nhân chênh lệch (BR-GL-REC-56: Ghi chú không tự động đổi trạng thái thành MATCHED khi chưa đối chiếu lại).",
+    if (!apiConnected || !glRecRunId || !glRecSelectedLine?.id) return;
+    const saved = await apiSaveWithResult((activeWriter) =>
+      annotateGlReconciliationNote(activeWriter, glRecRunId, {
+        note: glRecNoteInput.trim(), lineId: glRecSelectedLine.id,
+      }),
     );
+    if (saved) {
+      showGlReconciliation(saved.record);
+      setGlRecNoteInput("");
+    }
   };
 
   const recomputeClosingSummaryFromRows = (rows: any[]) => {
@@ -5722,6 +5702,11 @@ export default function MisaLedgerWorkspace({
         {/* ========================================================================= */}
         {currentTab === "process" && (
           <>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setGlReconciliationModalOpen(true)} style={{ padding: "8px 16px", border: "1px solid #0f766e", borderRadius: 6, background: "#ffffff", color: "#0f766e", fontWeight: 600, cursor: "pointer" }}>
+                Đối chiếu số liệu
+              </button>
+            </div>
             {/* Top Row: Two main cards (Left: Nghiệp vụ tổng hợp, Right: Báo cáo) */}
             <div
               style={{
@@ -7887,7 +7872,7 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <RefreshCw size={15} />
-                      <span>Đối chiếu GL ↔ Phân hệ ({glRecStatus})</span>
+                      <span>Đối chiếu số liệu ({glRecStatus})</span>
                     </button>
                   </div>
 
@@ -19960,7 +19945,7 @@ export default function MisaLedgerWorkspace({
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                    Đối chiếu số liệu Sổ cái GL với các Phân hệ nghiệp vụ (UC-GL-11)
+                    Đối chiếu số liệu
                   </h3>
                   <span
                     style={{
@@ -19969,13 +19954,17 @@ export default function MisaLedgerWorkspace({
                       fontSize: 11.5,
                       fontWeight: 700,
                       background:
-                        glRecStatus === "MATCHED"
+                        glRecStatus === "NOT_RUN"
+                          ? "#e2e8f0"
+                          : glRecStatus === "MATCHED"
                           ? "#dcfce7"
                           : glRecStatus === "WARNING"
                           ? "#fef3c7"
                           : "#fee2e2",
                       color:
-                        glRecStatus === "MATCHED"
+                        glRecStatus === "NOT_RUN"
+                          ? "#475569"
+                          : glRecStatus === "MATCHED"
                           ? "#166534"
                           : glRecStatus === "WARNING"
                           ? "#92400e"
@@ -19986,12 +19975,14 @@ export default function MisaLedgerWorkspace({
                       ? "MATCHED — Khớp số liệu GL & Phân hệ"
                       : glRecStatus === "WARNING"
                       ? "WARNING — Có cảnh báo cần chú ý"
-                      : "DIFFERENCE — Có chênh lệch cần kiểm tra"}
+                      : glRecStatus === "DIFFERENCE"
+                      ? "DIFFERENCE — Có chênh lệch cần kiểm tra"
+                      : glRecStatus === "ERROR" ? "ERROR — Không thể đối chiếu tin cậy"
+                      : glRecStatus === "PROCESSING" ? "Đang đối chiếu" : "Chưa đối chiếu"}
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                  Chỉ phát hiện, phân loại nguyên nhân và hỗ trợ Drill-down 2 phía; tuyệt đối không tự động sửa số liệu nguồn (BR-GL-REC-50, 94) | Snapshot:{" "}
-                  <code>{glRecWatermark}</code> | Chạy lúc: {glRecLastRunAt}
+                  {company.name} | Chế độ kế toán: {apiCompanies.find((item) => item.id === company.id)?.accounting_regime || "—"} | Snapshot: <code>{glRecWatermark || "—"}</code> | Chạy lúc: {glRecLastRunAt || "—"}
                 </div>
               </div>
               <button
@@ -20025,10 +20016,9 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
                   Kỳ kế toán:
-                  <input
-                    type="text"
+                  <select
                     value={glRecPeriodCode}
-                    onChange={(e) => setGlRecPeriodCode(e.target.value)}
+                    onChange={(e) => { setGlRecPeriodCode(e.target.value); clearGlRecResult(); }}
                     style={{
                       marginLeft: 8,
                       padding: "6px 10px",
@@ -20037,13 +20027,13 @@ export default function MisaLedgerWorkspace({
                       fontSize: 13,
                       width: 110,
                     }}
-                  />
+                  ><option value="">Chọn kỳ</option>{glRecPeriods.map((p) => <option key={p.id} value={p.code}>{p.code}</option>)}</select>
                 </label>
                 <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
-                  Loại đối chiếu (AF-01..07):
+                  Loại đối chiếu:
                   <select
                     value={glRecType}
-                    onChange={(e) => setGlRecType(e.target.value as any)}
+                    onChange={(e) => { setGlRecType(e.target.value as any); clearGlRecResult(); }}
                     style={{
                       marginLeft: 8,
                       padding: "6px 10px",
@@ -20059,15 +20049,26 @@ export default function MisaLedgerWorkspace({
                     <option value="GL_INV">GL ↔ INV (Giá trị tồn kho - TK 152, 155, 156)</option>
                     <option value="GL_FA">GL ↔ FA (Tài sản cố định & Khấu hao - TK 211, 214)</option>
                     <option value="GL_TAX">GL ↔ TAX (Thuế GTGT / TNDN - TK 133, 333)</option>
+                    <option value="GL_CCDC">GL ↔ CCDC (cần mapping nguồn riêng)</option>
+                    <option value="GL_PREPAID">GL ↔ Chi phí trả trước (cần mapping nguồn riêng)</option>
                   </select>
                 </label>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input aria-label="Tài khoản" list="gl-rec-accounts" placeholder="Tài khoản (tất cả)" value={glRecAccountCode} onChange={(e) => { setGlRecAccountCode(e.target.value); clearGlRecResult(); }} />
+                <datalist id="gl-rec-accounts">{glRecAccounts.map((account) => <option key={account.id} value={account.code}>{account.name}</option>)}</datalist>
+                <input aria-label="Mã đối tượng" list="gl-rec-parties" placeholder="Đối tượng (tất cả)" value={glRecPartyCode} onChange={(e) => { setGlRecPartyCode(e.target.value); clearGlRecResult(); }} />
+                <datalist id="gl-rec-parties">{glRecParties.map((party) => <option key={party.id} value={party.code}>{party.name}</option>)}</datalist>
+                <select aria-label="Loại tiền" value={glRecCurrencyCode} onChange={(e) => { setGlRecCurrencyCode(e.target.value); clearGlRecResult(); }}><option value="">Mọi loại tiền</option>{glRecCurrencies.map((currency) => <option key={currency.id} value={currency.code}>{currency.code}</option>)}</select>
+                <select aria-label="Chi nhánh" value={glRecBranchId} onChange={(e) => { setGlRecBranchId(e.target.value); clearGlRecResult(); }}><option value="">Mọi chi nhánh</option>{glRecBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
                   type="button"
                   onClick={() => {
-                    void handleRunGlReconciliation(false);
+                    void handleRunGlReconciliation();
                   }}
                   style={{
                     padding: "7px 14px",
@@ -20080,12 +20081,12 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Đối chiếu / Kiểm tra (Bước 6-38)
+                  {glRecBusy ? "Đang đối chiếu..." : "Đối chiếu"}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    void handleRunGlReconciliation(true);
+                    void handleRunGlReconciliation();
                   }}
                   style={{
                     padding: "7px 16px",
@@ -20102,8 +20103,9 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <RefreshCw size={14} />
-                  <span>Đối chiếu lại sau khi xử lý nguồn (Bước 45 / AF-17)</span>
+                  <span>Đối chiếu lại</span>
                 </button>
+                <button type="button" onClick={() => setGlRecShowHistory((value) => !value)}>Lịch sử đối chiếu</button>
               </div>
             </div>
 
@@ -20138,7 +20140,7 @@ export default function MisaLedgerWorkspace({
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-                <div style={{ color: "#64748b" }}>Điều kiện Khóa sổ kỳ (UC-GL-12 / BR-81)</div>
+                <div style={{ color: "#64748b" }}>Trạng thái lần đối chiếu</div>
                 <div
                   style={{
                     fontWeight: 700,
@@ -20147,19 +20149,42 @@ export default function MisaLedgerWorkspace({
                     marginTop: 2,
                   }}
                 >
-                  {glRecStatus === "MATCHED" ? "Đủ điều kiện khóa kỳ" : "Chặn khóa kỳ (Còn lệch BLOCK)"}
+                  {glRecStatus}
                 </div>
               </div>
             </div>
 
             {/* Reconciliation Lines Table */}
             <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px" }}>
+              {glRecPeriods.find((p) => p.code === glRecPeriodCode) && (
+                <div style={{ marginBottom: 10, fontSize: 12, color: "#475569" }}>
+                  Năm tài chính: {glRecPeriods.find((p) => p.code === glRecPeriodCode)?.fiscal_year} | Từ ngày: {toViDate(glRecPeriods.find((p) => p.code === glRecPeriodCode)?.start_date)} | Đến ngày: {toViDate(glRecPeriods.find((p) => p.code === glRecPeriodCode)?.end_date)}
+                </div>
+              )}
+              {glRecMessages.map((message, index) => <div key={index} role="alert" style={{ marginBottom: 8, color: "#92400e" }}>{message}</div>)}
+              {glRecShowHistory && (
+                <div style={{ marginBottom: 16, padding: 12, border: "1px solid #cbd5e1", borderRadius: 6 }}>
+                  <strong>Lịch sử đối chiếu</strong>
+                  {glRecHistory.length === 0 && <p>Chưa có lần đối chiếu nào.</p>}
+                  {glRecHistory.map((run) => (
+                    <button key={run.id} type="button" onClick={() => showGlReconciliation(run)} style={{ display: "block", marginTop: 8 }}>
+                      {run.period_code || glRecPeriods.find((p) => p.id === run.period)?.code || "Kỳ"} · {run.reconciliation_type} · {run.status} · {run.completed_at ? new Date(run.completed_at).toLocaleString("vi-VN") : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!glRecRunId && <p>Chọn kỳ và loại đối chiếu, sau đó nhấn Đối chiếu để xem số liệu thực tế.</p>}
+              {glRecRunId && glRecLines.length === 0 && <p>Lần đối chiếu này không có dòng kết quả.</p>}
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: "#e2e8f0", color: "#1e293b", fontWeight: 700 }}>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>TK / Đối tượng</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư ĐK GL</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư ĐK Phân hệ</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Nợ GL</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Nợ Phân hệ</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Có GL</th>
+                    <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>PS Có Phân hệ</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư CK GL</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Dư CK Phân hệ</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Chênh lệch (GL - PH)</th>
@@ -20181,19 +20206,23 @@ export default function MisaLedgerWorkspace({
                     >
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0" }}>
                         <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                          TK {ln.accountCode} — {ln.objectCode}
+                          TK {ln.accountCode} — {ln.objectCode} ({ln.currencyCode})
                         </div>
                         <div style={{ fontSize: 11, color: "#64748b" }}>{ln.objectName}</div>
                         {ln.note && (
                           <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>Ghi chú: {ln.note}</div>
                         )}
                       </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glOpening)}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subOpening)}</td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>
                         {formatVndNumber(ln.glPeriodDebit)}
                       </td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>
                         {formatVndNumber(ln.subPeriodDebit)}
                       </td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glPeriodCredit)}</td>
+                      <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.subPeriodCredit)}</td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>
                         {formatVndNumber(ln.glClosing)}
                       </td>
@@ -20232,7 +20261,7 @@ export default function MisaLedgerWorkspace({
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center" }}>
                         <button
                           type="button"
-                          onClick={() => setGlRecSelectedLine(ln)}
+                          onClick={() => { void handleGlReconciliationDrilldown(ln); }}
                           style={{
                             padding: "4px 10px",
                             borderRadius: 4,

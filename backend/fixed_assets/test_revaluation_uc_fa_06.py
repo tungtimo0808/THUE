@@ -79,6 +79,27 @@ class RevaluationUcFa06Tests(TestCase):
     def post_doc(self, pk):
         return self.client.post(f"/api/v1/fixed-assets/revaluations/{pk}/post/{self.query}", {}, format="json")
 
+    def test_tt58_simple_book_revalues_without_gl_accounts(self):
+        self.company.accounting_regime = "TT58"
+        self.company.bookkeeping_method = "SIMPLE"
+        self.company.save(update_fields=("accounting_regime", "bookkeeping_method"))
+        change = self.line(original_cost=Decimal("400000000"), depreciable=Decimal("400000000"), remaining=60)
+        self.error(self.client.post(self.url, self.payload(reason="OTHER", conclusion="Gia hạn", lines=[change],
+            entries=[self.entry("2111", "241", "1")]), format="json"), "EF21")
+        created = self.client.post(self.url, self.payload(reason="OTHER", conclusion="Gia hạn", lines=[change]), format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(created.data["status"], "DRAFT")
+        self.asset.refresh_from_db()
+        self.assertEqual(self.asset.useful_life_periods, 60)
+        self.assertEqual(self.asset.original_cost, Decimal("300000000"))
+        posted = self.post_doc(created.data["id"])
+        self.assertEqual(posted.status_code, 200, posted.data)
+        self.assertIsNone(posted.data["journal_entry"])
+        self.asset.refresh_from_db()
+        self.assertEqual(self.asset.useful_life_periods, 72)
+        self.assertEqual(self.asset.original_cost, Decimal("400000000"))
+        self.assertFalse(JournalEntry.objects.filter(company=self.company, source_module="FA").exists())
+
     def test_upgrade_posts_once_updates_basis_and_ledger(self):
         candidates = self.client.get(f"/api/v1/fixed-assets/revaluations/candidates/{self.query}&date={self.today}").data
         machine = next(row for row in candidates if row["code"] == "MAY01")

@@ -30,118 +30,13 @@ import {
   Paperclip,
 } from "lucide-react";
 import { request } from "./live-api";
+import { useApiSession } from "./ApiSession";
 import "./misa-opening.css";
 
 export function formatOpeningMoney(amount: number | string | undefined): string {
   const num = typeof amount === "number" ? amount : Number(amount) || 0;
   return new Intl.NumberFormat("vi-VN").format(num);
 }
-
-export const OPENING_CUSTOMERS = [
-  { code: "THANHHA", name: "Công ty TNHH Thanh Hà", taxCode: "110085253" },
-  { code: "NHATMINH", name: "CTCP Nội thất Nhật Minh", taxCode: "801382946" },
-  { code: "MINHHANH", name: "Công ty TNHH Kinh doanh Minh Hạnh", taxCode: "110086627" },
-  { code: "ANHTUAN", name: "Công ty TNHH Công nghệ số Anh Tuấn", taxCode: "110094515" },
-  { code: "CAUGIAY", name: "CTCP Thương mại Cầu Giấy", taxCode: "100408152" },
-  { code: "HIEPPHAT", name: "Công ty TNHH Giải pháp Hiệp Phát", taxCode: "110101949" },
-  { code: "BAOKIM", name: "Công ty TNHH Đầu tư Bảo Kim", taxCode: "110086049" },
-  { code: "THUANPHAT", name: "Công ty TNHH Thương mại Thuận Phát", taxCode: "601238247" },
-  { code: "DUYVINH", name: "Công ty TNHH Xây dựng Duy Vinh", taxCode: "700865055" },
-  { code: "KIENQUAN", name: "CTCP Đầu tư Kiến Quân Việt Nam", taxCode: "107527141" },
-  { code: "VIETHUNG", name: "Công ty TNHH Việt Hùng", taxCode: "102020196" },
-  { code: "THAIBINH", name: "Công ty TNHH Thái Bình", taxCode: "0108804440" },
-  { code: "HOANGLONG", name: "Công ty CP Hoàng Long computer", taxCode: "0105509988" },
-  { code: "PHANMINH", name: "Công ty TNHH Phan Minh", taxCode: "0109905550" },
-];
-
-export const OPENING_SUPPLIERS = [
-  { code: "PHATMAI", name: "Công ty TNHH Phát Mai Group", taxCode: "110084806" },
-  { code: "MINHQUAN", name: "Công ty Cổ phần Minh Quân Logistics", taxCode: "110087035" },
-  { code: "THANHTRU", name: "Công ty TNHH Thiết bị Thanh Trúc", taxCode: "110092821" },
-  { code: "MAISON", name: "CTCP Tư vấn và Dịch vụ Bất động sản Maison", taxCode: "106639438" },
-  { code: "VANPHO", name: "CTCP Vận tải và Thương mại Vạn Phát", taxCode: "200463686" },
-  { code: "MEDIAZ", name: "Công ty TNHH Truyền thông AZ Việt Nam", taxCode: "402155162" },
-  { code: "LOCATIO", name: "Công ty TNHH Dịch vụ Logistics Việt Hưng", taxCode: "101353160" },
-  { code: "VIETGIA", name: "Công ty Cổ phần Công nghệ Việt Gia", taxCode: "101217009" },
-  { code: "CONGNGHE", name: "Công ty TNHH Phát triển Công nghệ KTS", taxCode: "100366488" },
-  { code: "ANLOC", name: "Công ty TNHH Thương mại Máy tính An Lộc", taxCode: "101468933" },
-  { code: "TANCANG", name: "Công ty cổ phần đại lý giao nhận vận tải xếp dỡ tân cảng", taxCode: "304875444" },
-  { code: "QUOCTE", name: "Công ty cổ phần đầu tư thương mại và dịch vụ quốc tế", taxCode: "100110052" },
-  { code: "THANHDAT", name: "Công ty TNHH Thành Đạt", taxCode: "0101234567" },
-  { code: "ANTAM", name: "CÔNG TY CỔ PHẦN VĂN PHÒNG PHẨM AN TÂM", taxCode: "2004687684" },
-  { code: "BINHPHAT", name: "CTCP THƯƠNG MẠI BÌNH PHÁT", taxCode: "200433686" },
-  { code: "GIANGMY", name: "CÔNG TY CỔ PHẦN ĐẦU TƯ GIANG MỸ", taxCode: "225946138" },
-];
-
-export const DEFAULT_CUSTOMER_DEBTS = [
-  { id: "cust-1", code: "THANHHA", name: "Công ty TNHH Thanh Hà", accCode: "131", debit: 50000000, credit: 0, invoiceNo: "HD00125", invoiceDate: "15/12/2025", dueDate: "15/01/2026" },
-  { id: "cust-2", code: "NHATMINH", name: "CTCP Nội thất Nhật Minh", accCode: "131", debit: 0, credit: 15000000, invoiceNo: "HD00118", invoiceDate: "10/12/2025", dueDate: "10/01/2026" },
-  { id: "cust-3", code: "MINHHANH", name: "Công ty TNHH Kinh doanh Minh Hạnh", accCode: "131", debit: 60000000, credit: 0, invoiceNo: "HD00099", invoiceDate: "05/12/2025", dueDate: "05/01/2026" },
-  { id: "cust-4", code: "ANHTUAN", name: "Công ty TNHH Công nghệ số Anh Tuấn", accCode: "131", debit: 32500000, credit: 0, invoiceNo: "HD00084", invoiceDate: "28/11/2025", dueDate: "28/12/2025" },
-];
-
-export const DEFAULT_SUPPLIER_DEBTS = [
-  { id: "supp-1", code: "PHATMAI", name: "Công ty TNHH Phát Mai Group", accCode: "331", debit: 0, credit: 80000000, invoiceNo: "PM-0982", invoiceDate: "12/12/2025" },
-  { id: "supp-2", code: "MINHQUAN", name: "Công ty Cổ phần Minh Quân Logistics", accCode: "331", debit: 15000000, credit: 0, invoiceNo: "MQ-1140", invoiceDate: "18/12/2025" },
-  { id: "supp-3", code: "THANHTRU", name: "Công ty TNHH Thiết bị Thanh Trúc", accCode: "331", debit: 0, credit: 25000000, invoiceNo: "TT-2025", invoiceDate: "22/12/2025" },
-  { id: "supp-4", code: "MAISON", name: "CTCP Tư vấn và Dịch vụ Bất động sản Maison", accCode: "331", debit: 12000000, credit: 0, invoiceNo: "MS-2025", invoiceDate: "25/12/2025" },
-];
-
-export const DEFAULT_ACCOUNT_BALANCES = [
-  { account: "1111", name: "Tiền mặt Việt Nam", debit: 500000000, credit: 0 },
-  { account: "1121", name: "Tiền gửi Ngân hàng Techcombank (VND)", debit: 3255000000, credit: 0 },
-  { account: "1122", name: "Tiền gửi Ngân hàng Techcombank (USD)", debit: 3816750000, credit: 0 },
-  { account: "131", name: "Phải thu của khách hàng", debit: 142500000, credit: 15000000 },
-  { account: "1331", name: "Thuế GTGT được khấu trừ của hàng hóa, dịch vụ", debit: 12000000, credit: 0 },
-  { account: "141", name: "Tạm ứng", debit: 12000000, credit: 0 },
-  { account: "152", name: "Nguyên liệu, vật liệu", debit: 36000000, credit: 0 },
-  { account: "1531", name: "Công cụ, dụng cụ", debit: 14000000, credit: 0 },
-  { account: "1561", name: "Giá mua hàng hóa", debit: 1158000000, credit: 0 },
-  { account: "2111", name: "Tài sản cố định hữu hình - Máy móc, thiết bị", debit: 513600000, credit: 0 },
-  { account: "2113", name: "Phương tiện vận tải, truyền dẫn", debit: 816000000, credit: 0 },
-  { account: "213", name: "Tài sản cố định vô hình", debit: 48000000, credit: 0 },
-  { account: "2141", name: "Hao mòn tài sản cố định hữu hình", debit: 0, credit: 354400000 },
-  { account: "2143", name: "Hao mòn tài sản cố định vô hình", debit: 0, credit: 9000000 },
-  { account: "221", name: "Đầu tư vào công ty con", debit: 150000000, credit: 0 },
-  { account: "222", name: "Đầu tư vào công ty liên doanh, liên kết", debit: 120000000, credit: 0 },
-  { account: "241", name: "Xây dựng cơ bản dở dang", debit: 100000000, credit: 0 },
-  { account: "242", name: "Chi phí trả trước", debit: 38480000, credit: 0 },
-  { account: "331", name: "Phải trả cho người bán", debit: 27000000, credit: 105000000 },
-  { account: "3331", name: "Thuế GTGT phải nộp", debit: 0, credit: 5000000 },
-  { account: "334", name: "Phải trả người lao động", debit: 0, credit: 45000000 },
-  { account: "338", name: "Phải trả, phải nộp khác", debit: 0, credit: 5000000 },
-  { account: "341", name: "Vay và nợ thuê tài chính", debit: 0, credit: 2500000000 },
-  { account: "4111", name: "Vốn góp của chủ sở hữu", debit: 0, credit: 7685930000 },
-  { account: "4212", name: "Lợi nhuận sau thuế chưa phân phối năm trước", debit: 0, credit: 25000000 },
-  { account: "441", name: "Quỹ đầu tư phát triển", debit: 0, credit: 10000000 },
-];
-
-export const DEFAULT_BANK_BALANCES = [
-  { accountNumber: "123456789", bankName: "Techcombank", branch: "Chi nhánh Hà Nội", currency: "VND", originalAmount: 3255000000, amountVnd: 3255000000 },
-  { accountNumber: "987654321", bankName: "Techcombank (USD)", branch: "Chi nhánh Hà Nội", currency: "USD", originalAmount: 150000, amountVnd: 3816750000 },
-];
-
-export const DEFAULT_INVENTORY_BALANCES = [
-  { itemCode: "DT_IP15", itemName: "Điện thoại iPhone 15 Pro Max 256GB", warehouse: "Kho 156", unit: "Cái", quantity: 10, unitPrice: 16200000, amount: 162000000 },
-  { itemCode: "DT_SS24", itemName: "Điện thoại Samsung Galaxy S24 Ultra 256GB", warehouse: "Kho 156", unit: "Cái", quantity: 12, unitPrice: 14700000, amount: 176400000 },
-  { itemCode: "LT_MBAIR", itemName: "Máy tính xách tay Macbook Air 13-inch M2", warehouse: "Kho 156", unit: "Cái", quantity: 8, unitPrice: 12900000, amount: 103200000 },
-  { itemCode: "LT_HPPAV", itemName: "Máy tính xách tay HP Pavilion 14 i5", warehouse: "Kho 156", unit: "Cái", quantity: 15, unitPrice: 7800000, amount: 117000000 },
-  { itemCode: "MTB_IPAD10", itemName: "Máy tính bảng iPad Gen 10 64GB", warehouse: "Kho 156", unit: "Cái", quantity: 20, unitPrice: 5100000, amount: 102000000 },
-  { itemCode: "DH_AWSE", itemName: "Đồng hồ thông minh Apple Watch SE", warehouse: "Kho 156", unit: "Cái", quantity: 25, unitPrice: 3600000, amount: 90000000 },
-  { itemCode: "DH_SSGW6", itemName: "Đồng hồ thông minh Samsung Galaxy Watch 6", warehouse: "Kho 156", unit: "Cái", quantity: 18, unitPrice: 3120000, amount: 56160000 },
-  { itemCode: "TN_APSPRO2", itemName: "Tai nghe AirPods Pro 2", warehouse: "Kho 156", unit: "Bộ", quantity: 40, unitPrice: 2880000, amount: 115200000 },
-  { itemCode: "TN_SSGWEB", itemName: "Tai nghe Samsung Galaxy Buds FE", warehouse: "Kho 156", unit: "Bộ", quantity: 22, unitPrice: 1020000, amount: 22440000 },
-  { itemCode: "MCG_PS5", itemName: "Máy chơi game PlayStation 5 Slim", warehouse: "Kho 156", unit: "Cái", quantity: 10, unitPrice: 6300000, amount: 63000000 },
-  { itemCode: "LOA_JBL", itemName: "Loa Bluetooth JBL Flip 6", warehouse: "Kho 156", unit: "Cái", quantity: 40, unitPrice: 1380000, amount: 55200000 },
-  { itemCode: "SDP_ANKER", itemName: "Sạc dự phòng Anker PowerCore 20000mAh", warehouse: "Kho 156", unit: "Cái", quantity: 50, unitPrice: 210000, amount: 10500000 },
-  { itemCode: "MH_LGMQ2", itemName: "Màn hình máy tính LG 27-inch 4K", warehouse: "Kho 156", unit: "Cái", quantity: 15, unitPrice: 5700000, amount: 85500000 },
-  { itemCode: "VL_DCD", itemName: "Dây cáp điện", warehouse: "Kho 152", unit: "Cuộn", quantity: 20, unitPrice: 1500000, amount: 30000000 },
-  { itemCode: "VL_KDN", itemName: "Keo dán đa năng", warehouse: "Kho 152", unit: "Lọ", quantity: 50, unitPrice: 20000, amount: 1000000 },
-  { itemCode: "VL_VCN", itemName: "Vải lau công nghiệp", warehouse: "Kho 152", unit: "Kg", quantity: 100, unitPrice: 50000, amount: 5000000 },
-  { itemCode: "GXV-001", itemName: "Ghế xoay văn phòng", warehouse: "Kho 153", unit: "Cái", quantity: 5, unitPrice: 800000, amount: 4000000 },
-  { itemCode: "MHTL-001", itemName: "Máy hủy tài liệu", warehouse: "Kho 153", unit: "Cái", quantity: 2, unitPrice: 2500000, amount: 5000000 },
-  { itemCode: "BLV-001", itemName: "Bàn làm việc", warehouse: "Kho 153", unit: "Cái", quantity: 2, unitPrice: 2500000, amount: 5000000 },
-];
 
 export type MisaOpeningBalanceWorkspaceProps = {
   notify?: (msg: string) => void;
@@ -420,43 +315,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     },
   ]);
 
-  // Sample data options for WIP dropdowns
-  const sampleThcpOptions = [
-    { code: "THCP01", name: "Sản xuất Bàn làm việc Hòa Phát", type: "Sản phẩm", process: "Giản đơn" },
-    { code: "THCP02", name: "Sản xuất Ghế xoay văn phòng GX01", type: "Sản phẩm", process: "Giản đơn" },
-    { code: "THCP03", name: "Sản xuất Tủ hồ sơ 3 ngăn", type: "Sản phẩm", process: "Giản đơn" },
-  ];
-
-  const sampleProjectOptions = [
-    { code: "CT01", name: "Tòa nhà Văn phòng TechCom Tower", type: "Công trình dân dụng" },
-    { code: "CT02", name: "Thi công Đường cao tốc Bắc Nam gói XL02", type: "Công trình giao thông" },
-    { code: "CT03", name: "Xây dựng Trụ sở chi nhánh BIDV Cầu Giấy", type: "Công trình dân dụng" },
-  ];
-
-  const sampleOrderOptions = [
-    { code: "DH001", date: "15/01/2026", desc: "Cung cấp bàn ghế văn phòng đợt 1", customer: "Công ty TNHH Minh An" },
-    { code: "DH002", date: "20/01/2026", desc: "Gia công kết cấu thép nhà xưởng", customer: "Tập đoàn Xây dựng Hòa Bình" },
-    { code: "DH003", date: "25/01/2026", desc: "Thi công hệ thống điện mạng tầng 3", customer: "Công ty CP Công nghệ FPT" },
-  ];
-
-  const sampleContractOptions = [
-    { code: "HD001", date: "10/01/2026", name: "Hợp đồng thi công hoàn thiện nội thất", customer: "Tổng Công ty Sông Đà" },
-    { code: "HD002", date: "18/01/2026", name: "Hợp đồng bảo trì hệ thống điều hòa", customer: "Công ty CP Dịch vụ Vinhomes" },
-    { code: "HD003", date: "22/01/2026", name: "Hợp đồng cung cấp vật tư phụ tùng cơ khí", customer: "Công ty TNHH Canon Việt Nam" },
-  ];
-
   // =========================================================================
   // MODAL 8: TÀI SẢN CỐ ĐỊNH ĐẦU KỲ STATES & DATA (Screenshots 1 - 5)
   // =========================================================================
-  const sampleAssetDepartments = [
-    { code: "P.GD", name: "Phòng Giám đốc" },
-    { code: "P.KT", name: "Phòng Kế toán" },
-    { code: "P.KD", name: "Phòng Kinh doanh" },
-    { code: "P.SX", name: "Phân xưởng sản xuất" },
-    { code: "P.HC", name: "Phòng Hành chính nhân sự" },
-    { code: "P.IT", name: "Phòng Công nghệ thông tin" },
-  ];
-
   const sampleAssetTypes = [
     { code: "01", name: "Nhà cửa, vật kiến trúc" },
     { code: "02", name: "Máy móc, thiết bị" },
@@ -468,20 +329,13 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     { code: "08", name: "Tài sản cố định khác" },
   ];
 
-  const sampleAssetSuppliers = [
-    { code: "NCC01", name: "Công ty Cổ phần Toyota Việt Nam" },
-    { code: "NCC02", name: "Công ty TNHH Thiết bị Công nghiệp Việt Nam" },
-    { code: "NCC03", name: "Công ty Cổ phần FPT" },
-    { code: "NCC04", name: "Tổng công ty Xây dựng số 1" },
-  ];
-
   // Common Top Fields
   const [assetVoucherNo, setAssetVoucherNo] = useState("OPN");
-  const [assetVoucherDate, setAssetVoucherDate] = useState("01/01/2026");
-  const [assetType, setAssetType] = useState("03 - Phương tiện vận tải, truyền dẫn");
-  const [assetCode, setAssetCode] = useState("TSCD001");
-  const [assetDepartment, setAssetDepartment] = useState("P.GD - Phòng Giám đốc");
-  const [assetName, setAssetName] = useState("Xe ô tô Toyota Fortuner 2.7V");
+  const [assetVoucherDate, setAssetVoucherDate] = useState("");
+  const [assetType, setAssetType] = useState("");
+  const [assetCode, setAssetCode] = useState("");
+  const [assetDepartment, setAssetDepartment] = useState("");
+  const [assetName, setAssetName] = useState("");
   const [assetNoDepreciation, setAssetNoDepreciation] = useState(false);
 
   // Active Tab: 5 tabs
@@ -500,262 +354,214 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   // Tab 1: Thông tin khấu hao
   const [assetCostAcc, setAssetCostAcc] = useState("2113");
   const [assetDeprAcc, setAssetDeprAcc] = useState("2141");
-  const [assetDeprStartDate, setAssetDeprStartDate] = useState("01/01/2026");
-  const [assetUsageTime, setAssetUsageTime] = useState("5,00");
+  const [assetDeprStartDate, setAssetDeprStartDate] = useState("");
+  const [assetUsageTime, setAssetUsageTime] = useState("");
   const [assetUsageUnit, setAssetUsageUnit] = useState("Năm");
-  const [assetRemainingTime, setAssetRemainingTime] = useState("3,00");
+  const [assetRemainingTime, setAssetRemainingTime] = useState("");
   const [assetRemainingUnit, setAssetRemainingUnit] = useState("Năm");
-  const [assetOriginalCost, setAssetOriginalCost] = useState("1150000000");
-  const [assetDeprCost, setAssetDeprCost] = useState("1150000000");
-  const [assetAccumDepr, setAssetAccumDepr] = useState("460000000");
-  const [assetMonthDeprRate, setAssetMonthDeprRate] = useState("1,67");
-  const [assetMonthDeprVal, setAssetMonthDeprVal] = useState("19166667");
-  const [assetRemainingVal, setAssetRemainingVal] = useState("690000000");
-  const [assetYearDeprRate, setAssetYearDeprRate] = useState("20,00");
-  const [assetYearDeprVal, setAssetYearDeprVal] = useState("230000000");
+  const [assetOriginalCost, setAssetOriginalCost] = useState("0");
+  const [assetDeprCost, setAssetDeprCost] = useState("0");
+  const [assetAccumDepr, setAssetAccumDepr] = useState("0");
+  const [assetMonthDeprRate, setAssetMonthDeprRate] = useState("0");
+  const [assetMonthDeprVal, setAssetMonthDeprVal] = useState("0");
+  const [assetRemainingVal, setAssetRemainingVal] = useState("0");
+  const [assetYearDeprRate, setAssetYearDeprRate] = useState("0");
+  const [assetYearDeprVal, setAssetYearDeprVal] = useState("0");
   const [assetTaxLimitChecked, setAssetTaxLimitChecked] = useState(false);
   const [assetTaxLawDeprCost, setAssetTaxLawDeprCost] = useState("0");
   const [assetTaxLawMonthDeprVal, setAssetTaxLawMonthDeprVal] = useState("0");
 
   // Tab 2: Thiết lập phân bổ
-  const [assetAllocRows, setAssetAllocRows] = useState([
-    { id: "1", targetCode: "P.GD", targetName: "Phòng Giám đốc", rate: "100,00", expenseAcc: "6422", expenseItem: "CPKH_TSCD", statCode: "" },
-  ]);
+  const [assetAllocRows, setAssetAllocRows] = useState<any[]>([]);
 
   // Tab 3: Bộ phận cấu thành
-  const [assetComponentRows, setAssetComponentRows] = useState([
-    { id: "1", partName: "Động cơ Dual VVT-i 2.7L", unit: "Chiếc", quantity: "1,00", warrantyPeriod: "36 tháng" },
-  ]);
+  const [assetComponentRows, setAssetComponentRows] = useState<any[]>([]);
 
   // Tab 4: Dụng cụ, phụ tùng kèm theo
-  const [assetAccessoryRows, setAssetAccessoryRows] = useState([
-    { id: "1", name: "Lốp dự phòng Bridgestone 265/60R18", unit: "Quả", quantity: "1,00", value: "4500000" },
-  ]);
+  const [assetAccessoryRows, setAssetAccessoryRows] = useState<any[]>([]);
 
   // Tab 5: Thông tin khác
-  const [assetManufacturer, setAssetManufacturer] = useState("Toyota Motor Corporation");
-  const [assetManufactureYear, setAssetManufactureYear] = useState("2023");
-  const [assetModelNo, setAssetModelNo] = useState("VIN-TY8492048201");
-  const [assetOriginCountry, setAssetOriginCountry] = useState("Nhật Bản");
-  const [assetCapacity, setAssetCapacity] = useState("164 HP / 5200 rpm");
-  const [assetWarrantyPeriod, setAssetWarrantyPeriod] = useState("36 tháng hoặc 100.000 km");
-  const [assetWarrantyCondition, setAssetWarrantyCondition] = useState("Bảo hành chính hãng tại tất cả các đại lý ủy quyền của Toyota trên toàn quốc");
-  const [assetSupplier, setAssetSupplier] = useState("NCC01");
-  const [assetHandoverVoucherNo, setAssetHandoverVoucherNo] = useState("BBGN-089/2023");
-  const [assetHandoverDate, setAssetHandoverDate] = useState("15/12/2023");
+  const [assetManufacturer, setAssetManufacturer] = useState("");
+  const [assetManufactureYear, setAssetManufactureYear] = useState("");
+  const [assetModelNo, setAssetModelNo] = useState("");
+  const [assetOriginCountry, setAssetOriginCountry] = useState("");
+  const [assetCapacity, setAssetCapacity] = useState("");
+  const [assetWarrantyPeriod, setAssetWarrantyPeriod] = useState("");
+  const [assetWarrantyCondition, setAssetWarrantyCondition] = useState("");
+  const [assetSupplier, setAssetSupplier] = useState("");
+  const [assetHandoverVoucherNo, setAssetHandoverVoucherNo] = useState("");
+  const [assetHandoverDate, setAssetHandoverDate] = useState("");
   const [assetConditionStatus, setAssetConditionStatus] = useState("Mới");
   const [assetCurrentQuality, setAssetCurrentQuality] = useState("Hoạt động tốt");
 
-  // Real Opening Balances State for Company ABC (TT99)
-  const [customerDebts, setCustomerDebts] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem("abc_opening_customers_tt99_v2");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_CUSTOMER_DEBTS;
-  });
-
-  const [supplierDebts, setSupplierDebts] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem("abc_opening_suppliers_tt99_v2");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_SUPPLIER_DEBTS;
-  });
-
-  const [accountRows, setAccountRows] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem("abc_opening_accounts_tt99_v2");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_ACCOUNT_BALANCES;
-  });
-
-  const [bankBalances, setBankBalances] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem("abc_opening_bank_tt99_v2");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_BANK_BALANCES;
-  });
-
-  const [inventoryBalances, setInventoryBalances] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem("abc_opening_inventory_tt99_v2");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_INVENTORY_BALANCES;
-  });
-
-  const [employeeDebts, setEmployeeDebts] = useState<any[]>([
-    { id: "emp-1", code: "HOANGBACUNG", name: "Hoàng Bá Cung", accCode: "141", debit: 12000000, credit: 0, reason: "Tạm ứng đầu kỳ Phòng Hành chính - Nhân sự" },
-    { id: "emp-2", code: "PHAMQUANGHOA", name: "Phạm Quang Hòa", accCode: "141", debit: 5000000, credit: 0, reason: "Tạm ứng công tác kỹ thuật (PC 181 ngày 09/12)" },
-  ]);
-
-  // UC-GL-15: States cho CCDC (G), TSCĐ (H), Chi phí trả trước (I), Chi phí dở dang (J)
-  const [toolBalances, setToolBalances] = useState<any[]>([
-    {
-      id: "tool-1",
-      voucherNo: "OPN-CCDC-01",
-      voucherDate: "01/01/2026",
-      code: "CCDC001",
-      name: "Máy in laser Canon LBP2900",
-      unit: "Chiếc",
-      quantity: 2,
-      totalAmount: 14000000,
-      allocatedVal: 4000000,
-      remainingVal: 10000000,
-      allocPeriod: 12,
-      remainingPeriod: 8,
-      waitingAccount: "242",
-    },
-  ]);
-
-  const [assetBalances, setAssetBalances] = useState<any[]>([
-    {
-      id: "asset-1",
-      voucherNo: "OPN-TSCD-01",
-      voucherDate: "01/01/2026",
-      code: "TSCD001",
-      name: "Xe ô tô Toyota Fortuner 2.7V",
-      assetType: "03 - Phương tiện vận tải, truyền dẫn",
-      department: "P.GD - Phòng Giám đốc",
-      costAcc: "2113",
-      deprAcc: "2141",
-      deprStartDate: "01/01/2026",
-      originalCost: 816000000,
-      accumDepr: 204000000,
-      remainingVal: 612000000,
-      usageTime: 5,
-      remainingTime: 3,
-    },
-  ]);
-
-  const [prepaidBalances, setPrepaidBalances] = useState<any[]>([
-    {
-      id: "prepaid-1",
-      code: "CPTT-01",
-      name: "Tiền thuê văn phòng năm 2026",
-      amount: 38480000,
-      allocMonths: 12,
-      opening_date: "2026-01-01",
-    },
-  ]);
-
-  const [wipBalances, setWipBalances] = useState<any[]>([
-    {
-      id: "wip-1",
-      trackingMode: "Đối tượng tập hợp chi phí",
-      code: "THCP01",
-      name: "Sản xuất Bàn làm việc Hòa Phát",
-      rawMaterial: 45000000,
-      labor: 30000000,
-      machinery: 10000000,
-      general: 15000000,
-      total: 100000000,
-      accepted: 85000000,
-    },
-  ]);
+  const { token, companyId } = useApiSession();
+  const [customerDebts, setCustomerDebts] = useState<any[]>([]);
+  const [supplierDebts, setSupplierDebts] = useState<any[]>([]);
+  const [accountRows, setAccountRows] = useState<any[]>([]);
+  const [bankBalances, setBankBalances] = useState<any[]>([]);
+  const [inventoryBalances, setInventoryBalances] = useState<any[]>([]);
+  const [employeeDebts, setEmployeeDebts] = useState<any[]>([]);
+  const [toolBalances, setToolBalances] = useState<any[]>([]);
+  const [assetBalances, setAssetBalances] = useState<any[]>([]);
+  const [prepaidBalances, setPrepaidBalances] = useState<any[]>([]);
+  const [wipBalances, setWipBalances] = useState<any[]>([]);
+  const [bankAccountCatalog, setBankAccountCatalog] = useState<any[]>([]);
+  const [partyCatalog, setPartyCatalog] = useState<any[]>([]);
+  const [itemCatalog, setItemCatalog] = useState<any[]>([]);
+  const [warehouseCatalog, setWarehouseCatalog] = useState<any[]>([]);
+  const [departmentCatalog, setDepartmentCatalog] = useState<any[]>([]);
+  // H3 & AF-04: departments and suppliers come from the live catalogs, not from sample lists
+  const assetDepartmentOptions: Array<{ code: string; name: string }> = departmentCatalog.map((d: any) => ({ code: String(d.code || ""), name: String(d.name || "") }));
 
   // UC-GL-15: Metadata & Auxiliary Modal states (AF-03, AF-09, AF-10, AF-12, AF-13, EF-16, EF-19, EF-21)
-  const [startDate, setStartDate] = useState("2026-01-01");
+  const [startDate, setStartDate] = useState("");
   const [openingPeriodLocked, setOpeningPeriodLocked] = useState(false);
+  const [accountingRegime, setAccountingRegime] = useState("");
+  const [bookkeepingMethod, setBookkeepingMethod] = useState("");
   const [balanceVersion, setBalanceVersion] = useState<number>(1);
+  // MF-03 & AF-15: groups available for the book set of the data set (TT58 single entry has no account group)
+  const [supportedCategories, setSupportedCategories] = useState<string[]>([]);
+  // AF-16: Kiểm tra số dư đầu kỳ
+  const [openingCheck, setOpeningCheck] = useState<any | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   // Account Detail Sub-modal (A4–A5, EF-16, BR08)
   const [accountDetailModalIdx, setAccountDetailModalIdx] = useState<number | null>(null);
-  const [accountDetailRows, setAccountDetailRows] = useState<any[]>([
-    { object_code: "KH01", object_name: "Công ty TNHH Thanh Hà", dimension: "HD-01", debit: 0, credit: 0 },
-  ]);
+  const [accountDetailRows, setAccountDetailRows] = useState<any[]>([]);
 
   // Foreign currency fields (AF-12, BR11)
   const [bankCurrency, setBankCurrency] = useState("VND");
   const [bankExchangeRate, setBankExchangeRate] = useState(1);
 
   // Prepaid controlled form fields (Luồng I)
-  const [prepaidCode, setPrepaidCode] = useState("CPTT-02");
-  const [prepaidName, setPrepaidName] = useState("Chi phí bảo hiểm tài sản năm 2026");
-  const [prepaidAmount, setPrepaidAmount] = useState<number>(24000000);
-  const [prepaidAllocMonths, setPrepaidAllocMonths] = useState<number>(12);
+  const [prepaidCode, setPrepaidCode] = useState("");
+  const [prepaidName, setPrepaidName] = useState("");
+  const [prepaidAmount, setPrepaidAmount] = useState<number>(0);
+  const [prepaidAllocMonths, setPrepaidAllocMonths] = useState<number>(0);
 
   // Auxiliary Modals: Excel Import (AF-03), Voucher List (AF-09), Print Preview (AF-13)
   const [excelModalOpen, setExcelModalOpen] = useState(false);
-  const [excelJsonText, setExcelJsonText] = useState("");
+  const [excelRows, setExcelRows] = useState<any[]>([]);
+  const [excelFileName, setExcelFileName] = useState("");
   const [excelImportErrors, setExcelImportErrors] = useState<any[]>([]);
+  const [excelChecked, setExcelChecked] = useState<any | null>(null);
   const [voucherListModalOpen, setVoucherListModalOpen] = useState(false);
   const [openingVouchers, setOpeningVouchers] = useState<any[]>([]);
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [printPreviewData, setPrintPreviewData] = useState<any | null>(null);
+  const [savingOpening, setSavingOpening] = useState(false);
+
+  const openingRequest = async (path: string, payload?: Record<string, any>) => {
+    if (!companyId) throw new Error("Vui lòng chọn doanh nghiệp trước khi nhập số dư ban đầu.");
+    const query = `company_id=${encodeURIComponent(companyId)}`;
+    return request<any>(`/api/v1/general-ledger/opening-balances/${path}${path.includes("?") ? "&" : "?"}${query}`, token || undefined,
+      payload ? { method: "POST", body: JSON.stringify({ ...payload, company_id: companyId }) } : undefined);
+  };
 
   const applyBackendOpeningResponse = (res: any) => {
     if (!res) return;
     if (res.start_date) setStartDate(res.start_date);
+    if (res.accounting_regime) setAccountingRegime(res.accounting_regime);
+    if (res.bookkeeping_method) setBookkeepingMethod(res.bookkeeping_method);
     if (typeof res.opening_period_locked === "boolean") setOpeningPeriodLocked(res.opening_period_locked);
     if (typeof res.version === "number") setBalanceVersion(res.version);
-    if (Array.isArray(res.accounts) && res.accounts.length > 0) {
-      setAccountRows(res.accounts);
-      try { localStorage.setItem("abc_opening_accounts_tt99_v2", JSON.stringify(res.accounts)); } catch {}
-    }
-    if (Array.isArray(res.bank) && res.bank.length > 0) setBankBalances(res.bank);
-    if (Array.isArray(res.customers) && res.customers.length > 0) setCustomerDebts(res.customers);
-    if (Array.isArray(res.suppliers) && res.suppliers.length > 0) setSupplierDebts(res.suppliers);
-    if (Array.isArray(res.employees) && res.employees.length > 0) setEmployeeDebts(res.employees);
-    if (Array.isArray(res.inventory) && res.inventory.length > 0) setInventoryBalances(res.inventory);
-    if (Array.isArray(res.tools) && res.tools.length > 0) setToolBalances(res.tools);
-    if (Array.isArray(res.assets) && res.assets.length > 0) setAssetBalances(res.assets);
-    if (Array.isArray(res.prepaid) && res.prepaid.length > 0) setPrepaidBalances(res.prepaid);
-    if (Array.isArray(res.wip) && res.wip.length > 0) setWipBalances(res.wip);
+    if (Array.isArray(res.supported_categories)) setSupportedCategories(res.supported_categories);
+    setAccountRows(Array.isArray(res.accounts) ? res.accounts : []);
+    setBankBalances(Array.isArray(res.bank) ? res.bank : []);
+    setCustomerDebts(Array.isArray(res.customers) ? res.customers : []);
+    setSupplierDebts(Array.isArray(res.suppliers) ? res.suppliers : []);
+    setEmployeeDebts(Array.isArray(res.employees) ? res.employees : []);
+    setInventoryBalances(Array.isArray(res.inventory) ? res.inventory : []);
+    setToolBalances(Array.isArray(res.tools) ? res.tools : []);
+    setAssetBalances(Array.isArray(res.assets) ? res.assets : []);
+    setPrepaidBalances(Array.isArray(res.prepaid) ? res.prepaid : []);
+    setWipBalances(Array.isArray(res.wip) ? res.wip : []);
   };
 
-  const syncOpeningBalancesToBackend = (payload: Record<string, any>) => {
-    void request<any>("/api/v1/general-ledger/opening-balances/", undefined, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (res && typeof res.version === "number") setBalanceVersion(res.version);
-      })
-      .catch((err: any) => {
-        if (err?.message) notify?.(err.message);
+  const persistOpening = async (path: string, payload: Record<string, any>) => {
+    if (savingOpening) return false;
+    setSavingOpening(true);
+    try {
+      // EF-23 & EF-24: the backend refuses a save made on an outdated version or setup
+      const res = await openingRequest(path, {
+        ...payload, expected_version: balanceVersion, expected_regime: accountingRegime || undefined, expected_start_date: startDate || undefined,
       });
+      applyBackendOpeningResponse(res);
+      // BR-GL-OB-55: the success message comes from the backend once the save is confirmed
+      if (res?.message) notify?.(res.message);
+      if (res?.print_result?.print_status === "ERROR") notify?.(res.print_result.message);
+      return true;
+    } catch (err: any) {
+      notify?.(err?.message || "Không lưu được số dư ban đầu.");
+      return false;
+    } finally {
+      setSavingOpening(false);
+    }
   };
 
   useEffect(() => {
     let mounted = true;
-    request<any>("/api/v1/general-ledger/opening-balances/")
+    setAccountRows([]);
+    setBankBalances([]);
+    setCustomerDebts([]);
+    setSupplierDebts([]);
+    setEmployeeDebts([]);
+    setInventoryBalances([]);
+    setToolBalances([]);
+    setAssetBalances([]);
+    setPrepaidBalances([]);
+    setWipBalances([]);
+    setAccountingRegime("");
+    setBookkeepingMethod("");
+    if (!companyId) return;
+    openingRequest("")
       .then((res) => {
         if (!mounted || !res) return;
         applyBackendOpeningResponse(res);
-        if (!res.customers || !res.suppliers || !res.bank || !res.inventory) {
-          syncOpeningBalancesToBackend({
-            bank: res.bank || DEFAULT_BANK_BALANCES,
-            customers: res.customers || DEFAULT_CUSTOMER_DEBTS,
-            suppliers: res.suppliers || DEFAULT_SUPPLIER_DEBTS,
-            employees: res.employees || employeeDebts,
-            inventory: res.inventory || DEFAULT_INVENTORY_BALANCES,
-            tools: Array.isArray(res.tools) && res.tools.length > 0 ? res.tools : toolBalances,
-            assets: Array.isArray(res.assets) && res.assets.length > 0 ? res.assets : assetBalances,
-            prepaid: Array.isArray(res.prepaid) && res.prepaid.length > 0 ? res.prepaid : prepaidBalances,
-            wip: Array.isArray(res.wip) && res.wip.length > 0 ? res.wip : wipBalances,
-          });
-        }
       })
-      .catch(() => {});
+      .catch((err: any) => { if (mounted) notify?.(err?.message || "Không tải được số dư ban đầu."); });
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [companyId, token]);
+
+  useEffect(() => {
+    if (!companyId || !token) return;
+    let active = true;
+    const load = async (path: string) => {
+      const result = await request<any>(`${path}?company_id=${encodeURIComponent(companyId)}`, token);
+      return Array.isArray(result) ? result : Array.isArray(result?.results) ? result.results : [];
+    };
+    Promise.allSettled([
+      load("/api/v1/master-data/company-bank-accounts/"),
+      load("/api/v1/master-data/parties/"),
+      load("/api/v1/master-data/items/"),
+      load("/api/v1/master-data/warehouses/"),
+      load("/api/v1/organization/departments/"),
+    ]).then((results) => {
+      if (!active) return;
+      setBankAccountCatalog(results[0].status === "fulfilled" ? results[0].value : []);
+      setPartyCatalog(results[1].status === "fulfilled" ? results[1].value : []);
+      setItemCatalog(results[2].status === "fulfilled" ? results[2].value : []);
+      setWarehouseCatalog(results[3].status === "fulfilled" ? results[3].value : []);
+      setDepartmentCatalog(results[4].status === "fulfilled" ? results[4].value : []);
+    });
+    return () => { active = false; };
+  }, [companyId, token]);
 
   const [searchTerm, setSearchTerm] = useState("");
 
   // Section collapse state in customer/supplier modals
   const [invoiceDetailOpen, setInvoiceDetailOpen] = useState(true);
   const [projectDetailOpen, setProjectDetailOpen] = useState(true);
+  const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
+  const [supplierInvoices, setSupplierInvoices] = useState<any[]>([]);
+  const [customerDimensions, setCustomerDimensions] = useState<any[]>([]);
+  const [supplierDimensions, setSupplierDimensions] = useState<any[]>([]);
 
   // Form states for modals
   const [bankAccountCode, setBankAccountCode] = useState("1121");
-  const [bankAccNumber, setBankAccNumber] = useState("123456789");
+  const [bankAccNumber, setBankAccNumber] = useState("");
   const [bankDebit, setBankDebit] = useState(0);
   const [bankCredit, setBankCredit] = useState(0);
 
@@ -774,8 +580,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const [employeeDebit, setEmployeeDebit] = useState(0);
   const [employeeCredit, setEmployeeCredit] = useState(0);
 
-  const [inventoryItem, setInventoryItem] = useState("DT_IP15");
-  const [inventoryWarehouse, setInventoryWarehouse] = useState("Kho 156");
+  const [inventoryItem, setInventoryItem] = useState("");
+  const [inventoryWarehouse, setInventoryWarehouse] = useState("");
   const [inventoryQty, setInventoryQty] = useState(0);
   const [inventoryVal, setInventoryVal] = useState(0);
 
@@ -795,46 +601,14 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   };
 
   // AF-11: Xóa bản ghi số dư đầu kỳ ở bất kỳ nhóm nào
-  const handleDeleteOpeningItem = (category: string, idOrCode: string) => {
+  const handleDeleteOpeningItem = async (category: string, idOrCode: string) => {
     if (openingPeriodLocked) {
-      notify?.("EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép xóa số dư ban đầu (BR37).");
+      notify?.("Không thể thay đổi số dư ban đầu vì dữ liệu đã được sử dụng trong nghiệp vụ kế toán.");
       return;
     }
-    if (category === "customers") {
-      const updated = customerDebts.filter((c) => c.id !== idOrCode && c.code !== idOrCode);
-      setCustomerDebts(updated);
-      try { localStorage.setItem("abc_opening_customers_tt99_v2", JSON.stringify(updated)); } catch {}
-    } else if (category === "suppliers") {
-      const updated = supplierDebts.filter((s) => s.id !== idOrCode && s.code !== idOrCode);
-      setSupplierDebts(updated);
-      try { localStorage.setItem("abc_opening_suppliers_tt99_v2", JSON.stringify(updated)); } catch {}
-    } else if (category === "bank") {
-      const updated = bankBalances.filter((b) => b.accountNumber !== idOrCode && b.id !== idOrCode);
-      setBankBalances(updated);
-    } else if (category === "employees") {
-      setEmployeeDebts(employeeDebts.filter((e) => e.id !== idOrCode && e.code !== idOrCode));
-    } else if (category === "inventory") {
-      setInventoryBalances(inventoryBalances.filter((it) => it.itemCode !== idOrCode && it.id !== idOrCode));
-    } else if (category === "tools") {
-      setToolBalances(toolBalances.filter((t) => t.code !== idOrCode && t.id !== idOrCode));
-    } else if (category === "assets") {
-      setAssetBalances(assetBalances.filter((a) => a.code !== idOrCode && a.id !== idOrCode));
-    } else if (category === "prepaid") {
-      setPrepaidBalances(prepaidBalances.filter((p) => p.code !== idOrCode && p.id !== idOrCode));
-    } else if (category === "wip") {
-      setWipBalances(wipBalances.filter((w) => w.code !== idOrCode && w.id !== idOrCode));
+    if (await persistOpening("delete-item/", { category, item_id: idOrCode })) {
+      notify?.(`Đã xóa bản ghi '${idOrCode}'.`);
     }
-    void request<any>("/api/v1/general-ledger/opening-balances/delete-item/", undefined, {
-      method: "POST",
-      body: JSON.stringify({ category, item_id: idOrCode }),
-    })
-      .then((res) => {
-        applyBackendOpeningResponse(res);
-        notify?.(`Đã xóa bản ghi '${idOrCode}' và cập nhật lên CSDL (AF-11).`);
-      })
-      .catch(() => {
-        notify?.(`Đã xóa bản ghi '${idOrCode}'.`);
-      });
   };
 
   const handleDeleteCustomer = (id: string) => handleDeleteOpeningItem("customers", id);
@@ -843,7 +617,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   // AF-10: Mở biểu mẫu sửa bản ghi số dư đầu kỳ đã lưu
   const handleEditOpeningItem = (category: string, item: any) => {
     if (openingPeriodLocked) {
-      notify?.("EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép sửa số dư ban đầu (BR37).");
+      notify?.("Không thể thay đổi số dư ban đầu vì dữ liệu đã được sử dụng trong nghiệp vụ kế toán.");
       return;
     }
     const idVal = String(item.id || item.code || item.accountNumber || item.itemCode || "");
@@ -860,11 +634,15 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       setPartnerName(item.code || "");
       setPartnerDebit(Number(item.debit || 0));
       setPartnerCredit(Number(item.credit || 0));
+      setCustomerInvoices(Array.isArray(item.invoiceDetails) ? item.invoiceDetails : []);
+      setCustomerDimensions(Array.isArray(item.dimensionDetails) ? item.dimensionDetails : []);
     } else if (category === "suppliers") {
       setSupplierAccCode(item.accCode || "331");
       setSupplierName(item.code || "");
       setSupplierDebit(Number(item.debit || 0));
       setSupplierCredit(Number(item.credit || 0));
+      setSupplierInvoices(Array.isArray(item.invoiceDetails) ? item.invoiceDetails : []);
+      setSupplierDimensions(Array.isArray(item.dimensionDetails) ? item.dimensionDetails : []);
     } else if (category === "employees") {
       setEmployeeAccCode(item.accCode || "141");
       setEmployeeName(item.code || "");
@@ -904,6 +682,14 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       setPrepaidName(item.name || "");
       setPrepaidAmount(Number(item.amount || 0));
       setPrepaidAllocMonths(Number(item.allocMonths || 12));
+    } else if (category === "wip") {
+      const mode = item.trackingMode || "Đối tượng tập hợp chi phí";
+      setWipSubtab(mode);
+      const rows = wipBalances.filter((row) => row.trackingMode === mode);
+      if (mode === "Công trình") setWipProjectRows(rows);
+      else if (mode === "Đơn hàng") setWipOrderRows(rows);
+      else if (mode === "Hợp đồng") setWipContractRows(rows);
+      else setWipThcpRows(rows);
     }
     setActiveModal(category);
   };
@@ -912,22 +698,19 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const handleOpenVoucherList = () => {
     setVoucherListModalOpen(true);
     const catQuery = activeCategoryId ? `?category=${encodeURIComponent(activeCategoryId)}` : "";
-    void request<any>(`/api/v1/general-ledger/opening-balances/vouchers/${catQuery}`)
+    void openingRequest(`vouchers/${catQuery}`)
       .then((res) => {
         if (res && Array.isArray(res.vouchers)) {
           setOpeningVouchers(res.vouchers);
         }
       })
-      .catch(() => {});
+      .catch((err: any) => notify?.(err?.message || "Không tải được chứng từ."));
   };
 
   // AF-13, EF-17: In số dư đầu kỳ
   const handlePrintCategory = (catId?: string) => {
     const targetCat = catId || activeCategoryId || "accounts";
-    void request<any>("/api/v1/general-ledger/opening-balances/print/", undefined, {
-      method: "POST",
-      body: JSON.stringify({ category: targetCat }),
-    })
+    void openingRequest("print/", { category: targetCat })
       .then((res) => {
         if (res?.print_status === "ERROR") {
           notify?.(res.message || "EF-17: Không thể khởi tạo bản in. Dữ liệu đã lưu vẫn được giữ nguyên.");
@@ -936,61 +719,114 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         setPrintPreviewData(res);
         setPrintModalOpen(true);
       })
-      .catch(() => {
-        notify?.("Đang khởi tạo bản in số dư đầu kỳ...");
+      .catch((err: any) => {
+        notify?.(err?.message || "Không thể khởi tạo bản in số dư đầu kỳ.");
       });
   };
 
   // AF-03, EF-18: Nhập số dư từ Excel
   const handleOpenExcelImport = () => {
-    const cat = activeCategoryId || "customers";
     setExcelImportErrors([]);
-    let sampleRows: any[] = [];
-    if (cat === "customers") {
-      sampleRows = [{ accCode: "131", code: "THANHHA", name: "Công ty TNHH Thanh Hà", debit: 45000000, credit: 0, invoiceNo: "HD-XL-01" }];
-    } else if (cat === "suppliers") {
-      sampleRows = [{ accCode: "331", code: "PHATMAI", name: "Công ty TNHH Phát Mai Group", debit: 0, credit: 65000000, invoiceNo: "NCC-XL-01" }];
-    } else if (cat === "bank") {
-      sampleRows = [{ accountCode: "1121", accountNumber: "0011004234567", bankName: "Vietcombank", currency: "VND", originalAmount: 500000000, amountVnd: 500000000 }];
-    } else if (cat === "inventory") {
-      sampleRows = [{ itemCode: "HH01", itemName: "Máy tính Dell Vostro 3520", warehouse: "Kho 156", unit: "Chiếc", quantity: 10, amount: 150000000 }];
-    } else if (cat === "prepaid") {
-      sampleRows = [{ code: "CPTT-XL01", name: "Chi phí phần mềm kế toán", amount: 18000000, allocMonths: 12 }];
-    } else {
-      sampleRows = [{ account: "1111", name: "Tiền mặt Việt Nam", debit: 500000000, credit: 0 }];
-    }
-    setExcelJsonText(JSON.stringify(sampleRows, null, 2));
+    setExcelRows([]);
+    setExcelFileName("");
     setExcelModalOpen(true);
+  };
+
+  const excelColumns: Record<string, string[]> = {
+    accounts: ["account", "name", "debit", "credit"],
+    bank: ["accountCode", "accountNumber", "bankName", "currency", "exchangeRate", "originalAmount", "credit"],
+    customers: ["accCode", "code", "name", "debit", "credit", "invoiceNo", "invoiceDate", "dueDate"],
+    suppliers: ["accCode", "code", "name", "debit", "credit", "invoiceNo", "invoiceDate"],
+    employees: ["accCode", "code", "name", "debit", "credit"],
+    inventory: ["itemCode", "itemName", "warehouse", "unit", "quantity", "unitPrice", "amount"],
+    tools: ["code", "name", "voucherNo", "voucherDate", "quantity", "totalAmount", "allocatedVal", "remainingVal", "allocPeriod"],
+    assets: ["code", "name", "voucherNo", "voucherDate", "costAcc", "deprAcc", "originalCost", "accumDepr", "remainingVal"],
+    prepaid: ["code", "name", "amount", "allocMonths"],
+    wip: ["trackingMode", "code", "name", "total", "accepted"],
+  };
+
+  const handleDownloadExcelTemplate = async () => {
+    const XLSX = await import("xlsx");
+    const category = activeCategoryId || "accounts";
+    const sheet = XLSX.utils.aoa_to_sheet([excelColumns[category] || excelColumns.accounts]);
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "So du ban dau");
+    XLSX.writeFile(book, `mau-so-du-ban-dau-${category}.xlsx`);
+  };
+
+  const handleExportExcel = async () => {
+    const category = activeCategoryId || "accounts";
+    const rowsByCategory: Record<string, any[]> = {
+      accounts: accountRows, bank: bankBalances, customers: customerDebts,
+      suppliers: supplierDebts, employees: employeeDebts, inventory: inventoryBalances,
+      tools: toolBalances, assets: assetBalances, prepaid: prepaidBalances, wip: wipBalances,
+    };
+    const XLSX = await import("xlsx");
+    const sheet = XLSX.utils.json_to_sheet(rowsByCategory[category] || []);
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "So du ban dau");
+    XLSX.writeFile(book, `so-du-ban-dau-${category}.xlsx`);
+  };
+
+  const handleChooseExcel = async (file?: File) => {
+    setExcelRows([]);
+    setExcelFileName("");
+    if (!file) return;
+    if (!/\.xlsx?$/i.test(file.name) || file.size > 20 * 1024 * 1024) {
+      setExcelImportErrors([{ message: "Chọn tệp .xlsx hoặc .xls tối đa 20 MB." }]);
+      return;
+    }
+    try {
+      const XLSX = await import("xlsx");
+      const book = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(book.Sheets[book.SheetNames[0]], { defval: "" });
+      const required = excelColumns[activeCategoryId || "accounts"] || excelColumns.accounts;
+      const header = XLSX.utils.sheet_to_json<any[]>(book.Sheets[book.SheetNames[0]], { header: 1 })[0] || [];
+      const missing = required.filter((column) => !header.includes(column));
+      if (missing.length || !rows.length) throw new Error(missing.length ? `Thiếu cột: ${missing.join(", ")}` : "Tệp Excel không có dòng dữ liệu.");
+      setExcelRows(rows);
+      setExcelFileName(file.name);
+      setExcelImportErrors([]);
+      setExcelChecked(null);
+    } catch (err: any) {
+      setExcelImportErrors([{ message: err?.message || "Không đọc được tệp Excel." }]);
+    }
   };
 
   const handleConfirmExcelImport = () => {
     const cat = activeCategoryId || "customers";
-    let parsed: any[] = [];
-    try {
-      parsed = JSON.parse(excelJsonText);
-      if (!Array.isArray(parsed)) throw new Error("Dữ liệu phải là mảng các dòng.");
-    } catch {
-      setExcelImportErrors([{ row_index: 1, error_code: "EF-18", message: "EF-18: Cấu trúc dữ liệu mẫu không hợp lệ." }]);
+    if (!excelRows.length) {
+      setExcelImportErrors([{ message: "Vui lòng chọn tệp Excel hợp lệ." }]);
       return;
     }
-    void request<any>("/api/v1/general-ledger/opening-balances/import-excel/", undefined, {
-      method: "POST",
-      body: JSON.stringify({ category: cat, rows: parsed, atomic: true }),
-    })
+    if (!excelChecked) {
+      void openingRequest("import-excel/", { category: cat, rows: excelRows, dry_run: true, expected_version: balanceVersion })
+        .then((res) => {
+          const summary = res?.import_summary || {};
+          setExcelChecked(summary);
+          setExcelImportErrors((summary.row_errors || []).map((e: any) => ({ message: `${e.message}${e.column ? ` (cột ${e.column})` : ""}` })));
+        })
+        .catch((err: any) => setExcelImportErrors([{ message: err?.message || "Tệp Excel không hợp lệ." }]));
+      return;
+    }
+    void openingRequest("import-excel/", { category: cat, rows: excelRows, expected_version: balanceVersion })
       .then((res) => {
         applyBackendOpeningResponse(res);
         setExcelImportErrors([]);
+        setExcelChecked(null);
         setExcelModalOpen(false);
-        notify?.(`AF-03: Đã nhập thành công ${res?.import_summary?.imported_count || parsed.length} dòng từ Excel!`);
+        notify?.(res?.message || `Đã nhập ${res?.import_summary?.imported_count ?? 0} dòng từ Excel.`);
       })
       .catch((err: any) => {
-        notify?.(err?.message || "EF-18: Phát hiện lỗi dữ liệu khi kiểm tra tệp Excel.");
+        const message = err?.message || "Phát hiện lỗi dữ liệu khi kiểm tra tệp Excel.";
+        setExcelImportErrors([{ message }]);
+        notify?.(message);
       });
   };
 
-  const handleSaveModal = (type: string, andAdd = false, andPrint = false) => {
+  const handleSaveModal = async (type: string, andAdd = false, andPrint = false) => {
     if (openingPeriodLocked) {
-      notify?.("EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép sửa hoặc ghi đè trực tiếp số dư ban đầu (BR37).");
+      notify?.("Không thể thay đổi số dư ban đầu vì dữ liệu đã được sử dụng trong nghiệp vụ kế toán.");
       return;
     }
     const actionMode = andPrint ? "SAVE_AND_PRINT" : andAdd ? "SAVE_AND_ADD" : "SAVE_AND_CLOSE";
@@ -998,12 +834,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     if (type === "Số dư tài khoản") {
       for (const r of accountRows) {
         if ((Number(r.debit) || 0) < 0 || (Number(r.credit) || 0) < 0) {
-          notify?.(`EF-12: Tài khoản ${r.account} không được có Dư Nợ hoặc Dư Có âm (BR05).`);
+          notify?.(`Tài khoản ${r.account} không được có Dư Nợ hoặc Dư Có âm.`);
           return;
         }
       }
-      try { localStorage.setItem("abc_opening_accounts_tt99_v2", JSON.stringify(accountRows)); } catch {}
-      syncOpeningBalancesToBackend({ category: "accounts", items: accountRows, action_mode: actionMode });
+      if (!await persistOpening("", { category: "accounts", items: accountRows, action_mode: actionMode })) return;
       const totalD = accountRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
       const totalC = accountRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
       if (totalD !== totalC) {
@@ -1018,39 +853,34 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
     if (type === "Số dư TK ngân hàng") {
       if (!bankAccountCode) {
-        notify?.("EF-03: Vui lòng chọn Số tài khoản kế toán.");
+        notify?.("Vui lòng chọn số tài khoản.");
         return;
       }
       if (!bankAccNumber) {
-        notify?.("EF-04: Vui lòng chọn Tài khoản ngân hàng.");
+        notify?.("Vui lòng chọn tài khoản ngân hàng.");
         return;
       }
       if (bankDebit < 0 || bankCredit < 0) {
-        notify?.("EF-12: Số dư tài khoản ngân hàng không được âm (BR05).");
+        notify?.("Số dư phải là số hợp lệ và không được âm.");
         return;
       }
-      const isUsd = bankCurrency === "USD" || bankAccNumber.includes("987") || bankAccNumber.includes("USD") || bankAccountCode === "1122";
-      const currency = isUsd ? "USD" : bankCurrency || "VND";
-      const fxRate = currency === "VND" ? 1 : (Number(bankExchangeRate) > 0 ? Number(bankExchangeRate) : 25445);
+      const selectedBank = bankAccountCatalog.find((row) => row.account_number === bankAccNumber);
+      const currency = selectedBank?.currency_code || bankCurrency || "VND";
+      const fxRate = currency === "VND" ? 1 : Number(bankExchangeRate);
+      if (fxRate <= 0) { notify?.("Tỷ giá ngoại tệ phải lớn hơn 0."); return; }
       const newBank = {
         id: editingItemId || `bank-${bankAccNumber}`,
         accountCode: bankAccountCode,
         accountNumber: bankAccNumber,
-        bankName: isUsd ? "Techcombank (USD)" : "Techcombank",
-        branch: "Chi nhánh Hà Nội",
+        bankName: selectedBank?.bank_name || "",
+        branch: selectedBank?.branch || "",
         currency,
         exchangeRate: fxRate,
         originalAmount: bankDebit,
         credit: bankCredit,
         amountVnd: currency === "VND" ? bankDebit : Math.round(bankDebit * fxRate),
       };
-      const updated = [newBank, ...bankBalances.filter(b => b.accountNumber !== bankAccNumber && b.id !== editingItemId)];
-      setBankBalances(updated);
-      try { localStorage.setItem("abc_opening_bank_tt99_v2", JSON.stringify(updated)); } catch {}
-      void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-        method: "POST",
-        body: JSON.stringify({ category: "bank", item: newBank, editing_id: editingItemId, action_mode: actionMode }),
-      }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ bank: updated }));
+      if (!await persistOpening("save-item/", { category: "bank", item: newBank, editing_id: editingItemId, action_mode: actionMode })) return;
       notify?.(`Đã lưu thành công số dư tài khoản ngân hàng ${bankAccNumber}!`);
       setEditingItemId(null);
       if (andPrint) handlePrintCategory("bank");
@@ -1060,40 +890,35 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
     if (type === "Công nợ khách hàng") {
       if (!partnerAccCode) {
-        notify?.("EF-03: Vui lòng chọn Số tài khoản công nợ khách hàng.");
+        notify?.("Vui lòng chọn số tài khoản.");
         return;
       }
       if (!partnerName) {
-        notify?.("EF-05: Vui lòng chọn Khách hàng.");
+        notify?.("Vui lòng chọn khách hàng.");
         return;
       }
       if (partnerDebit < 0 || partnerCredit < 0) {
-        notify?.("EF-12: Dư Nợ / Dư Có công nợ khách hàng không được âm.");
+        notify?.("Số dư phải là số hợp lệ và không được âm.");
         return;
       }
-      const custObj = OPENING_CUSTOMERS.find(c => c.code === partnerName || c.name === partnerName);
+      const custObj = partyCatalog.find(c => c.code === partnerName || c.name === partnerName);
+      const existingCust = customerDebts.find(c => c.id === editingItemId);
       const newCust = {
         id: editingItemId || ("cust-" + Date.now()),
         code: custObj ? custObj.code : (partnerName.split(" - ")[0] || partnerName),
-        name: custObj ? custObj.name : (partnerName.split(" - ")[1] || partnerName),
+        name: existingCust?.name || (custObj ? custObj.name : (partnerName.split(" - ")[1] || partnerName)),
         accCode: partnerAccCode || "131",
         debit: Number(partnerDebit) || 0,
         credit: Number(partnerCredit) || 0,
-        invoiceNo: "HD" + Math.floor(10000 + Math.random() * 90000),
-        invoiceDate: "15/12/2025",
-        dueDate: "15/01/2026",
+        invoiceDetails: customerInvoices,
+        dimensionDetails: customerDimensions,
         isNew: true,
       };
-      const updated = [newCust, ...customerDebts.filter(c => c.id !== editingItemId)];
-      setCustomerDebts(updated);
-      try { localStorage.setItem("abc_opening_customers_tt99_v2", JSON.stringify(updated)); } catch {}
-      void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-        method: "POST",
-        body: JSON.stringify({ category: "customers", item: newCust, editing_id: editingItemId, action_mode: actionMode }),
-      }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ customers: updated }));
+      if (!await persistOpening("save-item/", { category: "customers", item: newCust, editing_id: editingItemId, action_mode: actionMode })) return;
       notify?.(`Đã lưu thành công số dư công nợ khách hàng ${newCust.name}!`);
       setPartnerDebit(0);
       setPartnerCredit(0);
+      if (andAdd) { setCustomerInvoices([]); setCustomerDimensions([]); }
       setEditingItemId(null);
       if (andPrint) handlePrintCategory("customers");
       if (!andAdd) setActiveModal(null);
@@ -1102,39 +927,35 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
     if (type === "Công nợ nhà cung cấp") {
       if (!supplierAccCode) {
-        notify?.("EF-03: Vui lòng chọn Số tài khoản công nợ nhà cung cấp.");
+        notify?.("Vui lòng chọn số tài khoản.");
         return;
       }
       if (!supplierName) {
-        notify?.("EF-06: Vui lòng chọn Nhà cung cấp.");
+        notify?.("Vui lòng chọn nhà cung cấp.");
         return;
       }
       if (supplierDebit < 0 || supplierCredit < 0) {
-        notify?.("EF-12: Dư Nợ / Dư Có công nợ nhà cung cấp không được âm.");
+        notify?.("Số dư phải là số hợp lệ và không được âm.");
         return;
       }
-      const suppObj = OPENING_SUPPLIERS.find(s => s.code === supplierName || s.name === supplierName);
+      const suppObj = partyCatalog.find(s => s.code === supplierName || s.name === supplierName);
+      const existingSupp = supplierDebts.find(s => s.id === editingItemId);
       const newSupp = {
         id: editingItemId || ("supp-" + Date.now()),
         code: suppObj ? suppObj.code : (supplierName.split(" - ")[0] || supplierName),
-        name: suppObj ? suppObj.name : (supplierName.split(" - ")[1] || supplierName),
+        name: existingSupp?.name || (suppObj ? suppObj.name : (supplierName.split(" - ")[1] || supplierName)),
         accCode: supplierAccCode || "331",
         debit: Number(supplierDebit) || 0,
         credit: Number(supplierCredit) || 0,
-        invoiceNo: "NCC-" + Math.floor(1000 + Math.random() * 9000),
-        invoiceDate: "12/12/2025",
+        invoiceDetails: supplierInvoices,
+        dimensionDetails: supplierDimensions,
         isNew: true,
       };
-      const updated = [newSupp, ...supplierDebts.filter(s => s.id !== editingItemId)];
-      setSupplierDebts(updated);
-      try { localStorage.setItem("abc_opening_suppliers_tt99_v2", JSON.stringify(updated)); } catch {}
-      void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-        method: "POST",
-        body: JSON.stringify({ category: "suppliers", item: newSupp, editing_id: editingItemId, action_mode: actionMode }),
-      }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ suppliers: updated }));
+      if (!await persistOpening("save-item/", { category: "suppliers", item: newSupp, editing_id: editingItemId, action_mode: actionMode })) return;
       notify?.(`Đã lưu thành công số dư công nợ nhà cung cấp ${newSupp.name}!`);
       setSupplierDebit(0);
       setSupplierCredit(0);
+      if (andAdd) { setSupplierInvoices([]); setSupplierDimensions([]); }
       setEditingItemId(null);
       if (andPrint) handlePrintCategory("suppliers");
       if (!andAdd) setActiveModal(null);
@@ -1143,15 +964,15 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
     if (type === "Công nợ nhân viên") {
       if (!employeeAccCode) {
-        notify?.("EF-03: Vui lòng chọn Số tài khoản công nợ nhân viên.");
+        notify?.("Vui lòng chọn số tài khoản.");
         return;
       }
       if (!employeeName) {
-        notify?.("EF-07: Vui lòng chọn Nhân viên.");
+        notify?.("Vui lòng chọn nhân viên.");
         return;
       }
       if (employeeDebit < 0 || employeeCredit < 0) {
-        notify?.("EF-12: Dư Nợ / Dư Có công nợ nhân viên không được âm.");
+        notify?.("Số dư phải là số hợp lệ và không được âm.");
         return;
       }
       const newEmp = {
@@ -1163,12 +984,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         credit: Number(employeeCredit) || 0,
         reason: "Số dư công nợ nhân viên đầu kỳ",
       };
-      const updated = [newEmp, ...employeeDebts.filter(e => e.id !== editingItemId && e.code !== newEmp.code)];
-      setEmployeeDebts(updated);
-      void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-        method: "POST",
-        body: JSON.stringify({ category: "employees", item: newEmp, editing_id: editingItemId, action_mode: actionMode }),
-      }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ employees: updated }));
+      if (!await persistOpening("save-item/", { category: "employees", item: newEmp, editing_id: editingItemId, action_mode: actionMode })) return;
       notify?.(`Đã lưu thành công công nợ nhân viên ${newEmp.name}!`);
       setEmployeeDebit(0);
       setEmployeeCredit(0);
@@ -1180,30 +996,24 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
     if (type === "Tồn kho vật tư") {
       if (!inventoryItem || !inventoryWarehouse) {
-        notify?.("EF-08: Vui lòng chọn đầy đủ Hàng hóa và Kho lưu trữ.");
+        notify?.("Vui lòng chọn hàng hóa và kho.");
         return;
       }
       if (inventoryQty < 0 || inventoryVal < 0) {
-        notify?.("EF-13: Số lượng tồn và Giá trị tồn không được âm (BR19).");
+        notify?.("Số lượng tồn và giá trị tồn không hợp lệ hoặc âm.");
         return;
       }
       const newInv = {
         id: editingItemId || `inv-${inventoryItem}-${inventoryWarehouse}`,
         itemCode: inventoryItem,
-        itemName: inventoryItem === "DT_IP15" ? "Điện thoại iPhone 15 Pro Max 256GB" : inventoryItem === "DT_SS24" ? "Điện thoại Samsung Galaxy S24 Ultra 256GB" : inventoryItem === "HH01" ? "Máy tính Dell Vostro 3520" : inventoryItem === "HH02" ? "Ổ cứng SSD Samsung 1TB" : inventoryItem,
+        itemName: itemCatalog.find((row) => row.code === inventoryItem)?.name || inventoryItem,
         warehouse: inventoryWarehouse,
-        unit: "Chiếc",
-        quantity: Number(inventoryQty) || 1,
+        unit: itemCatalog.find((row) => row.code === inventoryItem)?.unit_name || "",
+        quantity: Number(inventoryQty) || 0,
         unitPrice: inventoryQty > 0 ? Math.round(inventoryVal / inventoryQty) : inventoryVal,
         amount: Number(inventoryVal) || 0,
       };
-      const updated = [newInv, ...inventoryBalances.filter(it => it.itemCode !== inventoryItem || it.warehouse !== inventoryWarehouse)];
-      setInventoryBalances(updated);
-      try { localStorage.setItem("abc_opening_inventory_tt99_v2", JSON.stringify(updated)); } catch {}
-      void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-        method: "POST",
-        body: JSON.stringify({ category: "inventory", item: newInv, editing_id: editingItemId, action_mode: actionMode }),
-      }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ inventory: updated }));
+      if (!await persistOpening("save-item/", { category: "inventory", item: newInv, editing_id: editingItemId, action_mode: actionMode })) return;
       notify?.(`Đã lưu thành công tồn kho vật tư hàng hóa ${newInv.itemCode}!`);
       setEditingItemId(null);
       if (andPrint) handlePrintCategory("inventory");
@@ -1213,11 +1023,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
     if (type === "Chi phí trả trước") {
       if (!prepaidCode.trim() || !prepaidName.trim()) {
-        notify?.("EF-11: Vui lòng nhập đầy đủ Mã chi phí trả trước và Tên chi phí trả trước.");
+        notify?.("Vui lòng nhập đầy đủ Mã, Tên chi phí trả trước và Số tiền.");
         return;
       }
       if (Number(prepaidAmount) <= 0 || Number(prepaidAllocMonths) <= 0) {
-        notify?.("EF-14: Số tiền và Số kỳ phân bổ (Tháng) phải lớn hơn 0 (BR27).");
+        notify?.("Số tiền và Số kỳ phân bổ (Tháng) phải lớn hơn 0.");
         return;
       }
       const newPrepaid = {
@@ -1228,12 +1038,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         allocMonths: Number(prepaidAllocMonths),
         opening_date: startDate,
       };
-      const updated = [newPrepaid, ...prepaidBalances.filter(p => p.code !== newPrepaid.code && p.id !== editingItemId)];
-      setPrepaidBalances(updated);
-      void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-        method: "POST",
-        body: JSON.stringify({ category: "prepaid", item: newPrepaid, editing_id: editingItemId, action_mode: actionMode }),
-      }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ prepaid: updated }));
+      if (!await persistOpening("save-item/", { category: "prepaid", item: newPrepaid, editing_id: editingItemId, action_mode: actionMode })) return;
       notify?.(`Đã lưu chi phí trả trước đầu kỳ ${newPrepaid.code} thành công!`);
       setEditingItemId(null);
       if (andPrint) handlePrintCategory("prepaid");
@@ -1241,24 +1046,46 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       return;
     }
 
-    syncOpeningBalancesToBackend({ category: activeCategoryId || type, items: { savedAt: new Date().toISOString(), type } });
-    notify?.(`Đã lưu thành công ${type} vào CSDL.`);
-    if (!andAdd) {
-      setActiveModal(null);
-    }
+    notify?.(`Chưa có biểu mẫu lưu cho ${type}.`);
   };
 
   // =========================================================================
   // VIEW 1: MAIN HUB SCREEN (10 TILES) - Matches Screenshot 3
   // =========================================================================
+  const runOpeningCheck = () => {
+    void openingRequest("check/")
+      .then((res) => setOpeningCheck(res))
+      .catch((err: any) => notify?.(err?.message || "Không kiểm tra được số dư đầu kỳ."));
+  };
   if (!activeCategoryId) {
     return (
       <div className="misa-opening-container">
         <div className="misa-opening-hub">
           <h2 className="misa-opening-hub-title">Nhập số dư ban đầu</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 14px", fontSize: 12.5, color: "#475569" }}>
+            <span>Ngày bắt đầu hạch toán: <strong>{startDate}</strong> · Chế độ: <strong>{accountingRegime}</strong>{bookkeepingMethod === "SIMPLE" ? " (sổ đơn)" : ""}</span>
+            <button type="button" className="misa-opening-btn-secondary" data-testid="opening-check" onClick={runOpeningCheck}>Kiểm tra số dư đầu kỳ</button>
+          </div>
+          {accountingRegime === "TT58" && bookkeepingMethod === "SIMPLE" && (
+            <p style={{ margin: "0 0 12px", fontSize: 12.5, color: "#92400e" }}>
+              Bộ sổ TT58 không ghi sổ kép: nhập số liệu đầu kỳ theo từng nhóm, không lập bảng Dư Nợ/Dư Có và không tạo bút toán Nợ/Có.
+            </p>
+          )}
+          {openingCheck && (
+            <div data-testid="opening-check-result" style={{ marginBottom: 14, padding: 12, borderRadius: 6, background: "#fff",
+              border: `1px solid ${openingCheck.status === "ERROR" ? "#fecaca" : openingCheck.status === "WARNING" ? "#fde68a" : "#bbf7d0"}` }}>
+              <strong>Kết quả kiểm tra: {openingCheck.status_display}</strong>
+              {(openingCheck.checks || []).map((c: any, i: number) => (
+                <div key={i} style={{ fontSize: 12.5, marginTop: 4, color: c.status === "ERROR" ? "#b91c1c" : "#92400e" }}>
+                  [{c.status === "ERROR" ? "Lỗi" : "Cảnh báo"}] {c.group_title}{c.account ? ` – TK ${c.account}` : ""}{c.object ? ` – ${c.object}` : ""}: {c.message}
+                  {c.difference ? ` (chênh lệch ${formatOpeningMoney(c.difference)})` : ""}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="misa-opening-tiles-grid">
-            {OPENING_CATEGORIES.map((cat, idx) => (
+            {OPENING_CATEGORIES.map((cat, idx) => (supportedCategories.length && !supportedCategories.includes(cat.id)) ? null : (
               <div
                 key={cat.id}
                 className="misa-opening-tile"
@@ -1497,6 +1324,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
               onClick={() => {
                 setEditingItemId(null);
+                setCustomerInvoices([]);
+                setSupplierInvoices([]);
+                setCustomerDimensions([]);
+                setSupplierDimensions([]);
                 setActiveModal(activeCategoryId);
               }}
             >
@@ -1527,7 +1358,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             <button
               type="button"
               className="misa-opening-btn-secondary"
-              onClick={() => notify?.("Đã xuất dữ liệu số dư ra Excel.")}
+              onClick={() => void handleExportExcel()}
             >
               Xuất khẩu Excel
             </button>
@@ -1802,7 +1633,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     </div>
                   ) : (
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#d97706", marginTop: 6 }}>
-                      ⚠ Lệch Nợ/Có: {formatOpeningMoney(Math.abs(totalD - totalC))} đ (BR09)
+                      ⚠ Lệch Nợ/Có: {formatOpeningMoney(Math.abs(totalD - totalC))} đ
                     </div>
                   )}
                 </div>
@@ -2100,7 +1931,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
               </div>
               <div style={{ padding: "12px 20px" }}>
-                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Giá trị còn lại đầu kỳ (BR23)</span>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Giá trị còn lại đầu kỳ</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
                   {formatOpeningMoney(assetBalances.reduce((s, r) => s + (Number(r.remainingVal) || 0), 0))} đ
                 </div>
@@ -2287,9 +2118,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   </thead>
                   <tbody>
                     {accountRows.map((row, idx) => (
-                      <tr key={row.account} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "6px 12px", fontWeight: 600 }}>{row.account}</td>
-                        <td style={{ padding: "6px 12px" }}>{row.name}</td>
+                      <tr key={`${row.account}-${idx}`} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "6px 12px", fontWeight: 600 }}><input className="misa-opening-input" aria-label={`Số tài khoản dòng ${idx + 1}`} value={row.account || ""} onChange={(e) => setAccountRows(accountRows.map((item, i) => i === idx ? { ...item, account: e.target.value } : item))} /></td>
+                        <td style={{ padding: "6px 12px" }}><input className="misa-opening-input" aria-label={`Tên tài khoản dòng ${idx + 1}`} value={row.name || ""} onChange={(e) => setAccountRows(accountRows.map((item, i) => i === idx ? { ...item, name: e.target.value } : item))} /></td>
                         <td style={{ padding: "6px 12px" }}>
                           <input
                             type="number"
@@ -2326,7 +2157,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                               setAccountDetailRows(
                                 Array.isArray(row.details) && row.details.length > 0
                                   ? row.details
-                                  : [{ object_code: "DT01", object_name: row.name, dimension: "HD-01", debit: row.debit || 0, credit: row.credit || 0 }]
+                                   : []
                               );
                             }}
                           >
@@ -2401,7 +2232,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         const sumD = accountDetailRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
                         const sumC = accountDetailRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
                         if (sumD !== (Number(rowTarget.debit) || 0) || sumC !== (Number(rowTarget.credit) || 0)) {
-                          notify?.(`EF-16: Tổng chi tiết (Nợ: ${formatOpeningMoney(sumD)}, Có: ${formatOpeningMoney(sumC)}) không khớp với dòng TK ${rowTarget.account} (BR08).`);
+                          notify?.(`Tổng chi tiết (Nợ: ${formatOpeningMoney(sumD)}, Có: ${formatOpeningMoney(sumC)}) không khớp với dòng TK ${rowTarget.account}.`);
                           return;
                         }
                         const next = [...accountRows];
@@ -2422,7 +2253,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   type="button"
                   className="misa-opening-btn-secondary"
                   style={{ height: 30, fontSize: 12.5, padding: "0 12px" }}
-                  onClick={() => setAccountRows([...accountRows, { account: "1388", name: "Phải thu khác", debit: 0, credit: 0 }])}
+                   onClick={() => setAccountRows([...accountRows, { account: "", name: "", debit: 0, credit: 0 }])}
                 >
                   + Thêm dòng
                 </button>
@@ -2476,13 +2307,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-field">
                 <label className="misa-opening-label">Tài khoản ngân hàng <span style={{ color: "#ef4444" }}>*</span></label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <select aria-label="Tài khoản ngân hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={bankAccNumber} onChange={(e) => setBankAccNumber(e.target.value)}>
+                  <select aria-label="Tài khoản ngân hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={bankAccNumber} onChange={(e) => { const row = bankAccountCatalog.find((item) => item.account_number === e.target.value); setBankAccNumber(e.target.value); setBankCurrency(row?.currency_code || "VND"); setBankExchangeRate(row?.currency_code && row.currency_code !== "VND" ? 0 : 1); }}>
                     <option value="">-- Chọn số tài khoản ngân hàng --</option>
-                    <option value="123456789">123456789 - Techcombank Chi nhánh Hoàn Kiếm (VND)</option>
-                    <option value="987654321">987654321 - Techcombank Chi nhánh Hoàn Kiếm (USD)</option>
-                    <option value="0011004234567">0011004234567 - Vietcombank Sở giao dịch</option>
+                    {bankAccountCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.account_number}>{row.account_number} - {row.bank_name} ({row.currency_code})</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/company-bank-accounts")} style={{ width: 34, padding: 0, justifyContent: "center" }}>
                     +
                   </button>
                 </div>
@@ -2490,13 +2319,13 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Loại tiền (AF-12)</label>
-                  <select className="misa-opening-select" value={bankCurrency} onChange={(e) => { setBankCurrency(e.target.value); setBankExchangeRate(e.target.value === "USD" ? 25445 : 1); }}>
+                  <select className="misa-opening-select" value={bankCurrency} onChange={(e) => { setBankCurrency(e.target.value); setBankExchangeRate(e.target.value === "VND" ? 1 : 0); }}>
                     <option value="VND">VND - Đồng Việt Nam</option>
                     <option value="USD">USD - Đô la Mỹ</option>
                   </select>
                 </div>
                 <div className="misa-opening-field">
-                  <label className="misa-opening-label">Tỷ giá quy đổi (BR11)</label>
+                  <label className="misa-opening-label">Tỷ giá quy đổi</label>
                   <input type="number" className="misa-opening-input" value={bankExchangeRate} onChange={(e) => setBankExchangeRate(Number(e.target.value) || 0)} disabled={bankCurrency === "VND"} />
                 </div>
               </div>
@@ -2555,13 +2384,13 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select aria-label="Khách hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={partnerName} onChange={(e) => setPartnerName(e.target.value)}>
                       <option value="">-- Chọn khách hàng --</option>
-                      {OPENING_CUSTOMERS.map((c) => (
+                      {partyCatalog.filter((c) => c.status === "ACTIVE").map((c) => (
                         <option key={c.code} value={c.code}>
                           {c.code} - {c.name}
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>
+                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Khách hàng")} style={{ width: 34, padding: 0, justifyContent: "center" }}>
                       +
                     </button>
                   </div>
@@ -2599,22 +2428,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td><input type="text" className="misa-opening-input" defaultValue="15/12/2025" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="HD00125" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="15/01/2026" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="50000000" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="50000000" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="0" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="Nguyễn Văn A" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td style={{ textAlign: "center" }}><Trash2 size={13} color="#ef4444" style={{ cursor: "pointer" }} /></td>
-                          </tr>
+                          {customerInvoices.map((inv, idx) => (
+                            <tr key={idx}>
+                              {(["invoiceDate", "invoiceNo", "dueDate", "invoiceAmount", "remainingAmount", "advanceAmount", "employee"] as const).map((field) => (
+                                <td key={field}><input type={field.toLowerCase().includes("amount") ? "number" : "text"} className="misa-opening-input" aria-label={`${field} khách hàng ${idx + 1}`} value={inv[field] ?? ""} onChange={(e) => setCustomerInvoices(customerInvoices.map((row, i) => i === idx ? { ...row, [field]: field.toLowerCase().includes("amount") ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                              ))}
+                              <td><button type="button" aria-label={`Xóa hóa đơn khách hàng ${idx + 1}`} onClick={() => setCustomerInvoices(customerInvoices.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
+                        <button type="button" className="misa-opening-btn-secondary" onClick={() => setCustomerInvoices([...customerInvoices, { invoiceDate: "", invoiceNo: "", dueDate: "", invoiceAmount: 0, remainingAmount: 0, advanceAmount: 0 }])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
+                        <button type="button" className="misa-opening-btn-secondary" onClick={() => setCustomerInvoices([])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
                     </div>
                   </div>
                 )}
@@ -2643,22 +2470,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td><input type="text" className="misa-opening-input" placeholder="Nhân viên" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="Phòng Kinh doanh" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" placeholder="Công trình" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" placeholder="Đơn hàng" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="HĐ-2025/08" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="50000000" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="0" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td style={{ textAlign: "center" }}><Trash2 size={13} color="#ef4444" style={{ cursor: "pointer" }} /></td>
-                          </tr>
+                          {customerDimensions.map((dim, idx) => (
+                            <tr key={idx}>
+                              {(["employee", "department", "project", "order", "contract", "debit", "credit"] as const).map((field) => (
+                                <td key={field}><input type={field === "debit" || field === "credit" ? "number" : "text"} className="misa-opening-input" aria-label={`${field} chi tiết khách hàng ${idx + 1}`} value={dim[field] ?? ""} onChange={(e) => setCustomerDimensions(customerDimensions.map((row, i) => i === idx ? { ...row, [field]: field === "debit" || field === "credit" ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                              ))}
+                              <td><button type="button" aria-label={`Xóa chi tiết khách hàng ${idx + 1}`} onClick={() => setCustomerDimensions(customerDimensions.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
+                      <button type="button" className="misa-opening-btn-secondary" onClick={() => setCustomerDimensions([...customerDimensions, { debit: 0, credit: 0 }])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
+                      <button type="button" className="misa-opening-btn-secondary" onClick={() => setCustomerDimensions([])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
                     </div>
                   </div>
                 )}
@@ -2705,13 +2530,13 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select className="misa-opening-select" style={{ flex: 1 }} value={supplierName} onChange={(e) => setSupplierName(e.target.value)}>
                       <option value="">-- Chọn nhà cung cấp --</option>
-                      {OPENING_SUPPLIERS.map((s) => (
+                      {partyCatalog.filter((s) => s.status === "ACTIVE").map((s) => (
                         <option key={s.code} value={s.code}>
                           {s.code} - {s.name}
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhà cung cấp")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                   </div>
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
@@ -2747,22 +2572,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td><input type="text" className="misa-opening-input" defaultValue="20/12/2025" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="HD-INVOICE-88" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="20/01/2026" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="80000000" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="80000000" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="0" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="Trần Thị B" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td style={{ textAlign: "center" }}><Trash2 size={13} color="#ef4444" style={{ cursor: "pointer" }} /></td>
-                          </tr>
+                          {supplierInvoices.map((inv, idx) => (
+                            <tr key={idx}>
+                              {(["invoiceDate", "invoiceNo", "dueDate", "invoiceAmount", "remainingAmount", "advanceAmount", "employee"] as const).map((field) => (
+                                <td key={field}><input type={field.toLowerCase().includes("amount") ? "number" : "text"} className="misa-opening-input" aria-label={`${field} nhà cung cấp ${idx + 1}`} value={inv[field] ?? ""} onChange={(e) => setSupplierInvoices(supplierInvoices.map((row, i) => i === idx ? { ...row, [field]: field.toLowerCase().includes("amount") ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                              ))}
+                              <td><button type="button" aria-label={`Xóa hóa đơn nhà cung cấp ${idx + 1}`} onClick={() => setSupplierInvoices(supplierInvoices.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
+                        <button type="button" className="misa-opening-btn-secondary" onClick={() => setSupplierInvoices([...supplierInvoices, { invoiceDate: "", invoiceNo: "", dueDate: "", invoiceAmount: 0, remainingAmount: 0, advanceAmount: 0 }])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
+                        <button type="button" className="misa-opening-btn-secondary" onClick={() => setSupplierInvoices([])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
                     </div>
                   </div>
                 )}
@@ -2791,22 +2614,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td><input type="text" className="misa-opening-input" placeholder="Nhân viên" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="Phòng Vật tư" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" placeholder="Công trình" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" placeholder="Đơn hàng" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="text" className="misa-opening-input" defaultValue="HĐM-2025/11" style={{ height: 26, fontSize: 12 }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="0" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td><input type="number" className="misa-opening-input" defaultValue="80000000" style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                            <td style={{ textAlign: "center" }}><Trash2 size={13} color="#ef4444" style={{ cursor: "pointer" }} /></td>
-                          </tr>
+                          {supplierDimensions.map((dim, idx) => (
+                            <tr key={idx}>
+                              {(["employee", "department", "project", "order", "contract", "debit", "credit"] as const).map((field) => (
+                                <td key={field}><input type={field === "debit" || field === "credit" ? "number" : "text"} className="misa-opening-input" aria-label={`${field} chi tiết nhà cung cấp ${idx + 1}`} value={dim[field] ?? ""} onChange={(e) => setSupplierDimensions(supplierDimensions.map((row, i) => i === idx ? { ...row, [field]: field === "debit" || field === "credit" ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                              ))}
+                              <td><button type="button" aria-label={`Xóa chi tiết nhà cung cấp ${idx + 1}`} onClick={() => setSupplierDimensions(supplierDimensions.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
-                      <button type="button" className="misa-opening-btn-secondary" style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
+                      <button type="button" className="misa-opening-btn-secondary" onClick={() => setSupplierDimensions([...supplierDimensions, { debit: 0, credit: 0 }])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>+ Thêm dòng</button>
+                      <button type="button" className="misa-opening-btn-secondary" onClick={() => setSupplierDimensions([])} style={{ height: 26, fontSize: 12, padding: "0 10px" }}>Xóa hết dòng</button>
                     </div>
                   </div>
                 )}
@@ -2893,11 +2714,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <div style={{ display: "flex", gap: 6 }}>
                   <select className="misa-opening-select" style={{ flex: 1 }} value={inventoryItem} onChange={(e) => setInventoryItem(e.target.value)}>
                     <option value="">-- Chọn hàng hóa, vật tư --</option>
-                    <option value="HH01">HH01 - Máy tính Dell Vostro 3520</option>
-                    <option value="HH02">HH02 - Ổ cứng SSD Samsung 1TB</option>
-                    <option value="VL01">VL01 - Dây cáp mạng Cat6 UTP</option>
+                    {itemCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.code}>{row.code} - {row.name}</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/items")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                 </div>
               </div>
               <div className="misa-opening-field">
@@ -2905,10 +2724,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <div style={{ display: "flex", gap: 6 }}>
                   <select className="misa-opening-select" style={{ flex: 1 }} value={inventoryWarehouse} onChange={(e) => setInventoryWarehouse(e.target.value)}>
                     <option value="">-- Chọn kho lưu trữ --</option>
-                    <option value="KHO_TONG">KHO_TONG - Kho Tổng Hà Nội</option>
-                    <option value="KHO_HCM">KHO_HCM - Kho Chi nhánh TP.HCM</option>
+                    {warehouseCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.code}>{row.code} - {row.name}</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/warehouses")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                 </div>
               </div>
               <div className="misa-opening-form-row">
@@ -3558,16 +3376,16 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </button>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (!toolCode.trim() || !toolName.trim() || !toolVoucherNo.trim()) {
-                    notify?.("EF-09: Vui lòng nhập đầy đủ Số CT ghi tăng, Mã CCDC và Tên CCDC!");
+                    notify?.("Vui lòng nhập đầy đủ Mã CCDC, Tên CCDC và các trường bắt buộc.");
                     return;
                   }
                   const totalAmt = Number(String(toolTotalAmount).replace(/[^\d.-]/g, "")) || 0;
                   const allocVal = Number(String(toolAllocatedVal).replace(/[^\d.-]/g, "")) || 0;
                   const remVal = Number(String(toolRemainingVal).replace(/[^\d.-]/g, "")) || (totalAmt - allocVal);
                   if (totalAmt > 0 && remVal !== totalAmt - allocVal) {
-                    notify?.(`EF-14: Giá trị CCDC còn lại (${formatOpeningMoney(remVal)}) phải bằng Thành tiền (${formatOpeningMoney(totalAmt)}) trừ Đã phân bổ (${formatOpeningMoney(allocVal)}) (BR22).`);
+                    notify?.(`Giá trị CCDC còn lại (${formatOpeningMoney(remVal)}) phải bằng Thành tiền (${formatOpeningMoney(totalAmt)}) trừ Đã phân bổ (${formatOpeningMoney(allocVal)}).`);
                     return;
                   }
                   const newTool = {
@@ -3581,17 +3399,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     totalAmount: totalAmt,
                     allocatedVal: allocVal,
                     remainingVal: remVal,
-                    allocPeriod: Number(toolAllocPeriod) || 12,
+                    allocPeriod: String(toolAllocPeriod).trim() === "" ? "" : Number(toolAllocPeriod),
                     remainingPeriod: Number(toolRemainingPeriod) || 0,
-                    waitingAccount: toolWaitingAccount || "242",
+                    waitingAccount: toolWaitingAccount,
                     allocRows: toolAllocRows,
                   };
-                  const updated = [newTool, ...toolBalances.filter((t) => t.code !== newTool.code && t.id !== editingItemId)];
-                  setToolBalances(updated);
-                  void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-                    method: "POST",
-                    body: JSON.stringify({ category: "tools", item: newTool, editing_id: editingItemId, action_mode: "SAVE" }),
-                  }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ tools: updated }));
+                   if (!await persistOpening("save-item/", { category: "tools", item: newTool, editing_id: editingItemId, action_mode: "SAVE" })) return;
                   notify?.(`Đã lưu CCDC ${toolCode} thành công!`);
                   setEditingItemId(null);
                   setActiveModal(null);
@@ -3609,9 +3422,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               >Lưu</button>
               <button
                 type="button"
-                onClick={() => {
+                 onClick={async () => {
                   if (!toolCode.trim() || !toolName.trim() || !toolVoucherNo.trim()) {
-                    notify?.("EF-09: Vui lòng nhập đầy đủ Số CT ghi tăng, Mã CCDC và Tên CCDC!");
+                    notify?.("Vui lòng nhập đầy đủ Mã CCDC, Tên CCDC và các trường bắt buộc.");
                     return;
                   }
                   const totalAmt = Number(String(toolTotalAmount).replace(/[^\d.-]/g, "")) || 0;
@@ -3628,17 +3441,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     totalAmount: totalAmt,
                     allocatedVal: allocVal,
                     remainingVal: remVal,
-                    allocPeriod: Number(toolAllocPeriod) || 12,
+                    allocPeriod: String(toolAllocPeriod).trim() === "" ? "" : Number(toolAllocPeriod),
                     remainingPeriod: Number(toolRemainingPeriod) || 0,
-                    waitingAccount: toolWaitingAccount || "242",
+                    waitingAccount: toolWaitingAccount,
                     allocRows: toolAllocRows,
                   };
-                  const updated = [newTool, ...toolBalances.filter((t) => t.code !== newTool.code && t.id !== editingItemId)];
-                  setToolBalances(updated);
-                  void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-                    method: "POST",
-                    body: JSON.stringify({ category: "tools", item: newTool, editing_id: editingItemId, action_mode: "SAVE_AND_ADD" }),
-                  }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ tools: updated }));
+                   if (!await persistOpening("save-item/", { category: "tools", item: newTool, editing_id: editingItemId, action_mode: "SAVE_AND_ADD" })) return;
                   notify?.(`Đã lưu CCDC ${toolCode} thành công! Mời tiếp tục khai báo (AF-01).`);
                   setEditingItemId(null);
                   setToolCode("");
@@ -3884,7 +3692,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         }}
                       >
                         <option value="">Chọn đơn vị sử dụng</option>
-                        {sampleAssetDepartments.map((d) => (
+                        {assetDepartmentOptions.map((d) => (
                           <option key={d.code} value={`${d.code} - ${d.name}`}>
                             {d.code} - {d.name}
                           </option>
@@ -4480,14 +4288,14 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                                   onChange={(e) => {
                                     const next = [...assetAllocRows];
                                     next[idx].targetCode = e.target.value;
-                                    const dept = sampleAssetDepartments.find((d) => d.code === e.target.value);
+                                    const dept = assetDepartmentOptions.find((d) => d.code === e.target.value);
                                     if (dept) next[idx].targetName = dept.name;
                                     setAssetAllocRows(next);
                                   }}
                                   style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 20px 0 6px", fontSize: 13, background: "#ffffff", outline: "none", appearance: "none" }}
                                 >
                                   <option value="">Chọn đối tượng</option>
-                                  {sampleAssetDepartments.map((d) => (
+                                  {assetDepartmentOptions.map((d) => (
                                     <option key={d.code} value={d.code}>{d.code} - {d.name}</option>
                                   ))}
                                 </select>
@@ -5013,7 +4821,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           }}
                         >
                           <option value="">Chọn nhà cung cấp</option>
-                          {sampleAssetSuppliers.map((s) => (
+                          {partyCatalog.filter((p: any) => ["SUPPLIER", "BOTH", "CUSTOMER_SUPPLIER"].includes(String(p.party_type || "").toUpperCase())).map((s: any) => (
                             <option key={s.code} value={s.code}>
                               {s.code} - {s.name}
                             </option>
@@ -5204,19 +5012,19 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!assetCode.trim() || !assetName.trim() || !assetVoucherNo.trim()) {
-                    notify?.("EF-10: Vui lòng nhập đầy đủ Số CT ghi tăng, Mã tài sản và Tên tài sản!");
+                 onClick={async () => {
+                   if (!assetCode.trim() || !assetName.trim() || !assetVoucherNo.trim()) {
+                    notify?.("Vui lòng nhập đầy đủ Mã tài sản, Tên tài sản và các trường bắt buộc.");
                     return;
                   }
                   const origCost = Number(String(assetOriginalCost).replace(/[^\d.-]/g, "")) || 0;
                   const accumDepr = Number(String(assetAccumDepr).replace(/[^\d.-]/g, "")) || 0;
                   const remVal = Number(String(assetRemainingVal).replace(/[^\d.-]/g, "")) || (origCost - accumDepr);
                   if (origCost > 0 && remVal !== origCost - accumDepr) {
-                    notify?.(`EF-14: Giá trị còn lại (${formatOpeningMoney(remVal)}) phải bằng Nguyên giá (${formatOpeningMoney(origCost)}) trừ Hao mòn lũy kế (${formatOpeningMoney(accumDepr)}) (BR23).`);
+                    notify?.(`Giá trị còn lại (${formatOpeningMoney(remVal)}) phải bằng Nguyên giá (${formatOpeningMoney(origCost)}) trừ Hao mòn lũy kế (${formatOpeningMoney(accumDepr)}).`);
                     return;
                   }
-                  const newAsset = {
+                   const newAsset = {
                     id: editingItemId || assetCode.trim(),
                     voucherNo: assetVoucherNo.trim(),
                     voucherDate: assetVoucherDate || startDate,
@@ -5224,25 +5032,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     name: assetName.trim(),
                     assetType,
                     department: assetDepartment,
-                    costAcc: assetCostAcc || "2111",
-                    deprAcc: assetDeprAcc || "2141",
+                    costAcc: assetCostAcc,
+                    deprAcc: assetDeprAcc,
                     deprStartDate: assetDeprStartDate || startDate,
                     originalCost: origCost,
                     accumDepr,
                     remainingVal: remVal,
-                    usageTime: Number(String(assetUsageTime).replace(",", ".")) || 5,
-                    remainingTime: Number(String(assetRemainingTime).replace(",", ".")) || 3,
+                    usageTime: String(assetUsageTime).trim() === "" ? "" : Number(String(assetUsageTime).replace(",", ".")),
+                    remainingTime: String(assetRemainingTime).trim() === "" ? "" : Number(String(assetRemainingTime).replace(",", ".")),
                     noDepreciation: assetNoDepreciation,
                     taxLimitChecked: assetTaxLimitChecked,
                     taxLawDeprCost: Number(assetTaxLawDeprCost) || 0,
                     taxLawMonthDeprVal: Number(assetTaxLawMonthDeprVal) || 0,
                   };
-                  const updated = [newAsset, ...assetBalances.filter((a) => a.code !== newAsset.code && a.id !== editingItemId)];
-                  setAssetBalances(updated);
-                  void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-                    method: "POST",
-                    body: JSON.stringify({ category: "assets", item: newAsset, editing_id: editingItemId, action_mode: "SAVE" }),
-                  }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ assets: updated }));
+                   if (!await persistOpening("save-item/", { category: "assets", item: newAsset, editing_id: editingItemId, action_mode: "SAVE" })) return;
                   notify?.(`Đã lưu tài sản cố định ${assetCode} - ${assetName} thành công!`);
                   setEditingItemId(null);
                   setActiveModal(null);
@@ -5260,9 +5063,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               >Lưu</button>
               <button
                 type="button"
-                onClick={() => {
-                  if (!assetCode.trim() || !assetName.trim() || !assetVoucherNo.trim()) {
-                    notify?.("EF-10: Vui lòng nhập đầy đủ Số CT ghi tăng, Mã tài sản và Tên tài sản!");
+                 onClick={async () => {
+                   if (!assetCode.trim() || !assetName.trim() || !assetVoucherNo.trim()) {
+                    notify?.("Vui lòng nhập đầy đủ Mã tài sản, Tên tài sản và các trường bắt buộc.");
                     return;
                   }
                   const origCost = Number(String(assetOriginalCost).replace(/[^\d.-]/g, "")) || 0;
@@ -5276,22 +5079,17 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     name: assetName.trim(),
                     assetType,
                     department: assetDepartment,
-                    costAcc: assetCostAcc || "2111",
-                    deprAcc: assetDeprAcc || "2141",
+                    costAcc: assetCostAcc,
+                    deprAcc: assetDeprAcc,
                     deprStartDate: assetDeprStartDate || startDate,
                     originalCost: origCost,
                     accumDepr,
                     remainingVal: remVal,
-                    usageTime: Number(String(assetUsageTime).replace(",", ".")) || 5,
-                    remainingTime: Number(String(assetRemainingTime).replace(",", ".")) || 3,
+                    usageTime: String(assetUsageTime).trim() === "" ? "" : Number(String(assetUsageTime).replace(",", ".")),
+                    remainingTime: String(assetRemainingTime).trim() === "" ? "" : Number(String(assetRemainingTime).replace(",", ".")),
                     noDepreciation: assetNoDepreciation,
                   };
-                  const updated = [newAsset, ...assetBalances.filter((a) => a.code !== newAsset.code && a.id !== editingItemId)];
-                  setAssetBalances(updated);
-                  void request<any>("/api/v1/general-ledger/opening-balances/save-item/", undefined, {
-                    method: "POST",
-                    body: JSON.stringify({ category: "assets", item: newAsset, editing_id: editingItemId, action_mode: "SAVE_AND_ADD" }),
-                  }).then(applyBackendOpeningResponse).catch(() => syncOpeningBalancesToBackend({ assets: updated }));
+                   if (!await persistOpening("save-item/", { category: "assets", item: newAsset, editing_id: editingItemId, action_mode: "SAVE_AND_ADD" })) return;
                   notify?.(`Đã lưu tài sản cố định ${assetCode} thành công! Mời tiếp tục khai báo (AF-01).`);
                   setEditingItemId(null);
                   setAssetCode("");
@@ -5437,31 +5235,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                              <select
-                                value={row.code}
-                                onChange={(e) => {
-                                  const selected = sampleThcpOptions.find((o) => o.code === e.target.value);
-                                  const next = [...wipThcpRows];
-                                  next[idx].code = e.target.value;
-                                  if (selected) {
-                                    next[idx].name = selected.name;
-                                    next[idx].type = selected.type;
-                                    next[idx].process = selected.process;
-                                  }
-                                  setWipThcpRows(next);
-                                }}
-                                style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 20px 0 6px", fontSize: 13, background: "#ffffff", outline: "none", appearance: "none", cursor: "pointer" }}
-                              >
-                                <option value="">Chọn đối tượng THCP</option>
-                                {sampleThcpOptions.map((opt) => (
-                                  <option key={opt.code} value={opt.code}>{opt.code} - {opt.name}</option>
-                                ))}
-                              </select>
-                              <ChevronDown size={13} color="#64748b" style={{ position: "absolute", right: 6, pointerEvents: "none" }} />
+                              <input className="misa-opening-input" aria-label={`Mã đối tượng THCP ${idx + 1}`} value={row.code} onChange={(e) => setWipThcpRows(wipThcpRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
                             </div>
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.name || ""}
+                            <input className="misa-opening-input" aria-label={`Tên đối tượng THCP ${idx + 1}`} value={row.name} onChange={(e) => setWipThcpRows(wipThcpRows.map((item, i) => i === idx ? { ...item, name: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
                             {row.type || ""}
@@ -5569,30 +5347,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                                <select
-                                  value={row.code}
-                                  onChange={(e) => {
-                                    const selected = sampleProjectOptions.find((o) => o.code === e.target.value);
-                                    const next = [...wipProjectRows];
-                                    next[idx].code = e.target.value;
-                                    if (selected) {
-                                      next[idx].name = selected.name;
-                                      next[idx].type = selected.type;
-                                    }
-                                    setWipProjectRows(next);
-                                  }}
-                                  style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 20px 0 6px", fontSize: 13, background: "#ffffff", outline: "none", appearance: "none", cursor: "pointer" }}
-                                >
-                                  <option value="">Chọn công trình</option>
-                                  {sampleProjectOptions.map((opt) => (
-                                    <option key={opt.code} value={opt.code}>{opt.code} - {opt.name}</option>
-                                  ))}
-                                </select>
-                                <ChevronDown size={13} color="#64748b" style={{ position: "absolute", right: 6, pointerEvents: "none" }} />
+                                <input className="misa-opening-input" aria-label={`Mã công trình ${idx + 1}`} value={row.code} onChange={(e) => setWipProjectRows(wipProjectRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
                               </div>
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                              {row.name || ""}
+                              <input className="misa-opening-input" aria-label={`Tên công trình ${idx + 1}`} value={row.name} onChange={(e) => setWipProjectRows(wipProjectRows.map((item, i) => i === idx ? { ...item, name: e.target.value } : item))} />
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
                               {row.type || ""}
@@ -5734,37 +5493,17 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                              <select
-                                value={row.code}
-                                onChange={(e) => {
-                                  const selected = sampleOrderOptions.find((o) => o.code === e.target.value);
-                                  const next = [...wipOrderRows];
-                                  next[idx].code = e.target.value;
-                                  if (selected) {
-                                    next[idx].date = selected.date;
-                                    next[idx].desc = selected.desc;
-                                    next[idx].customer = selected.customer;
-                                  }
-                                  setWipOrderRows(next);
-                                }}
-                                style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 20px 0 6px", fontSize: 13, background: "#ffffff", outline: "none", appearance: "none", cursor: "pointer" }}
-                              >
-                                <option value="">Chọn đơn hàng</option>
-                                {sampleOrderOptions.map((opt) => (
-                                  <option key={opt.code} value={opt.code}>{opt.code}</option>
-                                ))}
-                              </select>
-                              <ChevronDown size={13} color="#64748b" style={{ position: "absolute", right: 6, pointerEvents: "none" }} />
+                              <input className="misa-opening-input" aria-label={`Mã đơn hàng ${idx + 1}`} value={row.code} onChange={(e) => setWipOrderRows(wipOrderRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
                             </div>
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.date || ""}
+                              <input className="misa-opening-input" aria-label={`Ngày đơn hàng ${idx + 1}`} value={row.date} onChange={(e) => setWipOrderRows(wipOrderRows.map((item, i) => i === idx ? { ...item, date: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.desc || ""}
+                            <input className="misa-opening-input" aria-label={`Diễn giải đơn hàng ${idx + 1}`} value={row.desc} onChange={(e) => setWipOrderRows(wipOrderRows.map((item, i) => i === idx ? { ...item, desc: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.customer || ""}
+                            <input className="misa-opening-input" aria-label={`Khách hàng đơn hàng ${idx + 1}`} value={row.customer} onChange={(e) => setWipOrderRows(wipOrderRows.map((item, i) => i === idx ? { ...item, customer: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
@@ -5862,37 +5601,17 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                              <select
-                                value={row.code}
-                                onChange={(e) => {
-                                  const selected = sampleContractOptions.find((o) => o.code === e.target.value);
-                                  const next = [...wipContractRows];
-                                  next[idx].code = e.target.value;
-                                  if (selected) {
-                                    next[idx].date = selected.date;
-                                    next[idx].name = selected.name;
-                                    next[idx].customer = selected.customer;
-                                  }
-                                  setWipContractRows(next);
-                                }}
-                                style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 20px 0 6px", fontSize: 13, background: "#ffffff", outline: "none", appearance: "none", cursor: "pointer" }}
-                              >
-                                <option value="">Chọn hợp đồng</option>
-                                {sampleContractOptions.map((opt) => (
-                                  <option key={opt.code} value={opt.code}>{opt.code}</option>
-                                ))}
-                              </select>
-                              <ChevronDown size={13} color="#64748b" style={{ position: "absolute", right: 6, pointerEvents: "none" }} />
+                              <input className="misa-opening-input" aria-label={`Mã hợp đồng ${idx + 1}`} value={row.code} onChange={(e) => setWipContractRows(wipContractRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
                             </div>
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.date || ""}
+                            <input className="misa-opening-input" aria-label={`Ngày hợp đồng ${idx + 1}`} value={row.date} onChange={(e) => setWipContractRows(wipContractRows.map((item, i) => i === idx ? { ...item, date: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.name || ""}
+                            <input className="misa-opening-input" aria-label={`Tên hợp đồng ${idx + 1}`} value={row.name} onChange={(e) => setWipContractRows(wipContractRows.map((item, i) => i === idx ? { ...item, name: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
-                            {row.customer || ""}
+                            <input className="misa-opening-input" aria-label={`Khách hàng hợp đồng ${idx + 1}`} value={row.customer} onChange={(e) => setWipContractRows(wipContractRows.map((item, i) => i === idx ? { ...item, customer: e.target.value } : item))} />
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
@@ -6109,8 +5828,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const activeWipRows =
+                 onClick={async () => {
+                   const activeWipRows =
                     wipSubtab === "Công trình"
                       ? wipProjectRows
                       : wipSubtab === "Đơn hàng"
@@ -6126,15 +5845,14 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       trackingMode: wipSubtab,
                     }));
                   if (validWip.length === 0) {
-                    notify?.("EF-23: Vui lòng chọn ít nhất một đối tượng tập hợp chi phí / công trình / đơn hàng / hợp đồng (BR29)!");
+                    notify?.("Vui lòng chọn ít nhất một đối tượng tập hợp chi phí / công trình / đơn hàng / hợp đồng!");
                     return;
                   }
                   const updated = [
                     ...validWip,
                     ...wipBalances.filter((w) => w.trackingMode !== wipSubtab),
                   ];
-                  setWipBalances(updated);
-                  syncOpeningBalancesToBackend({ wip: updated });
+                   if (!await persistOpening("", { category: "wip", items: updated })) return;
                   notify?.(`Đã lưu chi phí dở dang đầu kỳ (${wipSubtab}) thành công!`);
                   setActiveModal(null);
                 }}
@@ -6208,14 +5926,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-body">
               <p style={{ margin: "0 0 8px", fontSize: 12.5, color: "#475569" }}>
-                Dán hoặc chỉnh sửa dữ liệu các dòng nhập khẩu từ tệp mẫu Excel (Hệ thống kiểm tra từng dòng theo quy tắc BR41 & EF-18 trước khi ghi nhận):
+                Tải mẫu của nhóm dữ liệu, điền các dòng cần nhập và chọn tệp Excel. Dữ liệu sẽ được kiểm tra trước khi ghi nhận.
               </p>
-              <textarea
-                value={excelJsonText}
-                onChange={(e) => setExcelJsonText(e.target.value)}
-                rows={9}
-                style={{ width: "100%", fontFamily: "monospace", fontSize: 12.5, padding: 10, borderRadius: 6, border: "1px solid #cbd5e1" }}
-              />
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => void handleDownloadExcelTemplate()}>Tải tệp mẫu</button>
+              <input type="file" accept=".xlsx,.xls" aria-label="Chọn tệp Excel số dư ban đầu" onChange={(e) => void handleChooseExcel(e.target.files?.[0])} style={{ display: "block", marginTop: 12 }} />
+              {excelFileName && <p>{excelFileName}: {excelRows.length} dòng.</p>}
+              {excelChecked && <p data-testid="excel-check-summary">Kết quả kiểm tra: {excelChecked.valid_count} dòng hợp lệ, {excelChecked.error_count} dòng lỗi (dòng lỗi sẽ không được nhập).</p>}
               {excelImportErrors.length > 0 && (
                 <div style={{ marginTop: 10, padding: 10, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, color: "#b91c1c", fontSize: 12.5 }}>
                   {excelImportErrors.map((er, idx) => (
@@ -6226,7 +5942,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setExcelModalOpen(false)}>Hủy</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={handleConfirmExcelImport}>Thực hiện Import (AF-03)</button>
+              <button type="button" className="misa-opening-btn-primary" disabled={Boolean(excelChecked && !excelChecked.valid_count)} onClick={handleConfirmExcelImport}>{excelChecked ? "Xác nhận nhập" : "Kiểm tra tệp"}</button>
             </div>
           </div>
         </div>

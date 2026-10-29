@@ -30,10 +30,10 @@ class EmployeeManagementTests(TestCase):
             RolePermission.objects.get_or_create(role=self.role, permission=Permission.objects.get(code=f"MD.EMPLOYEE.{action}"), defaults={"effect": "ALLOW"})
 
     def create_employee(self, code="NV001", **fields):
-        return Employee.objects.create(company=self.company, branch=self.branch, employee_code=code, full_name="Nguyễn Văn A", **fields)
+        return Employee.objects.create(company=self.company, branch=self.branch, employee_code=code, full_name="Nguyễn Văn A", contract_type="RESIDENT_LONG", **fields)
 
     def test_create_requires_scoped_permission_and_keeps_company_boundary(self):
-        payload = {"company": str(self.company.pk), "branch": str(self.branch.pk), "employee_code": "NV002", "full_name": "Trần B"}
+        payload = {"company": str(self.company.pk), "branch": str(self.branch.pk), "employee_code": "NV002", "full_name": "Trần B", "contract_type": "RESIDENT_LONG"}
         self.assertEqual(self.client.post(self.url, payload, format="json").status_code, 403)
         self.grant("CREATE")
         self.assertEqual(self.client.post(self.url, {**payload, "branch": str(self.foreign_branch.pk)}, format="json").status_code, 400)
@@ -93,7 +93,7 @@ class EmployeeManagementTests(TestCase):
 
     def test_import_reports_invalid_rows_and_export_respects_scope(self):
         self.grant("VIEW", "CREATE", "IMPORT", "EXPORT")
-        csv_file = SimpleUploadedFile("employees.csv", f"employee_code,full_name,branch_id\nNV010,Nguyễn A,{self.branch.pk}\nNV011,Trần B,{self.foreign_branch.pk}\n".encode("utf-8"), content_type="text/csv")
+        csv_file = SimpleUploadedFile("employees.csv", f"employee_code,full_name,branch_id,contract_type\nNV010,Nguyễn A,{self.branch.pk},RESIDENT_LONG\nNV011,Trần B,{self.foreign_branch.pk},RESIDENT_LONG\n".encode("utf-8"), content_type="text/csv")
         response = self.client.post(f"{self.url}import-csv/", {"company_id": str(self.company.pk), "file": csv_file}, format="multipart")
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(len(response.data["created"]), 1)
@@ -118,3 +118,44 @@ class EmployeeManagementTests(TestCase):
         self.assertEqual(self.client.patch(endpoint, {"full_name": "Tên mới", "version": "2020-01-01T00:00:00Z"}, format="json").status_code, 409)
         self.assertEqual(self.client.patch(endpoint, {"identity_number": "123456789012", "version": employee.updated_at.isoformat()}, format="json").status_code, 403)
         self.assertEqual(Employee.objects.get(pk=employee.pk).full_name, "Nguyễn Văn A")
+
+    def test_uc_md_03_saves_salary_contact_and_bank_atomically(self):
+        self.grant("CREATE", "VIEW", "EDIT", "VIEW_SENSITIVE", "EXPORT")
+        payload = {
+            "company": str(self.company.pk), "branch": str(self.branch.pk),
+            "employee_code": "NV_FULL", "full_name": "  Nguyễn Văn A  ",
+            "contract_type": "RESIDENT_LONG", "job_title": "Kế toán",
+            "agreed_salary": "12000000", "salary_coefficient": None,
+            "insurance_salary": "9000000", "dependent_count": None,
+            "phone": "0912345678", "identity_number": "123456789012",
+            "bank_account": {"account_number": "123456", "bank_name": "Ngân hàng A", "account_holder": "Nguyễn Văn A"},
+        }
+        invalid = self.client.post(self.url, {**payload, "bank_account": {"account_number": "123456"}}, format="json")
+        self.assertEqual(invalid.status_code, 400, invalid.data)
+        self.assertFalse(Employee.objects.filter(employee_code="NV_FULL").exists())
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        employee = Employee.objects.get(pk=response.data["id"])
+        self.assertEqual(employee.full_name, "Nguyễn Văn A")
+        self.assertIsNone(employee.salary_coefficient)
+        self.assertIsNone(employee.dependent_count)
+        self.assertEqual(employee.bank_accounts.get().account_number, "123456")
+        endpoint = f"{self.url}{employee.pk}/?company_id={self.company.pk}"
+        updated = self.client.patch(endpoint, {"employee_code": "NV_NEW", "agreed_salary": "13000000", "version": response.data["version"], "bank_account": {"account_number": "654321", "bank_name": "Ngân hàng B", "account_holder": "Nguyễn Văn A"}}, format="json")
+        self.assertEqual(updated.status_code, 200, updated.data)
+        employee.refresh_from_db()
+        self.assertEqual(employee.employee_code, "NV_NEW")
+        self.assertEqual(employee.bank_accounts.count(), 1)
+        self.assertEqual(employee.bank_accounts.get().account_number, "654321")
+        exported = self.client.get(f"{self.url}export-xlsx/", {"company_id": str(self.company.pk)})
+        self.assertEqual(exported.status_code, 200)
+        self.assertIn("spreadsheetml.sheet", exported["Content-Type"])
+
+    def test_uc_md_03_rejects_invalid_fields_and_requires_contract(self):
+        self.grant("CREATE", "VIEW_SENSITIVE")
+        base = {"company": str(self.company.pk), "branch": str(self.branch.pk), "employee_code": "NV_BAD", "full_name": "Nguyễn Văn A"}
+        self.assertIn("contract_type", self.client.post(self.url, base, format="json").data)
+        invalid = {**base, "contract_type": "RESIDENT_SHORT", "phone": "123", "identity_number": "123", "agreed_salary": "-1"}
+        response = self.client.post(self.url, invalid, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Employee.objects.filter(employee_code="NV_BAD").exists())

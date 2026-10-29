@@ -126,7 +126,7 @@ const LiveItemCategories = lazy(() => import("./LiveItemCategories"));
 const LiveUoms = lazy(() => import("./LiveUoms"));
 const LiveWarehouses = lazy(() => import("./LiveWarehouses"));
 const LiveCompanyBankAccounts = lazy(() => import("./LiveCompanyBankAccounts"));
-const LiveAccounts = lazy(() => import("./LiveAccounts"));
+const LiveAccounts = lazy(() => import("./AccountCatalogWorkspace"));
 const LiveCatalogExtensions = lazy(() => import("./LiveCatalogExtensions"));
 const CompanyAdminWorkspace = lazy(() => import("./CompanyAdminWorkspace"));
 const SuperAdminWorkspace = lazy(() => import("./SuperAdminWorkspace"));

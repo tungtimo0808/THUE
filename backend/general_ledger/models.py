@@ -1224,6 +1224,8 @@ class GlReconciliationRule(models.Model):
         ("GL_FA", "GL ↔ FA (Tài sản cố định & Khấu hao)"),
         ("GL_TAX", "GL ↔ TAX (Thuế GTGT / TNDN / Khác)"),
         ("GL_TOOLS", "GL ↔ TOOLS (Công cụ dụng cụ / Chi phí trả trước)"),
+        ("GL_CCDC", "GL ↔ CCDC (Công cụ dụng cụ)"),
+        ("GL_PREPAID", "GL ↔ Chi phí trả trước"),
         ("GL_PAYROLL", "GL ↔ PAYROLL (Tiền lương & Bảo hiểm)"),
         ("GL_COST", "GL ↔ COST (Giá thành sản xuất)"),
     )
@@ -2130,6 +2132,9 @@ class SubledgerSourceModule(models.TextChoices):
     INV = "INV", "Kho"
     FA = "FA", "Tài sản cố định"
     TOOLS = "TOOLS", "Công cụ dụng cụ / Chi phí trả trước"
+    CCDC = "CCDC", "Công cụ dụng cụ"
+    PREPAID = "PREPAID", "Chi phí trả trước"
+    PREPAID_EXPENSE = "PREPAID_EXPENSE", "Chi phí trả trước"
     PAYROLL = "PAYROLL", "Tiền lương"
     TAX = "TAX", "Thuế"
     COST = "COST", "Giá thành"

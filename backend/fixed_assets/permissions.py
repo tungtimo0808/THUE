@@ -34,8 +34,10 @@ class FixedAssetPermission(BasePermission):
             "stocktake", "next_stocktake_number", "load_book_assets", "save_stocktake", "update_stocktake",
         ):
             self.message = "Bạn không có quyền thực hiện kiểm kê tài sản cố định."
-        elif action_name in ("register", "reports", "report_catalog"):
-            self.message = "Bạn không có quyền xem sổ hoặc báo cáo tài sản cố định."
+        elif action_name == "register":
+            self.message = "Bạn không có quyền truy cập chức năng này."
+        elif action_name in ("reports", "report_catalog"):
+            self.message = "Bạn không có quyền xem báo cáo này."
         elif action_name in (
             "default_allocation_period", "setup_allocation_period", "validate_allocation_voucher",
         ):

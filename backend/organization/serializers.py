@@ -278,6 +278,8 @@ class PositionSerializer(ModelValidationMixin, serializers.ModelSerializer):
 class EmployeeSerializer(ModelValidationMixin, serializers.ModelSerializer):
     version = serializers.DateTimeField(source="updated_at", read_only=True)
     linked_user = serializers.SerializerMethodField()
+    bank_account = serializers.JSONField(required=False, write_only=True)
+    payment_account = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -288,35 +290,94 @@ class EmployeeSerializer(ModelValidationMixin, serializers.ModelSerializer):
         membership = obj.memberships.select_related("user").first()
         return str(membership.user_id) if membership else None
 
+    def get_payment_account(self, obj):
+        request = self.context.get("request")
+        account_user = getattr(getattr(request, "user", None), "iam_account", None)
+        from iam.permissions import has_effective_permission
+        if not account_user or not has_effective_permission(account_user, obj.company, "MD.EMPLOYEE.VIEW_SENSITIVE", branch_id=obj.branch_id, department_id=obj.department_id):
+            return None
+        account = obj.bank_accounts.filter(is_active=True).order_by("-is_default", "id").first()
+        return EmployeeBankAccountSerializer(account).data if account else None
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
         from iam.permissions import has_effective_permission
         account = getattr(getattr(request, "user", None), "iam_account", None)
         if not account or not has_effective_permission(account, instance.company, "MD.EMPLOYEE.VIEW_SENSITIVE", branch_id=instance.branch_id, department_id=instance.department_id):
-            for field in ("identity_number", "personal_tax_code", "address", "date_of_birth"):
+            for field in ("identity_number", "personal_tax_code", "address", "date_of_birth", "agreed_salary", "salary_coefficient", "insurance_salary", "dependent_count", "payment_account"):
                 data.pop(field, None)
         return data
 
     def validate(self, attrs):
         if not self.instance and attrs.get("status", "ACTIVE") not in {"ACTIVE", "DRAFT"}:
             raise serializers.ValidationError({"status": "Hồ sơ mới chỉ có thể là ACTIVE hoặc DRAFT."})
-        if self.instance and any(field in attrs for field in ("branch", "department", "position")):
-            raise serializers.ValidationError({"branch": "Hãy dùng API phân công để lưu lịch sử đơn vị và chức vụ."})
+        if not self.instance and attrs.get("status", "ACTIVE") == "ACTIVE" and not attrs.get("contract_type"):
+            raise serializers.ValidationError({"contract_type": "Vui lòng chọn Loại hợp đồng."})
+        if self.instance and any(field not in {"status", "termination_date"} for field in attrs) and not (attrs.get("contract_type") or self.instance.contract_type):
+            raise serializers.ValidationError({"contract_type": "Vui lòng chọn Loại hợp đồng."})
         if self.instance and "company" in attrs:
             raise serializers.ValidationError({"company": "Không thể chuyển nhân viên sang doanh nghiệp khác."})
-        if self.instance and "employee_code" in attrs and attrs["employee_code"] != self.instance.employee_code:
-            raise serializers.ValidationError({"employee_code": "Không thể đổi mã nhân viên đã tạo."})
+        account = attrs.get("bank_account")
+        if account is not None:
+            if not isinstance(account, dict):
+                raise serializers.ValidationError({"bank_account": "Thông tin tài khoản không hợp lệ."})
+            account = {key: str(account.get(key) or "").strip() for key in ("account_number", "bank_name", "account_holder", "bank_branch")}
+            if any(account.values()) and not all(account[key] for key in ("account_number", "bank_name", "account_holder")):
+                raise serializers.ValidationError({"bank_account": "Cần nhập số tài khoản, tên ngân hàng và chủ tài khoản."})
+            attrs["bank_account"] = account
         return super().validate(attrs)
 
     def validate_employee_code(self, value):
-        return value.strip().upper()
+        value = value.strip().upper()
+        if not value:
+            raise serializers.ValidationError("Vui lòng nhập Mã nhân viên.")
+        company_id = self.initial_data.get("company") or getattr(self.instance, "company_id", None)
+        if company_id and Employee.objects.filter(company_id=company_id, employee_code__iexact=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
+            raise serializers.ValidationError("Mã nhân viên đã tồn tại. Vui lòng nhập mã khác.")
+        return value
+
+    def validate_full_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Vui lòng nhập Tên nhân viên.")
+        return value
 
     def validate_identity_number(self, value):
-        value = value.strip().replace(" ", "")
+        value = value.strip()
+        if value and not re.fullmatch(r"\d{12}", value):
+            raise serializers.ValidationError("Số CCCD phải gồm đúng 12 chữ số.")
         if value and Employee.objects.filter(company=self.initial_data.get("company") or getattr(self.instance, "company_id", None), identity_number=value, status="ACTIVE").exclude(pk=getattr(self.instance, "pk", None)).exists():
             raise serializers.ValidationError("Số định danh đã thuộc nhân viên ACTIVE khác.")
         return value
+
+    def _save_bank_account(self, employee, account):
+        if account is None:
+            return
+        existing = employee.bank_accounts.filter(is_active=True).order_by("-is_default", "id").first()
+        if not any(account.values()):
+            if existing:
+                existing.is_active = False
+                existing.save(update_fields=("is_active",))
+            return
+        if existing:
+            for key, value in account.items():
+                setattr(existing, key, value)
+            existing.save(update_fields=tuple(account))
+        else:
+            EmployeeBankAccount.objects.create(employee=employee, **account, is_default=True)
+
+    def create(self, validated_data):
+        account = validated_data.pop("bank_account", None)
+        employee = super().create(validated_data)
+        self._save_bank_account(employee, account)
+        return employee
+
+    def update(self, instance, validated_data):
+        account = validated_data.pop("bank_account", None)
+        employee = super().update(instance, validated_data)
+        self._save_bank_account(employee, account)
+        return employee
 
 
 class EmployeeBankAccountSerializer(serializers.ModelSerializer):

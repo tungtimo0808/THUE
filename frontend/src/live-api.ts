@@ -6,6 +6,7 @@ export type Company = {
   tax_code?: string;
   legal_representative?: string;
   accounting_regime?: string;
+  bookkeeping_method?: "DOUBLE_ENTRY" | "SIMPLE";
   address?: string;
 };
 export type Customer = {

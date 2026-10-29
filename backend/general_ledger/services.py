@@ -9740,6 +9740,10 @@ SUPPORTED_RECONCILIATION_TYPES = {
     "TAX": "TAX",
     "GL_TOOLS": "TOOLS",
     "TOOLS": "TOOLS",
+    "GL_CCDC": "CCDC",
+    "CCDC": "CCDC",
+    "GL_PREPAID": "PREPAID",
+    "PREPAID": "PREPAID",
     "GL_PAYROLL": "PAYROLL",
     "PAYROLL": "PAYROLL",
     "GL_COST": "COST",
@@ -9914,11 +9918,19 @@ def run_gl_subledger_reconciliation(company, data, request=None):
 
     from_date = _parse_date_safe(data.get("from_date"), default=period.start_date) or period.start_date
     to_date = _parse_date_safe(data.get("to_date"), default=period.end_date) or period.end_date
-    if from_date > to_date:
+    if from_date > to_date or from_date < period.start_date or to_date > period.end_date:
         raise ValidationError({
-            "date_range": "Từ ngày không được lớn hơn Đến ngày.",
+            "date_range": "Khoảng ngày đối chiếu phải nằm trong kỳ kế toán đã chọn.",
             "error_code": "INVALID_DATE_RANGE",
         })
+
+    if data.get("fiscal_year") and str(data["fiscal_year"]) != str(period.fiscal_year):
+        raise ValidationError({"fiscal_year": "Năm tài chính không khớp kỳ kế toán.", "error_code": "INVALID_FISCAL_YEAR"})
+    regime = str(company.accounting_regime or "").upper()
+    if regime not in ("TT99", "TT200", "TT133", "TT58"):
+        raise ValidationError({"accounting_regime": "Chưa xác định cấu hình kế toán của bộ dữ liệu.", "error_code": "ACCOUNTING_REGIME_UNAVAILABLE"})
+    if regime == "TT58" and company.bookkeeping_method != "DOUBLE_ENTRY":
+        raise ValidationError({"accounting_regime": "Bộ dữ liệu TT58 dùng sổ đơn; không thể đối chiếu Nợ/Có GL ghi sổ kép.", "error_code": "SIMPLE_BOOK_RECONCILIATION_UNSUPPORTED"})
 
     # 3. Xác định Loại đối chiếu (Step 4, AF-01..AF-07, EF-04)
     raw_rec_type = data.get("reconciliation_type") or data.get("type")
@@ -9957,6 +9969,8 @@ def run_gl_subledger_reconciliation(company, data, request=None):
     rule = None
     if rule_id:
         rule = models.GlReconciliationRule.objects.filter(company=company, pk=rule_id, is_active=True).first()
+        if not rule or rule.reconciliation_type != rec_type:
+            raise ValidationError({"rule": "Quy tắc đối chiếu không hợp lệ với loại đã chọn.", "error_code": "INVALID_RECONCILIATION_MAPPING"})
     if not rule:
         rule = (
             models.GlReconciliationRule.objects.filter(
@@ -9974,6 +9988,11 @@ def run_gl_subledger_reconciliation(company, data, request=None):
             .order_by("code")
             .first()
         )
+    if rec_type in ("GL_CCDC", "GL_PREPAID") and not rule:
+        raise ValidationError({
+            "mapping": "CCDC và chi phí trả trước cần quy tắc mapping riêng để phân tách số liệu GL theo nguồn nghiệp vụ.",
+            "error_code": "MISSING_RECONCILIATION_MAPPING",
+        })
 
     # Xác định tập tài khoản GL thuộc phạm vi đối chiếu (Step 5, AF-19, BR-GL-REC-07, 08)
     explicit_acc_param = data.get("account") or data.get("account_id") or data.get("account_code")
@@ -9988,6 +10007,10 @@ def run_gl_subledger_reconciliation(company, data, request=None):
 
     target_accounts = []
     if explicit_account:
+        if rule:
+            prefixes = [p.strip() for p in (rule.account_prefixes or "").split(",") if p.strip()]
+            if prefixes and not any(explicit_account.code.startswith(prefix) for prefix in prefixes):
+                raise ValidationError({"account": "Tài khoản không thuộc loại đối chiếu đã chọn.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
         if bool(data.get("include_subaccounts", True)):
             target_accounts = list(
                 models.Account.objects.filter(company=company, code__startswith=explicit_account.code).order_by("code")
@@ -10020,12 +10043,50 @@ def run_gl_subledger_reconciliation(company, data, request=None):
     target_account_map = {str(a.id): a for a in target_accounts}
     target_account_by_code = {a.code: a for a in target_accounts}
     primary_account = explicit_account or target_accounts[0]
+    split_sources = {
+        "GL_CCDC": ("CCDC",),
+        "GL_PREPAID": ("PREPAID", "PREPAID_EXPENSE"),
+    }.get(rec_type)
+    if split_sources and rule.source_module not in split_sources:
+        raise ValidationError({
+            "mapping": "Nguồn nghiệp vụ trong quy tắc đối chiếu không khớp loại CCDC hoặc chi phí trả trước.",
+            "error_code": "INVALID_RECONCILIATION_MAPPING",
+        })
+    if split_sources and (
+        models.JournalLine.objects.filter(
+            entry__company=company, entry__period=period, account_id__in=target_account_ids,
+            entry__source_module="TOOLS", entry__status__in=("POSTED", "REVERSED"),
+        ).exists()
+        or models.SubledgerJournalIngestion.objects.filter(
+            company=company, source_module="TOOLS", posting_date__gte=from_date,
+            posting_date__lte=to_date,
+        ).exists()
+    ):
+        raise ValidationError({
+            "mapping": "Nguồn TOOLS đang gộp CCDC và chi phí trả trước; cần phân loại nguồn trước khi đối chiếu riêng.",
+            "error_code": "AMBIGUOUS_SHARED_ACCOUNT_SOURCE",
+        })
+    if split_sources and any(a.code.startswith("242") for a in target_accounts):
+        ambiguous_opening = models.AccountBalance.objects.filter(
+            company=company, period=period, account_id__in=target_account_ids
+        ).filter(Q(opening_debit__gt=0) | Q(opening_credit__gt=0)).exists()
+        ambiguous_entries = models.JournalLine.objects.filter(
+            entry__company=company, entry__period=period, account_id__in=target_account_ids,
+            entry__status__in=("POSTED", "REVERSED"),
+        ).filter(Q(entry__source_module="") | Q(entry__source_module__isnull=True)).exists()
+        if ambiguous_opening or ambiguous_entries:
+            raise ValidationError({
+                "mapping": "Không đủ dữ liệu để phân tách số liệu đối chiếu theo nguồn nghiệp vụ trên tài khoản 242.",
+                "error_code": "AMBIGUOUS_SHARED_ACCOUNT_SOURCE",
+            })
 
     # Xác định điều kiện lọc bổ sung: Chi nhánh, Đối tượng, Loại tiền (Step 5, AF-19)
     branch_obj = None
     branch_param = data.get("branch") or data.get("branch_id")
     if branch_param:
         branch_obj = Branch.objects.filter(company=company, pk=branch_param).first()
+        if not branch_obj:
+            raise ValidationError({"branch": "Chi nhánh không thuộc doanh nghiệp hiện tại.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
 
     party_obj = None
     party_param = data.get("party") or data.get("party_id") or data.get("party_code")
@@ -10036,6 +10097,8 @@ def run_gl_subledger_reconciliation(company, data, request=None):
             party_obj = None
         if not party_obj:
             party_obj = Party.objects.filter(company=company, code__iexact=str(party_param).strip()).first()
+        if not party_obj:
+            raise ValidationError({"party": "Đối tượng không thuộc doanh nghiệp hiện tại.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
 
     currency_obj = None
     currency_param = data.get("currency") or data.get("currency_id") or data.get("currency_code")
@@ -10046,6 +10109,8 @@ def run_gl_subledger_reconciliation(company, data, request=None):
             currency_obj = None
         if not currency_obj:
             currency_obj = Currency.objects.filter(code__iexact=str(currency_param).strip()).first()
+        if not currency_obj:
+            raise ValidationError({"currency": "Loại tiền không hợp lệ.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
 
     warnings = []
     errors = []
@@ -10057,6 +10122,11 @@ def run_gl_subledger_reconciliation(company, data, request=None):
         .first()
     )
     gl_agg_status = latest_agg.status if latest_agg else "UP_TO_DATE"
+    if not latest_agg and data.get("require_fresh_gl_aggregation"):
+        raise ValidationError({
+            "gl_aggregation": "Số liệu Sổ cái chưa được tổng hợp. Vui lòng tổng hợp lại trước khi đối chiếu.",
+            "error_code": "GL_AGGREGATION_NOT_RUN",
+        })
     if gl_agg_status == "ERROR" or data.get("simulate_gl_aggregation_error"):
         raise ValidationError({
             "gl_aggregation": (
@@ -10170,6 +10240,8 @@ def run_gl_subledger_reconciliation(company, data, request=None):
         )
         .order_by("entry__posting_date", "entry__created_at", "line_no")
     )
+    if split_sources:
+        gl_lines_qs = gl_lines_qs.filter(entry__source_module__in=split_sources)
     if branch_obj:
         gl_lines_qs = gl_lines_qs.filter(entry__branch=branch_obj)
     if party_obj:
@@ -10191,6 +10263,8 @@ def run_gl_subledger_reconciliation(company, data, request=None):
     )
     if branch_obj:
         unposted_gl_lines_qs = unposted_gl_lines_qs.filter(entry__branch=branch_obj)
+    if split_sources:
+        unposted_gl_lines_qs = unposted_gl_lines_qs.filter(entry__source_module__in=split_sources)
     if party_obj:
         unposted_gl_lines_qs = unposted_gl_lines_qs.filter(party=party_obj)
     unposted_gl_lines = list(unposted_gl_lines_qs)
@@ -10415,6 +10489,14 @@ def run_gl_subledger_reconciliation(company, data, request=None):
                 continue
 
             acc_c = str(item.get("account_code") or primary_account.code).strip()
+            if acc_c not in target_account_by_code:
+                raise ValidationError({"subledger_items": "Tài khoản phân hệ không thuộc phạm vi mapping đã chọn.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
+            if branch_obj:
+                item_branch = item.get("branch_id") or item.get("branch")
+                if not item_branch:
+                    raise ValidationError({"branch": "Dữ liệu phân hệ thiếu chi nhánh để áp dụng cùng phạm vi đối chiếu.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
+                if str(item_branch) != str(branch_obj.id):
+                    continue
             obj_c = str(
                 item.get("object_code")
                 or item.get("party_code")
@@ -10502,7 +10584,7 @@ def run_gl_subledger_reconciliation(company, data, request=None):
             "primary_journal_entry", "currency"
         ).filter(
             company=company,
-            source_module=source_module,
+            source_module__in=split_sources or (source_module,),
             posting_date__gte=from_date,
             posting_date__lte=to_date,
         ).exclude(status="REVERSED")
@@ -10512,10 +10594,20 @@ def run_gl_subledger_reconciliation(company, data, request=None):
                 acc_c = str(rln.get("account_code") or "").strip()
                 if not any(acc_c.startswith(a.code) for a in target_accounts):
                     continue
+                if branch_obj:
+                    line_branch = rln.get("branch_id") or rln.get("branch")
+                    if not line_branch and ing.primary_journal_entry_id:
+                        line_branch = ing.primary_journal_entry.branch_id
+                    if not line_branch:
+                        raise ValidationError({"branch": "Dữ liệu phân hệ thiếu chi nhánh để áp dụng cùng phạm vi đối chiếu.", "error_code": "INVALID_RECONCILIATION_SCOPE"})
+                    if str(line_branch) != str(branch_obj.id):
+                        continue
                 obj_c = str(rln.get("party_code") or rln.get("object_code") or "").strip()
                 if party_obj and obj_c.upper() != party_obj.code.upper():
                     continue
                 curr_c = ing.currency.code if ing.currency_id and ing.currency else "VND"
+                if currency_obj and curr_c.upper() != currency_obj.code.upper():
+                    continue
                 k = _build_norm_key(acc_c, obj_c, curr_c)
                 acc_obj = target_account_by_code.get(acc_c) or primary_account
                 if k not in sub_groups:
@@ -10924,6 +11016,12 @@ def run_gl_subledger_reconciliation(company, data, request=None):
     else:
         overall_status = "MATCHED"
 
+    if _compute_gl_reconciliation_watermark(company, period, target_account_ids) != watermark:
+        raise ValidationError({
+            "snapshot": "Dữ liệu đã thay đổi trong quá trình đối chiếu. Vui lòng thực hiện lại.",
+            "error_code": "SNAPSHOT_INCONSISTENCY_RETRY_REQUIRED",
+        })
+
     # BR-GL-REC-84, 85: Nếu kỳ đã CLOSED, kiểm tra xem kết quả đối chiếu lại có khác với kết quả trước khi khóa kỳ không
     if period.status == "CLOSED":
         prev_closed_run = (
@@ -11006,6 +11104,9 @@ def run_gl_subledger_reconciliation(company, data, request=None):
             "currency_code": currency_obj.code if currency_obj else None,
             "is_bilateral": is_bilateral,
             "rounding_tolerance": str(rounding_tolerance),
+            "accounting_regime": regime,
+            "mapping_rule_id": str(rule.id) if rule else None,
+            "mapping_updated_at": rule.updated_at.isoformat() if rule else None,
         },
         subledger_amount=net_sub_total.quantize(Decimal("0.0001")),
         gl_amount=net_gl_total.quantize(Decimal("0.0001")),
@@ -20950,1602 +21051,17 @@ def export_accounting_book_uc_gl_14(company, params=None, request=None):
 
 
 # =============================================================================
-# UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU (OPENING BALANCE ENTRY ACROSS 10 CATEGORIES)
+# UC-GL-15: NHẬP SỐ DƯ BAN ĐẦU – implemented in opening_balance_services
 # =============================================================================
 
-UC_GL_15_CATEGORIES = (
-    "accounts",
-    "bank",
-    "customers",
-    "suppliers",
-    "employees",
-    "inventory",
-    "tools",
-    "assets",
-    "prepaid",
-    "wip",
+from .opening_balance_services import (  # noqa: E402,F401
+    check_opening_balances_uc_gl_15,
+    delete_opening_balance_item_uc_gl_15,
+    get_opening_balances_uc_gl_15,
+    import_opening_balances_excel_uc_gl_15,
+    list_opening_balance_vouchers_uc_gl_15,
+    print_opening_balance_uc_gl_15,
+    save_opening_balances_uc_gl_15,
+    upsert_opening_balance_item_uc_gl_15,
+    validate_opening_balance_group_uc_gl_15,
 )
-
-UC_GL_15_CATEGORY_TITLES = {
-    "accounts": "Số dư tài khoản",
-    "bank": "Số dư TK ngân hàng",
-    "customers": "Công nợ khách hàng",
-    "suppliers": "Công nợ nhà cung cấp",
-    "employees": "Công nợ nhân viên",
-    "inventory": "Tồn kho vật tư, hàng hóa và CCDC",
-    "tools": "CCDC đang sử dụng đầu kỳ",
-    "assets": "Tài sản cố định đầu kỳ",
-    "prepaid": "Chi phí trả trước đầu kỳ",
-    "wip": "Chi phí dở dang",
-}
-
-UC_GL_15_WIP_TRACKING_MODES = (
-    "Đối tượng tập hợp chi phí",
-    "Công trình",
-    "Đơn hàng",
-    "Hợp đồng",
-)
-
-UC_GL_15_BILATERAL_ACCOUNT_PREFIXES = (
-    "131",
-    "331",
-    "136",
-    "336",
-    "138",
-    "338",
-    "333",
-    "334",
-    "141",
-    "421",
-)
-
-
-def _to_dec_uc15(val, default="0") -> Decimal:
-    if val is None or val == "":
-        return Decimal(default)
-    if isinstance(val, Decimal):
-        return val
-    if isinstance(val, (int, float)):
-        return Decimal(str(val))
-    s = str(val).strip()
-    if not s:
-        return Decimal(default)
-    if "," in s and "." in s:
-        if s.rfind(",") > s.rfind("."):
-            s = s.replace(".", "").replace(",", ".")
-        else:
-            s = s.replace(",", "")
-    elif "," in s:
-        parts = s.split(",")
-        if len(parts) == 2 and len(parts[1]) <= 2:
-            s = s.replace(",", ".")
-        else:
-            s = s.replace(",", "")
-    try:
-        return Decimal(s)
-    except Exception:
-        return Decimal(default)
-
-
-def _check_uc_gl_15_permission(request, company, require_write: bool = False):
-    """EF-01: Kiểm tra quyền truy cập / nhập số dư ban đầu."""
-    from rest_framework.exceptions import PermissionDenied
-
-    if not request:
-        return
-    deny_flag = (
-        request.query_params.get("deny_permission")
-        if hasattr(request, "query_params")
-        else None
-    ) or (
-        request.data.get("deny_permission")
-        if hasattr(request, "data") and isinstance(request.data, dict)
-        else None
-    )
-    if str(deny_flag).lower() in ("true", "1", "yes"):
-        raise PermissionDenied("EF-01: Bạn không có quyền thực hiện chức năng Nhập số dư ban đầu.")
-    user = getattr(request, "user", None)
-    if user and getattr(user, "is_authenticated", False) and not getattr(user, "is_superuser", False):
-        if hasattr(user, "roles") and user.roles.filter(code="OPENING_BALANCE_DENIED").exists():
-            raise PermissionDenied("EF-01: Bạn không có quyền thực hiện chức năng Nhập số dư ban đầu.")
-
-
-def _resolve_uc_gl_15_company_setup(company, config: dict, params_or_data: dict | None = None) -> dict:
-    """
-    EF-02, BR01, BR02: Kiểm tra thiết lập ngày bắt đầu hạch toán và chế độ kế toán của doanh nghiệp.
-    Mọi dữ liệu số dư ban đầu luôn gắn với ngày bắt đầu hạch toán (start_date), không dùng ngày hiện tại.
-    """
-    params_or_data = params_or_data or {}
-    if config.get("accounting_setup_missing") or str(params_or_data.get("simulate_missing_setup")).lower() in ("true", "1"):
-        raise ValidationError({
-            "error_code": "EF-02",
-            "detail": "EF-02: Doanh nghiệp chưa hoàn tất thiết lập ngày bắt đầu hạch toán hoặc chế độ kế toán.",
-        })
-
-    first_period = models.AccountingPeriod.objects.filter(company=company).order_by("start_date").first()
-    if str(params_or_data.get("require_setup_check")).lower() in ("true", "1") and not first_period and not config.get("accounting_start_date"):
-        raise ValidationError({
-            "error_code": "EF-02",
-            "detail": "EF-02: Chưa thiết lập kỳ kế toán và ngày bắt đầu hạch toán cho doanh nghiệp.",
-        })
-
-    start_date_str = str(config.get("accounting_start_date") or (first_period.start_date.isoformat() if first_period else "2026-01-01"))
-    regime = str(config.get("accounting_regime") or "TT99")
-
-    period_locked = bool(
-        config.get("opening_balance_locked")
-        or (first_period and first_period.status == "CLOSED")
-    )
-    return {
-        "start_date": start_date_str,
-        "accounting_regime": regime,
-        "opening_period_locked": period_locked,
-        "period_code": first_period.code if first_period else f"{start_date_str[:4]}-01",
-    }
-
-
-def _compute_account_rollup_uc_gl_15(company, account_rows: list[dict]) -> list[dict]:
-    """
-    BR07: Tổng hợp số dư từ tài khoản con lên tài khoản cha mà không cộng trùng.
-    """
-    leaf_rows = []
-    codes_in_rows = {str(r.get("account") or r.get("code") or "").strip() for r in account_rows if isinstance(r, dict) and (r.get("account") or r.get("code"))}
-    for r in account_rows:
-        if not isinstance(r, dict):
-            continue
-        code = str(r.get("account") or r.get("code") or "").strip()
-        if not code:
-            continue
-        has_child_in_rows = any(other != code and other.startswith(code) for other in codes_in_rows)
-        if not has_child_in_rows:
-            leaf_rows.append(r)
-
-    parent_map = {}
-    all_db_accounts = {a.code: a.name for a in models.Account.objects.filter(company=company)}
-    for r in leaf_rows:
-        code = str(r.get("account") or r.get("code") or "").strip()
-        d = int(_to_dec_uc15(r.get("debit")))
-        c = int(_to_dec_uc15(r.get("credit")))
-        if len(code) >= 3:
-            root_code = code[:3]
-            if root_code not in parent_map:
-                parent_map[root_code] = {
-                    "account": root_code,
-                    "name": all_db_accounts.get(root_code) or r.get("name") or f"Tài khoản {root_code}",
-                    "debit": 0,
-                    "credit": 0,
-                    "is_parent": len(code) > 3,
-                    "children_count": 0,
-                }
-            parent_map[root_code]["debit"] += d
-            parent_map[root_code]["credit"] += c
-            if len(code) > 3:
-                parent_map[root_code]["children_count"] += 1
-                parent_map[root_code]["is_parent"] = True
-    return sorted(parent_map.values(), key=lambda x: x["account"])
-
-
-def validate_opening_balance_group_uc_gl_15(
-    company,
-    category: str,
-    items: list | dict,
-    existing_saved: dict | None = None,
-    is_single_add: bool = False,
-    editing_id: str | None = None,
-    strict: bool = True,
-) -> list[dict]:
-    """
-    Kiểm tra toàn bộ quy tắc nghiệp vụ (BR01..BR42) và ngoại lệ (EF-03..EF-23) cho từng nhóm A–J.
-    """
-    from master_data.models import Party
-
-    existing_saved = existing_saved or {}
-    if category not in UC_GL_15_CATEGORIES:
-        raise ValidationError({
-            "error_code": "EF-03",
-            "detail": f"Nhóm số dư ban đầu '{category}' không hợp lệ.",
-        })
-
-    if isinstance(items, dict):
-        if "rows" in items and isinstance(items["rows"], list):
-            row_list = items["rows"]
-        else:
-            row_list = [items]
-    elif isinstance(items, list):
-        row_list = items
-    else:
-        row_list = []
-
-    db_accounts = {
-        a.code: a for a in models.Account.objects.filter(company=company)
-    }
-
-    # --- LUỒNG A: SỐ DƯ TÀI KHOẢN ---
-    if category == "accounts":
-        codes_with_balance = set()
-        for r in row_list:
-            code = str(r.get("account") or r.get("code") or "").strip()
-            d = _to_dec_uc15(r.get("debit"))
-            c = _to_dec_uc15(r.get("credit"))
-            if d < 0 or c < 0:
-                raise ValidationError({
-                    "error_code": "EF-12",
-                    "account": code,
-                    "detail": f"EF-12: Tài khoản {code} có giá trị Dư Nợ hoặc Dư Có âm (BR05).",
-                })
-            if code and (d > 0 or c > 0):
-                codes_with_balance.add(code)
-
-            acc_obj = db_accounts.get(code)
-            if acc_obj and getattr(acc_obj, "status", "ACTIVE") != "ACTIVE" and (d > 0 or c > 0):
-                raise ValidationError({
-                    "error_code": "EF-20",
-                    "account": code,
-                    "detail": f"EF-20: Tài khoản {code} đang ngừng sử dụng (INACTIVE), không được nhập số dư đầu kỳ (BR03).",
-                })
-
-            if d > 0 and c > 0 and not r.get("allow_bilateral"):
-                is_bilateral = any(code.startswith(prefix) for prefix in UC_GL_15_BILATERAL_ACCOUNT_PREFIXES)
-                if acc_obj and acc_obj.normal_balance in ("DEBIT", "CREDIT") and not is_bilateral:
-                    raise ValidationError({
-                        "error_code": "BR06",
-                        "account": code,
-                        "detail": f"BR06: Tài khoản đơn tính {code} không được đồng thời có cả Dư Nợ và Dư Có trên cùng một dòng.",
-                    })
-
-            details = r.get("details")
-            if r.get("require_detail") and not details and (d > 0 or c > 0):
-                raise ValidationError({
-                    "error_code": "EF-16",
-                    "account": code,
-                    "detail": f"EF-16: Tài khoản {code} bắt buộc nhập chi tiết số dư theo đối tượng/chiều theo dõi (BR08).",
-                })
-            if isinstance(details, list) and len(details) > 0:
-                det_d = sum(_to_dec_uc15(item.get("debit")) for item in details)
-                det_c = sum(_to_dec_uc15(item.get("credit")) for item in details)
-                for item in details:
-                    if _to_dec_uc15(item.get("debit")) < 0 or _to_dec_uc15(item.get("credit")) < 0:
-                        raise ValidationError({
-                            "error_code": "EF-12",
-                            "account": code,
-                            "detail": f"EF-12: Dòng chi tiết của tài khoản {code} có số dư âm.",
-                        })
-                if det_d != d or det_c != c:
-                    raise ValidationError({
-                        "error_code": "EF-16",
-                        "account": code,
-                        "detail": (
-                            f"EF-16: Tổng chi tiết của tài khoản {code} (Nợ: {det_d}, Có: {det_c}) "
-                            f"không khớp với số dư trên dòng tài khoản (Nợ: {d}, Có: {c}) (BR08)."
-                        ),
-                    })
-
-        for code in codes_with_balance:
-            children = [other for other in codes_with_balance if other != code and other.startswith(code)]
-            if children:
-                raise ValidationError({
-                    "error_code": "BR07",
-                    "account": code,
-                    "detail": (
-                        f"BR07: Không được nhập trực tiếp số dư vào tài khoản tổng hợp {code} "
-                        f"khi đã có số dư ở tài khoản chi tiết {children[0]} (tránh cộng trùng số dư)."
-                    ),
-                })
-        return row_list
-
-    # --- LUỒNG B: SỐ DƯ TÀI KHOẢN NGÂN HÀNG ---
-    if category == "bank":
-        seen_keys = set()
-        existing_list = existing_saved.get("bank") or []
-        if is_single_add:
-            for ex in existing_list:
-                ex_id = str(ex.get("id") or ex.get("accountNumber") or "")
-                if editing_id and ex_id == str(editing_id):
-                    continue
-                ex_key = (
-                    str(ex.get("accountCode") or ex.get("account_code") or "1121").strip(),
-                    str(ex.get("accountNumber") or ex.get("account_number") or "").strip(),
-                    str(ex.get("currency") or "VND").strip().upper(),
-                )
-                if ex_key[1]:
-                    seen_keys.add(ex_key)
-
-        for r in row_list:
-            acc_code = str(r.get("accountCode") or r.get("account_code") or ("1122" if r.get("currency") == "USD" else "1121")).strip()
-            if "explicit_account_code" in r and not str(r.get("explicit_account_code") or "").strip():
-                acc_code = ""
-            acc_num = str(r.get("accountNumber") or r.get("account_number") or "").strip()
-            currency = str(r.get("currency") or "VND").strip().upper()
-
-            if not acc_code:
-                raise ValidationError({
-                    "error_code": "EF-03",
-                    "detail": "EF-03: Vui lòng chọn Số tài khoản kế toán ngân hàng (1121/1122).",
-                })
-            if not acc_num:
-                raise ValidationError({
-                    "error_code": "EF-04",
-                    "detail": "EF-04: Vui lòng chọn Tài khoản ngân hàng.",
-                })
-            acc_obj = db_accounts.get(acc_code)
-            if acc_obj and getattr(acc_obj, "status", "ACTIVE") != "ACTIVE":
-                raise ValidationError({
-                    "error_code": "EF-20",
-                    "detail": f"EF-20: Tài khoản {acc_code} đang ngừng sử dụng (INACTIVE).",
-                })
-
-            orig_amt = _to_dec_uc15(r.get("originalAmount") if "originalAmount" in r else r.get("debit"))
-            credit_amt = _to_dec_uc15(r.get("credit"))
-            amt_vnd = _to_dec_uc15(r.get("amountVnd") if "amountVnd" in r else orig_amt)
-            if orig_amt < 0 or credit_amt < 0 or amt_vnd < 0:
-                raise ValidationError({
-                    "error_code": "EF-12",
-                    "detail": "EF-12: Số dư tài khoản ngân hàng không được nhỏ hơn 0 (BR05).",
-                })
-
-            if currency != "VND":
-                fx_rate = _to_dec_uc15(r.get("exchangeRate") or r.get("exchange_rate"), default="25445")
-                if "exchangeRate" in r or "exchange_rate" in r:
-                    raw_rate = _to_dec_uc15(r.get("exchangeRate") if "exchangeRate" in r else r.get("exchange_rate"))
-                    if raw_rate <= 0:
-                        raise ValidationError({
-                            "error_code": "AF-12",
-                            "detail": "AF-12: Tỷ giá ngoại tệ phải lớn hơn 0 (BR11).",
-                        })
-                    fx_rate = raw_rate
-                if r.get("strict_fx_check") and abs(orig_amt * fx_rate - amt_vnd) > Decimal("5"):
-                    raise ValidationError({
-                        "error_code": "BR11",
-                        "detail": f"BR11: Số dư quy đổi VNĐ ({amt_vnd}) không khớp với Nguyên tệ ({orig_amt}) × Tỷ giá ({fx_rate}).",
-                    })
-
-            bkey = (acc_code, acc_num, currency)
-            if bkey in seen_keys:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Tài khoản ngân hàng {acc_num} ({currency}) trên TK {acc_code} đã tồn tại (BR04).",
-                })
-            seen_keys.add(bkey)
-        return row_list
-
-    # --- LUỒNG C & D: CÔNG NỢ KHÁCH HÀNG / NHÀ CUNG CẤP ---
-    if category in ("customers", "suppliers"):
-        is_cust = category == "customers"
-        missing_partner_code = "EF-05" if is_cust else "EF-06"
-        partner_label = "Khách hàng" if is_cust else "Nhà cung cấp"
-        seen_keys = set()
-        existing_list = existing_saved.get(category) or []
-        if is_single_add:
-            for ex in existing_list:
-                ex_id = str(ex.get("id") or "")
-                if editing_id and ex_id == str(editing_id):
-                    continue
-                ex_key = (
-                    str(ex.get("accCode") or ex.get("account_code") or ("131" if is_cust else "331")).strip(),
-                    str(ex.get("code") or "").strip(),
-                    str(ex.get("currency") or "VND").strip().upper(),
-                    str(ex.get("invoiceNo") or "").strip(),
-                )
-                if ex_key[1]:
-                    seen_keys.add(ex_key)
-
-        for r in row_list:
-            acc_code = str(r.get("accCode") or r.get("account_code") or "").strip()
-            partner_code = str(r.get("code") or r.get("partner_code") or "").strip()
-            currency = str(r.get("currency") or "VND").strip().upper()
-            inv_no = str(r.get("invoiceNo") or r.get("invoice_no") or "").strip()
-
-            if not acc_code:
-                raise ValidationError({
-                    "error_code": "EF-03",
-                    "detail": f"EF-03: Vui lòng chọn Số tài khoản công nợ {partner_label.lower()}.",
-                })
-            if not partner_code:
-                raise ValidationError({
-                    "error_code": missing_partner_code,
-                    "detail": f"{missing_partner_code}: Vui lòng chọn {partner_label}.",
-                })
-
-            acc_obj = db_accounts.get(acc_code)
-            if acc_obj and getattr(acc_obj, "status", "ACTIVE") != "ACTIVE":
-                raise ValidationError({
-                    "error_code": "EF-20",
-                    "detail": f"EF-20: Tài khoản {acc_code} đang ngừng sử dụng (INACTIVE).",
-                })
-            bp_obj = Party.objects.filter(company=company, code=partner_code).first()
-            if bp_obj and getattr(bp_obj, "status", "ACTIVE") != "ACTIVE":
-                raise ValidationError({
-                    "error_code": "EF-20",
-                    "detail": f"EF-20: {partner_label} {partner_code} đang ngừng theo dõi (INACTIVE) (BR03).",
-                })
-
-            debit = _to_dec_uc15(r.get("debit"))
-            credit = _to_dec_uc15(r.get("credit"))
-            if debit < 0 or credit < 0:
-                raise ValidationError({
-                    "error_code": "EF-12",
-                    "detail": f"EF-12: Dư Nợ / Dư Có công nợ {partner_label.lower()} không được âm (BR05).",
-                })
-
-            if currency != "VND" and ("exchangeRate" in r or "exchange_rate" in r):
-                fx_rate = _to_dec_uc15(r.get("exchangeRate") if "exchangeRate" in r else r.get("exchange_rate"))
-                if fx_rate <= 0:
-                    raise ValidationError({
-                        "error_code": "AF-12",
-                        "detail": "AF-12: Tỷ giá ngoại tệ phải lớn hơn 0 (BR11).",
-                    })
-
-            inv_details = r.get("invoiceDetails") or r.get("invoice_details")
-            if isinstance(inv_details, list) and len(inv_details) > 0:
-                sum_recv_or_pay = Decimal("0")
-                sum_adv = Decimal("0")
-                for idx_inv, inv in enumerate(inv_details, start=1):
-                    inv_number = str(inv.get("invoiceNo") or inv.get("invoice_no") or "").strip()
-                    inv_date = str(inv.get("invoiceDate") or inv.get("invoice_date") or "").strip()
-                    if not inv_number or not inv_date:
-                        raise ValidationError({
-                            "error_code": "BR15",
-                            "detail": f"BR15: Dòng hóa đơn #{idx_inv} thiếu Số hóa đơn hoặc Ngày hóa đơn.",
-                        })
-                    inv_val = _to_dec_uc15(inv.get("invoiceAmount") or inv.get("invoice_amount"))
-                    rem_val = _to_dec_uc15(
-                        inv.get("remainingAmount")
-                        if ("remainingAmount" in inv or "remaining_amount" in inv)
-                        else (inv.get("receivableAmount") or inv.get("payableAmount") or inv.get("debit") or inv.get("credit"))
-                    )
-                    adv_val = _to_dec_uc15(inv.get("advanceAmount") or inv.get("advance_amount"))
-                    if inv_val < 0 or rem_val < 0 or adv_val < 0:
-                        raise ValidationError({
-                            "error_code": "EF-12",
-                            "detail": f"EF-12: Dòng hóa đơn {inv_number} có số tiền âm.",
-                        })
-                    if inv_val > 0 and rem_val > inv_val:
-                        raise ValidationError({
-                            "error_code": "BR15",
-                            "detail": f"BR15: Số còn phải thu/trả ({rem_val}) trên hóa đơn {inv_number} vượt quá Giá trị hóa đơn ({inv_val}).",
-                        })
-                    sum_recv_or_pay += rem_val
-                    sum_adv += adv_val
-
-                expected_main = debit if is_cust else credit
-                expected_adv = credit if is_cust else debit
-                if sum_recv_or_pay != expected_main or (sum_adv > 0 and sum_adv != expected_adv):
-                    raise ValidationError({
-                        "error_code": "EF-16",
-                        "detail": (
-                            f"EF-16: Tổng chi tiết theo hóa đơn ({sum_recv_or_pay}) không khớp với "
-                            f"số dư công nợ {partner_label.lower()} ({expected_main}) (BR16)."
-                        ),
-                    })
-
-            dim_details = r.get("dimensionDetails") or r.get("dimension_details")
-            if isinstance(dim_details, list) and len(dim_details) > 0:
-                dim_d = sum(_to_dec_uc15(d.get("debit")) for d in dim_details)
-                dim_c = sum(_to_dec_uc15(d.get("credit")) for d in dim_details)
-                if dim_d != debit or dim_c != credit:
-                    raise ValidationError({
-                        "error_code": "EF-16",
-                        "detail": (
-                            f"EF-16: Tổng chi tiết theo đối tượng/hợp đồng (Nợ: {dim_d}, Có: {dim_c}) "
-                            f"không khớp với số dư công nợ {partner_label.lower()} (Nợ: {debit}, Có: {credit})."
-                        ),
-                    })
-
-            bkey = (acc_code, partner_code, currency, inv_no)
-            if is_single_add and bkey in seen_keys:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Công nợ đầu kỳ của {partner_label.lower()} {partner_code} trên TK {acc_code} đã tồn tại.",
-                })
-            seen_keys.add(bkey)
-        return row_list
-
-    # --- LUỒNG E: CÔNG NỢ NHÂN VIÊN ---
-    if category == "employees":
-        seen_keys = set()
-        existing_list = existing_saved.get("employees") or []
-        if is_single_add:
-            for ex in existing_list:
-                ex_id = str(ex.get("id") or "")
-                if editing_id and ex_id == str(editing_id):
-                    continue
-                ex_key = (
-                    str(ex.get("accCode") or ex.get("account_code") or "141").strip(),
-                    str(ex.get("code") or ex.get("employee_code") or "").strip(),
-                    str(ex.get("currency") or "VND").strip().upper(),
-                )
-                if ex_key[1]:
-                    seen_keys.add(ex_key)
-
-        for r in row_list:
-            acc_code = str(r.get("accCode") or r.get("account_code") or "").strip()
-            emp_code = str(r.get("code") or r.get("employee_code") or "").strip()
-            currency = str(r.get("currency") or "VND").strip().upper()
-            if not acc_code:
-                raise ValidationError({
-                    "error_code": "EF-03",
-                    "detail": "EF-03: Vui lòng chọn Số tài khoản công nợ nhân viên.",
-                })
-            if not emp_code:
-                raise ValidationError({
-                    "error_code": "EF-07",
-                    "detail": "EF-07: Vui lòng chọn Nhân viên.",
-                })
-            debit = _to_dec_uc15(r.get("debit"))
-            credit = _to_dec_uc15(r.get("credit"))
-            if debit < 0 or credit < 0:
-                raise ValidationError({
-                    "error_code": "EF-12",
-                    "detail": "EF-12: Dư Nợ / Dư Có công nợ nhân viên không được âm (BR05).",
-                })
-            bkey = (acc_code, emp_code, currency)
-            if bkey in seen_keys:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Nhân viên {emp_code} đã được khai báo số dư trên TK {acc_code} (BR14).",
-                })
-            seen_keys.add(bkey)
-        return row_list
-
-    # --- LUỒNG F: TỒN KHO VẬT TƯ, HÀNG HÓA VÀ CCDC ---
-    if category == "inventory":
-        seen_keys = set()
-        existing_list = existing_saved.get("inventory") or []
-        if is_single_add:
-            for ex in existing_list:
-                ex_id = str(ex.get("id") or ex.get("itemCode") or "")
-                if editing_id and ex_id == str(editing_id):
-                    continue
-                ex_key = (
-                    str(ex.get("itemCode") or ex.get("item_code") or "").strip(),
-                    str(ex.get("warehouse") or "").strip(),
-                    str(ex.get("lotNo") or ex.get("lot_no") or "").strip(),
-                )
-                if ex_key[0] and ex_key[1]:
-                    seen_keys.add(ex_key)
-
-        for r in row_list:
-            item_code = str(r.get("itemCode") or r.get("item_code") or "").strip()
-            warehouse = str(r.get("warehouse") or "").strip()
-            unit = str(r.get("unit") if "unit" in r else "Cái").strip()
-            lot_no = str(r.get("lotNo") or r.get("lot_no") or "").strip()
-
-            if not item_code or not warehouse:
-                raise ValidationError({
-                    "error_code": "EF-08",
-                    "detail": "EF-08: Vui lòng chọn đầy đủ Hàng hóa và Kho lưu trữ.",
-                })
-            if not unit:
-                raise ValidationError({
-                    "error_code": "BR18",
-                    "detail": f"BR18: Mặt hàng {item_code} chưa có Đơn vị tính hợp lệ.",
-                })
-
-            qty = _to_dec_uc15(r.get("quantity"))
-            amt = _to_dec_uc15(r.get("amount") if "amount" in r else r.get("value"))
-            if qty < 0 or amt < 0:
-                raise ValidationError({
-                    "error_code": "EF-13",
-                    "detail": f"EF-13: Số lượng tồn ({qty}) và Giá trị tồn ({amt}) không được âm (BR19).",
-                })
-            if qty == 0 and amt > 0 and not r.get("allow_zero_qty_value"):
-                raise ValidationError({
-                    "error_code": "EF-13",
-                    "detail": f"EF-13: Mặt hàng {item_code} có Số lượng tồn = 0 nhưng Giá trị tồn > 0 mà không bật cờ cho phép tồn giá trị (BR19).",
-                })
-
-            bkey = (item_code, warehouse, lot_no)
-            if bkey in seen_keys:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Mặt hàng {item_code} đã được khai báo tồn kho đầu kỳ tại {warehouse} (BR04).",
-                })
-            seen_keys.add(bkey)
-            r["generates_in_period_warehouse_voucher"] = False
-        return row_list
-
-    # --- LUỒNG G: CCDC ĐANG SỬ DỤNG ĐẦU KỲ ---
-    if category == "tools":
-        seen_codes = set()
-        existing_list = existing_saved.get("tools") or []
-        if is_single_add and isinstance(existing_list, list):
-            for ex in existing_list:
-                ex_code = str(ex.get("code") or ex.get("toolCode") or "").strip()
-                ex_id = str(ex.get("id") or ex_code)
-                if editing_id and (ex_id == str(editing_id) or ex_code == str(editing_id)):
-                    continue
-                if ex_code:
-                    seen_codes.add(ex_code)
-
-        for r in row_list:
-            if isinstance(r, dict) and r.get("type") and len(r) <= 3 and not strict:
-                continue
-            code = str(r.get("code") or r.get("toolCode") or "").strip()
-            name = str(r.get("name") or r.get("toolName") or "").strip()
-            voucher_no = str(r.get("voucherNo") or r.get("voucher_no") or "OPN").strip()
-            voucher_date = str(r.get("voucherDate") or r.get("voucher_date") or "2026-01-01").strip()
-            if "explicit_voucher_no" in r and not str(r.get("explicit_voucher_no") or "").strip():
-                voucher_no = ""
-            if "explicit_voucher_date" in r and not str(r.get("explicit_voucher_date") or "").strip():
-                voucher_date = ""
-
-            if not code or not name or not voucher_no or not voucher_date:
-                raise ValidationError({
-                    "error_code": "EF-09",
-                    "detail": "EF-09: Vui lòng nhập đầy đủ Số CT ghi tăng, Ngày ghi tăng, Mã CCDC và Tên CCDC.",
-                })
-            if code in seen_codes:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Mã CCDC '{code}' đã tồn tại trong danh sách đầu kỳ (BR21).",
-                })
-            seen_codes.add(code)
-
-            total_amt = _to_dec_uc15(r.get("totalAmount") if "totalAmount" in r else r.get("originalValue"))
-            alloc_val = _to_dec_uc15(r.get("allocatedVal") if "allocatedVal" in r else r.get("allocatedValue"))
-            rem_val = _to_dec_uc15(r.get("remainingVal") if "remainingVal" in r else r.get("remainingValue"))
-            alloc_period = _to_dec_uc15(r.get("allocPeriod") if "allocPeriod" in r else r.get("totalPeriods"), default="1")
-            rem_period = _to_dec_uc15(r.get("remainingPeriod") if "remainingPeriod" in r else r.get("remainingPeriods"), default="0")
-
-            if total_amt < 0 or alloc_val < 0 or rem_val < 0:
-                raise ValidationError({
-                    "error_code": "EF-14",
-                    "detail": f"EF-14: Giá trị CCDC '{code}' không được âm (BR22).",
-                })
-            if total_amt > 0:
-                if alloc_val > total_amt:
-                    raise ValidationError({
-                        "error_code": "EF-14",
-                        "detail": f"EF-14: Giá trị đã phân bổ ({alloc_val}) của CCDC '{code}' không được vượt quá Thành tiền ({total_amt}) (BR22).",
-                    })
-                if rem_val != (total_amt - alloc_val):
-                    raise ValidationError({
-                        "error_code": "EF-14",
-                        "detail": (
-                            f"EF-14: Giá trị CCDC còn lại ({rem_val}) phải bằng "
-                            f"Thành tiền ({total_amt}) trừ Giá trị đã phân bổ ({alloc_val}) (BR22)."
-                        ),
-                    })
-            if alloc_period <= 0 or rem_period < 0 or rem_period > alloc_period:
-                raise ValidationError({
-                    "error_code": "EF-14",
-                    "detail": f"EF-14: Số kỳ phân bổ ({alloc_period}) hoặc Số kỳ còn lại ({rem_period}) của CCDC '{code}' không hợp lệ (BR22).",
-                })
-
-            alloc_rows = r.get("allocRows") or r.get("alloc_rows")
-            if isinstance(alloc_rows, list) and len(alloc_rows) > 0:
-                rate_sum = sum(_to_dec_uc15(ar.get("rate")) for ar in alloc_rows)
-                if rate_sum != Decimal("100"):
-                    raise ValidationError({
-                        "error_code": "EF-14",
-                        "detail": f"EF-14: Tổng tỷ lệ phân bổ của CCDC '{code}' phải bằng 100% (hiện tại: {rate_sum}%).",
-                    })
-        return row_list
-
-    # --- LUỒNG H: TÀI SẢN CỐ ĐỊNH ĐẦU KỲ ---
-    if category == "assets":
-        seen_codes = set()
-        existing_list = existing_saved.get("assets") or []
-        if is_single_add and isinstance(existing_list, list):
-            for ex in existing_list:
-                ex_code = str(ex.get("code") or ex.get("assetCode") or "").strip()
-                ex_id = str(ex.get("id") or ex_code)
-                if editing_id and (ex_id == str(editing_id) or ex_code == str(editing_id)):
-                    continue
-                if ex_code:
-                    seen_codes.add(ex_code)
-
-        for r in row_list:
-            if isinstance(r, dict) and r.get("type") and len(r) <= 3 and not strict:
-                continue
-            code = str(r.get("code") or r.get("assetCode") or "").strip()
-            name = str(r.get("name") or r.get("assetName") or "").strip()
-            voucher_no = str(r.get("voucherNo") or r.get("voucher_no") or "OPN").strip()
-            voucher_date = str(r.get("voucherDate") or r.get("voucher_date") or "2026-01-01").strip()
-            asset_type = str(r.get("assetType") or r.get("asset_type") or "01").strip()
-            dept = str(r.get("department") or r.get("assetDepartment") or "P.GD").strip()
-            cost_acc = str(r.get("costAcc") or r.get("cost_acc") or "2111").strip()
-            depr_acc = str(r.get("deprAcc") or r.get("depr_acc") or "2141").strip()
-            depr_start_date = str(r.get("deprStartDate") or r.get("depr_start_date") or "2026-01-01").strip()
-
-            for explicit_key, field_val in (
-                ("explicit_voucher_no", voucher_no),
-                ("explicit_voucher_date", voucher_date),
-                ("explicit_asset_type", asset_type),
-                ("explicit_department", dept),
-                ("explicit_cost_acc", cost_acc),
-                ("explicit_depr_acc", depr_acc),
-                ("explicit_depr_start_date", depr_start_date),
-            ):
-                if explicit_key in r and not str(r.get(explicit_key) or "").strip():
-                    raise ValidationError({
-                        "error_code": "EF-10",
-                        "detail": "EF-10: Vui lòng nhập đầy đủ các trường bắt buộc của Tài sản cố định đầu kỳ.",
-                    })
-
-            if not code or not name or not voucher_no or not voucher_date or not asset_type or not dept or not cost_acc or not depr_acc:
-                raise ValidationError({
-                    "error_code": "EF-10",
-                    "detail": "EF-10: Vui lòng nhập đầy đủ Mã tài sản, Tên tài sản, Loại tài sản, Đơn vị sử dụng và Tài khoản nguyên giá/khấu hao.",
-                })
-            if code in seen_codes:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Mã tài sản cố định '{code}' đã tồn tại (BR23).",
-                })
-            seen_codes.add(code)
-
-            orig_cost = _to_dec_uc15(r.get("originalCost") if "originalCost" in r else r.get("original_cost"))
-            accum_depr = _to_dec_uc15(r.get("accumDepr") if "accumDepr" in r else r.get("accum_depr"))
-            rem_val = _to_dec_uc15(r.get("remainingVal") if "remainingVal" in r else r.get("remaining_val"))
-
-            if orig_cost < 0 or accum_depr < 0 or rem_val < 0:
-                raise ValidationError({
-                    "error_code": "EF-14",
-                    "detail": f"EF-14: Nguyên giá, Hao mòn lũy kế và Giá trị còn lại của TSCĐ '{code}' không được âm (BR23).",
-                })
-            if accum_depr > orig_cost:
-                raise ValidationError({
-                    "error_code": "EF-14",
-                    "detail": f"EF-14: Hao mòn lũy kế ({accum_depr}) của TSCĐ '{code}' không được lớn hơn Nguyên giá ({orig_cost}) (BR23).",
-                })
-            if orig_cost > 0 and rem_val != (orig_cost - accum_depr):
-                raise ValidationError({
-                    "error_code": "EF-14",
-                    "detail": (
-                        f"EF-14: Giá trị còn lại ({rem_val}) của TSCĐ '{code}' phải bằng "
-                        f"Nguyên giá ({orig_cost}) trừ Hao mòn lũy kế ({accum_depr}) (BR23)."
-                    ),
-                })
-
-            no_depr = bool(r.get("noDepreciation") or r.get("no_depreciation"))
-            if not no_depr:
-                usage_time = _to_dec_uc15(r.get("usageTime") if "usageTime" in r else r.get("usage_time"), default="5")
-                rem_time = _to_dec_uc15(r.get("remainingTime") if "remainingTime" in r else r.get("remaining_time"), default="3")
-                if usage_time <= 0 or rem_time < 0:
-                    raise ValidationError({
-                        "error_code": "EF-14",
-                        "detail": f"EF-14: Thời gian sử dụng ({usage_time}) hoặc Thời gian còn lại ({rem_time}) của TSCĐ '{code}' không hợp lệ (BR24).",
-                    })
-                alloc_rows = r.get("allocRows") or r.get("alloc_rows")
-                if isinstance(alloc_rows, list) and len(alloc_rows) > 0:
-                    rate_sum = sum(_to_dec_uc15(ar.get("rate")) for ar in alloc_rows)
-                    if rate_sum != Decimal("100"):
-                        raise ValidationError({
-                            "error_code": "EF-14",
-                            "detail": f"EF-14: Tổng tỷ lệ phân bổ khấu hao của TSCĐ '{code}' phải bằng 100% (BR24).",
-                        })
-
-            if r.get("taxLimitChecked") or r.get("tax_limit_checked"):
-                tax_cost = _to_dec_uc15(r.get("taxLawDeprCost") if "taxLawDeprCost" in r else r.get("tax_law_depr_cost"))
-                tax_month = _to_dec_uc15(r.get("taxLawMonthDeprVal") if "taxLawMonthDeprVal" in r else r.get("tax_law_month_depr_val"))
-                if tax_cost <= 0 or tax_month < 0:
-                    raise ValidationError({
-                        "error_code": "EF-14",
-                        "detail": f"EF-14: Giá trị tính KH theo luật thuế TNDN của TSCĐ '{code}' phải lớn hơn 0 (BR25).",
-                    })
-        return row_list
-
-    # --- LUỒNG I: CHI PHÍ TRẢ TRƯỚC ĐẦU KỲ ---
-    if category == "prepaid":
-        seen_codes = set()
-        existing_list = existing_saved.get("prepaid") or []
-        if is_single_add and isinstance(existing_list, list):
-            for ex in existing_list:
-                ex_code = str(ex.get("code") or "").strip()
-                ex_id = str(ex.get("id") or ex_code)
-                if editing_id and (ex_id == str(editing_id) or ex_code == str(editing_id)):
-                    continue
-                if ex_code:
-                    seen_codes.add(ex_code)
-
-        for r in row_list:
-            if isinstance(r, dict) and r.get("type") and len(r) <= 3 and not strict:
-                continue
-            code = str(r.get("code") or r.get("prepaidCode") or "").strip()
-            name = str(r.get("name") or r.get("prepaidName") or "").strip()
-            amt = _to_dec_uc15(r.get("amount"))
-            months = _to_dec_uc15(r.get("allocMonths") if "allocMonths" in r else r.get("months"), default="12")
-
-            if not code or not name or ("amount" in r and (r.get("amount") is None or str(r.get("amount")).strip() == "")):
-                raise ValidationError({
-                    "error_code": "EF-11",
-                    "detail": "EF-11: Vui lòng nhập đầy đủ Mã chi phí trả trước, Tên chi phí trả trước và Số tiền.",
-                })
-            if code in seen_codes:
-                raise ValidationError({
-                    "error_code": "EF-15",
-                    "detail": f"EF-15: Mã chi phí trả trước '{code}' đã tồn tại (BR26).",
-                })
-            seen_codes.add(code)
-
-            if amt <= 0 or months <= 0:
-                raise ValidationError({
-                    "error_code": "EF-14",
-                    "detail": f"EF-14: Số tiền ({amt}) và Số kỳ phân bổ (Tháng) ({months}) của chi phí trả trước '{code}' phải lớn hơn 0 (BR27).",
-                })
-        return row_list
-
-    # --- LUỒNG J: CHI PHÍ DỞ DANG ---
-    if category == "wip":
-        for r in row_list:
-            if isinstance(r, dict) and r.get("type") and len(r) <= 3 and not strict and "code" not in r:
-                continue
-            tracking_mode = str(r.get("trackingMode") or r.get("tracking_mode") or r.get("subtab") or "Đối tượng tập hợp chi phí").strip()
-            if tracking_mode and tracking_mode not in UC_GL_15_WIP_TRACKING_MODES:
-                raise ValidationError({
-                    "error_code": "EF-23",
-                    "detail": f"EF-23: Hình thức theo dõi chi phí dở dang '{tracking_mode}' không hợp lệ (BR28).",
-                })
-            code = str(r.get("code") or "").strip()
-            if not code:
-                raise ValidationError({
-                    "error_code": "EF-23",
-                    "detail": f"EF-23: Dòng chi phí dở dang ({tracking_mode}) chưa chọn đối tượng tập hợp chi phí / công trình / đơn hàng / hợp đồng (BR29).",
-                })
-            for cost_field in ("rawMaterial", "labor", "machinery", "general", "accepted", "total"):
-                if cost_field in r and _to_dec_uc15(r.get(cost_field)) < 0:
-                    raise ValidationError({
-                        "error_code": "EF-23",
-                        "detail": f"EF-23: Giá trị yếu tố chi phí '{cost_field}' của đối tượng '{code}' không được âm.",
-                    })
-        return row_list
-
-    return row_list
-
-
-def _sync_opening_accounts_to_journal_uc_gl_15(company, acc_rows: list[dict], start_date_str: str):
-    """
-    Đồng bộ danh sách số dư tài khoản (Luồng A) xuống bút toán đầu kỳ OPEN-2026-001.
-    """
-    from master_data.models import Currency
-
-    opening_entry = models.JournalEntry.objects.filter(company=company, entry_type="OPENING").first()
-    vnd = Currency.objects.filter(code="VND").first() or getattr(company, "accounting_currency", None)
-    if not opening_entry or not vnd:
-        return
-
-    new_lines = []
-    total_d = Decimal("0")
-    total_c = Decimal("0")
-    line_no = 1
-    for r in acc_rows:
-        code = str(r.get("account") or r.get("code") or "").strip()
-        d = _to_dec_uc15(r.get("debit"))
-        c = _to_dec_uc15(r.get("credit"))
-        if not code or (d == 0 and c == 0):
-            continue
-        acc_obj = models.Account.objects.filter(company=company, code=code).first()
-        if not acc_obj:
-            continue
-        if d > 0 and c > 0:
-            new_lines.append((line_no, acc_obj, d, Decimal("0"), r.get("name") or acc_obj.name))
-            line_no += 1
-            new_lines.append((line_no, acc_obj, Decimal("0"), c, r.get("name") or acc_obj.name))
-            line_no += 1
-            total_d += d
-            total_c += c
-        elif d > 0:
-            new_lines.append((line_no, acc_obj, d, Decimal("0"), r.get("name") or acc_obj.name))
-            line_no += 1
-            total_d += d
-        elif c > 0:
-            new_lines.append((line_no, acc_obj, Decimal("0"), c, r.get("name") or acc_obj.name))
-            line_no += 1
-            total_c += c
-
-    if new_lines and total_d == total_c:
-        opening_entry.lines.all().delete()
-        for lno, acc_obj, d_val, c_val, desc in new_lines:
-            models.JournalLine.objects.create(
-                entry=opening_entry,
-                line_no=lno,
-                account=acc_obj,
-                description=f"Số dư đầu kỳ {acc_obj.code} - {desc}",
-                currency=vnd,
-                exchange_rate=Decimal("1"),
-                foreign_amount=d_val if d_val > 0 else c_val,
-                debit=d_val,
-                credit=c_val,
-            )
-        opening_entry.total_debit = total_d
-        opening_entry.total_credit = total_c
-        opening_entry.save(update_fields=["total_debit", "total_credit", "updated_at"])
-
-
-def get_opening_balances_uc_gl_15(company, params: dict | None = None, request=None) -> dict:
-    """
-    UC-GL-15: Truy xuất toàn bộ 10 nhóm số dư ban đầu, trạng thái cân đối Nợ/Có,
-    tổng hợp tài khoản cha-con (BR07), version (EF-21) và trạng thái khóa kỳ (EF-19).
-    """
-    from common_services.models import CoreCompanySetting
-
-    params = params or {}
-    _check_uc_gl_15_permission(request, company, require_write=False)
-
-    setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
-    config = dict(setting.configuration or {})
-    setup_info = _resolve_uc_gl_15_company_setup(company, config, params)
-    saved = dict(config.get("opening_balances_tt99") or {})
-    version = int(config.get("opening_balances_version") or 1)
-
-    opening_entry = (
-        models.JournalEntry.objects.filter(company=company, entry_type="OPENING")
-        .prefetch_related("lines__account")
-        .first()
-    )
-    gl_accounts = []
-    if opening_entry:
-        grouped = {}
-        for line in opening_entry.lines.all():
-            code = line.account.code
-            if code not in grouped:
-                grouped[code] = {
-                    "account": code,
-                    "name": line.account.name,
-                    "debit": 0,
-                    "credit": 0,
-                }
-            grouped[code]["debit"] += int(line.debit or 0)
-            grouped[code]["credit"] += int(line.credit or 0)
-        gl_accounts = sorted(grouped.values(), key=lambda x: x["account"])
-
-    accounts = saved.get("accounts") if isinstance(saved.get("accounts"), list) else gl_accounts
-    total_debit = sum(int(_to_dec_uc15(r.get("debit"))) for r in accounts)
-    total_credit = sum(int(_to_dec_uc15(r.get("credit"))) for r in accounts)
-    difference = total_debit - total_credit
-    account_rollup = _compute_account_rollup_uc_gl_15(company, accounts)
-
-    def _norm_list(val):
-        if isinstance(val, list):
-            return val
-        return []
-
-    categories_dict = {
-        "accounts": accounts,
-        "bank": saved.get("bank") if isinstance(saved.get("bank"), list) else None,
-        "customers": saved.get("customers") if isinstance(saved.get("customers"), list) else None,
-        "suppliers": saved.get("suppliers") if isinstance(saved.get("suppliers"), list) else None,
-        "employees": saved.get("employees") if isinstance(saved.get("employees"), list) else None,
-        "inventory": saved.get("inventory") if isinstance(saved.get("inventory"), list) else None,
-        "tools": _norm_list(saved.get("tools")),
-        "assets": _norm_list(saved.get("assets")),
-        "prepaid": _norm_list(saved.get("prepaid")),
-        "wip": _norm_list(saved.get("wip")),
-    }
-
-    return {
-        "company_id": str(company.id),
-        "company_name": company.name,
-        "accounting_regime": setup_info["accounting_regime"],
-        "start_date": setup_info["start_date"],
-        "period_code": setup_info["period_code"],
-        "opening_period_locked": setup_info["opening_period_locked"],
-        "version": version,
-        "gl_entry_number": opening_entry.number if opening_entry else "OPEN-2026-001",
-        **categories_dict,
-        "categories": categories_dict,
-        "account_rollup": account_rollup,
-        "total_debit": total_debit,
-        "total_credit": total_credit,
-        "difference": difference,
-        "balanced": total_debit == total_credit,
-        "balance_warning": (
-            None
-            if total_debit == total_credit
-            else f"Tổng Dư Nợ ({total_debit:,} đ) và Tổng Dư Có ({total_credit:,} đ) đang lệch {abs(difference):,} đ (BR09)."
-        ),
-    }
-
-
-def save_opening_balances_uc_gl_15(company, payload: dict, request=None) -> dict:
-    """
-    UC-GL-15: Lưu đồng bộ một hoặc nhiều nhóm số dư ban đầu, kiểm tra EF-01..23 và BR01..42,
-    kiểm tra khóa kỳ (EF-19), kiểm tra xung đột phiên bản (EF-21) và ghi AuditLog (BR39).
-    """
-    from common_services.models import CoreCompanySetting
-
-    _check_uc_gl_15_permission(request, company, require_write=True)
-
-    with transaction.atomic():
-        setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
-        config = dict(setting.configuration or {})
-        setup_info = _resolve_uc_gl_15_company_setup(company, config, payload)
-
-        if setup_info["opening_period_locked"]:
-            raise ValidationError({
-                "error_code": "EF-19",
-                "detail": "EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép sửa hoặc ghi đè trực tiếp số dư ban đầu (BR37).",
-            })
-
-        current_version = int(config.get("opening_balances_version") or 1)
-        expected_version = payload.get("expected_version")
-        if expected_version is not None and int(expected_version) != current_version:
-            raise ValidationError({
-                "error_code": "EF-21",
-                "current_version": current_version,
-                "expected_version": int(expected_version),
-                "detail": (
-                    f"EF-21: Dữ liệu số dư ban đầu đã được người dùng khác cập nhật (phiên bản hiện tại: {current_version}, "
-                    f"phiên bản gửi lên: {expected_version}). Vui lòng tải lại dữ liệu trước khi lưu."
-                ),
-            })
-
-        saved = dict(config.get("opening_balances_tt99") or {})
-        strict_flag = bool(payload.get("strict", True))
-
-        category = payload.get("category")
-        updated_categories = []
-
-        if category and ("items" in payload or "rows" in payload):
-            raw_items = payload.get("items") if "items" in payload else payload.get("rows")
-            if category in UC_GL_15_CATEGORIES:
-                validated = validate_opening_balance_group_uc_gl_15(
-                    company,
-                    category,
-                    raw_items,
-                    existing_saved=saved,
-                    is_single_add=False,
-                    strict=strict_flag,
-                )
-                saved[category] = validated
-                updated_categories.append(category)
-            else:
-                saved[category] = raw_items
-                updated_categories.append(category)
-
-        incoming_cats = payload.get("categories") if isinstance(payload.get("categories"), dict) else {}
-        for key in UC_GL_15_CATEGORIES:
-            incoming_val = None
-            if key in payload and payload[key] is not None:
-                incoming_val = payload[key]
-            elif key in incoming_cats and incoming_cats[key] is not None:
-                incoming_val = incoming_cats[key]
-
-            if incoming_val is not None:
-                validated = validate_opening_balance_group_uc_gl_15(
-                    company,
-                    key,
-                    incoming_val,
-                    existing_saved=saved,
-                    is_single_add=False,
-                    strict=strict_flag,
-                )
-                saved[key] = validated
-                if key not in updated_categories:
-                    updated_categories.append(key)
-
-        if "accounts" in updated_categories and isinstance(saved.get("accounts"), list):
-            _sync_opening_accounts_to_journal_uc_gl_15(
-                company,
-                saved["accounts"],
-                setup_info["start_date"],
-            )
-
-        new_version = current_version + 1
-        config["opening_balances_tt99"] = saved
-        config["opening_balances_version"] = new_version
-        setting.configuration = config
-        setting.save(update_fields=["configuration", "updated_at"])
-
-        audit(
-            request,
-            setting,
-            "SAVE_OPENING_BALANCES_UC_GL_15",
-            before={"version": current_version, "categories": updated_categories},
-            after={
-                "version": new_version,
-                "categories": updated_categories,
-                "start_date": setup_info["start_date"],
-                "action_mode": payload.get("action_mode") or "SAVE",
-            },
-        )
-
-    res = get_opening_balances_uc_gl_15(company, request=request)
-    res["action_mode"] = payload.get("action_mode") or "SAVE"
-    res["updated_categories"] = updated_categories
-    return res
-
-
-def upsert_opening_balance_item_uc_gl_15(company, payload: dict, request=None) -> dict:
-    """
-    UC-GL-15: Thêm mới (AF-01 Lưu và Thêm / AF-02 Lưu và Đóng / AF-13 Lưu và In)
-    hoặc Sửa một bản ghi số dư ban đầu đã lưu (AF-10), có kiểm tra EF-19 (chứng từ phụ thuộc) và EF-15 (trùng khóa).
-    """
-    from common_services.models import CoreCompanySetting
-
-    _check_uc_gl_15_permission(request, company, require_write=True)
-    category = str(payload.get("category") or "").strip()
-    if category not in UC_GL_15_CATEGORIES:
-        raise ValidationError({
-            "error_code": "EF-03",
-            "detail": f"Nhóm số dư ban đầu '{category}' không hợp lệ.",
-        })
-
-    item = payload.get("item")
-    if not isinstance(item, dict):
-        raise ValidationError({
-            "error_code": "EF-03",
-            "detail": "Dữ liệu bản ghi số dư ban đầu (item) không hợp lệ.",
-        })
-
-    editing_id = payload.get("editing_id") or item.get("editing_id")
-    action_mode = str(payload.get("action_mode") or "SAVE").upper()
-
-    with transaction.atomic():
-        setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
-        config = dict(setting.configuration or {})
-        setup_info = _resolve_uc_gl_15_company_setup(company, config, payload)
-
-        if setup_info["opening_period_locked"]:
-            raise ValidationError({
-                "error_code": "EF-19",
-                "detail": "EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép thêm/sửa số dư ban đầu (BR37).",
-            })
-
-        current_version = int(config.get("opening_balances_version") or 1)
-        expected_version = payload.get("expected_version")
-        if expected_version is not None and int(expected_version) != current_version:
-            raise ValidationError({
-                "error_code": "EF-21",
-                "current_version": current_version,
-                "detail": "EF-21: Dữ liệu số dư ban đầu đã bị thay đổi bởi phiên làm việc khác. Vui lòng tải lại.",
-            })
-
-        saved = dict(config.get("opening_balances_tt99") or {})
-        existing_list = saved.get(category)
-        if not isinstance(existing_list, list):
-            existing_list = []
-
-        before_item = None
-        if editing_id:
-            for ex in existing_list:
-                ex_identifiers = {
-                    str(ex.get("id") or ""),
-                    str(ex.get("code") or ""),
-                    str(ex.get("accountNumber") or ""),
-                    str(ex.get("itemCode") or ""),
-                    str(ex.get("account") or ""),
-                }
-                if str(editing_id) in ex_identifiers:
-                    before_item = ex
-                    if ex.get("has_dependent_voucher") or ex.get("settled_amount", 0) > 0 or ex.get("allocated_in_period"):
-                        raise ValidationError({
-                            "error_code": "EF-19",
-                            "detail": (
-                                f"EF-19: Bản ghi '{editing_id}' đã phát sinh chứng từ phụ thuộc trong kỳ "
-                                "(thu/chi công nợ, phân bổ CCDC/CPTT hoặc khấu hao TSCĐ), không được sửa trực tiếp (BR38)."
-                            ),
-                        })
-                    break
-
-        validated_list = validate_opening_balance_group_uc_gl_15(
-            company,
-            category,
-            [item],
-            existing_saved=saved,
-            is_single_add=True,
-            editing_id=str(editing_id) if editing_id else None,
-            strict=True,
-        )
-        valid_item = dict(validated_list[0])
-        if not valid_item.get("id"):
-            valid_item["id"] = str(
-                valid_item.get("code")
-                or valid_item.get("accountNumber")
-                or valid_item.get("itemCode")
-                or valid_item.get("account")
-                or f"{category}-{int(timezone.now().timestamp() * 1000)}"
-            )
-        valid_item["opening_date"] = setup_info["start_date"]
-        valid_item["updated_at"] = timezone.now().isoformat()
-
-        if editing_id:
-            replaced = False
-            new_list = []
-            for ex in existing_list:
-                ex_identifiers = {
-                    str(ex.get("id") or ""),
-                    str(ex.get("code") or ""),
-                    str(ex.get("accountNumber") or ""),
-                    str(ex.get("itemCode") or ""),
-                    str(ex.get("account") or ""),
-                }
-                if not replaced and str(editing_id) in ex_identifiers:
-                    new_list.append(valid_item)
-                    replaced = True
-                else:
-                    new_list.append(ex)
-            if not replaced:
-                new_list.insert(0, valid_item)
-            existing_list = new_list
-        else:
-            existing_list = [valid_item, *existing_list]
-
-        saved[category] = existing_list
-        if category == "accounts":
-            _sync_opening_accounts_to_journal_uc_gl_15(company, existing_list, setup_info["start_date"])
-
-        new_version = current_version + 1
-        config["opening_balances_tt99"] = saved
-        config["opening_balances_version"] = new_version
-        setting.configuration = config
-        setting.save(update_fields=["configuration", "updated_at"])
-
-        audit(
-            request,
-            setting,
-            "EDIT_OPENING_BALANCE_ITEM" if editing_id else "ADD_OPENING_BALANCE_ITEM",
-            before={"category": category, "item": before_item},
-            after={"category": category, "item": valid_item, "action_mode": action_mode, "version": new_version},
-        )
-
-    res = get_opening_balances_uc_gl_15(company, request=request)
-    res["saved_item"] = valid_item
-    res["action_mode"] = action_mode
-
-    if action_mode == "SAVE_AND_PRINT":
-        print_res = print_opening_balance_uc_gl_15(
-            company,
-            {
-                "category": category,
-                "item_id": valid_item.get("id"),
-                "simulate_print_error": payload.get("simulate_print_error"),
-            },
-            request=request,
-        )
-        res["print_result"] = print_res
-    return res
-
-
-def delete_opening_balance_item_uc_gl_15(company, payload: dict, request=None) -> dict:
-    """
-    UC-GL-15 (AF-11): Xóa một bản ghi số dư ban đầu đã lưu, kiểm tra EF-19 (khóa kỳ / chứng từ phụ thuộc) và ghi AuditLog (BR39).
-    """
-    from common_services.models import CoreCompanySetting
-
-    _check_uc_gl_15_permission(request, company, require_write=True)
-    category = str(payload.get("category") or "").strip()
-    item_id = str(payload.get("item_id") or payload.get("id") or payload.get("code") or "").strip()
-
-    if category not in UC_GL_15_CATEGORIES or not item_id:
-        raise ValidationError({
-            "error_code": "EF-03",
-            "detail": "Vui lòng cung cấp nhóm số dư (category) và mã bản ghi cần xóa (item_id).",
-        })
-
-    with transaction.atomic():
-        setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
-        config = dict(setting.configuration or {})
-        setup_info = _resolve_uc_gl_15_company_setup(company, config, payload)
-
-        if setup_info["opening_period_locked"]:
-            raise ValidationError({
-                "error_code": "EF-19",
-                "detail": "EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép xóa số dư ban đầu (BR37).",
-            })
-
-        saved = dict(config.get("opening_balances_tt99") or {})
-        existing_list = saved.get(category)
-        if not isinstance(existing_list, list):
-            existing_list = []
-
-        target_item = None
-        remaining = []
-        for ex in existing_list:
-            ex_identifiers = {
-                str(ex.get("id") or ""),
-                str(ex.get("code") or ""),
-                str(ex.get("accountNumber") or ""),
-                str(ex.get("itemCode") or ""),
-                str(ex.get("account") or ""),
-            }
-            if target_item is None and item_id in ex_identifiers:
-                target_item = ex
-            else:
-                remaining.append(ex)
-
-        if target_item is None:
-            raise ValidationError({
-                "error_code": "EF-03",
-                "detail": f"Không tìm thấy bản ghi '{item_id}' trong nhóm '{category}'.",
-            })
-
-        if target_item.get("has_dependent_voucher") or target_item.get("settled_amount", 0) > 0 or target_item.get("allocated_in_period"):
-            raise ValidationError({
-                "error_code": "EF-19",
-                "detail": (
-                    f"EF-19: Bản ghi '{item_id}' đã phát sinh chứng từ phụ thuộc trong kỳ "
-                    "(đối trừ công nợ, phân bổ CCDC/CPTT hoặc khấu hao TSCĐ), không được xóa trực tiếp (BR38)."
-                ),
-            })
-
-        saved[category] = remaining
-        if category == "accounts":
-            _sync_opening_accounts_to_journal_uc_gl_15(company, remaining, setup_info["start_date"])
-
-        current_version = int(config.get("opening_balances_version") or 1)
-        new_version = current_version + 1
-        config["opening_balances_tt99"] = saved
-        config["opening_balances_version"] = new_version
-        setting.configuration = config
-        setting.save(update_fields=["configuration", "updated_at"])
-
-        audit(
-            request,
-            setting,
-            "DELETE_OPENING_BALANCE_ITEM",
-            before={"category": category, "deleted_item": target_item},
-            after={"category": category, "remaining_count": len(remaining), "version": new_version},
-        )
-
-    res = get_opening_balances_uc_gl_15(company, request=request)
-    res["deleted_item_id"] = item_id
-    return res
-
-
-def import_opening_balances_excel_uc_gl_15(company, payload: dict, request=None) -> dict:
-    """
-    UC-GL-15 (AF-03, EF-18, BR41): Nhập số dư ban đầu từ tệp Excel.
-    """
-    from common_services.models import CoreCompanySetting
-
-    _check_uc_gl_15_permission(request, company, require_write=True)
-    category = str(payload.get("category") or "").strip()
-    if category not in UC_GL_15_CATEGORIES:
-        raise ValidationError({
-            "error_code": "EF-18",
-            "detail": f"EF-18: Nhóm dữ liệu import Excel '{category}' không hợp lệ.",
-        })
-
-    rows = payload.get("rows")
-    if not isinstance(rows, list) or len(rows) == 0:
-        raise ValidationError({
-            "error_code": "EF-18",
-            "detail": "EF-18: Tệp Excel không có dữ liệu hoặc sai cấu trúc mẫu.",
-        })
-
-    atomic_import = bool(payload.get("atomic", True))
-    replace_existing = bool(payload.get("replace_existing", False))
-
-    setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
-    config = dict(setting.configuration or {})
-    setup_info = _resolve_uc_gl_15_company_setup(company, config, payload)
-    if setup_info["opening_period_locked"]:
-        raise ValidationError({
-            "error_code": "EF-19",
-            "detail": "EF-19: Kỳ kế toán đầu kỳ đã khóa sổ, không được phép import số dư ban đầu (BR37).",
-        })
-
-    valid_rows = []
-    row_errors = []
-
-    for idx, row in enumerate(rows, start=1):
-        if not isinstance(row, dict):
-            row_errors.append({
-                "row_index": idx,
-                "error_code": "EF-18",
-                "message": f"Dòng {idx}: Định dạng dữ liệu không hợp lệ.",
-            })
-            continue
-        try:
-            validated = validate_opening_balance_group_uc_gl_15(
-                company,
-                category,
-                [row],
-                existing_saved={
-                    "bank": valid_rows,
-                    "customers": valid_rows,
-                    "suppliers": valid_rows,
-                    "employees": valid_rows,
-                    "inventory": valid_rows,
-                    "tools": valid_rows,
-                    "assets": valid_rows,
-                    "prepaid": valid_rows,
-                },
-                is_single_add=True,
-                strict=True,
-            )
-            item = dict(validated[0])
-            if not item.get("id"):
-                item["id"] = str(
-                    item.get("code")
-                    or item.get("accountNumber")
-                    or item.get("itemCode")
-                    or item.get("account")
-                    or f"{category}-xl-{idx}"
-                )
-            item["opening_date"] = setup_info["start_date"]
-            valid_rows.append(item)
-        except ValidationError as exc:
-            detail_obj = exc.detail if hasattr(exc, "detail") else str(exc)
-            err_code = "EF-18"
-            msg = str(detail_obj)
-            if isinstance(detail_obj, dict):
-                err_code = str(detail_obj.get("error_code") or "EF-18")
-                msg = str(detail_obj.get("detail") or detail_obj)
-            row_errors.append({
-                "row_index": idx,
-                "error_code": err_code,
-                "message": f"Dòng {idx}: {msg}",
-            })
-
-    if row_errors and atomic_import:
-        raise ValidationError({
-            "error_code": "EF-18",
-            "category": category,
-            "total_rows": len(rows),
-            "valid_count": len(valid_rows),
-            "error_count": len(row_errors),
-            "row_errors": row_errors,
-            "detail": f"EF-18: Phát hiện {len(row_errors)} dòng lỗi khi kiểm tra tệp Excel (BR41).",
-        })
-
-    with transaction.atomic():
-        setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
-        config = dict(setting.configuration or {})
-        saved = dict(config.get("opening_balances_tt99") or {})
-        existing_list = saved.get(category) if isinstance(saved.get(category), list) else []
-
-        if replace_existing or category == "accounts":
-            merged = valid_rows
-        else:
-            merged = [*valid_rows, *existing_list]
-
-        saved[category] = merged
-        if category == "accounts":
-            _sync_opening_accounts_to_journal_uc_gl_15(company, merged, setup_info["start_date"])
-
-        current_version = int(config.get("opening_balances_version") or 1)
-        new_version = current_version + 1
-        config["opening_balances_tt99"] = saved
-        config["opening_balances_version"] = new_version
-        setting.configuration = config
-        setting.save(update_fields=["configuration", "updated_at"])
-
-        audit(
-            request,
-            setting,
-            "IMPORT_OPENING_BALANCES_EXCEL_UC_GL_15",
-            before={"category": category, "previous_count": len(existing_list)},
-            after={
-                "category": category,
-                "imported_count": len(valid_rows),
-                "error_count": len(row_errors),
-                "version": new_version,
-            },
-        )
-
-    res = get_opening_balances_uc_gl_15(company, request=request)
-    res["import_summary"] = {
-        "category": category,
-        "total_rows": len(rows),
-        "imported_count": len(valid_rows),
-        "error_count": len(row_errors),
-        "row_errors": row_errors,
-    }
-    return res
-
-
-def list_opening_balance_vouchers_uc_gl_15(company, params: dict | None = None, request=None) -> dict:
-    """
-    UC-GL-15 (AF-09): Xem danh sách chứng từ / bản ghi số dư đầu kỳ đã khai báo.
-    """
-    params = params or {}
-    state = get_opening_balances_uc_gl_15(company, params=params, request=request)
-    category_filter = str(params.get("category") or "").strip()
-    start_date = state["start_date"]
-
-    vouchers = []
-    if not category_filter or category_filter == "accounts":
-        vouchers.append({
-            "voucher_id": "OPEN-GL-001",
-            "voucher_no": state["gl_entry_number"],
-            "voucher_date": start_date,
-            "category": "accounts",
-            "category_title": UC_GL_15_CATEGORY_TITLES["accounts"],
-            "description": f"Chứng từ tổng hợp Số dư tài khoản đầu kỳ ({len(state.get('accounts') or [])} tài khoản)",
-            "debit": state["total_debit"],
-            "credit": state["total_credit"],
-            "amount": max(state["total_debit"], state["total_credit"]),
-            "status": "POSTED" if state["balanced"] else "UNBALANCED",
-            "has_dependent_voucher": False,
-        })
-
-    cat_items_map = {
-        "bank": (state.get("bank") or [], "OPN-BANK", lambda r: f"Số dư NH {r.get('accountNumber')} - {r.get('bankName')}", lambda r: int(_to_dec_uc15(r.get("amountVnd") or r.get("originalAmount")))),
-        "customers": (state.get("customers") or [], "OPN-KH", lambda r: f"Công nợ KH {r.get('code')} - {r.get('name')}", lambda r: int(_to_dec_uc15(r.get("debit")) + _to_dec_uc15(r.get("credit")))),
-        "suppliers": (state.get("suppliers") or [], "OPN-NCC", lambda r: f"Công nợ NCC {r.get('code')} - {r.get('name')}", lambda r: int(_to_dec_uc15(r.get("debit")) + _to_dec_uc15(r.get("credit")))),
-        "employees": (state.get("employees") or [], "OPN-NV", lambda r: f"Công nợ NV {r.get('code')} - {r.get('name')}", lambda r: int(_to_dec_uc15(r.get("debit")) + _to_dec_uc15(r.get("credit")))),
-        "inventory": (state.get("inventory") or [], "OPN-KHO", lambda r: f"Tồn kho đầu kỳ {r.get('itemCode')} ({r.get('warehouse')})", lambda r: int(_to_dec_uc15(r.get("amount")))),
-        "tools": (state.get("tools") or [], "OPN-CCDC", lambda r: f"CCDC đầu kỳ {r.get('code') or r.get('toolCode')} - {r.get('name') or r.get('toolName')}", lambda r: int(_to_dec_uc15(r.get("remainingVal") or r.get("totalAmount")))),
-        "assets": (state.get("assets") or [], "OPN-TSCD", lambda r: f"TSCĐ đầu kỳ {r.get('code') or r.get('assetCode')} - {r.get('name') or r.get('assetName')}", lambda r: int(_to_dec_uc15(r.get("originalCost") or r.get("remainingVal")))),
-        "prepaid": (state.get("prepaid") or [], "OPN-CPTT", lambda r: f"Chi phí trả trước đầu kỳ {r.get('code')} - {r.get('name')}", lambda r: int(_to_dec_uc15(r.get("amount")))),
-        "wip": (state.get("wip") or [], "OPN-WIP", lambda r: f"Chi phí dở dang đầu kỳ {r.get('code')} ({r.get('trackingMode') or r.get('subtab') or 'THCP'})", lambda r: int(_to_dec_uc15(r.get("rawMaterial")) + _to_dec_uc15(r.get("labor")) + _to_dec_uc15(r.get("machinery")) + _to_dec_uc15(r.get("general")))),
-    }
-
-    for cat_key, (rows, prefix, desc_fn, amt_fn) in cat_items_map.items():
-        if category_filter and category_filter != cat_key:
-            continue
-        if not isinstance(rows, list):
-            continue
-        for idx, r in enumerate(rows, start=1):
-            if not isinstance(r, dict):
-                continue
-            v_no = str(r.get("voucherNo") or r.get("invoiceNo") or f"{prefix}-{idx:03d}")
-            vouchers.append({
-                "voucher_id": str(r.get("id") or r.get("code") or r.get("accountNumber") or r.get("itemCode") or f"{cat_key}-{idx}"),
-                "voucher_no": v_no,
-                "voucher_date": str(r.get("voucherDate") or r.get("opening_date") or start_date),
-                "category": cat_key,
-                "category_title": UC_GL_15_CATEGORY_TITLES[cat_key],
-                "description": desc_fn(r),
-                "debit": int(_to_dec_uc15(r.get("debit"))),
-                "credit": int(_to_dec_uc15(r.get("credit"))),
-                "amount": amt_fn(r),
-                "status": "POSTED",
-                "has_dependent_voucher": bool(r.get("has_dependent_voucher")),
-            })
-
-    return {
-        "company_id": str(company.id),
-        "start_date": start_date,
-        "category_filter": category_filter or "ALL",
-        "total_vouchers": len(vouchers),
-        "vouchers": vouchers,
-    }
-
-
-def print_opening_balance_uc_gl_15(company, payload: dict, request=None) -> dict:
-    """
-    UC-GL-15 (AF-13, EF-17, BR34, BR35): Tạo dữ liệu in Phiếu/Bảng kê số dư ban đầu từ dữ liệu đã lưu thành công.
-    """
-    from common_services.models import CoreCompanySetting
-
-    state = get_opening_balances_uc_gl_15(company, request=request)
-    category = str(payload.get("category") or "accounts").strip()
-    if category not in UC_GL_15_CATEGORIES:
-        category = "accounts"
-
-    if str(payload.get("simulate_print_error")).lower() in ("true", "1", "yes"):
-        return {
-            "print_status": "ERROR",
-            "error_code": "EF-17",
-            "saved_data_intact": True,
-            "category": category,
-            "message": "EF-17: Lưu dữ liệu thành công nhưng không thể khởi tạo bản in. Bạn có thể mở lại bản ghi để in sau (BR35).",
-        }
-
-    rows = state.get(category) if isinstance(state.get(category), list) else []
-    item_id = payload.get("item_id")
-    if item_id:
-        filtered = [
-            r for r in rows
-            if str(r.get("id") or r.get("code") or r.get("accountNumber") or r.get("itemCode") or "") == str(item_id)
-        ]
-        if filtered:
-            rows = filtered
-
-    setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
-    audit(
-        request,
-        setting,
-        "PRINT_OPENING_BALANCE_UC_GL_15",
-        after={"category": category, "row_count": len(rows), "start_date": state["start_date"]},
-    )
-
-    return {
-        "print_status": "READY",
-        "form_code": "01-SĐĐK/TT99",
-        "circular_ref": "Thông tư 99/2025/TT-BTC",
-        "company_name": company.name,
-        "start_date": state["start_date"],
-        "category": category,
-        "category_title": UC_GL_15_CATEGORY_TITLES.get(category, category),
-        "printed_at": timezone.now().isoformat(),
-        "row_count": len(rows),
-        "rows": rows,
-        "total_debit": state["total_debit"],
-        "total_credit": state["total_credit"],
-        "balanced": state["balanced"],
-    }

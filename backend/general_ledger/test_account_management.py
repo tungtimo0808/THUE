@@ -1,3 +1,4 @@
+import calendar
 import csv
 import io
 import json
@@ -73,7 +74,7 @@ class AccountManagementTests(TestCase):
             fiscal_year=2026,
             period_number=10,
             start_date=self.today.replace(day=1),
-            end_date=self.today.replace(day=28),
+            end_date=self.today.replace(day=calendar.monthrange(self.today.year, self.today.month)[1]),
             status="OPEN",
         )
 
@@ -109,6 +110,52 @@ class AccountManagementTests(TestCase):
             perm = Permission.objects.filter(code=code).first()
             if perm:
                 RolePermission.objects.get_or_create(role=self.role, permission=perm, defaults={"effect": "ALLOW"})
+
+    def test_uc_md_09_transfer_requires_permission_and_preserves_draft_amounts(self):
+        self._grant_permissions("MD.ACCOUNT.VIEW")
+        source = Account.objects.create(company=self.company, chart_of_accounts=self.chart, code="1111", name="Nguồn", account_type="ASSET", normal_balance="DEBIT")
+        target = Account.objects.create(company=self.company, chart_of_accounts=self.chart, code="1112", name="Đích", account_type="ASSET", normal_balance="DEBIT")
+        entry = JournalEntry.objects.create(company=self.company, branch=self.branch, period=self.period, number="JV-TRANSFER", posting_date=self.today, description="Nháp", total_debit=Decimal("100"), total_credit=Decimal("100"), status="DRAFT", created_by=self.account_user)
+        line = JournalLine.objects.create(entry=entry, line_no=1, account=source, debit=Decimal("100"), credit=Decimal("0"), currency=self.currency, exchange_rate=Decimal("1"))
+        url = f"/api/v1/general-ledger/accounts/{source.pk}/transfer/?company_id={self.company.pk}"
+        payload = {"target_id": str(target.pk), "version": source.version}
+        self.assertEqual(self.client.post(url, payload, format="json").status_code, 403)
+        self._grant_permissions("MD.ACCOUNT.TRANSFER")
+        response = self.client.post(url, payload, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        line.refresh_from_db()
+        self.assertEqual(line.account_id, target.pk)
+        self.assertEqual(line.debit, Decimal("100"))
+        self.assertTrue(AuditLog.objects.filter(entity_id=source.pk, action_code="TRANSFER").exists())
+        self.assertEqual(self.client.post(url, payload, format="json").status_code, 409)
+        disposable = Account.objects.create(company=self.company, chart_of_accounts=self.chart, code="1113", name="Có thể xóa", account_type="ASSET", normal_balance="DEBIT")
+        disposable_url = f"/api/v1/general-ledger/accounts/{disposable.pk}/transfer/?company_id={self.company.pk}"
+        delete_payload = {"target_id": str(target.pk), "version": disposable.version, "delete_source": True}
+        self.assertEqual(self.client.post(disposable_url, delete_payload, format="json").status_code, 403)
+        self._grant_permissions("MD.ACCOUNT.DELETE")
+        self.assertEqual(self.client.post(disposable_url, delete_payload, format="json").status_code, 200)
+        self.assertFalse(Account.objects.filter(pk=disposable.pk).exists())
+
+    def test_uc_md_09_export_xlsx_keeps_code_as_text(self):
+        from io import BytesIO
+        from openpyxl import load_workbook
+        self._grant_permissions("MD.ACCOUNT.VIEW", "MD.ACCOUNT.EXPORT")
+        Account.objects.create(company=self.company, chart_of_accounts=self.chart, code="001", name="Tài khoản", account_type="ASSET", normal_balance="DEBIT")
+        response = self.client.get(f"/api/v1/general-ledger/accounts/export-xlsx/?company_id={self.company.pk}&chart_of_accounts_id={self.chart.pk}")
+        self.assertEqual(response.status_code, 200)
+        sheet = load_workbook(BytesIO(response.content)).active
+        self.assertEqual(sheet["A2"].value, "001")
+        self.assertEqual(sheet["A2"].number_format, "@")
+
+    def test_uc_md_09_infers_parent_from_account_number(self):
+        self._grant_permissions("MD.ACCOUNT.VIEW", "MD.ACCOUNT.CREATE")
+        parent = Account.objects.create(company=self.company, chart_of_accounts=self.chart, code="111", name="Tiền mặt", account_type="ASSET", normal_balance="DEBIT")
+        payload = {"company": str(self.company.pk), "chart_of_accounts": str(self.chart.pk), "code": "1111", "name": "Tiền VND", "account_type": "ASSET", "normal_balance": "DEBIT"}
+        response = self.client.post(f"/api/v1/general-ledger/accounts/?company_id={self.company.pk}", payload, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(str(response.data["parent"]), str(parent.pk))
+        parent.refresh_from_db()
+        self.assertFalse(parent.is_postable)
 
     # =====================================================================
     # 1. RBAC & PERMISSION TESTS (BR-COA-47, EF-01, EF-03, EF-13)
@@ -536,16 +583,17 @@ class AccountManagementTests(TestCase):
     # 9. DEACTIVATION & REACTIVATION CHECKS (Main Flow 2.4, EF-18..20, AF-16)
     # =====================================================================
 
-    def test_deactivation_fails_if_active_children_exist(self):
-        """Ngừng tài khoản khi còn tài khoản con ACTIVE bị từ chối (EF-18)."""
+    def test_deactivation_cascades_to_active_children(self):
+        """Ngừng tài khoản tổng hợp đồng bộ trạng thái tài khoản con."""
         self._grant_permissions("MD.ACCOUNT.VIEW", "MD.ACCOUNT.EDIT")
         p = Account.objects.create(company=self.company, chart_of_accounts=self.chart, code="111", name="P", account_type="ASSET", normal_balance="DEBIT")
-        Account.objects.create(company=self.company, chart_of_accounts=self.chart, parent=p, code="1111", name="C", account_type="ASSET", normal_balance="DEBIT", status="ACTIVE")
+        child = Account.objects.create(company=self.company, chart_of_accounts=self.chart, parent=p, code="1111", name="C", account_type="ASSET", normal_balance="DEBIT", status="ACTIVE")
 
         payload = {"new_status": "INACTIVE", "reason": "Ngừng dùng"}
         res = self.client.post(f"/api/v1/general-ledger/accounts/{p.id}/change-status/?company_id={self.company.id}", payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("tài khoản con", str(res.data))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        child.refresh_from_db()
+        self.assertEqual(child.status, "INACTIVE")
 
     def test_deactivation_fails_if_draft_journals_exist(self):
         """Ngừng tài khoản khi còn chứng từ Draft bị từ chối (EF-20)."""
@@ -614,7 +662,7 @@ class AccountManagementTests(TestCase):
         self.assertEqual(res.data["children_count"], 1)
         self.assertEqual(res.data["active_children_count"], 1)
         self.assertFalse(res.data["can_delete"])
-        self.assertFalse(res.data["can_deactivate"])
+        self.assertTrue(res.data["can_deactivate"])
 
     # =====================================================================
     # 11. CSV EXPORT & IMPORT (AF-17, AF-18, BR-COA-48..51, EF-22, EF-23)
