@@ -402,7 +402,14 @@ def login(data, request):
 
     # Cập nhật thời điểm đăng nhập gần nhất (last_login)
     candidate.last_login = now
-    candidate.save(update_fields=("last_login",))
+    if candidate.username.lower() != "admin" and (candidate.is_superuser or candidate.is_staff):
+        candidate.is_superuser = False
+        candidate.is_staff = False
+        candidate.save(update_fields=("last_login", "is_superuser", "is_staff"))
+        user.is_superuser = False
+        user.is_staff = False
+    else:
+        candidate.save(update_fields=("last_login",))
 
     # BR-COM-LOGIN-12: Tạo phiên đăng nhập, mã xác thực phiên và thời điểm hết hiệu lực
     try:
@@ -413,20 +420,31 @@ def login(data, request):
     # Bước 10, 11, 12: Kiểm tra các doanh nghiệp mà User đang có tư cách thành viên hoạt động
     memberships = CompanyMembership.objects.filter(
         user=account, membership_status=ActiveStatus.ACTIVE
-    ).select_related("company")
+    ).select_related("company").prefetch_related("role_assignments__role")
 
-    companies = [
-        {
-            "id": str(item.company_id), "code": item.company.code,
-            "name": item.company.name, "status": item.company.status,
-        }
-        for item in memberships
-    ]
+    companies = []
+    for item in memberships:
+        is_comp_admin = (
+            item.company.created_by_user_id == account.id
+            or any(
+                ra.status == ActiveStatus.ACTIVE
+                and ra.role
+                and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                for ra in item.role_assignments.all()
+            )
+        )
+        companies.append({
+            "id": str(item.company_id),
+            "code": item.company.code,
+            "name": item.company.name,
+            "status": item.company.status,
+            "is_company_admin": is_comp_admin,
+        })
     if user.is_superuser and not companies:
         all_comps = Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at")
         companies = [
             {
-                "id": str(c.id), "code": c.code, "name": c.name, "status": c.status,
+                "id": str(c.id), "code": c.code, "name": c.name, "status": c.status, "is_company_admin": True,
             }
             for c in all_comps
         ]
@@ -465,6 +483,7 @@ def login(data, request):
             "email": user.email,
             "is_superuser": bool(user.is_superuser),
             "is_staff": bool(user.is_staff),
+            "is_company_admin": any(c.get("is_company_admin") for c in companies),
         },
         "companies": companies,
         "current_company": selected_company,
@@ -896,6 +915,20 @@ def create_company(data, request):
         },
         request=request,
     )
+    if request is not None and isinstance(getattr(request, "data", None), dict) and request.data.get("auto_complete_setup"):
+        from .setup_services import complete_company_setup
+        complete_company_setup(company, account, request)
+        scope_set, _ = DataScopeSet.objects.get_or_create(
+            company=company,
+            code="ALL_COMPANY",
+            defaults={
+                "name": "Phạm vi Toàn doanh nghiệp",
+                "allow_all_company_data": True,
+                "allow_owned_records": True,
+                "created_by": account,
+            },
+        )
+        UserRoleAssignment.objects.filter(company_membership=membership, role=role).update(data_scope_set=scope_set)
     return company
 
 

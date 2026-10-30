@@ -70,8 +70,18 @@ def validate_receipt(attrs, instance=None):
         prefix = f"Dòng {index}"
         if not isinstance(line, dict) or not str(line.get("description", "")).strip():
             raise serializers.ValidationError({"receipt_details": f"{prefix}: Vui lòng nhập diễn giải."})
-        debit = Account.objects.filter(pk=line.get("debit_account"), company=company, status="ACTIVE", is_postable=True).first()
-        credit = Account.objects.filter(pk=line.get("credit_account"), company=company, status="ACTIVE", is_postable=True).first()
+        debit_ref = line.get("debit_account")
+        credit_ref = line.get("credit_account")
+        debit_code = str(line.get("debit_code") or "").strip()
+        credit_code = str(line.get("credit_code") or "").strip()
+        debit = (Account.objects.filter(company=company, code=debit_code, status="ACTIVE", is_postable=True).first() if debit_code else None) or Account.objects.filter(pk=debit_ref, company=company, status="ACTIVE", is_postable=True).first()
+        credit = (Account.objects.filter(company=company, code=credit_code, status="ACTIVE", is_postable=True).first() if credit_code else None) or Account.objects.filter(pk=credit_ref, company=company, status="ACTIVE", is_postable=True).first()
+        if debit:
+            line["debit_account"] = str(debit.id)
+            line["debit_code"] = debit.code
+        if credit:
+            line["credit_account"] = str(credit.id)
+            line["credit_code"] = credit.code
         if not debit or not debit.code.startswith("111"):
             raise serializers.ValidationError({"receipt_details": f"{prefix}: TK Nợ phải là tài khoản tiền mặt chi tiết thuộc 111."})
         if not credit or credit.pk == debit.pk:

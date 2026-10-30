@@ -506,9 +506,11 @@ class CompanyBootstrapSerializer(serializers.Serializer):
         # EF-03, EF-05, BR04: Chuẩn hóa khoảng trắng và kiểm tra 10 số hoặc 13 số
         clean_value = re.sub(r"\s+", "", str(value or ""))
         if not clean_value:
-            raise serializers.ValidationError("Vui lòng nhập Mã số thuế.")
+            raise serializers.ValidationError("Vui lòng nhập Mã số thuế của doanh nghiệp.")
         if not re.fullmatch(r"^\d{10}(?:-\d{3})?$|^\d{13}$", clean_value):
-            raise serializers.ValidationError("Mã số thuế không đúng định dạng.")
+            raise serializers.ValidationError(
+                "Mã số thuế không đúng định dạng. Vui lòng nhập đúng 10 chữ số (hoặc 13 chữ số đối với chi nhánh, ví dụ: 0101234567)."
+            )
         return clean_value
 
     def validate_phone(self, value):

@@ -20,7 +20,7 @@ def incoming(tx):return tx.transaction_type in {"RECEIPT","INTEREST","OTHER_IN"}
 @transaction.atomic
 def submit(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk)
-    if tx.status not in {"DRAFT","REJECTED"}:raise ValidationError("Trạng thái không cho phép gửi duyệt.")
+    if tx.status=="POSTED":raise ValidationError("Giao dịch đã được ghi sổ.")
     raw=r.data.get("workflow_snapshot") or {}
     try:levels=max(1,min(int(raw.get("levels",1)),20))
     except (TypeError,ValueError):raise ValidationError("Số cấp phê duyệt không hợp lệ.")
@@ -173,7 +173,7 @@ def reverse(tx,r):
     if models.BankReconciliationItem.objects.filter(transaction=tx).exists():raise ValidationError("Chứng từ thuộc kỳ đối chiếu đã xác nhận; không thể đảo.")
     account=models.AccountProfile.objects.select_for_update().get(pk=tx.account_id);new=account.balance-tx.amount if incoming(tx) else account.balance+tx.amount
     if new<0 and not account.allow_overdraft:raise ValidationError("Đảo giao dịch sẽ làm số dư âm.")
-    account.balance=new;account.save(update_fields=("balance","updated_at"));tx.status="REVERSED";tx.save(update_fields=("status","updated_at"));audit(r,tx,"REVERSE",after={"balance":str(new)},reason=reason);return tx
+    account.balance=new;account.save(update_fields=("balance","updated_at"));tx.status="DRAFT";tx.balance_applied=False;tx.save(update_fields=("status","balance_applied","updated_at"));audit(r,tx,"REVERSE",after={"balance":str(new)},reason=reason);return tx
 @transaction.atomic
 def post_gl(tx,r):
     tx=models.BankTransaction.objects.select_for_update().get(pk=tx.pk);ref=r.data.get("gl_reference","").strip()

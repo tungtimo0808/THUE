@@ -19,6 +19,7 @@ import {
 import { money, kinds, type Transaction } from "./data";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import {
   createApiWriter,
   fetchDashboardConfigUcRpt01,
@@ -31,6 +32,7 @@ export type DashboardHref = (path: string, extra?: Record<string, string>) => st
 
 interface MisaDashboardOverviewProps {
   items: Transaction[];
+  companyId?: string;
   companyName?: string;
   period?: string;
   href: DashboardHref;
@@ -54,16 +56,58 @@ function fmtPct(val: unknown): string | null {
 
 export function MisaDashboardOverview({
   items,
+  companyId: propCompanyId,
   companyName = "Doanh nghiệp",
   period: propPeriod,
   href,
   notify,
 }: MisaDashboardOverviewProps) {
-  const { token, companyId } = useApiSession();
+  const { token, companyId, companies: sessionCompanies } = useApiSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const urlPeriod = searchParams.get("period") || propPeriod || "2026-09";
+  const effectiveToken = useMemo(() => {
+    if (token) return token;
+    try {
+      const rawSession = localStorage.getItem("erp_api_session");
+      if (rawSession) {
+        const parsed = JSON.parse(rawSession);
+        if (parsed?.token || parsed?.access) return String(parsed.token || parsed.access);
+      }
+      return localStorage.getItem("erp_token") || "";
+    } catch {
+      return "";
+    }
+  }, [token]);
+
+  const effectiveCompanyId = useMemo(() => {
+    const isUuid = (v?: string | null) =>
+      Boolean(v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim()));
+    if (isUuid(propCompanyId)) return propCompanyId!.trim();
+    if (isUuid(companyId)) return companyId.trim();
+    const urlComp = searchParams.get("company");
+    if (isUuid(urlComp)) return urlComp!.trim();
+    if (sessionCompanies?.length && isUuid(sessionCompanies[0]?.id)) {
+      return sessionCompanies[0].id.trim();
+    }
+    try {
+      const storedComp = localStorage.getItem("erp_company_id");
+      if (isUuid(storedComp)) return storedComp!.trim();
+      const rawSession = localStorage.getItem("erp_api_session");
+      if (rawSession) {
+        const parsed = JSON.parse(rawSession);
+        if (isUuid(parsed?.companyId)) return String(parsed.companyId).trim();
+        if (Array.isArray(parsed?.companies) && isUuid(parsed.companies[0]?.id)) {
+          return String(parsed.companies[0].id).trim();
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return "";
+  }, [propCompanyId, companyId, searchParams, sessionCompanies]);
+
+  const urlPeriod = searchParams.get("period") || propPeriod || "2026-12";
   const [selectedPeriod, setSelectedPeriod] = useState<string>(urlPeriod);
   const [selectedBranchId, setSelectedBranchId] = useState<string>(searchParams.get("branch_id") || "");
   const [comparisonMode, setComparisonMode] = useState<string>("PREVIOUS_PERIOD");
@@ -93,9 +137,9 @@ export function MisaDashboardOverview({
   }, [urlPeriod]);
 
   const writer = useMemo(() => {
-    if (!token || !companyId) return null;
-    return createApiWriter(companyId, (path, init) => request(path, token, init));
-  }, [token, companyId]);
+    if (!effectiveToken || !effectiveCompanyId) return null;
+    return createApiWriter(effectiveCompanyId, (path, init) => request(path, effectiveToken, init));
+  }, [effectiveToken, effectiveCompanyId]);
 
   // Load config (periods, branches, widget catalog) when company changes
   useEffect(() => {
@@ -105,11 +149,16 @@ export function MisaDashboardOverview({
       .then((res) => {
         if (!active) return;
         setConfigData(res);
-        if (Array.isArray(res?.periods) && res.periods.length > 0) {
-          const exists = res.periods.some((p: any) => p.period_code === selectedPeriod);
+        const rawList = Array.isArray(res?.available_periods)
+          ? res.available_periods
+          : Array.isArray(res?.periods)
+            ? res.periods
+            : [];
+        if (rawList.length > 0 && selectedPeriod !== "2026") {
+          const exists = rawList.some((p: any) => (p.code || p.period_code) === selectedPeriod);
           if (!exists) {
-            const fallback = res.default_period_code || res.periods[0].period_code;
-            if (fallback) setSelectedPeriod(fallback);
+            const fallback = res.default_period_code || rawList[0].code || rawList[0].period_code;
+            if (fallback) setSelectedPeriod(String(fallback));
           }
         }
       })
@@ -206,16 +255,37 @@ export function MisaDashboardOverview({
   };
 
   const periodsList = useMemo(() => {
+    const formatPeriodName = (code: string, rawName?: string): string => {
+      const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(code);
+      if (m) return `Tháng ${m[2]}/${m[1]}`;
+      const q = /^(\d{4})-Q([1-4])$/i.exec(code);
+      if (q) return `Quý ${q[2]}/${q[1]}`;
+      if (/^\d{4}$/.test(code)) return `Năm tài chính ${code}`;
+      return rawName || `Kỳ ${code}`;
+    };
+
     const rawPeriods: any[] = configData?.available_periods || configData?.periods || [];
-    const normalized = rawPeriods.map((p) => ({
-      period_code: String(p.code || p.period_code || ""),
-      name: String(p.name || `Kỳ ${p.code || p.period_code}`),
-      status: String(p.status || "OPEN"),
-    }));
+    const normalized = rawPeriods.map((p) => {
+      const code = String(p.code || p.period_code || "").trim();
+      return {
+        period_code: code,
+        name: formatPeriodName(code, p.name),
+        status: String(p.status || "OPEN"),
+      };
+    });
     const defaults = [
-      { period_code: "2026-08", name: "Tháng 08/2026", status: "OPEN" },
-      { period_code: "2026-09", name: "Tháng 09/2026", status: "OPEN" },
       { period_code: "2026-12", name: "Tháng 12/2026", status: "OPEN" },
+      { period_code: "2026-11", name: "Tháng 11/2026", status: "OPEN" },
+      { period_code: "2026-10", name: "Tháng 10/2026", status: "OPEN" },
+      { period_code: "2026-09", name: "Tháng 09/2026", status: "OPEN" },
+      { period_code: "2026-08", name: "Tháng 08/2026", status: "OPEN" },
+      { period_code: "2026-07", name: "Tháng 07/2026", status: "OPEN" },
+      { period_code: "2026-06", name: "Tháng 06/2026", status: "OPEN" },
+      { period_code: "2026-05", name: "Tháng 05/2026", status: "OPEN" },
+      { period_code: "2026-04", name: "Tháng 04/2026", status: "OPEN" },
+      { period_code: "2026-03", name: "Tháng 03/2026", status: "OPEN" },
+      { period_code: "2026-02", name: "Tháng 02/2026", status: "OPEN" },
+      { period_code: "2026-01", name: "Tháng 01/2026", status: "OPEN" },
       { period_code: "2026", name: "Năm tài chính 2026", status: "OPEN" },
     ];
     const map = new Map<string, { period_code: string; name: string; status: string }>();
@@ -226,7 +296,11 @@ export function MisaDashboardOverview({
       if (!map.has(d.period_code)) map.set(d.period_code, d);
     }
     if (selectedPeriod && !map.has(selectedPeriod)) {
-      map.set(selectedPeriod, { period_code: selectedPeriod, name: `Kỳ ${selectedPeriod}`, status: "OPEN" });
+      map.set(selectedPeriod, {
+        period_code: selectedPeriod,
+        name: formatPeriodName(selectedPeriod),
+        status: "OPEN",
+      });
     }
     return Array.from(map.values());
   }, [configData, selectedPeriod]);
@@ -239,20 +313,24 @@ export function MisaDashboardOverview({
   const w02 = widgets["DASH-02"] || {};
   const w03 = widgets["DASH-03"] || {};
   const w04 = widgets["DASH-04"] || {};
+  const w07 = widgets["DASH-07"] || {};
+  const w08 = widgets["DASH-08"] || {};
+  const w09 = widgets["DASH-09"] || {};
   const dash01 = w01.data || {};
   const dash02 = w02.data || {};
   const dash03 = w03.data || {};
   const dash04 = w04.data || {};
   const dash05 = widgets["DASH-05"]?.data || {};
   const dash06 = widgets["DASH-06"]?.data || {};
-  const dash07 = widgets["DASH-07"]?.data || {};
-  const dash08 = widgets["DASH-08"]?.data || {};
-  const dash09 = widgets["DASH-09"]?.data || {};
+  const dash07 = w07.data || {};
+  const dash08 = w08.data || {};
+  const dash09 = w09.data || {};
   const dash10 = widgets["DASH-10"]?.data || {};
   const dash11 = widgets["DASH-11"]?.data || {};
   const dash12 = widgets["DASH-12"]?.data || {};
 
-  // Offline preview fallback ONLY when unauthenticated (!writer), clearly marked as DEMO per BR-RPT-DASH-03/04
+  // Offline preview fallback ONLY when unauthenticated (!writer)
+  const hasApiSession = Boolean(writer);
   const isOfficialApiConnected = Boolean(writer && overviewData);
   const postedLocal = items.filter((t) => t.status === "posted");
   const pendingLocal = items.filter((t) => t.status === "pending");
@@ -261,14 +339,14 @@ export function MisaDashboardOverview({
     {
       code: "DASH-01",
       label: "Doanh thu bán hàng",
-      status: w01.status || (isOfficialApiConnected ? "NO_DATA" : "DEMO"),
-      value: isOfficialApiConnected
+      status: w01.status || (hasApiSession ? "NO_DATA" : "DEMO"),
+      value: hasApiSession
         ? Number(w01.value ?? dash01.revenue_net ?? dash01.net_revenue ?? 0)
         : postedLocal.filter((t) => t.kind === "sale").reduce((s, t) => s + t.amount, 0),
-      subtext: isOfficialApiConnected
+      subtext: hasApiSession
         ? `Gộp: ${fmtMoney(dash01.revenue_gross ?? dash01.gross_revenue ?? 0)} · Giảm trừ: ${fmtMoney(dash01.revenue_deduction ?? dash01.deduction_amount ?? 0)}`
         : "Chứng từ bán hàng đã ghi sổ",
-      deltaPct: fmtPct(w01.comparison?.change_percent ?? dash01.delta_pct),
+      deltaPct: fmtPct(w01.comparison?.delta_percent ?? w01.comparison?.change_percent ?? dash01.delta_pct),
       icon: ArrowUpRight,
       tone: "blue",
       isCount: false,
@@ -277,14 +355,14 @@ export function MisaDashboardOverview({
     {
       code: "DASH-02",
       label: "Giá trị mua hàng",
-      status: w02.status || (isOfficialApiConnected ? "NO_DATA" : "DEMO"),
-      value: isOfficialApiConnected
+      status: w02.status || (hasApiSession ? "NO_DATA" : "DEMO"),
+      value: hasApiSession
         ? Number(w02.value ?? dash02.purchase_net_amount ?? dash02.net_purchase_value ?? 0)
         : postedLocal.filter((t) => t.kind === "purchase").reduce((s, t) => s + t.amount, 0),
-      subtext: isOfficialApiConnected
+      subtext: hasApiSession
         ? `${dash02.document_count ?? 0} chứng từ · Giảm trừ: ${fmtMoney(dash02.purchase_return_discount_amount ?? dash02.return_allowance_value ?? 0)}`
         : "Chứng từ mua hàng đã ghi sổ",
-      deltaPct: fmtPct(w02.comparison?.change_percent ?? dash02.delta_pct),
+      deltaPct: fmtPct(w02.comparison?.delta_percent ?? w02.comparison?.change_percent ?? dash02.delta_pct),
       icon: ArrowDownLeft,
       tone: "orange",
       isCount: false,
@@ -293,14 +371,14 @@ export function MisaDashboardOverview({
     {
       code: "DASH-03",
       label: "Tổng tiền đã thu",
-      status: w03.status || (isOfficialApiConnected ? "NO_DATA" : "DEMO"),
-      value: isOfficialApiConnected
-        ? Number(w03.value ?? dash03.cash_collected_external_amount ?? dash03.total_cash_inflow ?? 0)
+      status: w03.status || (hasApiSession ? "NO_DATA" : "DEMO"),
+      value: hasApiSession
+        ? Number(w03.value ?? dash03.receipt_total_external ?? dash03.cash_collected_external_amount ?? dash03.total_cash_inflow ?? 0)
         : postedLocal.filter((t) => t.kind === "receipt" || t.kind === "bank").reduce((s, t) => s + t.amount, 0),
-      subtext: isOfficialApiConnected
+      subtext: hasApiSession
         ? `TM: ${fmtMoney(dash03.cash_receipt_amount ?? dash03.cash_inflow ?? 0)} · NH: ${fmtMoney(dash03.bank_receipt_amount ?? dash03.bank_inflow ?? 0)}`
         : "Tiền mặt và tiền gửi đã ghi sổ",
-      deltaPct: fmtPct(w03.comparison?.change_percent ?? dash03.delta_pct),
+      deltaPct: fmtPct(w03.comparison?.delta_percent ?? w03.comparison?.change_percent ?? dash03.delta_pct),
       icon: Wallet,
       tone: "teal",
       isCount: false,
@@ -309,11 +387,11 @@ export function MisaDashboardOverview({
     {
       code: "DASH-04",
       label: "Chứng từ chờ xử lý",
-      status: w04.status || (isOfficialApiConnected ? "NO_DATA" : "DEMO"),
-      value: isOfficialApiConnected
+      status: w04.status || (hasApiSession ? "NO_DATA" : "DEMO"),
+      value: hasApiSession
         ? Number(w04.value ?? dash04.pending_company_approval_count ?? dash04.total_pending_count ?? 0)
         : pendingLocal.length,
-      subtext: isOfficialApiConnected
+      subtext: hasApiSession
         ? `Chờ duyệt: ${dash04.pending_company_approval_count ?? dash04.pending_approval_count ?? 0} · Chờ ghi sổ: ${dash04.approved_unposted_count ?? 0}`
         : "Cần kiểm tra và xác nhận",
       deltaPct: null,
@@ -325,7 +403,7 @@ export function MisaDashboardOverview({
   ];
 
   const recentDocsList: any[] = useMemo(() => {
-    const raw: any[] = isOfficialApiConnected
+    const raw: any[] = hasApiSession
       ? dash12.items || []
       : items.slice(0, 10).map((t) => ({
           document_id: t.id,
@@ -343,10 +421,28 @@ export function MisaDashboardOverview({
       if (recentStatusFilter && doc.status !== recentStatusFilter) return false;
       return true;
     });
-  }, [isOfficialApiConnected, dash12.items, items, recentModuleFilter, recentStatusFilter]);
+  }, [hasApiSession, dash12.items, items, recentModuleFilter, recentStatusFilter]);
 
-  const cashFlowSeries: any[] = dash05.series || [];
+  const cashFlowSeries: any[] = useMemo(() => {
+    const raw: any[] = dash05.series || [];
+    const active = raw.filter(
+      (pt: any) => Number(pt.inflow_amount ?? pt.inflow ?? 0) !== 0 || Number(pt.outflow_amount ?? pt.outflow ?? 0) !== 0,
+    );
+    return active.length > 0 ? active : raw;
+  }, [dash05.series]);
   const profitSeries: any[] = dash06.series || [];
+  const arRows: any[] =
+    (Array.isArray(dash07.top_debtors) && dash07.top_debtors.length ? dash07.top_debtors : dash07.items) || [];
+  const apRows: any[] =
+    (Array.isArray(dash08.top_creditors) && dash08.top_creditors.length ? dash08.top_creditors : dash08.items) || [];
+  const lowStockItems: any[] =
+    (Array.isArray(dash09.below_minimum_items) && dash09.below_minimum_items.length
+      ? dash09.below_minimum_items
+      : dash09.low_stock_items) || [];
+  const inventorySummaryRows: any[] =
+    (Array.isArray(dash09.top_items) && dash09.top_items.length
+      ? dash09.top_items
+      : dash09.by_warehouse || dash09.warehouse_summary) || [];
   const filterInfo = overviewData?.filters || overviewData?.context || {};
 
   return (
@@ -357,150 +453,162 @@ export function MisaDashboardOverview({
         style={{
           padding: "12px 16px",
           display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
+          flexDirection: "column",
+          gap: 10,
           borderLeft: "4px solid #0d9488",
+          overflow: "visible",
+          position: "relative",
+          zIndex: 40,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <strong style={{ fontSize: 15, color: "#0f172a" }}>Tổng quan hoạt động (UC-RPT-01)</strong>
-          <span
-            style={{
-              fontSize: 11.5,
-              padding: "2px 8px",
-              borderRadius: 999,
-              fontWeight: 600,
-              background: isOfficialApiConnected ? "#ecfdf5" : "#fff7ed",
-              color: isOfficialApiConnected ? "#047857" : "#c2410c",
-              border: `1px solid ${isOfficialApiConnected ? "#a7f3d0" : "#fed7aa"}`,
-            }}
-          >
-            {isOfficialApiConnected
-              ? `Số liệu chính thức (${overviewData?.cache_hit ? "Cache" : "Trực tiếp"})`
-              : "Chế độ xem thử ngoại tuyến (DEMO)"}
-          </span>
-          {filterInfo.from_date && (
-            <span style={{ fontSize: 12, color: "#475569" }}>
-              Kỳ: <strong>{filterInfo.fiscal_period_code || selectedPeriod}</strong> ({filterInfo.from_date} →{" "}
-              {filterInfo.to_date})
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <strong style={{ fontSize: 15, color: "#0f172a" }}>Tổng quan tình hình tài chính &amp; hoạt động</strong>
+            <span
+              style={{
+                fontSize: 11.5,
+                padding: "2px 10px",
+                borderRadius: 999,
+                fontWeight: 600,
+                background: hasApiSession ? "#ecfdf5" : "#fff7ed",
+                color: hasApiSession ? "#047857" : "#c2410c",
+                border: `1px solid ${hasApiSession ? "#a7f3d0" : "#fed7aa"}`,
+              }}
+            >
+              {isOfficialApiConnected
+                ? "Đã kết nối Sổ cái trực tuyến"
+                : hasApiSession
+                  ? "Đang đồng bộ Sổ cái…"
+                  : "Chế độ xem thử ngoại tuyến"}
             </span>
-          )}
+            {filterInfo.from_date && (
+              <span style={{ fontSize: 12, color: "#475569" }}>
+                Kỳ: <strong>{selectedPeriod || filterInfo.fiscal_period_code}</strong> ({filterInfo.from_date} →{" "}
+                {filterInfo.to_date})
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              className="ref-button teal"
+              disabled={loading || refreshing}
+              onClick={() => void loadDashboardOverview({ forceRefresh: true })}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0, borderRadius: 999 }}
+            >
+              <RefreshCw size={14} className={loading || refreshing ? "spin" : ""} />
+              <span>{refreshing ? "Đang làm mới…" : "Làm mới"}</span>
+            </button>
+
+            <Link
+              to={href("/reports")}
+              className="ref-button"
+              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0, borderRadius: 999 }}
+            >
+              <span>Trung tâm báo cáo</span>
+              <ExternalLink size={13} />
+            </Link>
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginLeft: "auto" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
-            <Calendar size={14} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
+            <Calendar size={14} style={{ color: "#64748b" }} />
             <span>Kỳ:</span>
-            <select
-              aria-label="Chọn kỳ báo cáo Dashboard"
+            <MisaDropdownSelect
+              ariaLabel="Chọn kỳ báo cáo Dashboard"
+              title="Kỳ báo cáo kế toán"
               value={selectedPeriod}
-              onChange={(e) => handlePeriodChange(e.target.value)}
-              style={{
-                padding: "4px 8px",
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
+              onChange={(val) => handlePeriodChange(val)}
+              minWidth={230}
+              buttonStyle={{
+                height: 31,
+                padding: "0 12px",
+                borderRadius: 999,
                 fontSize: 12.5,
-                background: "#fff",
+                minWidth: 195,
+              }}
+              popoverStyle={{ borderRadius: 12, padding: 6 }}
+              options={periodsList.map((p) => ({
+                value: p.period_code,
+                label: `${p.name} (${p.period_code})`,
+              }))}
+            />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
+            <Building2 size={14} style={{ color: "#64748b" }} />
+            <span>Đơn vị:</span>
+            <MisaDropdownSelect
+              ariaLabel="Chọn đơn vị/chi nhánh"
+              title="Đơn vị / Chi nhánh"
+              value={selectedBranchId}
+              onChange={(val) => handleBranchChange(val)}
+              minWidth={280}
+              buttonStyle={{
+                height: 31,
+                padding: "0 12px",
+                borderRadius: 999,
+                fontSize: 12.5,
                 minWidth: 230,
                 maxWidth: 320,
               }}
-            >
-              {periodsList.map((p) => (
-                <option key={p.period_code} value={p.period_code}>
-                  {p.name} ({p.period_code})
-                </option>
-              ))}
-            </select>
-          </label>
+              popoverStyle={{ borderRadius: 12, padding: 6 }}
+              options={[
+                { value: "", label: `Toàn doanh nghiệp (${companyName})` },
+                ...branchesList.map((b) => ({
+                  value: b.id,
+                  label: `${b.code} - ${b.name}`,
+                })),
+              ]}
+            />
+          </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
-            <Building2 size={14} />
-            <span>Đơn vị:</span>
-            <select
-              aria-label="Chọn đơn vị/chi nhánh"
-              value={selectedBranchId}
-              onChange={(e) => handleBranchChange(e.target.value)}
-              style={{
-                padding: "4px 8px",
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
-                fontSize: 12.5,
-                background: "#fff",
-                maxWidth: 200,
-                textOverflow: "ellipsis",
-              }}
-            >
-              <option value="">Toàn doanh nghiệp ({companyName})</option>
-              {branchesList.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.code} - {b.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <span>So sánh:</span>
-            <select
-              aria-label="Chế độ so sánh kỳ"
+            <MisaDropdownSelect
+              ariaLabel="Chế độ so sánh kỳ"
+              title="Chế độ so sánh"
               value={comparisonMode}
-              onChange={(e) => setComparisonMode(e.target.value)}
-              style={{
-                padding: "4px 8px",
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
+              onChange={(val) => setComparisonMode(val)}
+              minWidth={190}
+              buttonStyle={{
+                height: 31,
+                padding: "0 12px",
+                borderRadius: 999,
                 fontSize: 12.5,
-                background: "#fff",
-                maxWidth: 150,
               }}
-            >
-              <option value="PREVIOUS_PERIOD">Kỳ liền trước</option>
-              <option value="SAME_PERIOD_LAST_YEAR">Cùng kỳ năm trước</option>
-              <option value="NONE">Không so sánh</option>
-            </select>
-          </label>
+              popoverStyle={{ borderRadius: 12, padding: 6 }}
+              options={[
+                { value: "PREVIOUS_PERIOD", label: "Kỳ liền trước" },
+                { value: "SAME_PERIOD_LAST_YEAR", label: "Cùng kỳ năm trước" },
+                { value: "NONE", label: "Không so sánh" },
+              ]}
+            />
+          </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <span>Nguồn DT:</span>
-            <select
-              aria-label="Nguồn tính doanh thu"
+            <MisaDropdownSelect
+              ariaLabel="Nguồn tính doanh thu"
+              title="Nguồn tính doanh thu"
               value={revenueBasis}
-              onChange={(e) => setRevenueBasis(e.target.value)}
-              style={{
-                padding: "4px 8px",
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
+              onChange={(val) => setRevenueBasis(val)}
+              minWidth={210}
+              buttonStyle={{
+                height: 31,
+                padding: "0 12px",
+                borderRadius: 999,
                 fontSize: 12.5,
-                background: "#fff",
-                maxWidth: 155,
               }}
-            >
-              <option value="GL">Sổ cái (TK 511/521)</option>
-              <option value="SAL">Chứng từ bán hàng (SAL)</option>
-            </select>
-          </label>
-
-          <button
-            type="button"
-            className="ref-button teal"
-            disabled={loading || refreshing}
-            onClick={() => void loadDashboardOverview({ forceRefresh: true })}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0, borderRadius: 6 }}
-          >
-            <RefreshCw size={14} className={loading || refreshing ? "spin" : ""} />
-            <span>{refreshing ? "Đang làm mới…" : "Làm mới"}</span>
-          </button>
-
-          <Link
-            to={href("/reports")}
-            className="ref-button"
-            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0, borderRadius: 6 }}
-          >
-            <span>Trung tâm báo cáo</span>
-            <ExternalLink size={13} />
-          </Link>
+              popoverStyle={{ borderRadius: 12, padding: 6 }}
+              options={[
+                { value: "GL", label: "Sổ cái (TK 511/521)" },
+                { value: "SAL", label: "Chứng từ bán hàng (SAL)" },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
@@ -571,8 +679,8 @@ export function MisaDashboardOverview({
               onClick={() => void openMetricDrilldown(card.code)}
             >
               <div className="metric-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
-                  {card.code} · {card.label}
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b" }}>
+                  {card.label}
                 </span>
                 <span className={`metric-icon ${card.tone}`}>
                   <Icon size={18} />
@@ -591,7 +699,7 @@ export function MisaDashboardOverview({
                 <div style={{ margin: "10px 0 6px", display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                   <strong style={{ fontSize: 22, color: "#0f172a" }}>
                     {card.isCount
-                      ? String(card.value).padStart(2, "0")
+                      ? `${Number(card.value || 0)} chứng từ`
                       : fmtMoney(card.value)}
                   </strong>
                   {card.deltaPct && (
@@ -617,12 +725,15 @@ export function MisaDashboardOverview({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  gap: 8,
                   fontSize: 11.5,
                   color: "#64748b",
                 }}
               >
-                <span>{card.subtext}</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>Chi tiết →</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={card.subtext}>
+                  {card.subtext}
+                </span>
+                <span style={{ color: "#0284c7", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>Chi tiết →</span>
               </div>
             </article>
           );
@@ -641,21 +752,25 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
             <div>
-              <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>DASH-05 · Biểu đồ dòng tiền thu – chi</h2>
+              <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>Biểu đồ dòng tiền thu – chi</h2>
               <p style={{ fontSize: 12, color: "#64748b", margin: "2px 0 0" }}>
                 Tổng hợp Tiền mặt (111) và Tiền gửi ngân hàng (112), đã loại trừ chuyển quỹ nội bộ
               </p>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
               <button
                 type="button"
                 className="ref-button"
-                style={{ fontSize: 11.5, padding: "3px 8px" }}
+                style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 999, whiteSpace: "nowrap" }}
                 onClick={() => void openMetricDrilldown("DASH-05")}
               >
                 Truy vết
               </button>
-              <Link className="text-link" to={href("/cash/transactions")} style={{ fontSize: 12 }}>
+              <Link
+                className="text-link"
+                to={href("/cash/transactions")}
+                style={{ fontSize: 12, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 3 }}
+              >
                 Sổ quỹ <ArrowUpRight size={14} />
               </Link>
             </div>
@@ -732,7 +847,8 @@ export function MisaDashboardOverview({
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: "center", color: "#64748b", fontSize: 12.5 }}>
-              Chưa có phát sinh dòng tiền thu – chi trong kỳ đã chọn (Số dư: 0 ₫).
+              Chưa có phát sinh dòng tiền thu – chi trong kỳ đã chọn (Số dư hiện tại:{" "}
+              {fmtMoney(dash05.closing_cash_balance ?? dash05.closing_balance ?? 0)}).
             </div>
           )}
         </section>
@@ -741,21 +857,25 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
             <div>
-              <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>DASH-06 · Doanh thu, chi phí và lợi nhuận</h2>
+              <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>Doanh thu, chi phí và lợi nhuận</h2>
               <p style={{ fontSize: 12, color: "#64748b", margin: "2px 0 0" }}>
                 Tổng hợp từ Sổ cái TK loại 5, 6, 7, 8 theo Thông tư 99/2025/TT-BTC
               </p>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
               <button
                 type="button"
                 className="ref-button"
-                style={{ fontSize: 11.5, padding: "3px 8px" }}
+                style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 999, whiteSpace: "nowrap" }}
                 onClick={() => void openMetricDrilldown("DASH-06")}
               >
                 Truy vết
               </button>
-              <Link className="text-link" to={href("/reports")} style={{ fontSize: 12 }}>
+              <Link
+                className="text-link"
+                to={href("/reports")}
+                style={{ fontSize: 12, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 3 }}
+              >
                 B02-DN <ArrowUpRight size={14} />
               </Link>
             </div>
@@ -797,29 +917,29 @@ export function MisaDashboardOverview({
             <div>
               <span style={{ color: "#64748b", display: "block" }}>Doanh thu thuần</span>
               <strong style={{ color: "#0284c7" }}>
-                {fmtMoney(dash06.revenue_net ?? dash06.total_revenue ?? 0)}
+                {fmtMoney(dash06.net_revenue ?? dash06.revenue_net ?? dash06.total_revenue ?? 0)}
               </strong>
             </div>
             <div>
               <span style={{ color: "#64748b", display: "block" }}>Giá vốn (632)</span>
               <strong style={{ color: "#d97706" }}>
-                {fmtMoney(dash06.cogs_amount ?? dash06.total_cogs ?? 0)}
+                {fmtMoney(dash06.cogs ?? dash06.cogs_amount ?? dash06.total_cogs ?? 0)}
               </strong>
             </div>
             <div>
               <span style={{ color: "#64748b", display: "block" }}>Tổng chi phí</span>
               <strong style={{ color: "#dc2626" }}>
-                {fmtMoney(dash06.expense_total ?? dash06.operating_expense ?? 0)}
+                {fmtMoney(dash06.total_expense ?? dash06.expense_total ?? dash06.operating_expense ?? 0)}
               </strong>
             </div>
             <div>
               <span style={{ color: "#64748b", display: "block" }}>Lợi nhuận thuần</span>
               <strong
                 style={{
-                  color: Number(dash06.net_profit ?? dash06.profit_before_tax ?? 0) >= 0 ? "#059669" : "#dc2626",
+                  color: Number(dash06.net_profit ?? dash06.profit_after_tax ?? dash06.profit_before_tax ?? 0) >= 0 ? "#059669" : "#dc2626",
                 }}
               >
-                {fmtMoney(dash06.net_profit ?? dash06.profit_before_tax ?? 0)}
+                {fmtMoney(dash06.net_profit ?? dash06.profit_after_tax ?? dash06.profit_before_tax ?? 0)}
               </strong>
             </div>
           </div>
@@ -836,26 +956,29 @@ export function MisaDashboardOverview({
                   </tr>
                 </thead>
                 <tbody>
-                  {profitSeries.map((pt: any) => (
-                    <tr key={pt.bucket_key || pt.bucket}>
-                      <td>{pt.label || pt.bucket_key || pt.bucket}</td>
-                      <td className="numeric" style={{ color: "#0284c7" }}>
-                        {fmtMoney(pt.revenue)}
-                      </td>
-                      <td className="numeric" style={{ color: "#d97706" }}>
-                        {fmtMoney(pt.expense)}
-                      </td>
-                      <td
-                        className="numeric"
-                        style={{
-                          fontWeight: 600,
-                          color: Number(pt.profit ?? 0) >= 0 ? "#059669" : "#dc2626",
-                        }}
-                      >
-                        {fmtMoney(pt.profit)}
-                      </td>
-                    </tr>
-                  ))}
+                  {profitSeries.map((pt: any) => {
+                    const rowProfit = pt.profit_after_tax ?? pt.net_profit ?? pt.profit ?? 0;
+                    return (
+                      <tr key={pt.period_key || pt.bucket_key || pt.bucket}>
+                        <td>{pt.label || pt.period_key || pt.bucket_key || pt.bucket}</td>
+                        <td className="numeric" style={{ color: "#0284c7" }}>
+                          {fmtMoney(pt.net_revenue ?? pt.revenue)}
+                        </td>
+                        <td className="numeric" style={{ color: "#d97706" }}>
+                          {fmtMoney(pt.total_expense ?? pt.expense)}
+                        </td>
+                        <td
+                          className="numeric"
+                          style={{
+                            fontWeight: 600,
+                            color: Number(rowProfit) >= 0 ? "#059669" : "#dc2626",
+                          }}
+                        >
+                          {fmtMoney(rowProfit)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -879,20 +1002,21 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>DASH-07 · Công nợ phải thu khách hàng</h2>
+              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Công nợ phải thu khách hàng</h2>
               <p style={{ fontSize: 11.5, color: "#64748b", margin: "2px 0 0" }}>
-                Tổng phải thu: <strong>{fmtMoney(dash07.receivable_total ?? dash07.total_receivable ?? 0)}</strong> ·
-                Quá hạn: <strong style={{ color: "#dc2626" }}>{fmtMoney(dash07.overdue_amount ?? 0)}</strong> (
+                Tổng phải thu:{" "}
+                <strong>{fmtMoney(dash07.ar_total_receivable ?? dash07.receivable_total ?? dash07.total_receivable ?? w07.value ?? 0)}</strong> ·
+                Quá hạn: <strong style={{ color: "#dc2626" }}>{fmtMoney(dash07.ar_overdue_amount ?? dash07.overdue_amount ?? 0)}</strong> (
                 {dash07.overdue_customer_count ?? 0} KH)
               </p>
             </div>
             <button
               type="button"
               className="ref-button"
-              style={{ fontSize: 11.5, padding: "3px 8px" }}
+              style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 999 }}
               onClick={() => void openMetricDrilldown("DASH-07")}
             >
-              Chi tiết AR
+              Chi tiết phải thu
             </button>
           </div>
 
@@ -911,19 +1035,21 @@ export function MisaDashboardOverview({
             >
               <div>
                 <span style={{ color: "#64748b", display: "block" }}>Quá hạn 1–30 ngày</span>
-                <strong>{fmtMoney(dash07.aging_buckets.days_1_30)}</strong>
+                <strong>{fmtMoney(dash07.aging_buckets.overdue_1_30 ?? dash07.aging_buckets.days_1_30)}</strong>
               </div>
               <div>
                 <span style={{ color: "#64748b", display: "block" }}>31–60 ngày</span>
-                <strong>{fmtMoney(dash07.aging_buckets.days_31_60)}</strong>
+                <strong>{fmtMoney(dash07.aging_buckets.overdue_31_60 ?? dash07.aging_buckets.days_31_60)}</strong>
               </div>
               <div>
                 <span style={{ color: "#64748b", display: "block" }}>61–90 ngày</span>
-                <strong>{fmtMoney(dash07.aging_buckets.days_61_90)}</strong>
+                <strong>{fmtMoney(dash07.aging_buckets.overdue_61_90 ?? dash07.aging_buckets.days_61_90)}</strong>
               </div>
               <div>
                 <span style={{ color: "#dc2626", display: "block" }}>&gt; 90 ngày</span>
-                <strong style={{ color: "#dc2626" }}>{fmtMoney(dash07.aging_buckets.days_over_90)}</strong>
+                <strong style={{ color: "#dc2626" }}>
+                  {fmtMoney(dash07.aging_buckets.overdue_over_90 ?? dash07.aging_buckets.days_over_90)}
+                </strong>
               </div>
             </div>
           )}
@@ -937,18 +1063,19 @@ export function MisaDashboardOverview({
               </tr>
             </thead>
             <tbody>
-              {(dash07.items || dash07.top_debtors || []).map((row: any) => (
-                <tr key={row.partner_id || row.customer_id || row.partner_code || row.customer_code}>
+              {arRows.map((row: any) => (
+                <tr key={row.party_id || row.partner_id || row.customer_id || row.party_code || row.partner_code || row.customer_code}>
                   <td>
-                    <strong>{row.partner_code || row.customer_code}</strong> · {row.partner_name || row.customer_name}
+                    <strong>{row.party_code || row.partner_code || row.customer_code || row.document_number}</strong> ·{" "}
+                    {row.party_name || row.partner_name || row.customer_name}
                   </td>
-                  <td className="numeric">{fmtMoney(row.open_amount ?? row.total_outstanding)}</td>
+                  <td className="numeric">{fmtMoney(row.total_balance ?? row.open_balance ?? row.open_amount ?? row.total_outstanding)}</td>
                   <td className="numeric" style={{ color: Number(row.overdue_amount) > 0 ? "#dc2626" : "#64748b" }}>
                     {fmtMoney(row.overdue_amount)}
                   </td>
                 </tr>
               ))}
-              {!(dash07.items || dash07.top_debtors || []).length && (
+              {!arRows.length && (
                 <tr>
                   <td colSpan={3} style={{ textAlign: "center", color: "#64748b", padding: 12 }}>
                     Không có công nợ phải thu còn tồn.
@@ -963,20 +1090,21 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>DASH-08 · Công nợ phải trả nhà cung cấp</h2>
+              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Công nợ phải trả nhà cung cấp</h2>
               <p style={{ fontSize: 11.5, color: "#64748b", margin: "2px 0 0" }}>
-                Tổng phải trả: <strong>{fmtMoney(dash08.payable_total ?? dash08.total_payable ?? 0)}</strong> · Sắp đến
-                hạn: <strong style={{ color: "#d97706" }}>{fmtMoney(dash08.due_soon_amount ?? 0)}</strong> · Quá hạn:{" "}
-                <strong style={{ color: "#dc2626" }}>{fmtMoney(dash08.overdue_amount ?? 0)}</strong>
+                Tổng phải trả:{" "}
+                <strong>{fmtMoney(dash08.ap_total_payable ?? dash08.payable_total ?? dash08.total_payable ?? w08.value ?? 0)}</strong> · Sắp đến
+                hạn: <strong style={{ color: "#d97706" }}>{fmtMoney(dash08.ap_due_soon_amount ?? dash08.due_soon_amount ?? dash08.aging_buckets?.current ?? 0)}</strong> · Quá hạn:{" "}
+                <strong style={{ color: "#dc2626" }}>{fmtMoney(dash08.ap_overdue_amount ?? dash08.overdue_amount ?? 0)}</strong>
               </p>
             </div>
             <button
               type="button"
               className="ref-button"
-              style={{ fontSize: 11.5, padding: "3px 8px" }}
+              style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 999 }}
               onClick={() => void openMetricDrilldown("DASH-08")}
             >
-              Chi tiết AP
+              Chi tiết phải trả
             </button>
           </div>
 
@@ -995,19 +1123,21 @@ export function MisaDashboardOverview({
             >
               <div>
                 <span style={{ color: "#64748b", display: "block" }}>Quá hạn 1–30 ngày</span>
-                <strong>{fmtMoney(dash08.aging_buckets.days_1_30)}</strong>
+                <strong>{fmtMoney(dash08.aging_buckets.overdue_1_30 ?? dash08.aging_buckets.days_1_30)}</strong>
               </div>
               <div>
                 <span style={{ color: "#64748b", display: "block" }}>31–60 ngày</span>
-                <strong>{fmtMoney(dash08.aging_buckets.days_31_60)}</strong>
+                <strong>{fmtMoney(dash08.aging_buckets.overdue_31_60 ?? dash08.aging_buckets.days_31_60)}</strong>
               </div>
               <div>
                 <span style={{ color: "#64748b", display: "block" }}>61–90 ngày</span>
-                <strong>{fmtMoney(dash08.aging_buckets.days_61_90)}</strong>
+                <strong>{fmtMoney(dash08.aging_buckets.overdue_61_90 ?? dash08.aging_buckets.days_61_90)}</strong>
               </div>
               <div>
                 <span style={{ color: "#dc2626", display: "block" }}>&gt; 90 ngày</span>
-                <strong style={{ color: "#dc2626" }}>{fmtMoney(dash08.aging_buckets.days_over_90)}</strong>
+                <strong style={{ color: "#dc2626" }}>
+                  {fmtMoney(dash08.aging_buckets.overdue_over_90 ?? dash08.aging_buckets.days_over_90)}
+                </strong>
               </div>
             </div>
           )}
@@ -1021,18 +1151,19 @@ export function MisaDashboardOverview({
               </tr>
             </thead>
             <tbody>
-              {(dash08.items || dash08.top_creditors || []).map((row: any) => (
-                <tr key={row.partner_id || row.vendor_id || row.partner_code || row.vendor_code}>
+              {apRows.map((row: any) => (
+                <tr key={row.party_id || row.partner_id || row.vendor_id || row.party_code || row.partner_code || row.vendor_code}>
                   <td>
-                    <strong>{row.partner_code || row.vendor_code}</strong> · {row.partner_name || row.vendor_name}
+                    <strong>{row.party_code || row.partner_code || row.vendor_code || row.document_number}</strong> ·{" "}
+                    {row.party_name || row.partner_name || row.vendor_name}
                   </td>
-                  <td className="numeric">{fmtMoney(row.open_amount ?? row.total_outstanding)}</td>
+                  <td className="numeric">{fmtMoney(row.total_balance ?? row.open_balance ?? row.open_amount ?? row.total_outstanding)}</td>
                   <td className="numeric" style={{ color: Number(row.overdue_amount) > 0 ? "#dc2626" : "#64748b" }}>
                     {fmtMoney(row.overdue_amount)}
                   </td>
                 </tr>
               ))}
-              {!(dash08.items || dash08.top_creditors || []).length && (
+              {!apRows.length && (
                 <tr>
                   <td colSpan={3} style={{ textAlign: "center", color: "#64748b", padding: 12 }}>
                     Không có công nợ phải trả còn tồn.
@@ -1047,21 +1178,23 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>DASH-09 · Tổng quan tồn kho vật tư, hàng hóa</h2>
+              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Tổng quan tồn kho vật tư, hàng hóa</h2>
               <p style={{ fontSize: 11.5, color: "#64748b", margin: "2px 0 0" }}>
                 Giá trị tồn:{" "}
-                <strong>{fmtMoney(dash09.inventory_total_value ?? dash09.total_inventory_value ?? 0)}</strong> ·{" "}
+                <strong>{fmtMoney(dash09.inventory_total_value ?? dash09.total_inventory_value ?? w09.value ?? 0)}</strong> ·{" "}
                 {dash09.active_sku_count ?? dash09.active_item_count ?? 0} mặt hàng · Dưới tối thiểu:{" "}
-                <strong style={{ color: "#d97706" }}>{dash09.below_min_stock_count ?? 0}</strong>
+                <strong style={{ color: "#d97706" }}>
+                  {dash09.below_minimum_stock_count ?? dash09.below_min_stock_count ?? 0}
+                </strong>
               </p>
             </div>
             <button
               type="button"
               className="ref-button"
-              style={{ fontSize: 11.5, padding: "3px 8px" }}
+              style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 999 }}
               onClick={() => void openMetricDrilldown("DASH-09")}
             >
-              Chi tiết Kho
+              Chi tiết tồn kho
             </button>
           </div>
 
@@ -1074,7 +1207,7 @@ export function MisaDashboardOverview({
               </tr>
             </thead>
             <tbody>
-              {(dash09.low_stock_items || []).slice(0, 5).map((item: any) => (
+              {lowStockItems.slice(0, 5).map((item: any) => (
                 <tr key={item.item_id || item.item_code}>
                   <td>
                     <span style={{ color: "#dc2626", fontWeight: 600 }}>[Cảnh báo]</span> {item.item_code} ·{" "}
@@ -1084,28 +1217,33 @@ export function MisaDashboardOverview({
                     {item.quantity_on_hand ?? item.closing_quantity} / {item.min_stock_level ?? item.minimum_stock_qty}
                   </td>
                   <td className="numeric" style={{ color: "#dc2626", fontWeight: 600 }}>
-                    Thiếu {item.shortage_quantity}
+                    {item.shortage_quantity
+                      ? `Thiếu ${item.shortage_quantity}`
+                      : fmtMoney(item.closing_value ?? item.total_value ?? 0)}
                   </td>
                 </tr>
               ))}
-              {!(dash09.low_stock_items || []).length &&
-                (dash09.by_warehouse || dash09.warehouse_summary || []).slice(0, 5).map((wh: any) => (
-                  <tr key={wh.warehouse_id || wh.warehouse_code}>
+              {!lowStockItems.length &&
+                inventorySummaryRows.slice(0, 5).map((wh: any) => (
+                  <tr key={wh.warehouse_id || wh.warehouse_code || wh.item_id || wh.item_code}>
                     <td>
-                      {wh.warehouse_code} · {wh.warehouse_name}
+                      <strong>{wh.warehouse_code || wh.item_code}</strong> · {wh.warehouse_name || wh.item_name}
                     </td>
-                    <td className="numeric">{wh.sku_count ?? wh.item_count} mặt hàng</td>
-                    <td className="numeric">{fmtMoney(wh.total_value)}</td>
+                    <td className="numeric">
+                      {wh.closing_quantity !== undefined || wh.quantity !== undefined
+                        ? `${Number(wh.closing_quantity ?? wh.quantity ?? 0).toLocaleString("vi-VN")} ${wh.uom_code === "VND" ? "nhóm TK" : (wh.uom_code || "đv")}`
+                        : `${wh.sku_count ?? wh.item_count ?? 0} mặt hàng`}
+                    </td>
+                    <td className="numeric">{fmtMoney(wh.inventory_value ?? wh.closing_value ?? wh.total_value ?? 0)}</td>
                   </tr>
                 ))}
-              {!(dash09.low_stock_items || []).length &&
-                !(dash09.by_warehouse || dash09.warehouse_summary || []).length && (
-                  <tr>
-                    <td colSpan={3} style={{ textAlign: "center", color: "#64748b", padding: 12 }}>
-                      Tồn kho ổn định, không có mặt hàng dưới định mức tối thiểu.
-                    </td>
-                  </tr>
-                )}
+              {!lowStockItems.length && !inventorySummaryRows.length && (
+                <tr>
+                  <td colSpan={3} style={{ textAlign: "center", color: "#64748b", padding: 12 }}>
+                    Tồn kho ổn định, không có mặt hàng dưới định mức tối thiểu.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </section>
@@ -1114,7 +1252,7 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>DASH-10 · Tổng quan nghĩa vụ thuế (TK 133 / 333)</h2>
+              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Tổng quan nghĩa vụ thuế (TK 133 / 333)</h2>
               <p style={{ fontSize: 11.5, color: "#64748b", margin: "2px 0 0" }}>
                 Tổng thuế phải nộp:{" "}
                 <strong style={{ color: "#dc2626" }}>
@@ -1126,7 +1264,7 @@ export function MisaDashboardOverview({
                 </strong>
               </p>
             </div>
-            <Link className="ref-button" to={href("/tax")} style={{ fontSize: 11.5, padding: "3px 8px" }}>
+            <Link className="ref-button" to={href("/tax")} style={{ fontSize: 11.5, padding: "4px 10px", borderRadius: 999 }}>
               Phân hệ Thuế
             </Link>
           </div>
@@ -1199,7 +1337,7 @@ export function MisaDashboardOverview({
         <section className="card" style={{ padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
-              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>DASH-11 · Công việc cần xử lý</h2>
+              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Công việc cần xử lý</h2>
               <p style={{ fontSize: 11.5, color: "#64748b", margin: "2px 0 0" }}>
                 Phê duyệt chứng từ, ghi sổ và cảnh báo vận hành
               </p>
@@ -1260,7 +1398,7 @@ export function MisaDashboardOverview({
         </section>
 
         {/* DASH-12: Danh sách chứng từ gần đây */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, overflow: "visible", position: "relative", zIndex: 20 }}>
           <div
             style={{
               display: "flex",
@@ -1272,38 +1410,58 @@ export function MisaDashboardOverview({
             }}
           >
             <div>
-              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>DASH-12 · Danh sách chứng từ gần đây</h2>
+              <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Chứng từ phát sinh gần đây</h2>
               <p style={{ fontSize: 11.5, color: "#64748b", margin: "2px 0 0" }}>
-                Chứng từ thực tế phát sinh trong phạm vi phân quyền Data Scope
+                Tổng hợp chứng từ phát sinh gần nhất từ Sổ cái và các phân hệ nghiệp vụ
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Filter size={13} style={{ color: "#64748b" }} />
-              <select
-                aria-label="Lọc phân hệ chứng từ gần đây"
+              <MisaDropdownSelect
+                ariaLabel="Lọc phân hệ chứng từ gần đây"
+                title="Phân hệ nghiệp vụ"
                 value={recentModuleFilter}
-                onChange={(e) => setRecentModuleFilter(e.target.value)}
-                style={{ fontSize: 11.5, padding: "3px 6px", borderRadius: 4, border: "1px solid #cbd5e1" }}
-              >
-                <option value="">Tất cả phân hệ</option>
-                <option value="SAL">Bán hàng (SAL)</option>
-                <option value="PUR">Mua hàng (PUR)</option>
-                <option value="CASH">Tiền mặt (CASH)</option>
-                <option value="BANK">Tiền gửi (BANK)</option>
-                <option value="GL">Tổng hợp (GL)</option>
-              </select>
-              <select
-                aria-label="Lọc trạng thái chứng từ gần đây"
+                onChange={(val) => setRecentModuleFilter(val)}
+                minWidth={175}
+                align="right"
+                buttonStyle={{
+                  height: 28,
+                  padding: "0 10px",
+                  borderRadius: 999,
+                  fontSize: 11.5,
+                }}
+                popoverStyle={{ borderRadius: 12, padding: 6 }}
+                options={[
+                  { value: "", label: "Tất cả phân hệ" },
+                  { value: "SAL", label: "Bán hàng (SAL)" },
+                  { value: "PUR", label: "Mua hàng (PUR)" },
+                  { value: "CASH", label: "Tiền mặt (CASH)" },
+                  { value: "BANK", label: "Tiền gửi (BANK)" },
+                  { value: "GL", label: "Tổng hợp (GL)" },
+                ]}
+              />
+              <MisaDropdownSelect
+                ariaLabel="Lọc trạng thái chứng từ gần đây"
+                title="Trạng thái chứng từ"
                 value={recentStatusFilter}
-                onChange={(e) => setRecentStatusFilter(e.target.value)}
-                style={{ fontSize: 11.5, padding: "3px 6px", borderRadius: 4, border: "1px solid #cbd5e1" }}
-              >
-                <option value="">Mọi trạng thái</option>
-                <option value="POSTED">Đã ghi sổ (POSTED)</option>
-                <option value="PENDING_APPROVAL">Chờ duyệt</option>
-                <option value="APPROVED">Đã duyệt</option>
-                <option value="DRAFT">Nháp</option>
-              </select>
+                onChange={(val) => setRecentStatusFilter(val)}
+                minWidth={160}
+                align="right"
+                buttonStyle={{
+                  height: 28,
+                  padding: "0 10px",
+                  borderRadius: 999,
+                  fontSize: 11.5,
+                }}
+                popoverStyle={{ borderRadius: 12, padding: 6 }}
+                options={[
+                  { value: "", label: "Mọi trạng thái" },
+                  { value: "POSTED", label: "Đã ghi sổ" },
+                  { value: "PENDING_APPROVAL", label: "Chờ duyệt" },
+                  { value: "APPROVED", label: "Đã duyệt" },
+                  { value: "DRAFT", label: "Nháp" },
+                ]}
+              />
             </div>
           </div>
 
@@ -1334,22 +1492,33 @@ export function MisaDashboardOverview({
                         [{doc.module}] {doc.document_type_label || doc.document_type}
                       </span>
                     </td>
-                    <td>{doc.document_date || doc.posting_date}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{doc.document_date || doc.posting_date}</td>
                     <td>{doc.description || doc.partner_name || "—"}</td>
-                    <td className="numeric" style={{ fontWeight: 600 }}>
+                    <td className="numeric" style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
                       {doc.amount_masked ? "***" : fmtMoney(doc.amount)}
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: "nowrap" }}>
                       <span
                         style={{
+                          display: "inline-block",
+                          whiteSpace: "nowrap",
                           fontSize: 11,
-                          padding: "1px 6px",
-                          borderRadius: 4,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          fontWeight: 600,
                           background: doc.status === "POSTED" ? "#ecfdf5" : "#fffbeb",
                           color: doc.status === "POSTED" ? "#047857" : "#b45309",
                         }}
                       >
-                        {doc.status}
+                        {doc.status === "POSTED"
+                          ? "Đã ghi sổ"
+                          : doc.status === "PENDING_APPROVAL"
+                            ? "Chờ duyệt"
+                            : doc.status === "APPROVED"
+                              ? "Đã duyệt"
+                              : doc.status === "DRAFT"
+                                ? "Nháp"
+                                : doc.status}
                       </span>
                     </td>
                   </tr>
@@ -1381,13 +1550,13 @@ export function MisaDashboardOverview({
       >
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <ShieldCheck size={15} style={{ color: "#0d9488" }} />
-          {isOfficialApiConnected
+          {hasApiSession
             ? `Số liệu kế toán chính thức · Đã kết nối Sổ cái (GL) và các phân hệ nghiệp vụ · Cập nhật: ${
                 overviewData?.data_as_of
                   ? new Date(overviewData.data_as_of).toLocaleString("vi-VN")
                   : "Vừa xong"
               }`
-            : "Chế độ xem thử ngoại tuyến (Dữ liệu mẫu Demo) · Đăng nhập để kết nối Sổ cái chính thức"}
+            : "Chế độ xem thử ngoại tuyến · Đăng nhập để kết nối Sổ cái chính thức"}
         </span>
         <span>Sổ Việt ERP · Thông tư 99/2025/TT-BTC</span>
       </div>

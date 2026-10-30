@@ -10,13 +10,28 @@ class TaxPermission(BasePermission):
             return False
         if request.user.is_superuser:
             return True
-        company_id = request.query_params.get("company_id") or request.data.get("company")
+        data_company = (request.data.get("company") or request.data.get("company_id")) if isinstance(request.data, dict) else None
+        company_id = (
+            request.query_params.get("company_id")
+            or request.query_params.get("company")
+            or request.headers.get("X-Company-ID")
+            or request.META.get("HTTP_X_COMPANY_ID")
+            or data_company
+        )
         if not company_id and getattr(view, "kwargs", {}).get("pk"):
             model = getattr(getattr(view, "queryset", None), "model", None)
             if model:
                 company_id = model.objects.filter(pk=view.kwargs["pk"]).values_list("company_id", flat=True).first()
+        if not company_id and hasattr(request.user, "iam_account"):
+            company_id = (
+                request.user.iam_account.memberships.filter(membership_status="ACTIVE")
+                .order_by("-is_default", "-joined_at")
+                .values_list("company_id", flat=True)
+                .first()
+            )
         if not company_id or not hasattr(request.user, "iam_account"):
             return False
+        request._resolved_company_id = str(company_id)
         try:
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError):

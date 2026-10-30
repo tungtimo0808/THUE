@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import "./live-account.css";
 
 export default function LiveCompanySelect() {
@@ -109,6 +110,7 @@ export default function LiveCompanySelect() {
           email: "contact@soviet.vn",
           confirmed_authority: true,
           fiscal_year_start_month: 1,
+          auto_complete_setup: true,
         }),
       });
 
@@ -147,6 +149,7 @@ export default function LiveCompanySelect() {
           legal_representative: session?.user?.display_name || "Đỗ Đức Tùng",
           confirmed_authority: true,
           fiscal_year_start_month: 1,
+          auto_complete_setup: true,
         }),
       });
 
@@ -159,9 +162,15 @@ export default function LiveCompanySelect() {
         handleSelectAndEnter(res.id);
       }
     } catch (cause) {
-      setError(
+      const msg = humanizeErrorMessage(
         cause instanceof Error ? cause.message : "Không thể tạo mới doanh nghiệp."
       );
+      setError(msg);
+      showGlobalPopup({
+        type: "error",
+        title: "Không thể khởi tạo doanh nghiệp",
+        message: msg,
+      });
     } finally {
       setCreatingCompany(false);
     }
@@ -185,6 +194,8 @@ export default function LiveCompanySelect() {
   const isCompanyOrSuperAdmin = Boolean(
     session?.user?.is_superuser ||
     session?.user?.is_staff ||
+    (session?.user as any)?.is_company_admin ||
+    companies.some((c: any) => c.is_company_admin) ||
     userEmail === "tungtimo0808@gmail.com" ||
     session?.user?.role === "ADMIN" ||
     session?.user?.role === "SUPER_ADMIN"
@@ -263,31 +274,6 @@ export default function LiveCompanySelect() {
             </button>
           )}
 
-          {session?.user?.is_superuser && (
-            <button
-              type="button"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "7px 13px",
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: "#7c3aed",
-                background: "#f5f3ff",
-                border: "1px solid #ddd6fe",
-                borderRadius: 6,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-              onClick={() => navigate("/super-admin")}
-              title="Truy cập Bàn làm việc Super Admin Nền tảng"
-            >
-              <ShieldCheck size={14} color="#7c3aed" />
-              <span>Quản trị Nền tảng</span>
-            </button>
-          )}
-
           <button
             type="button"
             className="signout-inline-btn"
@@ -321,13 +307,6 @@ export default function LiveCompanySelect() {
             Chọn đơn vị bạn muốn truy cập để bắt đầu ghi chép, lập báo cáo và quản lý hóa đơn.
           </p>
         </div>
-
-        {error && (
-          <div className="account-error" role="alert" style={{ marginBottom: 20 }}>
-            <AlertCircle size={18} />
-            <span>{error}</span>
-          </div>
-        )}
 
         {/* Toolbar */}
         <div className="company-portal-toolbar">

@@ -10,8 +10,8 @@ from rest_framework.viewsets import GenericViewSet,ReadOnlyModelViewSet
 from . import models,serializers,services
 from .permissions import CashPermission
 from .receipt_validation import RECEIPT_TYPES
-def perms(r):return {"GET":f"{r}.VIEW","POST":f"{r}.CREATE","PUT":f"{r}.EDIT","PATCH":f"{r}.EDIT"}
-class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,GenericViewSet):
+def perms(r):return {"GET":f"{r}.VIEW","POST":f"{r}.CREATE","PUT":f"{r}.EDIT","PATCH":f"{r}.EDIT","DELETE":f"{r}.EDIT"}
+class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins.DestroyModelMixin,GenericViewSet):
     permission_classes=(CashPermission,);filter_backends=(SearchFilter,OrderingFilter);ordering=("-created_at",)
     def get_queryset(self):
         company=self.request.query_params.get("company_id")
@@ -52,11 +52,15 @@ class TransactionViewSet(BaseViewSet):
         if "company" in serializer.validated_data and serializer.validated_data["company"].pk != serializer.instance.company_id:
             raise ValidationError({"company": "Không được chuyển phiếu sang doanh nghiệp khác."})
         if serializer.instance.business_type in RECEIPT_TYPES:
-            branch_id = self.request.query_params.get("branch_id")
             fund = serializer.validated_data.get("fund", serializer.instance.fund)
-            if not branch_id or str(fund.branch_id) != branch_id:
+            branch_id = self.request.query_params.get("branch_id") or str(fund.branch_id)
+            if str(fund.branch_id) != branch_id:
                 raise ValidationError({"branch_id": "Chi nhánh không khớp quỹ phiếu thu."})
         super().perform_update(serializer)
+    def perform_destroy(self, instance):
+        if instance.status == models.TransactionStatus.POSTED:
+            raise ValidationError("Chứng từ đã ghi sổ không thể xóa. Vui lòng Bỏ ghi sổ trước khi xóa.")
+        instance.delete()
     @action(detail=True,methods=("post",))
     def submit(self,r,pk=None):return Response(self.get_serializer(services.submit(self.get_object(),r)).data)
     @action(detail=True,methods=("post",))
@@ -116,6 +120,14 @@ class ForecastViewSet(GenericViewSet):
             comp = Company.objects.filter(pk=cid).first()
             if comp:
                 return comp
+        account = getattr(getattr(request, "user", None), "iam_account", None)
+        if account:
+            pref = getattr(account, "preference", None)
+            if pref and pref.current_company_id:
+                return pref.current_company
+            mem = account.memberships.filter(membership_status="ACTIVE").select_related("company").first()
+            if mem and mem.company:
+                return mem.company
         return Company.objects.first()
 
     def list(self, request):
@@ -180,6 +192,14 @@ class DenominationCountViewSet(GenericViewSet):
             comp = Company.objects.filter(pk=cid).first()
             if comp:
                 return comp
+        account = getattr(getattr(request, "user", None), "iam_account", None)
+        if account:
+            pref = getattr(account, "preference", None)
+            if pref and pref.current_company_id:
+                return pref.current_company
+            mem = account.memberships.filter(membership_status="ACTIVE").select_related("company").first()
+            if mem and mem.company:
+                return mem.company
         return Company.objects.first()
 
     def list(self, request):

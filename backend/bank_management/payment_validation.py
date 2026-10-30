@@ -84,8 +84,22 @@ def validate_payment(attrs, instance=None):
         prefix = f"Dòng {index}"
         if not isinstance(line, dict) or not str(line.get("description", "")).strip():
             raise serializers.ValidationError({"payment_details": f"{prefix}: vui lòng nhập diễn giải."})
-        debit = Account.objects.filter(pk=line.get("debit_account"), company=company, status="ACTIVE", is_postable=True).first()
-        credit = Account.objects.filter(pk=line.get("credit_account"), company=company, status="ACTIVE", is_postable=True).first()
+        debit = (
+            Account.objects.filter(code=line.get("debit_code"), company=company, status="ACTIVE", is_postable=True).first()
+            if line.get("debit_code")
+            else Account.objects.filter(pk=line.get("debit_account"), company=company, status="ACTIVE", is_postable=True).first()
+        )
+        credit = (
+            Account.objects.filter(code=line.get("credit_code"), company=company, status="ACTIVE", is_postable=True).first()
+            if line.get("credit_code")
+            else Account.objects.filter(pk=line.get("credit_account"), company=company, status="ACTIVE", is_postable=True).first()
+        )
+        if debit:
+            line["debit_account"] = str(debit.pk)
+            line["debit_code"] = debit.code
+        if credit:
+            line["credit_account"] = str(credit.pk)
+            line["credit_code"] = credit.code
         if not debit or not credit or debit.pk == credit.pk:
             raise serializers.ValidationError({"payment_details": f"{prefix}: tài khoản Nợ/Có không hợp lệ."})
         if credit.pk != bank_account.gl_account_id or not credit.code.startswith("112"):

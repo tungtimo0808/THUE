@@ -33,13 +33,38 @@ def _setting(company):
 def _permission_enabled(company, permission):
     if permission.status != ActiveStatus.ACTIVE or permission.resource.status != ActiveStatus.ACTIVE:
         return False
-    modules = _setting(company).get("enabled_modules") or []
-    if permission.resource.module_code in {"SYS", "COM"} or not modules or permission.resource.module_code in modules:
+    disabled_modules = _setting(company).get("disabled_modules") or []
+    if permission.resource.module_code in disabled_modules:
+        action_code = getattr(getattr(permission, "action", None), "code", None)
+        return action_code in {"VIEW", "EXPORT", "PRINT"}
+    return True
+
+
+def is_company_admin_member(user_account, company):
+    if not user_account or not company:
+        return False
+    if not getattr(getattr(user_account, "auth_user", None), "is_active", False):
+        return False
+    if not CompanyMembership.objects.filter(
+        user=user_account,
+        company=company,
+        membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+    ).exists():
+        return False
+    if str(getattr(company, "created_by_user_id", "") or "") == str(user_account.id):
         return True
-    action_code = getattr(getattr(permission, "action", None), "code", None)
-    if action_code in {"VIEW", "EXPORT", "PRINT"}:
-        return True
-    return False
+    now = timezone.now()
+    return UserRoleAssignment.objects.filter(
+        company_membership__user=user_account,
+        company_membership__company=company,
+        role__status=RoleStatus.ACTIVE,
+        status=ActiveStatus.ACTIVE,
+        valid_from__lte=now,
+    ).filter(
+        Q(valid_to__isnull=True) | Q(valid_to__gte=now)
+    ).filter(
+        Q(role__is_system_admin=True) | Q(role__code="COMPANY_ADMIN")
+    ).exists()
 
 
 
@@ -105,6 +130,14 @@ def effective_assignments(user_account, company, at=None, skip_sync=False):
 
 
 def assignment_permission_codes(assignment):
+    if getattr(assignment.role, "is_system_admin", False) or getattr(assignment.role, "code", "") == "COMPANY_ADMIN":
+        from .models import Permission
+        return set(
+            Permission.objects.filter(
+                status=ActiveStatus.ACTIVE,
+                resource__status=ActiveStatus.ACTIVE,
+            ).values_list("code", flat=True)
+        )
     direct = {
         item.permission.code
         for item in assignment.role.role_permissions.all()
@@ -153,6 +186,8 @@ def has_effective_permission(
         user=user_account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
     ).exists() or not user_account.auth_user.is_active:
         return False
+    if is_company_admin_member(user_account, company):
+        return True
     permission = Permission.objects.select_related("resource", "action").filter(code=permission_code).first()
     if not permission or not _permission_enabled(company, permission):
         if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK", "SYS.USER.TERMINATE", "SYS.MEMBERSHIP.TERMINATE"):
@@ -253,6 +288,8 @@ class HasIamPermission(BasePermission):
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError):
             return False
+        if is_company_admin_member(request.user.iam_account, company):
+            return True
         explicit_scope = any(request.query_params.get(field) for field in (
             "branch_id", "department_id", "warehouse_id", "bank_account_id",
             "project_id", "cost_center_id",

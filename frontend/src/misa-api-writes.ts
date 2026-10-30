@@ -2523,6 +2523,7 @@ export async function postMoneyTransaction(w: ApiWriter, module: "cash" | "bank"
     if (!step) throw new FormDataError(`Chứng từ ${record.number} đang ở trạng thái ${record.status}, không ghi sổ được.`);
     record = await w.action(path, id, step, {
       version: record.version,
+      ...(step === "submit" ? { workflow_snapshot: { levels: 1, allow_self_approval: true, separate_cashier: false } } : {}),
       ...(module === "bank" && record.payment_details?.branch ? { branch: record.payment_details.branch } : {}),
     });
   }
@@ -2576,12 +2577,19 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
   const allocations = Array.isArray(d.allocations) ? d.allocations : [];
   if (businessType === "CUSTOMER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn chứng từ công nợ cần thu.");
   const date = toApiDate(d.date);
+  const payerPayee = String(d.person || party?.name || employee?.full_name || "").trim();
+  const rawMasterDesc = String(d.description || "").trim();
+  const firstLineDesc = String(lines[0]?.description || "").trim();
+  const isBareDesc = !rawMasterDesc || /^(thu tiền của|chi tiền cho|tạm ứng cho|thu hoàn ứng sau khi quyết toán tạm ứng cho|chi mua ngoài có hóa đơn cho|trả các khoản vay cho)$/i.test(rawMasterDesc);
+  const resolvedMasterDesc = isBareDesc && firstLineDesc && firstLineDesc.length > rawMasterDesc.length
+    ? firstLineDesc
+    : (isBareDesc && payerPayee && /\b(của|cho)$/i.test(rawMasterDesc) ? `${rawMasterDesc} ${payerPayee}` : (rawMasterDesc || firstLineDesc));
   const record = await w.post(`/api/v1/cash/transactions/?branch_id=${encodeURIComponent(fund.branch)}`, {
     fund: fund.id, number: String(d.code || "").trim(), transaction_type: "RECEIPT",
     business_type: businessType, transaction_date: date, party: party?.id || null,
-    payer_payee: String(d.person || party?.name || employee?.full_name || "").trim(),
+    payer_payee: payerPayee,
     currency: fund.currency, exchange_rate: String(rate), amount: String(amount),
-    description: String(d.description || "").trim(), attachments: d.attachedFiles || [],
+    description: resolvedMasterDesc, attachments: d.attachedFiles || [],
     receipt_details: { posting_date: toApiDate(d.postDate || d.date), payer_address: String(d.address || ""),
       original_documents: String(d.originalDocsCount || ""), employee: employee?.id || null,
       bank_account: bank?.id || null, lines, allocations },
@@ -2627,13 +2635,19 @@ export async function saveBankPaymentDraft(w: ApiWriter, d: Row) {
   const amount = lines.reduce((sum, row) => sum + num(row.amount), 0);
   const allocations = Array.isArray(d.allocations) ? d.allocations : [];
   if (businessType === "SUPPLIER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn công nợ cần trả.");
+  const counterpartyName = String(d.beneficiaryName || d.partner || employee?.full_name || (d.bankFee ? profile.bank_name : "")).trim();
+  const rawBankDesc = String(d.description || "").trim();
+  const firstBankLineDesc = String(lines[0]?.description || "").trim();
+  const isBareBankDesc = !rawBankDesc || /^(thu tiền của|chi tiền cho|tạm ứng cho|thu hoàn ứng sau khi quyết toán tạm ứng cho|chi mua ngoài có hóa đơn cho|trả các khoản vay cho)$/i.test(rawBankDesc);
+  const resolvedBankDesc = isBareBankDesc && firstBankLineDesc && firstBankLineDesc.length > rawBankDesc.length
+    ? firstBankLineDesc
+    : (isBareBankDesc && counterpartyName && /\b(của|cho)$/i.test(rawBankDesc) ? `${rawBankDesc} ${counterpartyName}` : (rawBankDesc || firstBankLineDesc));
   const record = await w.post(`/api/v1/bank/transactions/?branch_id=${encodeURIComponent(String(d.branchId || ""))}`, {
     account: profile.id, number: String(d.code || "").trim(), transaction_type: "PAYMENT",
     business_type: businessType, transaction_date: toApiDate(d.date), value_date: toApiDate(d.postDate || d.date),
-    party: party?.id || null, counterparty_name: String(d.beneficiaryName || d.partner || employee?.full_name ||
-      (d.bankFee ? profile.bank_name : "")).trim(),
+    party: party?.id || null, counterparty_name: counterpartyName,
     counterparty_account: String(d.receiverAccount || "").trim(), currency: profile.currency_id,
-    exchange_rate: String(rate), amount: String(amount), description: String(d.description || "").trim(),
+    exchange_rate: String(rate), amount: String(amount), description: resolvedBankDesc,
     bank_reference: String(d.bankReference || "").trim(),
     payment_details: { posting_date: toApiDate(d.postDate || d.date), branch: d.branchId,
       employee: employee?.id || null, payer_address: String(d.address || ""),
@@ -2664,9 +2678,14 @@ export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d:
   const party = parties.find((row) => String(row.code).toLowerCase() === partnerText)
     || parties.find((row) => String(row.name).toLowerCase() === partnerText);
   const date = toApiDate(d.postDate || d.date);
-  const description = String(d.description || d.reasonLabel || (receipt ? "Thu tiền" : "Chi tiền")).trim();
-  const label = module === "cash" ? (receipt ? "phiếu thu" : "phiếu chi") : (receipt ? "chứng từ thu tiền gửi" : "ủy nhiệm chi");
   const counterpart = String(d.person || party?.name || d.partner || "").trim() || (receipt ? "Người nộp tiền" : "Người nhận tiền");
+  const rawVoucherDesc = String(d.description || "").trim();
+  const firstVoucherLineDesc = String(lines[0]?.description || "").trim();
+  const isBareVoucherDesc = !rawVoucherDesc || /^(thu tiền của|chi tiền cho|tạm ứng cho|thu hoàn ứng sau khi quyết toán tạm ứng cho|chi mua ngoài có hóa đơn cho|trả các khoản vay cho)$/i.test(rawVoucherDesc);
+  const description = isBareVoucherDesc && firstVoucherLineDesc && firstVoucherLineDesc.length > rawVoucherDesc.length
+    ? firstVoucherLineDesc
+    : (isBareVoucherDesc && counterpart && /\b(của|cho)$/i.test(rawVoucherDesc) ? `${rawVoucherDesc} ${counterpart}` : String(rawVoucherDesc || firstVoucherLineDesc || d.reasonLabel || (receipt ? "Thu tiền" : "Chi tiền")).trim());
+  const label = module === "cash" ? (receipt ? "phiếu thu" : "phiếu chi") : (receipt ? "chứng từ thu tiền gửi" : "ủy nhiệm chi");
 
   let fund: Row | undefined, profile: Row | undefined;
   if (module === "cash") {

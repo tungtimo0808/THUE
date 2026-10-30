@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from iam.permissions import company_identifiers_agree, has_effective_permission, effective_assignments, assignment_permission_codes
+from iam.permissions import company_identifiers_agree, has_effective_permission, effective_assignments, assignment_permission_codes, is_company_admin_member
 from organization.models import Company
 from uuid import UUID
 
@@ -26,6 +26,7 @@ class AccountsReceivablePermission(BasePermission):
         except (Company.DoesNotExist,ValueError):return False
         code=getattr(view,"action_permissions",{}).get(view.action) or getattr(view,"iam_permissions",{}).get(request.method)
         if not code:return False
+        if is_company_admin_member(request.user.iam_account, company):return True
         if view.__class__.__name__ in {"CustomerReceiptVoucherViewSet","ReceiptAllocationVoucherViewSet","DebtNettingVoucherViewSet","DebtAdjustmentVoucherViewSet","CustomerDebtReconciliationViewSet","DueTrackingViewSet","CustomerPaymentReminderViewSet"} and request.method == "GET" and not request.query_params.get("branch_id"):
             return any(code in assignment_permission_codes(assignment) for assignment in effective_assignments(request.user.iam_account,company))
         if view.__class__.__name__ in {"CustomerReceiptVoucherViewSet","ReceiptAllocationVoucherViewSet","DebtNettingVoucherViewSet","DebtAdjustmentVoucherViewSet","CustomerDebtReconciliationViewSet","CustomerPaymentReminderViewSet"} and view.kwargs.get("pk") and not request.query_params.get("branch_id"):

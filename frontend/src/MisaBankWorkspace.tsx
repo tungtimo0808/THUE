@@ -78,7 +78,7 @@ import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
 import {matchesTransactionPeriod} from './transaction-period';
 
-type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; bankAccount?:string;branchId?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
+type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; rawPaymentDetails?:Record<string,any>; bankAccount?:string;branchId?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
 type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; gl_account_id?: string; gl_code?: string; currency_code: string; balance: string | number };
 
 type ApiBankTransaction = {
@@ -102,27 +102,38 @@ type ApiBankTransaction = {
 
 function mapBankTransaction(row: ApiBankTransaction): BankTransaction {
   const date = (value?: string | null) => value ? value.slice(0, 10).split("-").reverse().join("/") : "";
+  const rawDesc = (row.description || "").trim();
+  const firstLineDesc = (row.payment_details?.lines?.[0]?.description || "").trim();
+  const isBarePrefix = !rawDesc || /^(thu tiền của|chi tiền cho|tạm ứng cho|thu hoàn ứng sau khi quyết toán tạm ứng cho|chi mua ngoài có hóa đơn cho|trả các khoản vay cho)$/i.test(rawDesc);
+  const resolvedDesc = isBarePrefix && firstLineDesc && firstLineDesc.length > rawDesc.length
+    ? firstLineDesc
+    : (isBarePrefix && row.counterparty_name && /\b(của|cho)$/i.test(rawDesc) ? `${rawDesc} ${row.counterparty_name}` : (row.description || firstLineDesc || ""));
   return {
     id: row.id,
     dateHachToan: date(row.payment_details?.posting_date || row.transaction_date),
     dateChungTu: date(row.value_date || row.transaction_date),
     code: row.number,
-    description: row.description || "",
+    description: resolvedDesc,
     amount: Number(row.amount),
     partner: row.counterparty_name || "",
     kind: ["RECEIPT", "INTEREST", "OTHER_IN"].includes(row.transaction_type) ? "receipt" : "payment",
-    status: row.status.toLowerCase(),
+    status: row.status === "POSTED" ? "posted" : "draft",
+    rawPaymentDetails: row.payment_details,
     bankAccount: row.source_account_number || "",
     branchId: row.payment_details?.branch,
     bankName: row.source_bank_name || "",
     beneficiaryAccount: row.payment_details?.beneficiary_account || row.counterparty_account || "",
     beneficiaryBank: row.payment_details?.beneficiary_bank || "",
-    rows: row.payment_details?.lines?.map((line,index) => ({
-      id: String(index + 1), description: line.description, debit: line.debit_code,
-      credit: line.credit_code, amount: Number(line.amount),
-      bankAccount: "", bankName: "", partnerCode: "", partnerName: "",
-      employeeCode: "", employeeName: "", loanContract: "", loanDisbursementContract: "",
-    })),
+    rows: row.payment_details?.lines?.map((line,index) => {
+      const lDesc = (line.description || "").trim();
+      const lIsBare = !lDesc || /^(thu tiền của|chi tiền cho|tạm ứng cho|thu hoàn ứng sau khi quyết toán tạm ứng cho|chi mua ngoài có hóa đơn cho|trả các khoản vay cho)$/i.test(lDesc);
+      return {
+        id: String(index + 1), description: lIsBare && resolvedDesc ? resolvedDesc : (line.description || resolvedDesc), debit: line.debit_code,
+        credit: line.credit_code, amount: Number(line.amount),
+        bankAccount: "", bankName: "", partnerCode: "", partnerName: "",
+        employeeCode: "", employeeName: "", loanContract: "", loanDisbursementContract: "",
+      };
+    }),
     items: [],
   };
 }
@@ -174,6 +185,13 @@ export default function MisaBankWorkspace({
   const [showExcelModal, setShowExcelModal] = useState(false);
   const [bankImportKind,setBankImportKind]=useState<"receipt"|"payment"|null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [viewingBankVoucher, setViewingBankVoucher] = useState<BankTransaction | null>(null);
+  const [editBankCode, setEditBankCode] = useState("");
+  const [editBankDate, setEditBankDate] = useState("");
+  const [editBankPartner, setEditBankPartner] = useState("");
+  const [editBankDescription, setEditBankDescription] = useState("");
+  const [editBankRows, setEditBankRows] = useState<VoucherDetailRow[]>([]);
+  const [isSavingBankEdit, setIsSavingBankEdit] = useState(false);
   const [showCreateVoucher, setShowCreateVoucher] = useState<"receipt" | "payment" | null>(null);
   const [statementVoucherSource, setStatementVoucherSource] = useState<{ account: string; accountNumber: string; date: string; amount: number; description: string; counterparty: string; counterpartyAccount: string; reference: string } | null>(null);
   const [createVoucherTypeIndex, setCreateVoucherTypeIndex] = useState(0);
@@ -341,6 +359,7 @@ export default function MisaBankWorkspace({
   }, [token, company.id, notify, bankApiRevision]);
 
   const [bankRowMenu,setBankRowMenu]=useState<string|null>(null);
+  const [bankExcelMenuOpen, setBankExcelMenuOpen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState(bankParams.get("voucher") || "unc-028");
   const [bankCheckedIds,setBankCheckedIds]=useState<string[]>([]);
   const [bankDeletePending,setBankDeletePending]=useState(false);
@@ -440,7 +459,7 @@ export default function MisaBankWorkspace({
       const byId = new Map(updated.map((row) => [row.id, mapBankTransaction(row)]));
       setTransactions((previous) => previous.map((row) => byId.get(row.id) || row));
       setBankCheckedIds([]);
-      notify(`Đã ${action === "post" ? "ghi sổ" : "đảo giao dịch"} ${updated.length + transfers.length} chứng từ.`);
+      notify(`Đã ${action === "post" ? "ghi sổ" : "bỏ ghi sổ"} ${updated.length + transfers.length} chứng từ.`);
       try {
         const profiles = await request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
           `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}`, token,
@@ -452,6 +471,130 @@ export default function MisaBankWorkspace({
       }
     } catch (error) {
       notify(error instanceof Error ? error.message : "Không thực hiện được thao tác ngân hàng.");
+    }
+  };
+
+  useEffect(() => {
+    if (!viewingBankVoucher) return;
+    const v = transactions.find((item) => item.id === viewingBankVoucher.id) || viewingBankVoucher;
+    setEditBankCode(v.code || "");
+    setEditBankDate(parseReportDate(v.dateChungTu || v.dateHachToan || currentCashDate()));
+    setEditBankPartner(v.partner || "");
+    setEditBankDescription(v.description || "");
+    const initialRows: VoucherDetailRow[] = v.rows?.length
+      ? v.rows.map((r, i) => ({
+          id: r.id || `${v.id}-${i}`,
+          description: r.description || v.description || "",
+          debit: r.debit || (v.kind === "receipt" ? "1121" : "6427"),
+          credit: r.credit || (v.kind === "receipt" ? "131" : "1121"),
+          amount: Number(r.amount) || 0,
+          partnerCode: r.partnerCode || v.partnerCode || "",
+          partnerName: r.partnerName || v.partner || "",
+        }))
+      : [
+          {
+            id: `${v.id}-0`,
+            description: v.description || "",
+            debit: v.debit || (v.kind === "receipt" ? "1121" : "6427"),
+            credit: v.credit || (v.kind === "receipt" ? "131" : "1121"),
+            amount: Number(v.amount) || 0,
+            partnerCode: v.partnerCode || "",
+            partnerName: v.partner || "",
+          },
+        ];
+    setEditBankRows(initialRows);
+  }, [viewingBankVoucher?.id]);
+
+  const handleSaveBankVoucherEdit = async (andPost = false) => {
+    if (!viewingBankVoucher || !token || !company?.id) return;
+    const v = transactions.find((item) => item.id === viewingBankVoucher.id) || viewingBankVoucher;
+    const totalAmount = editBankRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    if (!(totalAmount > 0)) {
+      notify("Số tiền chứng từ phải lớn hơn 0.");
+      return;
+    }
+    if (!editBankDescription.trim()) {
+      notify("Vui lòng nhập diễn giải chứng từ.");
+      return;
+    }
+    setIsSavingBankEdit(true);
+    try {
+      const payload: Record<string, any> = {
+        number: editBankCode.trim() || v.code,
+        transaction_date: editBankDate || parseReportDate(v.dateChungTu),
+        counterparty_name: editBankPartner.trim() || v.partner || "",
+        description: editBankDescription.trim(),
+        amount: String(totalAmount),
+      };
+      if (v.rawPaymentDetails && typeof v.rawPaymentDetails === "object" && Object.keys(v.rawPaymentDetails).length > 0) {
+        const existingLines = Array.isArray(v.rawPaymentDetails.lines) ? v.rawPaymentDetails.lines : [];
+        payload.payment_details = {
+          ...v.rawPaymentDetails,
+          posting_date: editBankDate || v.rawPaymentDetails.posting_date || parseReportDate(v.dateHachToan),
+          lines: editBankRows.map((r, idx) => ({
+            ...(existingLines[idx] || {}),
+            description: (r.description || editBankDescription || "").trim(),
+            debit_code: (r.debit || (v.kind === "receipt" ? "1121" : "6427")).trim(),
+            credit_code: (r.credit || (v.kind === "receipt" ? "131" : "1121")).trim(),
+            amount: String(Number(r.amount) || 0),
+          })),
+        };
+      }
+      const branchQuery = v.branchId ? `&branch_id=${encodeURIComponent(v.branchId)}` : "";
+      const updatedRaw = await request<ApiBankTransaction>(
+        `/api/v1/bank/transactions/${v.id}/?company_id=${encodeURIComponent(company.id)}${branchQuery}`,
+        token,
+        {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        },
+      );
+      const mapped = mapBankTransaction(updatedRaw);
+      if (!updatedRaw.payment_details?.lines?.length) {
+        mapped.rows = editBankRows.map((r, idx) => ({
+          ...r,
+          id: `${v.id}-${idx}`,
+          description: (r.description || editBankDescription || "").trim(),
+          partnerName: editBankPartner.trim() || r.partnerName || "",
+        }));
+      }
+      setTransactions((prev) => {
+        const next = prev.map((row) => (row.id === v.id ? mapped : row));
+        const curr = bankDataCache.get(company.id);
+        if (curr) curr.transactions = next;
+        return next;
+      });
+      if (andPost) {
+        await setBankPosting("posted", [mapped]);
+      } else {
+        notify(`Đã cập nhật chứng từ ${mapped.code} thành công.`);
+      }
+      setViewingBankVoucher(null);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không lưu được thay đổi chứng từ ngân hàng.");
+    } finally {
+      setIsSavingBankEdit(false);
+    }
+  };
+
+  const deleteBankTransaction = async (tx: BankTransaction) => {
+    if (!token || !company?.id) return;
+    try {
+      await request(
+        `/api/v1/bank/transactions/${tx.id}/?company_id=${encodeURIComponent(company.id)}`,
+        token,
+        { method: "DELETE" },
+      );
+      setTransactions((prev) => {
+        const next = prev.filter((r) => r.id !== tx.id);
+        const curr = bankDataCache.get(company.id);
+        if (curr) curr.transactions = next;
+        return next;
+      });
+      if (viewingBankVoucher?.id === tx.id) setViewingBankVoucher(null);
+      notify(`Đã xóa chứng từ ${tx.code} thành công.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Không thể xóa chứng từ ngân hàng.");
     }
   };
 
@@ -875,6 +1018,367 @@ export default function MisaBankWorkspace({
           onClose={() => setShowVoucherModal(false)}
         />
       )}
+
+      {viewingBankVoucher && (() => {
+        const v = transactions.find((item) => item.id === viewingBankVoucher.id) || viewingBankVoucher;
+        const isPosted = v.status === "posted";
+        const activeRows: VoucherDetailRow[] = editBankRows.length
+          ? editBankRows
+          : [
+              {
+                id: `${v.id}-0`,
+                description: v.description || "",
+                debit: v.debit || (v.kind === "receipt" ? "1121" : "6427"),
+                credit: v.credit || (v.kind === "receipt" ? "131" : "1121"),
+                amount: Number(v.amount) || 0,
+                partnerCode: v.partnerCode || "",
+                partnerName: v.partner || "",
+              },
+            ];
+        const computedTotal = activeRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+        return (
+          <div className="misa-modal-overlay" onClick={() => setViewingBankVoucher(null)}>
+            <div
+              className="misa-voucher-window"
+              style={{ width: "min(1180px, 95vw)", height: "auto", maxHeight: "90vh" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="misa-voucher-header">
+                <div className="misa-voucher-header-left">
+                  <h2 className="misa-voucher-title">
+                    {v.kind === "receipt" ? "Báo Có (Thu tiền gửi)" : "Ủy nhiệm chi (Chi tiền gửi)"} — {editBankCode || v.code}
+                  </h2>
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      borderRadius: 12,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      background: isPosted ? "#ecfdf5" : "#fffbeb",
+                      color: isPosted ? "#047857" : "#b45309",
+                      border: isPosted ? "1px solid #a7f3d0" : "1px solid #fde68a",
+                    }}
+                  >
+                    {isPosted ? "Đã ghi sổ (Chỉ xem)" : "Chưa ghi sổ (Cho phép sửa)"}
+                  </span>
+                </div>
+                <div className="misa-voucher-header-tools">
+                  <button
+                    type="button"
+                    className="misa-voucher-close-btn"
+                    onClick={() => setViewingBankVoucher(null)}
+                    title="Đóng (ESC)"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="misa-voucher-body" style={{ paddingBottom: 12 }}>
+                {isPosted && (
+                  <div
+                    style={{
+                      margin: "10px 20px 0",
+                      padding: "8px 14px",
+                      borderRadius: 8,
+                      background: "#fffbeb",
+                      border: "1px solid #fde68a",
+                      color: "#92400e",
+                      fontSize: 12.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
+                  >
+                    <span>
+                      Chứng từ này <strong>đã ghi sổ</strong> nên đang được khóa chỉnh sửa. Bấm <strong>"Bỏ ghi sổ để sửa"</strong> nếu bạn muốn chỉnh sửa nội dung.
+                    </span>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ height: 28, padding: "0 12px", fontSize: 12, fontWeight: 600, background: "#fef3c7", borderColor: "#f59e0b", color: "#92400e", flexShrink: 0 }}
+                      onClick={() => void setBankPosting("draft", [v])}
+                    >
+                      Bỏ ghi sổ để sửa
+                    </button>
+                  </div>
+                )}
+
+                <div className="misa-voucher-master-grid">
+                  <div className="misa-voucher-master-left">
+                    <div className="misa-voucher-row-main">
+                      <div className="misa-voucher-field" style={{ flex: 1 }}>
+                        <label>Đối tượng</label>
+                        <input
+                          className="misa-voucher-input"
+                          value={editBankPartner}
+                          readOnly={isPosted}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditBankPartner(val);
+                            setEditBankRows((rows) => rows.map((r, i) => (i === 0 ? { ...r, partnerName: val } : r)));
+                          }}
+                        />
+                      </div>
+                      <div className="misa-voucher-field" style={{ width: 240 }}>
+                        <label>Tài khoản ngân hàng</label>
+                        <input className="misa-voucher-input" value={v.bankAccount || "—"} readOnly style={{ background: "#f8fafc" }} />
+                      </div>
+                    </div>
+                    <div className="misa-voucher-row-main">
+                      <div className="misa-voucher-field" style={{ flex: 1 }}>
+                        <label>Nội dung thanh toán (Diễn giải)</label>
+                        <input
+                          className="misa-voucher-input"
+                          value={editBankDescription}
+                          readOnly={isPosted}
+                          onChange={(e) => {
+                            const nextDesc = e.target.value;
+                            const prevDesc = editBankDescription;
+                            setEditBankDescription(nextDesc);
+                            setEditBankRows((rows) =>
+                              rows.map((r, i) =>
+                                i === 0 && (!r.description || r.description === prevDesc) ? { ...r, description: nextDesc } : r,
+                              ),
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="misa-voucher-master-right">
+                    <div className="misa-voucher-total-block">
+                      <div className="misa-voucher-total-label">Tổng tiền</div>
+                      <div className="misa-voucher-total-number" style={{ fontSize: 26 }}>
+                        {formatVND(computedTotal)}
+                      </div>
+                    </div>
+                    <div className="misa-voucher-meta-stack">
+                      <div className="misa-voucher-meta-row">
+                        <label>Ngày chứng từ</label>
+                        <div className="misa-voucher-meta-control">
+                          <input
+                            type={isPosted ? "text" : "date"}
+                            className="misa-voucher-input"
+                            value={isPosted ? editBankDate.split("-").reverse().join("/") : editBankDate}
+                            readOnly={isPosted}
+                            onChange={(e) => setEditBankDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="misa-voucher-meta-row">
+                        <label>Số chứng từ</label>
+                        <div className="misa-voucher-meta-control">
+                          <input
+                            className="misa-voucher-input"
+                            value={editBankCode}
+                            readOnly={isPosted}
+                            onChange={(e) => setEditBankCode(e.target.value)}
+                            style={{ fontWeight: 700, color: "#00a862" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="misa-voucher-details-section" style={{ padding: "12px 20px" }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a", marginBottom: 8 }}>
+                    Chi tiết hạch toán định khoản
+                  </div>
+                  <table className="misa-tax-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 44 }}>STT</th>
+                        <th>Diễn giải</th>
+                        <th style={{ width: 100 }}>TK Nợ</th>
+                        <th style={{ width: 100 }}>TK Có</th>
+                        <th className="numeric" style={{ width: 170 }}>Số tiền</th>
+                        <th>Tên đối tượng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeRows.map((row, idx) => (
+                        <tr key={row.id || idx}>
+                          <td>{idx + 1}</td>
+                          <td>
+                            {isPosted ? (
+                              row.description || editBankDescription
+                            ) : (
+                              <input
+                                className="misa-voucher-input"
+                                style={{ height: 28, width: "100%" }}
+                                value={row.description}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditBankRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: val } : r)));
+                                  if (idx === 0 && activeRows.length === 1) setEditBankDescription(val);
+                                }}
+                              />
+                            )}
+                          </td>
+                          <td>
+                            {isPosted ? (
+                              <strong style={{ color: "#2563eb" }}>{row.debit}</strong>
+                            ) : (
+                              <input
+                                className="misa-voucher-input"
+                                style={{ height: 28, width: "100%", fontWeight: 700, color: "#2563eb" }}
+                                value={row.debit}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditBankRows((rows) => rows.map((r, i) => (i === idx ? { ...r, debit: val } : r)));
+                                }}
+                              />
+                            )}
+                          </td>
+                          <td>
+                            {isPosted ? (
+                              <strong style={{ color: "#7c3aed" }}>{row.credit}</strong>
+                            ) : (
+                              <input
+                                className="misa-voucher-input"
+                                style={{ height: 28, width: "100%", fontWeight: 700, color: "#7c3aed" }}
+                                value={row.credit}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditBankRows((rows) => rows.map((r, i) => (i === idx ? { ...r, credit: val } : r)));
+                                }}
+                              />
+                            )}
+                          </td>
+                          <td className="numeric">
+                            {isPosted ? (
+                              <strong>{formatVND(Number(row.amount) || 0)}</strong>
+                            ) : (
+                              <input
+                                type="number"
+                                className="misa-voucher-input"
+                                style={{ height: 28, width: "100%", textAlign: "right", fontWeight: 700 }}
+                                value={row.amount}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value) || 0;
+                                  setEditBankRows((rows) => rows.map((r, i) => (i === idx ? { ...r, amount: val } : r)));
+                                }}
+                              />
+                            )}
+                          </td>
+                          <td>
+                            {isPosted ? (
+                              row.partnerName || editBankPartner || ""
+                            ) : (
+                              <input
+                                className="misa-voucher-input"
+                                style={{ height: 28, width: "100%" }}
+                                value={row.partnerName || editBankPartner}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditBankRows((rows) => rows.map((r, i) => (i === idx ? { ...r, partnerName: val } : r)));
+                                }}
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td />
+                        <td><strong>Cộng</strong></td>
+                        <td />
+                        <td />
+                        <td className="numeric"><strong>{formatVND(computedTotal)}</strong></td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 20px",
+                  background: "#0f172a",
+                  borderTop: "1px solid #1e293b",
+                }}
+              >
+                <button
+                  type="button"
+                  className="misa-btn-secondary"
+                  style={{ background: "#1e293b", color: "#f8fafc", border: "1px solid #334155" }}
+                  onClick={() => setViewingBankVoucher(null)}
+                >
+                  Đóng
+                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button
+                    type="button"
+                    className="misa-btn-secondary"
+                    style={{ background: "#ffffff", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: 6 }}
+                    onClick={() => {
+                      setViewingBankVoucher(null);
+                      setSelectedVoucher({
+                        code: editBankCode || v.code,
+                        date: editBankDate || parseReportDate(v.dateChungTu),
+                        person: editBankPartner || v.partner,
+                        address: "Hà Nội",
+                        reason: editBankDescription || v.description,
+                        debitAccount: activeRows[0]?.debit || v.debit || (v.kind === "receipt" ? "1121" : "6427"),
+                        creditAccount: activeRows[0]?.credit || v.credit || (v.kind === "receipt" ? "131" : "1121"),
+                        amount: computedTotal,
+                        amountInWords: convertNumberToVietnameseWords(computedTotal),
+                        notes: "Chứng từ ngân hàng",
+                        chiefAccountant: "Trương Thị B",
+                        director: "Nguyễn Văn A",
+                      });
+                      setShowVoucherModal(true);
+                    }}
+                  >
+                    <Printer size={14} />
+                    <span>In biểu mẫu A4 ({editBankCode || v.code})</span>
+                  </button>
+                  {!isPosted ? (
+                    <>
+                      <button
+                        type="button"
+                        className="misa-btn-secondary"
+                        disabled={isSavingBankEdit}
+                        style={{ background: "#3b82f6", color: "#ffffff", border: "none", fontWeight: 700 }}
+                        onClick={() => void handleSaveBankVoucherEdit(false)}
+                      >
+                        {isSavingBankEdit ? "Đang lưu..." : "Lưu thay đổi (Cất)"}
+                      </button>
+                      <button
+                        type="button"
+                        className="misa-btn-primary"
+                        disabled={isSavingBankEdit}
+                        style={{ background: "#00a862", border: "none", fontWeight: 700 }}
+                        onClick={() => void handleSaveBankVoucherEdit(true)}
+                      >
+                        Cất & Ghi sổ
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ background: "#f59e0b", border: "none", fontWeight: 700 }}
+                      onClick={() => void setBankPosting("draft", [v])}
+                    >
+                      Bỏ ghi sổ để sửa
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {showCreateVoucher && (
         <CreateVoucherModal
@@ -1362,6 +1866,92 @@ export default function MisaBankWorkspace({
             >
               <FileSpreadsheet size={15} />
             </button>
+
+            <div style={{ position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setBankExcelMenuOpen((prev) => !prev)}
+                style={{
+                  height: 32,
+                  padding: "0 10px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 6,
+                  background: bankExcelMenuOpen ? "#f0fdf4" : "#ffffff",
+                  borderColor: bankExcelMenuOpen ? "#00a862" : "#d1d5db",
+                  color: bankExcelMenuOpen ? "#00a862" : "#334155",
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                }}
+              >
+                <span>Nhập/Xuất Excel</span>
+                <ChevronDown size={13} style={{ transform: bankExcelMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+              </button>
+              {bankExcelMenuOpen && (
+                <>
+                  <div
+                    style={{ position: "fixed", inset: 0, zIndex: 45 }}
+                    onClick={() => setBankExcelMenuOpen(false)}
+                  />
+                  <div className="misa-row-action-menu" style={{ minWidth: 195, zIndex: 50 }}>
+                    <button
+                      type="button"
+                      className="misa-row-action-item"
+                      onClick={async () => {
+                        setBankExcelMenuOpen(false);
+                        const XLSX = await import("xlsx");
+                        const workbook = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(
+                          workbook,
+                          XLSX.utils.aoa_to_sheet([
+                            ["Ngày hạch toán", "Ngày chứng từ", "Số chứng từ", "Diễn giải", "Số tiền", "Đối tượng", "Số tài khoản NH", "Lý do thu/chi", "Loại chứng từ"],
+                            ...filteredTransactions.map((transaction) => [
+                              transaction.dateHachToan,
+                              transaction.dateChungTu,
+                              transaction.code,
+                              transaction.description,
+                              transaction.amount,
+                              transaction.partner,
+                              transaction.bankAccount || "",
+                              transaction.reasonLabel || "",
+                              transaction.documentType || "",
+                            ]),
+                          ]),
+                          "Tien-gui"
+                        );
+                        XLSX.writeFileXLSX(workbook, "Thu-chi-tien-gui.xlsx");
+                      }}
+                    >
+                      Xuất ra file Excel (.xlsx)
+                    </button>
+                    <div className="misa-row-action-divider" />
+                    <button
+                      type="button"
+                      className="misa-row-action-item"
+                      onClick={() => {
+                        setBankExcelMenuOpen(false);
+                        setBankImportKind("receipt");
+                      }}
+                    >
+                      Nhập thu tiền gửi từ Excel
+                    </button>
+                    <button
+                      type="button"
+                      className="misa-row-action-item"
+                      onClick={() => {
+                        setBankExcelMenuOpen(false);
+                        setBankImportKind("payment");
+                      }}
+                    >
+                      Nhập chi tiền gửi từ Excel
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               type="button"
@@ -1869,7 +2459,6 @@ export default function MisaBankWorkspace({
 
         {/* Master Table (Image 4 & 5) */}
         <div style={{ flex: 1, minHeight: 220, overflow: "auto", background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
-          <details className="ce-toolbar"><summary style={{cursor:'pointer'}}>Nhập chứng từ tiền gửi từ Excel</summary><button onClick={()=>setBankImportKind('receipt')}>Nhập thu tiền gửi</button><button onClick={()=>setBankImportKind('payment')}>Nhập chi tiền gửi</button></details>
           {checkedBankRows.length>0&&<div className="ce-toolbar" role="toolbar" aria-label="Thao tác chứng từ tiền gửi đã chọn"><strong>Đã chọn {checkedBankRows.length}</strong><button onClick={()=>setBankPosting('posted')}>Ghi sổ</button><button onClick={()=>setBankPosting('draft')}>Bỏ ghi sổ</button><button disabled title="Not supported by backend">Xóa</button><button onClick={()=>setBankCheckedIds([])}>Bỏ chọn</button></div>}
           {bankDeletedRows.length>0&&<div className="ce-toolbar" role="status">Đã xóa {bankDeletedRows.length} chứng từ trên frontend.<button onClick={()=>{setTransactions(previous=>[...bankDeletedRows.filter(row=>!previous.some(existing=>existing.id===row.id)),...previous]);setBankDeletedRows([]);}}>Hoàn tác</button></div>}
           {bankDeletePending&&<div className="ce-overlay"><section className="ce-panel" role="alertdialog" aria-modal="true" aria-label="Xóa chứng từ tiền gửi"><header><h2>Xóa chứng từ tiền gửi</h2></header><div className="ce-panel-body">Xóa {checkedBankRows.length} chứng từ đã chọn khỏi danh sách frontend?</div><footer><button onClick={()=>setBankDeletePending(false)}>Hủy</button><button className="ce-primary" onClick={()=>{const ids=new Set(checkedBankRows.map(row=>row.id));setBankDeletedRows(checkedBankRows);setTransactions(previous=>previous.filter(row=>!ids.has(row.id)));setBankCheckedIds(previous=>previous.filter(id=>!ids.has(id)));setBankDeletePending(false);}}>Xóa chứng từ</button></footer></section></div>}
@@ -1906,21 +2495,8 @@ export default function MisaBankWorkspace({
                         onClick={(e) => {
                           e.stopPropagation();
                           if (tx.kind === "transfer") { viewBankTransfer(String(tx.id).slice(9)); return; }
-                          setSelectedVoucher({
-                            code: tx.code,
-                            date: parseReportDate(tx.dateChungTu),
-                            person: tx.partner,
-                            address: "Hà Nội",
-                            reason: tx.description,
-                            debitAccount: tx.debit||(tx.kind==="receipt"?"1121":"6427"),
-                            creditAccount: tx.credit||(tx.kind==="receipt"?"131":"1121"),
-                            amount: tx.amount,
-                            amountInWords: convertNumberToVietnameseWords(tx.amount),
-                            notes: "Kèm theo Hóa đơn điện tử số 34221 ngày 02/09/2026",
-                            chiefAccountant: "Trương Thị B",
-                            director: "Nguyễn Văn A",
-                          });
-                          setShowVoucherModal(true);
+                          setSelectedRowId(tx.id);
+                          setViewingBankVoucher(tx);
                         }}
                       >
                         {tx.code}
@@ -1932,41 +2508,169 @@ export default function MisaBankWorkspace({
                     </td>,
                     <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.partner}</td>,
                     <td style={{padding:"8px 10px"}}>{tx.bankAccount||""}</td>,<td style={{padding:"8px 10px"}}>{tx.reasonLabel||""}</td>,<td style={{padding:"8px 10px"}}>{tx.documentType||(tx.kind==="receipt"?"Thu tiền gửi":tx.kind==="transfer"?"Chuyển tiền nội bộ":"Ủy nhiệm chi")}</td>,
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span
-                        style={{ color: "#0284c7", cursor: "pointer", marginRight: 6 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (tx.kind === "transfer") { viewBankTransfer(String(tx.id).slice(9)); return; }
-                          setSelectedVoucher({
-                            code: tx.code,
-                            date: parseReportDate(tx.dateChungTu),
-                            person: tx.partner,
-                            address: "Hà Nội",
-                            reason: tx.description,
-                            debitAccount: tx.debit||(tx.kind==="receipt"?"1121":"6427"),
-                            creditAccount: tx.credit||(tx.kind==="receipt"?"131":"1121"),
-                            amount: tx.amount,
-                            amountInWords: convertNumberToVietnameseWords(tx.amount),
-                            notes: "Kèm theo Hóa đơn điện tử số 34221",
-                            chiefAccountant: "Trương Thị B",
-                            director: "Nguyễn Văn A",
-                          });
-                          setShowVoucherModal(true);
-                        }}
-                      >
-                        Xem
-                      </span>
-                      <button aria-label={`Chức năng chứng từ ${tx.code}`} aria-expanded={bankRowMenu===tx.id} onClick={event=>{event.stopPropagation();setBankRowMenu(previous=>previous===tx.id?null:tx.id);}} style={{border:0,background:'transparent',color:'#0284c7',cursor:'pointer'}}><ChevronDown size={13}/></button>
-                      {bankRowMenu===tx.id&&<div role="menu" aria-label={`Chức năng ${tx.code}`}>
-                        {tx.kind==='transfer' ? <>
-                          {tx.status==='draft'&&<button role="menuitem" onClick={event=>{event.stopPropagation();editBankTransfer(String(tx.id).slice(9));}}>Sửa</button>}
-                          {tx.status==='draft'&&<button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting('posted',[tx]);setBankRowMenu(null);}}>Ghi sổ</button>}
-                          {tx.status==='draft'&&<button role="menuitem" onClick={event=>{event.stopPropagation();void cancelBankTransfer(String(tx.id).slice(9));}}>Hủy</button>}
-                          {tx.status==='posted'&&<button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting('draft',[tx]);setBankRowMenu(null);}}>Bỏ ghi sổ</button>}
-                        </> : <button role="menuitem" onClick={event=>{event.stopPropagation();void setBankPosting(tx.status==='posted'?'draft':'posted',[tx]);setBankRowMenu(null);}}>{tx.status==='posted'?'Đảo giao dịch':'Ghi sổ'}</button>}
-                        <button role="menuitem" onClick={event=>{event.stopPropagation();setBankRowMenu(null);}}>Đóng</button>
-                      </div>}
+                    <td style={{ padding: "8px 10px", textAlign: "center", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+                      <div className="misa-row-action-cell">
+                        {tx.kind !== "transfer" && (
+                          <button
+                            type="button"
+                            className="misa-row-action-link print"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedVoucher({
+                                code: tx.code,
+                                date: parseReportDate(tx.dateChungTu),
+                                person: tx.partner,
+                                address: "Hà Nội",
+                                reason: tx.description,
+                                debitAccount: tx.rows?.[0]?.debit || tx.debit || (tx.kind === "receipt" ? "1121" : "6427"),
+                                creditAccount: tx.rows?.[0]?.credit || tx.credit || (tx.kind === "receipt" ? "131" : "1121"),
+                                amount: tx.amount,
+                                amountInWords: convertNumberToVietnameseWords(tx.amount),
+                                notes: "Chứng từ ngân hàng",
+                                chiefAccountant: "Trương Thị B",
+                                director: "Nguyễn Văn A",
+                              });
+                              setShowVoucherModal(true);
+                            }}
+                          >
+                            In
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="misa-row-action-link view"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (tx.kind === "transfer") { viewBankTransfer(String(tx.id).slice(9)); return; }
+                            setSelectedRowId(tx.id);
+                            setViewingBankVoucher(tx);
+                          }}
+                        >
+                          Xem
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Chức năng chứng từ ${tx.code}`}
+                          aria-expanded={bankRowMenu === tx.id}
+                          className={`misa-row-action-trigger ${bankRowMenu === tx.id ? "active" : ""}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setBankRowMenu((previous) => (previous === tx.id ? null : tx.id));
+                          }}
+                          title="Thêm thao tác"
+                        >
+                          <ChevronDown size={13} style={{ transform: bankRowMenu === tx.id ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                        </button>
+                        {bankRowMenu === tx.id && (
+                          <>
+                            <div
+                              style={{ position: "fixed", inset: 0, zIndex: 70 }}
+                              onClick={() => setBankRowMenu(null)}
+                            />
+                            <div className="misa-row-action-menu" role="menu" aria-label={`Chức năng ${tx.code}`}>
+                              {tx.kind === "transfer" ? (
+                                <>
+                                  {tx.status === "draft" && (
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="misa-row-action-item"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        editBankTransfer(String(tx.id).slice(9));
+                                      }}
+                                    >
+                                      Sửa
+                                    </button>
+                                  )}
+                                  {tx.status === "draft" && (
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="misa-row-action-item"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void setBankPosting("posted", [tx]);
+                                        setBankRowMenu(null);
+                                      }}
+                                    >
+                                      Ghi sổ
+                                    </button>
+                                  )}
+                                  {tx.status === "draft" && (
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="misa-row-action-item danger"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void cancelBankTransfer(String(tx.id).slice(9));
+                                      }}
+                                    >
+                                      Hủy
+                                    </button>
+                                  )}
+                                  {tx.status === "posted" && (
+                                    <button
+                                      type="button"
+                                      role="menuitem"
+                                      className="misa-row-action-item"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void setBankPosting("draft", [tx]);
+                                        setBankRowMenu(null);
+                                      }}
+                                    >
+                                      Bỏ ghi sổ
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    className="misa-row-action-item"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setBankRowMenu(null);
+                                      setSelectedRowId(tx.id);
+                                      setViewingBankVoucher(tx);
+                                    }}
+                                  >
+                                    {tx.status === "posted" ? "Xem chứng từ" : "Sửa chứng từ"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    className="misa-row-action-item"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      void setBankPosting(tx.status === "posted" ? "draft" : "posted", [tx]);
+                                      setBankRowMenu(null);
+                                    }}
+                                  >
+                                    {tx.status === "posted" ? "Bỏ ghi sổ" : "Ghi sổ"}
+                                  </button>
+                                  <div className="misa-row-action-divider" />
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    className="misa-row-action-item danger"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setBankRowMenu(null);
+                                      void deleteBankTransaction(tx);
+                                    }}
+                                  >
+                                    Xóa
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </td>,<td>{tx.partnerCode||""}</td>,<td>{tx.beneficiaryAccount||""}</td>,<td>{tx.beneficiaryBank||""}</td>,<td>{tx.address||""}</td>,<td>{tx.employee||""}</td>,<td>{tx.bankName||""}</td>,<td>{tx.combinedInvoices||""}</td>,<td>{tx.settled||""}</td>,<td>{tx.extended1||""}</td>,<td>{tx.extended2||""}</td>,<td>{tx.extended3||""}</td>,<td>{tx.extended4||""}</td>,<td>{tx.extended5||""}</td>,<td>{tx.extended6||""}</td>,<td>{tx.extended7||""}</td>,<td>{tx.extended8||""}</td>,<td>{tx.extended9||""}</td>,<td>{tx.extended10||""}</td>,<td>{tx.createdBy||""}</td>,<td>{tx.createdAt||""}</td>,<td>{tx.updatedBy||""}</td>,<td>{tx.updatedAt||""}</td>];const cell=cells[column.id-2];return cloneElement(cell,{key:column.id,style:{...cell.props.style,width:column.width,minWidth:column.width}});})}
                   </tr>
                 );

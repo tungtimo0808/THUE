@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import "./admin-workspaces.css";
 
 type TabKey = "overview" | "companies" | "users" | "audit";
@@ -105,11 +106,45 @@ interface RecentLog {
 
 export default function SuperAdminWorkspace() {
   const navigate = useNavigate();
-  const { token, session, restoring, selectCompany } = useApiSession();
+  const { restoring, selectCompany } = useApiSession();
+
+  // Dedicated Super Admin Step-Up Auth State (isolated from regular user session)
+  const [superAdminToken, setSuperAdminToken] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem("erp_superadmin_token") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [superAdminUser, setSuperAdminUser] = useState<{ username?: string; display_name?: string; email?: string } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem("erp_superadmin_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loginIdentity, setLoginIdentity] = useState<string>("");
+  const [loginPassword, setLoginPassword] = useState<string>("");
+  const [loginError, setLoginError] = useState<string>("");
+  const [loggingIn, setLoggingIn] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [_loading, setLoading] = useState<boolean>(false);
-  const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [alertMsg, setRawAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const setAlertMsg = (val: { type: "success" | "error"; text: string } | null) => {
+    if (!val) {
+      setRawAlertMsg(null);
+      return;
+    }
+    const cleanText = humanizeErrorMessage(val.text);
+    setRawAlertMsg({ type: val.type, text: cleanText });
+    showGlobalPopup({
+      type: val.type,
+      title: val.type === "error" ? "Thông báo lỗi" : "Thực hiện thành công",
+      message: cleanText,
+    });
+  };
 
   // Stats
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
@@ -152,18 +187,51 @@ export default function SuperAdminWorkspace() {
   const [resetUser, setResetUser] = useState<PlatformUser | null>(null);
   const [newPassword, setNewPassword] = useState<string>("");
 
-  const resolveToken = () => {
-    if (token) return token;
-    const direct = localStorage.getItem("erp_token");
-    if (direct) return direct;
+  const resolveToken = () => superAdminToken;
+
+  const handleSuperAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginIdentity.trim() || !loginPassword) return;
+    setLoggingIn(true);
+    setLoginError("");
     try {
-      const raw = localStorage.getItem("erp_api_session");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return parsed.token || parsed.access || "";
+      const response = await fetch("/api/v1/iam/platform/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginIdentity.trim(),
+          identity: loginIdentity.trim(),
+          password: loginPassword,
+        }),
+      });
+      const res: any = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(res.detail || res.message || "Tài khoản hoặc mật khẩu Super Admin không chính xác.");
       }
-    } catch {}
-    return "";
+      const tok = res.access || res.token || "";
+      if (!tok) {
+        throw new Error("Không nhận được token xác thực Super Admin.");
+      }
+      sessionStorage.setItem("erp_superadmin_token", tok);
+      sessionStorage.setItem("erp_superadmin_user", JSON.stringify(res.user || { username: "admin", display_name: "Platform Super Admin" }));
+      setSuperAdminToken(tok);
+      setSuperAdminUser(res.user || { username: "admin", display_name: "Platform Super Admin" });
+      setLoginPassword("");
+    } catch (err: any) {
+      setLoginError(err.message || "Tài khoản hoặc mật khẩu Super Admin không chính xác.");
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  const handleSuperAdminLogout = () => {
+    sessionStorage.removeItem("erp_superadmin_token");
+    sessionStorage.removeItem("erp_superadmin_user");
+    setSuperAdminToken("");
+    setSuperAdminUser(null);
+    setMetrics(null);
+    setCompanies([]);
+    setUsers([]);
   };
 
   // Load Platform Stats
@@ -211,10 +279,7 @@ export default function SuperAdminWorkspace() {
   useEffect(() => {
     if (restoring) return;
     const t = resolveToken();
-    if (!t) {
-      navigate("/login?next=/super-admin");
-      return;
-    }
+    if (!t) return;
     let active = true;
     setLoading(true);
     setAlertMsg(null);
@@ -229,9 +294,15 @@ export default function SuperAdminWorkspace() {
         setRecentLogs(statsRes.value.recent_logs || []);
         setServerTime(statsRes.value.server_time || "");
       } else {
+        const errMsg = statsRes.reason?.message || "";
+        if (errMsg.includes("401") || errMsg.includes("403") || errMsg.toLowerCase().includes("superuser") || errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("xác thực")) {
+          handleSuperAdminLogout();
+          setLoginError("Phiên Super Admin đã hết hạn hoặc tài khoản không có quyền Super Admin. Vui lòng đăng nhập bằng tài khoản 'admin'.");
+          return;
+        }
         setAlertMsg({
           type: "error",
-          text: statsRes.reason?.message || "Không thể tải dữ liệu Nền tảng Super Admin.",
+          text: errMsg || "Không thể tải dữ liệu Nền tảng Super Admin.",
         });
       }
       if (compRes.status === "fulfilled") {
@@ -247,7 +318,7 @@ export default function SuperAdminWorkspace() {
     return () => {
       active = false;
     };
-  }, [token, restoring]);
+  }, [superAdminToken, restoring]);
 
   // Set Company Status
   const handleSetCompanyStatus = async (companyId: string, newStatus: string) => {
@@ -567,6 +638,193 @@ export default function SuperAdminWorkspace() {
     );
   }
 
+  if (!superAdminToken) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
+          padding: 20,
+          fontFamily: "Inter, system-ui, sans-serif",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 440,
+            background: "#ffffff",
+            borderRadius: 16,
+            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.45)",
+            overflow: "hidden",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          <div
+            style={{
+              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+              padding: "26px 28px",
+              color: "#ffffff",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.18)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ShieldCheck size={24} color="#ffffff" />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", opacity: 0.9 }}>
+                  SỔ VIỆT ERP • STEP-UP SECURITY
+                </div>
+                <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800 }}>
+                  Xác thực Super Admin Nền tảng
+                </h2>
+              </div>
+            </div>
+            <p style={{ margin: 0, fontSize: 12.5, opacity: 0.92, lineHeight: 1.5 }}>
+              Khu vực điều hành toàn hệ thống yêu cầu đăng nhập riêng bằng tài khoản quản trị tối cao (<strong>admin</strong>). Tài khoản chủ doanh nghiệp thông thường không có quyền truy cập trực tiếp.
+            </p>
+          </div>
+
+          <form onSubmit={handleSuperAdminLogin} style={{ padding: "26px 28px" }}>
+            {loginError && (
+              <div
+                role="alert"
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "11px 14px",
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  color: "#b91c1c",
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  marginBottom: 18,
+                  lineHeight: 1.45,
+                }}
+              >
+                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "#334155", marginBottom: 6 }}>
+                Tài khoản Super Admin
+              </label>
+              <input
+                type="text"
+                value={loginIdentity}
+                onChange={(e) => setLoginIdentity(e.target.value)}
+                placeholder="Nhập tài khoản Super Admin (admin)"
+                autoFocus
+                required
+                style={{
+                  width: "100%",
+                  height: 42,
+                  padding: "0 14px",
+                  borderRadius: 9,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 13.5,
+                  color: "#0f172a",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "#334155", marginBottom: 6 }}>
+                Mật khẩu Super Admin
+              </label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Nhập mật khẩu (admin)"
+                required
+                style={{
+                  width: "100%",
+                  height: 42,
+                  padding: "0 14px",
+                  borderRadius: 9,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 13.5,
+                  color: "#0f172a",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loggingIn}
+              style={{
+                width: "100%",
+                height: 44,
+                borderRadius: 10,
+                border: "none",
+                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                color: "#ffffff",
+                fontSize: 13.5,
+                fontWeight: 700,
+                cursor: loggingIn ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                boxShadow: "0 8px 20px -4px rgba(124, 58, 237, 0.45)",
+              }}
+            >
+              <KeyRound size={16} />
+              <span>{loggingIn ? "Đang xác thực quyền tối cao..." : "Đăng nhập Trung tâm Super Admin"}</span>
+            </button>
+
+            <div
+              style={{
+                marginTop: 18,
+                paddingTop: 14,
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                fontSize: 12,
+                color: "#64748b",
+              }}
+            >
+              <span>Phiên độc lập với tài khoản Doanh nghiệp</span>
+              <Link
+                to="/"
+                style={{
+                  color: "#4f46e5",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                ← Quay lại ứng dụng
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-workspace">
       {/* Super Admin Top Header */}
@@ -583,7 +841,7 @@ export default function SuperAdminWorkspace() {
             <div className="admin-header-subtitle">
               <span>Trạng thái: <strong>HỆ THỐNG ONLINE 100%</strong></span>
               <span>Thời gian Server: <strong>{serverTime ? new Date(serverTime).toLocaleTimeString("vi-VN") : "Bình thường"}</strong></span>
-              <span>Quản trị viên: <strong>{(session as any)?.username || (session as any)?.user?.username || "Super Admin"}</strong></span>
+              <span>Quản trị viên: <strong>{superAdminUser?.username || "admin"}</strong></span>
             </div>
           </div>
           <div className="admin-header-actions">
@@ -599,6 +857,15 @@ export default function SuperAdminWorkspace() {
             <Link to="/" className="admin-btn admin-btn-light">
               <ExternalLink size={15} /> Về Ứng dụng Kế toán
             </Link>
+            <button
+              type="button"
+              onClick={handleSuperAdminLogout}
+              className="admin-btn admin-btn-light"
+              style={{ color: "#fecaca", borderColor: "rgba(254, 202, 202, 0.35)" }}
+              title="Đăng xuất khỏi phiên Super Admin"
+            >
+              <Lock size={15} /> Đăng xuất Super Admin
+            </button>
           </div>
         </div>
       </header>
@@ -633,17 +900,6 @@ export default function SuperAdminWorkspace() {
 
       {/* Main Body */}
       <div className="admin-container">
-        {alertMsg && (
-          <div className={`admin-alert ${alertMsg.type === "success" ? "admin-alert-success" : "admin-alert-error"}`}>
-            <span>{alertMsg.text}</span>
-            <button
-              onClick={() => setAlertMsg(null)}
-              style={{ background: "none", border: "none", cursor: "pointer" }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
 
         {/* ================= TAB 1: OVERVIEW ================= */}
         {activeTab === "overview" && (

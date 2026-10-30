@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition, memo, type ReactNode } from "react";
+import { GlobalFeedbackPopupHost, showGlobalPopup, classifyNoticeType, humanizeErrorMessage } from "./global-popup";
 import {
   BrowserRouter,
   Navigate,
@@ -519,11 +520,10 @@ function ReferenceWorkspace() {
     apiCompanies.find((c) => c.id === apiCompanyId) ||
     apiCompanies[0];
   const company = matchedApiCompany || companies[0];
-  const period = ["2026-12", "2026-09", "2026-08", "2026"].includes(
-    params.get("period") || "",
-  )
-    ? params.get("period")!
-    : "2026-09";
+  const rawUrlPeriod = params.get("period") || "";
+  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
+    ? rawUrlPeriod
+    : "2026-12";
   const [dataset, setDataset] = useState(() => {
     try {
       return localStorage.getItem("ref_dataset") || "accounting-2026";
@@ -568,7 +568,7 @@ function ReferenceWorkspace() {
 
   useEffect(() => {
     setVisitedModules([moduleId]);
-  }, [company.id, period]);
+  }, [company.id]);
 
   const displayModules = useMemo(() => {
     if (!visitedModules.includes(moduleId)) {
@@ -576,12 +576,6 @@ function ReferenceWorkspace() {
     }
     return visitedModules;
   }, [visitedModules, moduleId]);
-
-  // Sync dashboard summary KPIs from backend /api/v1/common/dashboard/ when on overview
-  useEffect(() => {
-    if (!apiToken || !company.id || moduleId !== "overview") return;
-    void request(`/api/v1/common/dashboard/?company=${encodeURIComponent(company.id)}&company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
-  }, [apiToken, company.id, moduleId]);
 
   const triggerSwitchFeedback = (type: string, message: string) => {
     setRecentlyChangedCluster(type);
@@ -593,7 +587,7 @@ function ReferenceWorkspace() {
 
   const datasetLabel = dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026";
   const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
-  const periodLabel = period === "2026-09" ? "K9.2026" : period === "2026-08" ? "K8.2026" : "Năm 2026";
+  const periodLabel = period.startsWith("2026-") ? `K${Number(period.slice(5))}.2026` : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
   const scoped = useMemo(
     () => items.filter((t) => t.company === company.id && (period === "2026" ? t.date.startsWith("2026") : t.date.startsWith(period))),
@@ -659,11 +653,23 @@ function ReferenceWorkspace() {
   >(null);
   const [createKind, setCreateKind] = useState<Kind | null>(null),
     [detailId, setDetailId] = useState<string | null>(null);
-  const [notice, setNotice] = useState(""),
+  const [notice, setRawNotice] = useState(""),
     [info, setInfo] = useState(""),
     [settingsSearch, setSettingsSearch] = useState(""),
     [query, setQuery] = useState(""),
     [workMode, setWorkMode] = useState("Kế toán");
+  const setNotice = useCallback((msg: string) => {
+    const cleaned = msg ? humanizeErrorMessage(msg) : "";
+    setRawNotice(cleaned);
+    if (cleaned) {
+      const pType = classifyNoticeType(cleaned);
+      showGlobalPopup({
+        type: pType,
+        title: pType === "error" ? "Thông báo lỗi" : pType === "warning" ? "Cảnh báo kiểm tra" : "Lưu dữ liệu thành công",
+        message: cleaned,
+      });
+    }
+  }, []);
   const href: ReferenceHref = (path, extra) =>
     `${path}?${new URLSearchParams({ company: company.id, period, ...extra })}`;
   const detail = items.find((t) => t.id === detailId),
@@ -863,6 +869,7 @@ function ReferenceWorkspace() {
       return (
         <MisaDashboardOverview
           items={scoped}
+          companyId={matchedApiCompany?.id || apiCompanyId}
           companyName={company.name}
           period={period}
           href={href}
@@ -1327,8 +1334,18 @@ function ReferenceWorkspace() {
                 <div className="ref-cluster-popover-header">Kỳ làm việc</div>
                 <div className="ref-cluster-popover-list">
                   {[
+                    { id: "2026-12", label: "K12.2026 (Tháng 12/2026)" },
+                    { id: "2026-11", label: "K11.2026 (Tháng 11/2026)" },
+                    { id: "2026-10", label: "K10.2026 (Tháng 10/2026)" },
                     { id: "2026-09", label: "K9.2026 (Tháng 09/2026)" },
                     { id: "2026-08", label: "K8.2026 (Tháng 08/2026)" },
+                    { id: "2026-07", label: "K7.2026 (Tháng 07/2026)" },
+                    { id: "2026-06", label: "K6.2026 (Tháng 06/2026)" },
+                    { id: "2026-05", label: "K5.2026 (Tháng 05/2026)" },
+                    { id: "2026-04", label: "K4.2026 (Tháng 04/2026)" },
+                    { id: "2026-03", label: "K3.2026 (Tháng 03/2026)" },
+                    { id: "2026-02", label: "K2.2026 (Tháng 02/2026)" },
+                    { id: "2026-01", label: "K1.2026 (Tháng 01/2026)" },
                     { id: "2026", label: "Năm 2026 (Cả năm)" },
                   ].map((item) => {
                     const isSelected = period === item.id;
@@ -1461,11 +1478,7 @@ function ReferenceWorkspace() {
                   <div className="ref-user-dropdown-header">
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
                       <div className="ref-user-dropdown-title">{userDisplayName}</div>
-                      {Boolean(apiSession?.user?.is_superuser) ? (
-                        <span style={{ background: "#7c3aed", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          👑 SUPER ADMIN
-                        </span>
-                      ) : userEmail === "tungtimo0808@gmail.com" ? (
+                      {(Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") ? (
                         <span style={{ background: "#f59e0b", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
                           👑 ADMIN DOANH NGHIỆP
                         </span>
@@ -1493,7 +1506,7 @@ function ReferenceWorkspace() {
                     <span>Đổi / Quản lý doanh nghiệp</span>
                   </button>
 
-                  {(Boolean(apiSession?.user?.is_superuser) || userEmail === "tungtimo0808@gmail.com") && (
+                  {(Boolean(apiSession?.user?.is_superuser) || Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") && (
                     <button
                       type="button"
                       className="ref-user-dropdown-item"
@@ -1504,20 +1517,6 @@ function ReferenceWorkspace() {
                     >
                       <Building2 size={15} color="#0052cc" />
                       <span><strong>Quản trị doanh nghiệp</strong></span>
-                    </button>
-                  )}
-
-                  {Boolean(apiSession?.user?.is_superuser) && (
-                    <button
-                      type="button"
-                      className="ref-user-dropdown-item"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        navigate("/super-admin");
-                      }}
-                    >
-                      <ShieldCheck size={15} color="#7c3aed" />
-                      <span><strong>Quản trị nền tảng (Super Admin)</strong></span>
                     </button>
                   )}
 
@@ -1973,7 +1972,7 @@ function ReferenceWorkspace() {
             : referenceTabs[mId]?.[0]?.[0] || "process";
           return (
             <KeepAliveModuleSlot
-              key={`keepalive-${mId}-${company.id}-${period}`}
+              key={`keepalive-${mId}-${company.id}`}
               mId={mId}
               isCurrent={isCurrent}
               activeTab={activeTabForSlot}
@@ -2434,21 +2433,6 @@ function ReferenceWorkspace() {
           onSubmit={submit}
         />
       )}
-      <div
-        className={`toast ${notice ? "visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {notice && (
-          <>
-            <Check size={16} />
-            <span>{notice}</span>
-            <button aria-label="Đóng thông báo" onClick={() => setNotice("")}>
-              <X size={16} />
-            </button>
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -2513,11 +2497,29 @@ function AppRoute() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const origAlert = window.alert;
+    window.alert = (msg?: any) => {
+      const text = String(msg ?? "").trim();
+      if (!text) return;
+      const pType = classifyNoticeType(text);
+      showGlobalPopup({
+        type: pType,
+        title: pType === "error" ? "Thông báo lỗi" : pType === "warning" ? "Cảnh báo kiểm tra" : "Thông báo hệ thống",
+        message: humanizeErrorMessage(text),
+      });
+    };
+    return () => {
+      window.alert = origAlert;
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <ApiSessionProvider>
         <ErrorBoundary>
           <AppRoute />
+          <GlobalFeedbackPopupHost />
         </ErrorBoundary>
       </ApiSessionProvider>
     </BrowserRouter>

@@ -63,7 +63,27 @@ class CompanyScopedViewSet(ProtectedModelViewSet):
         company_id = self.request.query_params.get("company_id")
         if company_id:
             queryset = queryset.filter(company_id=company_id)
-        return queryset
+            if not getattr(self.request.user, "is_superuser", False):
+                account = getattr(self.request.user, "iam_account", None)
+                if account and CompanyMembership.objects.filter(
+                    user=account, membership_status=ActiveStatus.ACTIVE
+                ).exists():
+                    if not CompanyMembership.objects.filter(
+                        company_id=company_id,
+                        user=account,
+                        membership_status=ActiveStatus.ACTIVE,
+                    ).exists():
+                        return queryset.none()
+            return queryset
+        if getattr(self.request.user, "is_superuser", False):
+            return queryset
+        account = getattr(self.request.user, "iam_account", None)
+        if not account:
+            return queryset.none()
+        return queryset.filter(
+            company__memberships__user=account,
+            company__memberships__membership_status=ActiveStatus.ACTIVE,
+        ).distinct()
 
 
 class CompanyViewSet(ProtectedModelViewSet):

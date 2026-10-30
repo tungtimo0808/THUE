@@ -1,3 +1,5 @@
+import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
+
 export type Company = {
   id: string;
   code: string;
@@ -154,7 +156,11 @@ export async function request<T>(path: string, token?: string, options?: Request
           },
         });
       response = await fetchWithToken(initialToken);
-      if (response.status === 401 && !path.startsWith("/api/token/")) {
+      const isAuthOrPlatformEndpoint =
+        path.startsWith("/api/token/") ||
+        path.includes("/auth/login/") ||
+        path.includes("/iam/platform/");
+      if (response.status === 401 && !isAuthOrPlatformEndpoint) {
         const renewed = await renewAccessToken(initialToken);
         if (!renewed) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401);
         response = await fetchWithToken(renewed);
@@ -170,18 +176,57 @@ export async function request<T>(path: string, token?: string, options?: Request
 
     const body: unknown = await response.json().catch(() => null);
     if (!response.ok) {
+      let detail = "";
       if ([502, 503, 504].includes(response.status)) {
-        throw new ApiError("Backend chưa sẵn sàng. Hãy đợi migrations hoàn tất rồi thử lại.", response.status);
+        detail = "Máy chủ đang khởi động hoặc cập nhật dữ liệu. Vui lòng đợi giây lát rồi thử lại.";
+      } else if (response.status === 401 && !body) {
+        detail = "Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.";
+      } else {
+        detail = humanizeErrorMessage(body, response.status);
       }
-      if (response.status === 401) {
-        throw new ApiError("Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.", 401);
+      const isSilentCheck =
+        path.includes("/duplicates/") ||
+        (isGet && (path.includes("/notifications") || path.includes("/work-items")));
+      if (!isSilentCheck) {
+        showGlobalPopup({
+          type: "error",
+          title: isGet ? "Không thể tải dữ liệu" : "Không thể thực hiện thao tác",
+          message: detail,
+        });
       }
-      const detail = Array.isArray(body)
-        ? body.map(String).join(" ")
-        : body && typeof body === "object"
-        ? Object.entries(body).map(([field, value]) => `${field}: ${Array.isArray(value) ? value.join(", ") : (typeof value === "object" ? JSON.stringify(value) : String(value))}`).join("; ")
-        : `Yêu cầu thất bại (HTTP ${response.status}).`;
       throw new ApiError(detail, response.status);
+    }
+    if (!isGet) {
+      const isSilentMutation =
+        path.startsWith("/api/token/") ||
+        path.includes("/auth/login/") ||
+        path.includes("/auth/logout/") ||
+        path.includes("/iam/platform/login/") ||
+        path.includes("/companies/switch/") ||
+        path.includes("/duplicates/") ||
+        path.includes("/preview") ||
+        path.includes("/validate");
+      if (!isSilentMutation) {
+        const serverMsg =
+          body && typeof body === "object" && typeof (body as any).message === "string"
+            ? (body as any).message
+            : "";
+        const defaultActionMsg =
+          method === "DELETE"
+            ? "Đã xóa dữ liệu thành công."
+            : path.includes("/companies/create")
+            ? "Đã khởi tạo doanh nghiệp mới và thiết lập sổ sách kế toán thành công."
+            : path.includes("/post")
+            ? "Đã ghi sổ chứng từ thành công."
+            : path.includes("/unpost")
+            ? "Đã bỏ ghi sổ chứng từ thành công."
+            : "Đã lưu dữ liệu thành công.";
+        showGlobalPopup({
+          type: "success",
+          title: method === "DELETE" ? "Xóa thành công" : "Lưu dữ liệu thành công",
+          message: serverMsg || defaultActionMsg,
+        });
+      }
     }
     if (dedupeKey) {
       getResponseCache.set(dedupeKey, { data: body, timestamp: Date.now() });

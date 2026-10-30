@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { FileSpreadsheet, X } from "lucide-react";
 import { request } from "./live-api";
+import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 
 type Profile = { id: string; account_number: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; currency_id: string; currency_code: string };
 type Mapping = Record<string, string>;
@@ -184,10 +185,16 @@ export default function BankStatementImportModal({ companyId, token, profiles, o
       const url = `/api/v1/bank/statements/import-file/?company_id=${encodeURIComponent(companyId)}${profile?.branch_id ? `&branch_id=${encodeURIComponent(profile.branch_id)}` : ""}`;
       const response = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(Object.entries(data).map(([key, value]) => `${key}: ${String(value)}`).join("; ") || `HTTP ${response.status}`);
+      if (!response.ok) throw new Error(humanizeErrorMessage(data, response.status));
+      showGlobalPopup({ type: "success", title: "Nhập sao kê thành công", message: `Đã nhập thành công ${selected.length} dòng sao kê ngân hàng.` });
       onImported(selected.length, data.source_reference, accountId);
       onClose();
-    } catch (caught) { setConfirmation(false); setError(caught instanceof Error ? caught.message : "Không lưu được sao kê."); }
+    } catch (caught) {
+      const msg = caught instanceof Error ? humanizeErrorMessage(caught.message) : "Không lưu được sao kê ngân hàng.";
+      setConfirmation(false);
+      setError(msg);
+      showGlobalPopup({ type: "error", title: "Lỗi nhập sao kê ngân hàng", message: msg });
+    }
     finally { setBusy(false); }
   }
 

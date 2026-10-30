@@ -61,7 +61,14 @@ class SalesCommercialInvoiceViewSet(viewsets.ModelViewSet):
         if hasattr(self.request.user, "company") and self.request.user.company:
             return self.request.user.company
         if hasattr(self.request.user, "iam_account"):
-            emp = getattr(self.request.user.iam_account, "employee", None)
+            account = self.request.user.iam_account
+            pref = getattr(account, "preference", None)
+            if pref and pref.current_company_id:
+                return pref.current_company
+            mem = account.memberships.filter(membership_status="ACTIVE").select_related("company").first()
+            if mem and mem.company:
+                return mem.company
+            emp = getattr(account, "employee", None)
             if emp and emp.company:
                 return emp.company
         return Company.objects.first()

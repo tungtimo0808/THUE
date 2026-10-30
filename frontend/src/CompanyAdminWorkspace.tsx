@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import "./admin-workspaces.css";
 
@@ -322,7 +323,20 @@ export default function CompanyAdminWorkspace() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [_loading, setLoading] = useState<boolean>(false);
-  const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [alertMsg, setRawAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const setAlertMsg = (val: { type: "success" | "error"; text: string } | null) => {
+    if (!val) {
+      setRawAlertMsg(null);
+      return;
+    }
+    const cleanText = humanizeErrorMessage(val.text);
+    setRawAlertMsg({ type: val.type, text: cleanText });
+    showGlobalPopup({
+      type: val.type,
+      title: val.type === "error" ? "Thông báo lỗi" : "Lưu dữ liệu thành công",
+      message: cleanText,
+    });
+  };
 
   // Data states
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
@@ -962,19 +976,8 @@ export default function CompanyAdminWorkspace() {
         </button>
       </nav>
 
-      {/* Alert Notification */}
+      {/* Alert Notification handled via GlobalFeedbackPopupHost */}
       <div className="admin-container">
-        {alertMsg && (
-          <div className={`admin-alert ${alertMsg.type === "success" ? "admin-alert-success" : "admin-alert-error"}`}>
-            <span>{alertMsg.text}</span>
-            <button
-              onClick={() => setAlertMsg(null)}
-              style={{ background: "none", border: "none", cursor: "pointer" }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
 
         {/* ================= TAB 1: OVERVIEW ================= */}
         {activeTab === "overview" && (
