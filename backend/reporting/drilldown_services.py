@@ -740,4 +740,3 @@ def drill_through_report(
         "inherited_parameters": inherited_params,
         "timestamp": timezone.now().isoformat(),
     }
-

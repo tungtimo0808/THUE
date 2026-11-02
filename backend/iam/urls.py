@@ -3,10 +3,12 @@ from rest_framework.routers import DefaultRouter
 from .organization_assignment_views import OrganizationAssignmentViewSet
 from .platform_views import (
     PlatformCompanyViewSet,
+    PlatformLoginView,
     PlatformStatsView,
     PlatformUserViewSet,
     seed_standard_roles_view,
     assign_member_role_view,
+    create_staff_member_view,
 )
 
 from .views import (
@@ -62,8 +64,9 @@ router.register("permission-overrides", UserPermissionOverrideViewSet, basename=
 router.register("effective-permissions", EffectivePermissionViewSet, basename="effective-permission")
 
 urlpatterns = [
+    path("platform/login/", PlatformLoginView.as_view(), name="platform-login"),
     path("platform/stats/", PlatformStatsView.as_view(), name="platform-stats"),
     path("roles/seed-standard/", seed_standard_roles_view, name="seed-standard-roles"),
     path("members/assign-role/", assign_member_role_view, name="assign-member-role"),
+    path("members/create-staff/", create_staff_member_view, name="create-staff-member"),
 ] + router.urls
-

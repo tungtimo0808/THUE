@@ -247,7 +247,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                 Tự động phân bổ đối trừ
               </button>
             </div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -306,7 +306,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>
               2. Danh sách chứng từ công nợ (Hóa đơn / Chứng từ mua hàng)
             </div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -548,7 +548,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
         <div style={{ flex: 1, padding: "16px 20px", overflowY: "auto" }}>
           {step === 1 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -602,7 +602,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
               <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
                 Xác nhận chi tiết đối trừ ({selectedCount} đối tượng được chọn):
               </div>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -809,7 +809,7 @@ export function UnOffsetModal({ onClose, onSuccess }: UnOffsetModalProps) {
 
         {/* Table list */}
         <div style={{ flex: 1, padding: "16px 20px", overflowY: "auto" }}>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -1027,7 +1027,7 @@ export function MultiUnOffsetModal({ onClose, onSuccess }: MultiUnOffsetModalPro
             </span>
           </div>
 
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -1234,7 +1234,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>
               1. Chứng từ phải thu (TK 131)
             </div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
@@ -1289,7 +1289,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>
               2. Chứng từ phải trả (TK 331)
             </div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>

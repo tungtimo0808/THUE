@@ -31,7 +31,7 @@ export default function DirectoryTabContent({
           return (
             <label key={key}>
               {field.label}{field.label==="Loại hợp đồng"&&<em>*</em>}
-              {field.options ? <select value={values[key]||field.options[0]} onChange={e=>onChange(key,e.target.value)}>{field.options.map(option=><option key={option}>{option}</option>)}</select> : field.kind === "textarea" ? (
+              {field.options ? <select value={values[key]||""} onChange={e=>onChange(key,e.target.value)}><option value="">{field.label === "Loại hợp đồng" ? "Chọn loại hợp đồng" : `Chọn ${field.label.toLowerCase()}`}</option>{field.options.map(option=><option key={option}>{option}</option>)}</select> : field.kind === "textarea" ? (
                 <textarea
                   value={values[key] || ""}
                   onChange={(e) => onChange(key, e.target.value)}

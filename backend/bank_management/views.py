@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import mixins,serializers as drf_serializers
 from rest_framework.decorators import action
+from iam.permissions import CompanyMemberMixin
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
@@ -17,8 +18,8 @@ from rest_framework.viewsets import GenericViewSet,ReadOnlyModelViewSet
 from . import models,serializers,services,statement_import,reconciliation,period_reconciliation,unmatched,balance_report,deposit_ledger
 from .permissions import BankPermission
 from .payment_validation import PAYMENT_TYPES
-def perms(x):return {"GET":f"{x}.VIEW","POST":f"{x}.CREATE","PUT":f"{x}.EDIT","PATCH":f"{x}.EDIT"}
-class Base(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,GenericViewSet):
+def perms(x):return {"GET":f"{x}.VIEW","POST":f"{x}.CREATE","PUT":f"{x}.EDIT","PATCH":f"{x}.EDIT","DELETE":f"{x}.EDIT"}
+class Base(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins.DestroyModelMixin,GenericViewSet):
     permission_classes=(BankPermission,);filter_backends=(SearchFilter,OrderingFilter);ordering=("-created_at",)
     def get_queryset(self):
         c=self.request.query_params.get("company_id");qs=super().get_queryset().filter(company_id=c) if c else super().get_queryset().none()
@@ -73,12 +74,17 @@ class TransactionViewSet(Base):
             raise drf_serializers.ValidationError({"company":"Không được chuyển chứng từ sang doanh nghiệp khác."})
         if s.instance.business_type in PAYMENT_TYPES:
             account=s.validated_data.get("account",s.instance.account).account
-            branch_id=self.request.query_params.get("branch_id")
-            if not branch_id or account.branch_id and str(account.branch_id)!=branch_id:
+            branch_id=self.request.query_params.get("branch_id") or (str(account.branch_id) if account.branch_id else None)
+            if branch_id and account.branch_id and str(account.branch_id)!=branch_id:
                 raise drf_serializers.ValidationError({"branch_id":"Chi nhánh không khớp tài khoản chi."})
-            if not Branch.objects.filter(pk=branch_id,company=s.instance.company,status="ACTIVE").exists():
+            if branch_id and not Branch.objects.filter(pk=branch_id,company=s.instance.company,status="ACTIVE").exists():
                 raise drf_serializers.ValidationError({"branch_id":"Chi nhánh không thuộc doanh nghiệp hoặc đã ngừng hoạt động."})
         super().perform_update(s)
+    def perform_destroy(self,instance):
+        if instance.status=="POSTED":
+            raise drf_serializers.ValidationError({"status":"Chứng từ đã ghi sổ không thể xóa. Vui lòng Bỏ ghi sổ trước khi xóa."})
+        services.audit(self.request,instance,"DELETE",before=self.get_serializer(instance).data)
+        instance.delete()
     @action(detail=True,methods=("post",))
     def submit(self,r,pk=None):return Response(self.get_serializer(services.submit(self.get_object(),r)).data)
     @action(detail=True,methods=("post",))
@@ -433,19 +439,8 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
         c=self.request.query_params.get("company_id");return self.queryset.filter(company_id=c) if c else self.queryset.none()
 
 
-class BankRuleViewSet(GenericViewSet):
+class BankRuleViewSet(CompanyMemberMixin, GenericViewSet):
     """API quản lý Quy tắc tự động hạch toán ngân hàng điện tử lưu trữ trực tiếp trong PostgreSQL."""
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        from organization.models import Company
-        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
-        if cid:
-            comp = Company.objects.filter(pk=cid).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
     def list(self, request):
         from common_services.models import CoreCompanySetting
         company = self._resolve_company(request)

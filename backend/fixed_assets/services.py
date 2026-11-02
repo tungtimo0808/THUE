@@ -470,7 +470,7 @@ def _determine_reconciliation_status(company, original_cost, asset_account, orig
             entries = JournalEntry.objects.filter(id__in=matched_ids)
 
     if not entries.exists():
-        # Check GoodsPurchase in purchases module if linked
+        # A purchase document alone is evidence of cost, not proof of a posted GL debit.
         try:
             from purchases.models import GoodsPurchase
             purchases = GoodsPurchase.objects.filter(company=company, number__in=doc_numbers).exclude(status="CANCELLED")
@@ -478,7 +478,7 @@ def _determine_reconciliation_status(company, original_cost, asset_account, orig
                 pur_total = sum((p.total_amount - getattr(p, "total_tax_amount", Decimal("0")) for p in purchases), Decimal("0"))
                 first_ref = purchases.first().number
                 if pur_total == original_cost or sum((p.total_amount for p in purchases), Decimal("0")) == original_cost:
-                    return models.AccountingReconciliationStatus.RECONCILED, models.GlStatus.POSTED, first_ref
+                    return models.AccountingReconciliationStatus.UNRECONCILED, models.GlStatus.PENDING, first_ref
                 return models.AccountingReconciliationStatus.DISCREPANCY, models.GlStatus.PENDING, first_ref
         except Exception:
             pass
@@ -500,9 +500,7 @@ def _determine_reconciliation_status(company, original_cost, asset_account, orig
             return models.AccountingReconciliationStatus.RECONCILED, models.GlStatus.POSTED, first_number
         return models.AccountingReconciliationStatus.DISCREPANCY, models.GlStatus.PENDING, first_number
 
-    total_entry_debit = entries.aggregate(total=Sum("total_debit"))["total"] or Decimal("0")
-    if total_entry_debit == original_cost:
-        return models.AccountingReconciliationStatus.RECONCILED, models.GlStatus.POSTED, first_number
+    # Other debits on the voucher cannot establish the asset's original cost.
     return models.AccountingReconciliationStatus.DISCREPANCY, models.GlStatus.PENDING, first_number
 
 
@@ -524,6 +522,7 @@ def acquire_fixed_asset(request, data):
     # EF01 & BR01: Permission check
     if not request.user or not request.user.is_authenticated or not company:
         raise PermissionDenied("Bạn không có quyền ghi tăng tài sản cố định.")
+    simple_book = company.accounting_regime == "TT58" and company.bookkeeping_method == "SIMPLE"
     if not getattr(request.user, "is_superuser", False):
         iam_acc = getattr(request.user, "iam_account", None)
         if not iam_acc or not has_effective_permission(iam_acc, company, "FA.ASSET.CREATE"):
@@ -593,15 +592,15 @@ def acquire_fixed_asset(request, data):
     # EF13 & BR11: TK nguyên giá
     raw_asset_acc = data.get("asset_account") if "asset_account" in data else data.get("cost_account")
     asset_account = _resolve_account(company, raw_asset_acc)
-    if not asset_account or asset_account.company_id != company.id or asset_account.status != "ACTIVE" or not asset_account.is_postable:
+    if not simple_book and (not asset_account or asset_account.company_id != company.id or asset_account.status != "ACTIVE" or not asset_account.is_postable):
         raise ValidationError({"asset_account": "Tài khoản nguyên giá không hợp lệ."})
-    if not any(asset_account.code.startswith(prefix) for prefix in ("211", "212", "213")):
+    if asset_account and not any(asset_account.code.startswith(prefix) for prefix in ("211", "212", "213")):
         raise ValidationError({"asset_account": "Tài khoản nguyên giá không hợp lệ."})
     # Check compatibility between category and asset_account (intangible vs tangible)
     is_intangible_cat = "vô hình" in category.name.lower() or "vo hinh" in category.name.lower() or (category.asset_account and category.asset_account.code.startswith("213"))
-    if is_intangible_cat and not asset_account.code.startswith("213"):
+    if asset_account and is_intangible_cat and not asset_account.code.startswith("213"):
         raise ValidationError({"asset_account": "Tài khoản nguyên giá không hợp lệ."})
-    if not is_intangible_cat and category.asset_account and category.asset_account.code.startswith("211") and asset_account.code.startswith("213"):
+    if asset_account and not is_intangible_cat and category.asset_account and category.asset_account.code.startswith("211") and asset_account.code.startswith("213"):
         raise ValidationError({"asset_account": "Tài khoản nguyên giá không hợp lệ."})
 
     # AF03 & BR19: Không tính khấu hao / Đối tượng trích khấu hao
@@ -609,6 +608,11 @@ def acquire_fixed_asset(request, data):
         is_depreciable = not bool(data.get("no_depreciation"))
     else:
         is_depreciable = bool(data.get("is_depreciable", True))
+    no_depreciation_reason = str(data.get("no_depreciation_reason") or "").strip()
+    if not is_depreciable and not no_depreciation_reason:
+        raise ValidationError({"no_depreciation_reason": "Vui lòng nhập căn cứ không tính khấu hao."})
+    if len(no_depreciation_reason) > 500:
+        raise ValidationError({"no_depreciation_reason": "Căn cứ không tính khấu hao không được vượt quá 500 ký tự."})
 
     # EF17 & BR16 & BR17: Hao mòn lũy kế & Giá trị còn lại
     accumulated_depreciation = _parse_decimal(data.get("accumulated_depreciation", "0"), default=None)
@@ -635,16 +639,16 @@ def acquire_fixed_asset(request, data):
         raw_acc_acc = data.get("accumulated_account") if "accumulated_account" in data else data.get("depr_account")
         accumulated_account = _resolve_account(company, raw_acc_acc)
         if (
-            not accumulated_account
-            or accumulated_account.company_id != company.id
+            not simple_book and not accumulated_account
+            or (accumulated_account is not None and (accumulated_account.company_id != company.id
             or accumulated_account.status != "ACTIVE"
             or not accumulated_account.is_postable
-            or not accumulated_account.code.startswith("214")
+            or not accumulated_account.code.startswith("214")))
         ):
             raise ValidationError({"accumulated_account": "Vui lòng chọn tài khoản khấu hao hợp lệ."})
-        if asset_account.code.startswith("213") and accumulated_account.code.startswith(("2141", "2142")):
+        if asset_account and accumulated_account and asset_account.code.startswith("213") and accumulated_account.code.startswith(("2141", "2142")):
             raise ValidationError({"accumulated_account": "Vui lòng chọn tài khoản khấu hao hợp lệ."})
-        if asset_account.code.startswith("211") and accumulated_account.code.startswith("2143"):
+        if asset_account and accumulated_account and asset_account.code.startswith("211") and accumulated_account.code.startswith("2143"):
             raise ValidationError({"accumulated_account": "Vui lòng chọn tài khoản khấu hao hợp lệ."})
 
         # EF15 & AF06 & BR13 & BR15: Thời gian sử dụng & Đơn vị thời gian (Năm / Tháng)
@@ -793,11 +797,11 @@ def acquire_fixed_asset(request, data):
                 line.get("expense_account_id") or line.get("expense_account") or line.get("expense_account_code"),
             )
             if (
-                not line_acc
-                or line_acc.company_id != company.id
+                not simple_book and not line_acc
+                or (line_acc is not None and (line_acc.company_id != company.id
                 or line_acc.status != "ACTIVE"
                 or not line_acc.is_postable
-                or not any(line_acc.code.startswith(p) for p in valid_expense_prefixes)
+                or not any(line_acc.code.startswith(p) for p in valid_expense_prefixes)))
             ):
                 raise ValidationError({"allocations": "Thông tin phân bổ chi phí khấu hao không hợp lệ."})
 
@@ -811,9 +815,9 @@ def acquire_fixed_asset(request, data):
                 "department_code": line_dept.code,
                 "department_name": line_dept.name,
                 "rate": str(rate.quantize(Decimal("0.01"))),
-                "expense_account_id": str(line_acc.id),
-                "expense_account_code": line_acc.code,
-                "expense_account_name": line_acc.name,
+                "expense_account_id": str(line_acc.id) if line_acc else "",
+                "expense_account_code": line_acc.code if line_acc else "",
+                "expense_account_name": line_acc.name if line_acc else "",
                 "expense_item": str(line.get("expense_item") or "").strip(),
                 "cost_center": str(line.get("cost_center") or "").strip(),
             })
@@ -828,12 +832,32 @@ def acquire_fixed_asset(request, data):
         raise ValidationError({"origins": "Nguyên giá chưa phù hợp với hồ sơ nguồn. Vui lòng kiểm tra lại."})
 
     origins_total = Decimal("0")
+    seen_origin_documents = set()
     existing_assets = list(models.AssetRecord.objects.filter(company=company).exclude(status="DISPOSED").only("id", "source_reference", "origins"))
     for item in raw_origins:
         if not isinstance(item, dict):
             raise ValidationError({"origins": "Nguyên giá chưa phù hợp với hồ sơ nguồn. Vui lòng kiểm tra lại."})
         doc_no = str(item.get("document_number") or item.get("voucher_no") or "").strip()
         src_id = str(item.get("source_document_id") or "").strip()
+        if src_id:
+            from purchases.models import GoodsPurchase
+            try:
+                source_purchase = GoodsPurchase.objects.filter(company=company, pk=src_id).exclude(status="CANCELLED").first()
+            except (ValueError, ValidationError):
+                source_purchase = None
+            if not source_purchase or (doc_no and doc_no != source_purchase.number):
+                raise ValidationError({"origins": "Chứng từ nguồn không hợp lệ hoặc không thuộc doanh nghiệp."})
+            doc_no = source_purchase.number
+        # One invoice may legitimately contribute several distinct capitalizable costs.
+        # Reject the same linked source, or an exact repeated manual cost line.
+        origin_key = ("id", src_id) if src_id else (
+            "line", doc_no.casefold(), str(item.get("origin_type") or "Mua sắm mới").strip().casefold(),
+            str(_parse_decimal(item.get("capitalized_amount") if "capitalized_amount" in item else item.get("amount"), default="")),
+        ) if doc_no else None
+        if origin_key and origin_key in seen_origin_documents:
+            raise ValidationError({"origins": "Chứng từ nguồn bị khai báo trùng trong cùng hồ sơ."})
+        if origin_key:
+            seen_origin_documents.add(origin_key)
         allow_multiple = bool(item.get("allow_multiple_assets", False))
 
         # EF21: Check duplicate source document already used for another asset
@@ -902,13 +926,18 @@ def acquire_fixed_asset(request, data):
             manufacture_year = None
 
     # EF25 & BR12 & BR29 & Section 5.2: Đối chiếu Sổ cái (không tự tạo bút toán nguyên giá trùng)
-    reconciliation_status, gl_status, matched_gl_ref = _determine_reconciliation_status(
-        company=company,
-        original_cost=original_cost,
-        asset_account=asset_account,
-        origins=normalized_origins,
-        gl_reference=str(data.get("gl_reference") or "").strip(),
-    )
+    if simple_book:
+        reconciliation_status = models.AccountingReconciliationStatus.UNRECONCILED
+        gl_status = models.GlStatus.NOT_REQUIRED
+        matched_gl_ref = ""
+    else:
+        reconciliation_status, gl_status, matched_gl_ref = _determine_reconciliation_status(
+            company=company,
+            original_cost=original_cost,
+            asset_account=asset_account,
+            origins=normalized_origins,
+            gl_reference=str(data.get("gl_reference") or "").strip(),
+        )
 
     first_origin_doc = normalized_origins[0]["document_number"] if normalized_origins else ""
     source_ref = str(data.get("source_reference") or first_origin_doc or "").strip()
@@ -939,6 +968,7 @@ def acquire_fixed_asset(request, data):
                 department=department,
                 acquisition_voucher_no=voucher_no,
                 is_depreciable=is_depreciable,
+                no_depreciation_reason=no_depreciation_reason,
                 asset_account=asset_account,
                 accumulated_account=accumulated_account,
                 depreciable_amount=depreciable_amount,
@@ -1146,6 +1176,10 @@ def update_fixed_asset_info(request, asset_id, data):
             # EF08 & AF11 & AF12 & AF13 & BR07–BR10 & BR21: Prevent direct modification of accounting/depreciation fields
             if data.get("requires_cost_upgrade") or data.get("adjust_original_cost"):
                 raise ValidationError({"original_cost": "Thông tin kế toán không được chỉnh sửa trực tiếp. Vui lòng thực hiện nghiệp vụ điều chỉnh phù hợp."})
+
+            for protected_key in ("status", "source_module", "source_reference", "accounting_reconciliation_status", "gl_status", "bookkeeping_method", "accounting_regime"):
+                if protected_key in data:
+                    raise ValidationError({protected_key: "Thông tin kế toán không được cập nhật trực tiếp tại chức năng này. Vui lòng thực hiện nghiệp vụ điều chỉnh phù hợp."})
 
             decimal_accounting_checks = (
                 ("original_cost", asset.original_cost),
@@ -1369,9 +1403,22 @@ def update_fixed_asset_info(request, asset_id, data):
                     if amt is None or amt <= 0:
                         raise ValidationError({"origins": "Thông tin nguồn gốc hình thành chưa hợp lệ. Vui lòng kiểm tra chứng từ liên quan."})
                     # BR13: Cannot alter existing line's accounting amount
+                    old_origin = (asset.origins or [])[idx] if idx < len(asset.origins or []) else {}
                     if idx < len(asset.origins or []):
-                        old_line_amt = _parse_decimal((asset.origins[idx] or {}).get("amount"), default=None)
+                        old_line_amt = _parse_decimal((old_origin or {}).get("amount"), default=None)
                         if old_line_amt is not None and amt.quantize(Decimal("0.0001")) != old_line_amt.quantize(Decimal("0.0001")):
+                            raise ValidationError({"origins": "Thông tin nguồn gốc hình thành chưa hợp lệ. Vui lòng kiểm tra chứng từ liên quan."})
+                    old_source_id = str((old_origin or {}).get("source_document_id") or "").strip()
+                    source_id = str(item.get("source_document_id") or old_source_id).strip()
+                    if old_source_id and (source_id != old_source_id or doc_no != str(old_origin.get("document_number") or "").strip()):
+                        raise ValidationError({"origins": "Thông tin nguồn gốc hình thành chưa hợp lệ. Vui lòng kiểm tra chứng từ liên quan."})
+                    if source_id:
+                        from purchases.models import GoodsPurchase
+                        try:
+                            source_purchase = GoodsPurchase.objects.filter(company=asset.company, pk=source_id).exclude(status="CANCELLED").first()
+                        except (ValueError, ValidationError):
+                            source_purchase = None
+                        if not source_purchase or source_purchase.number != doc_no:
                             raise ValidationError({"origins": "Thông tin nguồn gốc hình thành chưa hợp lệ. Vui lòng kiểm tra chứng từ liên quan."})
                     origins_sum += amt
                     doc_date = _parse_date(item.get("document_date"))
@@ -1380,10 +1427,10 @@ def update_fixed_asset_info(request, asset_id, data):
                         "document_number": doc_no,
                         "document_date": str(doc_date) if doc_date else str(item.get("document_date") or "").strip(),
                         "amount": str(amt.quantize(Decimal("0.0001"))),
-                        "partner_code": str(item.get("partner_code") or "").strip(),
-                        "partner_name": str(item.get("partner_name") or "").strip(),
-                        "source_document_id": str(item.get("source_document_id") or "").strip(),
-                        "allow_multiple_assets": allow_multi,
+                        "partner_code": str(item.get("partner_code") or old_origin.get("partner_code") or "").strip(),
+                        "partner_name": str(item.get("partner_name") or old_origin.get("partner_name") or "").strip(),
+                        "source_document_id": source_id,
+                        "allow_multiple_assets": allow_multi or bool(old_origin.get("allow_multiple_assets")),
                     })
 
                 if cleaned_origins and origins_sum.quantize(Decimal("0.0001")) != asset.original_cost.quantize(Decimal("0.0001")):
@@ -1462,12 +1509,14 @@ def update_fixed_asset_info(request, asset_id, data):
             if not update_fields:
                 return asset, {}, "Không có thông tin thay đổi."
 
-            # EF12 & Step 11: Validate Update Reason (mandatory when updating asset info)
+            # An explanation is required for controlled corrections, not ordinary metadata edits.
             raw_reason = data.get("update_reason") if "update_reason" in data else data.get("reason")
             update_reason = str(raw_reason or "").strip()
-            if not update_reason:
+            if data.get("allow_initial_correction") and not update_reason:
                 raise ValidationError({"update_reason": "Vui lòng nhập lý do cập nhật thông tin tài sản."})
             _validate_text_field("update_reason", update_reason, 500)
+            if expected_version in (None, ""):
+                raise ValidationError({"version": "Thông tin tài sản đã được thay đổi. Vui lòng tải lại dữ liệu trước khi cập nhật."})
 
             # Section 4.1–4.3 Invariants assertion: original_cost, accumulated_depreciation, remaining_value remain untouched
             user_actor = actor(request)
@@ -1560,6 +1609,76 @@ def _parse_depreciation_period(data):
     return month, year, period_code, period_start, period_end, last_day
 
 
+_DEPR_REGIME_ALIASES = {
+    "TT99": "TT99", "99": "TT99", "CIRCULAR_99": "TT99",
+    "TT200": "TT200", "200": "TT200", "CIRCULAR_200": "TT200",
+    "TT133": "TT133", "133": "TT133", "CIRCULAR_133": "TT133",
+    "TT58": "TT58", "58": "TT58", "CIRCULAR_58": "TT58",
+}
+_DEPR_GL_REGIMES = ("TT99", "TT200", "TT133")
+
+
+def _normalize_depr_regime(raw):
+    return _DEPR_REGIME_ALIASES.get(str(raw or "").strip().upper())
+
+
+def _resolve_depreciation_accounting_setup(company, on_date, for_posting=False):
+    """
+    UC-FA-03 BR23, BR27–BR31, EF26, EF27 / UC-FA-04 BR21, BR28–BR32, EF23, EF25:
+    Determine the accounting regime and bookkeeping method effective on the posting date
+    (not the date the user is working), and whether depreciation produces Debit/Credit lines.
+    """
+    from general_ledger.models import ChartOfAccounts
+
+    no_setup_msg = (
+        "Chưa có cấu hình kế toán phù hợp để ghi nhận khấu hao tài sản."
+        if for_posting
+        else "Chưa có cấu hình kế toán phù hợp để tính khấu hao tài sản cố định."
+    )
+    company_regime = _normalize_depr_regime(company.accounting_regime)
+    if not company_regime:
+        raise ValidationError({"detail": no_setup_msg})
+
+    bookkeeping_method = getattr(company, "bookkeeping_method", "") or "DOUBLE_ENTRY"
+    if company_regime == "TT58":
+        # BR28 & AF17: TT58 single-entry books track depreciation without GL accounts.
+        if bookkeeping_method == "SIMPLE":
+            return {"regime": "TT58", "account_regime": None, "bookkeeping_method": "SIMPLE", "uses_gl": False}
+        if bookkeeping_method != "DOUBLE_ENTRY":
+            raise ValidationError({"detail": (
+                "Chưa có cấu hình sổ kế toán phù hợp để ghi nhận khấu hao."
+                if for_posting
+                else "Chưa xác định được cấu hình ghi sổ phù hợp với chế độ kế toán áp dụng."
+            )})
+
+    # BR31 & AF18: the chart effective on the posting date decides the account set (keeps TT200 history as is).
+    chart = (
+        ChartOfAccounts.objects.filter(company=company, effective_from__lte=on_date)
+        .filter(Q(effective_to__isnull=True) | Q(effective_to__gte=on_date))
+        .exclude(status__in=("INACTIVE", "ARCHIVED"))
+        .order_by("-is_default", "-effective_from")
+        .first()
+    )
+    account_regime = _normalize_depr_regime(chart.accounting_regime) if chart else None
+    if account_regime not in _DEPR_GL_REGIMES:
+        # BR30: TT58 with double-entry must follow the regime it opted into via its chart.
+        account_regime = company_regime if company_regime in _DEPR_GL_REGIMES else None
+    if not account_regime:
+        raise ValidationError({"detail": no_setup_msg})
+    return {"regime": company_regime, "account_regime": account_regime, "bookkeeping_method": bookkeeping_method, "uses_gl": True}
+
+
+def _is_valid_depr_expense_code(code, account_regime):
+    """BR21, BR24–BR26 & AF19: Debit account for depreciation must belong to the applied regime."""
+    code = str(code or "").strip()
+    if not code:
+        return False
+    if account_regime == "TT133":
+        # TT133 has no 621/622/623/627/641; selling/admin depreciation goes to 6421/6422.
+        return code == "642" or code.startswith(("6421", "6422", "154", "241", "632", "811"))
+    return code.startswith(VALID_DEPR_DEBIT_PREFIXES)
+
+
 def _has_locked_subsequent_period(company, period_end):
     """EF17 & BR17: Check if any subsequent period after period_end is locked."""
     from general_ledger.models import AccountingPeriod
@@ -1605,11 +1724,17 @@ def _compute_depreciation_for_company_period(
     recalculate=False,
     explicit_asset_ids=None,
     require_explicit_allocations=False,
+    accounting_setup=None,
 ):
     """
-    Core calculation engine for UC-FA-03 Steps 13–23, AF05–AF14, EF08–EF24, BR04–BR26, Section 4.1–4.8.
+    Core calculation engine for UC-FA-03 Steps 10–21, AF05–AF19, EF08–EF28, BR04–BR39.
     Returns dict with lines, allocations, accounting_entries, total_amount, total_deductible, total_non_deductible.
     """
+    if accounting_setup is None:
+        accounting_setup = _resolve_depreciation_accounting_setup(company, period_end)
+    uses_gl = accounting_setup["uses_gl"]
+    account_regime = accounting_setup["account_regime"]
+
     # EF22: If explicit asset_ids passed, check they all belong to company
     if explicit_asset_ids:
         found_count = models.AssetRecord.objects.filter(company=company, id__in=explicit_asset_ids).count()
@@ -1636,8 +1761,6 @@ def _compute_depreciation_for_company_period(
     total_deductible = Decimal("0")
     total_non_deductible = Decimal("0")
     skipped_already_depreciated = 0
-
-    valid_expense_prefixes = ("621", "622", "623", "627", "641", "642", "154", "241", "811")
 
     for asset in candidates:
         # AF07 & BR05: Skip assets marked non-depreciable
@@ -1743,37 +1866,35 @@ def _compute_depreciation_for_company_period(
         use_whole_vnd = depreciable_base >= Decimal("10000") and depreciable_base == depreciable_base.to_integral_value()
         quant_unit = Decimal("1") if use_whole_vnd else Decimal("0.0001")
 
-        if asset.method == models.DepreciationMethod.STRAIGHT_LINE:
-            if has_reval_or_life_change:
-                periods_left = max(asset.useful_life_periods - asset.periods_processed, 1)
-                full_monthly = (remaining_depreciable / Decimal(periods_left)).quantize(quant_unit)
-            elif asset.monthly_depreciation_amount and asset.monthly_depreciation_amount > 0:
-                full_monthly = asset.monthly_depreciation_amount.quantize(quant_unit)
-            else:
-                full_monthly = (depreciable_base / Decimal(asset.useful_life_periods)).quantize(quant_unit)
-        elif asset.method == models.DepreciationMethod.DECLINING_BALANCE:
-            # BR09: Declining balance algorithm (Accelerated rate = Straight-line rate * adjustment factor)
-            adj_factor = Decimal("2.0") if asset.useful_life_periods > 48 else Decimal("1.5")
-            annual_rate = (Decimal("12") / Decimal(asset.useful_life_periods)) * adj_factor
-            monthly_rate = annual_rate / Decimal("12")
-            full_monthly = (asset.remaining_value * monthly_rate).quantize(quant_unit)
-        else:
-            # Units of production or configured monthly amount
-            if asset.monthly_depreciation_amount and asset.monthly_depreciation_amount > 0:
-                full_monthly = asset.monthly_depreciation_amount.quantize(quant_unit)
-            else:
-                raise ValidationError({
-                    "method": "Chưa thiết lập đầy đủ thông tin khấu hao của tài sản.",
-                    "asset_code": asset.code,
-                })
+        # BR08 & BR09 & EF28: UC-FA-03 only computes straight-line; other methods need their own
+        # specified and tested algorithm and must not be approximated with the straight-line formula.
+        if asset.method != models.DepreciationMethod.STRAIGHT_LINE:
+            raise ValidationError({
+                "method": f"Chưa đủ thông tin để tính khấu hao theo phương pháp đường thẳng ({asset.code}).",
+                "detail": "Chưa đủ thông tin để tính khấu hao theo phương pháp đường thẳng.",
+                "asset_code": asset.code,
+            })
 
-        # AF05 & AF08 & Section 4.1: Prorate by actual eligible days in period if not full month
+        # BR47: KH tháng đủ kỳ = Giá trị phải khấu hao / Tổng số tháng trích khấu hao
+        # BR10 & AF09: after a posted revaluation or life change, spread what remains over the remaining months.
+        periods_left = max(asset.useful_life_periods - (asset.periods_processed or 0), 1)
+        if has_reval_or_life_change:
+            full_monthly = (remaining_depreciable / Decimal(periods_left)).quantize(quant_unit)
+        elif asset.monthly_depreciation_amount and asset.monthly_depreciation_amount > 0:
+            full_monthly = asset.monthly_depreciation_amount.quantize(quant_unit)
+        else:
+            full_monthly = (depreciable_base / Decimal(asset.useful_life_periods)).quantize(quant_unit)
+
+        # AF05 & AF08 & BR11 & BR48: Prorate by actual eligible days in period if not full month
         if eligible_days < total_days_in_period:
             raw_period_depr = (full_monthly * Decimal(eligible_days) / Decimal(total_days_in_period)).quantize(quant_unit)
+        elif periods_left == 1:
+            # BR13: the last month absorbs the remaining value and rounding differences.
+            raw_period_depr = remaining_depreciable
         else:
             raw_period_depr = full_monthly
 
-        # Section 4.2: Final period cap: KH kỳ cuối = MIN(KH tính theo phương pháp, Giá trị còn được phép khấu hao trước kỳ)
+        # BR12 & BR13: never exceed what is still depreciable at the start of the period
         period_depr = min(raw_period_depr, remaining_depreciable)
         if period_depr <= 0 or period_depr > remaining_depreciable:
             raise ValidationError({
@@ -1807,9 +1928,9 @@ def _compute_depreciation_for_company_period(
             deductible_amt = period_depr
             non_deductible_amt = Decimal("0")
 
-        # EF14 & BR22 & BR23: Validate accumulated depreciation account (TK Có 214x)
+        # EF14 & BR24–BR26: Validate accumulated depreciation account (TK Có 214x); not required for TT58 single-entry (BR28)
         accum_acc = asset.accumulated_account or (asset.category.accumulated_account if asset.category_id else None)
-        if (
+        if uses_gl and (
             not accum_acc
             or accum_acc.company_id != company.id
             or accum_acc.status != "ACTIVE"
@@ -1824,8 +1945,21 @@ def _compute_depreciation_for_company_period(
 
         # Step 19–22 & AF10 & AF11 & EF12 & EF13 & EF14 & BR13 & BR19–BR23 & BR33: Cost Allocation
         raw_allocs = asset.allocations if isinstance(asset.allocations, list) and len(asset.allocations) > 0 else None
+        line_department_name = asset.department.name if asset.department_id else ""
+        # UC-FA-05 BR26 & BR46: a period ending before a later posted transfer keeps the allocation in force then
+        later_transfer = (
+            asset.transactions.filter(transaction_type="TRANSFER", status="POSTED", transaction_date__gt=period_end)
+            .order_by("transaction_date", "created_at")
+            .first()
+        )
+        if later_transfer and isinstance(later_transfer.before_snapshot, dict):
+            history_allocs = later_transfer.before_snapshot.get("allocations")
+            if isinstance(history_allocs, list) and history_allocs:
+                raw_allocs = history_allocs
+            line_department_name = str(later_transfer.before_snapshot.get("from_department_name") or line_department_name)
         if not raw_allocs:
-            if require_explicit_allocations or not (asset.category_id and asset.category.expense_account_id and asset.department_id):
+            category_expense = asset.category.expense_account if asset.category_id and asset.category.expense_account_id else None
+            if require_explicit_allocations or not asset.department_id or (uses_gl and not category_expense):
                 raise ValidationError({
                     "allocations": f"Chưa thiết lập phân bổ chi phí khấu hao cho tài sản ({asset.code}).",
                     "detail": "Chưa thiết lập phân bổ chi phí khấu hao cho tài sản.",
@@ -1836,13 +1970,13 @@ def _compute_depreciation_for_company_period(
                     "department_id": str(asset.department_id),
                     "department_name": asset.department.name if asset.department else "",
                     "rate": "100",
-                    "expense_account_id": str(asset.category.expense_account_id),
-                    "expense_account": asset.category.expense_account.code,
+                    "expense_account_id": str(category_expense.id) if category_expense else "",
+                    "expense_account": category_expense.code if category_expense else "",
                     "expense_item": "Chi phí khấu hao TSCĐ",
                     "cost_center": "",
                 }
             ]
-        elif len(raw_allocs) == 1 and asset.department_id:
+        elif len(raw_allocs) == 1 and asset.department_id and not later_transfer:
             # AF10, AF20, Section 5.6 & BR13: Check if asset was transferred on or before period_end
             mid_transfer = (
                 asset.transactions.filter(
@@ -1927,12 +2061,13 @@ def _compute_depreciation_for_company_period(
             )
             if not exp_acc and asset.category_id and asset.category.expense_account_id:
                 exp_acc = asset.category.expense_account
-            if (
+            # EF14 & AF19 & BR28: expense account must fit the regime; optional for TT58 single-entry books
+            if uses_gl and (
                 not exp_acc
                 or exp_acc.company_id != company.id
                 or exp_acc.status != "ACTIVE"
                 or not exp_acc.is_postable
-                or not any(exp_acc.code.startswith(p) for p in valid_expense_prefixes)
+                or not _is_valid_depr_expense_code(exp_acc.code, account_regime)
             ):
                 raise ValidationError({
                     "expense_account": "Tài khoản hạch toán khấu hao không hợp lệ. Vui lòng kiểm tra lại.",
@@ -1983,6 +2118,7 @@ def _compute_depreciation_for_company_period(
             else:
                 alloc_amt = period_depr - allocated_running
 
+            exp_acc = pa["expense_account"]
             alloc_entry = {
                 "asset_id": str(asset.id),
                 "asset_code": asset.code,
@@ -1991,13 +2127,19 @@ def _compute_depreciation_for_company_period(
                 "department_name": pa["department_name"],
                 "rate": str(pa["rate"].quantize(Decimal("0.01"))),
                 "allocated_amount": str(alloc_amt),
-                "expense_account_id": str(pa["expense_account"].id),
-                "expense_account_code": pa["expense_account"].code,
-                "credit_account_id": str(accum_acc.id),
-                "credit_account_code": accum_acc.code,
+                "expense_account_id": str(exp_acc.id) if exp_acc else "",
+                "expense_account_code": exp_acc.code if exp_acc else "",
+                "credit_account_id": str(accum_acc.id) if uses_gl else "",
+                "credit_account_code": accum_acc.code if uses_gl else "",
                 "expense_item": pa["expense_item"],
+                "cost_item": pa["expense_item"],
                 "cost_center": pa["cost_center"],
             }
+            asset_alloc_rows.append(alloc_entry)
+            all_allocations.append(alloc_entry)
+            if not uses_gl:
+                # AF17 & BR28: TT58 single-entry books keep allocation data without Debit/Credit lines.
+                continue
             acct_entry = {
                 "asset_id": str(asset.id),
                 "asset_code": asset.code,
@@ -2012,10 +2154,9 @@ def _compute_depreciation_for_company_period(
                 "department_name": pa["department_name"],
                 "cost_center": pa["cost_center"],
                 "expense_item": pa["expense_item"],
+                "cost_item": pa["expense_item"],
             }
-            asset_alloc_rows.append(alloc_entry)
             asset_acct_rows.append(acct_entry)
-            all_allocations.append(alloc_entry)
             all_accounting_entries.append(acct_entry)
 
         opening_rem = asset.original_cost - opening_accum
@@ -2028,7 +2169,7 @@ def _compute_depreciation_for_company_period(
             "asset_code": asset.code,
             "asset_name": asset.name,
             "category_name": asset.category.name if asset.category_id else "",
-            "department_name": asset.department.name if asset.department_id else "",
+            "department_name": line_department_name,
             "original_cost": asset.original_cost,
             "depreciable_amount": depreciable_base,
             "opening_accumulated_depreciation": opening_accum,
@@ -2040,6 +2181,9 @@ def _compute_depreciation_for_company_period(
             "non_deductible_amount": non_deductible_amt,
             "eligible_days": eligible_days,
             "total_days_in_period": total_days_in_period,
+            # BR29: S4b-DNSN needs the rate and the monthly level next to the accumulated figure.
+            "annual_depreciation_rate": (Decimal("1200") / Decimal(asset.useful_life_periods)).quantize(Decimal("0.01")),
+            "monthly_depreciation_amount": full_monthly,
             "allocations": asset_alloc_rows,
             "accounting_lines": asset_acct_rows,
             "asset_version": asset.version or 1,
@@ -2060,7 +2204,32 @@ def _compute_depreciation_for_company_period(
         "total_amount": total_amount,
         "total_deductible_amount": total_deductible,
         "total_non_deductible_amount": total_non_deductible,
+        "accounting_setup": accounting_setup,
     }
+
+
+def _check_depreciation_totals(calc_result):
+    """Step 21 & EF15 & BR39: Depreciation == Allocation (== Accounting when the books use GL accounts)."""
+    total = calc_result["total_amount"]
+    alloc_sum = sum(Decimal(str(a["allocated_amount"])) for a in calc_result["allocations"])
+    if alloc_sum != total:
+        raise ValidationError({"detail": "Số tiền khấu hao, phân bổ và hạch toán không khớp."})
+    if calc_result["accounting_setup"]["uses_gl"]:
+        acct_sum = sum(Decimal(str(e["amount"])) for e in calc_result["accounting_entries"])
+        if acct_sum != total:
+            raise ValidationError({"detail": "Số tiền khấu hao, phân bổ và hạch toán không khớp."})
+
+
+def default_depreciation_period(request):
+    """Step 3 & BR03: Default month/year of the period picker follows the company's working period."""
+    company_id = request.query_params.get("company_id")
+    try:
+        company = Company.objects.get(pk=company_id)
+    except (Company.DoesNotExist, ValueError, TypeError):
+        raise PermissionDenied("Bạn không có quyền tính khấu hao tài sản cố định.")
+    _check_depreciation_permission(request, company, "FA.CALCULATION.CALCULATE")
+    month, year = _get_working_period_uc11(company)
+    return {"month": month, "year": year}
 
 
 def preview_depreciation_period(request, data=None):
@@ -2104,14 +2273,21 @@ def preview_depreciation_period(request, data=None):
         explicit_asset_ids=data.get("asset_ids"),
         require_explicit_allocations=bool(data.get("require_explicit_allocations", False)),
     )
+    _check_depreciation_totals(calc_result)
+    setup = calc_result["accounting_setup"]
 
     suggested_no = _next_depreciation_voucher_no(company)
     date_display = period_end.strftime("%d/%m/%Y")
 
     return {
         "voucher_no": suggested_no,
+        "suggested_voucher_no": suggested_no,
         "voucher_date": date_display,
         "posting_date": date_display,
+        "accounting_regime": setup["regime"],
+        "account_regime": setup["account_regime"],
+        "bookkeeping_method": setup["bookkeeping_method"],
+        "uses_general_ledger": setup["uses_gl"],
         "period_month": month,
         "period_year": year,
         "period_code": period_code,
@@ -2139,6 +2315,8 @@ def preview_depreciation_period(request, data=None):
                 "non_deductible_amount": str(item["non_deductible_amount"]),
                 "eligible_days": item["eligible_days"],
                 "total_days_in_period": item["total_days_in_period"],
+                "annual_depreciation_rate": str(item["annual_depreciation_rate"]),
+                "monthly_depreciation_amount": str(item["monthly_depreciation_amount"]),
                 "asset_version": item["asset_version"],
             }
             for item in calc_result["lines"]
@@ -2179,7 +2357,7 @@ def save_and_post_depreciation_voucher(request, data=None):
             company=company, idempotency_key=idempotency_key
         ).first()
         if existing_idem:
-            return existing_idem, f"Đã lưu chứng từ tính khấu hao {existing_idem.number} thành công!"
+            return existing_idem, "Lưu chứng từ tính khấu hao thành công."
 
     # EF02: Validate month & year
     month, year, period_code, period_start, period_end, last_day = _parse_depreciation_period(data)
@@ -2210,7 +2388,10 @@ def save_and_post_depreciation_voucher(request, data=None):
     if not allow_cross_period and (posting_date.year != year or posting_date.month != month):
         raise ValidationError({"posting_date": "Ngày hạch toán không phù hợp với kỳ tính khấu hao."})
 
-    # EF03 & BR28: Check period lock for both period_end and posting_date
+    # BR23 & BR31: regime and bookkeeping method effective on the posting date
+    accounting_setup = _resolve_depreciation_accounting_setup(company, posting_date)
+
+    # EF03 & BR07: Check period lock for both period_end and posting_date
     if _closed(company, period_end) or _closed(company, posting_date):
         raise ValidationError({"period": "Kỳ kế toán đã khóa, không thể tính khấu hao tài sản cố định."})
 
@@ -2237,10 +2418,10 @@ def save_and_post_depreciation_voucher(request, data=None):
             except OperationalError as exc:
                 raise ValidationError({"detail": "Đang có tiến trình tính khấu hao cho kỳ này. Vui lòng thử lại sau."}) from exc
 
-            if existing_runs and not recalculate:
-                raise ValidationError({"detail": "Tài sản đã được tính khấu hao trong kỳ đã chọn."})
+            # AF14 & BR16: without recalculation, assets that already have a result in this period are
+            # skipped per asset by the engine; EF16 is raised there only when nothing is left to compute.
 
-            # AF14 & BR32: If recalculate=True, cleanly roll back previous runs of the same period before replacing
+            # AF14 & BR17: If recalculate=True, cleanly roll back previous runs of the same period before replacing
             if existing_runs and recalculate:
                 for old_run in existing_runs:
                     if old_run.status == "POSTED":
@@ -2260,7 +2441,12 @@ def save_and_post_depreciation_voucher(request, data=None):
                 recalculate=recalculate,
                 explicit_asset_ids=data.get("asset_ids"),
                 require_explicit_allocations=bool(data.get("require_explicit_allocations", False)),
+                accounting_setup=accounting_setup,
             )
+            uses_gl = accounting_setup["uses_gl"]
+            if calc_result["total_amount"] <= 0:
+                # AF13: never save a zero-value voucher just to record a fake operation.
+                raise ValidationError({"detail": "Không có tài sản cố định cần tính khấu hao trong kỳ đã chọn."})
 
             # EF18: Check expected_asset_versions if caller supplied snapshot versions from preview
             expected_versions = data.get("expected_asset_versions")
@@ -2288,17 +2474,15 @@ def save_and_post_depreciation_voucher(request, data=None):
                         if c_amt is None or c_amt < 0 or c_amt > rem_allowed:
                             raise ValidationError({"amount": "Giá trị khấu hao vượt mức được phép của tài sản."})
 
-            for total_override_key in ("total_allocation_amount", "total_accounting_amount"):
+            override_keys = ("total_allocation_amount", "total_accounting_amount") if uses_gl else ("total_allocation_amount",)
+            for total_override_key in override_keys:
                 if total_override_key in data and data.get(total_override_key) not in (None, ""):
                     given_tot = _parse_decimal(data.get(total_override_key), default=None)
                     if given_tot is None or abs(given_tot - calc_result["total_amount"]) > Decimal("1"):
                         raise ValidationError({"detail": "Số tiền khấu hao, phân bổ và hạch toán không khớp."})
 
-            # Step 23 & EF15 & BR26: Cross-check internal totals (Depreciation == Allocation == Accounting)
-            alloc_sum = sum(Decimal(str(a["allocated_amount"])) for a in calc_result["allocations"])
-            acct_sum = sum(Decimal(str(e["amount"])) for e in calc_result["accounting_entries"])
-            if alloc_sum != calc_result["total_amount"] or acct_sum != calc_result["total_amount"]:
-                raise ValidationError({"detail": "Số tiền khấu hao, phân bổ và hạch toán không khớp."})
+            # Step 21 & EF15 & BR39: Cross-check internal totals
+            _check_depreciation_totals(calc_result)
 
             # Ensure AssetPeriod is open/created for this period
             models.AssetPeriod.objects.get_or_create(
@@ -2369,17 +2553,20 @@ def save_and_post_depreciation_voucher(request, data=None):
                     "total_amount": str(run.total_amount),
                     "asset_codes": [item["asset_code"] for item in calc_result["lines"]],
                     "status": run.status,
+                    "accounting_regime": accounting_setup["regime"],
+                    "account_regime": accounting_setup["account_regime"],
+                    "bookkeeping_method": accounting_setup["bookkeeping_method"],
                 },
                 reason=description,
             )
 
-            # Step 25–26 & AF20 & BR16 & BR29 & BR30:
-            # If post_now=True, post synchronously and update accumulated_depreciation & GL;
+            # Step 25 & AF20 & BR40–BR42:
+            # If post_now=True, post once and update accumulated depreciation & GL (or the TT58 asset book);
             # If post_now=False (AF20), leave in CALCULATED ("Chưa ghi sổ") without altering asset balances yet.
             if post_now:
                 run = post_depreciation_run_uc03(run, request, from_save=True)
 
-            return run, f"Đã lưu chứng từ tính khấu hao {run.number} thành công!"
+            return run, "Lưu chứng từ tính khấu hao thành công."
     except DatabaseError as exc:
         # EF20
         raise ValidationError({"detail": "Tính khấu hao tài sản cố định thất bại. Vui lòng thử lại."}) from exc
@@ -2435,13 +2622,13 @@ def _ensure_gl_account_for_code(company, code, is_debit=True):
 
 def post_depreciation_run_uc03(run, request, from_save=False):
     """
-    UC-FA-03 Step 26 & UC-FA-04 (Ghi nhận khấu hao tài sản):
+    UC-FA-03 Step 25 & UC-FA-04 (Ghi nhận khấu hao tài sản):
     Validates and posts a CALCULATED ("Chưa ghi sổ") depreciation voucher:
-    - Enforces all UC-FA-04 business rules (BR01–BR30) & exception flows (EF01–EF22)
-    - Supports editing allocation / accounting accounts before posting (AF04)
-    - Supports consolidating accounting lines with identical accounts & cost objects (AF05, BR16)
-    - Updates each asset's accumulated_depreciation and periods_processed (preserving original_cost per BR19)
-    - Creates AssetTransaction and General Ledger JournalEntry + JournalLine records atomically (BR23)
+    - Enforces UC-FA-04 business rules (BR01–BR57) & exception flows (EF01–EF30)
+    - Posts exactly the lines, allocations and entries stored by UC-FA-03 (BR01, BR51); no recalculation
+    - Supports consolidating accounting lines with identical accounts & cost objects (AF05, BR19)
+    - Updates each asset's accumulated_depreciation and periods_processed (preserving original_cost per BR35)
+    - Creates AssetTransaction and General Ledger JournalEntry + JournalLine records atomically (BR45, BR46)
     """
     from general_ledger.models import Account
 
@@ -2451,6 +2638,14 @@ def post_depreciation_run_uc03(run, request, from_save=False):
         _check_depreciation_permission(request, run.company, "FA.CALCULATION.POST", uc04=True)
         if data.get("simulate_concurrent_lock"):
             raise ValidationError({"detail": "Chứng từ đang được xử lý. Vui lòng thử lại sau."})
+        # BR01 & BR51 & AF10: the stored result is posted as is; corrections go through UC-FA-03.
+        overridden = [key for key in ("lines", "custom_lines", "allocations", "accounting_entries") if key in data]
+        if overridden:
+            raise ValidationError({
+                "detail": "Ghi sổ sử dụng số liệu khấu hao, phân bổ và định khoản đã lưu. "
+                          "Vui lòng tính lại khấu hao trước khi ghi sổ nếu cần điều chỉnh.",
+                "fields": overridden,
+            })
 
     try:
         with transaction.atomic():
@@ -2467,8 +2662,9 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     return run
                 raise ValidationError({"status": "Chứng từ khấu hao đã được ghi sổ."})
 
+            # EF29 & BR03: cancelled or any other non-"Chưa ghi sổ" voucher
             if run.status != "CALCULATED":
-                raise ValidationError({"status": "Chứng từ khấu hao không ở trạng thái cho phép ghi sổ."})
+                raise ValidationError({"status": "Trạng thái chứng từ không cho phép ghi sổ."})
 
             if req_idem and not run.idempotency_key:
                 run.idempotency_key = req_idem
@@ -2503,9 +2699,9 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     raise ValidationError({"period": "Chưa xác định được kỳ khấu hao của chứng từ."})
                 if m < 1 or m > 12 or y < 1900 or y > 2100:
                     raise ValidationError({"period": "Chưa xác định được kỳ khấu hao của chứng từ."})
-                run.period_month = m
-                run.period_year = y
-                run.period_code = f"{y:04d}-{m:02d}"
+                # BR01 & AF10: the lines were computed for the stored period; another period needs a new calculation.
+                if (m, y) != (run.period_month, run.period_year):
+                    raise ValidationError({"period": "Kỳ khấu hao khác kỳ đã tính trên chứng từ. Vui lòng tính lại khấu hao trước khi ghi sổ."})
 
                 # Step 8–9 & EF05 & AF12 & BR03: Validate voucher_date & posting_date
                 if "voucher_date" in data:
@@ -2519,7 +2715,10 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                 if not p_date:
                     raise ValidationError({"posting_date": "Ngày hạch toán không hợp lệ. Vui lòng kiểm tra lại."})
 
-                allow_cross_period = bool(data.get("allow_cross_period_adjustment", False))
+                # AF12: posting outside the depreciation period needs a stated adjustment basis.
+                allow_cross_period = bool(data.get("allow_cross_period_adjustment", False)) and bool(
+                    str(data.get("adjustment_reason") or "").strip()
+                )
                 if not allow_cross_period and (p_date.year != run.period_year or p_date.month != run.period_month):
                     raise ValidationError({"posting_date": "Ngày hạch toán không hợp lệ. Vui lòng kiểm tra lại."})
                 run.posting_date = p_date
@@ -2531,6 +2730,12 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     run.reference = str(data.get("reference") or "").strip()
                 if "attachments" in data and isinstance(data.get("attachments"), list):
                     run.attachments = data["attachments"]
+
+            # BR21 & BR32 & EF23 & EF25: regime and bookkeeping method effective on the posting date
+            accounting_setup = _resolve_depreciation_accounting_setup(
+                run.company, run.posting_date or run.period_end, for_posting=not from_save
+            )
+            uses_gl = accounting_setup["uses_gl"]
 
             # EF06 & BR05 & BR18: Period lock check
             if (
@@ -2544,16 +2749,15 @@ def post_depreciation_run_uc03(run, request, from_save=False):
 
             # Step 12–13 & EF10 & BR01 & BR06: Check depreciation lines exist and total_amount > 0
             lines = list(run.lines.select_related("asset", "asset__accumulated_account", "asset__category__accumulated_account").all())
-            if (
-                ("lines" in data and isinstance(data.get("lines"), list) and len(data["lines"]) == 0)
-                or not lines
-                or run.total_amount <= 0
-                or all(l.amount <= 0 for l in lines)
-            ):
+            if not lines or run.total_amount <= 0 or any(l.amount <= 0 for l in lines):
                 raise ValidationError({"lines": "Chứng từ chưa có dữ liệu khấu hao để ghi nhận."})
 
+            # Step 12 & BR12 & EF27: detail lines must add up to "Tổng khấu hao tháng"
+            if sum((l.amount for l in lines), Decimal("0")) != run.total_amount:
+                raise ValidationError({"detail": "Số tiền khấu hao và phân bổ chưa cân đối. Vui lòng kiểm tra lại."})
+
             if not from_save:
-                # AF13 & BR04: Check if prior period depreciation voucher for any asset in this voucher is still unposted
+                # AF13 & EF30: a prior period voucher for the same assets is still unposted
                 asset_ids_in_run = [l.asset_id for l in lines]
                 if (
                     models.CalculationRun.objects.filter(
@@ -2565,20 +2769,8 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     )
                     .exclude(pk=run.pk)
                     .exists()
-                    and not bool(data.get("allow_unposted_prior_period", False))
                 ):
-                    raise ValidationError(
-                        {"period": "Khấu hao kỳ trước chưa được ghi sổ. Vui lòng ghi sổ kỳ trước trước khi thực hiện."}
-                    )
-
-                # Optional custom line overrides (for EF15 / custom adjustment validation)
-                if "custom_lines" in data and isinstance(data.get("custom_lines"), list):
-                    for c_line in data["custom_lines"]:
-                        c_amt = _parse_decimal(c_line.get("amount"), default=None)
-                        for l_obj in lines:
-                            if l_obj.asset.code == c_line.get("asset_code") or str(l_obj.asset_id) == str(c_line.get("asset_id")):
-                                if c_amt is not None:
-                                    l_obj.amount = c_amt
+                    raise ValidationError({"period": "Chưa hoàn tất ghi nhận khấu hao kỳ trước. Vui lòng kiểm tra lại."})
 
             # Validate each asset in lines (EF14, EF15, EF16, EF17, BR06–BR09, BR20–BR22, BR25)
             expected_versions = data.get("expected_asset_versions") if isinstance(data.get("expected_asset_versions"), dict) else {}
@@ -2623,6 +2815,10 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                         or asset.accumulated_depreciation != line.opening_accumulated_depreciation
                         or (line.asset_version and asset.version != line.asset_version)
                         or (exp_v is not None and int(exp_v) != int(asset.version))
+                        # BR08 & BR39: a transfer, revaluation, life change or decrease posted after the calculation
+                        or asset.transactions.exclude(transaction_type="DEPRECIATION")
+                        .filter(status="POSTED", posted_at__gt=run.created_at, transaction_date__lte=run.period_end)
+                        .exists()
                     ):
                         raise ValidationError(
                             {"detail": "Dữ liệu tài sản đã thay đổi. Vui lòng tính lại khấu hao trước khi ghi sổ."}
@@ -2660,13 +2856,13 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                         raise ValidationError({"amount": "Giá trị khấu hao vượt mức được phép của tài sản."})
 
             if not from_save:
-                # Step 14–16 & EF11 & EF13 & AF04 & BR10–BR12: Validate Tab Phân bổ (Allocations)
+                # Step 12 & EF11 & EF13 & AF04 & BR13 & BR14: Validate the stored Tab Phân bổ
                 if "total_allocation_amount" in data and data.get("total_allocation_amount") not in (None, ""):
                     given_alloc_tot = _parse_decimal(data.get("total_allocation_amount"), default=None)
                     if given_alloc_tot is None or given_alloc_tot != run.total_amount:
                         raise ValidationError({"allocations": "Tổng tiền phân bổ không khớp với số khấu hao đã tính."})
 
-                allocations = data.get("allocations") if "allocations" in data else run.allocations_snapshot
+                allocations = run.allocations_snapshot
                 if not isinstance(allocations, list) or len(allocations) == 0:
                     raise ValidationError({"allocations": "Chưa thiết lập đầy đủ thông tin phân bổ khấu hao."})
 
@@ -2690,7 +2886,7 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     alloc_amt = _parse_decimal(alloc.get("allocated_amount"), default=None)
                     if (
                         not dept_or_obj
-                        or not exp_acc
+                        or (uses_gl and not exp_acc)
                         or rate is None
                         or rate <= 0
                         or rate > Decimal("100")
@@ -2718,159 +2914,133 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                 if total_alloc_sum != run.total_amount:
                     raise ValidationError({"allocations": "Tổng tiền phân bổ không khớp với số khấu hao đã tính."})
 
-                # AF04: If caller updated allocations and did not explicitly pass accounting_entries, rebuild accounting_entries from allocations
-                if "allocations" in data and "accounting_entries" not in data:
-                    rebuilt_entries = []
-                    for alloc in allocations:
-                        a_code = str(alloc.get("asset_code") or "").strip()
-                        a_name = str(alloc.get("asset_name") or "").strip()
-                        c_acc = str(
-                            alloc.get("credit_account")
-                            or alloc.get("credit_account_code")
-                            or expected_credit_by_asset.get(a_code)
-                            or "2141"
-                        ).strip()
-                        d_acc = str(
-                            alloc.get("expense_account")
-                            or alloc.get("expense_account_code")
-                            or alloc.get("debit_account")
-                            or ""
-                        ).strip()
-                        amt = _parse_decimal(alloc.get("allocated_amount"), default=Decimal("0"))
-                        ded_amt = _parse_decimal(alloc.get("deductible_amount"), default=amt)
-                        nonded_amt = _parse_decimal(alloc.get("non_deductible_amount"), default=Decimal("0"))
-                        rebuilt_entries.append(
-                            {
-                                "asset_id": alloc.get("asset_id"),
-                                "asset_code": a_code,
-                                "asset_name": a_name,
-                                "description": f"Khấu hao TSCĐ {a_code} - {run.period_code}".strip(),
-                                "debit_account": d_acc,
-                                "debit_account_code": d_acc,
-                                "credit_account": c_acc,
-                                "credit_account_code": c_acc,
-                                "amount": str(amt),
-                                "deductible_amount": str(ded_amt),
-                                "non_deductible_amount": str(nonded_amt),
-                                "department_name": str(alloc.get("department_name") or "").strip(),
-                                "cost_item": str(alloc.get("cost_item") or alloc.get("expense_item") or "").strip(),
-                            }
+
+                if not uses_gl:
+                    # AF17 & BR29: TT58 single-entry books post to the asset book only, no Debit/Credit lines.
+                    run.accounting_entries = []
+                else:
+                    # Step 13 & EF08 & EF09 & EF12 & EF24 & BR15–BR17: Validate the stored Tab Hạch toán
+                    for key_override in ("total_accounting_amount", "total_debit", "total_credit"):
+                        if key_override in data and data.get(key_override) not in (None, ""):
+                            given_acct_tot = _parse_decimal(data.get(key_override), default=None)
+                            if given_acct_tot is None or given_acct_tot != run.total_amount:
+                                raise ValidationError(
+                                    {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
+                                )
+
+                    accounting_entries = run.accounting_entries
+                    if not isinstance(accounting_entries, list) or len(accounting_entries) == 0:
+                        raise ValidationError(
+                            {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
                         )
-                    run.accounting_entries = rebuilt_entries
 
-                run.allocations_snapshot = allocations
+                    def _postable(code):
+                        acc = Account.objects.filter(company=run.company, code=code).first()
+                        return bool(
+                            acc
+                            and acc.status == "ACTIVE"
+                            and acc.is_postable
+                            and not acc.children.filter(status="ACTIVE").exists()
+                        )
 
-                # Step 17–19 & EF08 & EF09 & EF12 & AF05 & BR13–BR17: Validate Tab Hạch toán (Accounting Entries)
-                for key_override in ("total_accounting_amount", "total_debit", "total_credit"):
-                    if key_override in data and data.get(key_override) not in (None, ""):
-                        given_acct_tot = _parse_decimal(data.get(key_override), default=None)
-                        if given_acct_tot is None or given_acct_tot != run.total_amount:
+                    account_regime = accounting_setup["account_regime"]
+                    entry_sum_by_asset = {}
+                    for line_no, ae in enumerate(accounting_entries, 1):
+                        if not isinstance(ae, dict):
+                            raise ValidationError(
+                                {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
+                            )
+                        debit_code = str(ae.get("debit_account") or ae.get("debit_account_code") or "").strip()
+                        credit_code = str(ae.get("credit_account") or ae.get("credit_account_code") or "").strip()
+
+                        # EF08: Debit account must exist, be active and postable (the line is named)
+                        if not debit_code or not _postable(debit_code):
+                            raise ValidationError({"debit_account": "Tài khoản ghi Nợ không hợp lệ.", "line": line_no})
+                        # EF24 & AF14–AF16 & BR22–BR27: and belong to the regime of the posting date
+                        if not _is_valid_depr_expense_code(debit_code, account_regime):
+                            raise ValidationError({
+                                "debit_account": "Tài khoản hạch toán không phù hợp với chế độ kế toán của doanh nghiệp.",
+                                "line": line_no,
+                            })
+
+                        # EF09 & BR16: Credit account is the asset's accumulated depreciation account (214x)
+                        ae_asset_code = str(ae.get("asset_code") or "").strip()
+                        if (
+                            not credit_code.startswith("214")
+                            or not _postable(credit_code)
+                            or (expected_credit_by_asset.get(ae_asset_code) and credit_code != expected_credit_by_asset[ae_asset_code])
+                        ):
+                            raise ValidationError({"credit_account": "Tài khoản hao mòn TSCĐ không hợp lệ.", "line": line_no})
+
+                        # EF12 & BR17: amount present and Debit == Credit
+                        amt = _parse_decimal(ae.get("amount"), default=None)
+                        d_amt = _parse_decimal(ae.get("debit_amount"), default=amt)
+                        c_amt = _parse_decimal(ae.get("credit_amount"), default=amt)
+                        if amt is None or amt <= 0 or d_amt != c_amt or d_amt != amt:
+                            raise ValidationError(
+                                {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
+                            )
+                        entry_sum_by_asset[ae_asset_code] = entry_sum_by_asset.get(ae_asset_code, Decimal("0")) + amt
+
+                    # AF04 & EF12: every asset's depreciation is fully reflected in the entries
+                    for line in lines:
+                        if entry_sum_by_asset.get(line.asset.code, Decimal("0")) != line.amount:
                             raise ValidationError(
                                 {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
                             )
 
-                accounting_entries = data.get("accounting_entries") if "accounting_entries" in data else run.accounting_entries
-                if not isinstance(accounting_entries, list) or len(accounting_entries) == 0:
-                    raise ValidationError(
-                        {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
-                    )
-
-                for ae in accounting_entries:
-                    if not isinstance(ae, dict):
-                        raise ValidationError(
-                            {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
-                        )
-                    debit_code = str(ae.get("debit_account") or ae.get("debit_account_code") or "").strip()
-                    credit_code = str(ae.get("credit_account") or ae.get("credit_account_code") or "").strip()
-
-                    # EF08: Validate Debit Account
-                    if not debit_code or not debit_code.startswith(VALID_DEPR_DEBIT_PREFIXES):
-                        raise ValidationError({"debit_account": "Tài khoản ghi Nợ không hợp lệ."})
-                    existing_debit = Account.objects.filter(company=run.company, code=debit_code).first()
-                    if existing_debit and (
-                        existing_debit.status != "ACTIVE"
-                        or not existing_debit.is_postable
-                        or existing_debit.children.filter(status="ACTIVE").exists()
-                    ):
-                        raise ValidationError({"debit_account": "Tài khoản ghi Nợ không hợp lệ."})
-
-                    # EF09: Validate Credit Account (Accumulated Depreciation 214x)
-                    if not credit_code or not credit_code.startswith("214"):
-                        raise ValidationError({"credit_account": "Tài khoản hao mòn TSCĐ không hợp lệ."})
-                    existing_credit = Account.objects.filter(company=run.company, code=credit_code).first()
-                    if existing_credit and (
-                        existing_credit.status != "ACTIVE"
-                        or not existing_credit.is_postable
-                        or existing_credit.children.filter(status="ACTIVE").exists()
-                    ):
-                        raise ValidationError({"credit_account": "Tài khoản hao mòn TSCĐ không hợp lệ."})
-                    ae_asset_code = str(ae.get("asset_code") or "").strip()
-                    if (
-                        ae_asset_code
-                        and ae_asset_code in expected_credit_by_asset
-                        and expected_credit_by_asset[ae_asset_code]
-                        and credit_code != expected_credit_by_asset[ae_asset_code]
-                    ):
-                        raise ValidationError({"credit_account": "Tài khoản hao mòn TSCĐ không hợp lệ."})
-
-                    # EF12: Validate accounting entry amount & Debit == Credit
-                    amt = _parse_decimal(ae.get("amount"), default=None)
-                    d_amt = _parse_decimal(ae.get("debit_amount"), default=amt)
-                    c_amt = _parse_decimal(ae.get("credit_amount"), default=amt)
-                    if amt is None or amt <= 0 or d_amt != c_amt or d_amt != amt:
+                    acct_sum = sum(_parse_decimal(ae.get("amount"), default=Decimal("0")) for ae in accounting_entries)
+                    if acct_sum != run.total_amount:
                         raise ValidationError(
                             {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
                         )
 
-                acct_sum = sum(_parse_decimal(ae.get("amount"), default=Decimal("0")) for ae in accounting_entries)
-                if acct_sum != run.total_amount:
-                    raise ValidationError(
-                        {"accounting_entries": "Số tiền hạch toán không khớp với số khấu hao của chứng từ."}
-                    )
-
-                # AF05 & BR16: Optional consolidation of accounting entries with identical (debit, credit, department, cost_item)
-                if bool(data.get("consolidate_accounting_entries", False)):
-                    grouped = {}
-                    for ae in accounting_entries:
-                        g_key = (
-                            str(ae.get("debit_account") or "").strip(),
-                            str(ae.get("credit_account") or "").strip(),
-                            str(ae.get("department_name") or "").strip(),
-                            str(ae.get("cost_item") or "").strip(),
-                        )
-                        amt = _parse_decimal(ae.get("amount"), default=Decimal("0"))
-                        ded = _parse_decimal(ae.get("deductible_amount"), default=amt)
-                        nonded = _parse_decimal(ae.get("non_deductible_amount"), default=Decimal("0"))
-                        src_code = str(ae.get("asset_code") or "").strip()
-                        if g_key not in grouped:
-                            grouped[g_key] = {
-                                "description": run.description or f"Khấu hao TSCĐ kỳ {run.period_code}",
-                                "debit_account": g_key[0],
-                                "credit_account": g_key[1],
-                                "department_name": g_key[2],
-                                "cost_item": g_key[3],
-                                "amount": amt,
-                                "deductible_amount": ded,
-                                "non_deductible_amount": nonded,
-                                "source_asset_codes": [src_code] if src_code else [],
+                    # AF05 & BR19: Optional consolidation of entries with identical (debit, credit, department, cost_item),
+                    # keeping each source asset and amount behind the consolidated line.
+                    if bool(data.get("consolidate_accounting_entries", False)):
+                        grouped = {}
+                        for ae in accounting_entries:
+                            g_key = (
+                                str(ae.get("debit_account") or "").strip(),
+                                str(ae.get("credit_account") or "").strip(),
+                                str(ae.get("department_name") or "").strip(),
+                                str(ae.get("cost_item") or "").strip(),
+                            )
+                            amt = _parse_decimal(ae.get("amount"), default=Decimal("0"))
+                            ded = _parse_decimal(ae.get("deductible_amount"), default=amt)
+                            nonded = _parse_decimal(ae.get("non_deductible_amount"), default=Decimal("0"))
+                            src_code = str(ae.get("asset_code") or "").strip()
+                            if g_key not in grouped:
+                                grouped[g_key] = {
+                                    "description": run.description or f"Khấu hao TSCĐ kỳ {run.period_code}",
+                                    "debit_account": g_key[0],
+                                    "credit_account": g_key[1],
+                                    "department_name": g_key[2],
+                                    "cost_item": g_key[3],
+                                    "amount": amt,
+                                    "deductible_amount": ded,
+                                    "non_deductible_amount": nonded,
+                                    "source_asset_codes": [src_code] if src_code else [],
+                                    "source_lines": [],
+                                }
+                            else:
+                                grouped[g_key]["amount"] += amt
+                                grouped[g_key]["deductible_amount"] += ded
+                                grouped[g_key]["non_deductible_amount"] += nonded
+                                if src_code and src_code not in grouped[g_key]["source_asset_codes"]:
+                                    grouped[g_key]["source_asset_codes"].append(src_code)
+                            grouped[g_key]["source_lines"].append({"asset_code": src_code, "amount": str(amt)})
+                        accounting_entries = [
+                            {
+                                **val,
+                                "amount": str(val["amount"]),
+                                "deductible_amount": str(val["deductible_amount"]),
+                                "non_deductible_amount": str(val["non_deductible_amount"]),
                             }
-                        else:
-                            grouped[g_key]["amount"] += amt
-                            grouped[g_key]["deductible_amount"] += ded
-                            grouped[g_key]["non_deductible_amount"] += nonded
-                            if src_code and src_code not in grouped[g_key]["source_asset_codes"]:
-                                grouped[g_key]["source_asset_codes"].append(src_code)
-                    accounting_entries = [
-                        {
-                            **val,
-                            "amount": str(val["amount"]),
-                            "deductible_amount": str(val["deductible_amount"]),
-                            "non_deductible_amount": str(val["non_deductible_amount"]),
-                        }
-                        for val in grouped.values()
-                    ]
+                            for val in grouped.values()
+                        ]
 
-                run.accounting_entries = accounting_entries
+                    run.accounting_entries = accounting_entries
 
                 # EF18 & EF19: Simulated failure hooks to verify atomic rollback (BR23)
                 if data.get("simulate_gl_error"):
@@ -2901,14 +3071,19 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     approved_at=now,
                 )
                 post_transaction(tx, request)
-                tx.gl_status = "POSTED"
+                tx.gl_status = models.GlStatus.POSTED if uses_gl else models.GlStatus.NOT_REQUIRED
                 tx.gl_reference = run.number
                 tx.save(update_fields=("gl_status", "gl_reference", "updated_at"))
                 line.transaction = tx
                 line.save(update_fields=("transaction",))
 
-            # Create General Ledger JournalEntry and JournalLines
-            gl_entry_id = _try_create_gl_journal_entry_for_depreciation(run, user_actor, strict=not from_save)
+            # Create General Ledger JournalEntry and JournalLines (BR28: none for TT58 single-entry books)
+            gl_entry_id = (
+                _try_create_gl_journal_entry_for_depreciation(run, user_actor, strict=True) if uses_gl else None
+            )
+            # EF18 & EF28 & BR41: never mark the voucher posted when the ledger entry was not written.
+            if uses_gl and not gl_entry_id:
+                raise ValidationError({"detail": "Không thể hạch toán chứng từ khấu hao. Vui lòng thử lại."})
             run.status = "POSTED"
             run.posted_by = user_actor
             run.posted_at = now
@@ -2947,6 +3122,11 @@ def post_depreciation_run_uc03(run, request, from_save=False):
                     "period_code": run.period_code,
                     "total_amount": str(run.total_amount),
                     "gl_entry_id": str(gl_entry_id) if gl_entry_id else "",
+                    # Step 22 & BR49: assets and the entries or book data recorded
+                    "asset_codes": [line.asset.code for line in lines],
+                    "accounting_regime": accounting_setup["regime"],
+                    "bookkeeping_method": accounting_setup["bookkeeping_method"],
+                    "accounting_entries": run.accounting_entries or [],
                 },
                 reason=run.description,
             )
@@ -2961,7 +3141,7 @@ def _try_create_gl_journal_entry_for_depreciation(run, user_actor, strict=False)
     """Creates a POSTED JournalEntry and balanced JournalLines in general_ledger for a depreciation voucher."""
     try:
         import calendar
-        from general_ledger.models import AccountingPeriod, JournalEntry, JournalLine
+        from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
         from master_data.models import Currency
 
         if not run.accounting_entries:
@@ -3027,12 +3207,11 @@ def _try_create_gl_journal_entry_for_depreciation(run, user_actor, strict=False)
                 continue
             debit_code = str(ae.get("debit_account") or "").strip()
             credit_code = str(ae.get("credit_account") or "").strip()
-            debit_acc = _ensure_gl_account_for_code(run.company, debit_code, is_debit=True)
-            credit_acc = _ensure_gl_account_for_code(run.company, credit_code, is_debit=False)
+            # UC-FA-04 EF08/EF18: post only to accounts that exist in the chart; never create them on the fly.
+            debit_acc = Account.objects.filter(company=run.company, code=debit_code).first()
+            credit_acc = Account.objects.filter(company=run.company, code=credit_code).first()
             if not debit_acc or not credit_acc:
-                if strict:
-                    raise ValidationError({"detail": "Không thể hạch toán chứng từ khấu hao. Vui lòng thử lại."})
-                continue
+                raise ValidationError({"detail": "Không thể hạch toán chứng từ khấu hao. Vui lòng thử lại."})
             ae["debit_account_id"] = str(debit_acc.id)
             ae["credit_account_id"] = str(credit_acc.id)
             dims = {
@@ -3040,6 +3219,7 @@ def _try_create_gl_journal_entry_for_depreciation(run, user_actor, strict=False)
                 "cost_item": ae.get("cost_item") or "",
                 "asset_code": ae.get("asset_code") or "",
                 "source_asset_codes": ae.get("source_asset_codes") or ([ae["asset_code"]] if ae.get("asset_code") else []),
+                "source_lines": ae.get("source_lines") or [],
                 "deductible_amount": str(ae.get("deductible_amount") or amt),
                 "non_deductible_amount": str(ae.get("non_deductible_amount") or "0"),
             }
@@ -3281,11 +3461,159 @@ def _serialize_transfer_voucher_group(company, voucher_no, transactions_qs=None)
     }
 
 
+from django.core.exceptions import ValidationError as DjangoValidationError  # noqa: E402
+
+
+_TRANSFER_UNUSABLE_SALES_STATUSES = (
+    "DRAFT", "PENDING_APPROVAL", "REJECTED", "REVISION_REQUIRED", "EXPIRED",
+    "CLOSED", "CANCELLED", "TERMINATED", "DECLINED",
+)
+
+
+def _can_override_transfer_number(request, company):
+    """UC-FA-05 BR05 & EF07: only users allowed to override document numbers may replace the proposed number."""
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    iam_acc = getattr(user, "iam_account", None)
+    return bool(iam_acc and has_effective_permission(iam_acc, company, "SYS.NUMBERING.MANUAL_OVERRIDE"))
+
+
+def _lookup_by_id_or_code(queryset, value, code_fields):
+    value = str(value or "").strip()
+    if not value:
+        return None
+    try:
+        found = queryset.filter(pk=value).first()
+    except (ValueError, DjangoValidationError):
+        found = None
+    if found:
+        return found
+    q = Q()
+    for field in code_fields:
+        q |= Q(**{f"{field}__iexact": value})
+    return queryset.filter(q).first()
+
+
+def _resolve_transfer_cost_dimensions(company, line, tx_date):
+    """
+    UC-FA-05 Steps 13–17 & 22, EF23–EF27, BR20–BR25: each cost tracking value, when given,
+    must be a usable record of this company's catalogs at the transfer date.
+    """
+    from master_data.models import CostCenter, ExpenseItem, Project
+    from sales.models import SalesContract, SalesOrder
+
+    def in_range(obj):
+        start = getattr(obj, "start_date", None)
+        end = getattr(obj, "end_date", None)
+        return (not start or start <= tx_date) and (not end or end >= tx_date)
+
+    dims = {}
+    raw_contract = line.get("sales_contract")
+    contract = None
+    if str(raw_contract or "").strip():
+        contract = _lookup_by_id_or_code(SalesContract.objects.filter(company=company), raw_contract, ("number", "contract_number"))
+        if not contract or contract.status in _TRANSFER_UNUSABLE_SALES_STATUSES or not in_range(contract):
+            raise ValidationError({"sales_contract": "Hợp đồng bán không hợp lệ. Vui lòng chọn lại.",
+                                   "detail": "Hợp đồng bán không hợp lệ. Vui lòng chọn lại."})
+    dims["sales_contract"] = contract.number if contract else ""
+    dims["sales_contract_id"] = str(contract.id) if contract else ""
+
+    raw_order = line.get("sales_order")
+    order = None
+    if str(raw_order or "").strip():
+        order = _lookup_by_id_or_code(SalesOrder.objects.filter(company=company), raw_order, ("number",))
+        if (
+            not order
+            or order.status in _TRANSFER_UNUSABLE_SALES_STATUSES
+            or (contract and order.contract_id and order.contract_id != contract.id)
+        ):
+            raise ValidationError({"sales_order": "Đơn đặt hàng không phù hợp với hợp đồng bán đã chọn.",
+                                   "detail": "Đơn đặt hàng không phù hợp với hợp đồng bán đã chọn."})
+    dims["sales_order"] = order.number if order else ""
+    dims["sales_order_id"] = str(order.id) if order else ""
+
+    raw_project = line.get("project")
+    project = None
+    if str(raw_project or "").strip():
+        project = _lookup_by_id_or_code(Project.objects.filter(company=company), raw_project, ("code", "name"))
+        if not project or project.status != "ACTIVE" or not in_range(project):
+            raise ValidationError({"project": "Công trình không hợp lệ hoặc không được phép tập hợp chi phí.",
+                                   "detail": "Công trình không hợp lệ hoặc không được phép tập hợp chi phí."})
+    dims["project"] = project.code if project else ""
+    dims["project_id"] = str(project.id) if project else ""
+
+    raw_item = line.get("expense_item") or line.get("cost_item")
+    item = None
+    if str(raw_item or "").strip():
+        item = _lookup_by_id_or_code(ExpenseItem.objects.filter(company=company), raw_item, ("code", "name"))
+        if not item or item.status != "ACTIVE" or not in_range(item):
+            raise ValidationError({"expense_item": "Khoản mục chi phí không hợp lệ.", "detail": "Khoản mục chi phí không hợp lệ."})
+    dims["expense_item"] = item.code if item else ""
+    dims["expense_item_id"] = str(item.id) if item else ""
+    dims["expense_item_name"] = item.name if item else ""
+
+    raw_object = line.get("cost_object") or line.get("cost_center")
+    cost_object = None
+    if str(raw_object or "").strip():
+        cost_object = _lookup_by_id_or_code(CostCenter.objects.filter(company=company), raw_object, ("code", "name"))
+        if not cost_object or cost_object.status != "ACTIVE":
+            raise ValidationError({"cost_object": "Đối tượng tập hợp chi phí không hợp lệ.",
+                                   "detail": "Đối tượng tập hợp chi phí không hợp lệ."})
+    dims["cost_object"] = cost_object.code if cost_object else ""
+    dims["cost_object_id"] = str(cost_object.id) if cost_object else ""
+    dims["cost_object_name"] = cost_object.name if cost_object else ""
+    return dims
+
+
+def _validate_transfer_allocations(company, raw_allocations, accounting_setup):
+    """
+    UC-FA-05 AF11 & AF20 & EF36 & BR27 & BR31 & BR35: a new allocation set after the transfer must cover
+    100% over valid departments, with expense accounts fitting the applied regime when the books use GL.
+    """
+    message = "Chưa đủ thông tin phân bổ khấu hao sau điều chuyển."
+    if not isinstance(raw_allocations, list) or not raw_allocations:
+        raise ValidationError({"allocations": message, "detail": message})
+    cleaned = []
+    rate_sum = Decimal("0")
+    for raw in raw_allocations:
+        if not isinstance(raw, dict):
+            raise ValidationError({"allocations": message, "detail": message})
+        rate = _parse_decimal(raw.get("rate"), default=None)
+        dept = _resolve_department(company, raw.get("department_id") or raw.get("department") or raw.get("department_name"))
+        if rate is None or rate <= 0 or not dept or dept.company_id != company.id:
+            raise ValidationError({"allocations": message, "detail": message})
+        acc = _resolve_account(company, raw.get("expense_account_id") or raw.get("expense_account") or raw.get("expense_account_code"))
+        if accounting_setup["uses_gl"] and (
+            not acc
+            or acc.status != "ACTIVE"
+            or not acc.is_postable
+            or not _is_valid_depr_expense_code(acc.code, accounting_setup["account_regime"])
+        ):
+            raise ValidationError({"allocations": message, "detail": message})
+        rate_sum += rate
+        cleaned.append({
+            **raw,
+            "department_id": str(dept.id),
+            "department_name": dept.name,
+            "rate": str(rate.quantize(Decimal("0.01"))),
+            "expense_account_id": str(acc.id) if acc else "",
+            "expense_account": acc.code if acc else "",
+            "expense_account_code": acc.code if acc else "",
+        })
+    if rate_sum.quantize(Decimal("0.01")) != Decimal("100.00"):
+        raise ValidationError({"allocations": "Tổng tỷ lệ phân bổ khấu hao phải bằng 100%.", "detail": message})
+    return cleaned
+
+
 @transaction.atomic
 def transfer_fixed_assets_uc05(request, data=None):
     """
-    UC-FA-05 – Điều chuyển tài sản cố định (Steps 1-30, AF01-AF24, EF01-EF34, BR01-BR40, Section 5).
+    UC-FA-05 – Điều chuyển tài sản cố định (Steps 1-30, AF01-AF25, EF01-EF37, BR01-BR59).
     Atomically validates and executes internal fixed-asset transfers across departments for 1..N assets.
+    Cost, accumulated depreciation and remaining value never change and no GL entry is produced (BR41, BR42).
     """
     import copy
     import re
@@ -3361,6 +3689,14 @@ def transfer_fixed_assets_uc05(request, data=None):
             "detail": "Không thể điều chuyển tài sản trong kỳ đã khóa.",
         })
 
+    # EF35 & BR29 & BR36–BR39: regime and bookkeeping method effective at the transfer date
+    try:
+        accounting_setup = _resolve_depreciation_accounting_setup(company, tx_date)
+    except ValidationError as exc:
+        raise ValidationError({
+            "detail": "Chưa xác định được cấu hình dữ liệu kế toán phù hợp để điều chuyển tài sản.",
+        }) from exc
+
     # EF02: Check if numbering rule is disabled / unconfigured
     if payload.get("numbering_rule_configured") is False or payload.get("numbering_enabled") is False:
         raise ValidationError({
@@ -3398,10 +3734,11 @@ def transfer_fixed_assets_uc05(request, data=None):
             "detail": "Vui lòng nhập số biên bản giao nhận.",
         })
 
-    # EF07: User not allowed to modify suggested voucher number when allow_manual_voucher_no=False
-    allow_manual = payload.get("allow_manual_voucher_no", True)
-    expected_no = str(payload.get("expected_voucher_no") or suggested_no).strip()
-    if allow_manual is False and voucher_no != expected_no:
+    # EF07 & BR05 & AF03: replacing the proposed number needs the number override permission.
+    # The proposal shown on screen may be a step behind a concurrent save (EF06), so the client's
+    # copy of it is accepted alongside the current one.
+    proposed_numbers = {suggested_no, str(payload.get("expected_voucher_no") or "").strip()} - {""}
+    if voucher_no not in proposed_numbers and not _can_override_transfer_number(request, company):
         raise ValidationError({
             "voucher_no": "Bạn không có quyền thay đổi số biên bản giao nhận.",
             "detail": "Bạn không có quyền thay đổi số biên bản giao nhận.",
@@ -3419,13 +3756,12 @@ def transfer_fixed_assets_uc05(request, data=None):
         Q(number=voucher_no) | Q(source_reference=voucher_no)
     ).exists()
     if is_dup_voucher:
-        if bool(payload.get("auto_resolve_number_conflict", False)):
-            voucher_no = suggested_no
-        else:
-            raise ValidationError({
-                "voucher_no": "Số biên bản giao nhận đã tồn tại. Vui lòng sử dụng số khác.",
-                "detail": "Số biên bản giao nhận đã tồn tại. Vui lòng sử dụng số khác.",
-            })
+        # EF05 & EF06: never swap the number silently; the user confirms a new one.
+        raise ValidationError({
+            "voucher_no": "Số biên bản giao nhận đã tồn tại. Vui lòng sử dụng số khác.",
+            "detail": "Số biên bản giao nhận đã tồn tại. Vui lòng sử dụng số khác.",
+            "suggested_voucher_no": suggested_no,
+        })
 
     # EF10: Deliverer (Người bàn giao)
     deliverer = str(
@@ -3675,12 +4011,14 @@ def transfer_fixed_assets_uc05(request, data=None):
             to_dept_obj = Department.objects.filter(company=company).filter(
                 Q(code__iexact=to_str) | Q(name__iexact=to_str)
             ).first()
-        if not to_dept_obj and bool(line.get("auto_create_department", False)):
-            to_dept_obj = _resolve_department(company, to_str, auto_create=True)
-
+        # EF34 & BR02: a department of another company is not an internal transfer
+        if to_dept_obj and to_dept_obj.company_id != company.id:
+            raise ValidationError({
+                "to_department": "Nghiệp vụ không thuộc phạm vi điều chuyển TSCĐ nội bộ.",
+                "detail": "Nghiệp vụ không thuộc phạm vi điều chuyển TSCĐ nội bộ.",
+            })
         if (
             not to_dept_obj
-            or to_dept_obj.company_id != company.id
             or getattr(to_dept_obj, "status", "ACTIVE") != "ACTIVE"
             or getattr(to_dept_obj, "is_active", True) is False
         ):
@@ -3707,89 +4045,32 @@ def transfer_fixed_assets_uc05(request, data=None):
                 "detail": f"Tài sản {asset.code} đã có nghiệp vụ điều chuyển tại thời điểm này.",
             })
 
-        # EF29 & BR33: Check if transfer affects already-posted depreciation runs
-        if not bool(payload.get("allow_posted_depreciation_adjustment", False)):
-            has_posted_depr = (
-                models.CalculationLine.objects.filter(
-                    asset=asset,
-                    run__status="POSTED",
-                    run__period_end__gte=tx_date,
-                ).exists()
-                or asset.transactions.filter(
-                    transaction_type="DEPRECIATION",
-                    status="POSTED",
-                    transaction_date__gte=tx_date,
-                ).exists()
-            )
-            if has_posted_depr:
-                raise ValidationError({
-                    "transaction_date": "Điều chuyển ảnh hưởng đến dữ liệu khấu hao đã ghi sổ. Vui lòng thực hiện điều chỉnh phù hợp.",
-                    "detail": "Điều chuyển ảnh hưởng đến dữ liệu khấu hao đã ghi sổ. Vui lòng thực hiện điều chỉnh phù hợp.",
-                })
-
-        # Cost tracking dimensions (Steps 13-17, AF06-AF11, EF23-EF28, BR18-BR27)
-        sales_contract = str(line.get("sales_contract") or "").strip()
-        sales_order = str(line.get("sales_order") or "").strip()
-        project = str(line.get("project") or "").strip()
-        expense_item = str(line.get("expense_item") or line.get("cost_item") or "").strip()
-        cost_object = str(line.get("cost_object") or line.get("cost_center") or "").strip()
-
-        # EF23: Invalid sales contract
-        if (
-            bool(line.get("sales_contract_invalid", False))
-            or sales_contract.upper().startswith("INVALID")
-            or sales_contract.upper().startswith("EXPIRED")
-        ):
+        # EF29 & BR19 & BR44 & BR45: a back-dated transfer may not rewrite posted depreciation
+        has_posted_depr = (
+            models.CalculationLine.objects.filter(
+                asset=asset,
+                run__status="POSTED",
+                run__period_end__gte=tx_date,
+            ).exists()
+            or asset.transactions.filter(
+                transaction_type="DEPRECIATION",
+                status="POSTED",
+                transaction_date__gte=tx_date,
+            ).exists()
+        )
+        if has_posted_depr:
             raise ValidationError({
-                "sales_contract": "Hợp đồng bán không hợp lệ. Vui lòng chọn lại.",
-                "detail": "Hợp đồng bán không hợp lệ. Vui lòng chọn lại.",
+                "transaction_date": "Điều chuyển ảnh hưởng đến dữ liệu khấu hao đã ghi sổ. Vui lòng thực hiện điều chỉnh phù hợp.",
+                "detail": "Điều chuyển ảnh hưởng đến dữ liệu khấu hao đã ghi sổ. Vui lòng thực hiện điều chỉnh phù hợp.",
             })
 
-        # EF24: Sales order incompatible with selected sales contract
-        expected_order_contract = str(line.get("sales_order_contract") or "").strip()
-        if (
-            bool(line.get("sales_order_invalid", False))
-            or sales_order.upper().startswith("INVALID")
-            or sales_order.upper().startswith("MISMATCH")
-            or (sales_contract and sales_order and expected_order_contract and expected_order_contract != sales_contract)
-        ):
-            raise ValidationError({
-                "sales_order": "Đơn đặt hàng không phù hợp với hợp đồng bán đã chọn.",
-                "detail": "Đơn đặt hàng không phù hợp với hợp đồng bán đã chọn.",
-            })
-
-        # EF25: Project invalid or closed for cost collection
-        if (
-            bool(line.get("project_invalid", False))
-            or project.upper().startswith("INVALID")
-            or project.upper().startswith("CLOSED")
-        ):
-            raise ValidationError({
-                "project": "Công trình không hợp lệ hoặc không được phép tập hợp chi phí.",
-                "detail": "Công trình không hợp lệ hoặc không được phép tập hợp chi phí.",
-            })
-
-        # EF26: Expense item invalid or inactive
-        if (
-            bool(line.get("expense_item_invalid", False))
-            or expense_item.upper().startswith("INVALID")
-            or expense_item.upper().startswith("INACTIVE")
-        ):
-            raise ValidationError({
-                "expense_item": "Khoản mục chi phí không hợp lệ.",
-                "detail": "Khoản mục chi phí không hợp lệ.",
-            })
-
-        # EF27: Cost object invalid or inactive
-        if (
-            bool(line.get("cost_object_invalid", False))
-            or cost_object.upper().startswith("INVALID")
-            or cost_object.upper().startswith("INACTIVE")
-        ):
-            raise ValidationError({
-                "cost_object": "Đối tượng tập hợp chi phí không hợp lệ.",
-                "detail": "Đối tượng tập hợp chi phí không hợp lệ.",
-            })
+        # Steps 13–17 & 22, EF23–EF27, BR20–BR25: cost tracking values come from the company's catalogs
+        dims = _resolve_transfer_cost_dimensions(company, line, tx_date)
+        sales_contract = dims["sales_contract"]
+        sales_order = dims["sales_order"]
+        project = dims["project"]
+        expense_item = dims["expense_item"]
+        cost_object = dims["cost_object"]
 
         # EF28 & BR20: Required cost tracking missing when policy mandates it
         require_cost_tracking = bool(
@@ -3804,14 +4085,21 @@ def transfer_fixed_assets_uc05(request, data=None):
 
         validated_items.append({
             "asset": asset,
+            "version": asset.version,
             "to_department": to_dept_obj,
             "sales_contract": sales_contract,
             "sales_order": sales_order,
             "project": project,
             "expense_item": expense_item,
             "cost_object": cost_object,
+            "dims": dims,
             "clear_cost_tracking": bool(line.get("clear_cost_tracking", False)),
-            "custom_allocations": line.get("allocations") if isinstance(line.get("allocations"), list) else None,
+            # AF20 & EF36: an explicit new allocation set must be complete and fit the regime
+            "custom_allocations": (
+                _validate_transfer_allocations(company, line.get("allocations"), accounting_setup)
+                if "allocations" in line
+                else None
+            ),
             "line_receiver": str(line.get("receiver") or receiver).strip(),
             "simulate_error": bool(line.get("simulate_db_error", False)),
         })
@@ -3848,21 +4136,35 @@ def transfer_fixed_assets_uc05(request, data=None):
             }
 
             # Determine updated allocations (AF11, AF13, BR26, BR27, Section 5.6)
+            dims = item["dims"]
             new_exp_item = (
                 "Chi phí khấu hao TSCĐ"
                 if item["clear_cost_tracking"]
-                else (item["expense_item"] or old_exp_item or "Chi phí khấu hao TSCĐ")
+                else (dims["expense_item_name"] or old_exp_item or "Chi phí khấu hao TSCĐ")
             )
             new_cost_center = (
                 to_dept.name
                 if item["clear_cost_tracking"]
-                else (item["cost_object"] or item["project"] or to_dept.name)
+                else (dims["cost_object_name"] or item["project"] or to_dept.name)
             )
+            # BR28: moving the asset does not by itself change the expense account
             default_exp_acc_id = str(asset.category.expense_account_id) if asset.category and asset.category.expense_account_id else ""
-            default_exp_acc_code = asset.category.expense_account.code if asset.category and asset.category.expense_account_id else "6424"
+            default_exp_acc_code = asset.category.expense_account.code if asset.category and asset.category.expense_account_id else ""
 
             if item["custom_allocations"] is not None:
                 asset.allocations = copy.deepcopy(item["custom_allocations"])
+            elif len(old_allocs) > 1 and not any(
+                isinstance(al, dict) and old_dept and (
+                    str(al.get("department_id") or "") == str(old_dept.id)
+                    or str(al.get("department_name") or al.get("department") or "").lower() in {old_dept.name.lower(), old_dept.code.lower()}
+                )
+                for al in old_allocs
+            ):
+                # AF11 & EF36 & BR27: the transferred unit is not one of the allocation targets; do not guess
+                raise ValidationError({
+                    "allocations": "Chưa đủ thông tin phân bổ khấu hao sau điều chuyển.",
+                    "detail": "Chưa đủ thông tin phân bổ khấu hao sau điều chuyển.",
+                })
             elif len(old_allocs) > 1:
                 # AF11 & BR27: Multi-department allocation - update only the transferred department's slot, preserving ratios
                 updated_multi = []
@@ -3933,6 +4235,9 @@ def transfer_fixed_assets_uc05(request, data=None):
                 "project": "" if item["clear_cost_tracking"] else item["project"],
                 "expense_item": new_exp_item,
                 "cost_object": "" if item["clear_cost_tracking"] else item["cost_object"],
+                **({} if item["clear_cost_tracking"] else {k: v for k, v in dims.items() if k.endswith(("_id", "_name"))}),
+                "accounting_regime": accounting_setup["regime"],
+                "bookkeeping_method": accounting_setup["bookkeeping_method"],
                 "attachments": validated_attachments,
                 "prorate_in_period": prorate_in_period,
                 "allocations": copy.deepcopy(asset.allocations),
@@ -3982,8 +4287,14 @@ def transfer_fixed_assets_uc05(request, data=None):
             created_txs.append(tx_obj)
     except ValidationError:
         raise
+    except IntegrityError as exc:
+        # EF06: another user saved the same number in the meantime
+        raise ValidationError({
+            "voucher_no": "Số biên bản giao nhận đã tồn tại. Vui lòng sử dụng số khác.",
+            "detail": "Số biên bản giao nhận đã tồn tại. Vui lòng sử dụng số khác.",
+        }) from exc
     except Exception as exc:
-        # EF31 & BR35: Roll back entire multi-asset transfer atomically and return exact error message
+        # EF31 & EF37 & BR47: Roll back entire multi-asset transfer atomically and return exact error message
         raise ValidationError({
             "detail": "Điều chuyển tài sản cố định thất bại. Vui lòng thử lại.",
         }) from exc
@@ -5616,6 +5927,7 @@ def _serialize_disposal_voucher_group(company, voucher_no: str, transactions_qs=
         "effective_date": after_snap.get("effective_date") or first_tx.transaction_date.isoformat(),
         "period_code": after_snap.get("period_code") or first_tx.period_code,
         "reference": after_snap.get("reference") or "",
+        "reference_journal_ids": after_snap.get("reference_journal_ids") or [],
         "total_amount": str(total_original_cost),
         "total_original_cost": str(total_original_cost),
         "total_depreciable_amount": str(total_depreciable),
@@ -5666,6 +5978,8 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
         company = Company.objects.get(pk=company_id)
     except (Company.DoesNotExist, ValueError) as exc:
         raise ValidationError({"company": "Doanh nghiệp không hợp lệ."}) from exc
+
+    simple_book = company.accounting_regime == "TT58" and company.bookkeeping_method == "SIMPLE"
 
     # EF01 & EF30: Permission & company scope check
     user = getattr(request, "user", None)
@@ -5775,6 +6089,24 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
     reference = str(payload.get("reference") or payload.get("source_reference") or "").strip()
 
     # Step 28, EF29: Validate attachments (<= 5MB and allowed formats)
+    reference_journal_ids = payload.get("reference_journal_ids") or []
+    if not isinstance(reference_journal_ids, list):
+        raise ValidationError({"reference_journal_ids": "Chứng từ tham chiếu không hợp lệ. Vui lòng chọn lại."})
+    if reference_journal_ids:
+        from general_ledger.models import JournalEntry
+        reference_journals = list(JournalEntry.objects.filter(
+            pk__in=reference_journal_ids, company=company, status="POSTED"
+        ))
+        if len(reference_journals) != len(set(map(str, reference_journal_ids))):
+            raise ValidationError({"reference_journal_ids": "Chứng từ tham chiếu không hợp lệ. Vui lòng chọn lại."})
+        if not user.is_superuser and any(
+            entry.branch_id and not has_effective_permission(
+                user.iam_account, company, "FA.TRANSACTION.DISPOSE", branch_id=entry.branch_id
+            ) for entry in reference_journals
+        ):
+            raise ValidationError({"reference_journal_ids": "Chứng từ tham chiếu không hợp lệ. Vui lòng chọn lại."})
+        reference = ", ".join(entry.number for entry in reference_journals)
+
     raw_attachments = payload.get("attachments") or []
     if not isinstance(raw_attachments, list):
         raise ValidationError({
@@ -5846,6 +6178,8 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
                 "reason": "Chưa đủ căn cứ hoặc thông tin chuyển TSCĐ thành CCDC.",
                 "detail": "Chưa đủ căn cứ hoặc thông tin chuyển TSCĐ thành CCDC.",
             })
+    elif reason_code == "RETURN_FINANCE_LEASE" and require_docs and not has_doc_basis:
+        raise ValidationError({"reason": "Chưa đủ hồ sơ trả lại tài sản thuê tài chính."})
 
     # Step 9–23, EF08: Validate asset rows (Tab Tài sản)
     raw_rows = payload.get("rows") or payload.get("items") or payload.get("assets")
@@ -5968,6 +6302,18 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
                 "detail": "Tài sản có nghiệp vụ liên quan chưa hoàn tất. Vui lòng kiểm tra lại.",
             })
 
+        # A posted calculation for a later period, or a full-month calculation before
+        # a mid-month disposal, must be adjusted through the depreciation workflow.
+        posted_depreciation = models.CalculationLine.objects.filter(
+            asset=asset, run__company=company, run__calculation_type="DEPRECIATION",
+            run__status="POSTED", run__period_code__gte=period_code,
+        )
+        last_day = calendar.monthrange(effective_dt.year, effective_dt.month)[1]
+        if posted_depreciation.filter(run__period_code__gt=period_code).exists() or (
+            effective_dt.day < last_day and posted_depreciation.filter(run__period_code=period_code).exists()
+        ):
+            raise ValidationError({"asset": "Điều chỉnh ảnh hưởng đến dữ liệu kế toán đã ghi sổ. Vui lòng xử lý kỳ liên quan."})
+
         orig_db = (asset.original_cost or Decimal("0")).quantize(Decimal("0.01"))
         depr_base_db = (asset.depreciable_amount or orig_db).quantize(Decimal("0.01"))
         accum_db = (asset.accumulated_depreciation or Decimal("0")).quantize(Decimal("0.01"))
@@ -6049,7 +6395,7 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
             or default_accum_acc
         ).strip()
 
-        if not asset_acc.startswith(("211", "212", "213")) or not accum_acc.startswith("214"):
+        if not simple_book and (not asset_acc.startswith(("211", "212", "213")) or not accum_acc.startswith("214")):
             raise ValidationError({
                 "asset_account": "Tài khoản nguyên giá hoặc hao mòn TSCĐ không hợp lệ.",
                 "detail": "Tài khoản nguyên giá hoặc hao mòn TSCĐ không hợp lệ.",
@@ -6068,12 +6414,19 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
                 "reason": "Tài sản không thuộc loại TSCĐ thuê tài chính.",
                 "detail": "Tài sản không thuộc loại TSCĐ thuê tài chính.",
             })
+        if simple_book:
+            asset_acc = accum_acc = ""
 
         # Step 21, 22, EF23, BR15, BR16: Determine & validate TK Xử lý giá trị (disposal_account)
         is_welfare_asset = bool(row.get("is_welfare_asset") or payload.get("is_welfare_asset"))
         has_processing_decision = bool(row.get("has_processing_decision") or payload.get("has_processing_decision"))
         immediate_expense = bool(row.get("immediate_expense") or payload.get("immediate_expense"))
-        allocation_periods = int(row.get("allocation_periods") or payload.get("allocation_periods") or 12)
+        try:
+            allocation_periods = int(row.get("allocation_periods") or payload.get("allocation_periods") or 12)
+        except (TypeError, ValueError):
+            raise ValidationError({"allocation_periods": "Số kỳ phân bổ phải là số nguyên dương."})
+        if allocation_periods < 1:
+            raise ValidationError({"allocation_periods": "Số kỳ phân bổ phải là số nguyên dương."})
 
         if reason_code == "SALE_LIQUIDATION" and is_welfare_asset:
             proposed_disposal_acc = "3532"
@@ -6097,11 +6450,13 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
         )
         disposal_acc = str(raw_disp_acc if raw_disp_acc is not None else proposed_disposal_acc).strip()
 
-        if not disposal_acc or not disposal_acc.startswith(reason_rule["allowed_prefixes"]):
+        if not simple_book and (not disposal_acc or not disposal_acc.startswith(reason_rule["allowed_prefixes"])):
             raise ValidationError({
                 "disposal_account": "Tài khoản xử lý giá trị không phù hợp với lý do ghi giảm.",
                 "detail": "Tài khoản xử lý giá trị không phù hợp với lý do ghi giảm.",
             })
+        if simple_book:
+            disposal_acc = ""
 
         total_original_cost += orig_db
 
@@ -6129,16 +6484,18 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
 
         # 2) Handle remaining value (ONLY when remaining_value > 0 per AF18, or capital contribution difference per Section 4.5)
         agreed_inv_val = _parse_decimal(
-            row.get("agreed_investment_value") or payload.get("agreed_investment_value"),
+            row.get("agreed_investment_value", payload.get("agreed_investment_value")),
             default=None,
         )
         comp_val = _parse_decimal(
-            row.get("compensation_amount") or payload.get("compensation_amount"),
+            row.get("compensation_amount", payload.get("compensation_amount")),
             default=None,
         )
 
         if reason_code in ("CAPITAL_SUBSIDIARY", "CAPITAL_JOINT_VENTURE", "CAPITAL_ASSOCIATE", "OTHER_LONG_TERM_INVESTMENT") and agreed_inv_val is not None:
             agreed_inv_val = agreed_inv_val.quantize(Decimal("0.01"))
+            if agreed_inv_val < Decimal("0"):
+                raise ValidationError({"agreed_investment_value": "Giá trị góp vốn được chấp thuận không hợp lệ."})
             diff_val = (agreed_inv_val - rem_db).quantize(Decimal("0.01"))
             diff_acc = str(row.get("difference_account") or payload.get("difference_account") or ("711" if diff_val >= 0 else "811")).strip()
             if diff_val >= Decimal("0"):
@@ -6178,6 +6535,8 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
                     })
         elif reason_code == "INVENTORY_SHORTAGE" and has_processing_decision and comp_val is not None and rem_db > Decimal("0"):
             comp_val = comp_val.quantize(Decimal("0.01"))
+            if comp_val < Decimal("0") or comp_val > rem_db:
+                raise ValidationError({"compensation_amount": "Số tiền bồi thường phải từ 0 đến giá trị còn lại của tài sản."})
             loss_val = max(Decimal("0.00"), rem_db - comp_val)
             comp_acc = str(row.get("compensation_account") or payload.get("compensation_account") or "1388").strip()
             loss_acc = str(row.get("loss_account") or payload.get("loss_account") or "811").strip()
@@ -6228,6 +6587,7 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
 
         validated_items.append({
             "asset": asset,
+            "version": asset.version,
             "original_cost": orig_db,
             "depreciable_amount": depr_base_db,
             "accumulated_depreciation": accum_db,
@@ -6239,7 +6599,9 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
 
     # Step 24–27, AF21, AF22, EF24, EF25, BR36, BR37: Validate Tab Hạch toán
     raw_entries = payload.get("accounting_entries")
-    if raw_entries is not None:
+    if simple_book and raw_entries:
+        raise ValidationError({"accounting_entries": "Bộ sổ TT58 không ghi sổ kép không sử dụng bút toán Nợ/Có."})
+    if raw_entries is not None and not simple_book:
         if not isinstance(raw_entries, list) or len(raw_entries) == 0:
             raise ValidationError({
                 "accounting_entries": "Bút toán ghi giảm không cân đối. Vui lòng kiểm tra lại.",
@@ -6295,7 +6657,7 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
                 "detail": "Số tiền ghi giảm nguyên giá không khớp với danh sách tài sản.",
             })
     else:
-        serialized_entries = [
+        serialized_entries = [] if simple_book else [
             {"line_no": i + 1, **entry}
             for i, entry in enumerate(auto_accounting_entries)
         ]
@@ -6310,6 +6672,11 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
         with transaction.atomic():
             if simulate_db_failure:
                 raise RuntimeError("Simulated database failure during asset disposal")
+
+            for item in validated_items:
+                locked_asset = models.AssetRecord.objects.select_for_update().get(pk=item["asset"].pk)
+                if locked_asset.status == models.AssetStatus.DISPOSED or locked_asset.version != item["version"]:
+                    raise ValidationError({"asset": "Số liệu tài sản đã thay đổi. Vui lòng tải lại dữ liệu."})
 
             journal_entry = _create_gl_journal_entry_for_disposal(
                 company=company,
@@ -6351,6 +6718,7 @@ def dispose_fixed_assets_uc07(request, data: dict | None = None) -> dict:
                     "effective_date": effective_dt.isoformat(),
                     "period_code": period_code,
                     "reference": reference,
+                    "reference_journal_ids": list(map(str, reference_journal_ids)),
                     "department_id": str(dept.id) if dept else "",
                     "department_name": dept.name if dept else "",
                     "asset_account": item["asset_account"],
@@ -6435,6 +6803,8 @@ STOCKTAKE_QUALITY_ISSUE_KEYWORDS = (
     "mất khả năng",
     "hỏng",
 )
+
+STOCKTAKE_EF04_MESSAGE = "Số chứng từ kiểm kê không hợp lệ hoặc đã tồn tại."
 
 STOCKTAKE_CONCLUSION_NO_DIFF_PHRASES = (
     "khớp 100%",
@@ -6550,40 +6920,14 @@ def _reconstruct_asset_book_snapshot_at_count_date(asset, count_dt: date_cls) ->
     Reconstructs book department, original_cost, depreciable_amount, accumulated_depreciation,
     and remaining_value = original_cost - accumulated_depreciation at count_dt.
     """
-    dept_obj = asset.department
-    future_transfer = (
-        asset.transactions.filter(
-            transaction_type="TRANSFER",
-            status="POSTED",
-            transaction_date__gt=count_dt,
-        )
-        .order_by("transaction_date", "created_at")
-        .first()
-    )
-    if future_transfer and isinstance(future_transfer.before_snapshot, dict):
-        prev_dept_id = future_transfer.before_snapshot.get("from_department_id") or future_transfer.before_snapshot.get("department")
-        if prev_dept_id:
-            prev_dept = Department.objects.filter(pk=prev_dept_id).first()
-            if prev_dept:
-                dept_obj = prev_dept
-
-    orig = Decimal(str(asset.original_cost or Decimal("0"))).quantize(Decimal("0.01"))
-    depr_base = Decimal(
-        str(asset.depreciable_amount if asset.depreciable_amount and asset.depreciable_amount > 0 else orig)
-    ).quantize(Decimal("0.01"))
-    accum = Decimal(str(asset.accumulated_depreciation or Decimal("0"))).quantize(Decimal("0.01"))
-    if accum < Decimal("0"):
-        accum = Decimal("0.00")
-    if accum > orig:
-        accum = orig
-    rem = (orig - accum).quantize(Decimal("0.01"))
+    snapshot = _reconstruct_asset_snapshot_at_date_uc09(asset, count_dt)
     return {
-        "book_department_id": str(dept_obj.id) if dept_obj else "",
-        "book_department_name": dept_obj.name if dept_obj else "",
-        "original_cost": orig,
-        "depreciable_amount": depr_base,
-        "accumulated_depreciation": accum,
-        "remaining_value": rem,
+        "book_department_id": snapshot.get("department_id", ""),
+        "book_department_name": snapshot.get("department_name", ""),
+        "original_cost": snapshot["original_cost"],
+        "depreciable_amount": snapshot["depreciable_amount"],
+        "accumulated_depreciation": snapshot["accumulated_depreciation"],
+        "remaining_value": snapshot["remaining_value"],
     }
 
 
@@ -6596,8 +6940,8 @@ def _validate_uc08_attachments(raw_attachments) -> list:
         return []
     if not isinstance(raw_attachments, list):
         raise ValidationError({
-            "attachments": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
-            "detail": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
+            "attachments": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
+            "detail": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
         })
     allowed_exts = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png", ".csv", ".txt"}
     max_bytes = 5 * 1024 * 1024
@@ -6605,8 +6949,8 @@ def _validate_uc08_attachments(raw_attachments) -> list:
     for att in raw_attachments:
         if not isinstance(att, dict) or att.get("invalid") is True:
             raise ValidationError({
-                "attachments": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
-                "detail": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
+                "attachments": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
+                "detail": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
             })
         fname = str(att.get("name") or att.get("filename") or att.get("file_name") or "").strip()
         fsize = att.get("size") if "size" in att else att.get("file_size", 0)
@@ -6616,15 +6960,15 @@ def _validate_uc08_attachments(raw_attachments) -> list:
             fsize_int = max_bytes + 1
         if fsize_int < 0 or fsize_int > max_bytes:
             raise ValidationError({
-                "attachments": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
-                "detail": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
+                "attachments": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
+                "detail": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
             })
         if fname and "." in fname:
             ext = "." + fname.rsplit(".", 1)[-1].lower()
             if ext not in allowed_exts:
                 raise ValidationError({
-                    "attachments": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
-                    "detail": "Tệp đính kèm không hợp lệ hoặc vượt quá dung lượng cho phép (tối đa 5MB).",
+                    "attachments": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
+                    "detail": "Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.",
                 })
         validated.append({
             "name": fname or "bien_ban_kiem_ke.pdf",
@@ -6632,6 +6976,74 @@ def _validate_uc08_attachments(raw_attachments) -> list:
             "url": str(att.get("url") or ""),
         })
     return validated
+
+
+STOCKTAKE_CONFIRMED_STATUSES = ("CONFIRMED", "POSTED", "COMPLETED", "PROCESSED")
+# BR57–BR60: these recommendations are only settled by a posted processing voucher (UC-FA-01/05/06/07)
+STOCKTAKE_VOUCHER_RECOMMENDATIONS = ("ghi giảm", "thanh lý", "nhượng bán", "điều chuyển", "đánh giá lại", "ghi tăng")
+
+
+def _resolve_stocktake_accounting_setup(company, count_dt):
+    """
+    Step 36, AF21, AF22, EF24, BR44–BR55: regime, bookkeeping method and book source effective at the
+    count date. Stocktake never posts, so a TT58 single-entry book needs no GL account (BR52).
+    """
+    try:
+        setup = _resolve_depreciation_accounting_setup(company, count_dt)
+    except ValidationError as exc:
+        raise ValidationError({"detail": "Chưa xác định được cấu hình dữ liệu kế toán phục vụ kiểm kê."}) from exc
+    uses_gl = bool(setup["uses_gl"])
+    return {
+        "accounting_regime": setup["regime"],
+        "account_regime": setup["account_regime"] or "",
+        "bookkeeping_method": setup["bookkeeping_method"],
+        "uses_general_ledger": uses_gl,
+        # BR53: TT58 single-entry books read cost and depreciation from the S4b-DNSN register
+        "book_source": "Sổ TSCĐ S4b-DNSN" if not uses_gl else "Sổ tài sản cố định",
+    }
+
+
+def _find_stocktake_resolution_voucher(company, voucher_no: str, asset=None):
+    """
+    AF15, AF20, EF18, BR43: the processing voucher must be a posted document of the company;
+    for a book asset it must concern that asset. Multi-asset vouchers store lines as NO, NO-02, ...
+    """
+    from general_ledger.models import JournalEntry
+
+    number_q = Q(number__iexact=voucher_no) | Q(number__iregex=rf"^{re.escape(voucher_no)}-[0-9]{{2}}$")
+    txs = models.AssetTransaction.objects.filter(number_q, company=company, status="POSTED")
+    if asset is not None:
+        txs = txs.filter(asset=asset)
+    tx = txs.order_by("transaction_date").first()
+    if tx:
+        return {"number": voucher_no, "type": tx.transaction_type, "date": tx.transaction_date.isoformat()}
+    revals = models.AssetRevaluation.objects.filter(company=company, number__iexact=voucher_no, status="POSTED")
+    if asset is not None:
+        revals = revals.filter(lines__asset=asset)
+    reval = revals.first()
+    if reval:
+        return {"number": reval.number, "type": "REVALUATION", "date": reval.posting_date.isoformat()}
+    entry = JournalEntry.objects.filter(company=company, number__iexact=voucher_no, status="POSTED").first()
+    if entry:
+        return {"number": entry.number, "type": "JOURNAL", "date": entry.posting_date.isoformat() if entry.posting_date else ""}
+    return None
+
+
+def _stocktake_result_fingerprint(meta_or_payload: dict) -> list:
+    """BR62 & EF26: the count results that a confirmed voucher may only change with the adjust right."""
+    rows = []
+    for ln in meta_or_payload.get("lines") or []:
+        rows.append((
+            str(ln.get("asset_id") or ln.get("temp_code") or ""),
+            ln.get("existence_status"),
+            str(ln.get("actual_department_name") or "").strip().lower(),
+            str(ln.get("current_quality") or "").strip(),
+            bool(ln.get("other_mismatch")),
+            str(ln.get("recommendation") or "").strip(),
+            str(ln.get("note") or "").strip(),
+            str(ln.get("asset_name") or "").strip() if ln.get("is_surplus") else "",
+        ))
+    return rows
 
 
 def _is_asset_eligible_for_stocktake_at_date(asset, count_dt: date_cls) -> bool:
@@ -6686,14 +7098,7 @@ def load_book_assets_for_stocktake_uc08(request, data=None) -> dict:
     except (Company.DoesNotExist, ValueError) as exc:
         raise ValidationError({"company": "Doanh nghiệp không hợp lệ."}) from exc
 
-    # EF23: Check scope permission
-    if str(payload.get("out_of_scope_permission", "")).lower() in ("true", "1"):
-        raise ValidationError({
-            "scope": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-            "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-        })
-
-    # EF03 & EF04: Validate count_date ('Kiểm kê đến ngày')
+    # EF02: Validate count_date ('Kiểm kê đến ngày')
     raw_count_date = payload.get("count_date") or payload.get("audit_date") or payload.get("date")
     count_dt = _parse_date(raw_count_date)
     if not count_dt:
@@ -6708,11 +7113,8 @@ def load_book_assets_for_stocktake_uc08(request, data=None) -> dict:
             "detail": "Ngày kiểm kê không được lớn hơn ngày hiện tại.",
         })
 
-    # EF10: Simulate or handle book load error
-    if str(payload.get("simulate_load_error", "")).lower() in ("true", "1"):
-        raise ValidationError({
-            "detail": "Không thể lấy danh sách tài sản tại ngày kiểm kê. Vui lòng thử lại.",
-        })
+    # Step 36 & EF24: the regime and book source effective at the count date
+    accounting_setup = _resolve_stocktake_accounting_setup(company, count_dt)
 
     asset_type = str(payload.get("asset_type") or "FIXED_ASSET").strip().upper()
     dept_id = str(payload.get("department_id") or payload.get("department") or "").strip()
@@ -6724,8 +7126,8 @@ def load_book_assets_for_stocktake_uc08(request, data=None) -> dict:
         dept_obj = Department.objects.filter(pk=dept_id).first()
         if dept_obj and str(dept_obj.company_id) != str(company.id):
             raise ValidationError({
-                "department": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-                "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
+                "department": "Bạn không có quyền kiểm kê tài sản này.",
+                "detail": "Bạn không có quyền kiểm kê tài sản này.",
             })
 
     qs = (
@@ -6744,9 +7146,72 @@ def load_book_assets_for_stocktake_uc08(request, data=None) -> dict:
     tot_accum = Decimal("0.00")
     tot_rem = Decimal("0.00")
 
+    try:
+        loaded_lines, (tot_orig, tot_depr_base, tot_accum, tot_rem) = _load_stocktake_book_rows(
+            request, company, qs, count_dt, dept_id, dept_name,
+        )
+    except ValidationError:
+        raise
+    except Exception as exc:
+        # EF07 & EF25: the book (or the S4b-DNSN register) could not be read at the count date
+        raise ValidationError({"detail": (
+            "Không thể xác định số liệu tài sản theo sổ đang áp dụng."
+            if not accounting_setup["uses_general_ledger"]
+            else "Không thể lấy danh sách tài sản tại ngày kiểm kê. Vui lòng thử lại."
+        )}) from exc
+
+    return {
+        "company": str(company.id),
+        "count_date": count_dt.isoformat(),
+        "count_date_display": count_dt.strftime("%d/%m/%Y"),
+        **accounting_setup,
+        "scope": {
+            "department_id": dept_id,
+            "department_name": dept_name,
+            "category_id": cat_id,
+            "category_name": cat_name,
+        },
+        "lines": loaded_lines,
+        "summary": {
+            "book_assets_count": len(loaded_lines),
+            "verified_existing_count": 0,
+            "matched_count": 0,
+            "missing_count": 0,
+            "department_mismatch_count": 0,
+            "other_mismatch_count": 0,
+            "info_mismatch_count": 0,
+            "surplus_count": 0,
+            "diff_count": 0,
+            "quality_issue_count": 0,
+            "uncounted_count": len(loaded_lines),
+            "total_original_cost": str(tot_orig.quantize(Decimal("0.01"))),
+            "total_depreciable_amount": str(tot_depr_base.quantize(Decimal("0.01"))),
+            "total_accumulated_depreciation": str(tot_accum.quantize(Decimal("0.01"))),
+            "total_remaining_value": str((tot_orig - tot_accum).quantize(Decimal("0.01"))),
+        },
+        "message": (
+            f"Đã nạp {len(loaded_lines)} tài sản cố định đang theo dõi tại ngày {count_dt.strftime('%d/%m/%Y')}."
+            if loaded_lines
+            else "Không có tài sản cố định thuộc phạm vi kiểm kê tại ngày đã chọn."
+        ),
+    }
+
+
+def _load_stocktake_book_rows(request, company, qs, count_dt, dept_id, dept_name):
+    """BR09–BR13: book rows (as of the count date) inside the requested scope and the user's branches."""
+    loaded_lines = []
+    tot_orig = Decimal("0.00")
+    tot_depr_base = Decimal("0.00")
+    tot_accum = Decimal("0.00")
+    tot_rem = Decimal("0.00")
+
     for asset in qs:
         if not _is_asset_eligible_for_stocktake_at_date(asset, count_dt):
             continue
+        if not request.user.is_superuser:
+            from iam.permissions import has_effective_permission
+            if not has_effective_permission(request.user.iam_account, company, "FA.COUNT.CREATE", branch_id=asset.branch_id):
+                continue
         snap = _reconstruct_asset_book_snapshot_at_count_date(asset, count_dt)
         if dept_id and snap["book_department_id"] != dept_id:
             continue
@@ -6791,40 +7256,7 @@ def load_book_assets_for_stocktake_uc08(request, data=None) -> dict:
             "reconciliation_result_display": "Chưa kiểm kê",
             "version": asset.version or 1,
         })
-
-    return {
-        "company": str(company.id),
-        "count_date": count_dt.isoformat(),
-        "count_date_display": count_dt.strftime("%d/%m/%Y"),
-        "scope": {
-            "department_id": dept_id,
-            "department_name": dept_name,
-            "category_id": cat_id,
-            "category_name": cat_name,
-        },
-        "lines": loaded_lines,
-        "summary": {
-            "book_assets_count": len(loaded_lines),
-            "verified_existing_count": 0,
-            "matched_count": 0,
-            "missing_count": 0,
-            "department_mismatch_count": 0,
-            "other_mismatch_count": 0,
-            "surplus_count": 0,
-            "diff_count": 0,
-            "quality_issue_count": 0,
-            "uncounted_count": len(loaded_lines),
-            "total_original_cost": str(tot_orig.quantize(Decimal("0.01"))),
-            "total_depreciable_amount": str(tot_depr_base.quantize(Decimal("0.01"))),
-            "total_accumulated_depreciation": str(tot_accum.quantize(Decimal("0.01"))),
-            "total_remaining_value": str(tot_rem.quantize(Decimal("0.01"))),
-        },
-        "message": (
-            f"Đã nạp {len(loaded_lines)} tài sản cố định đang theo dõi tại ngày {count_dt.strftime('%d/%m/%Y')}."
-            if loaded_lines
-            else "Không có tài sản cố định thuộc phạm vi kiểm kê tại ngày đã chọn."
-        ),
-    }
+    return loaded_lines, (tot_orig, tot_depr_base, tot_accum, tot_rem)
 
 
 def serialize_stocktake_voucher_uc08(count_obj: models.AssetCount) -> dict:
@@ -6843,9 +7275,10 @@ def serialize_stocktake_voucher_uc08(count_obj: models.AssetCount) -> dict:
         scope = meta.get("scope") or {}
         report_datetime = meta.get("report_datetime") or f"{count_obj.count_date.strftime('%d/%m/%Y')} 08:00:00"
         reference = meta.get("reference") or ""
+        reference_journal_ids = meta.get("reference_journal_ids") or []
         recommendations_processed = bool(meta.get("recommendations_processed", False))
         status_code = meta.get("status") or "CONFIRMED"
-        status_display = meta.get("status_display") or ("Đã xử lý kiến nghị" if recommendations_processed else "Đã hoàn tất")
+        status_display = meta.get("status_display") or "Đã ghi nhận"
         attachments = meta.get("attachments") or []
         idempotency_key = meta.get("idempotency_key") or ""
     else:
@@ -6854,9 +7287,10 @@ def serialize_stocktake_voucher_uc08(count_obj: models.AssetCount) -> dict:
         scope = {"scope_type": "ALL"}
         report_datetime = f"{count_obj.count_date.strftime('%d/%m/%Y')} 08:00:00"
         reference = ""
+        reference_journal_ids = []
         recommendations_processed = False
         status_code = "CONFIRMED"
-        status_display = "Đã hoàn tất"
+        status_display = "Đã ghi nhận"
         attachments = []
         idempotency_key = ""
         enriched_lines = []
@@ -6936,6 +7370,7 @@ def serialize_stocktake_voucher_uc08(count_obj: models.AssetCount) -> dict:
         "purpose": count_obj.purpose,
         "conclusion": count_obj.conclusion,
         "reference": reference,
+        "reference_journal_ids": reference_journal_ids,
         "scope": scope,
         "recommendations_processed": recommendations_processed,
         "status": status_code,
@@ -6948,6 +7383,10 @@ def serialize_stocktake_voucher_uc08(count_obj: models.AssetCount) -> dict:
         "summary": summary,
         "attachments": attachments,
         "idempotency_key": idempotency_key,
+        "accounting_regime": meta.get("accounting_regime", "") if isinstance(raw_committee, dict) else "",
+        "bookkeeping_method": meta.get("bookkeeping_method", "") if isinstance(raw_committee, dict) else "",
+        "uses_general_ledger": meta.get("uses_general_ledger", True) if isinstance(raw_committee, dict) else True,
+        "book_source": meta.get("book_source", "") if isinstance(raw_committee, dict) else "",
         "created_at": count_obj.created_at.isoformat() if count_obj.created_at else "",
         "message": "Lưu biên bản kiểm kê tài sản cố định thành công.",
     }
@@ -6983,31 +7422,27 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
     # EF23: Check cross-company / scope permission
     if instance and str(instance.company_id) != str(company.id):
         raise ValidationError({
-            "company": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-            "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
+            "company": "Bạn không có quyền kiểm kê tài sản này.",
+            "detail": "Bạn không có quyền kiểm kê tài sản này.",
         })
-    if str(payload.get("out_of_scope_permission", "")).lower() in ("true", "1"):
-        raise ValidationError({
-            "scope": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-            "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-        })
-
-    # EF27 & BR44: Prevent unauthorized modification of an already-confirmed stocktake
+    # EF26 & BR62: a confirmed voucher keeps its count results unless the user holds the adjust right;
+    # without it only the post-stocktake processing (AF20) may be updated.
+    confirmed_before = None
+    can_adjust_confirmed = True
     if instance is not None:
         raw_comm = instance.committee if isinstance(instance.committee, dict) else {}
-        existing_status = raw_comm.get("status", "CONFIRMED")
-        allow_confirmed_edit = str(payload.get("allow_confirmed_edit", "")).lower() in ("true", "1")
-        if existing_status in ("CONFIRMED", "POSTED", "COMPLETED", "PROCESSED") and not allow_confirmed_edit:
-            raise ValidationError({
-                "status": "Bạn không có quyền điều chỉnh biên bản kiểm kê đã xác nhận.",
-                "detail": "Bạn không có quyền điều chỉnh biên bản kiểm kê đã xác nhận.",
-            })
+        if raw_comm.get("status", "CONFIRMED") in STOCKTAKE_CONFIRMED_STATUSES:
+            confirmed_before = raw_comm
+            from iam.permissions import has_effective_permission as _has_count_permission
+            can_adjust_confirmed = request.user.is_superuser or _has_count_permission(
+                request.user.iam_account, company, "FA.COUNT.ADJUST_CONFIRMED"
+            )
 
-    # EF28 & BR21 & BR37: Reject direct/auto disposal from stocktake without approved post-stocktake resolution
+    # EF27, BR19 & BR57: a stocktake never writes an asset down; disposal is done in UC-FA-07
     if (
         str(payload.get("auto_dispose_missing", "")).lower() in ("true", "1")
         or str(payload.get("action") or "").strip().upper() == "DISPOSE_MISSING"
-    ) and str(payload.get("approved_resolution_basis", "")).lower() not in ("true", "1"):
+    ):
         raise ValidationError({
             "disposal": "Chưa đủ căn cứ ghi giảm tài sản. Vui lòng hoàn tất hồ sơ xử lý sau kiểm kê.",
             "detail": "Chưa đủ căn cứ ghi giảm tài sản. Vui lòng hoàn tất hồ sơ xử lý sau kiểm kê.",
@@ -7016,13 +7451,13 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
     # EF25: Idempotency check before validation or after basic company lookup
     idem_key = str(payload.get("idempotency_key") or "").strip()
     if idem_key and instance is None:
-        for existing_cnt in models.AssetCount.objects.filter(company=company).order_by("-created_at")[:50]:
+        for existing_cnt in models.AssetCount.objects.filter(company=company, committee__idempotency_key=idem_key):
             if isinstance(existing_cnt.committee, dict) and existing_cnt.committee.get("idempotency_key") == idem_key:
                 res = serialize_stocktake_voucher_uc08(existing_cnt)
                 res["idempotent_replayed"] = True
                 return res
 
-    # Step 4, EF02, BR02: Validate Mục đích kiểm kê (purpose)
+    # EF03 & BR03: Validate Mục đích kiểm kê (purpose)
     purpose = str(payload.get("purpose") or "").strip()
     if not purpose:
         raise ValidationError({
@@ -7046,8 +7481,8 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         str(payload.get("status") or "").strip().upper() == "DRAFT"
         or str(payload.get("is_draft", "")).lower() in ("true", "1")
     )
-    allow_future = str(payload.get("allow_planned_future_count", "")).lower() in ("true", "1")
-    if count_dt > timezone.localdate() and not (is_draft or allow_future):
+    # EF02 & BR05: only a draft (planned count) may carry a future count date
+    if count_dt > timezone.localdate() and not is_draft:
         raise ValidationError({
             "count_date": "Ngày kiểm kê không được lớn hơn ngày hiện tại.",
             "detail": "Ngày kiểm kê không được lớn hơn ngày hiện tại.",
@@ -7061,11 +7496,11 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         or (payload.get("date") if payload.get("count_date") or payload.get("audit_date") else None)
     )
     report_dt, report_datetime_str = _parse_stocktake_report_datetime(raw_report_dt, count_dt)
-    allow_early_report = str(payload.get("allow_early_report_date", "")).lower() in ("true", "1")
-    if report_dt is None or (report_dt < count_dt and not allow_early_report):
+    # EF05 & BR07: the report is drawn up on/after the cut-off date and, once confirmed, not in the future
+    if report_dt is None or report_dt < count_dt or (report_dt > timezone.localdate() and not is_draft):
         raise ValidationError({
-            "report_date": "Ngày lập biên bản không phù hợp với ngày kiểm kê.",
-            "detail": "Ngày lập biên bản không phù hợp với ngày kiểm kê.",
+            "report_date": "Ngày lập biên bản không hợp lệ.",
+            "detail": "Ngày lập biên bản không hợp lệ.",
         })
 
     # Step 6, AF03, EF06, EF07, BR04, BR05: Validate Số chứng từ / Số biên bản
@@ -7076,27 +7511,25 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
     else:
         voucher_no = str(raw_no or "").strip()
 
-    if not voucher_no or len(voucher_no) > 50 or not re.match(r"^[A-Za-z0-9Đđ/_-]+$", voucher_no):
-        raise ValidationError({
-            "voucher_no": "Vui lòng nhập số chứng từ kiểm kê hợp lệ.",
-            "number": "Vui lòng nhập số chứng từ kiểm kê hợp lệ.",
-            "detail": "Vui lòng nhập số chứng từ kiểm kê hợp lệ.",
-        })
-
+    # EF04 & BR06: blank, malformed or duplicated number
     dup_qs = models.AssetCount.objects.filter(company=company, number__iexact=voucher_no)
     if instance is not None:
         dup_qs = dup_qs.exclude(pk=instance.pk)
-    if dup_qs.exists():
+    if (
+        not voucher_no or len(voucher_no) > 50 or not re.match(r"^[A-Za-z0-9Đđ/_-]+$", voucher_no)
+        or dup_qs.exists()
+    ):
         raise ValidationError({
-            "voucher_no": "Số chứng từ kiểm kê đã tồn tại.",
-            "number": "Số chứng từ kiểm kê đã tồn tại.",
-            "detail": "Số chứng từ kiểm kê đã tồn tại.",
+            "voucher_no": STOCKTAKE_EF04_MESSAGE,
+            "number": STOCKTAKE_EF04_MESSAGE,
+            "detail": STOCKTAKE_EF04_MESSAGE,
+            "suggested_voucher_no": get_next_stocktake_voucher_no(company, count_date=count_dt),
         })
 
     # Steps 8–13, AF04, AF05, EF08, BR09, BR10: Validate Thành viên tham gia (committee / members)
     raw_members = payload.get("members") if "members" in payload else payload.get("committee")
-    require_committee = str(payload.get("require_committee", "")).lower() in ("true", "1")
-    allow_dup_member = str(payload.get("allow_duplicate_member", "")).lower() in ("true", "1")
+    # EF06, BR26: a recorded voucher needs its stocktake committee; a draft may still be incomplete
+    require_committee = not is_draft
     validated_members = []
     seen_members = set()
 
@@ -7125,7 +7558,7 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
                     })
                 continue
             member_key = m_name.lower()
-            if member_key in seen_members and not allow_dup_member:
+            if member_key in seen_members:
                 raise ValidationError({
                     "committee": "Vui lòng khai báo đầy đủ thành viên tham gia kiểm kê.",
                     "detail": "Vui lòng khai báo đầy đủ thành viên tham gia kiểm kê.",
@@ -7145,8 +7578,22 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
             "detail": "Vui lòng khai báo đầy đủ thành viên tham gia kiểm kê.",
         })
 
-    # Step 33, AF24, EF26, BR39, BR40: Validate attachments (<= 5MB, valid formats)
+    # Step 31, EF21, BR33: Validate attachments (<= 5MB, valid formats)
     validated_attachments = _validate_uc08_attachments(payload.get("attachments"))
+    reference_journal_ids = payload.get("reference_journal_ids") or []
+    if not isinstance(reference_journal_ids, list):
+        raise ValidationError({"reference_journal_ids": "Chứng từ tham chiếu không hợp lệ. Vui lòng chọn lại."})
+    if reference_journal_ids:
+        from general_ledger.models import JournalEntry
+        from iam.permissions import has_effective_permission
+        journals = list(JournalEntry.objects.filter(pk__in=reference_journal_ids, company=company, status="POSTED"))
+        if len(journals) != len(set(map(str, reference_journal_ids))) or (
+            not request.user.is_superuser and any(j.branch_id and not has_effective_permission(
+                request.user.iam_account, company, "FA.COUNT.CREATE", branch_id=j.branch_id
+            ) for j in journals)
+        ):
+            raise ValidationError({"reference_journal_ids": "Chứng từ tham chiếu không hợp lệ. Vui lòng chọn lại."})
+        payload["reference"] = ", ".join(j.number for j in journals)
 
     # Steps 14–30, EF09: Validate asset lines
     raw_lines = payload.get("lines") if "lines" in payload else payload.get("rows")
@@ -7170,8 +7617,8 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         s_dept = Department.objects.filter(pk=scope_dept_id).first()
         if s_dept and str(s_dept.company_id) != str(company.id):
             raise ValidationError({
-                "scope": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-                "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
+                "scope": "Bạn không có quyền kiểm kê tài sản này.",
+                "detail": "Bạn không có quyền kiểm kê tài sản này.",
             })
 
     seen_book_asset_ids = set()
@@ -7209,7 +7656,8 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
 
         if is_surplus:
             # AF11, EF17, BR22, BR32, Section 4.4: Surplus asset discovered outside book records
-            s_code = str(row.get("temp_code") or row.get("asset_code") or row.get("assetCode") or f"THUA-{idx + 1:03d}").strip()
+            # AF11.3 & BR20: the system assigns the temporary stocktake id; it is never an official asset code
+            s_code = f"THUA-{surplus_count + 1:03d}"
             s_name = str(row.get("asset_name") or row.get("assetName") or row.get("name") or "").strip()
             s_dept = str(
                 row.get("actual_department_name")
@@ -7230,8 +7678,8 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
             s_rec = str(row.get("recommendation") or "Xác minh nguồn gốc để ghi tăng").strip()
             s_qual = str(row.get("current_quality") or row.get("currentQuality") or row.get("condition") or "Bình thường").strip()
 
-            # EF17: Require name, actual department/location, and identification note/characteristic
-            if not s_name or not s_dept or not (s_ident or row.get("temp_code") or row.get("asset_code")):
+            # EF14: Require name, actual location and identification info (serial, features, discovery basis)
+            if not s_name or not s_dept or not s_ident:
                 raise ValidationError({
                     "lines": "Vui lòng bổ sung thông tin nhận dạng tài sản thừa.",
                     "detail": "Vui lòng bổ sung thông tin nhận dạng tài sản thừa.",
@@ -7263,11 +7711,12 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
                 "book_quantity": "0",
                 "actual_quantity": "1",
                 "difference": "1",
-                "book_value": "0.00",
-                "original_cost": "0.00",
-                "depreciable_amount": "0.00",
-                "accumulated_depreciation": "0.00",
-                "remaining_value": "0.00",
+                # BR40: an unverified surplus asset has no book value, not a value of zero
+                "book_value": None,
+                "original_cost": None,
+                "depreciable_amount": None,
+                "accumulated_depreciation": None,
+                "remaining_value": None,
                 "is_surplus": True,
                 "exists": True,
                 "existence_status": "EXISTS",
@@ -7307,8 +7756,8 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
                 other_company_asset = models.AssetRecord.objects.filter(code__iexact=raw_asset_code).first()
                 if other_company_asset is not None:
                     raise ValidationError({
-                        "asset": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-                        "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
+                        "asset": "Bạn không có quyền kiểm kê tài sản này.",
+                        "detail": "Bạn không có quyền kiểm kê tài sản này.",
                     })
 
         code_label = asset.code if asset else (raw_asset_code or str(raw_asset_id or f"dòng {idx + 1}"))
@@ -7321,9 +7770,14 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         # EF23: Cross-company asset check
         if str(asset.company_id) != str(company.id):
             raise ValidationError({
-                "asset": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-                "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
+                "asset": "Bạn không có quyền kiểm kê tài sản này.",
+                "detail": "Bạn không có quyền kiểm kê tài sản này.",
             })
+        if not request.user.is_superuser:
+            from iam.permissions import has_effective_permission
+            count_permission = "FA.COUNT.EDIT" if instance is not None else "FA.COUNT.CREATE"
+            if not has_effective_permission(request.user.iam_account, company, count_permission, branch_id=asset.branch_id):
+                raise ValidationError({"scope": "Bạn không có quyền kiểm kê tài sản này."})
 
         # EF11: Asset type mismatch
         if asset.asset_type != asset_type:
@@ -7400,11 +7854,11 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
             # Neither existence_status, exists, nor actual_quantity specified -> UNCOUNTED per BR14
             existence_status = "UNCOUNTED"
 
-        # EF14 & BR19: Reject unconfirmed row when saving completed stocktake
+        # EF11 & BR17: Reject unconfirmed row when saving a completed stocktake
         if existence_status == "UNCOUNTED" and not is_draft:
             raise ValidationError({
-                "lines": "Còn tài sản chưa được xác nhận kết quả kiểm kê. Vui lòng kiểm tra lại.",
-                "detail": "Còn tài sản chưa được xác nhận kết quả kiểm kê. Vui lòng kiểm tra lại.",
+                "lines": "Còn tài sản chưa được xác nhận kết quả kiểm kê.",
+                "detail": "Còn tài sản chưa được xác nhận kết quả kiểm kê.",
             })
 
         cur_quality = str(
@@ -7425,8 +7879,8 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
             if act_dept_obj:
                 if str(act_dept_obj.company_id) != str(company.id):
                     raise ValidationError({
-                        "department": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
-                        "detail": "Bạn không có quyền kiểm kê tài sản thuộc phạm vi này.",
+                        "department": "Bạn không có quyền kiểm kê tài sản này.",
+                        "detail": "Bạn không có quyền kiểm kê tài sản này.",
                     })
                 actual_dept_name = act_dept_obj.name
 
@@ -7478,8 +7932,10 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
             if existence_status == "EXISTS"
             else False
         )
-        if existence_status == "EXISTS" and has_qual_issue and not is_draft:
-            if not cur_quality or not recommendation:
+        is_other_mismatch = bool(row.get("identity_mismatch") or row.get("other_mismatch")) and existence_status == "EXISTS"
+        # EF13 & BR24: a quality issue or wrong identification needs its explanation and recommendation
+        if existence_status == "EXISTS" and (has_qual_issue or is_other_mismatch) and not is_draft:
+            if not cur_quality or not recommendation or (is_other_mismatch and not note):
                 raise ValidationError({
                     "lines": f"Vui lòng bổ sung tình trạng và kiến nghị xử lý cho tài sản {asset.code}.",
                     "detail": f"Vui lòng bổ sung tình trạng và kiến nghị xử lý cho tài sản {asset.code}.",
@@ -7493,7 +7949,6 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         tot_rem += snap["remaining_value"]
 
         is_dept_mismatch = False
-        is_other_mismatch = bool(row.get("identity_mismatch") or row.get("other_mismatch"))
 
         if existence_status == "UNCOUNTED":
             uncounted_count += 1
@@ -7521,6 +7976,9 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
                 reconciliation_display = "Chênh lệch đơn vị sử dụng"
                 if not recommendation:
                     recommendation = f"Điều chuyển từ {book_dept_name} sang {actual_dept_name}"
+                # BR25: every issue is kept even though the asset counts once in the difference
+                if is_other_mismatch:
+                    other_mismatch_count += 1
             elif is_other_mismatch:
                 other_mismatch_count += 1
                 reconciliation_result = "OTHER_MISMATCH"
@@ -7609,23 +8067,23 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
             "reconciliation_result_display": reconciliation_display,
         })
 
-    # Section 4.6 & BR30: diff_count = missing + surplus + department_mismatch + other_mismatch
-    diff_count = missing_count + surplus_count + department_mismatch_count + other_mismatch_count
+    # BR37 & BR74: distinct objects with an existence or management-information difference
+    diff_count = sum(
+        1 for r in enriched_lines
+        if r["reconciliation_result"] in ("MISSING", "SURPLUS", "DEPARTMENT_MISMATCH", "OTHER_MISMATCH")
+    )
+    info_mismatch_count = sum(1 for r in enriched_lines if r["reconciliation_result"] in ("DEPARTMENT_MISMATCH", "OTHER_MISMATCH"))
 
     # Step 31, EF20, BR34: Validate Conclusion against detailed reconciliation results
     conclusion = str(payload.get("conclusion") or "").strip()
     conclusion_lower = conclusion.lower()
     if conclusion_lower:
         claims_no_diff = any(phrase in conclusion_lower for phrase in STOCKTAKE_CONCLUSION_NO_DIFF_PHRASES)
+        # EF16 & BR41
         if claims_no_diff and diff_count > 0:
             raise ValidationError({
-                "conclusion": "Kết luận kiểm kê không khớp với kết quả đối chiếu. Vui lòng kiểm tra lại.",
-                "detail": "Kết luận kiểm kê không khớp với kết quả đối chiếu. Vui lòng kiểm tra lại.",
-            })
-        if str(payload.get("contradictory_conclusion", "")).lower() in ("true", "1"):
-            raise ValidationError({
-                "conclusion": "Kết luận kiểm kê không khớp với kết quả đối chiếu. Vui lòng kiểm tra lại.",
-                "detail": "Kết luận kiểm kê không khớp với kết quả đối chiếu. Vui lòng kiểm tra lại.",
+                "conclusion": "Kết luận kiểm kê không khớp với kết quả đối chiếu.",
+                "detail": "Kết luận kiểm kê không khớp với kết quả đối chiếu.",
             })
 
     # Step 32, AF18–AF22, EF21, EF22, BR35, BR36: Validate 'Đã xử lý kiến nghị' & recommendation statuses
@@ -7635,32 +8093,44 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         else payload.get("stocktakeProcessed", False)
     )
     reference = str(payload.get("reference") or "").strip()
-    resolution_vouchers = payload.get("resolution_vouchers") or []
-    has_header_resolution_basis = bool(
-        reference
-        or resolution_vouchers
-        or str(payload.get("resolution_result") or "").strip()
-    )
 
     actionable_rows = [
         r for r in enriched_lines if r.get("recommendation_status", "NONE") != "NONE"
     ]
+    ef18 = {
+        "recommendations_processed": "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
+        "detail": "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
+    }
+    ef17 = {
+        "recommendations_processed": "Còn kiến nghị kiểm kê chưa được xử lý.",
+        "detail": "Còn kiến nghị kiểm kê chưa được xử lý.",
+    }
+    book_assets_by_id = {str(spec["asset"].id): spec["asset"] for spec in db_line_specs}
 
-    # Check if any individual row is explicitly marked PROCESSED without any resolution voucher/result (EF22)
-    for r in actionable_rows:
-        if r.get("recommendation_status") == "PROCESSED":
-            if not (r.get("resolution_voucher_no") or r.get("resolution_result") or has_header_resolution_basis):
-                raise ValidationError({
-                    "recommendations_processed": "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
-                    "detail": "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
-                })
+    def _has_valid_basis(r):
+        """BR43: voucher-type recommendations need a posted processing voucher, the others a result."""
+        rec_lower = str(r.get("recommendation") or "").lower()
+        needs_voucher = r["reconciliation_result"] in ("MISSING", "SURPLUS") or any(
+            kw in rec_lower for kw in STOCKTAKE_VOUCHER_RECOMMENDATIONS
+        )
+        if r.get("resolution_voucher_no"):
+            return True
+        return bool(r.get("resolution_result")) and not needs_voucher
+
+    # AF20 & EF18: a linked processing voucher must exist, be posted and concern the asset
+    for r in enriched_lines:
+        voucher_ref = r.get("resolution_voucher_no")
+        if voucher_ref:
+            found_voucher = _find_stocktake_resolution_voucher(
+                company, voucher_ref, None if r.get("is_surplus") else book_assets_by_id.get(r.get("asset_id"))
+            )
+            if not found_voucher:
+                raise ValidationError(ef18)
+            r["resolution_voucher"] = found_voucher
+        if r.get("recommendation_status") == "PROCESSED" and not _has_valid_basis(r):
+            raise ValidationError(ef18)
 
     if recommendations_processed:
-        if str(payload.get("has_unprocessed_recommendations", "")).lower() in ("true", "1"):
-            raise ValidationError({
-                "recommendations_processed": "Còn kiến nghị kiểm kê chưa được xử lý. Không thể xác nhận đã xử lý kiến nghị.",
-                "detail": "Còn kiến nghị kiểm kê chưa được xử lý. Không thể xác nhận đã xử lý kiến nghị.",
-            })
         # Check if any actionable row is explicitly in PENDING or VERIFYING ("Tiếp tục xác minh", AF18)
         for r in actionable_rows:
             r_stat = r.get("recommendation_status")
@@ -7675,24 +8145,13 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
                 "",
             )
             if r_stat == "VERIFYING" or raw_row_stat in ("PENDING", "CHUA_XU_LY", "VERIFYING", "TIEP_TUC_XAC_MINH", "UNPROCESSED"):
-                raise ValidationError({
-                    "recommendations_processed": "Còn kiến nghị kiểm kê chưa được xử lý. Không thể xác nhận đã xử lý kiến nghị.",
-                    "detail": "Còn kiến nghị kiểm kê chưa được xử lý. Không thể xác nhận đã xử lý kiến nghị.",
-                })
+                raise ValidationError(ef17)
 
-        # EF22: If there are actionable rows and recommendations_processed=True, require resolution voucher/result
-        if actionable_rows:
-            all_rows_have_basis = all(
-                bool(r.get("resolution_voucher_no") or r.get("resolution_result") or has_header_resolution_basis)
-                for r in actionable_rows
-            )
-            if not all_rows_have_basis:
-                raise ValidationError({
-                    "recommendations_processed": "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
-                    "detail": "Vui lòng bổ sung chứng từ hoặc kết quả xử lý kiến nghị.",
-                })
-            for r in actionable_rows:
-                r["recommendation_status"] = "PROCESSED"
+        # EF18 & BR42–BR43: every actionable recommendation needs its processing basis
+        if not all(_has_valid_basis(r) for r in actionable_rows):
+            raise ValidationError(ef18)
+        for r in actionable_rows:
+            r["recommendation_status"] = "PROCESSED"
 
     summary = {
         "book_assets_count": book_assets_count,
@@ -7701,6 +8160,7 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         "missing_count": missing_count,
         "department_mismatch_count": department_mismatch_count,
         "other_mismatch_count": other_mismatch_count,
+        "info_mismatch_count": info_mismatch_count,
         "surplus_count": surplus_count,
         "diff_count": diff_count,
         "quality_issue_count": quality_issue_count,
@@ -7708,15 +8168,32 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         "total_original_cost": str(tot_orig.quantize(Decimal("0.01"))),
         "total_depreciable_amount": str(tot_depr_base.quantize(Decimal("0.01"))),
         "total_accumulated_depreciation": str(tot_accum.quantize(Decimal("0.01"))),
-        "total_remaining_value": str(tot_rem.quantize(Decimal("0.01"))),
+        # BR77: Tổng GTCL = Tổng nguyên giá − Tổng hao mòn lũy kế
+        "total_remaining_value": str((tot_orig - tot_accum).quantize(Decimal("0.01"))),
     }
 
+    # Step 40 & 3.10: "Đã ghi nhận" is a stocktake state; processing recommendations does not post anything
     status_code = "DRAFT" if is_draft else ("PROCESSED" if recommendations_processed else "CONFIRMED")
-    status_display = (
-        "Bản nháp"
-        if is_draft
-        else ("Đã xử lý kiến nghị" if recommendations_processed else "Đã hoàn tất")
-    )
+    status_display = "Chưa hoàn tất" if is_draft else "Đã ghi nhận"
+
+    # Step 36, AF21, AF22 & EF24: regime and book source effective at the count date
+    accounting_setup = _resolve_stocktake_accounting_setup(company, count_dt)
+
+    # EF26 & BR62: a confirmed voucher may not lose its recorded count results without the adjust right
+    if confirmed_before is not None and not can_adjust_confirmed:
+        if (
+            is_draft
+            or _stocktake_result_fingerprint({"lines": enriched_lines}) != _stocktake_result_fingerprint(confirmed_before)
+            or voucher_no != instance.number
+            or count_dt != instance.count_date
+            or purpose[:500] != instance.purpose
+            or [(m["name"], m["role"]) for m in validated_members]
+            != [(m.get("name"), m.get("role")) for m in confirmed_before.get("members") or []]
+        ):
+            raise ValidationError({
+                "status": "Bạn không có quyền điều chỉnh biên bản kiểm kê đã xác nhận.",
+                "detail": "Bạn không có quyền điều chỉnh biên bản kiểm kê đã xác nhận.",
+            })
 
     committee_meta = {
         "_uc08": True,
@@ -7733,19 +8210,18 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
         },
         "report_datetime": report_datetime_str,
         "reference": reference,
+        "reference_journal_ids": list(map(str, reference_journal_ids)),
         "recommendations_processed": recommendations_processed,
         "status": status_code,
         "status_display": status_display,
         "attachments": validated_attachments,
         "idempotency_key": idem_key,
+        **accounting_setup,
     }
 
-    # Steps 39–43, EF24, BR37, BR41, BR45: Persist atomically without altering AssetRecord
+    # Steps 37–40, EF22, BR56, BR63–BR66: Persist atomically without altering AssetRecord
     try:
         with transaction.atomic():
-            if str(payload.get("simulate_db_error", "")).lower() in ("true", "1"):
-                raise RuntimeError("Simulated database error during stocktake save.")
-
             user_actor = actor(request)
             if instance is None:
                 count_obj = models.AssetCount.objects.create(
@@ -7807,11 +8283,25 @@ def save_fixed_asset_stocktake_uc08(request, data=None, instance: models.AssetCo
                     "purpose": purpose,
                     "summary": summary,
                     "status": status_code,
+                    "accounting_regime": accounting_setup["accounting_regime"],
+                    "recommendations_processed": recommendations_processed,
+                    # BR66: which assets were counted and with what result
+                    "results": [
+                        {
+                            "asset_code": r["asset_code"],
+                            "result": r["reconciliation_result"],
+                            "recommendation_status": r.get("recommendation_status", "NONE"),
+                        }
+                        for r in enriched_lines
+                    ],
                 },
                 reason=purpose,
             )
     except ValidationError:
         raise
+    except IntegrityError as exc:
+        # EF04 & BR65: a concurrent save took the same number first
+        raise ValidationError({"voucher_no": STOCKTAKE_EF04_MESSAGE, "detail": STOCKTAKE_EF04_MESSAGE}) from exc
     except Exception as exc:
         raise ValidationError({
             "detail": "Lưu biên bản kiểm kê thất bại. Vui lòng thử lại.",
@@ -7831,13 +8321,51 @@ UC09_REPORT_DEFINITIONS = [
         "group_code": "ASSET_REPORTS",
         "group_title_vi": "Báo cáo tài sản",
         "group_title_en": "Fixed Asset Reports",
-        "title_vi": "S21 - DN: Sổ tài sản cố định",
-        "title_en": "S21 - DN: Fixed Asset Register (Circular 200/133)",
+        "title_vi": "S21-DN: Sổ tài sản cố định",
+        "title_en": "S21-DN: Fixed Asset Register",
         "form_code": "Mẫu số S21-DN",
         "keywords": ["s21", "s21-dn", "sổ tài sản cố định theo thông tư", "mẫu s21", "sổ tscđ s21"],
-        "supports_period": True,
+        "statutory_form": True,
+        "supports_period": False,
         "supports_year": True,
-        "supports_department": True,
+        "requires_year": True,
+        "supports_department": False,
+        "supports_category": True,
+        "supports_exclude_disposed": True,
+    },
+    {
+        "code": "S09_DNN",
+        "ui_id": "S09",
+        "group_code": "ASSET_REPORTS",
+        "group_title_vi": "Báo cáo tài sản",
+        "group_title_en": "Fixed Asset Reports",
+        "title_vi": "S09-DNN: Sổ tài sản cố định",
+        "title_en": "S09-DNN: Fixed Asset Register",
+        "form_code": "Mẫu số S09-DNN",
+        "keywords": ["s09", "s09-dnn", "sổ tài sản cố định theo thông tư 133", "mẫu s09"],
+        "statutory_form": True,
+        "supports_period": False,
+        "supports_year": True,
+        "requires_year": True,
+        "supports_department": False,
+        "supports_category": True,
+        "supports_exclude_disposed": True,
+    },
+    {
+        "code": "S4B_DNSN",
+        "ui_id": "S4B",
+        "group_code": "ASSET_REPORTS",
+        "group_title_vi": "Báo cáo tài sản",
+        "group_title_en": "Fixed Asset Reports",
+        "title_vi": "S4b-DNSN: Sổ tài sản cố định",
+        "title_en": "S4b-DNSN: Fixed Asset Register",
+        "form_code": "Mẫu số S4b-DNSN",
+        "keywords": ["s4b", "s4b-dnsn", "sổ tài sản cố định thông tư 58", "doanh nghiệp siêu nhỏ"],
+        "statutory_form": True,
+        "supports_period": False,
+        "supports_year": True,
+        "requires_year": True,
+        "supports_department": False,
         "supports_category": True,
         "supports_exclude_disposed": True,
     },
@@ -7885,8 +8413,10 @@ UC09_REPORT_DEFINITIONS = [
         "keywords": ["bảng tính khấu hao", "khấu hao theo năm", "khấu hao năm", "khấu hao 12 tháng", "phân bổ khấu hao năm"],
         "supports_period": False,
         "supports_year": True,
+        "requires_year": True,
         "supports_department": True,
         "supports_category": True,
+        "supports_include_zero_remaining": True,
     },
     {
         "code": "RECONCILE_FA_GL",
@@ -7898,6 +8428,8 @@ UC09_REPORT_DEFINITIONS = [
         "title_en": "Fixed Asset Subledger & General Ledger Reconciliation Report",
         "form_code": "FA-REC-GL",
         "keywords": ["đối chiếu sổ cái", "sổ tài sản và sổ cái", "đối chiếu 211", "đối chiếu 214", "lệch sổ cái"],
+        # BR44: only for books kept on the GL, for users who may read the GL
+        "requires_gl": True,
         "supports_period": True,
         "supports_year": True,
         "supports_department": True,
@@ -7914,6 +8446,7 @@ UC09_REPORT_DEFINITIONS = [
         "title_en": "Stocktake & Fixed Asset Register Reconciliation Report",
         "form_code": "FA-REC-COUNT",
         "keywords": ["đối chiếu kiểm kê", "kết quả kiểm kê", "kiểm kê với sổ tài sản", "thừa thiếu kiểm kê"],
+        "supports_count_selection": True,
         "supports_period": True,
         "supports_year": True,
         "supports_department": True,
@@ -7922,7 +8455,88 @@ UC09_REPORT_DEFINITIONS = [
     },
 ]
 
-_UC09_USER_REPORT_PREFERENCES = {}
+# BR33–BR42: the statutory register template and its issuing circular for each regime
+UC09_FORM_VERSIONS = {
+    ("S21_DN", "TT99"): "Mẫu số S21-DN (Ban hành theo Thông tư số 99/2025/TT-BTC)",
+    ("S21_DN", "TT200"): "Mẫu số S21-DN (Ban hành theo Thông tư số 200/2014/TT-BTC)",
+    ("S09_DNN", "TT133"): "Mẫu số S09-DNN (Ban hành theo Thông tư số 133/2016/TT-BTC)",
+    ("S4B_DNSN", "TT58"): "Mẫu số S4b-DNSN (Ban hành theo Thông tư số 58/2026/TT-BTC)",
+}
+UC09_FA_ACCOUNT_PREFIXES = {
+    "TT99": ("211", "212", "213", "214"),
+    "TT200": ("211", "212", "213", "214"),
+    "TT133": ("211", "214"),
+}
+UC09_REPORT_PREFERENCE_KEY = "fa_hidden_reports"
+
+
+def _uc09_accounting_setup(company, on_date):
+    """
+    BR32, BR38–BR42: regime, bookkeeping method and the statutory templates available at a date.
+    None when the accounting setup cannot be determined (EF21).
+    """
+    try:
+        setup = _resolve_depreciation_accounting_setup(company, on_date)
+    except ValidationError:
+        return None
+    forms = {}
+    if setup["uses_gl"]:
+        if setup["account_regime"] in ("TT99", "TT200"):
+            forms["S21_DN"] = setup["account_regime"]
+        elif setup["account_regime"] == "TT133":
+            forms["S09_DNN"] = "TT133"
+    if setup["regime"] == "TT58":
+        # BR38 & BR41: a micro enterprise keeps S4b-DNSN, or the forms of the regime it opted into
+        forms["S4B_DNSN"] = "TT58"
+    return {**setup, "forms": forms}
+
+
+def _uc09_can_view_report(request, company, defn) -> bool:
+    """BR01, BR03, BR44: report right, plus the GL right for the GL reconciliation."""
+    if request.user.is_superuser:
+        return True
+    account = getattr(request.user, "iam_account", None)
+    if account is None or not has_effective_permission(account, company, "FA.REPORT.VIEW"):
+        return False
+    return not defn.get("requires_gl") or has_effective_permission(account, company, "GL.BALANCE.VIEW")
+
+
+def _uc09_is_report_available(defn, setup) -> bool:
+    """1.4 & B03–B04: statutory templates follow the regime; the GL reconciliation needs a GL."""
+    if defn.get("statutory_form"):
+        return bool(setup) and defn["code"] in setup["forms"]
+    if defn.get("requires_gl"):
+        return bool(setup) and setup["uses_gl"]
+    return True
+
+
+def _uc09_visible_asset_ids(request, company, permission_code):
+    """BR02 & EF20: only assets of branches the user may read; None means no restriction."""
+    if request.user.is_superuser:
+        return None
+    account = getattr(request.user, "iam_account", None)
+    branch_ids = models.AssetRecord.objects.filter(company=company).values_list("branch_id", flat=True).distinct()
+    allowed = [b for b in branch_ids if account and has_effective_permission(account, company, permission_code, branch_id=b)]
+    return models.AssetRecord.objects.filter(company=company, branch_id__in=allowed).values_list("id", flat=True)
+
+
+def _uc09_hidden_report_codes(request, company_id, new_codes=None) -> set:
+    """AF11: the personal show/hide choice is kept in the user's preferences, not in process memory."""
+    from common_services.models import UserPreference
+
+    account = getattr(request.user, "iam_account", None)
+    if account is None:
+        return set()
+    pref, _ = UserPreference.objects.get_or_create(user=account)
+    stored = dict(pref.settings or {})
+    per_company = dict(stored.get(UC09_REPORT_PREFERENCE_KEY) or {})
+    key = str(company_id or "all")
+    if new_codes is not None:
+        per_company[key] = sorted({str(c).strip().upper() for c in new_codes if c})
+        stored[UC09_REPORT_PREFERENCE_KEY] = per_company
+        pref.settings = stored
+        pref.save(update_fields=("settings", "updated_at"))
+    return set(per_company.get(key) or [])
 
 
 def _resolve_uc09_report_definition(raw_code_or_title: str) -> dict | None:
@@ -8179,6 +8793,16 @@ def _reconstruct_asset_snapshot_at_date_uc09(asset, as_of_dt: date_cls, lang: st
 
 
 def get_fixed_asset_register_uc09(request, data=None) -> dict:
+    """EF03: a failure while reading the register never returns a partial list."""
+    try:
+        return _get_fixed_asset_register_uc09(request, data)
+    except (ValidationError, PermissionDenied):
+        raise
+    except Exception as exc:
+        raise ValidationError({"detail": "Không thể tải danh sách tài sản cố định. Vui lòng thử lại."}) from exc
+
+
+def _get_fixed_asset_register_uc09(request, data=None) -> dict:
     """
     UC-FA-09 – Main Flow A: Xem sổ tài sản cố định (Steps 1–25, AF01–AF08).
     Read-only query that reconstructs asset register as of `as_of_date`, filters by
@@ -8264,6 +8888,13 @@ def get_fixed_asset_register_uc09(request, data=None) -> dict:
         qs = qs.filter(category_id=cat_id_filter)
     if cat_name_filter:
         qs = qs.filter(category__name__iexact=cat_name_filter)
+    # BR02 & BR14: search and filters only ever apply inside the user's data scope
+    visible_ids = _uc09_visible_asset_ids(request, company, "FA.ASSET.VIEW")
+    if visible_ids is not None:
+        qs = qs.filter(pk__in=visible_ids)
+    # A09 & BR17: TK NG is only shown for books kept on accounts
+    register_setup = _uc09_accounting_setup(company, as_of_dt)
+    uses_gl = register_setup["uses_gl"] if register_setup else True
 
     filtered_snapshots = []
     seen_codes = set()
@@ -8400,8 +9031,9 @@ def get_fixed_asset_register_uc09(request, data=None) -> dict:
             {"key": "accumulated_depreciation", "label": "Hao mòn lũy kế"},
             {"key": "remaining_value", "label": "Giá trị còn lại"},
             {"key": "depreciation_rate_display", "label": "Tỷ lệ KH"},
-            {"key": "asset_account_code", "label": "TK NG"},
+            *([{"key": "asset_account_code", "label": "TK NG"}] if uses_gl else []),
         ],
+        "uses_general_ledger": uses_gl,
         "items": serialized_page,
         "pagination": {
             "page": page,
@@ -8449,10 +9081,13 @@ def get_fixed_asset_report_catalog_uc09(request, data=None) -> dict:
     search_kw = str(_param("search") or "").strip().lower()
     ava_query = str(_param("ava_query") or "").strip().lower()
 
-    user_key = f"{getattr(request.user, 'id', 'anon')}:{company_id or 'all'}"
-    if "hidden_report_codes" in payload and isinstance(payload["hidden_report_codes"], list):
-        _UC09_USER_REPORT_PREFERENCES[user_key] = [str(c).strip().upper() for c in payload["hidden_report_codes"] if c]
-    hidden_codes = set(_UC09_USER_REPORT_PREFERENCES.get(user_key, []))
+    company = Company.objects.filter(pk=company_id).first() if company_id else None
+    if company is None:
+        raise ValidationError({"company": "Không tìm thấy doanh nghiệp làm việc.", "detail": "Không tìm thấy doanh nghiệp làm việc."})
+    new_hidden = payload["hidden_report_codes"] if isinstance(payload.get("hidden_report_codes"), list) else None
+    hidden_codes = _uc09_hidden_report_codes(request, company.id, new_hidden)
+    # B03–B04 & BR32: the catalog follows the regime and bookkeeping method of the data set
+    setup = _uc09_accounting_setup(company, timezone.localdate())
 
     include_hidden = str(_param("include_hidden", "false")).lower() in ("true", "1", "yes")
 
@@ -8460,6 +9095,9 @@ def get_fixed_asset_report_catalog_uc09(request, data=None) -> dict:
     ava_suggestions = []
 
     for defn in UC09_REPORT_DEFINITIONS:
+        # BR03, BR04 & AF09: neither the list nor the AVA suggestions show a report the user may not open
+        if not _uc09_is_report_available(defn, setup) or not _uc09_can_view_report(request, company, defn):
+            continue
         title = defn["title_en"] if is_en else defn["title_vi"]
         group_title = defn["group_title_en"] if is_en else defn["group_title_vi"]
         is_hidden = defn["code"] in hidden_codes or defn["ui_id"] in hidden_codes
@@ -8482,6 +9120,11 @@ def get_fixed_asset_report_catalog_uc09(request, data=None) -> dict:
             "supports_account": defn.get("supports_account", False),
             "supports_only_differences": defn.get("supports_only_differences", False),
             "supports_exclude_disposed": defn.get("supports_exclude_disposed", False),
+            "supports_include_zero_remaining": defn.get("supports_include_zero_remaining", False),
+            "supports_count_selection": defn.get("supports_count_selection", False),
+            "requires_year": defn.get("requires_year", False),
+            "keywords": defn["keywords"],
+            "form_version": UC09_FORM_VERSIONS.get((defn["code"], (setup or {}).get("forms", {}).get(defn["code"])), defn["form_code"]),
         }
 
         if ava_query:
@@ -8530,10 +9173,22 @@ def get_fixed_asset_report_catalog_uc09(request, data=None) -> dict:
         "reports": catalog_items,
         "ava_suggestions": [pair[1] for pair in ava_suggestions],
         "hidden_report_codes": sorted(hidden_codes),
+        "accounting_regime": (setup or {}).get("regime", ""),
+        "uses_general_ledger": bool(setup and setup["uses_gl"]),
     }
 
 
 def generate_fixed_asset_report_uc09(request, data=None) -> dict:
+    """EF15 & EF22: a failure while building the report never returns partial figures."""
+    try:
+        return _generate_fixed_asset_report_uc09(request, data)
+    except (ValidationError, PermissionDenied):
+        raise
+    except Exception as exc:
+        raise ValidationError({"detail": "Lập báo cáo thất bại. Vui lòng thử lại."}) from exc
+
+
+def _generate_fixed_asset_report_uc09(request, data=None) -> dict:
     """
     UC-FA-09 – Main Flow B: Xem báo cáo tài sản cố định (Steps 5–24, AF13, AF15, AF16).
     Supports all 6 report types:
@@ -8575,42 +9230,56 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
         })
     report_code = defn["code"]
 
+    # EF06, BR01 & BR03: checked by the backend for every report, independent of the screen
+    if not _uc09_can_view_report(request, company, defn):
+        raise PermissionDenied("Bạn không có quyền xem báo cáo này.")
+
     lang = str(_param("lang") or "vi").strip().lower()
     is_en = lang.startswith("en")
 
-    # Step 6 & Step 7: Period / Year / From Date / To Date resolution and validation
+    # B06–B10, EF07, EF11 & BR18–BR20: period / year resolution and validation
     today_dt = timezone.localdate()
     raw_year = _param("year")
+    has_year = raw_year is not None and str(raw_year).strip() != ""
+    if defn.get("requires_year") and not has_year and not (_param("from_date") and _param("to_date")):
+        raise ValidationError({
+            "year": "Vui lòng nhập đầy đủ tham số báo cáo.",
+            "detail": "Vui lòng nhập đầy đủ tham số báo cáo.",
+            "missing_fields": ["year"],
+        })
     try:
-        year_val = int(raw_year) if raw_year is not None and str(raw_year).strip() else today_dt.year
+        year_val = int(raw_year) if has_year else (_parse_date(_param("to_date")) or today_dt).year
+        if not 1900 <= year_val <= 9999:
+            raise ValueError
     except (TypeError, ValueError):
         raise ValidationError({
-            "year": "Năm báo cáo không hợp lệ.",
-            "detail": "Năm báo cáo không hợp lệ.",
+            "year": "Vui lòng nhập đầy đủ tham số báo cáo.",
+            "detail": "Vui lòng nhập đầy đủ tham số báo cáo.",
+            "missing_fields": ["year"],
         })
+    # BR20: a year means the fiscal year configured for the company, not always the calendar year
+    fy_month = int(getattr(company, "fiscal_year_start_month", 1) or 1)
+    fy_start = date_cls(year_val, fy_month, 1)
+    fy_end = date_cls(year_val + (1 if fy_month > 1 else 0), (fy_month - 2) % 12 + 1, 1)
+    fy_end = date_cls(fy_end.year, fy_end.month, calendar.monthrange(fy_end.year, fy_end.month)[1])
 
     raw_from = _param("from_date") or _param("start_date")
     raw_to = _param("to_date") or _param("end_date")
+    ef07 = "Khoảng thời gian báo cáo không hợp lệ."
 
-    if raw_from and str(raw_from).strip():
+    if raw_from and str(raw_from).strip() and defn.get("supports_period", True):
         from_dt = _parse_date(raw_from)
         if not from_dt:
-            raise ValidationError({
-                "from_date": "Từ ngày không hợp lệ. Vui lòng nhập theo định dạng DD/MM/YYYY.",
-                "detail": "Từ ngày không hợp lệ. Vui lòng nhập theo định dạng DD/MM/YYYY.",
-            })
+            raise ValidationError({"from_date": ef07, "detail": ef07})
     else:
-        from_dt = date_cls(year_val, 1, 1)
+        from_dt = fy_start
 
-    if raw_to and str(raw_to).strip():
+    if raw_to and str(raw_to).strip() and defn.get("supports_period", True):
         to_dt = _parse_date(raw_to)
         if not to_dt:
-            raise ValidationError({
-                "to_date": "Đến ngày không hợp lệ. Vui lòng nhập theo định dạng DD/MM/YYYY.",
-                "detail": "Đến ngày không hợp lệ. Vui lòng nhập theo định dạng DD/MM/YYYY.",
-            })
+            raise ValidationError({"to_date": ef07, "detail": ef07})
     else:
-        to_dt = date_cls(year_val, 12, 31)
+        to_dt = fy_end
 
     # Step 7: Kiểm tra Từ ngày không lớn hơn Đến ngày
     if from_dt > to_dt:
@@ -8644,6 +9313,56 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
     if account_code_filter.lower() in ("all", "tất cả", "tat ca"):
         account_code_filter = ""
 
+    # EF09: the department must exist in the company and lie inside the user's scope
+    if dept_id_filter or dept_name_filter:
+        dept_qs = Department.objects.filter(company=company)
+        try:
+            dept_obj = dept_qs.filter(pk=dept_id_filter).first() if dept_id_filter else dept_qs.filter(name__iexact=dept_name_filter).first()
+        except (ValueError, DjangoValidationError):
+            dept_obj = None
+        if dept_obj is None or (
+            not request.user.is_superuser
+            and not has_effective_permission(request.user.iam_account, company, "FA.REPORT.VIEW", department_id=dept_obj.id)
+        ):
+            raise ValidationError({"department": "Đơn vị sử dụng không hợp lệ hoặc ngoài phạm vi được phép.",
+                                   "detail": "Đơn vị sử dụng không hợp lệ hoặc ngoài phạm vi được phép."})
+    # EF10: the asset category must be a fixed-asset category of the company
+    if cat_id_filter or cat_name_filter:
+        cat_qs = models.AssetCategory.objects.filter(company=company, asset_type=models.AssetType.FIXED_ASSET)
+        try:
+            cat_ok = (cat_qs.filter(pk=cat_id_filter) if cat_id_filter else cat_qs.filter(name__iexact=cat_name_filter)).exists()
+        except (ValueError, DjangoValidationError):
+            cat_ok = False
+        if not cat_ok:
+            raise ValidationError({"category": "Loại tài sản cố định không hợp lệ.", "detail": "Loại tài sản cố định không hợp lệ."})
+
+    # B11, EF13, EF17, EF21, BR42: regime of the reported fiscal period decides template and GL use
+    setup = _uc09_accounting_setup(company, to_dt)
+    form_regime = None
+    if defn.get("statutory_form") or defn.get("requires_gl"):
+        if setup is None:
+            raise ValidationError({"detail": "Chưa xác định được chế độ kế toán hoặc mẫu sổ phù hợp."})
+        if defn.get("statutory_form"):
+            form_regime = setup["forms"].get(report_code)
+            if not form_regime:
+                raise ValidationError({"report_code": "Mẫu sổ không phù hợp với chế độ kế toán áp dụng.",
+                                       "detail": "Mẫu sổ không phù hợp với chế độ kế toán áp dụng."})
+        if defn.get("requires_gl") and not setup["uses_gl"]:
+            raise ValidationError({"detail": "Bộ dữ liệu không sử dụng Sổ cái để đối chiếu."})
+    # EF12: the account to check must be a cost/depreciation account of the applied chart
+    if report_code == "RECONCILE_FA_GL" and account_code_filter:
+        from general_ledger.models import Account
+
+        prefixes = UC09_FA_ACCOUNT_PREFIXES.get(setup["account_regime"], ())
+        if not account_code_filter.startswith(prefixes) or not Account.objects.filter(
+            company=company, code__startswith=account_code_filter
+        ).exists():
+            raise ValidationError({"account_code": "Tài khoản cần đối chiếu không hợp lệ.",
+                                   "detail": "Tài khoản cần đối chiếu không hợp lệ."})
+
+    raw_zero = _param("include_zero_remaining", False)
+    include_zero_remaining = str(raw_zero).lower() in ("true", "1", "yes") if not isinstance(raw_zero, bool) else raw_zero
+
     asset_code_filter = str(_param("asset_code") or "").strip()
     asset_id_filter = str(_param("asset_id") or "").strip()
 
@@ -8664,6 +9383,10 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
         assets_qs = assets_qs.filter(category__name__iexact=cat_name_filter)
     if asset_id_filter:
         assets_qs = assets_qs.filter(pk=asset_id_filter)
+    # BR02 & EF20: data outside the user's branches is neither shown nor exported
+    visible_ids = _uc09_visible_asset_ids(request, company, "FA.REPORT.VIEW")
+    if visible_ids is not None:
+        assets_qs = assets_qs.filter(pk__in=visible_ids)
     if asset_code_filter:
         assets_qs = assets_qs.filter(code__iexact=asset_code_filter)
         if not assets_qs.exists():
@@ -8671,6 +9394,11 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
                 "asset_code": "Không tìm thấy tài sản cố định được chọn.",
                 "detail": "Không tìm thấy tài sản cố định được chọn.",
             })
+    # EF16: an asset whose depreciation exceeds its cost cannot be reported; nothing is corrected here
+    from django.db.models import F
+
+    if assets_qs.filter(accumulated_depreciation__gt=F("original_cost")).exists():
+        raise ValidationError({"detail": "Dữ liệu tài sản chưa nhất quán. Vui lòng kiểm tra chứng từ liên quan."})
 
     opening_ref_dt = date_cls.fromordinal(from_dt.toordinal() - 1)
     report_title = defn["title_en"] if is_en else defn["title_vi"]
@@ -8688,25 +9416,25 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
     # --------------------------------------------------------------------------
     # REPORT 1: S21_DN (`S21 - DN: Sổ tài sản cố định` – AF15)
     # --------------------------------------------------------------------------
-    if report_code == "S21_DN":
+    if report_code in ("S21_DN", "S09_DNN", "S4B_DNSN"):
+        # AF12–AF14, BR34, BR39 & BR43: the columns of the circular's template, without custom columns
+        is_s4b = report_code == "S4B_DNSN"
         columns = [
             {"key": "stt", "label": "No." if is_en else "STT"},
-            {"key": "acquisition_voucher_no", "label": "Increase Voucher No." if is_en else "Số hiệu CT ghi tăng"},
-            {"key": "acquisition_date_display", "label": "Voucher Date" if is_en else "Ngày tháng CT"},
+            {"key": "acquisition_voucher_no", "label": "Increase Voucher No." if is_en else "Ghi tăng - Chứng từ số hiệu"},
+            {"key": "acquisition_date_display", "label": "Voucher Date" if is_en else "Ghi tăng - Ngày tháng"},
             {"key": "name", "label": "Asset Name & Specification" if is_en else "Tên, đặc điểm, ký hiệu TSCĐ"},
-            {"key": "country_of_origin", "label": "Country of Origin" if is_en else "Nước sản xuất"},
+            *([] if is_s4b else [{"key": "country_of_origin", "label": "Country of Origin" if is_en else "Nước sản xuất"}]),
             {"key": "in_service_date_display", "label": "In-Service Date" if is_en else "Tháng năm đưa vào sử dụng"},
             {"key": "code", "label": "Asset Code" if is_en else "Số hiệu TSCĐ"},
-            {"key": "department_name", "label": "Department" if is_en else "Đơn vị sử dụng"},
             {"key": "original_cost", "label": "Original Cost" if is_en else "Nguyên giá TSCĐ"},
-            {"key": "depreciation_rate_display", "label": "Depr. Rate (%)" if is_en else "Tỷ lệ KH (% năm)"},
-            {"key": "annual_depreciation_amount", "label": "Annual Depr. Amount" if is_en else "Mức KH năm"},
-            {"key": "depreciation_in_period", "label": "Depr. in Period" if is_en else "Hao mòn tính trong kỳ"},
-            {"key": "accumulated_depreciation", "label": "Accumulated Depr." if is_en else "Hao mòn lũy kế đến khi ghi giảm/cuối kỳ"},
-            {"key": "remaining_value", "label": "Remaining Value" if is_en else "Giá trị còn lại"},
-            {"key": "disposal_voucher_no", "label": "Disposal Voucher No." if is_en else "Số hiệu CT ghi giảm"},
-            {"key": "disposal_date_display", "label": "Disposal Date" if is_en else "Ngày tháng ghi giảm"},
-            {"key": "disposal_reason", "label": "Disposal Reason" if is_en else "Lý do ghi giảm TSCĐ"},
+            {"key": "depreciation_rate_display", "label": "Depr. Rate (%)" if is_en else "Khấu hao - Tỷ lệ (%)"},
+            {"key": "annual_depreciation_amount", "label": "Depr. Amount" if is_en else "Khấu hao - Mức khấu hao"},
+            {"key": "accumulated_depreciation", "label": "Accumulated Depr." if is_en else (
+                "Khấu hao lũy kế" if is_s4b else "Khấu hao đã tính đến khi ghi giảm TSCĐ")},
+            {"key": "disposal_voucher_no", "label": "Disposal Voucher No." if is_en else "Ghi giảm - Chứng từ số hiệu"},
+            {"key": "disposal_date_display", "label": "Disposal Date" if is_en else "Ghi giảm - Ngày tháng"},
+            {"key": "disposal_reason", "label": "Disposal Reason" if is_en else "Lý do giảm TSCĐ"},
         ]
 
         tot_orig = Decimal("0.00")
@@ -9058,8 +9786,9 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
     # --------------------------------------------------------------------------
     elif report_code == "ANNUAL_DEPRECIATION_SCHEDULE":
         period_label = f"Fiscal Year {year_val}" if is_en else f"Năm {year_val}"
-        year_start = date_cls(year_val, 1, 1)
-        year_end = date_cls(year_val, 12, 31)
+        # BR20: the twelve months of the fiscal year
+        year_start, year_end = fy_start, fy_end
+        fiscal_months = [((fy_month - 1 + i) % 12 + 1, year_val + (fy_month - 1 + i) // 12) for i in range(12)]
 
         columns = [
             {"key": "stt", "label": "No." if is_en else "STT"},
@@ -9069,7 +9798,7 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
             {"key": "original_cost", "label": "Original Cost" if is_en else "Nguyên giá"},
             *[
                 {"key": f"month_{m}", "label": f"M{m}" if is_en else f"Tháng {m}"}
-                for m in range(1, 13)
+                for m, _y in fiscal_months
             ],
             {"key": "total_year_depreciation", "label": "Total Year Depr." if is_en else "Cộng KH năm"},
             {"key": "accumulated_depreciation", "label": "Accumulated Depr." if is_en else "Hao mòn lũy kế"},
@@ -9086,6 +9815,11 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
             snap_end = _reconstruct_asset_snapshot_at_date_uc09(asset, year_end, lang=lang)
             if not snap_end.get("acquired_by_date"):
                 continue
+            # AF-04 & BR29: an asset written down before the year is no longer depreciated in it
+            disp_dt = next((tx.transaction_date for tx in asset.transactions.all()
+                            if tx.status == "POSTED" and tx.transaction_type == "DISPOSAL"), None) or asset.disposed_at
+            if disp_dt and disp_dt < year_start:
+                continue
             if dept_id_filter and snap_end["department_id"] != dept_id_filter:
                 continue
             if dept_name_filter and snap_end["department_name"].strip().lower() != dept_name_filter.lower():
@@ -9097,7 +9831,7 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
                 if ln.run and ln.run.status == "POSTED":
                     r_year = ln.run.period_end.year if ln.run.period_end else None
                     r_month = ln.run.period_end.month if ln.run.period_end else None
-                    if r_year == year_val and r_month in monthly_map:
+                    if (r_month, r_year) in fiscal_months:
                         monthly_map[r_month] += Decimal(str(ln.amount or 0)).quantize(Decimal("0.01"))
 
             # Also check standalone DEPRECIATION transactions in year_val if no run line recorded for that month
@@ -9108,6 +9842,14 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
                         monthly_map[m_idx] += Decimal(str(tx.amount or 0)).quantize(Decimal("0.01"))
 
             row_year_total = sum(monthly_map.values(), Decimal("0.00")).quantize(Decimal("0.01"))
+            # AF16.6: fully depreciated assets still in use only when the user asks for them
+            if (
+                not include_zero_remaining
+                and snap_end["remaining_value"] == Decimal("0.00")
+                and row_year_total == Decimal("0.00")
+                and not snap_end["is_disposed_at_date"]
+            ):
+                continue
             for m in range(1, 13):
                 tot_months[m] += monthly_map[m]
 
@@ -9341,8 +10083,11 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
             {"key": "original_cost", "label": "Original Cost" if is_en else "Nguyên giá"},
             {"key": "remaining_value", "label": "Remaining Value" if is_en else "Giá trị còn lại"},
             {"key": "discrepancy_display", "label": "Reconciliation Result" if is_en else "Kết quả đối chiếu"},
+            {"key": "quality_issue_display", "label": "Quality Issue" if is_en else "Vấn đề chất lượng"},
             {"key": "condition", "label": "Condition" if is_en else "Tình trạng chất lượng"},
             {"key": "recommendation", "label": "Recommendation" if is_en else "Kiến nghị xử lý"},
+            {"key": "recommendation_status_display", "label": "Processing" if is_en else "Tình trạng xử lý"},
+            {"key": "resolution_voucher_no", "label": "Processing Voucher" if is_en else "Chứng từ xử lý"},
         ]
 
         count_id = _param("count_id")
@@ -9353,12 +10098,30 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
             asset_type=models.AssetType.FIXED_ASSET,
         ).prefetch_related("lines", "lines__asset").order_by("-count_date", "-created_at")
 
-        if count_id:
-            counts_qs = counts_qs.filter(pk=count_id)
-        elif count_voucher_no:
-            counts_qs = counts_qs.filter(number__iexact=count_voucher_no)
+        ef14 = {"count_id": "Biên bản kiểm kê không hợp lệ. Vui lòng chọn lại.",
+                "detail": "Biên bản kiểm kê không hợp lệ. Vui lòng chọn lại."}
+
+        def _is_recorded(cnt):
+            # BR49: only vouchers recorded under UC-FA-08 (not drafts, not cancelled)
+            meta = cnt.committee if isinstance(cnt.committee, dict) else {}
+            return meta.get("_uc08") and meta.get("status", "CONFIRMED") in STOCKTAKE_CONFIRMED_STATUSES
+
+        if count_id or count_voucher_no:
+            try:
+                picked = counts_qs.filter(pk=count_id) if count_id else counts_qs.filter(number__iexact=count_voucher_no)
+                picked = [c for c in picked if _is_recorded(c)]
+            except (ValueError, DjangoValidationError):
+                picked = []
+            if not picked:
+                raise ValidationError(ef14)
+            counts_qs = picked
         else:
-            counts_qs = counts_qs.filter(count_date__gte=from_dt, count_date__lte=to_dt)
+            counts_qs = [c for c in counts_qs.filter(count_date__gte=from_dt, count_date__lte=to_dt) if _is_recorded(c)]
+        rec_status_labels = {
+            "PENDING": "Chưa xử lý", "VERIFYING": "Đang xử lý", "IN_PROGRESS": "Đang xử lý", "PROCESSED": "Đã xử lý", "NONE": "",
+        }
+        result_counts = {"MATCHED": 0, "MISSING": 0, "SURPLUS": 0, "DEPT_MISMATCH": 0, "OTHER_MISMATCH": 0}
+        quality_issue_total = 0
 
         tot_orig = Decimal("0.00")
         tot_rem = Decimal("0.00")
@@ -9379,20 +10142,28 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
                 disc_type = str(ln.get("discrepancy_type") or ln.get("reconciliation_result") or "MATCHED").upper()
                 if disc_type == "DEPARTMENT_MISMATCH":
                     disc_type = "DEPT_MISMATCH"
+                if disc_type == "UNCOUNTED":
+                    # BR50 & BR70: an unconfirmed row is never counted as missing
+                    continue
                 has_q_issue = bool(ln.get("has_quality_issue"))
-                is_diff = disc_type != "MATCHED" or has_q_issue
-                if only_differences and not is_diff:
+                is_diff = disc_type != "MATCHED"
+                if only_differences and not (is_diff or has_q_issue):
                     continue
 
-                orig_val = Decimal(str(ln.get("original_cost") or 0)).quantize(Decimal("0.01"))
-                rem_val = Decimal(str(ln.get("remaining_value") or 0)).quantize(Decimal("0.01"))
+                is_surplus_row = bool(ln.get("is_surplus")) or disc_type == "SURPLUS"
+                # BR40 & BR39: a surplus asset has no book value and stays out of the value totals
+                orig_val = None if is_surplus_row else Decimal(str(ln.get("original_cost") or 0)).quantize(Decimal("0.01"))
+                rem_val = None if is_surplus_row else Decimal(str(ln.get("remaining_value") or 0)).quantize(Decimal("0.01"))
                 b_qty = int(Decimal(str(ln.get("book_quantity") or 0)))
                 a_qty = int(Decimal(str(ln.get("actual_quantity") or 0)))
 
-                tot_orig += orig_val
-                tot_rem += rem_val
+                if orig_val is not None:
+                    tot_orig += orig_val
+                    tot_rem += rem_val
                 tot_book_qty += b_qty
                 tot_actual_qty += a_qty
+                result_counts[disc_type] = result_counts.get(disc_type, 0) + 1
+                quality_issue_total += 1 if has_q_issue else 0
                 if is_diff:
                     diff_count += 1
                 else:
@@ -9412,13 +10183,19 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
                     "actual_department_name": a_dept,
                     "book_quantity": b_qty,
                     "actual_quantity": a_qty,
-                    "original_cost": str(orig_val),
-                    "accumulated_depreciation": str(Decimal(str(ln.get("accumulated_depreciation") or 0)).quantize(Decimal("0.01"))),
-                    "remaining_value": str(rem_val),
+                    "original_cost": None if orig_val is None else str(orig_val),
+                    "accumulated_depreciation": None if is_surplus_row else str(Decimal(str(ln.get("accumulated_depreciation") or 0)).quantize(Decimal("0.01"))),
+                    "remaining_value": None if rem_val is None else str(rem_val),
                     "discrepancy_type": disc_type,
                     "discrepancy_display": ln.get("discrepancy_display") or ln.get("reconciliation_result_display") or "",
-                    "condition": ln.get("condition") or "",
+                    "has_quality_issue": has_q_issue,
+                    "quality_issue_display": ("Yes" if is_en else "Có") if has_q_issue else "",
+                    "condition": ln.get("current_quality") or ln.get("condition") or "",
                     "recommendation": ln.get("recommendation") or "",
+                    # BR51: processing is read from the linked result/voucher, not from the conclusion text
+                    "recommendation_status": ln.get("recommendation_status") or "NONE",
+                    "recommendation_status_display": rec_status_labels.get(ln.get("recommendation_status") or "NONE", ""),
+                    "resolution_voucher_no": ln.get("resolution_voucher_no") or "",
                     "recommendations_processed": serialized_cnt.get("recommendations_processed", False),
                     "has_difference": is_diff,
                 })
@@ -9429,16 +10206,23 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
             "actual_quantity": tot_actual_qty,
             "matched_count": matched_count,
             "discrepancy_count": diff_count,
+            "missing_count": result_counts["MISSING"],
+            "surplus_count": result_counts["SURPLUS"],
+            "department_mismatch_count": result_counts["DEPT_MISMATCH"],
+            "other_mismatch_count": result_counts["OTHER_MISMATCH"],
+            "quality_issue_count": quality_issue_total,
             "original_cost": str(tot_orig.quantize(Decimal("0.01"))),
             "remaining_value": str(tot_rem.quantize(Decimal("0.01"))),
         }
 
     is_empty = len(rows) == 0
+    # AF19: no fabricated rows; the parameters stay for another try
     empty_message = (
-        ("No fixed asset data matching the selected report parameters." if is_en else "Không có tài sản cố định phù hợp với điều kiện tìm kiếm.")
+        ("No data matching the report parameters." if is_en else "Không có dữ liệu phù hợp với tham số báo cáo.")
         if is_empty
         else ""
     )
+    form_version = UC09_FORM_VERSIONS.get((report_code, form_regime), defn["form_code"])
 
     signatures = {
         "prepared_by_label": "Prepared by" if is_en else "Người lập biểu",
@@ -9450,12 +10234,18 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
         "report_code": report_code,
         "ui_id": defn["ui_id"],
         "form_code": defn["form_code"],
+        "form_version": form_version,
+        "accounting_regime": (setup or {}).get("regime", ""),
+        "uses_general_ledger": bool(setup and setup["uses_gl"]),
         "title": report_title,
         "lang": "en" if is_en else "vi",
         "header": {
             "report_title": report_title,
             "form_code": defn["form_code"],
+            "form_version": form_version,
             "company_id": str(company.id),
+            "company_tax_code": getattr(company, "tax_code", "") or "",
+            "company_address": getattr(company, "address", "") or "",
             "company_name": company.name,
             "period_label": period_label,
             "from_date": from_dt.isoformat(),
@@ -9487,6 +10277,7 @@ def generate_fixed_asset_report_uc09(request, data=None) -> dict:
         "print_metadata": {
             "printable": True,
             "form_code": defn["form_code"],
+            "form_version": form_version,
             "title": report_title,
             "company_name": company.name,
             "period_label": period_label,
@@ -23524,8 +24315,3 @@ def generate_tool_report_uc16(request, data=None) -> dict:
         response_data["print_payload"] = print_rep_payload
 
     return response_data
-
-
-
-
-

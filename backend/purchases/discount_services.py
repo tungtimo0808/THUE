@@ -12,7 +12,7 @@ from approval_workflows.submission import configured_snapshot
 from common_services.models import DocumentNumberingRule
 from common_services.period_services import determine_period_for_date
 from general_ledger.models import AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import _balance, _recalculate_closing, post as post_journal
+from general_ledger.services import _balance, _recalculate_closing, post as post_journal, source_module_request
 from master_data.models import DocumentType
 from inventory.models import (InventoryPeriod, InventoryPolicy, InventoryTransaction,
                               InventoryTransactionLine, StockBalance, StockMovement)
@@ -326,7 +326,7 @@ def post(document, request):
             JournalLine.objects.create(entry=journal, line_no=n, account=vat_account, credit=vat,
                 currency=document.company.accounting_currency, party=document.supplier,
                 description="Giảm thuế GTGT đầu vào do giảm giá hàng mua")
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
     document.journal_entry = journal
     payable = Payable.objects.select_for_update().filter(goods_purchase=document.original_purchase).first()
     reduction = min(document.total_amount, payable.balance) if payable else Decimal("0")

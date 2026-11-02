@@ -849,6 +849,8 @@ def create_invoice_request_from_order(request, order, lines_payload, number=None
         raise ValidationError({"lines": "Vui lòng chọn ít nhất một dòng hàng để đề nghị lập hóa đơn."})
 
     if not number:
+        from organization.models import Company
+        Company.objects.select_for_update().get(pk=order.company_id)
         try:
             from common_services.numbering_services import generate_document_number
             doc_type = DocumentType.objects.filter(code__in=["SAL.INVOICE_REQUEST", "DXHD", "INVOICE_REQUEST"]).first()

@@ -1,0 +1,30 @@
+.tt133-report { min-height: 100%; padding-top: 12px; background: #e8efff; color: #172443; font: 13px "Be Vietnam Pro", sans-serif; }
+.tt133-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; background: #bfcef1; border-bottom: 1px solid #91a8dd; }
+.tt133-toolbar button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid #94a9d6; border-radius: 3px; background: #edf3ff; color: #123267; cursor: pointer; }
+.tt133-toolbar button:disabled { opacity: .5; cursor: default; }
+.tt133-toolbar button:focus-visible, .tt133-tabs button:focus-visible { outline: 2px solid #0a56c3; outline-offset: 2px; }
+.tt133-toolbar-spacer { flex: 1; }
+.tt133-toolbar input { width: 78px; margin-left: 5px; padding: 6px; border: 1px solid #94a9d6; border-radius: 3px; }
+.tt133-tabs { display: flex; gap: 2px; overflow-x: auto; padding: 7px 10px 0; background: #d9e4fc; }
+.tt133-tabs button { white-space: nowrap; padding: 8px 14px; border: 1px solid #a3b7e4; border-bottom: 0; background: #f0f4ff; color: #18365f; cursor: pointer; }
+.tt133-tabs button.active { background: #fff; color: #0b367e; font-weight: 700; }
+.tt133-sheet { margin: 0 10px 12px; padding: 16px; background: #fff; border: 1px solid #a3b7e4; min-height: 540px; }
+.tt133-sheet header { text-align: center; margin-bottom: 16px; }
+.tt133-sheet h1 { font: 700 17px Georgia, serif; text-transform: uppercase; margin: 0 0 5px; }
+.tt133-sheet header p { margin: 3px 0; }
+.tt133-warning, .tt133-error { padding: 8px 10px; border-radius: 3px; }
+.tt133-warning { background: #fff5d6; color: #704d08; }
+.tt133-error { background: #fee7e7; color: #9a1c1c; }
+.tt133-table-scroll { overflow: auto; max-height: 70vh; }
+.tt133-sheet table { width: 100%; border-collapse: collapse; min-width: 640px; }
+.tt133-sheet th, .tt133-sheet td { padding: 7px 9px; border: 1px solid #c9d1e2; }
+.tt133-sheet th { position: sticky; top: 0; background: #dce7ff; text-align: left; }
+.tt133-sheet td:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+.tt133-sheet tr.total { background: #eef3ff; font-weight: 700; }
+.tt133-sheet small { color: #a16207; font-weight: 600; }
+.tt133-note-editor { display: grid; gap: 5px; margin-top: 8px; max-width: 650px; }
+.tt133-note-editor textarea { min-height: 88px; resize: vertical; padding: 8px; border: 1px solid #a3b7e4; border-radius: 3px; font: inherit; }
+.tt133-note-editor button { justify-self: start; padding: 6px 10px; border: 1px solid #6e93d7; border-radius: 3px; background: #e4edff; color: #123267; cursor: pointer; }
+.tt133-note-editor button:disabled { opacity: .55; cursor: default; }
+.tt133-note-editor textarea:focus-visible, .tt133-note-editor button:focus-visible { outline: 2px solid #0a56c3; outline-offset: 2px; }
+@media print { .tt133-toolbar, .tt133-tabs, .tt133-note-editor button { display: none; } .tt133-report { background: white; } .tt133-sheet { border: 0; margin: 0; padding: 0; } .tt133-table-scroll { max-height: none; overflow: visible; } .tt133-note-editor textarea { border: 0; resize: none; } }

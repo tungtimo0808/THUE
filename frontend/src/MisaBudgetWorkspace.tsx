@@ -928,7 +928,7 @@ export default function MisaBudgetWorkspace({
               </div>
 
               {/* Table of budget vouchers */}
-              <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+              <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #e2e8f0", overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", color: "#334155", fontWeight: 600, borderBottom: "1px solid #cbd5e1" }}>

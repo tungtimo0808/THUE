@@ -1,5 +1,6 @@
 from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
+from .tt133_views import TT133FinancialReportViewSet
 
 from .views import (
     BusinessResultViewSet,
@@ -34,6 +35,7 @@ router.register("engine", ReportEngineViewSet, basename="report-engine")
 router.register("runs", ReportRunViewSet, basename="report-run")
 router.register("exports", ReportExportViewSet, basename="report-export")
 router.register("tt99-financial-statements", FinancialStatementTT99ViewSet, basename="report-tt99-financial-statements")
+router.register("tt133-financial-statements", TT133FinancialReportViewSet, basename="report-tt133-financial-statements")
 router.register("dashboard", DashboardViewSet, basename="report-dashboard")
 router.register("financial-bundles", FinancialBundleViewSet, basename="report-financial-bundles")
 router.register("financial-statements", FinancialStatementRunViewSet, basename="report-financial-statements")

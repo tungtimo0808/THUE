@@ -44,7 +44,7 @@ def resolve_object(company, object_type, object_id):
 
 
 def _pools(period, objects):
-    """Net debits of 621/622/627 in the period: direct to an object when the line carries its cost center/project."""
+    """Net debits of 621/622/627 in the period (or direct 154 debits under TT133): direct to an object when the line carries its cost center/project."""
     direct = defaultdict(lambda: defaultdict(lambda: ZERO))
     shared = defaultdict(lambda: ZERO)
     by_center = {str(obj.object_id): obj for obj in objects if obj.object_type == "COST_CENTER"}
@@ -57,6 +57,39 @@ def _pools(period, objects):
         for row in lines:
             amount = (row["debit"] or ZERO) - (row["credit"] or ZERO)
             target = by_center.get(str(row["cost_center_id"])) or by_project.get(str(row["project_id"]))
+            if target:
+                direct[target.pk][element] += amount
+            else:
+                shared[element] += amount
+
+    # TT133 support: when production costs are posted directly to TK 154 (without 621/622/627)
+    has_62x = any(shared.values()) or any(any(v.values()) for v in direct.values())
+    if not has_62x:
+        lines_154 = (
+            JournalLine.objects.filter(
+                entry__company=period.company,
+                entry__status="POSTED",
+                account__code__startswith="154",
+                entry__posting_date__range=(period.start_date, period.end_date),
+                debit__gt=ZERO,
+            )
+            .exclude(entry__source_event_id__startswith="COST:")
+            .exclude(entry__entry_type="OPENING")
+            .select_related("entry")
+        )
+        for ln in lines_154:
+            amount = (ln.debit or ZERO) - (ln.credit or ZERO)
+            if amount <= ZERO:
+                continue
+            dims = ln.dimensions or {}
+            desc = f"{ln.description or ''} {getattr(ln.entry, 'description', '') or ''} {dims.get('expense_item', '') or ''}".lower()
+            if any(k in desc for k in ("lương", "nhan cong", "nhân công", "labor", "334", "338")):
+                element = "labor"
+            elif any(k in desc for k in ("khấu hao", "분bổ", "phân bổ", "sản xuất chung", "sxc", "overhead", "214", "242")):
+                element = "overhead"
+            else:
+                element = "material"
+            target = by_center.get(str(ln.cost_center_id)) or by_project.get(str(ln.project_id))
             if target:
                 direct[target.pk][element] += amount
             else:
@@ -186,7 +219,7 @@ def _journal(period, kind, lines, request, warehouse=None):
 
 @transaction.atomic
 def transfer(period, request):
-    """Kết chuyển chi phí: Nợ 154 / Có 621, 622, 627 for the period's collected costs."""
+    """Kết chuyển chi phí: Nợ 154 / Có 621, 622, 627 for the period's collected costs (hoặc xác nhận tập hợp trực tiếp TK 154 theo TT133)."""
     period = models.CostPeriod.objects.select_for_update().get(pk=period.pk)
     if period.status != models.CostPeriod.Status.CALCULATED:
         raise ValidationError("Kỳ tính giá thành đã được kết chuyển.")
@@ -196,7 +229,10 @@ def transfer(period, request):
     for element, prefix in ELEMENT_ACCOUNTS.items():
         amount = Decimal(period.pools.get(element, "0"))
         if amount > 0:
-            lines.append((wip, _account(period.company, prefix), amount, f"Kết chuyển chi phí TK {prefix}"))
+            has_62x_acc = Account.objects.filter(company=period.company, code__startswith=prefix, is_postable=True, status="ACTIVE").exists()
+            credit_acc = _account(period.company, prefix) if has_62x_acc else wip
+            label = f"Kết chuyển chi phí TK {prefix}" if has_62x_acc else f"Xác nhận kết chuyển chi phí sản xuất trực tiếp TK 154 ({element})"
+            lines.append((wip, credit_acc, amount, label))
     period.transfer_entry = _journal(period, "KC", lines, request)
     period.status = models.CostPeriod.Status.TRANSFERRED
     period.save(update_fields=("transfer_entry", "status"))

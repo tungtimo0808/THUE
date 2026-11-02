@@ -1,4 +1,5 @@
 import {useNavigate} from "react-router-dom";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import DirectoryChoiceField from "./DirectoryChoiceField";
 import VoucherDateField from "./VoucherDateField";
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +20,7 @@ import { MISA_DIRECTORY_DEFINITIONS } from "./misa-directory-definitions";
 import type { DirectoryDefinition } from "./misa-directory-definitions";
 import "./misa-directory.css";
 import DirectoryTabContent from "./DirectoryTabContent";
+import AccountCatalogWorkspace from "./AccountCatalogWorkspace";
 import {
   requiredDirectoryField,
   validateDirectoryEntry,
@@ -104,8 +106,9 @@ export default function MisaDirectoryWorkspace({
     MISA_DIRECTORY_DEFINITIONS.find(item=>item.name===initialName) || null,
   );
   const apiPath = definition ? directoryApiPaths[definition.name] : undefined;
+  const employeeDirectory = definition?.name === "Nhân viên";
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(
-    companyId, apiPath ? { entries: apiPath } : {}, notify,
+    companyId, apiPath ? { entries: apiPath, ...(employeeDirectory ? { branches: "/api/v1/organization/branches/", departments: "/api/v1/organization/departments/" } : {}) } : {}, notify,
   );
   const [legacyView, setLegacyView] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
@@ -170,9 +173,27 @@ export default function MisaDirectoryWorkspace({
       (apiConnected && apiPath
         ? (apiRows.entries || []).map((row) => ({
             id: String(row.id),
-            values: Object.fromEntries(definition.headers.map((header) => [header, directoryValue(row, header)])),
+            values: employeeDirectory ? {
+              "Mã": String(row.employee_code || ""), "Tên": String(row.full_name || ""),
+              "Đơn vị": String((apiRows.departments || []).find(item => item.id === row.department)?.name || (apiRows.branches || []).find(item => item.id === row.branch)?.name || ""),
+              "Chức danh": String(row.job_title || ""), "Ngày sinh": String(row.date_of_birth || ""),
+              "Số CCCD": String(row.identity_number || ""), "Loại": row.gender === "FEMALE" ? "Nữ" : "Nam",
+              "Thông tin tiền lương:Lương thỏa thuận": String(row.agreed_salary ?? ""),
+              "Thông tin tiền lương:Hệ số lương": String(row.salary_coefficient ?? ""),
+              "Thông tin tiền lương:Lương đóng bảo hiểm": String(row.insurance_salary ?? ""),
+              "Thông tin tiền lương:Mã số thuế": String(row.personal_tax_code || ""),
+              "Thông tin tiền lương:Loại hợp đồng": ({ RESIDENT_LONG: "Cư trú và có HĐLĐ từ 3 tháng trở lên", RESIDENT_SHORT: "Cư trú và không ký HĐLĐ/HĐLĐ dưới 3 tháng", NON_RESIDENT: "Không cư trú" } as Record<string,string>)[row.contract_type] || "",
+              "Thông tin tiền lương:Số người phụ thuộc": String(row.dependent_count ?? ""),
+              "Thông tin liên hệ:Địa chỉ": String(row.address || ""), "Thông tin liên hệ:Email": String(row.email || ""),
+              "Thông tin liên hệ:Điện thoại di động": String(row.phone || ""),
+              "Tài khoản ngân hàng:grid:0": JSON.stringify(row.payment_account ? [{ "Số tài khoản": row.payment_account.account_number, "Tên ngân hàng": row.payment_account.bank_name, "Chủ tài khoản": row.payment_account.account_holder, "Chi nhánh": row.payment_account.bank_branch }] : []),
+              "Mã nhân viên": String(row.employee_code || ""), "Tên nhân viên": String(row.full_name || ""),
+              "Trạng thái người dùng": row.linked_user ? "Đã liên kết" : "Chưa liên kết",
+              "Tên đơn vị": String((apiRows.departments || []).find(item => item.id === row.department)?.name || (apiRows.branches || []).find(item => item.id === row.branch)?.name || ""),
+              "Số tài khoản": String(row.payment_account?.account_number || ""), "Tên ngân hàng": String(row.payment_account?.bank_name || ""), "Trạng thái": String(row.status || ""),
+            } : Object.fromEntries(definition.headers.map((header) => [header, directoryValue(row, header)])),
           }))
-        : seedRows(definition)).map((row) => ({
+        : employeeDirectory ? [] : seedRows(definition)).map((row) => ({
         ...row,
         values: normalizeDirectoryValues(
           definition.fields,
@@ -219,8 +240,38 @@ export default function MisaDirectoryWorkspace({
     setError("");
     setTab(definition?.tabs[0] || "");
   };
+  const changeEmployeeStatus = async (id: string, next: "ACTIVE" | "INACTIVE" | "TERMINATED", confirm = true) => {
+    const employee = (apiRows.entries || []).find(row => String(row.id) === id);
+    if (!employee) throw new Error("Không tìm thấy hồ sơ nhân viên. Hãy làm mới danh sách.");
+    if (confirm && !window.confirm(next === "ACTIVE" ? "Kích hoạt lại nhân viên?" : next === "INACTIVE" ? "Ngừng sử dụng nhân viên?" : "Kết thúc làm việc của nhân viên?")) return false;
+    let terminationDate: string | null = null;
+    if (next === "TERMINATED") {
+      terminationDate = window.prompt("Ngày kết thúc (YYYY-MM-DD):", new Date().toISOString().slice(0, 10));
+      if (!terminationDate) return false;
+    }
+    const path = `/api/v1/organization/employees/${id}/change_status/?company_id=${encodeURIComponent(companyId)}`;
+    const body = { status: next, version: employee.version, termination_date: terminationDate };
+    try {
+      await request(path, token, { method: "POST", body: JSON.stringify(body) });
+    } catch (reason) {
+      if (!(reason instanceof Error) || !reason.message.includes("confirm_assets")) throw reason;
+      if (!window.confirm("Nhân viên còn tài sản đang quản lý. Bạn đã kiểm tra việc bàn giao và muốn tiếp tục?")) return false;
+      await request(path, token, { method: "POST", body: JSON.stringify({ ...body, confirm_assets: true }) });
+    }
+    reloadApi();
+    return true;
+  };
+  const exportEmployees = async () => {
+    try {
+      const response = await fetch(`/api/v1/organization/employees/export-xlsx/?company_id=${encodeURIComponent(companyId)}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error(`Không thể xuất Excel (HTTP ${response.status}).`);
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a"); link.href = url; link.download = "nhan-vien.xlsx"; link.click(); URL.revokeObjectURL(url);
+    } catch (reason) { notify(reason instanceof Error ? reason.message : "Không thể xuất Excel."); }
+  };
   const save = async (addAnother = false) => {
     if (!definition || !editor) return;
+    if (employeeDirectory && !apiConnected) { setError("Cần đăng nhập và chọn doanh nghiệp để quản lý nhân viên."); return; }
     const normalized = {
       ...editor,
       values: normalizeDirectoryValues(
@@ -239,6 +290,8 @@ export default function MisaDirectoryWorkspace({
       setError(problem);
       return;
     }
+    if (employeeDirectory && !normalized.values["Đơn vị"]?.trim()) { setError("Vui lòng chọn Đơn vị."); return; }
+    if (employeeDirectory && !normalized.values["Thông tin tiền lương:Loại hợp đồng"]?.trim()) { setError("Vui lòng chọn Loại hợp đồng."); return; }
     if (apiConnected && apiPath && writableDirectories.has(definition.name)) {
       const original = apiRows.entries?.find((row) => String(row.id) === editor.id);
       const existing = allRows.some((row) => row.id === editor.id);
@@ -251,7 +304,7 @@ export default function MisaDirectoryWorkspace({
         : Object.entries(values).find(([label]) => /^Tên/.test(label))?.[1] || values["Tên"];
       try {
         const baseInput: Record<string, any> = {
-          ...(definition.name === "Ngân hàng" || definition.name === "Loại tiền" ? {} : { company: companyId }),
+          ...(definition.name === "Ngân hàng" || definition.name === "Loại tiền" || (employeeDirectory && existing) ? {} : { company: companyId }),
           code, name,
           ...(original?.version ? { version: original.version } : {}),
         };
@@ -291,7 +344,7 @@ export default function MisaDirectoryWorkspace({
         return;
       }
     }
-    setRecords((previous) => ({
+    if (!(employeeDirectory && apiConnected)) setRecords((previous) => ({
       ...previous,
       [definition.name]: allRows.some((row) => row.id === editor.id)
         ? allRows.map((row) => (row.id === editor.id ? normalized : row))
@@ -326,6 +379,8 @@ export default function MisaDirectoryWorkspace({
         {legacy}
       </div>
     );
+  if (definition?.name === "Hệ thống tài khoản")
+    return <AccountCatalogWorkspace onBack={() => setDefinition(null)} />;
   if (!definition) {
     const groups = [
       ...new Set(MISA_DIRECTORY_DEFINITIONS.map((item) => item.group)),
@@ -378,7 +433,7 @@ export default function MisaDirectoryWorkspace({
         </button>
         <h1>{definition.name}</h1>
         {definition.canAdd && (
-          <button onClick={() => showEditor()}>
+          <button disabled={employeeDirectory && !apiConnected} onClick={() => showEditor()}>
             <Plus size={15} /> Thêm
           </button>
         )}
@@ -397,8 +452,16 @@ export default function MisaDirectoryWorkspace({
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
+        {employeeDirectory && <><button type="button" onClick={reloadApi}>Làm mới</button><button type="button" onClick={exportEmployees}>Xuất Excel</button></>}
         <span />
         {selected.length > 0 && <b>Đã chọn {selected.length}</b>}
+        {employeeDirectory && selected.length > 0 && <button type="button" onClick={async () => {
+          if (!window.confirm(`Ngừng sử dụng ${selected.length} nhân viên đã chọn?`)) return;
+          const failures: string[] = []; let done = 0;
+          for (const id of selected) { try { if (await changeEmployeeStatus(id, "INACTIVE", false)) done++; } catch (reason) { failures.push(`${id}: ${reason instanceof Error ? reason.message : "Lỗi"}`); } }
+          notify(`Đã ngừng sử dụng ${done}/${selected.length} nhân viên.${failures.length ? ` Thất bại: ${failures.join("; ")}` : ""}`);
+          setSelected([]);
+        }}>Ngừng sử dụng đã chọn</button>}
         <button
           aria-label="Ẩn hiện cột danh mục"
           onClick={() => setColumnsOpen(!columnsOpen)}
@@ -473,7 +536,11 @@ export default function MisaDirectoryWorkspace({
                   {headers.map((header) => (
                     <td key={header}>
                       {header === "Chức năng" ? (
-                        <button onClick={() => showEditor(row)}>Sửa</button>
+                        <><button onClick={() => showEditor(row)}>Sửa</button>{employeeDirectory && (() => {
+                          const item = (apiRows.entries || []).find(entry => String(entry.id) === row.id);
+                          const target = item?.status === "ACTIVE" ? "INACTIVE" : item?.status === "INACTIVE" ? "ACTIVE" : null;
+                          return <>{target && <button type="button" onClick={() => changeEmployeeStatus(row.id, target).catch(reason => notify(reason instanceof Error ? reason.message : "Không đổi được trạng thái."))}>{target === "ACTIVE" ? "Kích hoạt lại" : "Ngừng sử dụng"}</button>}{item?.status === "ACTIVE" && <button type="button" onClick={() => changeEmployeeStatus(row.id, "TERMINATED").catch(reason => notify(reason instanceof Error ? reason.message : "Không kết thúc được nhân viên."))}>Kết thúc</button>}</>;
+                        })()}</>
                       ) : (
                         row.values[header]
                       )}
@@ -575,8 +642,8 @@ export default function MisaDirectoryWorkspace({
                 {editFields.map((field) => (
                   <label key={field.label}>
                     {field.label}
-                    {(definition.name==="Tài khoản ngân hàng"?["Số tài khoản","Tên ngân hàng"].includes(field.label):requiredDirectoryField(field.label)||(definition.name==="Nhân viên"&&["Đơn vị","Chức danh"].includes(field.label))) && <em>*</em>}
-                    {field.kind==="combo"?<DirectoryChoiceField onManage={()=>{const query=new URLSearchParams(window.location.search);query.set("directory","Cơ cấu tổ chức");directoryNavigate("/directory?"+query.toString());}} label={field.label} value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} options={"options" in field?field.options as string[]:[]}/> : ["Ngày sinh","Ngày cấp"].includes(field.label)?<VoucherDateField value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} label={field.label}/> : field.kind === "textarea" ? (
+                    {(definition.name==="Tài khoản ngân hàng"?["Số tài khoản","Tên ngân hàng"].includes(field.label):requiredDirectoryField(field.label)||(employeeDirectory&&field.label==="Đơn vị")) && <em>*</em>}
+                    {field.kind==="combo"?<DirectoryChoiceField onManage={()=>{const query=new URLSearchParams(window.location.search);query.set("directory","Cơ cấu tổ chức");directoryNavigate("/directory?"+query.toString());}} label={field.label} value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} options={employeeDirectory && field.label==="Đơn vị" ? [...(apiRows.branches || []), ...(apiRows.departments || [])].filter(row => row.status === "ACTIVE").map(row => String(row.name)) : "options" in field?field.options as string[]:[]}/> : ["Ngày sinh","Ngày cấp"].includes(field.label)?<VoucherDateField value={editor.values[field.label]||""} onChange={value=>updateEditor(field.label,value)} label={field.label}/> : field.kind === "textarea" ? (
                       <textarea
                         value={editor.values[field.label] || ""}
                         onChange={(e) =>
@@ -653,9 +720,13 @@ export default function MisaDirectoryWorkspace({
             <footer>
               <button onClick={() => closeEditor()}>Hủy</button>
               <button onClick={() => save()}>Lưu</button>
-              <button className="md-primary" onClick={() => save(true)}>
-                Lưu và Thêm
-              </button>
+              <MisaSaveSplitButton
+                defaultMode="save_and_add"
+                showPrint={false}
+                height={32}
+                onSaveAndClose={() => save(false)}
+                onSaveAndAdd={() => save(true)}
+              />
             </footer>
           </div>
         </div>

@@ -140,6 +140,7 @@ def _account_ok(account, company):
 def check(revaluation, request, *, posting=False):
     """Steps 38-40: every rule of the document; `posting` re-reads the asset values under lock (EF26)."""
     company = revaluation.company
+    simple_book = company.accounting_regime == "TT58" and company.bookkeeping_method == "SIMPLE"
     if not NUMBER_PATTERN.match(revaluation.number or "") or models.AssetRevaluation.objects.filter(
             company=company, number=revaluation.number).exclude(pk=revaluation.pk).exists():
         fail("EF02", "number")
@@ -225,6 +226,10 @@ def check(revaluation, request, *, posting=False):
     is_asset = lambda account: account.pk in asset_accounts or account.code.startswith(ASSET_ACCOUNT_PREFIXES)
     is_accumulated = lambda account: account.pk in accumulated_accounts or account.code.startswith(ACCUMULATED_PREFIX)
     entries = list(revaluation.entries.select_related("debit_account", "credit_account", "party", "expense_item", "department"))
+    if simple_book and entries:
+        fail("EF21", "entries")
+    if simple_book and any(line.expense_account_id or line.revaluation_account_id for line in lines):
+        fail("EF21", "lines")
     net_asset = net_accumulated = ZERO
     for entry in entries:
         debit, credit = entry.debit_account, entry.credit_account
@@ -244,7 +249,7 @@ def check(revaluation, request, *, posting=False):
         net_asset += entry.amount * ((1 if is_asset(debit) else 0) - (1 if is_asset(credit) else 0))
         net_accumulated += entry.amount * ((1 if is_accumulated(credit) else 0) - (1 if is_accumulated(debit) else 0))
     expected_cost = ZERO if revaluation.cost_booked_at_source else cost_difference
-    if net_asset != expected_cost or net_accumulated != accumulated_difference:
+    if not simple_book and (net_asset != expected_cost or net_accumulated != accumulated_difference):
         fail("EF22", "entries")
     if revaluation.cost_booked_at_source and models.AssetRevaluation.objects.filter(
             company=company, status="POSTED", cost_booked_at_source=True, source_reference=revaluation.source_reference,

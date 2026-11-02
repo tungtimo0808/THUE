@@ -1,7 +1,7 @@
 import logging
 
-from django.http import Http404
 from django.utils import timezone
+from django.http import Http404
 from rest_framework import serializers as drf_serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.decorators import action
@@ -65,8 +65,9 @@ class AssetViewSet(CompanyViewSet):
     action_permissions = {
         "history": "FA.ASSET.VIEW",
         "register": "FA.ASSET.VIEW",
-        "reports": "FA.ASSET.VIEW",
-        "report_catalog": "FA.ASSET.VIEW",
+        # UC-FA-09 BR03: viewing the asset register does not grant the reports
+        "reports": "FA.REPORT.VIEW",
+        "report_catalog": "FA.REPORT.VIEW",
         "tool_source_vouchers": "FA.ASSET.VIEW",
         "tool_register": "FA.ASSET.VIEW",
         "acquire": "FA.ASSET.CREATE",
@@ -521,6 +522,8 @@ class TransactionViewSet(CompanyViewSet):
         "next_revaluation_number": "FA.TRANSACTION.REVALUATE",
         "dispose": "FA.TRANSACTION.DISPOSE",
         "next_disposal_number": "FA.TRANSACTION.DISPOSE",
+        "disposal_references": "FA.TRANSACTION.DISPOSE",
+        "disposal_attachments": "FA.TRANSACTION.DISPOSE",
         "default_allocation_period": "FA.CALCULATION.CALCULATE",
         "setup_allocation_period": "FA.CALCULATION.CALCULATE",
         "validate_allocation_voucher": "FA.CALCULATION.CALCULATE",
@@ -615,6 +618,104 @@ class TransactionViewSet(CompanyViewSet):
             company, disposal_date=tx_date, year_based=year_based, prefix=prefix
         )
         return Response({"voucher_no": voucher_no, "number": voucher_no})
+
+    @action(detail=False, methods=("get",), url_path="disposal-references")
+    def disposal_references(self, request):
+        from general_ledger.models import JournalEntry
+        from iam.permissions import has_effective_permission
+
+        company_id = request.query_params.get("company_id")
+        if not company_id:
+            raise drf_serializers.ValidationError({"company_id": "Thiếu company_id."})
+        entries = JournalEntry.objects.filter(company_id=company_id, status="POSTED").order_by("-posting_date", "-created_at")
+        from_date = services._parse_date(request.query_params.get("from_date")) if request.query_params.get("from_date") else None
+        to_date = services._parse_date(request.query_params.get("to_date")) if request.query_params.get("to_date") else None
+        if request.query_params.get("from_date") and not from_date or request.query_params.get("to_date") and not to_date:
+            raise drf_serializers.ValidationError("Điều kiện tìm kiếm chứng từ không hợp lệ.")
+        if from_date and to_date and from_date > to_date:
+            raise drf_serializers.ValidationError({"from_date": "Ngày Từ không được lớn hơn ngày Đến."})
+        if from_date:
+            entries = entries.filter(posting_date__gte=from_date)
+        if to_date:
+            entries = entries.filter(posting_date__lte=to_date)
+        number = str(request.query_params.get("number") or "").strip()
+        if number:
+            entries = entries.filter(number__icontains=number)
+        entry_type = str(request.query_params.get("entry_type") or "").strip()
+        if entry_type:
+            if entry_type not in {"MANUAL", "SUBLEDGER", "ALLOCATION", "ADJUSTMENT", "OPENING"}:
+                raise drf_serializers.ValidationError("Điều kiện tìm kiếm chứng từ không hợp lệ.")
+            entries = entries.filter(entry_type=entry_type)
+        rows = []
+        for entry in entries[:200]:
+            if not request.user.is_superuser and entry.branch_id and not has_effective_permission(
+                request.user.iam_account, entry.company, "FA.TRANSACTION.DISPOSE", branch_id=entry.branch_id
+            ):
+                continue
+            rows.append({"id": str(entry.id), "number": entry.number, "posting_date": entry.posting_date,
+                "document_date": entry.document_date, "description": entry.description, "entry_type": entry.entry_type})
+        return Response(rows)
+
+    @action(detail=False, methods=("get", "post"), url_path="disposal-attachments", parser_classes=(MultiPartParser, FormParser))
+    def disposal_attachments(self, request):
+        import os
+        import uuid
+        from django.core.files.storage import default_storage
+        from django.db import transaction
+        from django.http import FileResponse
+        from iam.permissions import has_effective_permission
+
+        company_id = request.query_params.get("company_id") or request.data.get("company_id")
+        voucher_no = request.query_params.get("voucher_no") or request.data.get("voucher_no")
+        if not company_id or not voucher_no:
+            raise drf_serializers.ValidationError("Thiếu doanh nghiệp hoặc số chứng từ ghi giảm.")
+        records = models.AssetTransaction.objects.filter(
+            company_id=company_id, transaction_type="DISPOSAL", source_reference=voucher_no, status="POSTED"
+        ).select_related("company", "asset")
+        first = records.first()
+        if not first:
+            raise NotFound("Không tìm thấy chứng từ ghi giảm.")
+        if not request.user.is_superuser and any(
+            not has_effective_permission(request.user.iam_account, first.company, "FA.TRANSACTION.DISPOSE", branch_id=tx.asset.branch_id)
+            for tx in records
+        ):
+            raise drf_serializers.ValidationError("Bạn không có quyền truy cập hồ sơ ghi giảm này.")
+        attachments = (first.after_snapshot or {}).get("attachments") or []
+        if request.method == "GET":
+            attachment_id = request.query_params.get("attachment_id")
+            if not attachment_id:
+                return Response(attachments)
+            item = next((entry for entry in attachments if entry.get("id") == attachment_id), None)
+            if not item or not item.get("storage_path") or not default_storage.exists(item["storage_path"]):
+                raise NotFound("Không tìm thấy tệp đính kèm.")
+            return FileResponse(default_storage.open(item["storage_path"], "rb"), as_attachment=True, filename=item["name"])
+        upload = request.FILES.get("file")
+        allowed = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".png", ".jpg", ".jpeg", ".csv", ".txt"}
+        if not upload or upload.size > 5 * 1024 * 1024 or os.path.splitext(upload.name)[1].lower() not in allowed:
+            raise drf_serializers.ValidationError("Tệp đính kèm không hợp lệ hoặc vượt dung lượng tối đa 5MB.")
+        if any(entry.get("name") == upload.name and entry.get("size") == upload.size and entry.get("storage_path") for entry in attachments):
+            return Response(services._serialize_disposal_voucher_group(first.company, voucher_no))
+        attachment_id = str(uuid.uuid4())
+        storage_path = default_storage.save(
+            f"fixed_assets/disposals/{company_id}/{first.id}/{attachment_id}{os.path.splitext(upload.name)[1].lower()}", upload
+        )
+        try:
+            with transaction.atomic():
+                for tx in records.select_for_update():
+                    snapshot = dict(tx.after_snapshot or {})
+                    existing = [entry for entry in snapshot.get("attachments", []) if not (
+                        entry.get("name") == upload.name and entry.get("size") == upload.size and not entry.get("storage_path")
+                    )]
+                    existing.append({"id": attachment_id, "name": upload.name, "size": upload.size,
+                        "type": upload.content_type, "storage_path": storage_path})
+                    snapshot["attachments"] = existing
+                    tx.after_snapshot = snapshot
+                    tx.save(update_fields=("after_snapshot", "updated_at"))
+                services.audit(request, first, "ATTACH", after={"attachment_id": attachment_id, "name": upload.name})
+        except Exception:
+            default_storage.delete(storage_path)
+            raise
+        return Response(services._serialize_disposal_voucher_group(first.company, voucher_no), status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=("post",), url_path="dispose")
     def dispose(self, request):
@@ -876,6 +977,7 @@ class CalculationRunViewSet(CompanyViewSet):
         "post": "FA.CALCULATION.POST",
         "unpost": "FA.CALCULATION.POST",
         "cancel": "FA.CALCULATION.EDIT",
+        "default_period": "FA.CALCULATION.VIEW",
         "preview": "FA.CALCULATION.VIEW",
         "save_voucher": "FA.CALCULATION.CREATE",
         "export_allocation": "FA.CALCULATION.VIEW",
@@ -922,6 +1024,10 @@ class CalculationRunViewSet(CompanyViewSet):
             raise drf_serializers.ValidationError("Chỉ bảng tính nháp hoặc chưa ghi sổ mới được xóa.")
         services.audit(self.request, instance, "DELETE", before=self.get_serializer(instance).data)
         instance.delete()
+
+    @action(detail=False, methods=("get",), url_path="default-period")
+    def default_period(self, request):
+        return Response(services.default_depreciation_period(request))
 
     @action(detail=False, methods=("get", "post"), url_path="preview")
     def preview(self, request):

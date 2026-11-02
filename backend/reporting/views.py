@@ -9,7 +9,9 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, ViewSet
 
 from audit_log.services import record_audit
 from general_ledger.models import JournalEntry
-from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission
+from iam.permissions import (
+    CompanyMemberMixin, assignment_permission_codes, effective_assignments, has_effective_permission,
+)
 from organization.models import Company
 
 from . import (
@@ -213,7 +215,7 @@ class ReportExportViewSet(ReadOnlyModelViewSet):
         return self.queryset.filter(run__company_id=company) if company else self.queryset.none()
 
 
-class FinancialStatementTT99ViewSet(ViewSet):
+class FinancialStatementTT99ViewSet(CompanyMemberMixin, ViewSet):
     """
     API tổng hợp trực tiếp Bộ Báo cáo tài chính theo Thông tư 99/2025/TT-BTC từ Sổ Cái (JournalEntry / JournalLine):
     - B01-DN: Báo cáo tình hình tài chính
@@ -221,19 +223,6 @@ class FinancialStatementTT99ViewSet(ViewSet):
     - B03-DN: Báo cáo lưu chuyển tiền tệ (Trực tiếp & Gián tiếp)
     - B09-DN: Bản thuyết minh báo cáo tài chính
     """
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or request.data.get("company_id")
-            or request.data.get("company")
-        )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        return Company.objects.first()
 
     def list(self, request):
         from django.db.models import Sum
@@ -711,6 +700,100 @@ class FinancialStatementTT99ViewSet(ViewSet):
             "net_profit": pat_60,
         }
 
+        # 5. Bảng cân đối tài khoản (Trial Balance) & Sổ quỹ tiền mặt (Cash Ledger)
+        from general_ledger.models import Account
+        period_acc_qs = (
+            JournalLine.objects.filter(entry__company=company, entry__status="POSTED")
+            .exclude(entry__entry_type="OPENING")
+            .values("account__code")
+            .annotate(debit=Sum("debit"), credit=Sum("credit"))
+        )
+        period_map = {r["account__code"]: (int(r["debit"] or 0), int(r["credit"] or 0)) for r in period_acc_qs}
+
+        all_accounts = list(
+            Account.objects.filter(company=company, status="ACTIVE")
+            .order_by("code")
+            .values("code", "name", "account_level", "is_postable")
+        )
+        acc_codes_set = {a["code"] for a in all_accounts}
+        leaf_rows_by_code = {}
+        for a in all_accounts:
+            code = a["code"]
+            has_child = any(other != code and other.startswith(code) for other in acc_codes_set)
+            if not has_child:
+                od, oc = open_map.get(code, (0, 0))
+                pd, pc = period_map.get(code, (0, 0))
+                net = (od + pd) - (oc + pc)
+                cd = max(net, 0)
+                cc = max(-net, 0)
+                if od or oc or pd or pc or cd or cc:
+                    leaf_rows_by_code[code] = {
+                        "openDebit": od,
+                        "openCredit": oc,
+                        "periodDebit": pd,
+                        "periodCredit": pc,
+                        "closeDebit": cd,
+                        "closeCredit": cc,
+                    }
+
+        trial_balance = []
+        for a in all_accounts:
+            code = a["code"]
+            descendants = [lc for lc in leaf_rows_by_code if lc == code or lc.startswith(code)]
+            if not descendants:
+                continue
+            is_parent = any(lc != code for lc in descendants)
+            od = sum(leaf_rows_by_code[lc]["openDebit"] for lc in descendants)
+            oc = sum(leaf_rows_by_code[lc]["openCredit"] for lc in descendants)
+            pd = sum(leaf_rows_by_code[lc]["periodDebit"] for lc in descendants)
+            pc = sum(leaf_rows_by_code[lc]["periodCredit"] for lc in descendants)
+            cd = sum(leaf_rows_by_code[lc]["closeDebit"] for lc in descendants)
+            cc = sum(leaf_rows_by_code[lc]["closeCredit"] for lc in descendants)
+            trial_balance.append({
+                "id": f"tb-{code}",
+                "accountNumber": code,
+                "accountName": a["name"],
+                "level": max(0, int(a.get("account_level") or 1) - 1),
+                "isParent": is_parent,
+                "openDebit": od,
+                "openCredit": oc,
+                "periodDebit": pd,
+                "periodCredit": pc,
+                "closeDebit": cd,
+                "closeCredit": cc,
+            })
+
+        cash_running = open_b01["_cash_111"]
+        cash_ledger_rows = []
+        for entry in period_entries.order_by("posting_date", "created_at"):
+            lines = list(entry.lines.all())
+            cash_lines = [l for l in lines if l.account.code.startswith("111")]
+            if not cash_lines:
+                continue
+            non_cash_lines = [l for l in lines if not l.account.code.startswith("111")]
+            contra_code = non_cash_lines[0].account.code if non_cash_lines else "1111"
+            rec_amt = sum(int(l.debit or 0) for l in cash_lines)
+            pay_amt = sum(int(l.credit or 0) for l in cash_lines)
+            cash_running += (rec_amt - pay_amt)
+            p_date = entry.posting_date.strftime("%d/%m/%Y") if entry.posting_date else ""
+            d_date = entry.document_date.strftime("%d/%m/%Y") if entry.document_date else p_date
+            v_num = str(entry.number or "").replace("GL-", "")
+            cash_ledger_rows.append({
+                "id": str(entry.id),
+                "postingDate": p_date,
+                "voucherDate": d_date,
+                "receiptNo": v_num if rec_amt > 0 else "",
+                "paymentNo": v_num if pay_amt > 0 else "",
+                "description": entry.description or "",
+                "account": cash_lines[0].account.code,
+                "contraAccount": contra_code,
+                "receipt": rec_amt,
+                "payment": pay_amt,
+                "balance": cash_running,
+                "partnerCode": "",
+                "partnerName": "",
+            })
+
         return Response({
             "company_id": str(company.id),
             "company_name": company.name,
@@ -721,6 +804,12 @@ class FinancialStatementTT99ViewSet(ViewSet):
             "b03_direct": b03_direct,
             "b03_indirect": b03_indirect,
             "b09_dn": b09_dn,
+            "trial_balance": trial_balance,
+            "cash_ledger": {
+                "opening_balance": open_b01["_cash_111"],
+                "closing_balance": cash_running,
+                "rows": cash_ledger_rows,
+            },
         })
 
 
@@ -1066,7 +1155,7 @@ class FinancialPositionViewSet(ViewSet):
     def parameters(self, request):
         company = financial_position_services.resolve_b01_company(request)
         financial_position_services.require_b01_permission(request.user, company, "RPT_FINANCIAL_VIEW")
-        return Response(financial_position_services.get_financial_position_parameters(company, request.user))
+        return Response(financial_position_services.get_financial_position_parameters(company, request.user, request.query_params))
 
     def runs(self, request):
         if request.method == "POST":
@@ -1802,36 +1891,11 @@ class AssetReportViewSet(ViewSet):
         return Response(asset_report_services.export_asset_report_run_payload(run_id, fmt=fmt, user=request.user, request=request))
 
 
-class UnifiedExportViewSet(ViewSet):
+class UnifiedExportViewSet(CompanyMemberMixin, ViewSet):
     """
     UC-RPT-15: In hoặc Export báo cáo (Print & Export Engine).
     Hệ thống kết xuất và in ấn dùng chung cho các phân hệ UC-RPT-01 đến UC-RPT-14.
     """
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
-    def _get_company_id(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            return str(company_id)
-        comp = Company.objects.first()
-        return str(comp.id) if comp else "DEFAULT-COMPANY"
-
     def capabilities(self, request, report_code=None):
         caps = unified_export_services.get_export_capabilities(report_code)
         return Response(caps)
@@ -1936,36 +2000,11 @@ class UnifiedExportViewSet(ViewSet):
         return Response(result)
 
 
-class DrilldownViewSet(ViewSet):
+class DrilldownViewSet(CompanyMemberMixin, ViewSet):
     """
     UC-RPT-14: Universal Report Data Drill-Down & Lineage ViewSet.
     Cung cấp các API truy vết chi tiết số liệu dùng chung cho toàn bộ các nhóm báo cáo.
     """
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
-    def _get_company_id(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            return str(company_id)
-        comp = Company.objects.first()
-        return str(comp.id) if comp else "DEFAULT-COMPANY"
-
     def _resolve_data(self, request):
         if hasattr(request.data, "dict"):
             return request.data.dict()
@@ -2109,16 +2148,3 @@ class DrilldownViewSet(ViewSet):
             return Response({"detail": str(pe)}, status=status.HTTP_403_FORBIDDEN)
         except ValidationError as ve:
             return Response({"detail": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -4,14 +4,15 @@ from django.db.models import Sum
 from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
+from iam.permissions import CompanyMemberMixin
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet,ReadOnlyModelViewSet
 from . import models,serializers,services
 from .permissions import CashPermission
 from .receipt_validation import RECEIPT_TYPES
-def perms(r):return {"GET":f"{r}.VIEW","POST":f"{r}.CREATE","PUT":f"{r}.EDIT","PATCH":f"{r}.EDIT"}
-class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,GenericViewSet):
+def perms(r):return {"GET":f"{r}.VIEW","POST":f"{r}.CREATE","PUT":f"{r}.EDIT","PATCH":f"{r}.EDIT","DELETE":f"{r}.EDIT"}
+class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins.DestroyModelMixin,GenericViewSet):
     permission_classes=(CashPermission,);filter_backends=(SearchFilter,OrderingFilter);ordering=("-created_at",)
     def get_queryset(self):
         company=self.request.query_params.get("company_id")
@@ -52,11 +53,15 @@ class TransactionViewSet(BaseViewSet):
         if "company" in serializer.validated_data and serializer.validated_data["company"].pk != serializer.instance.company_id:
             raise ValidationError({"company": "Không được chuyển phiếu sang doanh nghiệp khác."})
         if serializer.instance.business_type in RECEIPT_TYPES:
-            branch_id = self.request.query_params.get("branch_id")
             fund = serializer.validated_data.get("fund", serializer.instance.fund)
-            if not branch_id or str(fund.branch_id) != branch_id:
+            branch_id = self.request.query_params.get("branch_id") or str(fund.branch_id)
+            if str(fund.branch_id) != branch_id:
                 raise ValidationError({"branch_id": "Chi nhánh không khớp quỹ phiếu thu."})
         super().perform_update(serializer)
+    def perform_destroy(self, instance):
+        if instance.status == models.TransactionStatus.POSTED:
+            raise ValidationError("Chứng từ đã ghi sổ không thể xóa. Vui lòng Bỏ ghi sổ trước khi xóa.")
+        instance.delete()
     @action(detail=True,methods=("post",))
     def submit(self,r,pk=None):return Response(self.get_serializer(services.submit(self.get_object(),r)).data)
     @action(detail=True,methods=("post",))
@@ -105,19 +110,8 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
         c=self.request.query_params.get("company_id");return self.queryset.filter(company_id=c) if c else self.queryset.none()
 
 
-class ForecastViewSet(GenericViewSet):
+class ForecastViewSet(CompanyMemberMixin, GenericViewSet):
     """API quản lý Dự báo dòng tiền lưu trữ trực tiếp trong PostgreSQL (CoreCompanySetting.configuration)."""
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        from organization.models import Company
-        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
-        if cid:
-            comp = Company.objects.filter(pk=cid).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
     def list(self, request):
         from common_services.models import CoreCompanySetting
         company = self._resolve_company(request)
@@ -169,19 +163,8 @@ class ForecastViewSet(GenericViewSet):
         return Response({"docs": docs, "results": docs})
 
 
-class DenominationCountViewSet(GenericViewSet):
+class DenominationCountViewSet(CompanyMemberMixin, GenericViewSet):
     """API quản lý Kiểm kê quỹ tiền mặt theo mệnh giá lưu trữ trực tiếp trong PostgreSQL."""
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        from organization.models import Company
-        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
-        if cid:
-            comp = Company.objects.filter(pk=cid).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
     def list(self, request):
         from common_services.models import CoreCompanySetting
         company = self._resolve_company(request)

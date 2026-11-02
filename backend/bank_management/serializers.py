@@ -31,7 +31,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     currency_code=serializers.CharField(source="currency.code",read_only=True)
     class Meta:model=models.BankTransaction;fields="__all__";read_only_fields=("id","status","workflow_snapshot","base_amount","balance_applied","integration_status","gl_status","gl_reference","source_reference","payment_method_snapshot","created_by","submitted_at","approved_at","posted_at","created_at","updated_at")
     def validate(self,a):
-        if self.instance and self.instance.status not in {"DRAFT","REJECTED"}:raise serializers.ValidationError("Giao dịch đã xử lý không được sửa.")
+        if self.instance and self.instance.status == "POSTED":raise serializers.ValidationError("Chứng từ đã ghi sổ không được sửa. Vui lòng Bỏ ghi sổ trước khi chỉnh sửa.")
         company=a.get("company") or self.instance.company;account=a.get("account") or self.instance.account;currency=a.get("currency") or self.instance.currency;party=a.get("party") or getattr(self.instance,"party",None)
         method=a.get("payment_method_config") if "payment_method_config" in a else getattr(self.instance,"payment_method_config",None)
         if method and (not self.instance or getattr(self.instance,"payment_method_config_id",None) != method.pk): a["payment_method_snapshot"]=method_snapshot(method)

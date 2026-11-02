@@ -1,8 +1,23 @@
+from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.permissions import BasePermission
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from .models import ActiveStatus, CompanyMembership, RoleStatus, UserPermissionOverride, UserRoleAssignment
+
+
+def company_identifiers_agree(request):
+    """Reject conflicting company or branch context before permission checks."""
+    data = request.data if hasattr(request.data, "get") else {}
+    for values in (
+        (request.headers.get("X-Company-ID"), request.query_params.get("company_id"),
+         data.get("company"), data.get("company_id")),
+        (request.query_params.get("branch_id"), data.get("branch"), data.get("branch_id")),
+    ):
+        if len({str(value).strip().lower() for value in values if value}) > 1:
+            return False
+    return True
 
 
 def is_platform_admin_user(user_account):
@@ -20,13 +35,38 @@ def _setting(company):
 def _permission_enabled(company, permission):
     if permission.status != ActiveStatus.ACTIVE or permission.resource.status != ActiveStatus.ACTIVE:
         return False
-    modules = _setting(company).get("enabled_modules") or []
-    if permission.resource.module_code in {"SYS", "COM"} or not modules or permission.resource.module_code in modules:
+    disabled_modules = _setting(company).get("disabled_modules") or []
+    if permission.resource.module_code in disabled_modules:
+        action_code = getattr(getattr(permission, "action", None), "code", None)
+        return action_code in {"VIEW", "EXPORT", "PRINT"}
+    return True
+
+
+def is_company_admin_member(user_account, company):
+    if not user_account or not company:
+        return False
+    if not getattr(getattr(user_account, "auth_user", None), "is_active", False):
+        return False
+    if not CompanyMembership.objects.filter(
+        user=user_account,
+        company=company,
+        membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+    ).exists():
+        return False
+    if str(getattr(company, "created_by_user_id", "") or "") == str(user_account.id):
         return True
-    action_code = getattr(getattr(permission, "action", None), "code", None)
-    if action_code in {"VIEW", "EXPORT", "PRINT"}:
-        return True
-    return False
+    now = timezone.now()
+    return UserRoleAssignment.objects.filter(
+        company_membership__user=user_account,
+        company_membership__company=company,
+        role__status=RoleStatus.ACTIVE,
+        status=ActiveStatus.ACTIVE,
+        valid_from__lte=now,
+    ).filter(
+        Q(valid_to__isnull=True) | Q(valid_to__gte=now)
+    ).filter(
+        Q(role__is_system_admin=True) | Q(role__code="COMPANY_ADMIN")
+    ).exists()
 
 
 
@@ -92,6 +132,14 @@ def effective_assignments(user_account, company, at=None, skip_sync=False):
 
 
 def assignment_permission_codes(assignment):
+    if getattr(assignment.role, "is_system_admin", False) or getattr(assignment.role, "code", "") == "COMPANY_ADMIN":
+        from .models import Permission
+        return set(
+            Permission.objects.filter(
+                status=ActiveStatus.ACTIVE,
+                resource__status=ActiveStatus.ACTIVE,
+            ).values_list("code", flat=True)
+        )
     direct = {
         item.permission.code
         for item in assignment.role.role_permissions.all()
@@ -140,6 +188,8 @@ def has_effective_permission(
         user=user_account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
     ).exists() or not user_account.auth_user.is_active:
         return False
+    if is_company_admin_member(user_account, company):
+        return True
     permission = Permission.objects.select_related("resource", "action").filter(code=permission_code).first()
     if not permission or not _permission_enabled(company, permission):
         if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK", "SYS.USER.TERMINATE", "SYS.MEMBERSHIP.TERMINATE"):
@@ -210,6 +260,32 @@ def has_other_effective_system_admin(company, *, excluded_user=None, excluded_ro
     return queryset.exists()
 
 
+class CompanyMemberMixin:
+    """Signed-in access to one company the user belongs to, named by the request."""
+    permission_classes = (IsAuthenticated,)
+
+    def _resolve_company(self, request):
+        from organization.models import Company
+
+        data = request.data if isinstance(request.data, dict) else {}
+        company_id = request.query_params.get("company_id") or data.get("company_id") or data.get("company")
+        if not company_id:
+            raise ValidationError({"company_id": "Phải xác định doanh nghiệp làm việc (company_id)."})
+        try:
+            company = Company.objects.get(pk=company_id)
+        except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+            raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
+        if not request.user.is_superuser and not CompanyMembership.objects.filter(
+            user=getattr(request.user, "iam_account", None), company=company,
+            membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+        ).exists():
+            raise PermissionDenied("Người dùng không thuộc doanh nghiệp này.")
+        return company
+
+    def _get_company_id(self, request):
+        return str(self._resolve_company(request).id)
+
+
 class HasIamPermission(BasePermission):
     """Superusers bootstrap IAM; all other users need an effective scoped grant."""
 
@@ -218,6 +294,8 @@ class HasIamPermission(BasePermission):
             return False
         if request.user.is_superuser:
             return True
+        if not company_identifiers_agree(request):
+            return False
         permission_map = getattr(view, "iam_permissions", {})
         permission_code = getattr(view, "action_permissions", {}).get(getattr(view, "action", None)) or permission_map.get(request.method)
         if not permission_code:
@@ -238,13 +316,16 @@ class HasIamPermission(BasePermission):
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError):
             return False
-        has_specific_scope = bool(
-            request.query_params.get("warehouse_id")
-            or (isinstance(request.data, dict) and request.data.get("warehouse"))
-            or request.query_params.get("branch_id")
-            or (isinstance(request.data, dict) and request.data.get("branch"))
+        if is_company_admin_member(request.user.iam_account, company):
+            return True
+        explicit_scope = any(request.query_params.get(field) for field in (
+            "branch_id", "department_id", "warehouse_id", "bank_account_id",
+            "project_id", "cost_center_id",
+        )) or (
+            isinstance(request.data, dict)
+            and any(request.data.get(field) for field in ("warehouse", "branch", "department", "company_bank_account", "project", "cost_center"))
         )
-        if getattr(view, "allow_scoped_list_permission", False) and not has_specific_scope:
+        if getattr(view, "allow_scoped_list_permission", False) and not explicit_scope:
             if _setting(company).get("direct_user_permissions_enabled", False):
                 now = timezone.now()
                 if UserPermissionOverride.objects.filter(

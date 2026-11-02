@@ -3,6 +3,9 @@ from __future__ import annotations
 import calendar
 import hashlib
 import json
+import copy
+import functools
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
@@ -15,7 +18,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from audit_log.services import record_audit
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
 from iam.models import ActiveStatus, CompanyMembership, Permission, UserPermissionOverride
-from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission
+from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission, is_company_admin_member
 from organization.models import Branch, Company
 
 from .models import (
@@ -58,9 +61,43 @@ class DashboardContext:
     refresh_mode: str
     cash_flow_scope: str
     config: DashboardConfiguration | None
+    revenue_basis: str = "GL"
     warnings: list[dict[str, Any]] = field(default_factory=list)
     fail_widgets: set[str] = field(default_factory=set)
     is_before_start_date: bool = False
+    workflow_summary: dict[str, Any] | None = field(default=None, repr=False)
+    # Audit 2026-10-27 (P1): memo trong phạm vi 1 request để không chạy lại cùng một phép tính/truy vấn.
+    memo: dict[Any, Any] = field(default_factory=dict, repr=False, compare=False)
+
+
+def _ctx_memoized(func):
+    """Cache kết quả theo (hàm, tham số) trên ctx.memo; trả deepcopy để caller sửa kết quả không ảnh hưởng memo."""
+
+    @functools.wraps(func)
+    def wrapper(ctx, *args):
+        memo = getattr(ctx, "memo", None)
+        if memo is None:
+            return func(ctx, *args)
+        key = (func.__name__, args)
+        if key not in memo:
+            memo[key] = func(ctx, *args)
+        return copy.deepcopy(memo[key])
+
+    return wrapper
+
+
+def _metric_catalog(ctx: DashboardContext, metric_code: str):
+    """Nạp toàn bộ DashboardMetricCatalog một lần cho mỗi request thay vì 1 truy vấn/widget."""
+    memo = getattr(ctx, "memo", None)
+    if memo is None:
+        return DashboardMetricCatalog.objects.filter(metric_code=metric_code).first()
+    catalog_map = memo.get("__metric_catalog__")
+    if catalog_map is None:
+        catalog_map = {}
+        for item in DashboardMetricCatalog.objects.all().order_by("pk"):
+            catalog_map.setdefault(item.metric_code, item)
+        memo["__metric_catalog__"] = catalog_map
+    return catalog_map.get(metric_code)
 
 
 def _to_decimal(val: Any) -> Decimal:
@@ -151,6 +188,14 @@ def _user_permission_codes(iam_account, company: Company) -> set[str]:
     if not iam_account:
         return set()
     codes: set[str] = set()
+    if is_company_admin_member(iam_account, company):
+        codes.update({"RPT.DASHBOARD.VIEW", "RPT.DASHBOARD.REFRESH", "RPT.DASHBOARD.CONFIG", "RPT.CENTER.VIEW", "VIEW_DASHBOARD"})
+        codes.update(
+            Permission.objects.filter(
+                status=ActiveStatus.ACTIVE,
+                resource__status=ActiveStatus.ACTIVE,
+            ).values_list("code", flat=True)
+        )
     for assignment in effective_assignments(iam_account, company):
         codes |= assignment_permission_codes(assignment)
     now = timezone.now()
@@ -169,7 +214,7 @@ def _user_permission_codes(iam_account, company: Company) -> set[str]:
 
 
 def _resolve_user_data_scope(user, iam_account, company: Company) -> tuple[list[str] | None, list[str] | None, list[str] | None]:
-    if user.is_superuser:
+    if user.is_superuser or is_company_admin_member(iam_account, company):
         return None, None, None
     assignments = list(effective_assignments(iam_account, company))
     dashboard_assignments = [
@@ -308,13 +353,58 @@ def resolve_dashboard_context(request, *, require_refresh_perm: bool = False) ->
     warnings: list[dict[str, Any]] = []
 
     if fiscal_period_id:
+        raw_fp = str(fiscal_period_id).strip()
         fiscal_period = AccountingPeriod.objects.filter(company=company).filter(
-            Q(id=fiscal_period_id) if len(str(fiscal_period_id)) == 36 else Q(code=str(fiscal_period_id))
+            Q(id=raw_fp) if len(raw_fp) == 36 else Q(code=raw_fp)
         ).first()
-        if not fiscal_period:
-            raise ValidationError({"fiscal_period_id": "Kỳ kế toán không tồn tại.", "code": "FISCAL_PERIOD_NOT_FOUND"})
-        from_date = fiscal_period.start_date
-        to_date = fiscal_period.end_date
+        if fiscal_period:
+            from_date = fiscal_period.start_date
+            to_date = fiscal_period.end_date
+        elif re.match(r"^\d{4}$", raw_fp) and not params.get("fiscal_period_id"):
+            yr = int(raw_fp)
+            period_type = "YEAR"
+            from_date = date(yr, 1, 1)
+            to_date = date(yr, 12, 31)
+            fiscal_period = AccountingPeriod.objects.filter(company=company, fiscal_year=yr).order_by("-end_date").first()
+        elif re.match(r"^\d{4}-Q([1-4])$", raw_fp, re.IGNORECASE) and not params.get("fiscal_period_id"):
+            yr = int(raw_fp[:4])
+            qtr = int(raw_fp[-1])
+            q_start = (qtr - 1) * 3 + 1
+            q_end = q_start + 2
+            period_type = "QUARTER"
+            from_date = date(yr, q_start, 1)
+            to_date = date(yr, q_end, calendar.monthrange(yr, q_end)[1])
+            fiscal_period = AccountingPeriod.objects.filter(company=company, fiscal_year=yr, start_date__gte=from_date, end_date__lte=to_date).order_by("-end_date").first()
+        elif re.match(r"^\d{4}-(0[1-9]|1[0-2])$", raw_fp) and not params.get("fiscal_period_id"):
+            yr, mo = map(int, raw_fp.split("-"))
+            from_date = date(yr, mo, 1)
+            to_date = date(yr, mo, calendar.monthrange(yr, mo)[1])
+        else:
+            is_cross_company_uuid = (
+                len(raw_fp) == 36
+                and AccountingPeriod.objects.exclude(company=company).filter(id=raw_fp).exists()
+            )
+            if not is_cross_company_uuid:
+                raise ValidationError({"fiscal_period_id": "Kỳ kế toán không tồn tại.", "code": "FISCAL_PERIOD_NOT_FOUND"})
+            today = timezone.localdate()
+            fiscal_period = (
+                AccountingPeriod.objects.filter(company=company, start_date__lte=today, end_date__gte=today).first()
+                or AccountingPeriod.objects.filter(company=company, status="OPEN").order_by("-start_date").first()
+                or AccountingPeriod.objects.filter(company=company).order_by("-start_date").first()
+            )
+            if fiscal_period:
+                warnings.append({
+                    "code": "PERIOD_FALLBACK",
+                    "message": f"Kỳ kế toán '{fiscal_period_id}' không thuộc doanh nghiệp, hệ thống đã tự động chuyển sang kỳ {fiscal_period.code}.",
+                })
+            elif params.get("require_fiscal_period") in ("1", "true", "True", True):
+                raise ValidationError({"fiscal_period_id": "Kỳ kế toán không tồn tại.", "code": "FISCAL_PERIOD_NOT_FOUND"})
+            if fiscal_period:
+                from_date = fiscal_period.start_date
+                to_date = fiscal_period.end_date
+            else:
+                from_date = date(today.year, today.month, 1)
+                to_date = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
     elif period_type == "CUSTOM":
         if not from_date or not to_date:
             raise ValidationError({"from_date": "Chế độ tùy chọn ngày (CUSTOM) yêu cầu đầy đủ from_date và to_date.", "code": "CUSTOM_DATES_REQUIRED"})
@@ -392,6 +482,10 @@ def resolve_dashboard_context(request, *, require_refresh_perm: bool = False) ->
     if cash_flow_scope not in {"EXTERNAL_ONLY", "ALL_INCLUDING_INTERNAL"}:
         cash_flow_scope = "EXTERNAL_ONLY"
 
+    revenue_basis = str(params.get("basis") or params.get("revenue_basis") or "GL").upper()
+    if revenue_basis not in {"GL", "SAL"}:
+        revenue_basis = "GL"
+
     raw_fail = params.get("simulate_error_widgets") or params.get("fail_widgets") or ""
     fail_widgets = {w.strip().upper() for w in str(raw_fail).split(",") if w.strip()}
 
@@ -415,6 +509,7 @@ def resolve_dashboard_context(request, *, require_refresh_perm: bool = False) ->
         refresh_mode=refresh_mode,
         cash_flow_scope=cash_flow_scope,
         config=config,
+        revenue_basis=revenue_basis,
         warnings=warnings,
         fail_widgets=fail_widgets,
         is_before_start_date=is_before_start_date,
@@ -474,7 +569,7 @@ def is_widget_permitted(ctx: DashboardContext, metric_code: str) -> bool:
 
 
 def build_drilldown_meta(ctx: DashboardContext, metric_code: str, extra_filters: dict[str, Any] | None = None) -> dict[str, Any]:
-    catalog = DashboardMetricCatalog.objects.filter(metric_code=metric_code).first()
+    catalog = _metric_catalog(ctx, metric_code)
     target_uc = catalog.target_uc_code if catalog else "UC-RPT-02"
     target_report = catalog.target_report_code if catalog else ""
     target_perm = catalog.target_report_permission if catalog else ""
@@ -575,6 +670,7 @@ def _filter_branches(qs, branch_field: str, branch_ids: list[str] | None):
 # DASH-01: Doanh thu bán hàng (Pre-VAT Net Revenue)
 # ==============================================================================
 
+@_ctx_memoized
 def _calculate_revenue_for_range(ctx: DashboardContext, start_date: date, end_date: date) -> dict[str, Any]:
     from sales.models import GoodsSale, SalesAllowance, SalesReturn, ServiceSale
 
@@ -729,6 +825,13 @@ def _calculate_revenue_for_range(ctx: DashboardContext, start_date: date, end_da
         "entry__branch_id",
         ctx.effective_branch_ids,
     )
+    if getattr(ctx, "revenue_basis", "GL") == "SAL":
+        period_lines = period_lines.filter(
+            Q(entry__source_module="SAL")
+            | Q(entry__number__startswith="BH")
+            | Q(entry__number__startswith="HD")
+            | Q(entry__number__startswith="GL-BH")
+        )
     if linked_je_ids:
         period_lines = period_lines.exclude(entry_id__in=linked_je_ids)
     if linked_doc_ids:
@@ -1233,6 +1336,39 @@ def _calculate_cash_collected_for_range(ctx: DashboardContext, start_date: date,
         amt = _to_decimal(bt.destination_amount) * _to_decimal(bt.exchange_rate or 1)
         internal_in += amt
 
+    # Fallback to General Ledger (JournalLine on 111*/112*) when no CashTransaction/BankTransaction exists in period
+    if not docs and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
+        gl_cash_lines = _filter_branches(
+            JournalLine.objects.filter(
+                entry__company=ctx.company,
+                entry__status="POSTED",
+                entry__posting_date__range=(start_date, end_date),
+                debit__gt=0,
+            )
+            .exclude(entry__entry_type__in=("OPENING", "CLOSING"))
+            .filter(Q(account__code__startswith="111") | Q(account__code__startswith="112"))
+            .select_related("entry", "account", "party"),
+            "entry__branch_id",
+            ctx.effective_branch_ids,
+        )
+        for line in gl_cash_lines:
+            amt = _to_decimal(line.debit)
+            is_cash_acc = line.account.code.startswith("111")
+            if is_cash_acc:
+                cash_external += amt
+            else:
+                bank_external += amt
+            docs.append({
+                "module": "CASH" if is_cash_acc else "BANK",
+                "document_type": "RECEIPT",
+                "document_id": str(line.entry_id),
+                "document_number": line.entry.number,
+                "posting_date": line.entry.posting_date.isoformat(),
+                "party_name": line.party.name if line.party_id else (line.description or line.entry.description or "Thu tiền Sổ cái"),
+                "amount": _quantize_money(amt),
+                "is_internal_transfer": False,
+            })
+
     external_total = cash_external + bank_external
     gross_total = external_total + internal_in
     selected = external_total if ctx.cash_flow_scope == "EXTERNAL_ONLY" else gross_total
@@ -1282,6 +1418,7 @@ def compute_dash_03_cash_collected(ctx: DashboardContext) -> dict[str, Any]:
 # DASH-04: Chứng từ chờ xử lý & DASH-11: Danh sách công việc cần xử lý
 # ==============================================================================
 
+@_ctx_memoized
 def _collect_workflow_and_action_items(ctx: DashboardContext) -> dict[str, Any]:
     from accounts_payable.models import PayableDocument, PaymentRequest, SupplierInvoice
     from accounts_receivable.models import CustomerReceiptVoucher, ReceivableDocument
@@ -1737,6 +1874,36 @@ def compute_dash_05_cash_flow(ctx: DashboardContext, bucket_override: str | None
                     buckets[bkey]["inflow"] += amt
                 else:
                     buckets[bkey]["outflow"] += amt
+
+        if tx_count == 0 and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
+            gl_cf_lines = _filter_branches(
+                JournalLine.objects.filter(
+                    entry__company=ctx.company,
+                    entry__status="POSTED",
+                    entry__posting_date__range=(ctx.from_date, ctx.to_date),
+                )
+                .exclude(entry__entry_type__in=("OPENING", "CLOSING"))
+                .filter(
+                    Q(account__code__startswith="111")
+                    | Q(account__code__startswith="112")
+                    | Q(account__code__startswith="113")
+                )
+                .select_related("entry", "account"),
+                "entry__branch_id",
+                ctx.effective_branch_ids,
+            )
+            for line in gl_cf_lines:
+                bkey = _bucket_key_for(line.entry.posting_date)
+                if bkey not in buckets:
+                    continue
+                d_amt = _to_decimal(line.debit)
+                c_amt = _to_decimal(line.credit)
+                if d_amt > ZERO:
+                    tx_count += 1
+                    buckets[bkey]["inflow"] += d_amt
+                if c_amt > ZERO:
+                    tx_count += 1
+                    buckets[bkey]["outflow"] += c_amt
 
     running = opening_balance
     total_in = ZERO
@@ -2222,6 +2389,33 @@ def compute_dash_07_receivables(ctx: DashboardContext, top_n: int = 5) -> dict[s
                 "code": "SUBLEDGER_GL_MISMATCH",
                 "message": f"Sổ phụ phải thu ({_quantize_money(sub_net)}) lệch với Sổ cái TK 131 ({_quantize_money(gl_net)}).",
             })
+        elif total_rec == ZERO and customer_advance == ZERO and gl_net > ZERO and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
+            total_rec = gl_net
+            not_due_total = gl_net
+            aging["not_due"] = gl_net
+            for line in gl_131_qs.filter(debit__gt=0).select_related("entry", "party").order_by("-debit")[:top_n]:
+                amt = _to_decimal(line.debit)
+                p_code = line.party.code if line.party_id else line.entry.number
+                p_name = line.party.name if line.party_id else (line.description or line.entry.description or "Phải thu khách hàng (TK 131)")
+                p_key = str(line.party_id or line.entry_id)
+                customer_totals[p_key] = {
+                    "party_id": p_key,
+                    "party_code": p_code,
+                    "party_name": p_name,
+                    "total_balance": amt,
+                    "not_due_amount": amt,
+                    "overdue_amount": ZERO,
+                    "max_days_overdue": 0,
+                }
+                items_detail.append({
+                    "receivable_id": str(line.id),
+                    "document_number": line.entry.number,
+                    "party_name": p_name,
+                    "due_date": None,
+                    "days_overdue": 0,
+                    "aging_bucket": "not_due",
+                    "open_balance": _quantize_money(amt),
+                })
 
     sorted_debtors = sorted(
         customer_totals.values(),
@@ -2448,6 +2642,33 @@ def compute_dash_08_payables(ctx: DashboardContext, top_n: int = 5) -> dict[str,
                 "code": "SUBLEDGER_GL_MISMATCH",
                 "message": f"Sổ phụ phải trả ({_quantize_money(sub_net)}) lệch với Sổ cái TK 331 ({_quantize_money(gl_net)}).",
             })
+        elif total_pay == ZERO and supplier_advance == ZERO and gl_net > ZERO and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
+            total_pay = gl_net
+            not_due_total = gl_net
+            aging["not_due"] = gl_net
+            for line in gl_331_qs.filter(credit__gt=0).select_related("entry", "party").order_by("-credit")[:top_n]:
+                amt = _to_decimal(line.credit)
+                p_code = line.party.code if line.party_id else line.entry.number
+                p_name = line.party.name if line.party_id else (line.description or line.entry.description or "Phải trả nhà cung cấp (TK 331)")
+                p_key = str(line.party_id or line.entry_id)
+                supplier_totals[p_key] = {
+                    "party_id": p_key,
+                    "party_code": p_code,
+                    "party_name": p_name,
+                    "total_balance": amt,
+                    "not_due_amount": amt,
+                    "overdue_amount": ZERO,
+                    "max_days_overdue": 0,
+                }
+                items_detail.append({
+                    "payable_id": str(line.id),
+                    "document_number": line.entry.number,
+                    "party_name": p_name,
+                    "due_date": None,
+                    "days_overdue": 0,
+                    "aging_bucket": "not_due",
+                    "open_balance": _quantize_money(amt),
+                })
 
     sorted_creditors = sorted(
         supplier_totals.values(),
@@ -2713,7 +2934,51 @@ def compute_dash_09_inventory(ctx: DashboardContext, top_n: int = 5) -> dict[str
     top_items_sorted = sorted(item_summary.values(), key=lambda x: x["inventory_value"], reverse=True)[:top_n]
     by_wh_sorted = sorted(wh_summary.values(), key=lambda x: x["total_value"], reverse=True)
 
-    has_data = bool(wh_item_balances) or bool(below_min_items)
+    if total_value == ZERO and not wh_item_balances and not below_min_items and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
+        gl_inv_rows = (
+            _filter_branches(
+                JournalLine.objects.filter(
+                    entry__company=ctx.company,
+                    entry__status="POSTED",
+                    entry__posting_date__lte=as_of,
+                ).filter(
+                    Q(account__code__startswith="152")
+                    | Q(account__code__startswith="153")
+                    | Q(account__code__startswith="155")
+                    | Q(account__code__startswith="156")
+                    | Q(account__code__startswith="157")
+                ),
+                "entry__branch_id",
+                ctx.effective_branch_ids,
+            )
+            .values("account__id", "account__code", "account__name")
+            .annotate(d=Sum("debit"), c=Sum("credit"))
+            .order_by("account__code")
+        )
+        for row in gl_inv_rows:
+            net_v = _to_decimal(row["d"]) - _to_decimal(row["c"])
+            if net_v > ZERO:
+                total_value += net_v
+                acc_code = str(row["account__code"])
+                acc_name = str(row["account__name"])
+                active_items.add(acc_code)
+                by_wh_sorted.append({
+                    "warehouse_id": str(row["account__id"]),
+                    "warehouse_code": f"TK {acc_code}",
+                    "warehouse_name": acc_name,
+                    "total_value": net_v,
+                    "item_count": 1,
+                })
+                top_items_sorted.append({
+                    "item_id": str(row["account__id"]),
+                    "item_code": f"TK {acc_code}",
+                    "item_name": acc_name,
+                    "uom_code": "VND",
+                    "quantity": Decimal("1"),
+                    "inventory_value": net_v,
+                })
+
+    has_data = bool(wh_item_balances) or bool(below_min_items) or total_value > ZERO
     return {
         "metric_code": "DASH-09",
         "name": "Tổng quan tồn kho",
@@ -3214,7 +3479,7 @@ def _latest_company_activity_ts(company: Company) -> datetime | None:
 
 
 def _build_cache_key(ctx: DashboardContext, widget_code: str) -> tuple[str, str, str]:
-    period_key = f"{ctx.period_type}:{ctx.from_date.isoformat()}:{ctx.to_date.isoformat()}:{ctx.as_of_date.isoformat()}:{ctx.comparison_mode}:{ctx.cash_flow_scope}"
+    period_key = f"{ctx.period_type}:{ctx.from_date.isoformat()}:{ctx.to_date.isoformat()}:{ctx.as_of_date.isoformat()}:{ctx.comparison_mode}:{ctx.cash_flow_scope}:{getattr(ctx, 'revenue_basis', 'GL')}"
     perm_sig = sorted(
         code for code in WIDGET_PERMISSION_ALIASES
         if is_widget_permitted(ctx, code)
@@ -3284,6 +3549,7 @@ def get_dashboard_config_payload(ctx: DashboardContext) -> dict[str, Any]:
             {
                 "id": str(p["id"]),
                 "code": p["code"],
+                "name": f"Tháng {int(p['period_number']):02d}/{p['fiscal_year']}",
                 "fiscal_year": p["fiscal_year"],
                 "period_number": p["period_number"],
                 "start_date": p["start_date"].isoformat(),

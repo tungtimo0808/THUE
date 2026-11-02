@@ -260,7 +260,7 @@ def tax_report(company, date_from, date_to, parameters):
 
 
 def management_report(company, date_from, date_to, parameters):
-    lines = _journal_lines(company, date_from, date_to, parameters)
+    lines = _journal_lines(company, date_from, date_to, parameters).exclude(entry__entry_type="CLOSING")
     grouped = lines.values("account__account_type").annotate(debit=Coalesce(Sum("debit"), Value(ZERO), output_field=MONEY), credit=Coalesce(Sum("credit"), Value(ZERO), output_field=MONEY))
     values = {item["account__account_type"]: item for item in grouped}
     revenue = values.get("REVENUE", {}).get("credit", ZERO) - values.get("REVENUE", {}).get("debit", ZERO)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Building2,
@@ -29,11 +29,13 @@ import {
   BarChart3,
   Receipt,
   BookOpen,
+  FileSpreadsheet,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import "./admin-workspaces.css";
 
@@ -158,7 +160,7 @@ const ROLE_RANK_MAP: Record<string, number> = {
 };
 
 const getMemberRank = (m: MemberItem): number => {
-  if (m.email === "tungtimo0808@gmail.com") return 1;
+  if (m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")) return 1;
   const assignments = m.role_assignments || [];
   let best = 999;
   for (const a of assignments) {
@@ -317,11 +319,24 @@ const translatePermissionCode = (code: string): { module: string; name: string; 
 };
 
 export default function CompanyAdminWorkspace() {
-  const { token, companyId, companies, restoring } = useApiSession();
+  const { token, companyId, companies, selectCompany, restoring } = useApiSession();
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [_loading, setLoading] = useState<boolean>(false);
-  const [alertMsg, setAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [alertMsg, setRawAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const setAlertMsg = (val: { type: "success" | "error"; text: string } | null) => {
+    if (!val) {
+      setRawAlertMsg(null);
+      return;
+    }
+    const cleanText = humanizeErrorMessage(val.text);
+    setRawAlertMsg({ type: val.type, text: cleanText });
+    showGlobalPopup({
+      type: val.type,
+      title: val.type === "error" ? "Thông báo lỗi" : "Lưu dữ liệu thành công",
+      message: cleanText,
+    });
+  };
 
   // Data states
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
@@ -366,6 +381,7 @@ export default function CompanyAdminWorkspace() {
     phone: "",
     department_id: "",
     position_id: "",
+    role_code: "KT_TRUONG",
   });
 
   const [showRoleModal, setShowRoleModal] = useState<boolean>(false);
@@ -375,10 +391,62 @@ export default function CompanyAdminWorkspace() {
     description: "",
   });
 
+  // Custom Company Switcher Popover state
+  const [switcherOpen, setSwitcherOpen] = useState<boolean>(false);
+  const [switcherSearch, setSwitcherSearch] = useState<string>("");
+  const switcherRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!switcherOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setSwitcherOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSwitcherOpen(false);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [switcherOpen]);
+
+  const filteredSwitcherCompanies = useMemo(() => {
+    const q = switcherSearch.trim().toLowerCase();
+    const activeId = companyId || companyInfo?.id;
+    const base = !q
+      ? [...companies]
+      : companies.filter(
+          (c) =>
+            c.name?.toLowerCase().includes(q) ||
+            c.code?.toLowerCase().includes(q) ||
+            c.tax_code?.toLowerCase().includes(q)
+        );
+    return base.sort((a, b) => {
+      if (a.id === activeId) return -1;
+      if (b.id === activeId) return 1;
+      return (a.name || "").localeCompare(b.name || "", "vi");
+    });
+  }, [companies, switcherSearch, companyId, companyInfo?.id]);
+
   // Load Initial Data (Fast essential load for Tab 1 & Tab 2)
   const loadWorkspaceData = async () => {
-    const effectiveToken = token || localStorage.getItem("erp_token") || "";
-    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || (companies.length > 0 ? companies[0].id : "");
+    const parsedSession = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("erp_api_session") || "{}");
+      } catch {
+        return {};
+      }
+    })();
+    const effectiveToken = token || localStorage.getItem("erp_token") || parsedSession.token || parsedSession.access || "";
+    const effectiveCompanyId =
+      companyId ||
+      localStorage.getItem("erp_company_id") ||
+      parsedSession.companyId ||
+      (companies.length > 0 ? companies[0].id : "");
     if (!effectiveToken || !effectiveCompanyId) return;
     setLoading(true);
     setAlertMsg(null);
@@ -558,27 +626,39 @@ export default function CompanyAdminWorkspace() {
     });
   };
 
-  // Create Employee
+  // Create Employee & Member Account
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !companyId) return;
     try {
-      await request(`/api/v1/organization/employees/?company_id=${companyId}`, token, {
+      const res: any = await request(`/api/v1/iam/members/create-staff/?company_id=${companyId}`, token, {
         method: "POST",
         body: JSON.stringify({
-          company: companyId,
+          company_id: companyId,
+          employee_code: employeeFormData.code.trim().toUpperCase(),
           code: employeeFormData.code.trim().toUpperCase(),
           full_name: employeeFormData.full_name.trim(),
           email: employeeFormData.email.trim(),
           phone: employeeFormData.phone.trim(),
-          department: employeeFormData.department_id || null,
-          position: employeeFormData.position_id || null,
-          status: "ACTIVE",
+          department_id: employeeFormData.department_id || null,
+          position_id: employeeFormData.position_id || null,
+          role_code: employeeFormData.role_code || "",
         }),
       });
-      setAlertMsg({ type: "success", text: `Đã thêm thành công nhân viên ${employeeFormData.full_name}.` });
+      setAlertMsg({
+        type: "success",
+        text: res.message || `Đã thêm thành công nhân viên ${employeeFormData.full_name}.`,
+      });
       setShowEmployeeModal(false);
-      setEmployeeFormData({ code: "", full_name: "", email: "", phone: "", department_id: "", position_id: "" });
+      setEmployeeFormData({
+        code: "",
+        full_name: "",
+        email: "",
+        phone: "",
+        department_id: "",
+        position_id: "",
+        role_code: "KT_TRUONG",
+      });
       loadWorkspaceData();
     } catch (err: any) {
       setAlertMsg({ type: "error", text: err.message || "Không thể tạo nhân viên mới." });
@@ -669,6 +749,21 @@ export default function CompanyAdminWorkspace() {
     }
   };
 
+  const ownerMember = useMemo(() => {
+    return (
+      members.find((m) =>
+        m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")
+      ) || members[0]
+    );
+  }, [members]);
+
+  const adminMembersCount = useMemo(() => {
+    return members.filter(
+      (m) =>
+        m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")
+    ).length;
+  }, [members]);
+
   // Filtered and sorted members for Tab 2 (sorted from HIGHEST rank to LOWEST rank)
   const filteredMembers = useMemo(() => {
     const list = members.filter((m) => {
@@ -682,7 +777,7 @@ export default function CompanyAdminWorkspace() {
 
       const isCompanyAdmin =
         m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN") ||
-        m.email === "tungtimo0808@gmail.com";
+        m.id === ownerMember?.id;
 
       const matchScope =
         memberScopeFilter === "all" ||
@@ -702,15 +797,7 @@ export default function CompanyAdminWorkspace() {
       if (rankA !== rankB) return rankA - rankB;
       return (a.full_name || a.email).localeCompare(b.full_name || b.email, "vi");
     });
-  }, [members, memberSearch, memberScopeFilter, memberRoleFilter]);
-
-  const adminMembersCount = useMemo(() => {
-    return members.filter(
-      (m) =>
-        m.email === "tungtimo0808@gmail.com" ||
-        m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")
-    ).length;
-  }, [members]);
+  }, [members, memberSearch, memberScopeFilter, memberRoleFilter, ownerMember]);
 
   if (restoring) {
     return (
@@ -728,9 +815,107 @@ export default function CompanyAdminWorkspace() {
       <header className="admin-header">
         <div className="admin-header-content">
           <div>
-            <div className="admin-header-title">
+            <div className="admin-header-title" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <Building2 size={24} />
               <h1>Quản trị Doanh nghiệp: {companyInfo?.name || "Đang tải..."}</h1>
+              {companies.length > 1 && (
+                <div className="admin-company-switcher" ref={switcherRef}>
+                  <button
+                    type="button"
+                    className={`admin-company-switcher-trigger ${switcherOpen ? "is-open" : ""}`}
+                    onClick={() => setSwitcherOpen((prev) => !prev)}
+                    title="Chuyển đổi nhanh doanh nghiệp đang quản trị"
+                  >
+                    <span className="admin-switcher-label">Chuyển DN</span>
+                    <span className="admin-switcher-code">{companyInfo?.code || companies[0]?.code}</span>
+                    <span className="admin-switcher-name">{companyInfo?.name || companies[0]?.name}</span>
+                    <ChevronDown size={14} className={`admin-switcher-chevron ${switcherOpen ? "is-open" : ""}`} />
+                  </button>
+
+                  {switcherOpen && (
+                    <div className="admin-company-switcher-popover">
+                      <div className="admin-switcher-popover-header">
+                        <span className="admin-switcher-popover-title">
+                          Chọn doanh nghiệp quản trị ({companies.length})
+                        </span>
+                        <Link
+                          to="/select-company"
+                          style={{ fontSize: 11.5, fontWeight: 600, color: "#0052cc", display: "inline-flex", alignItems: "center", gap: 4 }}
+                          onClick={() => setSwitcherOpen(false)}
+                        >
+                          Tất cả DN <ExternalLink size={11} />
+                        </Link>
+                      </div>
+
+                      {companies.length >= 2 && (
+                        <div className="admin-switcher-search-wrap">
+                          <Search size={14} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                          <input
+                            type="text"
+                            className="admin-switcher-search-input"
+                            placeholder="Tìm theo tên, mã DN hoặc MST..."
+                            value={switcherSearch}
+                            onChange={(e) => setSwitcherSearch(e.target.value)}
+                            autoFocus
+                          />
+                          {switcherSearch && (
+                            <button
+                              type="button"
+                              onClick={() => setSwitcherSearch("")}
+                              style={{ background: "none", border: "none", padding: 2, color: "#94a3b8", cursor: "pointer" }}
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="admin-switcher-list admin-custom-scroll">
+                        {filteredSwitcherCompanies.length === 0 ? (
+                          <div style={{ padding: "18px 12px", textAlign: "center", fontSize: 12.5, color: "#64748b" }}>
+                            Không tìm thấy doanh nghiệp phù hợp.
+                          </div>
+                        ) : (
+                          filteredSwitcherCompanies.map((c) => {
+                            const isCurrent = c.id === (companyId || companyInfo?.id);
+                            return (
+                              <button
+                                key={c.id}
+                                type="button"
+                                className={`admin-switcher-item ${isCurrent ? "is-active" : ""}`}
+                                onClick={() => {
+                                  setSwitcherOpen(false);
+                                  setSwitcherSearch("");
+                                  if (selectCompany && c.id !== companyId) {
+                                    selectCompany(c.id);
+                                  }
+                                }}
+                              >
+                                <div className="admin-switcher-item-icon">
+                                  <Building2 size={17} />
+                                </div>
+                                <div className="admin-switcher-item-body">
+                                  <div className="admin-switcher-item-name">{c.name}</div>
+                                  <div className="admin-switcher-item-meta">
+                                    <span className="admin-switcher-item-code">{c.code}</span>
+                                    <span>MST: {c.tax_code || "Chưa thiết lập"}</span>
+                                    <span style={{ color: "#10b981", fontWeight: 600 }}>• Hoạt động</span>
+                                  </div>
+                                </div>
+                                {isCurrent && (
+                                  <div className="admin-switcher-item-check" title="Đang chọn">
+                                    <Check size={13} strokeWidth={3} />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <span className="admin-badge admin-badge-active">
                 <CheckCircle2 size={12} /> {companyInfo?.status === "ACTIVE" || !companyInfo?.status ? "Hoạt động" : companyInfo?.status}
               </span>
@@ -738,11 +923,14 @@ export default function CompanyAdminWorkspace() {
             <div className="admin-header-subtitle">
               <span>Mã DN: <strong>{companyInfo?.code}</strong></span>
               <span>MST: <strong>{companyInfo?.tax_code || "Chưa thiết lập"}</strong></span>
-              <span>Đại diện: <strong>{companyInfo?.legal_representative || "Chưa có"}</strong></span>
+              <span>Chủ sở hữu (Admin): <strong>{ownerMember ? (ownerMember.full_name || ownerMember.email) : (companyInfo?.legal_representative || "Chưa gán")}</strong></span>
               <span>Chế độ: <strong>{formatAccountingRegime(companyInfo?.accounting_regime || "TT99")}</strong></span>
             </div>
           </div>
           <div className="admin-header-actions">
+            <Link to="/opening" className="admin-btn admin-btn-light" title="Khai báo số dư ban đầu cho doanh nghiệp này">
+              <FileSpreadsheet size={15} /> Số dư ban đầu
+            </Link>
             <button
               className="admin-btn admin-btn-light"
               onClick={handleSeedStandardRoles}
@@ -788,19 +976,8 @@ export default function CompanyAdminWorkspace() {
         </button>
       </nav>
 
-      {/* Alert Notification */}
+      {/* Alert Notification handled via GlobalFeedbackPopupHost */}
       <div className="admin-container">
-        {alertMsg && (
-          <div className={`admin-alert ${alertMsg.type === "success" ? "admin-alert-success" : "admin-alert-error"}`}>
-            <span>{alertMsg.text}</span>
-            <button
-              onClick={() => setAlertMsg(null)}
-              style={{ background: "none", border: "none", cursor: "pointer" }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
 
         {/* ================= TAB 1: OVERVIEW ================= */}
         {activeTab === "overview" && (
@@ -889,6 +1066,13 @@ export default function CompanyAdminWorkspace() {
                   </h3>
                 </div>
                 <div className="admin-card-body" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <Link
+                    to="/opening"
+                    className="admin-btn admin-btn-secondary"
+                    style={{ justifyContent: "flex-start", background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" }}
+                  >
+                    <FileSpreadsheet size={16} /> Khai báo & Đối chiếu Số dư ban đầu (Số dư độc lập của công ty)
+                  </Link>
                   <button
                     className="admin-btn admin-btn-secondary"
                     style={{ justifyContent: "flex-start" }}
@@ -1102,8 +1286,8 @@ export default function CompanyAdminWorkspace() {
                     ) : (
                       filteredMembers.map((m) => {
                         const isCompanyAdmin =
-                          m.email === "tungtimo0808@gmail.com" ||
-                          m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN");
+                          m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN") ||
+                          m.id === ownerMember?.id;
 
                         return (
                           <tr key={m.id} style={isCompanyAdmin ? { backgroundColor: "#fffbeb" } : undefined}>
@@ -1458,6 +1642,39 @@ export default function CompanyAdminWorkspace() {
         {activeTab === "config" && (
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+              {/* Opening Balances Control */}
+              <div className="admin-card">
+                <div className="admin-card-header">
+                  <h3>
+                    <FileSpreadsheet size={18} /> Số dư Ban đầu & Hạch toán Khởi tạo
+                  </h3>
+                  <Link to="/opening" className="admin-btn admin-btn-primary admin-btn-sm">
+                    Mở số dư đầu kỳ
+                  </Link>
+                </div>
+                <div className="admin-card-body">
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                    Khai báo và đối chiếu số dư ban đầu cho riêng doanh nghiệp <strong>{companyInfo?.name}</strong>. Dữ liệu số dư hoàn toàn biệt lập theo từng workspace.
+                  </p>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "0.85rem" }}>
+                    <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
+                      <span>Phạm vi lưu trữ:</span>
+                      <strong style={{ color: "var(--admin-primary)" }}>Workspace riêng biệt</strong>
+                    </li>
+                    <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
+                      <span>Kiểm soát cân đối:</span>
+                      <span className="admin-badge admin-badge-active">Chuẩn TT99/2025/TT-BTC</span>
+                    </li>
+                    <li style={{ padding: "0.5rem 0", display: "flex", justifyContent: "space-between" }}>
+                      <span>Thao tác trực tiếp:</span>
+                      <Link to="/opening" style={{ color: "var(--admin-primary)", textDecoration: "none", fontWeight: 600 }}>
+                        Vào trung tâm khai báo số dư &rarr;
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
               {/* Modules Control */}
               <div className="admin-card">
                 <div className="admin-card-header">
@@ -1682,6 +1899,21 @@ export default function CompanyAdminWorkspace() {
                     {positions.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="admin-form-group">
+                  <label>Vai trò Phân quyền Nghiệp vụ</label>
+                  <select
+                    className="admin-select"
+                    value={employeeFormData.role_code}
+                    onChange={(e) => setEmployeeFormData({ ...employeeFormData, role_code: e.target.value })}
+                  >
+                    <option value="">-- Chưa gán vai trò (Phân quyền sau) --</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.code}>
+                        {formatRoleDisplayName(r.code, r.name)}
                       </option>
                     ))}
                   </select>

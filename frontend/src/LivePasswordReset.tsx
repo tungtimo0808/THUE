@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { KeyRound, Lock, Mail } from "lucide-react";
+import { AuthField, AuthLayout, AuthSubmit } from "./AuthLayout";
 import { request } from "./live-api";
-import "./live-account.css";
+
+const STEPS = ["Nhập email", "Xác thực mã", "Mật khẩu mới"] as const;
+const STEP_ORDER = ["request", "verify", "change", "done"];
 
 export default function LivePasswordReset() {
   const [step, setStep] = useState<"request" | "verify" | "change" | "done">("request");
@@ -37,11 +41,8 @@ export default function LivePasswordReset() {
       if (result.challenge) setChallenge(result.challenge);
       if (result.dev_otp) setDevOtp(result.dev_otp);
       setMessage("Đã gửi lại mã xác thực đặt lại mật khẩu.");
-    } catch {
-      await request("/api/v1/common/auth/forgot-password/", undefined, {
-        method: "POST", body: JSON.stringify({ email: email.trim() }),
-      }).catch(() => {});
-      setMessage("Đã gửi lại yêu cầu xác thực.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không gửi lại được mã.");
     } finally { setBusy(false); }
   }
 
@@ -70,28 +71,41 @@ export default function LivePasswordReset() {
     finally { setBusy(false); }
   }
 
-  return <main className="account-page"><section className="account-card">
-    <Link to="/login">← Đăng nhập</Link>
-    <p className="account-eyebrow">COM-05</p>
-    <h1>Đặt lại mật khẩu</h1>
-    {error && <p className="account-error" role="alert">{error}</p>}
-    {message && <p className="account-message" role="status">{message}</p>}
-    {step === "request" && <form onSubmit={requestOtp}>
-      <label>Email tài khoản<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required /></label>
-      <button type="submit" disabled={busy}>Gửi mã xác thực</button>
-    </form>}
-    {step === "verify" && <form onSubmit={verify}>
-      <p>Nhập mã 6 số đã gửi đến email.</p>
-      {devOtp && <p className="account-dev-code">Mã kiểm thử trên BE local: <strong>{devOtp}</strong></p>}
-      <label>Mã xác thực<input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value)} autoComplete="one-time-code" required /></label>
-      <button type="submit" disabled={busy}>Xác nhận mã</button>
-      <button type="button" className="account-text-button" onClick={resendOtp} disabled={busy}>Gửi lại mã xác thực</button>
-    </form>}
-    {step === "change" && <form onSubmit={change}>
-      <label>Mật khẩu mới<input type="password" minLength={8} value={password} onChange={event => setPassword(event.target.value)} autoComplete="new-password" required /></label>
-      <label>Xác nhận mật khẩu mới<input type="password" minLength={8} value={confirm} onChange={event => setConfirm(event.target.value)} autoComplete="new-password" required /></label>
-      <button type="submit" disabled={busy}>Đặt lại mật khẩu</button>
-    </form>}
-    {step === "done" && <p>Đã đổi mật khẩu. <Link to="/login">Đăng nhập bằng mật khẩu mới</Link>.</p>}
-  </section></main>;
+  return (
+    <AuthLayout
+      title="Đặt lại mật khẩu"
+      subtitle={step === "request" ? "Nhập email đã đăng ký để nhận mã xác thực" : undefined}
+      error={error}
+      message={message}
+      steps={STEPS}
+      currentStep={STEP_ORDER.indexOf(step)}
+      footer={<><span>Đã nhớ mật khẩu?</span><Link to="/login">Đăng nhập</Link></>}
+    >
+      {step === "request" && (
+        <form onSubmit={requestOtp} className="auth-form">
+          <AuthField id="reset-email" label="Email tài khoản" icon={Mail} type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="name@company.com" autoComplete="email" required autoFocus />
+          <AuthSubmit busy={busy} busyLabel="Đang gửi mã…">Gửi mã xác thực</AuthSubmit>
+        </form>
+      )}
+      {step === "verify" && (
+        <>
+          <p className="auth-note">Nhập mã 6 số đã gửi đến email.</p>
+          {devOtp && <p className="account-dev-code">Mã kiểm thử trên BE local: <strong>{devOtp}</strong></p>}
+          <form onSubmit={verify} className="auth-form">
+            <AuthField id="reset-code" label="Mã xác thực" icon={KeyRound} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value)} autoComplete="one-time-code" required autoFocus />
+            <AuthSubmit busy={busy} busyLabel="Đang xác nhận…">Xác nhận mã</AuthSubmit>
+          </form>
+          <button type="button" className="auth-text-button" onClick={resendOtp} disabled={busy}>Gửi lại mã xác thực</button>
+        </>
+      )}
+      {step === "change" && (
+        <form onSubmit={change} className="auth-form">
+          <AuthField id="reset-password" label="Mật khẩu mới" icon={Lock} type="password" minLength={8} value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••" autoComplete="new-password" required autoFocus />
+          <AuthField id="reset-confirm" label="Xác nhận mật khẩu mới" icon={Lock} type="password" minLength={8} value={confirm} onChange={event => setConfirm(event.target.value)} placeholder="••••••••" autoComplete="new-password" required />
+          <AuthSubmit busy={busy} busyLabel="Đang đổi mật khẩu…">Đặt lại mật khẩu</AuthSubmit>
+        </form>
+      )}
+      {step === "done" && <p className="auth-note">Đã đổi mật khẩu. <Link to="/login">Đăng nhập bằng mật khẩu mới</Link>.</p>}
+    </AuthLayout>
+  );
 }

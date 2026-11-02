@@ -45,8 +45,8 @@ def _ensure_fiscal_year(company, actor, today):
     )
     if fiscal_year.status != FiscalYearStatus.ACTIVE:
         activate_fiscal_year(fiscal_year, actor, open_current_period=True)
-    # Vouchers dated earlier in the year must also be postable.
-    fiscal_year.periods.filter(start_date__lte=today, status=FiscalPeriodStatus.FUTURE).update(status=FiscalPeriodStatus.OPEN)
+    # Vouchers dated in any month of the active fiscal year must be postable out of the box.
+    fiscal_year.periods.filter(status=FiscalPeriodStatus.FUTURE).update(status=FiscalPeriodStatus.OPEN)
     return fiscal_year
 
 
@@ -117,6 +117,12 @@ def complete_company_setup(company, actor, request=None):
     _ensure_gl_periods(company, fiscal_year)
     if not Account.objects.filter(company=company).exists():
         init_chart_of_accounts_from_template(company, regime=company.accounting_regime, user=actor)
+    try:
+        from general_ledger.services import seed_default_closing_rules, seed_default_financial_statement_mappings
+        seed_default_closing_rules(company, actor)
+        seed_default_financial_statement_mappings(company, actor)
+    except Exception:
+        pass
     create_default_numbering_rules_for_company(company, actor)
     _ensure_tax_rates(company, today)
     _ensure_units(company)

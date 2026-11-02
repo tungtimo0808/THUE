@@ -27,6 +27,7 @@ from iam.models import (
 from iam.permissions import assignment_permission_codes, effective_assignments
 from master_data.models import Currency
 from organization.models import Branch, Company
+from reporting.statement_forms import attach_run_file
 from reporting.models import (
     CashEquivalentInstrument,
     CashFlowClassification,
@@ -92,6 +93,11 @@ def _strip_accents(text: str) -> str:
 #   mappings: list of (account_prefix, balance_side, sign, condition_dict)
 # )
 
+# Accounts already in the indirect working-capital lines (09, 11); their cash must not repeat in 16/17.
+WORKING_CAPITAL_PREFIXES = (
+    "131", "1331", "136", "138", "141", "244", "331", "3331", "3332", "3333", "3338", "334", "335", "338",
+)
+
 B03_DIRECT_27_LINES: list[tuple] = [
     # --- I. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG KINH DOANH (8 MÃ: 01..07, 20) ---
     (
@@ -147,7 +153,7 @@ B03_DIRECT_27_LINES: list[tuple] = [
     ),
     (
         "04",
-        "4. Chi phí đi vay đã trả",
+        "4. Tiền lãi vay đã trả",
         "OPERATING",
         "I. Lưu chuyển tiền từ hoạt động kinh doanh",
         "",
@@ -633,7 +639,7 @@ B03_INDIRECT_37_LINES: list[tuple] = [
     ),
     (
         "06",
-        "- Chi phí đi vay",
+        "- Chi phí lãi vay",
         "OPERATING",
         "I. Lưu chuyển tiền từ hoạt động kinh doanh",
         "VI.06",
@@ -730,7 +736,7 @@ B03_INDIRECT_37_LINES: list[tuple] = [
     ),
     (
         "12",
-        "- Tăng, giảm chi phí chờ phân bổ",
+        "- Tăng, giảm chi phí trả trước",
         "OPERATING",
         "I. Lưu chuyển tiền từ hoạt động kinh doanh",
         "",
@@ -1840,7 +1846,7 @@ def _classify_counterpart_for_cash_flow(
             return "01", None, "OPERATING", "CF-RULE-OP-01"
 
         if cp_code.startswith(("711", "138", "141", "244", "338", "353", "334")):
-            return "06", "16", "OPERATING", "CF-RULE-OP-06"
+            return "06", None if cp_code.startswith(WORKING_CAPITAL_PREFIXES) else "16", "OPERATING", "CF-RULE-OP-06"
 
         return None, None, "UNCLASSIFIED", "UNCLASSIFIED"
 
@@ -1900,7 +1906,7 @@ def _classify_counterpart_for_cash_flow(
             return "02", None, "OPERATING", "CF-RULE-OP-02"
 
         if cp_code.startswith(("811", "138", "141", "244", "333", "335", "338", "352", "353", "414", "418")):
-            return "07", "17", "OPERATING", "CF-RULE-OP-07"
+            return "07", None if cp_code.startswith(WORKING_CAPITAL_PREFIXES) else "17", "OPERATING", "CF-RULE-OP-07"
 
         return None, None, "UNCLASSIFIED", "UNCLASSIFIED"
 
@@ -5062,6 +5068,15 @@ def export_cash_flow_run(request, run_id: str) -> dict[str, Any]:
         "display_unit": d_unit,
         "run": run_header,
         "lines": lines_payload["lines"],
+        **attach_run_file(
+            {}, run, company, lines_payload["lines"], data, title="BÁO CÁO LƯU CHUYỂN TIỀN TỆ",
+            period=(
+                f"(Theo phương pháp {'gián tiếp' if run.cash_flow_method == 'INDIRECT' else 'trực tiếp'})"
+                f" - Năm {run.fiscal_year}"
+            ),
+            labels=("Năm nay", "Năm trước"),
+            keys=("raw_current_period_amount", "raw_comparative_period_amount"), export_format=export_format,
+        ),
         "summary": lines_payload["summary"],
         "signatures": {
             "preparer_title": "Người lập biểu",

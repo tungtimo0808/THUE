@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { request } from "./live-api";
+import { useApiSession } from "./ApiSession";
 import {
   ChevronLeft,
   Search,
@@ -139,17 +141,89 @@ export default function MisaTrialBalanceManagementReport({
     return "Tháng 10 năm 2026";
   }, []);
 
+  const { token, company } = useApiSession();
+  const [liveRows, setLiveRows] = useState<TrialBalanceAccountItem[] | null>(null);
+  const [liveLeafRows, setLiveLeafRows] = useState<TrialBalanceAccountItem[] | null>(null);
+
+  useEffect(() => {
+    if (!company?.id) return;
+    let cancelled = false;
+    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(company.id)}`, token)
+      .then((res) => {
+        if (cancelled) return;
+        const tb = Array.isArray(res?.trial_balance) ? res.trial_balance : [];
+        const mapped: TrialBalanceAccountItem[] = tb.map((r: any) => ({
+          code: String(r.accountNumber || ""),
+          name: String(r.accountName || ""),
+          openingDebit: Number(r.openDebit || 0),
+          openingCredit: Number(r.openCredit || 0),
+          periodDebit: Number(r.periodDebit || 0),
+          periodCredit: Number(r.periodCredit || 0),
+          accumDebit: Number(r.periodDebit || 0),
+          accumCredit: Number(r.periodCredit || 0),
+          closingDebit: Number(r.closeDebit || 0),
+          closingCredit: Number(r.closeCredit || 0),
+        }));
+        const leaves: TrialBalanceAccountItem[] = tb
+          .filter((r: any) => !r.isParent)
+          .map((r: any) => ({
+            code: String(r.accountNumber || ""),
+            name: String(r.accountName || ""),
+            openingDebit: Number(r.openDebit || 0),
+            openingCredit: Number(r.openCredit || 0),
+            periodDebit: Number(r.periodDebit || 0),
+            periodCredit: Number(r.periodCredit || 0),
+            accumDebit: Number(r.periodDebit || 0),
+            accumCredit: Number(r.periodCredit || 0),
+            closingDebit: Number(r.closeDebit || 0),
+            closingCredit: Number(r.closeCredit || 0),
+          }));
+        setLiveRows(mapped);
+        setLiveLeafRows(leaves);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [company?.id, token]);
+
+  const sourceRows = liveRows !== null ? liveRows : DEFAULT_TRIAL_BALANCE_DATA;
+
   // Filtered rows
   const filteredRows = useMemo(() => {
-    if (!searchKeyword.trim()) return DEFAULT_TRIAL_BALANCE_DATA;
+    if (!searchKeyword.trim()) return sourceRows;
     const kw = searchKeyword.toLowerCase();
-    return DEFAULT_TRIAL_BALANCE_DATA.filter(
+    return sourceRows.filter(
       (r) => r.code.toLowerCase().includes(kw) || r.name.toLowerCase().includes(kw)
     );
-  }, [searchKeyword]);
+  }, [searchKeyword, sourceRows]);
 
-  // Totals matching screenshot
+  // Totals matching screenshot or live leaf rows
   const totals = useMemo(() => {
+    if (liveLeafRows !== null) {
+      return liveLeafRows.reduce(
+        (acc, r) => ({
+          openingDebit: (acc.openingDebit || 0) + (r.openingDebit || 0),
+          openingCredit: (acc.openingCredit || 0) + (r.openingCredit || 0),
+          periodDebit: (acc.periodDebit || 0) + (r.periodDebit || 0),
+          periodCredit: (acc.periodCredit || 0) + (r.periodCredit || 0),
+          accumDebit: (acc.accumDebit || 0) + (r.accumDebit || 0),
+          accumCredit: (acc.accumCredit || 0) + (r.accumCredit || 0),
+          closingDebit: (acc.closingDebit || 0) + (r.closingDebit || 0),
+          closingCredit: (acc.closingCredit || 0) + (r.closingCredit || 0),
+        }),
+        {
+          openingDebit: 0,
+          openingCredit: 0,
+          periodDebit: 0,
+          periodCredit: 0,
+          accumDebit: 0,
+          accumCredit: 0,
+          closingDebit: 0,
+          closingCredit: 0,
+        }
+      );
+    }
     return {
       openingDebit: 0,
       openingCredit: 0,
@@ -160,7 +234,7 @@ export default function MisaTrialBalanceManagementReport({
       closingDebit: 37000000,
       closingCredit: 37000000,
     };
-  }, []);
+  }, [liveLeafRows]);
 
   const handleApplyParams = () => {
     setIsParamDrawerOpen(false);

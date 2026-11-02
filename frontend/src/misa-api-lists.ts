@@ -13,6 +13,33 @@ interface CacheEntry {
 
 const apiListCache = new Map<string, CacheEntry>();
 
+// Audit 2026-10-27 (P2): giới hạn số entry (LRU) và TTL để tab mở lâu không tích RAM vô hạn.
+const API_LIST_CACHE_MAX_ENTRIES = 60;
+const API_LIST_CACHE_TTL_MS = 10 * 60 * 1000;
+
+function cacheGet(cacheKey: string): CacheEntry | undefined {
+  const entry = apiListCache.get(cacheKey);
+  if (!entry) return undefined;
+  if (Date.now() - entry.timestamp > API_LIST_CACHE_TTL_MS) {
+    apiListCache.delete(cacheKey);
+    return undefined;
+  }
+  // Refresh LRU order.
+  apiListCache.delete(cacheKey);
+  apiListCache.set(cacheKey, entry);
+  return entry;
+}
+
+function cacheSet(cacheKey: string, data: ApiRow[]) {
+  apiListCache.delete(cacheKey);
+  apiListCache.set(cacheKey, { data, timestamp: Date.now() });
+  while (apiListCache.size > API_LIST_CACHE_MAX_ENTRIES) {
+    const oldestKey = apiListCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    apiListCache.delete(oldestKey);
+  }
+}
+
 const STATIC_CATALOG_PATTERNS = [
   "/general-ledger/accounts/",
   "/master-data/currencies/",
@@ -42,7 +69,7 @@ function getInitialRows(companyId: string, resources: Record<string, string>): R
   const result: Record<string, ApiRow[]> = {};
   for (const [name, path] of Object.entries(resources)) {
     const cacheKey = `${companyId}::${path}`;
-    const cached = apiListCache.get(cacheKey);
+    const cached = cacheGet(cacheKey);
     result[name] = cached ? cached.data : [];
   }
   return result;
@@ -77,24 +104,43 @@ export function useMisaApiLists(
     // Hydrate immediately from cache if available so switching tabs has 0ms delay!
     const cached = getInitialRows(companyId, resourceMap);
     setRows((prev) => {
-      const next: Record<string, ApiRow[]> = {};
+      let changed = false;
+      const next: Record<string, ApiRow[]> = { ...prev };
       for (const [name] of entries) {
-        next[name] = prev[name]?.length ? prev[name] : (cached[name] || []);
+        const nextVal = prev[name]?.length ? prev[name] : (cached[name] || []);
+        if (next[name] !== nextVal) {
+          next[name] = nextVal;
+          changed = true;
+        }
       }
-      return next;
+      return changed ? next : prev;
     });
 
-    // Revalidate each resource in background progressively
-    entries.forEach(async ([name, path]) => {
-      const separator = path.includes("?") ? "&" : "?";
-      let nextPath: string | null = `${path}${separator}company_id=${encodeURIComponent(companyId)}`;
-      if (!nextPath.includes("page_size=")) {
-        nextPath += "&page_size=100";
-      }
+    const FRESH_SW_WINDOW_MS = 60_000;
+    const entriesToFetch = entries.filter(([, path]) => {
+      if (revision > 0) return true;
+      const entry = apiListCache.get(`${companyId}::${path}`);
+      if (!entry) return true;
+      return Date.now() - entry.timestamp > FRESH_SW_WINDOW_MS;
+    });
 
-      const collected: ApiRow[] = [];
-      let pages = 0;
-      try {
+    if (entriesToFetch.length === 0) {
+      return () => {
+        active = false;
+      };
+    }
+
+    // Fetch needed resources in parallel and commit in ONE batched setRows call to avoid 8-12 cascading re-renders
+    void Promise.allSettled(
+      entriesToFetch.map(async ([name, path]) => {
+        const separator = path.includes("?") ? "&" : "?";
+        let nextPath: string | null = `${path}${separator}company_id=${encodeURIComponent(companyId)}`;
+        if (!nextPath.includes("page_size=")) {
+          nextPath += "&page_size=100";
+        }
+
+        const collected: ApiRow[] = [];
+        let pages = 0;
         while (nextPath && pages < 50) {
           if (!nextPath.includes("page_size=")) {
             nextPath += (nextPath.includes("?") ? "&" : "?") + "page_size=100";
@@ -106,25 +152,40 @@ export function useMisaApiLists(
           nextPath = `${nextUrl.pathname}${nextUrl.search}`;
           pages += 1;
         }
+        return { name, path, collected };
+      }),
+    ).then((results) => {
+      if (!active) return;
+      const batchUpdates: Record<string, ApiRow[]> = {};
+      let hasUpdates = false;
 
-        if (!active) return;
-        apiListCache.set(`${companyId}::${path}`, { data: collected, timestamp: Date.now() });
-        setRows((prev) => ({
-          ...prev,
-          [name]: collected,
-        }));
-      } catch (error) {
-        if (!active) return;
-        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-          // SEC-05: Evict cached data on auth failure or permission revocation
-          apiListCache.delete(`${companyId}::${path}`);
-          setRows((prev) => ({ ...prev, [name]: [] }));
+      for (let i = 0; i < results.length; i += 1) {
+        const res = results[i];
+        const [name, path] = entriesToFetch[i];
+        if (res.status === "fulfilled") {
+          cacheSet(`${companyId}::${path}`, res.value.collected);
+          batchUpdates[name] = res.value.collected;
+          hasUpdates = true;
         } else {
-          const hasData = (apiListCache.get(`${companyId}::${path}`)?.data.length ?? 0) > 0;
-          if (!hasData) {
-            notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);
+          const error = res.reason;
+          if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+            apiListCache.delete(`${companyId}::${path}`);
+            batchUpdates[name] = [];
+            hasUpdates = true;
+          } else {
+            const hasData = (apiListCache.get(`${companyId}::${path}`)?.data.length ?? 0) > 0;
+            if (!hasData) {
+              notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);
+            }
           }
         }
+      }
+
+      if (hasUpdates) {
+        setRows((prev) => ({
+          ...prev,
+          ...batchUpdates,
+        }));
       }
     });
 

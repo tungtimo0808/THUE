@@ -247,7 +247,7 @@ def run(data, request):
     if corrections:
         journal_total = sum((abs(value) for _line, _warehouse, value in corrections), ZERO)
         journal = JournalEntry.objects.create(company=company, period=period, number=f"TGXK-{str(run.pk)[:12]}",
-            entry_type="ADJUSTMENT", posting_date=period.end_date, document_date=period.end_date,
+            entry_type="SUBLEDGER", posting_date=period.end_date, document_date=period.end_date,
             description=f"Điều chỉnh giá xuất kho {period.code}", source_module="INV",
             source_event_id=f"INV.COST:{run.pk}", source_entity_type="ValuationRun", source_entity_id=run.pk,
             status="APPROVED", total_debit=journal_total, total_credit=journal_total,

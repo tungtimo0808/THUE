@@ -307,8 +307,10 @@ class CompanyBootstrapView(APIView):
             return Response({"message": "Vui lòng cung cấp mã số thuế để tra cứu."}, status=status.HTTP_400_BAD_REQUEST)
         import re
         clean_tax = re.sub(r"\s+", "", tax_code)
-        if not re.fullmatch(r"\d{10}(?:-\d{3})?", clean_tax):
-            raise drf_serializers.ValidationError({"tax_code": "Mã số thuế không đúng định dạng."})
+        if not re.fullmatch(r"\d{10}(?:-\d{3})?|\d{13}", clean_tax):
+            raise drf_serializers.ValidationError({
+                "tax_code": "Mã số thuế không đúng định dạng. Vui lòng nhập đúng 10 chữ số (hoặc 13 chữ số đối với chi nhánh, ví dụ: 0101234567)."
+            })
         existing = Company.objects.filter(tax_code=clean_tax).first()
         if existing:
             return Response({
@@ -354,11 +356,51 @@ class MyCompaniesView(APIView):
 
     @extend_schema(responses=CompanySummarySerializer(many=True))
     def get(self, request):
-        memberships = CompanyMembership.objects.filter(user=services.iam_user(request), membership_status=ActiveStatus.ACTIVE).select_related("company")
+        if request.user.is_superuser and request.user.username.lower() == "admin":
+            companies = Company.objects.all().order_by("name")
+            return Response([
+                {
+                    "id": str(x.id),
+                    "code": x.code,
+                    "name": x.name,
+                    "status": x.status,
+                    "tax_code": x.tax_code,
+                    "address": x.address,
+                    "accounting_regime": x.accounting_regime or "TT99",
+                    "business_type": x.business_type,
+                    "legal_representative": x.legal_representative,
+                    "representative_title": x.representative_title or "Giám đốc",
+                    "is_company_admin": True,
+                }
+                for x in companies
+            ])
+        account = services.iam_user(request)
+        memberships = (
+            CompanyMembership.objects.filter(user=account, membership_status=ActiveStatus.ACTIVE)
+            .select_related("company")
+            .prefetch_related("role_assignments__role")
+        )
         return Response([
             {
-                "id": str(x.company_id), "code": x.company.code,
-                "name": x.company.name, "status": x.company.status,
+                "id": str(x.company_id),
+                "code": x.company.code,
+                "name": x.company.name,
+                "status": x.company.status,
+                "tax_code": x.company.tax_code,
+                "address": x.company.address,
+                "accounting_regime": x.company.accounting_regime or "TT99",
+                "business_type": x.company.business_type,
+                "legal_representative": x.company.legal_representative,
+                "representative_title": x.company.representative_title or "Giám đốc",
+                "is_company_admin": (
+                    x.company.created_by_user_id == account.id
+                    or any(
+                        ra.status == ActiveStatus.ACTIVE
+                        and ra.role
+                        and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                        for ra in x.role_assignments.all()
+                    )
+                ),
             }
             for x in memberships
         ])

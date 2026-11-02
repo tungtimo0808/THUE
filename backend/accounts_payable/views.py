@@ -24,6 +24,9 @@ class BaseViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         if not company_id: return super().get_queryset().none()
         qs = super().get_queryset().filter(company_id=company_id)
         if value := self.request.query_params.get("status"): qs = qs.filter(status=value)
+        if branch_id := self.request.query_params.get("branch_id"):
+            if any(field.name == "branch" for field in qs.model._meta.fields):
+                qs = qs.filter(branch_id=branch_id)
         return qs
     def perform_create(self, serializer):
         obj = serializer.save(created_by=services.actor(self.request)); services.audit(self.request, obj, "CREATE", after=serializer.data)
@@ -348,7 +351,9 @@ class PaymentViewSet(BaseViewSet):
         return qs
 
     def create(self, request, *args, **kwargs):
-        if "action" not in request.data and ("external_type" in request.data or "payment_method_config" in request.data) and "payment_method" not in request.data:
+        # Only bank/cash imports (external_type) may create a confirmed payment directly;
+        # every other payment goes through a payment request.
+        if "action" not in request.data and "external_type" in request.data and "payment_method" not in request.data:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             config = serializer.validated_data.get("payment_method_config")

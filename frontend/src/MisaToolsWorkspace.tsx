@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import {
   Search,
   Plus,
@@ -35,6 +36,7 @@ import {
 import { formatVND } from "./MisaPurchaseModals";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
+  createApiWriter,
   calculateAllocationVoucherUc12,
   cancelPrepaidDecreaseUc14,
   cancelToolDecreaseUc14,
@@ -75,6 +77,8 @@ import {
   validateAllocationVoucherUc11,
   validateToolStocktakeDateUc15,
 } from "./misa-api-writes";
+import { useApiSession } from "./ApiSession";
+import { request } from "./live-api";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 
 export type MisaToolsWorkspaceProps = {
@@ -667,6 +671,8 @@ export default function MisaToolsWorkspace({
     toolCounts: "/api/v1/fixed-assets/counts/?asset_type=TOOL",
   }, notify);
   const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
+  const { token: apiToken } = useApiSession();
+  const writer = createApiWriter(_company.id, (path, init) => request(path, apiToken, init));
   const toolsData = apiConnected ? (apiRows.assets || []).filter((row) => row.asset_type === "TOOL").map((row) => ({
     code: row.code, name: row.name, category: row.category_name || "", dept: row.department_name || "",
     qty: apiNumber(row.quantity), originalCost: apiNumber(row.original_cost), allocatedAmount: apiNumber(row.allocated_value),
@@ -961,14 +967,15 @@ export default function MisaToolsWorkspace({
           year: nextYear,
           voucherNo: allocationVoucherNo,
         });
-        setToolAllocIdentifyRows(res.identify_rows || []);
-        setToolAllocDetailRows(res.allocation_rows || []);
-        setToolAllocAccountingRows(res.accounting_rows || []);
-        setToolAllocTotalAmount(Number(res.total_amount || 0));
-        setToolAllocEmptyWarning(res.empty_period_warning || "");
-        if (res.posting_date) setAllocationPostingDate(res.posting_date);
-        if (res.voucher_date) setAllocationVoucherDate(res.voucher_date);
-        if (res.description) setAllocationReason(res.description);
+        const data = res.record;
+        setToolAllocIdentifyRows(data.identify_rows || []);
+        setToolAllocDetailRows(data.allocation_rows || []);
+        setToolAllocAccountingRows(data.accounting_rows || []);
+        setToolAllocTotalAmount(Number(data.total_amount || 0));
+        setToolAllocEmptyWarning(data.empty_period_warning || "");
+        if (data.posting_date) setAllocationPostingDate(data.posting_date);
+        if (data.voucher_date) setAllocationVoucherDate(data.voucher_date);
+        if (data.description) setAllocationReason(data.description);
         return { message: res.message || "" };
       });
     }
@@ -995,14 +1002,15 @@ export default function MisaToolsWorkspace({
           year: nextYear,
           voucherNo: prepaidAllocVoucherNo,
         });
-        setPrepaidAllocIdentifyRows(res.identify_rows || []);
-        setPrepaidAllocDetailRows(res.allocation_rows || []);
-        setPrepaidAllocAccountingRows(res.accounting_rows || []);
-        setPrepaidAllocTotalAmount(Number(res.total_amount || 0));
-        setPrepaidAllocEmptyWarning(res.empty_period_warning || "");
-        if (res.posting_date) setPrepaidAllocPostingDate(res.posting_date);
-        if (res.voucher_date) setPrepaidAllocVoucherDate(res.voucher_date);
-        if (res.description) setPrepaidAllocReason(res.description);
+        const data = res.record;
+        setPrepaidAllocIdentifyRows(data.identify_rows || []);
+        setPrepaidAllocDetailRows(data.allocation_rows || []);
+        setPrepaidAllocAccountingRows(data.accounting_rows || []);
+        setPrepaidAllocTotalAmount(Number(data.total_amount || 0));
+        setPrepaidAllocEmptyWarning(data.empty_period_warning || "");
+        if (data.posting_date) setPrepaidAllocPostingDate(data.posting_date);
+        if (data.voucher_date) setPrepaidAllocVoucherDate(data.voucher_date);
+        if (data.description) setPrepaidAllocReason(data.description);
         return { message: res.message || "" };
       });
     }
@@ -3661,30 +3669,33 @@ export default function MisaToolsWorkspace({
                     notify("Năm phân bổ không hợp lệ.");
                     return;
                   }
-                  if (apiConnected) {
-                    void apiSave(async (writer) => {
-                      const res = await setupAllocationPeriodUc11(writer, {
-                        allocationType: "TOOL",
-                        month: allocationMonth,
-                        year: allocationYear,
+                  if (apiConnected && writer) {
+                    void setupAllocationPeriodUc11(writer, {
+                      allocationType: "TOOL",
+                      month: allocationMonth,
+                      year: allocationYear,
+                    })
+                      .then((res) => {
+                        const data = res.record;
+                        setShowSelectPeriodModal(false);
+                        setAllocationVoucherNo(data.voucher_no || `PBCC${String(allocationVouchers.length + 1).padStart(5, "0")}`);
+                        setAllocationPostingDate(data.posting_date);
+                        setAllocationVoucherDate(data.voucher_date);
+                        setAllocationReason(data.description || `Phân bổ chi phí CCDC tháng ${allocationMonth} năm ${allocationYear}`);
+                        setToolAllocIdentifyRows(data.identify_rows || []);
+                        setToolAllocDetailRows(data.allocation_rows || []);
+                        setToolAllocAccountingRows(data.accounting_rows || []);
+                        setToolAllocTotalAmount(Number(data.total_amount || 0));
+                        setToolAllocEmptyWarning(data.empty_period_warning || "");
+                        setAllocationVoucherTab("identify");
+                        setShowAllocationVoucherModal(true);
+                        if (data.empty_period_warning) {
+                          notify(data.empty_period_warning);
+                        }
+                      })
+                      .catch((err) => {
+                        notify(err instanceof Error ? err.message : "Không thể kiểm tra điều kiện kỳ phân bổ. Vui lòng thử lại.");
                       });
-                      setShowSelectPeriodModal(false);
-                      setAllocationVoucherNo(res.proposedVoucherNo || `PBCC${String(allocationVouchers.length + 1).padStart(5, "0")}`);
-                      setAllocationPostingDate(res.postingDateDisplay);
-                      setAllocationVoucherDate(res.voucherDateDisplay);
-                      setAllocationReason(res.description || `Phân bổ chi phí CCDC tháng ${allocationMonth} năm ${allocationYear}`);
-                      setToolAllocIdentifyRows(res.identifyRows || []);
-                      setToolAllocDetailRows(res.allocationRows || []);
-                      setToolAllocAccountingRows(res.accountingRows || []);
-                      setToolAllocTotalAmount(Number(res.totalAllocationAmount || 0));
-                      setToolAllocEmptyWarning(res.emptySourceWarning || "");
-                      setAllocationVoucherTab("identify");
-                      setShowAllocationVoucherModal(true);
-                      if (res.emptySourceWarning) {
-                        notify(res.emptySourceWarning);
-                      }
-                      return { message: res.message || "" };
-                    });
                     return;
                   }
                   setShowSelectPeriodModal(false);
@@ -4365,7 +4376,7 @@ export default function MisaToolsWorkspace({
                         voucherNo: allocationVoucherNo,
                         identifyRows: toolAllocIdentifyRows,
                       });
-                      return { message: res.message || `Xuất bảng phân bổ ra Excel thành công (${(res as any).file_name || "Bang_Phan_Bo_CCDC.xlsx"}).` };
+                      return { message: res.message || `Xuất bảng phân bổ ra Excel thành công (${res.record?.file_name || "Bang_Phan_Bo_CCDC.xlsx"}).` };
                     });
                     return;
                   }
@@ -7489,9 +7500,9 @@ export default function MisaToolsWorkspace({
                   onClick={() => {
                     const selectedItems = refVoucherList.filter((rv) => refVoucherSelectedNos.includes(rv.voucherNo));
                     if (refVoucherContext === "ALLOC_CCDC") {
-                      setToolAllocReferences(selectedItems.map((rv) => ({ voucherNo: rv.voucherNo, voucherDate: rv.voucherDate, voucherType: rv.voucherType || "Chứng từ gốc", description: rv.description, amount: (rv as any).amount || 0 })));
+                      setToolAllocReferences(selectedItems.map((rv) => ({ voucherNo: rv.voucherNo, voucherDate: rv.voucherDate, voucherType: rv.voucherType || "Chứng từ gốc", description: rv.description, amount: rv.amount })));
                     } else if (refVoucherContext === "ALLOC_PREPAID") {
-                      setPrepaidAllocReferences(selectedItems.map((rv) => ({ voucherNo: rv.voucherNo, voucherDate: rv.voucherDate, voucherType: rv.voucherType || "Chứng từ gốc", description: rv.description, amount: (rv as any).amount || 0 })));
+                      setPrepaidAllocReferences(selectedItems.map((rv) => ({ voucherNo: rv.voucherNo, voucherDate: rv.voucherDate, voucherType: rv.voucherType || "Chứng từ gốc", description: rv.description, amount: rv.amount })));
                     } else if (refVoucherContext === "DEC_CCDC" && selectedItems.length > 0) {
                       setDecreaseReason((prev) => `${prev} (Tham chiếu: ${selectedItems.map((x) => x.voucherNo).join(", ")})`);
                     } else if (selectedItems.length > 0) {
@@ -11662,30 +11673,33 @@ export default function MisaToolsWorkspace({
                       notify("Năm phân bổ không hợp lệ.");
                       return;
                     }
-                    if (apiConnected) {
-                      void apiSave(async (writer) => {
-                        const res = await setupAllocationPeriodUc11(writer, {
-                          allocationType: "PREPAID",
-                          month: prepaidAllocMonth,
-                          year: prepaidAllocYear,
+                    if (apiConnected && writer) {
+                      void setupAllocationPeriodUc11(writer, {
+                        allocationType: "PREPAID",
+                        month: prepaidAllocMonth,
+                        year: prepaidAllocYear,
+                      })
+                        .then((res) => {
+                          const data = res.record;
+                          setShowPrepaidDateModal(false);
+                          setPrepaidAllocVoucherNo(data.voucher_no || `PBCP${String(prepaidAllocVouchers.length + 1).padStart(5, "0")}`);
+                          setPrepaidAllocPostingDate(data.posting_date);
+                          setPrepaidAllocVoucherDate(data.voucher_date);
+                          setPrepaidAllocReason(data.description || `Phân bổ chi phí trả trước tháng ${prepaidAllocMonth} năm ${prepaidAllocYear}`);
+                          setPrepaidAllocIdentifyRows(data.identify_rows || []);
+                          setPrepaidAllocDetailRows(data.allocation_rows || []);
+                          setPrepaidAllocAccountingRows(data.accounting_rows || []);
+                          setPrepaidAllocTotalAmount(Number(data.total_amount || 0));
+                          setPrepaidAllocEmptyWarning(data.empty_period_warning || "");
+                          setPrepaidAllocTab("identify");
+                          setShowPrepaidAllocVoucherModal(true);
+                          if (data.empty_period_warning) {
+                            notify(data.empty_period_warning);
+                          }
+                        })
+                        .catch((err) => {
+                          notify(err instanceof Error ? err.message : "Không thể kiểm tra điều kiện kỳ phân bổ. Vui lòng thử lại.");
                         });
-                        setShowPrepaidDateModal(false);
-                        setPrepaidAllocVoucherNo(res.proposedVoucherNo || `PBCP${String(prepaidAllocVouchers.length + 1).padStart(5, "0")}`);
-                        setPrepaidAllocPostingDate(res.postingDateDisplay);
-                        setPrepaidAllocVoucherDate(res.voucherDateDisplay);
-                        setPrepaidAllocReason(res.description || `Phân bổ chi phí trả trước tháng ${prepaidAllocMonth} năm ${prepaidAllocYear}`);
-                        setPrepaidAllocIdentifyRows(res.identifyRows || []);
-                        setPrepaidAllocDetailRows(res.allocationRows || []);
-                        setPrepaidAllocAccountingRows(res.accountingRows || []);
-                        setPrepaidAllocTotalAmount(Number(res.totalAllocationAmount || 0));
-                        setPrepaidAllocEmptyWarning(res.emptySourceWarning || "");
-                        setPrepaidAllocTab("identify");
-                        setShowPrepaidAllocVoucherModal(true);
-                        if (res.emptySourceWarning) {
-                          notify(res.emptySourceWarning);
-                        }
-                        return { message: res.message || "" };
-                      });
                       return;
                     }
                     setShowPrepaidDateModal(false);
@@ -12347,12 +12361,41 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 22px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
                 >Lưu</button>
-                <button
-                  type="button"
-                  onClick={() => {
+                <MisaSaveSplitButton
+                  defaultMode="save_and_add"
+                  showPrint={false}
+                  height={32}
+                  onSaveAndClose={() => {
                     if (apiConnected) {
                       void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows, sourceDocs: form1SourceDocs }, false))
                         .then((saved) => { if (saved) setShowPrepaidItemModal(false); });
+                      return;
+                    }
+                    const newItem = {
+                      code: form1Code,
+                      name: form1Name || "Chi phí trả trước mới",
+                      totalAmount: form1Amount,
+                      allocationMonths: form1AllocMonths,
+                      allocatedAmount: 0,
+                      remainingAmount: form1Amount,
+                      costAccount: form1Rows[0]?.costAccount || "6422",
+                      dept: form1Rows[0]?.targetName || "Khối Văn phòng",
+                      startDate: form1StartDate,
+                    };
+                    setPrepaidExpensesList([newItem, ...prepaidExpensesList.filter((x) => x.code !== form1Code)]);
+                    setShowPrepaidItemModal(false);
+                    notify(`Đã lưu chi phí trả trước ${form1Code} thành công.`);
+                  }}
+                  onSaveAndAdd={() => {
+                    if (apiConnected) {
+                      void apiSave((writer) => savePrepaidExpense(writer, { code: form1Code, name: form1Name, allocMonths: form1AllocMonths, startDate: form1StartDate, recordDate: form1RecordDate, amount: form1Amount, waitingAcc: form1WaitingAcc, stopAlloc: form1StopAlloc, rows: form1Rows, sourceDocs: form1SourceDocs }, false))
+                        .then((saved) => {
+                          if (saved) {
+                            setForm1Code(`CPTT00${prepaidExpensesList.length + 2}`);
+                            setForm1Name("");
+                            setForm1Amount(0);
+                          }
+                        });
                       return;
                     }
                     const newItem = {
@@ -12372,10 +12415,7 @@ export default function MisaToolsWorkspace({
                     setForm1Amount(0);
                     notify(`Đã lưu chi phí trả trước ${form1Code} và mở biểu mẫu thêm mới`);
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
-                >
-                  Lưu và Thêm
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -13624,7 +13664,7 @@ export default function MisaToolsWorkspace({
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
                           {prepaidAllocAttachments.map((att, idx) => (
                             <span
-                              key={`${(att as any).fileName || (att as any).file_name}-${idx}`}
+                              key={`${att.file_name}-${idx}`}
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -13638,8 +13678,8 @@ export default function MisaToolsWorkspace({
                               }}
                             >
                               <Paperclip size={12} style={{ color: "#0284c7" }} />
-                              <span>{(att as any).fileName || (att as any).file_name}</span>
-                              <span style={{ color: "#94a3b8", fontSize: 11 }}>({Math.ceil(((att as any).fileSize || (att as any).file_size || 0) / 1024)} KB)</span>
+                              <span>{att.file_name}</span>
+                              <span style={{ color: "#94a3b8", fontSize: 11 }}>({Math.ceil(att.file_size / 1024)} KB)</span>
                               <X
                                 size={12}
                                 style={{ cursor: "pointer", color: "#ef4444" }}
@@ -13830,8 +13870,8 @@ export default function MisaToolsWorkspace({
                             description: r.description,
                           })),
                           attachments: prepaidAllocAttachments.map((a) => ({
-                            file_name: (a as any).fileName || (a as any).file_name,
-                            file_size: (a as any).fileSize || (a as any).file_size,
+                            file_name: a.file_name,
+                            file_size: a.file_size,
                           })),
                           printAfterSave: true,
                         });
@@ -13920,8 +13960,8 @@ export default function MisaToolsWorkspace({
                             description: r.description,
                           })),
                           attachments: prepaidAllocAttachments.map((a) => ({
-                            file_name: (a as any).fileName || (a as any).file_name,
-                            file_size: (a as any).fileSize || (a as any).file_size,
+                            file_name: a.file_name,
+                            file_size: a.file_size,
                           })),
                           printAfterSave: false,
                         });
@@ -13967,7 +14007,7 @@ export default function MisaToolsWorkspace({
                           voucherNo: prepaidAllocVoucherNo,
                           identifyRows: prepaidAllocIdentifyRows,
                         });
-                        return { message: res.message || `Đã xuất khẩu ${(res as any).file_name || "Bang_Phan_Bo_CPTT.xlsx"}` };
+                        return { message: res.message || `Đã xuất khẩu ${res.record?.file_name || "Bang_Phan_Bo_CPTT.xlsx"}` };
                       });
                       return;
                     }
@@ -14407,9 +14447,10 @@ export default function MisaToolsWorkspace({
                   }}
                   style={{ height: 32, padding: "0 20px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer" }}
                 >Lưu</button>
-                <button
-                  type="button"
-                  onClick={() => {
+                <MisaSaveSplitButton
+                  defaultMode="save_and_close"
+                  height={32}
+                  onSaveAndClose={() => {
                     if (apiConnected) {
                       void apiSave((writer) => savePrepaidDecreaseUc14(writer, {
                         voucherNo: prepaidDecreaseVoucherNo,
@@ -14454,11 +14495,10 @@ export default function MisaToolsWorkspace({
                     setPrepaidDecreaseViewMode("list");
                     notify(`Đã lưu chứng từ ghi giảm chi phí trả trước ${prepaidDecreaseVoucherNo} thành công.`);
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-                >
-                  <span>Lưu và Đóng</span>
-                  <ChevronDown size={14} />
-                </button>
+                  onSaveAndAdd={() => {
+                    notify(`Đã lưu chứng từ ghi giảm chi phí trả trước ${prepaidDecreaseVoucherNo} và mở thêm mới.`);
+                  }}
+                />
               </div>
             </div>
           </div>

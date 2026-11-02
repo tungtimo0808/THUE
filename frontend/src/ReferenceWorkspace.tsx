@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition, memo, type ReactNode } from "react";
+import { GlobalFeedbackPopupHost, showGlobalPopup, classifyNoticeType, humanizeErrorMessage } from "./global-popup";
 import {
   BrowserRouter,
   Navigate,
@@ -50,6 +51,7 @@ import {
   type Transaction,
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
+import { MisaSystemUtilitiesModal } from "./MisaSystemUtilitiesModal";
 import {
   referenceNav,
   referenceTabHierarchy,
@@ -74,29 +76,45 @@ import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
 import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
+import type { ComponentType } from "react";
+
+function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return lazy(() =>
+    factory().catch((err) => {
+      const key = "sv_chunk_reload_ts";
+      const last = Number(sessionStorage.getItem(key) || "0");
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+      }
+      throw err;
+    })
+  );
+}
+
+const CompanyAdminWorkspace = lazyWithRetry(() => import("./CompanyAdminWorkspace"));
+const SuperAdminWorkspace = lazyWithRetry(() => import("./SuperAdminWorkspace"));
 
 // Code-split heavy workspace modules for instant initial load (sub-second cold start)
-const MisaCashWorkspace = lazy(() => import("./MisaCashWorkspace"));
-const MisaBankWorkspace = lazy(() => import("./MisaBankWorkspace"));
-const MisaPurchaseWorkspace = lazy(() => import("./MisaPurchaseWorkspace"));
-const MisaSupplierRiskWorkspace = lazy(() => import("./MisaSupplierRiskWorkspace"));
-const MisaSalesWorkspace = lazy(() => import("./MisaSalesWorkspace"));
-const MisaInventoryWorkspace = lazy(() => import("./MisaInventoryWorkspace"));
-const MisaToolsWorkspace = lazy(() => import("./MisaToolsWorkspace"));
-const MisaAssetsWorkspace = lazy(() => import("./MisaAssetsWorkspace"));
-const MisaPayrollWorkspace = lazy(() => import("./MisaPayrollWorkspace"));
-const MisaTaxWorkspace = lazy(() => import("./MisaTaxWorkspace"));
-const MisaCostWorkspace = lazy(() => import("./MisaCostWorkspace"));
-const MisaLedgerWorkspace = lazy(() => import("./MisaLedgerWorkspace"));
-const MisaBudgetWorkspace = lazy(() => import("./MisaBudgetWorkspace"));
-const MisaReportCenterWorkspace = lazy(() => import("./MisaReportCenterWorkspace"));
-const MisaFinancialAnalysisWorkspace = lazy(() => import("./MisaFinancialAnalysisWorkspace"));
-const MisaOpeningBalanceWorkspace = lazy(() => import("./MisaOpeningBalanceWorkspace"));
-const MisaDashboardOverview = lazy(() => import("./MisaDashboardOverview"));
-const MisaInvoiceWorkspace = lazy(() => import("./MisaInvoiceWorkspace"));
-const InvoiceLookupWorkspace = lazy(() => import("./InvoiceLookupWorkspace"));
-const CompanyAdminWorkspace = lazy(() => import("./CompanyAdminWorkspace"));
-const SuperAdminWorkspace = lazy(() => import("./SuperAdminWorkspace"));
+const MisaCashWorkspace = lazyWithRetry(() => import("./MisaCashWorkspace"));
+const MisaBankWorkspace = lazyWithRetry(() => import("./MisaBankWorkspace"));
+const MisaPurchaseWorkspace = lazyWithRetry(() => import("./MisaPurchaseWorkspace"));
+const MisaSupplierRiskWorkspace = lazyWithRetry(() => import("./MisaSupplierRiskWorkspace"));
+const MisaSalesWorkspace = lazyWithRetry(() => import("./MisaSalesWorkspace"));
+const MisaInventoryWorkspace = lazyWithRetry(() => import("./MisaInventoryWorkspace"));
+const MisaToolsWorkspace = lazyWithRetry(() => import("./MisaToolsWorkspace"));
+const MisaAssetsWorkspace = lazyWithRetry(() => import("./MisaAssetsWorkspace"));
+const MisaPayrollWorkspace = lazyWithRetry(() => import("./MisaPayrollWorkspace"));
+const MisaTaxWorkspace = lazyWithRetry(() => import("./MisaTaxWorkspace"));
+const MisaCostWorkspace = lazyWithRetry(() => import("./MisaCostWorkspace"));
+const MisaLedgerWorkspace = lazyWithRetry(() => import("./MisaLedgerWorkspace"));
+const MisaBudgetWorkspace = lazyWithRetry(() => import("./MisaBudgetWorkspace"));
+const MisaReportCenterWorkspace = lazyWithRetry(() => import("./MisaReportCenterWorkspace"));
+const MisaFinancialAnalysisWorkspace = lazyWithRetry(() => import("./MisaFinancialAnalysisWorkspace"));
+const MisaOpeningBalanceWorkspace = lazyWithRetry(() => import("./MisaOpeningBalanceWorkspace"));
+const MisaDashboardOverview = lazyWithRetry(() => import("./MisaDashboardOverview"));
+const MisaInvoiceWorkspace = lazyWithRetry(() => import("./MisaInvoiceWorkspace"));
+const InvoiceLookupWorkspace = lazyWithRetry(() => import("./InvoiceLookupWorkspace"));
 
 const WorkspaceLoader = () => (
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 360, gap: 12, width: "100%" }}>
@@ -104,6 +122,50 @@ const WorkspaceLoader = () => (
     <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải dữ liệu phân hệ...</span>
     <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
   </div>
+);
+
+const KeepAliveModuleSlot = memo(
+  function KeepAliveModuleSlot({
+    isCurrent,
+    renderContent,
+  }: {
+    mId: string;
+    isCurrent: boolean;
+    activeTab: string;
+    companyId: string;
+    period: string;
+    childTab: string | null;
+    directoryParam: string | null;
+    payrollOption: string;
+    renderContent: () => ReactNode;
+  }) {
+    return (
+      <div
+        style={
+          isCurrent
+            ? { display: "contents" }
+            : { display: "none", contentVisibility: "hidden", contain: "layout style paint" }
+        }
+        aria-hidden={!isCurrent}
+      >
+        <Suspense fallback={<WorkspaceLoader />}>{renderContent()}</Suspense>
+      </div>
+    );
+  },
+  (prev, next) => {
+    if (!prev.isCurrent && !next.isCurrent) {
+      return prev.companyId === next.companyId && prev.period === next.period;
+    }
+    return (
+      prev.isCurrent === next.isCurrent &&
+      prev.activeTab === next.activeTab &&
+      prev.companyId === next.companyId &&
+      prev.period === next.period &&
+      prev.childTab === next.childTab &&
+      prev.directoryParam === next.directoryParam &&
+      prev.payrollOption === next.payrollOption
+    );
+  },
 );
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
@@ -141,7 +203,7 @@ import LiveItemCategories from "./LiveItemCategories";
 import LiveUoms from "./LiveUoms";
 import LiveWarehouses from "./LiveWarehouses";
 import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
-import LiveAccounts from "./LiveAccounts";
+import LiveAccounts from "./AccountCatalogWorkspace";
 import LiveCatalogExtensions from "./LiveCatalogExtensions";
 import { MisaModuleApiExtensionPanel, MODULE_EXTENDED_APIS } from "./MisaModuleApiExtensionDrawer";
 import { request } from "./live-api";
@@ -157,49 +219,49 @@ export type ReferenceHref = (
 
 const quickCreateGroups: {
   title: string;
-  items: { label: string; kind?: Kind }[];
+  items: { label: string; kind?: Kind; path: string }[];
 }[] = [
     {
       title: "TIỀN MẶT",
       items: [
-        { label: "Thu tiền mặt", kind: "receipt" },
-        { label: "Chi tiền mặt", kind: "payment" },
+        { label: "Thu tiền mặt", kind: "receipt", path: "/cash/transactions" },
+        { label: "Chi tiền mặt", kind: "payment", path: "/cash/transactions" },
       ],
     },
     {
       title: "TIỀN GỬI",
       items: [
-        { label: "Thu tiền gửi", kind: "bank" },
-        { label: "Chi tiền gửi", kind: "payment" },
+        { label: "Thu tiền gửi", kind: "bank", path: "/bank/transactions" },
+        { label: "Chi tiền gửi", kind: "payment", path: "/bank/transactions" },
       ],
     },
     {
       title: "KHO",
       items: [
-        { label: "Nhập kho" },
-        { label: "Xuất kho" },
-        { label: "Chuyển kho" },
+        { label: "Nhập kho", path: "/inventory/receipts" },
+        { label: "Xuất kho", path: "/inventory/issues" },
+        { label: "Chuyển kho", path: "/inventory/transfers" },
       ],
     },
     {
       title: "MUA HÀNG",
       items: [
-        { label: "Mua hàng", kind: "purchase" },
-        { label: "Mua dịch vụ", kind: "purchase" },
+        { label: "Mua hàng", kind: "purchase", path: "/purchases/transactions" },
+        { label: "Mua dịch vụ", kind: "purchase", path: "/purchases/service-purchases" },
       ],
     },
     {
       title: "BÁN HÀNG",
       items: [
-        { label: "Bán hàng", kind: "sale" },
-        { label: "Bán dịch vụ", kind: "sale" },
+        { label: "Bán hàng", kind: "sale", path: "/sales/transactions" },
+        { label: "Bán dịch vụ", kind: "sale", path: "/sales/invoices" },
       ],
     },
     {
       title: "TỔNG HỢP",
       items: [
-        { label: "Chứng từ nghiệp vụ khác" },
-        { label: "Quyết toán tạm ứng" },
+        { label: "Chứng từ nghiệp vụ khác", path: "/ledger/transactions" },
+        { label: "Quyết toán tạm ứng", path: "/ledger/advance-settlement-request" },
       ],
     },
   ];
@@ -287,7 +349,8 @@ function ReferenceWorkspace() {
     }
   }, [apiRestoring, apiToken, apiCompanies.length, navigate]);
 
-  const pathParts = location.pathname.split("/");
+  const normalizedPathname = location.pathname.replace(/^\/reference(?=\/|$)/, "") || "/";
+  const pathParts = normalizedPathname.split("/");
   const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
@@ -301,6 +364,22 @@ function ReferenceWorkspace() {
   const activeTabNode = referenceTabHierarchy[moduleId]?.find(
     (item) => item.id === tab,
   );
+
+  const isProcessTab = (optimisticTab || tab) === "process";
+
+  useEffect(() => {
+    if (isProcessTab) {
+      document.body.classList.add("ref-process-scroll-lock");
+      document.documentElement.classList.add("ref-process-scroll-lock");
+    } else {
+      document.body.classList.remove("ref-process-scroll-lock");
+      document.documentElement.classList.remove("ref-process-scroll-lock");
+    }
+    return () => {
+      document.body.classList.remove("ref-process-scroll-lock");
+      document.documentElement.classList.remove("ref-process-scroll-lock");
+    };
+  }, [isProcessTab]);
 
   const [configuredTabs, setConfiguredTabs] = useState<Record<string, string[]>>(() => {
     try {
@@ -441,11 +520,10 @@ function ReferenceWorkspace() {
     apiCompanies.find((c) => c.id === apiCompanyId) ||
     apiCompanies[0];
   const company = matchedApiCompany || companies[0];
-  const period = ["2026-12", "2026-09", "2026-08", "2026"].includes(
-    params.get("period") || "",
-  )
-    ? params.get("period")!
-    : "2026-09";
+  const rawUrlPeriod = params.get("period") || "";
+  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
+    ? rawUrlPeriod
+    : "2026-12";
   const [dataset, setDataset] = useState(() => {
     try {
       return localStorage.getItem("ref_dataset") || "accounting-2026";
@@ -490,7 +568,7 @@ function ReferenceWorkspace() {
 
   useEffect(() => {
     setVisitedModules([moduleId]);
-  }, [company.id, period]);
+  }, [company.id]);
 
   const displayModules = useMemo(() => {
     if (!visitedModules.includes(moduleId)) {
@@ -498,12 +576,6 @@ function ReferenceWorkspace() {
     }
     return visitedModules;
   }, [visitedModules, moduleId]);
-
-  // Sync dashboard summary KPIs from backend /api/v1/common/dashboard/ when on overview
-  useEffect(() => {
-    if (!apiToken || !company.id || moduleId !== "overview") return;
-    void request(`/api/v1/common/dashboard/?company=${encodeURIComponent(company.id)}&company_id=${encodeURIComponent(company.id)}`, apiToken).catch(() => {});
-  }, [apiToken, company.id, moduleId]);
 
   const triggerSwitchFeedback = (type: string, message: string) => {
     setRecentlyChangedCluster(type);
@@ -513,9 +585,21 @@ function ReferenceWorkspace() {
     setTimeout(() => setIsSwitchingContext(false), 280);
   };
 
-  const datasetLabel = dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026";
+  const activeCompanyRegime = useMemo(() => {
+    const raw = String((company as any)?.accounting_regime || "TT99").toUpperCase();
+    if (raw.includes("133")) return "TT133";
+    if (raw.includes("200")) return "TT200";
+    return "TT99";
+  }, [company]);
+  const activeRegimeShortBadge =
+    activeCompanyRegime === "TT133"
+      ? "TT133/2016 (SME)"
+      : activeCompanyRegime === "TT200"
+      ? "TT200/2014"
+      : "TT99/2025";
+  const datasetLabel = `${dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026"} · ${activeRegimeShortBadge}`;
   const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
-  const periodLabel = period === "2026-09" ? "K9.2026" : period === "2026-08" ? "K8.2026" : "Năm 2026";
+  const periodLabel = period.startsWith("2026-") ? `K${Number(period.slice(5))}.2026` : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
   const scoped = useMemo(
     () => items.filter((t) => t.company === company.id && (period === "2026" ? t.date.startsWith("2026") : t.date.startsWith(period))),
@@ -581,10 +665,23 @@ function ReferenceWorkspace() {
   >(null);
   const [createKind, setCreateKind] = useState<Kind | null>(null),
     [detailId, setDetailId] = useState<string | null>(null);
-  const [notice, setNotice] = useState(""),
+  const [notice, setRawNotice] = useState(""),
     [info, setInfo] = useState(""),
+    [settingsSearch, setSettingsSearch] = useState(""),
     [query, setQuery] = useState(""),
     [workMode, setWorkMode] = useState("Kế toán");
+  const setNotice = useCallback((msg: string) => {
+    const cleaned = msg ? humanizeErrorMessage(msg) : "";
+    setRawNotice(cleaned);
+    if (cleaned) {
+      const pType = classifyNoticeType(cleaned);
+      showGlobalPopup({
+        type: pType,
+        title: pType === "error" ? "Thông báo lỗi" : pType === "warning" ? "Cảnh báo kiểm tra" : "Lưu dữ liệu thành công",
+        message: cleaned,
+      });
+    }
+  }, []);
   const href: ReferenceHref = (path, extra) =>
     `${path}?${new URLSearchParams({ company: company.id, period, ...extra })}`;
   const detail = items.find((t) => t.id === detailId),
@@ -623,14 +720,24 @@ function ReferenceWorkspace() {
     {
       id: "sys-tt99",
       category: "system" as const,
-      code: "Thông tư 99/2025",
+      code:
+        activeCompanyRegime === "TT133"
+          ? "Thông tư 133/2016"
+          : activeCompanyRegime === "TT200"
+          ? "Thông tư 200/2014"
+          : "Thông tư 99/2025",
       kindLabel: "Chế độ kế toán",
       kind: "info" as const,
-      description: "Hệ thống đã cập nhật đầy đủ sổ quỹ S07-DN, S07a-DN và báo cáo B03-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
+      description:
+        activeCompanyRegime === "TT133"
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp nhỏ và vừa theo Thông tư 133/2016/TT-BTC (101 TK, Bộ BCTC B01a/B01b-DNN, B02-DNN, B03-DNN, B09-DNN)."
+          : activeCompanyRegime === "TT200"
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp theo Thông tư 200/2014/TT-BTC (135 TK, Bộ BCTC B01/B02/B03/B09-DN)."
+          : "Hệ thống đã cập nhật đầy đủ Hệ thống 138 TK, sổ quỹ S07-DN, S07a-DN và bộ BCTC B01/B02/B03/B09-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
       partner: "Bộ Tài chính",
       amount: 0,
       date: "20/09/2026 08:30",
-      actionUrl: "/cash/reports",
+      actionUrl: "/reports",
     },
   ];
 
@@ -719,18 +826,47 @@ function ReferenceWorkspace() {
       setNotice("Không thể lưu. Vui lòng kiểm tra dung lượng trình duyệt.");
     }
   };
+  const quickAccessRoutes: Record<string, string> = {
+    "Quản lý danh mục": href("/directory"),
+    "Nhập số dư ban đầu": href("/opening"),
+    "Cập nhật số dư dữ liệu năm trước": href("/opening"),
+    "Nhập dữ liệu": href("/opening"),
+    "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế": href("/purchases/invoice-processing/supplier-risk"),
+    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/sync"),
+    "Kiểm soát hồ sơ và hạch toán": href("/invoices/unposted"),
+    "Nhật ký truy cập": "/audit-logs",
+    "Thông tin công ty": "/admin?tab=overview",
+    "Quản lý người dùng và phân quyền": "/admin?tab=personnel",
+    "Quản lý dữ liệu": "/fiscal-periods",
+    "Tùy chọn": "/admin?tab=config",
+    "Ngày hạch toán": "/fiscal-periods",
+    "Thiết lập kết nối Ngân hàng điện tử (mBank)": href("/bank/ebanking"),
+    "Thiết lập ký số từ xa (SmartCA / eSign)": href("/invoices/meinvoice"),
+    "Nhập kho": href("/inventory/receipts"),
+    "Xuất kho": href("/inventory/issues"),
+    "Chuyển kho": href("/inventory/transfers"),
+    "Chứng từ nghiệp vụ khác": href("/ledger/transactions"),
+    "Quyết toán tạm ứng": href("/ledger/advance-settlement-request"),
+    "Kiểm tra đối chiếu": href("/ledger/process"),
+  };
+
   const infoAction = (name: string) => {
     setPanel(null);
-    if (name === "Thông tin công ty" || name === "Quản lý người dùng và phân quyền" || name === "Quản lý dữ liệu") {
-      navigate("/admin");
+    if (name === "Thiết lập màu sắc và hiển thị") {
+      setPanel("mode");
       return;
     }
-    if (name === "Nhật ký truy cập") {
-      navigate("/audit-logs");
+    if (name === "Gợi ý, nhắc nhở thông minh") {
+      setPanel("notifications");
       return;
     }
-    if (name === "Tùy chọn") {
-      navigate("/admin?tab=config");
+    if (name === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán") {
+      setAiOpen(true);
+      return;
+    }
+    const targetRoute = quickAccessRoutes[name];
+    if (targetRoute) {
+      navigate(targetRoute);
       return;
     }
     setInfo(name);
@@ -755,6 +891,7 @@ function ReferenceWorkspace() {
       return (
         <MisaDashboardOverview
           items={scoped}
+          companyId={matchedApiCompany?.id || apiCompanyId}
           companyName={company.name}
           period={period}
           href={href}
@@ -1025,7 +1162,7 @@ function ReferenceWorkspace() {
   }
 
   return (
-    <div className={`reference-app ${collapsed ? "ref-collapsed" : ""}`}>
+    <div className={`reference-app ${collapsed ? "ref-collapsed" : ""} ${isProcessTab ? "ref-process-locked" : ""}`}>
       <a href="#reference-main" className="skip-link">
         Đến nội dung chính
       </a>
@@ -1082,6 +1219,8 @@ function ReferenceWorkspace() {
                 <div className="ref-cluster-popover-list">
                   {(apiCompanies.length > 0 ? apiCompanies : companies).map((c) => {
                     const isSelected = c.id === company.id;
+                    const rawReg = String((c as any).accounting_regime || "TT99").toUpperCase();
+                    const cReg = rawReg.includes("133") ? "TT133" : rawReg.includes("200") ? "TT200" : "TT99";
                     return (
                       <button
                         key={c.id}
@@ -1093,10 +1232,24 @@ function ReferenceWorkspace() {
                           }
                           context("company", c.id);
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name}`);
+                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name} (${cReg})`);
                         }}
                       >
-                        <span className="ref-cluster-item-name">{c.name}</span>
+                        <span className="ref-cluster-item-name" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span>{c.name}</span>
+                          <span
+                            style={{
+                              fontSize: 10.5,
+                              fontWeight: 700,
+                              padding: "1px 6px",
+                              borderRadius: 999,
+                              background: cReg === "TT133" ? "#fef3c7" : cReg === "TT200" ? "#e0e7ff" : "#dcfce7",
+                              color: cReg === "TT133" ? "#b45309" : cReg === "TT200" ? "#1d4ed8" : "#047857",
+                            }}
+                          >
+                            {cReg}
+                          </span>
+                        </span>
                         {isSelected && <Check size={14} className="ref-cluster-check" />}
                       </button>
                     );
@@ -1219,8 +1372,18 @@ function ReferenceWorkspace() {
                 <div className="ref-cluster-popover-header">Kỳ làm việc</div>
                 <div className="ref-cluster-popover-list">
                   {[
+                    { id: "2026-12", label: "K12.2026 (Tháng 12/2026)" },
+                    { id: "2026-11", label: "K11.2026 (Tháng 11/2026)" },
+                    { id: "2026-10", label: "K10.2026 (Tháng 10/2026)" },
                     { id: "2026-09", label: "K9.2026 (Tháng 09/2026)" },
                     { id: "2026-08", label: "K8.2026 (Tháng 08/2026)" },
+                    { id: "2026-07", label: "K7.2026 (Tháng 07/2026)" },
+                    { id: "2026-06", label: "K6.2026 (Tháng 06/2026)" },
+                    { id: "2026-05", label: "K5.2026 (Tháng 05/2026)" },
+                    { id: "2026-04", label: "K4.2026 (Tháng 04/2026)" },
+                    { id: "2026-03", label: "K3.2026 (Tháng 03/2026)" },
+                    { id: "2026-02", label: "K2.2026 (Tháng 02/2026)" },
+                    { id: "2026-01", label: "K1.2026 (Tháng 01/2026)" },
                     { id: "2026", label: "Năm 2026 (Cả năm)" },
                   ].map((item) => {
                     const isSelected = period === item.id;
@@ -1353,11 +1516,7 @@ function ReferenceWorkspace() {
                   <div className="ref-user-dropdown-header">
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
                       <div className="ref-user-dropdown-title">{userDisplayName}</div>
-                      {Boolean(apiSession?.user?.is_superuser) ? (
-                        <span style={{ background: "#7c3aed", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          👑 SUPER ADMIN
-                        </span>
-                      ) : userEmail === "tungtimo0808@gmail.com" ? (
+                      {(Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") ? (
                         <span style={{ background: "#f59e0b", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
                           👑 ADMIN DOANH NGHIỆP
                         </span>
@@ -1385,7 +1544,7 @@ function ReferenceWorkspace() {
                     <span>Đổi / Quản lý doanh nghiệp</span>
                   </button>
 
-                  {(Boolean(apiSession?.user?.is_superuser) || userEmail === "tungtimo0808@gmail.com") && (
+                  {(Boolean(apiSession?.user?.is_superuser) || Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") && (
                     <button
                       type="button"
                       className="ref-user-dropdown-item"
@@ -1396,20 +1555,6 @@ function ReferenceWorkspace() {
                     >
                       <Building2 size={15} color="#0052cc" />
                       <span><strong>Quản trị doanh nghiệp</strong></span>
-                    </button>
-                  )}
-
-                  {Boolean(apiSession?.user?.is_superuser) && (
-                    <button
-                      type="button"
-                      className="ref-user-dropdown-item"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        navigate("/super-admin");
-                      }}
-                    >
-                      <ShieldCheck size={15} color="#7c3aed" />
-                      <span><strong>Quản trị nền tảng (Super Admin)</strong></span>
                     </button>
                   )}
 
@@ -1522,7 +1667,7 @@ function ReferenceWorkspace() {
           </button>
         </div>
       </aside>
-      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""}`} tabIndex={-1}>
+      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""} ${isProcessTab ? "ref-process-fixed" : ""}`} tabIndex={-1}>
         <span className="sr-only">
           Phân hệ {module?.label || "Không tìm thấy"}
         </span>
@@ -1858,43 +2003,116 @@ function ReferenceWorkspace() {
           </div>
         </div>
         )}
-        <Suspense fallback={<WorkspaceLoader />}>
-          {displayModules.map((mId) => {
-            const isCurrent = mId === moduleId;
-            return (
-              <div
-                key={`keepalive-${mId}-${company.id}-${period}`}
-                style={{
-                  display: isCurrent ? "contents" : "none",
-                }}
-                aria-hidden={!isCurrent}
-              >
-                {renderWorkspaceContentForModule(mId, isCurrent ? (optimisticTab || tab) : undefined)}
-              </div>
-            );
-          })}
-        </Suspense>
+        {displayModules.map((mId) => {
+          const isCurrent = mId === moduleId;
+          const activeTabForSlot = isCurrent
+            ? optimisticTab || tab
+            : referenceTabs[mId]?.[0]?.[0] || "process";
+          return (
+            <KeepAliveModuleSlot
+              key={`keepalive-${mId}-${company.id}`}
+              mId={mId}
+              isCurrent={isCurrent}
+              activeTab={activeTabForSlot}
+              companyId={company.id}
+              period={period}
+              childTab={isCurrent ? childTab : null}
+              directoryParam={isCurrent ? params.get("directory") : null}
+              payrollOption={payrollOption}
+              renderContent={() => renderWorkspaceContentForModule(mId, activeTabForSlot)}
+            />
+          );
+        })}
       </main>
       {panel === "settings" && (
         <Modal
-          title="Các tiện ích và thiết lập"
-          onClose={() => setPanel(null)}
+          title="Các tiện ích và thiết lập (Truy cập nhanh)"
+          onClose={() => {
+            setPanel(null);
+            setSettingsSearch("");
+          }}
           wide
         >
+          <div style={{ padding: "12px 20px 0 20px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#f8fafc",
+                border: "1px solid #cbd5e1",
+                borderRadius: 8,
+                padding: "7px 12px",
+              }}
+            >
+              <Search size={15} style={{ color: "#64748b" }} />
+              <input
+                type="search"
+                placeholder="Tìm nhanh tiện ích, danh mục, số dư đầu kỳ, thiết lập..."
+                value={settingsSearch}
+                onChange={(e) => setSettingsSearch(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  width: "100%",
+                  fontSize: 13,
+                  color: "#0f172a",
+                }}
+              />
+            </div>
+          </div>
           <div className="ref-mega-menu">
-            {settingsGroups.map((g, i) => (
-              <section
-                className={`ref-settings-group group-${i}`}
-                key={g.title}
-              >
-                <h3>{g.title}</h3>
-                {g.items.map((label) => (
-                  <button key={label} onClick={() => infoAction(label)}>
-                    {label}
-                  </button>
-                ))}
-              </section>
-            ))}
+            {settingsGroups.map((g, i) => {
+              const filteredItems = g.items.filter(
+                (label) =>
+                  !settingsSearch.trim() ||
+                  label.toLowerCase().includes(settingsSearch.trim().toLowerCase())
+              );
+              return (
+                <section
+                  className={`ref-settings-group group-${i}`}
+                  key={g.title}
+                >
+                  <h3>{g.title}</h3>
+                  {filteredItems.map((label) => {
+                    const isQuickRoute =
+                      Boolean(quickAccessRoutes[label]) ||
+                      label === "Thiết lập màu sắc và hiển thị" ||
+                      label === "Gợi ý, nhắc nhở thông minh" ||
+                      label === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán";
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => infoAction(label)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          width: "100%",
+                        }}
+                      >
+                        <span>{label}</span>
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                            background: isQuickRoute ? "#e0f2fe" : "#dcfce7",
+                            color: isQuickRoute ? "#0369a1" : "#15803d",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {isQuickRoute ? "Mở →" : "API"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </section>
+              );
+            })}
           </div>
         </Modal>
       )}
@@ -1938,9 +2156,10 @@ function ReferenceWorkspace() {
                     {group.items.map((item) => (
                       <button
                         key={item.label}
-                        onClick={() =>
-                          item.kind ? create(item.kind) : infoAction(item.label)
-                        }
+                        onClick={() => {
+                          setPanel(null);
+                          navigate(href(item.path));
+                        }}
                       >
                         <Plus size={15} />
                         {item.label}
@@ -1953,42 +2172,55 @@ function ReferenceWorkspace() {
               <>
                 <p>
                   Chọn phân hệ bên trái, sau đó chọn Quy trình hoặc danh sách
-                  giao dịch trên thanh tab.
+                  giao dịch trên thanh tab để thao tác trực tiếp với dữ liệu kế toán.
                 </p>
                 <ol className="help-list">
-                  <li>Nhấn Thu tiền hoặc Chi tiền để mở các nghiệp vụ.</li>
+                  <li>Nhấn vào các nút trên sơ đồ Quy trình để chuyển nhanh đến màn hình nghiệp vụ tương ứng.</li>
                   <li>
-                    Dùng bộ lọc để tìm chứng từ theo trạng thái và thời gian.
+                    Mở <strong>Các tiện ích và thiết lập</strong> (biểu tượng bánh răng) để truy cập nhanh Danh mục, Số dư ban đầu, Ghi sổ theo lô, Bảo trì dữ liệu và Thiết lập hệ thống.
                   </li>
-                  <li>Chọn một chứng từ để xem chi tiết phía dưới bảng.</li>
+                  <li>Sử dụng phím tắt <code>Ctrl + K</code> để tìm kiếm nhanh chứng từ trên toàn hệ thống.</li>
                 </ol>
-                <p className="info-note">
-                  Bản trải nghiệm lưu nháp trên trình duyệt. Chưa kết nối API kế
-                  toán, phân quyền và thuế.
-                </p>
               </>
             ) : panel === "module" ? (
               <div className="module-quick-menu">
                 <section>
-                  <h3>NGHIỆP VỤ</h3>
-                  {tabs.slice(0, 6).map(([, label]) => (
-                    <button key={label} onClick={() => infoAction(label)}>
+                  <h3>NGHIỆP VỤ ({module?.label?.toUpperCase()})</h3>
+                  {tabs.slice(0, 8).map(([tabId, label]) => (
+                    <button
+                      key={tabId}
+                      onClick={() => {
+                        setPanel(null);
+                        navigate(href(`/${moduleId}/${tabId}`));
+                      }}
+                    >
                       {label}
                     </button>
                   ))}
                 </section>
                 <section>
-                  <h3>TIỆN ÍCH</h3>
-                  <button onClick={() => infoAction("Kiểm tra đối chiếu")}>
-                    Kiểm tra đối chiếu
+                  <h3>TIỆN ÍCH TRUY CẬP NHANH</h3>
+                  <button onClick={() => infoAction("Kiểm tra đối chiếu chứng từ, sổ sách")}>
+                    Kiểm tra đối chiếu sổ sách
                   </button>
-                  <button onClick={() => infoAction("Nhập dữ liệu")}>
-                    Nhập dữ liệu
+                  <button onClick={() => infoAction("Nhập số dư ban đầu")}>
+                    Nhập số dư ban đầu
+                  </button>
+                  <button onClick={() => infoAction("Quản lý danh mục")}>
+                    Quản lý danh mục
+                  </button>
+                  <button onClick={() => infoAction("Ghi sổ/Bỏ ghi theo lô")}>
+                    Ghi sổ / Bỏ ghi theo lô
                   </button>
                 </section>
                 <section>
                   <h3>BÁO CÁO</h3>
-                  <button onClick={() => navigate(href("/reports"))}>
+                  <button
+                    onClick={() => {
+                      setPanel(null);
+                      navigate(href("/reports"));
+                    }}
+                  >
                     Mở trung tâm báo cáo
                   </button>
                 </section>
@@ -2213,14 +2445,15 @@ function ReferenceWorkspace() {
         </Modal>
       )}
       {info && (
-        <Modal title={info} onClose={() => setInfo("")}>
-          <div className="modal-body">
-            <p className="info-note">
-              Chức năng “{info}” chưa kết nối dữ liệu nghiệp vụ. Bản giao diện
-              hiện hỗ trợ tạo nháp, xem chứng từ, tìm kiếm, lọc và xuất CSV.
-            </p>
-          </div>
-        </Modal>
+        <MisaSystemUtilitiesModal
+          utilityName={info}
+          companyId={company.id}
+          companyName={company.name}
+          token={apiToken}
+          onClose={() => setInfo("")}
+          onNavigate={(url) => navigate(url)}
+          notify={setNotice}
+        />
       )}
       {createKind && (
         <DocumentForm
@@ -2238,21 +2471,6 @@ function ReferenceWorkspace() {
           onSubmit={submit}
         />
       )}
-      <div
-        className={`toast ${notice ? "visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {notice && (
-          <>
-            <Check size={16} />
-            <span>{notice}</span>
-            <button aria-label="Đóng thông báo" onClick={() => setNotice("")}>
-              <X size={16} />
-            </button>
-          </>
-        )}
-      </div>
     </div>
   );
 }
@@ -2317,11 +2535,29 @@ function AppRoute() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const origAlert = window.alert;
+    window.alert = (msg?: any) => {
+      const text = String(msg ?? "").trim();
+      if (!text) return;
+      const pType = classifyNoticeType(text);
+      showGlobalPopup({
+        type: pType,
+        title: pType === "error" ? "Thông báo lỗi" : pType === "warning" ? "Cảnh báo kiểm tra" : "Thông báo hệ thống",
+        message: humanizeErrorMessage(text),
+      });
+    };
+    return () => {
+      window.alert = origAlert;
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <ApiSessionProvider>
         <ErrorBoundary>
           <AppRoute />
+          <GlobalFeedbackPopupHost />
         </ErrorBoundary>
       </ApiSessionProvider>
     </BrowserRouter>

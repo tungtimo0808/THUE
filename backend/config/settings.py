@@ -22,6 +22,17 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 
+def _env_list(name, default=''):
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
+
+
+# Audit 2026-10-27 (P0): không cho chạy production với SECRET_KEY mặc định/insecure.
+if not DEBUG and 'test' not in sys.argv:
+    if SECRET_KEY in {'', 'development-only-change-me'} or SECRET_KEY.startswith('django-insecure'):
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured('SECRET_KEY phải được đặt giá trị bí mật thật khi DEBUG=False.')
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -268,6 +279,30 @@ SPECTACULAR_SETTINGS = {
 
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+
+# Cache: khai báo tường minh (LocMem = riêng từng process). Rate limit chỉ chính xác khi 1 process;
+# khi scale nhiều replica hãy đặt DJANGO_CACHE_BACKEND=django.core.cache.backends.db.DatabaseCache
+# và chạy `python manage.py createcachetable` (Audit 2026-10-27, P2).
+CACHES = {
+    'default': {
+        'BACKEND': os.getenv('DJANGO_CACHE_BACKEND', 'django.core.cache.backends.locmem.LocMemCache'),
+        'LOCATION': os.getenv('DJANGO_CACHE_LOCATION', 'thue-erp-default'),
+    }
+}
+
+# Production hardening (Audit 2026-10-27, P0) — chỉ áp dụng khi DEBUG=False.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = os.getenv('USE_X_FORWARDED_HOST', 'True') == 'True'
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True') == 'True'
+    CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True') == 'True'
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    X_FRAME_OPTIONS = 'DENY'
 
 CATALOG_IMPORT_MAX_BYTES = int(os.getenv('CATALOG_IMPORT_MAX_BYTES', str(5 * 1024 * 1024)))
 CATALOG_IMPORT_MAX_ROWS = int(os.getenv('CATALOG_IMPORT_MAX_ROWS', '5000'))

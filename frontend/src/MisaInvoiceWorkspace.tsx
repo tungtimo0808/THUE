@@ -375,15 +375,15 @@ export default function MisaInvoiceWorkspace({
       </div>
       <footer>
         {[
-          "Thiết lập Email gửi HĐ",
-          "Thiết lập chữ ký số",
-          "Lịch sử truyền nhận với TCT",
-          "Tùy chọn",
-        ].map((label) => (
-          <button key={label} onClick={() => notify(label)}>
+          ["Thiết lập Email gửi HĐ", "/invoices/meinvoice"],
+          ["Thiết lập chữ ký số", "/invoices/meinvoice"],
+          ["Lịch sử truyền nhận với TCT", "/invoices/sync"],
+          ["Tùy chọn", "/invoices/lookup"],
+        ].map(([label, targetPath]) => (
+          <Link key={label} to={href(targetPath)}>
             <FileText size={18} />
             <span>{label}</span>
-          </button>
+          </Link>
         ))}
       </footer>
     </div>

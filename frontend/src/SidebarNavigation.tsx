@@ -24,6 +24,7 @@ export function SidebarNavigation({
   const [openModule, setOpenModule] = useState<string | null>(null);
   const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number } | null>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const openTimerRef = useRef<number | null>(null);
 
   const closeAfterBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -47,25 +48,34 @@ export function SidebarNavigation({
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
+    if (openTimerRef.current) {
+      clearTimeout(openTimerRef.current);
+      openTimerRef.current = null;
+    }
     const flyoutData = MISA_MODULE_FLYOUTS[modId];
     if (!flyoutData) return;
-    const rect = currentTarget.getBoundingClientRect();
-    const opsCount = flyoutData.operations?.length ?? 0;
-    const utilsCount = flyoutData.utilities?.length ?? 0;
-    const itemsCount = Math.max(opsCount, utilsCount) || 5;
-    const estimatedHeight = Math.max(160, itemsCount * 32 + 60);
-    const windowHeight = window.innerHeight;
-    // Align so the first item lines up with the hovered sidebar item (matching MISA screenshot)
-    let top = rect.top - 36;
-    if (top + estimatedHeight > windowHeight - 16) {
-      top = Math.max(40, windowHeight - estimatedHeight - 16);
-    }
-    if (top < 16) top = 16;
-    setFlyoutPos({ top, left: rect.right + 2 });
-    setOpenModule(modId);
+    openTimerRef.current = window.setTimeout(() => {
+      const rect = currentTarget.getBoundingClientRect();
+      const opsCount = flyoutData.operations?.length ?? 0;
+      const utilsCount = flyoutData.utilities?.length ?? 0;
+      const itemsCount = Math.max(opsCount, utilsCount) || 5;
+      const estimatedHeight = Math.max(160, itemsCount * 32 + 60);
+      const windowHeight = window.innerHeight;
+      let top = rect.top - 36;
+      if (top + estimatedHeight > windowHeight - 16) {
+        top = Math.max(40, windowHeight - estimatedHeight - 16);
+      }
+      if (top < 16) top = 16;
+      setFlyoutPos({ top, left: rect.right + 2 });
+      setOpenModule(modId);
+    }, 65);
   };
 
   const handleCloseModule = () => {
+    if (openTimerRef.current) {
+      clearTimeout(openTimerRef.current);
+      openTimerRef.current = null;
+    }
     closeTimerRef.current = window.setTimeout(() => {
       setOpenModule(null);
       setFlyoutPos(null);

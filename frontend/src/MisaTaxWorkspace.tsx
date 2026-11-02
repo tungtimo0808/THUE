@@ -292,6 +292,13 @@ export default function MisaTaxWorkspace({
           </div>
         )}
 
+        {/* 4. Modal: Xem chi tiết báo cáo */}
+        {previewReport === "Bảng đối chiếu bảng kê thuế GTGT và sổ cái" &&
+          <TaxReconciliationModal companyId={company.id} companyName={company.name} token={apiToken}
+            title={previewReport} reconciliationType="VAT_GL" onClose={() => setPreviewReport(null)} />}
+        {previewReport === "Bảng đối chiếu số thuế đã nộp và số thuế phải nộp" &&
+          <TaxReconciliationModal companyId={company.id} companyName={company.name} token={apiToken}
+            title={previewReport} reconciliationType="OBLIGATION_PAYMENT" onClose={() => setPreviewReport(null)} />}
         {/* 4. Modal: Xem chi tiết báo cáo thuế qua UC-RPT-07 Engine & MisaTaxReportModal */}
         {activeTaxReport && (
           <MisaTaxReportModal
@@ -304,16 +311,6 @@ export default function MisaTaxWorkspace({
             onClose={() => setActiveTaxReport(null)}
             notify={notify}
           />
-        )}
-
-        {/* 5. Modal: Bảng đối chiếu thuế chuyên sâu (UC-TAX-10) */}
-        {previewReport === "Bảng đối chiếu bảng kê thuế GTGT và sổ cái" && (
-          <TaxReconciliationModal companyId={company.id} companyName={company.name} token={apiToken}
-            title={previewReport} reconciliationType="VAT_GL" onClose={() => setPreviewReport(null)} />
-        )}
-        {previewReport === "Bảng đối chiếu số thuế đã nộp và số thuế phải nộp" && (
-          <TaxReconciliationModal companyId={company.id} companyName={company.name} token={apiToken}
-            title={previewReport} reconciliationType="OBLIGATION_PAYMENT" onClose={() => setPreviewReport(null)} />
         )}
       </>
     );
@@ -1199,7 +1196,13 @@ export default function MisaTaxWorkspace({
                   .map((item) => (
                     <div
                       key={item.code}
-                      onClick={() => setActiveTaxReport({ reportCode: item.code, reportName: item.title, category: "RECONCILIATION_REPORT", taxType: item.taxType })}
+                      onClick={() => {
+                        if (["B?ng ??i chi?u b?ng k? thu? GTGT v? s? c?i", "B?ng ??i chi?u s? thu? ?? n?p v? s? thu? ph?i n?p"].includes(item.title)) {
+                          setPreviewReport(item.title);
+                        } else {
+                          setActiveTaxReport({ reportCode: item.code, reportName: item.title, category: "RECONCILIATION_REPORT", taxType: item.taxType });
+                        }
+                      }}
                       style={{
                         padding: "10px 10px",
                         display: "flex",

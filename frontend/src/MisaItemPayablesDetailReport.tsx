@@ -1036,7 +1036,7 @@ export default function MisaItemPayablesDetailReport({
                   </div>
                 </div>
 
-                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: "#e5efe8", borderBottom: "1px solid #cbd5e1" }}>

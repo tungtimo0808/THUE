@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission
+from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission, is_company_admin_member
 from organization.models import Company
 
 from .models import ReportDefinition
@@ -9,6 +9,8 @@ from .models import ReportDefinition
 class ReportingPermission(BasePermission):
     @staticmethod
     def has_any_grant(user_account, company, code):
+        if is_company_admin_member(user_account, company):
+            return True
         return any(code in assignment_permission_codes(item) for item in effective_assignments(user_account, company))
 
     def has_permission(self, request, view):

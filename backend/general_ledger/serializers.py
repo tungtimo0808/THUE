@@ -3,7 +3,8 @@ from rest_framework import serializers
 
 from django.db import transaction
 from decimal import Decimal
-from drf_spectacular.utils import extend_schema_serializer
+import re
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 
 from . import models
 from .models import Account, AccountClass, ChartOfAccounts
@@ -39,21 +40,39 @@ class ChartOfAccountsSerializer(ValidatedModelSerializer):
 class AccountSerializer(ValidatedModelSerializer):
     parent_code = serializers.CharField(source="parent.code", read_only=True)
     parent_name = serializers.CharField(source="parent.name", read_only=True)
-    children_count = serializers.IntegerField(source="children.count", read_only=True)
+    children_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
         fields = "__all__"
-        read_only_fields = ("version",)
+        read_only_fields = ("id", "version", "account_level", "is_system", "is_statutory_account", "statutory_account_code", "status")
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_children_count(self, obj) -> int:
+        # Audit 2026-10-27 (P1): AccountViewSet annotate sẵn để tránh N+1 COUNT theo từng dòng.
+        for attr in ("_children_count", "annotated_children_count"):
+            val = getattr(obj, attr, None)
+            if val is not None:
+                return val
+        return obj.children.count()
 
     def validate_code(self, value):
+        value = value.strip()
+        if not re.fullmatch(r"[0-9]{3,50}", value):
+            raise serializers.ValidationError("Số tài khoản không hợp lệ. Vui lòng nhập lại.")
         if self.instance and self.instance.code != value:
             if self.instance.is_system:
                 raise serializers.ValidationError("Không được thay đổi số hiệu của tài khoản hệ thống.")
             if self.instance.journal_lines.exists():
                 raise serializers.ValidationError("Số hiệu tài khoản đã phát sinh bút toán không được sửa trực tiếp.")
-            if self.instance.status == "ACTIVE":
-                raise serializers.ValidationError("Không đổi số hiệu trực tiếp; hãy ngừng tài khoản cũ và tạo tài khoản mới.")
+            if self.instance.balances.exists() or self.instance.children.exists():
+                raise serializers.ValidationError("Tài khoản đã có số dư hoặc tài khoản con. Không thể đổi trực tiếp Số tài khoản.")
+        return value
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Vui lòng nhập Tên tài khoản.")
         return value
 
     def validate_account_type(self, value):
@@ -68,11 +87,39 @@ class AccountSerializer(ValidatedModelSerializer):
 
     def validate_normal_balance(self, value):
         if self.instance and self.instance.normal_balance != value:
-            if self.instance.is_system:
-                raise serializers.ValidationError("Không được thay đổi tính chất số dư của tài khoản hệ thống.")
+            if self.instance.is_system or self.instance.journal_lines.exists() or self.instance.balances.exists():
+                raise serializers.ValidationError("Không thể đổi tính chất của tài khoản đã được sử dụng hoặc thuộc hệ thống.")
         return value
 
     def validate(self, attrs):
+        if self.instance and any(field in attrs for field in ("company", "chart_of_accounts")):
+            raise serializers.ValidationError("Không thể chuyển tài khoản sang doanh nghiệp hoặc bộ dữ liệu khác.")
+        chart = attrs.get("chart_of_accounts") or (self.instance.chart_of_accounts if self.instance else None)
+        if chart and chart.accounting_regime == "TT58":
+            raise serializers.ValidationError({"chart_of_accounts": "Bộ dữ liệu này áp dụng chế độ sổ kế toán theo Thông tư 58."})
+        if not self.instance and chart and attrs.get("code") and not attrs.get("parent"):
+            candidate = max(
+                (row for row in Account.objects.filter(chart_of_accounts=chart).only("id", "code") if attrs["code"].startswith(row.code) and attrs["code"] != row.code),
+                key=lambda row: len(row.code), default=None,
+            )
+            if candidate:
+                attrs["parent"] = candidate
+        if not self.instance and attrs.get("parent"):
+            parent = attrs["parent"]
+            if parent.journal_lines.exists() or parent.balances.filter(
+                models.Q(opening_debit__gt=0) | models.Q(opening_credit__gt=0) |
+                models.Q(closing_debit__gt=0) | models.Q(closing_credit__gt=0)
+            ).exists():
+                raise serializers.ValidationError({"parent": "Tài khoản tổng hợp đã có phát sinh. Cần xử lý dữ liệu hạch toán trực tiếp trước khi sử dụng tài khoản chi tiết."})
+        requirements = attrs.get("dimension_requirements")
+        if requirements is not None:
+            valid_dimensions = {choice[0] for choice in models.AccountingDimension.choices}
+            valid_levels = {choice[0] for choice in models.DimensionRequirementLevel.choices}
+            if not isinstance(requirements, dict) or any(key not in valid_dimensions or level not in valid_levels for key, level in requirements.items()):
+                raise serializers.ValidationError({"dimension_requirements": "Yếu tố hoặc mức độ theo dõi chi tiết không hợp lệ."})
+        if self.instance and (requirements is not None and requirements != self.instance.dimension_requirements or "is_foreign_currency" in attrs and attrs["is_foreign_currency"] != self.instance.is_foreign_currency):
+            if self.instance.journal_lines.exists() or self.instance.balances.exists():
+                raise serializers.ValidationError("Không thể đổi theo dõi chi tiết hoặc ngoại tệ khi tài khoản đã có phát sinh.")
         attrs = super().validate(attrs)
         parent = attrs.get("parent") or (self.instance.parent if self.instance else None)
         code = attrs.get("code") or (self.instance.code if self.instance else None)
@@ -1539,5 +1586,3 @@ class FinancialStatementBatchSerializer(serializers.ModelSerializer):
             "updated_at",
             "reports",
         )
-
-

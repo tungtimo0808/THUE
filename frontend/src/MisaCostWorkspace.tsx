@@ -1,4 +1,5 @@
 import { useState, useId, useEffect } from "react";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   acceptCostObjects, acceptCostPeriod, costObjectCatalog, createApiWriter, postSalarySheet, saveCostObjectSettings, saveCostPeriod, saveDepreciation,
@@ -1325,7 +1326,36 @@ if (apiConnected) {
     orders: "Đơn hàng",
     contracts: "Hợp đồng",
   } as Record<string, string>)[currentTab] || "Sản xuất liên tục - Hệ số, tỷ lệ";
-  const currentSubtabData = COST_PROCESS_DATA[subtab] || COST_PROCESS_DATA.simple;
+  const baseSubtabData = COST_PROCESS_DATA[subtab] || COST_PROCESS_DATA.simple;
+  const activeCostRegime =
+    (company as any)?.accounting_regime ||
+    "TT99";
+  const currentSubtabData = {
+    ...baseSubtabData,
+    videoSubtitle:
+      activeCostRegime === "TT133"
+        ? "THÔNG TƯ 133 (SME)"
+        : activeCostRegime === "TT200"
+        ? "THÔNG TƯ 200"
+        : "THÔNG TƯ 99",
+    row1: (baseSubtabData.row1 || []).map((s) => {
+      if (activeCostRegime === "TT133") {
+        if (s.step === 4) {
+          return {
+            ...s,
+            desc: "Xuất kho nguyên vật liệu hạch toán trực tiếp Nợ TK 154 (Chi tiết yếu tố NVL - TT133 không dùng TK 621)",
+          };
+        }
+        if (s.step === 5) {
+          return {
+            ...s,
+            desc: "Tập hợp chi phí nhân công, khấu hao, phân bổ CCDC trực tiếp vào Nợ TK 154 (TT133 không dùng TK 622, 627)",
+          };
+        }
+      }
+      return s;
+    }),
+  };
   const records = INITIAL_COST_PERIODS[currentTab] || [];
   const filteredRecords = records.filter(
     (r) =>
@@ -1342,7 +1372,16 @@ if (apiConnected) {
     }).format(val);
 
   return (
-    <div className="misa-cost-workspace" style={{ background: "#f8fafc", minHeight: "100%", padding: 16 }}>
+    <div
+      className={`misa-cost-workspace ${currentTab === "process" ? "ref-process-wrapper" : ""}`}
+      style={{
+        background: "#f8fafc",
+        height: currentTab === "process" ? "100%" : undefined,
+        minHeight: currentTab === "process" ? undefined : "100%",
+        padding: currentTab === "process" ? "10px 16px" : 16,
+        overflow: currentTab === "process" ? "hidden" : undefined,
+      }}
+    >
       {/* ==================================================================== */}
       {/* 1. PROCESS TAB (QUY TRÌNH) - MATCHES SCREENSHOT 2 */}
       {/* ==================================================================== */}
@@ -1421,12 +1460,46 @@ if (apiConnected) {
                   fontWeight: 700,
                   color: "#1e293b",
                   textAlign: "center",
-                  margin: "0 0 32px 0",
+                  margin: "0 0 10px 0",
                   letterSpacing: 0.2,
                 }}
               >
                 {currentSubtabData.headerTitle}
               </h2>
+              <div
+                data-testid="costing-regime-banner"
+                style={{
+                  margin: "0 auto 22px auto",
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background:
+                    activeCostRegime === "TT133"
+                      ? "#eff6ff"
+                      : activeCostRegime === "TT200"
+                      ? "#fffbeb"
+                      : "#ecfdf5",
+                  color:
+                    activeCostRegime === "TT133"
+                      ? "#1d4ed8"
+                      : activeCostRegime === "TT200"
+                      ? "#b45309"
+                      : "#047857",
+                  border:
+                    activeCostRegime === "TT133"
+                      ? "1px solid #bfdbfe"
+                      : activeCostRegime === "TT200"
+                      ? "1px solid #fde68a"
+                      : "1px solid #a7f3d0",
+                }}
+              >
+                {activeCostRegime === "TT133"
+                  ? "Chế độ TT 133/2016/TT-BTC (DNNVV): Hạch toán chi phí SXKD trực tiếp vào TK 154 (theo yếu tố NVL, Nhân công, SXC — không dùng TK 621, 622, 627)"
+                  : activeCostRegime === "TT200"
+                  ? "Chế độ TT 200/2014/TT-BTC: Tập hợp chi phí qua TK 621, 622, 627 và kết chuyển sang TK 154 cuối kỳ"
+                  : "Chế độ TT 99/2025/TT-BTC: Tập hợp chi phí qua TK 621, 622, 627 và kết chuyển sang TK 154 cuối kỳ"}
+              </div>
 
               {/* S-curve Interactive Flow Diagram */}
               <div
@@ -11373,7 +11446,7 @@ if (apiConnected) {
                 </div>
 
                 {/* Table with light mint green header */}
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 140 }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 140 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -12025,7 +12098,7 @@ if (apiConnected) {
                 </div>
 
                 {/* Table with pale mint green header */}
-                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 140 }}>
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 140 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -12243,7 +12316,7 @@ if (apiConnected) {
             </div>
 
             <div style={{ padding: "16px 20px", overflowY: "auto" }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4" }}>
@@ -12395,7 +12468,7 @@ if (apiConnected) {
                 Quy trình sản xuất gồm các công đoạn kế tiếp nhau, trong đó nửa thành phẩm công đoạn trước là đối tượng chế biến của công đoạn sau.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -13802,7 +13875,7 @@ if (apiConnected) {
             </div>
 
             <div style={{ padding: "16px 20px", overflowY: "auto" }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4" }}>
@@ -13996,7 +14069,7 @@ if (apiConnected) {
                 </div>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["c621", "Dở dang 621", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c621 ?? settingOf(code)?.opening_wip], ["c622", "Dở dang 622", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c622 ?? 0], ["c627", "Dở dang 627", (code) => settingOf(code)?.estimate?.opening_wip_detail?.c627 ?? 0]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14152,7 +14225,7 @@ if (apiConnected) {
                 Thiết lập hệ số hoặc tỷ lệ giữa các thành phẩm sản xuất trong cùng một phân xưởng quy về sản phẩm chuẩn.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["coefficient", "Hệ số giá thành", (code) => settingOf(code)?.coefficient ?? 1]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14304,7 +14377,7 @@ if (apiConnected) {
                 Thiết lập tiêu thức phân bổ chi phí chung và chi phí nhân công cho các đối tượng tập hợp chi phí.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14448,7 +14521,7 @@ if (apiConnected) {
                 Giá thành kế hoạch được sử dụng làm căn cứ tính tỷ lệ giá thành và phân bổ chi phí sản xuất thực tế.
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 {apiConnected ? <CostNormEditor rows={apiCostCenters || []} columns={[["plannedCost", "Giá thành kế hoạch", (code) => settingOf(code)?.planned_cost ?? 0]]} value={normValue} onChange={editNorm} /> : (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#dff0e4", color: "#1e293b" }}>
@@ -14731,7 +14804,7 @@ if (apiConnected) {
               </div>
 
               {/* Table */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 140 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 140 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -15139,7 +15212,7 @@ if (apiConnected) {
                 </div>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -15321,7 +15394,7 @@ if (apiConnected) {
                 />
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -15808,27 +15881,13 @@ if (apiConnected) {
                   cursor: "pointer",
                 }}
               >Lưu</button>
-              <button
-                type="button"
-                onClick={() => handleSaveEstimate(true)}
-                style={{
-                  height: 30,
-                  padding: "0 14px",
-                  background: "#00a862",
-                  border: "none",
-                  borderRadius: 3,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#ffffff",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <span>Lưu và Đóng</span>
-                <ChevronDown size={14} />
-              </button>
+              <MisaSaveSplitButton
+                defaultMode="save_and_close"
+                showPrint={false}
+                height={30}
+                onSaveAndClose={() => handleSaveEstimate(true)}
+                onSaveAndAdd={() => handleSaveEstimate(false)}
+              />
             </div>
           </div>
         </div>
@@ -15957,7 +16016,7 @@ if (apiConnected) {
                 </button>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 120 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 120 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -16616,7 +16675,7 @@ if (apiConnected) {
                 </button>
               </div>
 
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden", minHeight: 120 }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto", minHeight: 120 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
@@ -16809,7 +16868,7 @@ if (apiConnected) {
             </div>
 
             <div style={{ padding: "16px 20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 4, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>

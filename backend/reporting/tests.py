@@ -382,6 +382,33 @@ class DashboardOverviewUcRpt01Tests(ReportingTestSetupMixin, TestCase):
     Covers TC-RPT-01-01 through TC-RPT-01-50 across all 12 widgets (DASH-01 .. DASH-12).
     """
 
+    def test_workflow_widgets_reuse_request_scoped_queries(self):
+        from unittest.mock import patch
+
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        from reporting import dashboard_services
+
+        original = dashboard_services.execute_widget_safely
+        query_counts = {}
+
+        def measure(ctx, code, calculate):
+            with CaptureQueriesContext(connection) as queries:
+                result = original(ctx, code, calculate)
+            query_counts[code] = len(queries)
+            return result
+
+        with patch.object(dashboard_services, "execute_widget_safely", measure):
+            response = self.client.get(
+                f"/api/v1/reports/dashboard/overview/?company_id={self.company.id}"
+                f"&fiscal_period_id={self.period_sep.id}&refresh_mode=FORCE_REFRESH"
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("DASH-04", query_counts)
+        self.assertLessEqual(query_counts["DASH-11"], 2)
+
     # ------------------------------------------------------------------
     # Nhóm A: Truy cập, quyền, Data Scope (TC-RPT-01-01 .. TC-RPT-01-06)
     # ------------------------------------------------------------------
@@ -3110,12 +3137,12 @@ class BusinessResultUcRpt04Tests(TestCase):
         self.assertEqual(tpl_res.status_code, 200)
         by_legal = {t["legal_form_code"]: t for t in tpl_res.data["templates"]}
         self.assertEqual(set(by_legal.keys()), {"B02-DN", "B02-DNKLT", "B02a-DN", "B02b-DN"})
-        self.assertEqual(by_legal["B02-DN"]["indicator_count"], 21)
+        self.assertEqual(by_legal["B02-DN"]["indicator_count"], 25)
         self.assertEqual(by_legal["B02-DN"]["value_slot_count"], 2)
         self.assertEqual(by_legal["B02-DN"]["table_column_count"], 5)
-        self.assertEqual(by_legal["B02-DNKLT"]["indicator_count"], 21)
+        self.assertEqual(by_legal["B02-DNKLT"]["indicator_count"], 25)
         self.assertEqual(by_legal["B02-DNKLT"]["going_concern_status"], "NON_GOING_CONCERN")
-        self.assertEqual(by_legal["B02a-DN"]["indicator_count"], 21)
+        self.assertEqual(by_legal["B02a-DN"]["indicator_count"], 25)
         self.assertEqual(by_legal["B02a-DN"]["value_slot_count"], 4)
         self.assertEqual(by_legal["B02a-DN"]["table_column_count"], 7)
         self.assertEqual(by_legal["B02b-DN"]["indicator_count"], 4)
@@ -3232,7 +3259,7 @@ class BusinessResultUcRpt04Tests(TestCase):
             format="json",
         )
         self.assertEqual(res_b02a.status_code, 201)
-        self.assertEqual(res_b02a.data["total_template_lines"], 21)
+        self.assertEqual(res_b02a.data["total_template_lines"], 25)
         self.assertEqual(len(res_b02a.data["run"]["table_columns"]), 7)
         b02a_map = {ln["indicator_code"]: ln for ln in res_b02a.data["lines"]}
         slots_01 = b02a_map["01"]["slots_by_code"]
@@ -7373,7 +7400,7 @@ class SalesReportsUcRpt09Tests(TestCase):
         cat_res = self.client.get(f"/api/v1/reports/sales/catalogue/?company_id={self.company.id}")
         self.assertEqual(cat_res.status_code, 200)
         self.assertEqual(cat_res.data["total_reports"], 36)
-        
+
         # TC-RPT-09-02: Lọc danh mục theo 5 nhóm nghiệp vụ
         cat_a = self.client.get(f"/api/v1/reports/sales/catalogue/?company_id={self.company.id}&report_category_type=SALES_LEDGER_AND_JOURNAL")
         self.assertEqual(cat_a.status_code, 200)
@@ -11375,12 +11402,3 @@ class DrilldownUcRpt14Tests(TestCase):
         self.assertEqual(AssetTransaction.objects.count(), tx_count_before)
         self.assertEqual(StockMovement.objects.count(), mov_count_before)
         self.assertEqual(InventoryTransaction.objects.count(), inv_tx_before)
-
-
-
-
-
-
-
-
-

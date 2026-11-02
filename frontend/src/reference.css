@@ -1949,7 +1949,7 @@ select:has(~ svg),
   min-height: 25px;
   background: white;
   border: 1px solid #cbbcaf;
-  border-radius: 1px;
+  border-radius: 6px;
   padding: 3px 10px;
   font-size: 11px;
   color: #334155;
@@ -2045,7 +2045,7 @@ select:has(~ svg),
   min-height: 160px;
 }
 .ref-dashboard-chart text {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   fill: #667575;
   font-size: 10px;
 }
@@ -2210,7 +2210,7 @@ select:has(~ svg),
 }
 .ref-command-bar select {
   font-size: 11px;
-  border-radius: 1px;
+  border-radius: 6px;
   padding: 3px 6px;
   height: 25px;
   border-color: #b8c5c6;
@@ -2386,7 +2386,7 @@ select:has(~ svg),
 .ref-filter-popover input {
   display: block;
   padding: 4px 6px;
-  border-radius: 1px;
+  border-radius: 6px;
   border: 1px solid #cbd1d0;
   font-size: 11px;
   width: 100%;
@@ -3004,11 +3004,11 @@ select:has(~ svg),
   background: #1a29296b;
 }
 .reference-app .modal-header h2 {
-  font-family: Arial, sans-serif;
+  font-family: inherit;
 }
 .reference-app .toast {
   background: #0f172a;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
 }
 .reference-app :focus-visible {
   outline-color: #7d8b4e;
@@ -4073,4 +4073,74 @@ select:has(~ svg),
 .ref-user-dropdown-item.danger:hover {
   background: #fef2f2;
 }
+
+/* ==========================================================================
+   PROCESS WORKSPACE FIXED / NO-SCROLL VIEWPORT LOCK
+   Ensures all module "Quy trình" tabs remain firmly fixed within the viewport
+   without vertical sliding or page/main scrolling.
+   ========================================================================== */
+html.ref-process-scroll-lock,
+body.ref-process-scroll-lock {
+  overflow: hidden !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+}
+
+.reference-app.ref-process-locked {
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.ref-main.ref-process-fixed {
+  display: flex !important;
+  flex-direction: column !important;
+  height: calc(100vh - var(--ref-header)) !important;
+  height: calc(100dvh - var(--ref-header)) !important;
+  max-height: calc(100vh - var(--ref-header)) !important;
+  max-height: calc(100dvh - var(--ref-header)) !important;
+  padding: 0 16px 0 !important;
+  overflow: hidden !important;
+}
+
+.ref-main.ref-process-fixed .ref-module-bar {
+  flex: 0 0 40px !important;
+  position: relative !important;
+  top: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+}
+
+.ref-main.ref-process-fixed .ref-process-wrapper {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  padding: 18px 24px 16px !important;
+  box-sizing: border-box !important;
+}
+
+.ref-main.ref-process-fixed .misa-cash-workspace,
+.ref-main.ref-process-fixed .misa-bank-workspace,
+.ref-main.ref-process-fixed .misa-purchase-workspace,
+.ref-main.ref-process-fixed .misa-sales-workspace,
+.ref-main.ref-process-fixed .misa-inventory-workspace,
+.ref-main.ref-process-fixed .misa-assets-workspace,
+.ref-main.ref-process-fixed .misa-tools-workspace,
+.ref-main.ref-process-fixed .misa-payroll-workspace,
+.ref-main.ref-process-fixed .misa-cost-workspace,
+.ref-main.ref-process-fixed .ref-nested-workspace {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  padding: 8px 16px !important;
+  box-sizing: border-box !important;
+}
+
 

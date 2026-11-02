@@ -261,7 +261,7 @@ STANDARD_ROLE_DEFINITIONS = [
         "name": "Kế toán trưởng",
         "description": "Toàn quyền quản lý tài chính, kiểm soát sổ cái, phê duyệt chứng từ, khóa/mở kỳ kế toán.",
         "permission_prefixes": [
-            "GL.", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
+            "GL.", "OPENING_BALANCE_", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
         ],
     },
     {
@@ -338,6 +338,20 @@ def seed_standard_roles_for_company(company, actor=None):
         ]
         if new_admin_grants:
             RolePermission.objects.bulk_create(new_admin_grants)
+
+        # Gán vai trò COMPANY_ADMIN (Chủ sở hữu) cho tài khoản khởi tạo/chủ doanh nghiệp
+        if actor:
+            actor_mem = CompanyMembership.objects.filter(company=company, user=actor).first()
+            if actor_mem:
+                UserRoleAssignment.objects.get_or_create(
+                    company_membership=actor_mem,
+                    role=admin_role,
+                    defaults={
+                        "status": ActiveStatus.ACTIVE,
+                        "assigned_by": actor,
+                        "assign_reason": "Chủ sở hữu / Quản trị viên doanh nghiệp",
+                    },
+                )
 
         created_roles.append({
             "code": admin_role.code,

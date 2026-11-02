@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import * as XLSX from "xlsx";
 import {
   ChevronLeft,
   Search,
@@ -197,8 +196,9 @@ export default function MisaStateObligationsReport({
     notify?.("Đã xóa điều kiện lọc về mặc định.");
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const exportRows = filteredRows.map((r) => ({
         "Chỉ tiêu": r.name,
         "Mã số": r.code,

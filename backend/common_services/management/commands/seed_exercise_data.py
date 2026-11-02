@@ -44,11 +44,19 @@ class Command(BaseCommand):
             defaults={"name": "Đô la Mỹ", "numeric_code": "840", "decimal_places": 2, "is_active": True}
         )
 
-        # 2. Users: ensure superadmin and default admin from .env
+        # 2. Users: ensure dedicated superadmin (admin/admin) and default company owner from .env
         import os
-        superadmin_user = os.getenv("SUPERADMIN_USERNAME", "superadmin")
+        superadmin_user = "admin"
         superadmin_email = os.getenv("SUPERADMIN_EMAIL", "superadmin@soviet.vn")
-        superadmin_pass = os.getenv("SUPERADMIN_PASSWORD", "SuperAdmin@2026")
+        superadmin_pass = "admin"
+
+        existing_staff_admin = User.objects.filter(username="admin", email="admin@example.com").first()
+        if existing_staff_admin:
+            existing_staff_admin.username = "ketoan.mua"
+            existing_staff_admin.email = "ketoan.mua@soviet.vn"
+            existing_staff_admin.is_superuser = False
+            existing_staff_admin.is_staff = False
+            existing_staff_admin.save(update_fields=("username", "email", "is_superuser", "is_staff"))
 
         super_auth, _ = User.objects.get_or_create(
             username=superadmin_user,
@@ -78,6 +86,8 @@ class Command(BaseCommand):
             defaults={"email": admin_email, "is_staff": False, "is_superuser": False}
         )
         admin_auth.email = admin_email
+        admin_auth.is_staff = False
+        admin_auth.is_superuser = False
         admin_auth.is_active = True
         admin_auth.set_password(admin_pass)
         admin_auth.save()
@@ -93,24 +103,29 @@ class Command(BaseCommand):
         iam_user = admin_iam
 
         # 3. Company ABC
-        company, created = Company.objects.get_or_create(
-            tax_code="109876543",
-            defaults={
-                "code": "ABC",
-                "name": "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC",
-                "legal_name": "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC",
-                "short_name": "ABC",
-                "address": "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội",
-                "province": "Hà Nội",
-                "business_type": BusinessType.LLC_MULTI_MEMBER,
-                "accounting_currency": vnd,
-                "legal_reporting_currency": vnd,
-                "accounting_regime": "TT99",
-                "fiscal_year_start_month": 1,
-                "status": CompanyStatus.ACTIVE,
-                "created_by_user_id": iam_user.id,
-            }
+        company = (
+            Company.objects.filter(code="ABC").first()
+            or Company.objects.filter(tax_code="109876543").first()
         )
+        created = False
+        if not company:
+            company = Company.objects.create(
+                tax_code="109876543",
+                code="ABC",
+                name="CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC",
+                legal_name="CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC",
+                short_name="ABC",
+                address="198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội",
+                province="Hà Nội",
+                business_type=BusinessType.LLC_MULTI_MEMBER,
+                accounting_currency=vnd,
+                legal_reporting_currency=vnd,
+                accounting_regime="TT99",
+                fiscal_year_start_month=1,
+                status=CompanyStatus.ACTIVE,
+                created_by_user_id=iam_user.id,
+            )
+            created = True
         if not created:
             company.name = "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC"
             company.legal_name = "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC"
@@ -118,16 +133,23 @@ class Command(BaseCommand):
             company.address = "198 Trần Quang Khải. P. Hoàn Kiếm, TP. Hà Nội"
             company.accounting_regime = "TT99"
             company.status = CompanyStatus.ACTIVE
+            company.created_by_user_id = iam_user.id
             company.save()
 
         # Seed standard roles and full-permission COMPANY_ADMIN role for ABC
         from iam.role_services import seed_standard_roles_for_company
         seed_standard_roles_for_company(company, iam_user)
 
-        # Memberships for superadmin & admin -> Ensure single COMPANY_ADMIN role
-        from iam.models import ActiveStatus, Role, UserRoleAssignment
+        # Remove platform superadmin membership from ABC so ABC belongs strictly to its Company Owner (admin_iam)
+        from iam.models import ActiveStatus, Role, UserRoleAssignment, OrganizationAssignment
+        super_mems = CompanyMembership.objects.filter(company=company, user=super_iam)
+        UserRoleAssignment.objects.filter(company_membership__in=super_mems).delete()
+        OrganizationAssignment.objects.filter(membership__in=super_mems).delete()
+        super_mems.delete()
+
+        # Membership for company owner (admin_iam) -> Ensure single COMPANY_ADMIN role
         admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
-        for user_target in [super_iam, admin_iam]:
+        for user_target in [admin_iam]:
             m, _ = CompanyMembership.objects.get_or_create(
                 company=company,
                 user=user_target,
@@ -197,8 +219,8 @@ class Command(BaseCommand):
         staff_map = [
             ("nongxuanmai098@gmail.com", "+84971389093", "Nông Xuân Mai", "KT_TRUONG", "Phòng Kế toán", "Kế toán trưởng"),
             ("timo2026@example.com", "+84987654321", "Trần Thủ Quỹ", "THU_QUY", "Phòng Tài chính - Quỹ", "Thủ quỹ"),
-            ("admin@soviet.vn", "+84912345678", "Lê Kế Toán Bán Hàng", "KT_BANHANG", "Phòng Kinh doanh", "Kế toán bán hàng"),
-            ("admin@example.com", "admin", "Nguyễn Kế Toán Mua", "KT_MUAHANG", "Phòng Mua hàng", "Kế toán mua hàng"),
+            ("ketoan.ban@soviet.vn", "+84912345678", "Lê Kế Toán Bán Hàng", "KT_BANHANG", "Phòng Kinh doanh", "Kế toán bán hàng"),
+            ("ketoan.mua@soviet.vn", "ketoan.mua", "Nguyễn Kế Toán Mua", "KT_MUAHANG", "Phòng Mua hàng", "Kế toán mua hàng"),
         ]
         from organization.models import Department, Employee
         for staff_email, staff_uname, staff_dname, rcode, dname, pname in staff_map:
@@ -213,13 +235,23 @@ class Command(BaseCommand):
             u_acc.display_name = staff_dname
             u_acc.save()
 
-            dept_obj = Department.objects.filter(company=company, name=dname).first()
+            dept_obj = (
+                Department.objects.filter(company=company, name=dname).first()
+                or Department.objects.filter(company=company, code=f"PB_{u_obj.id}").first()
+            )
             if not dept_obj:
                 dept_obj = Department.objects.create(company=company, name=dname, code=f"PB_{u_obj.id}", branch=branch, status="ACTIVE")
 
-            emp_obj = Employee.objects.filter(company=company, email=staff_email).first()
+            emp_obj = (
+                Employee.objects.filter(company=company, email=staff_email).first()
+                or Employee.objects.filter(company=company, employee_code=f"NV_{u_obj.id}").first()
+            )
             if not emp_obj:
                 emp_obj = Employee.objects.create(company=company, email=staff_email, employee_code=f"NV_{u_obj.id}", full_name=staff_dname, department=dept_obj, branch=branch, status="ACTIVE")
+            else:
+                emp_obj.email = staff_email
+                emp_obj.full_name = staff_dname
+                emp_obj.save(update_fields=("email", "full_name"))
             staff_m, _ = CompanyMembership.objects.get_or_create(
                 company=company, user=u_acc,
                 defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": iam_user, "employee": emp_obj}

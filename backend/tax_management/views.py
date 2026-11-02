@@ -27,7 +27,12 @@ class CompanyViewSet(ModelViewSet):
     ordering = ("-created_at",)
 
     def get_queryset(self):
-        company = self.request.query_params.get("company_id")
+        company = (
+            self.request.query_params.get("company_id")
+            or self.request.query_params.get("company")
+            or self.request.headers.get("X-Company-ID")
+            or getattr(self.request, "_resolved_company_id", None)
+        )
         return super().get_queryset().filter(company_id=company) if company else super().get_queryset().none()
 
     def perform_create(self, serializer):

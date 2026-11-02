@@ -290,11 +290,14 @@ class CompanyMembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             company_uuid = uuid.UUID(str(company_id))
         except (TypeError, ValueError):
             company_uuid = None
-        company = Company.objects.filter(pk=company_uuid, status="ACTIVE").first() if company_uuid else None
+        if self.request.user.is_superuser:
+            company = Company.objects.filter(pk=company_uuid).first() if company_uuid else None
+        else:
+            company = Company.objects.filter(pk=company_uuid, status="ACTIVE").first() if company_uuid else None
         if company is None or not hasattr(self.request.user, "iam_account"):
             return self.queryset.none()
         actor = self.request.user.iam_account
-        if not CompanyMembership.objects.filter(company=company, user=actor, membership_status="ACTIVE").exists():
+        if not self.request.user.is_superuser and not CompanyMembership.objects.filter(company=company, user=actor, membership_status="ACTIVE").exists():
             return self.queryset.none()
         permission = (
             "SYS.USER.VIEW_HISTORY" if self.action in ("history", "membership_history") else
@@ -538,10 +541,13 @@ class RoleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewS
             company_uuid = uuid.UUID(str(company_id))
         except (TypeError, ValueError):
             company_uuid = None
-        company = Company.objects.filter(pk=company_uuid, status="ACTIVE").first() if company_uuid else None
+        if self.request.user.is_superuser:
+            company = Company.objects.filter(pk=company_uuid).first() if company_uuid else None
+        else:
+            company = Company.objects.filter(pk=company_uuid, status="ACTIVE").first() if company_uuid else None
         if company is None or not hasattr(self.request.user, "iam_account"):
             return self.queryset.none()
-        if not CompanyMembership.objects.filter(
+        if not self.request.user.is_superuser and not CompanyMembership.objects.filter(
             company=company, user=self.request.user.iam_account, membership_status="ACTIVE",
         ).exists():
             return self.queryset.none()

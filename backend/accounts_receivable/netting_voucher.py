@@ -427,7 +427,7 @@ def post_voucher(voucher, request):
         credit=ZERO,
         currency=voucher.currency,
         foreign_amount=voucher.total_amount,
-        exchange_rate=Decimal("1"),
+        exchange_rate=(total_payable_conv / voucher.total_amount).quantize(Decimal("0.00000001")),
         party=voucher.supplier,
         description=voucher.description,
     )
@@ -442,7 +442,7 @@ def post_voucher(voucher, request):
         credit=total_rec_conv,
         currency=voucher.currency,
         foreign_amount=voucher.total_amount,
-        exchange_rate=Decimal("1"),
+        exchange_rate=(total_rec_conv / voucher.total_amount).quantize(Decimal("0.00000001")),
         party=voucher.customer,
         description=voucher.description,
     )
@@ -596,21 +596,15 @@ def unpost_voucher(voucher, request):
 
     # Reverse GL journal entry
     if voucher.journal_entry_id:
-        from general_ledger.services import reverse as reverse_journal
-        proxy = type("RequestProxy", (), {
-            "user": request.user,
-            "data": {
-                "reason": reason,
-                "period": str(period.pk),
-                "posting_date": voucher.posting_date,
-                "number": f"REV-GL-{voucher.number}-{voucher.posting_count}",
-            },
-            "META": request.META,
-            "headers": request.headers,
-            "method": request.method,
-            "path": request.path,
-        })()
-        reverse_journal(voucher.journal_entry, proxy)
+        from general_ledger.services import gl_request, reverse as reverse_journal
+        reverse_journal(voucher.journal_entry, gl_request(request, {
+            "reason": reason,
+            "period": str(period.pk),
+            "posting_date": voucher.posting_date,
+            "number": f"REV-GL-{voucher.number}-{voucher.posting_count}",
+            "from_source_module": True,
+            "auto_post": True,
+        }))
         voucher.journal_entry = None
 
     from accounts_payable.services import update_payable_status

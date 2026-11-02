@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 
 export interface SaleReturnItem {
   id: string;
@@ -4390,23 +4391,12 @@ export function SaleReturnModal({
               }}
             >Lưu</button>
 
-            <button
-              type="button"
-              onClick={() => handleSave(true)}
-              style={{
-                height: 30,
-                padding: "0 18px",
-                border: "none",
-                borderRadius: 4,
-                background: "#00a862",
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                color: "#ffffff",
-              }}
-            >
-              Lưu và Thêm
-            </button>
+            <MisaSaveSplitButton
+              defaultMode="save_and_add"
+              height={30}
+              onSaveAndClose={() => handleSave(false)}
+              onSaveAndAdd={() => handleSave(true)}
+            />
           </div>
         </footer>
       </div>

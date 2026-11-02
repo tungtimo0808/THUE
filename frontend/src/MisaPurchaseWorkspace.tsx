@@ -4672,9 +4672,9 @@ export default function MisaPurchaseWorkspace({
       className="ref-process-wrapper"
       style={{
         background: "#f1f5f9",
-        minHeight: "100%",
-        padding: "24px 28px",
-        overflowY: "auto",
+        height: "100%",
+        padding: "10px 16px",
+        overflow: "hidden",
       }}
     >
       <div
@@ -5070,7 +5070,7 @@ export default function MisaPurchaseWorkspace({
                 textAlign: "center",
                 zIndex: 10,
               }}
-              onClick={() => notify("Đang mở chức năng Xử lý hóa đơn đầu vào Sổ Việt e-Invoice...")}
+              onClick={() => navigateTo("invoice-processing")}
               title="Xử lý hóa đơn đầu vào"
             >
               <span className="ref-business-icon process" style={{ marginBottom: 6 }}>
@@ -5251,7 +5251,7 @@ export default function MisaPurchaseWorkspace({
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => notify("Mở Bảng kê hóa đơn mua vào...")}>
+              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Sổ chi tiết mua hàng")}>
                 • Bảng kê hóa đơn dịch vụ mua vào
               </span>
             </li>
@@ -5354,7 +5354,7 @@ export default function MisaPurchaseWorkspace({
           <button
             type="button"
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", cursor: "pointer", fontSize: 12, color: "#334155" }}
-            onClick={() => notify("Tùy chọn thiết lập phân hệ Mua hàng...")}
+            onClick={() => navigate("/admin?tab=config")}
           >
             <SlidersHorizontal size={20} style={{ color: "#64748b" }} />
             <span>Tùy chọn</span>

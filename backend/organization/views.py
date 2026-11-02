@@ -8,6 +8,7 @@ from django.db import transaction
 from django.http import HttpResponse
 import csv
 import io
+from openpyxl import Workbook
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from audit_log.services import record_audit
@@ -62,7 +63,27 @@ class CompanyScopedViewSet(ProtectedModelViewSet):
         company_id = self.request.query_params.get("company_id")
         if company_id:
             queryset = queryset.filter(company_id=company_id)
-        return queryset
+            if not getattr(self.request.user, "is_superuser", False):
+                account = getattr(self.request.user, "iam_account", None)
+                if account and CompanyMembership.objects.filter(
+                    user=account, membership_status=ActiveStatus.ACTIVE
+                ).exists():
+                    if not CompanyMembership.objects.filter(
+                        company_id=company_id,
+                        user=account,
+                        membership_status=ActiveStatus.ACTIVE,
+                    ).exists():
+                        return queryset.none()
+            return queryset
+        if getattr(self.request.user, "is_superuser", False):
+            return queryset
+        account = getattr(self.request.user, "iam_account", None)
+        if not account:
+            return queryset.none()
+        return queryset.filter(
+            company__memberships__user=account,
+            company__memberships__membership_status=ActiveStatus.ACTIVE,
+        ).distinct()
 
 
 class CompanyViewSet(ProtectedModelViewSet):
@@ -328,7 +349,7 @@ class EmployeeViewSet(CompanyScopedViewSet):
             raise PermissionDenied("Không có quyền tạo nhân viên trong phạm vi này.")
         if company.status != "ACTIVE":
             raise ValidationError({"company": "Doanh nghiệp chưa hoạt động."})
-        if any(field in serializer.validated_data for field in ("identity_number", "personal_tax_code", "address", "date_of_birth")) and not has_effective_permission(self._account(), company, "MD.EMPLOYEE.VIEW_SENSITIVE", branch_id=getattr(branch, "pk", None), department_id=getattr(department, "pk", None)):
+        if any(field in serializer.validated_data for field in ("identity_number", "personal_tax_code", "address", "date_of_birth", "agreed_salary", "salary_coefficient", "insurance_salary", "dependent_count", "bank_account")) and not has_effective_permission(self._account(), company, "MD.EMPLOYEE.VIEW_SENSITIVE", branch_id=getattr(branch, "pk", None), department_id=getattr(department, "pk", None)):
             raise PermissionDenied("Không có quyền cập nhật dữ liệu nhạy cảm.")
         employee = serializer.save()
         self._audit(employee, "CREATE")
@@ -339,7 +360,11 @@ class EmployeeViewSet(CompanyScopedViewSet):
         if not self._allowed(employee, "MD.EMPLOYEE.EDIT"):
             raise PermissionDenied("Không có quyền sửa nhân viên.")
         self._check_version(employee)
-        if any(field in serializer.validated_data for field in ("identity_number", "personal_tax_code", "address", "date_of_birth")) and not self._sensitive_allowed(employee):
+        target_branch = serializer.validated_data.get("branch", employee.branch)
+        target_department = serializer.validated_data.get("department", employee.department)
+        if (target_branch != employee.branch or target_department != employee.department) and not has_effective_permission(self._account(), employee.company, "MD.EMPLOYEE.EDIT", branch_id=getattr(target_branch, "pk", None), department_id=getattr(target_department, "pk", None)):
+            raise PermissionDenied("Không có quyền sửa nhân viên trong đơn vị mới.")
+        if any(field in serializer.validated_data for field in ("identity_number", "personal_tax_code", "address", "date_of_birth", "agreed_salary", "salary_coefficient", "insurance_salary", "dependent_count", "bank_account")) and not self._sensitive_allowed(employee):
             raise PermissionDenied("Không có quyền cập nhật dữ liệu nhạy cảm.")
         before = {"employee_code": employee.employee_code, "full_name": employee.full_name, "status": employee.status}
         if "status" in serializer.validated_data and serializer.validated_data["status"] != employee.status:
@@ -367,6 +392,11 @@ class EmployeeViewSet(CompanyScopedViewSet):
         new_status = request.data.get("status")
         if new_status not in ("ACTIVE", "INACTIVE", "TERMINATED"):
             raise ValidationError({"status": "Trạng thái không hợp lệ."})
+        transitions = {"DRAFT": {"ACTIVE"}, "ACTIVE": {"INACTIVE", "TERMINATED"}, "INACTIVE": {"ACTIVE"}, "TERMINATED": set()}
+        if new_status not in transitions.get(employee.status, set()):
+            raise ValidationError({"status": "Không thể chuyển sang trạng thái này."})
+        if new_status == "ACTIVE" and not (employee.branch_id and employee.contract_type):
+            raise ValidationError({"status": "Hồ sơ thiếu Đơn vị hoặc Loại hợp đồng để kích hoạt."})
         if new_status == "TERMINATED" and not request.data.get("termination_date"):
             raise ValidationError({"termination_date": "Cần ngày kết thúc."})
         if new_status in ("INACTIVE", "TERMINATED") and employee.assets_in_custody.exclude(status="DISPOSED").exists() and request.data.get("confirm_assets") is not True:
@@ -469,6 +499,26 @@ class EmployeeViewSet(CompanyScopedViewSet):
         response["Content-Disposition"] = 'attachment; filename="employees.csv"'
         return response
 
+    @action(detail=False, methods=("get",), url_path="export-xlsx")
+    def export_xlsx(self, request):
+        if not request.query_params.get("company_id"):
+            raise ValidationError({"company_id": "Cần chọn doanh nghiệp."})
+        employees = [item for item in self.filter_queryset(self.get_queryset()) if self._allowed(item, "MD.EMPLOYEE.EXPORT")]
+        if not self._account() or not employees:
+            raise PermissionDenied("Không có quyền xuất nhân viên.")
+        book = Workbook()
+        sheet = book.active
+        sheet.title = "Nhân viên"
+        sheet.append(["Mã nhân viên", "Tên nhân viên", "Chức danh", "Tên đơn vị", "Số tài khoản", "Trạng thái"])
+        for employee in employees:
+            account = employee.bank_accounts.filter(is_active=True).order_by("-is_default", "id").first() if self._sensitive_allowed(employee) else None
+            sheet.append([employee.employee_code, employee.full_name, employee.job_title, employee.department.name if employee.department_id else employee.branch.name if employee.branch_id else "", account.account_number if account else "", employee.status])
+        output = io.BytesIO()
+        book.save(output)
+        response = HttpResponse(output.getvalue(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = 'attachment; filename="employees.xlsx"'
+        return response
+
     @action(detail=False, methods=("post",), url_path="import-csv")
     def import_csv(self, request):
         company = get_object_or_404(Company, pk=request.data.get("company_id"))
@@ -480,8 +530,8 @@ class EmployeeViewSet(CompanyScopedViewSet):
         try:
             content = uploaded.read().decode("utf-8-sig")
             reader = csv.DictReader(io.StringIO(content))
-            if not {"employee_code", "full_name", "branch_id"}.issubset(reader.fieldnames or []):
-                raise ValidationError({"file": "Thiếu cột employee_code, full_name hoặc branch_id."})
+            if not {"employee_code", "full_name", "branch_id", "contract_type"}.issubset(reader.fieldnames or []):
+                raise ValidationError({"file": "Thiếu cột employee_code, full_name, branch_id hoặc contract_type."})
             rows = list(reader)
         except UnicodeDecodeError as exc:
             raise ValidationError({"file": "Tệp phải dùng UTF-8."}) from exc
@@ -493,7 +543,7 @@ class EmployeeViewSet(CompanyScopedViewSet):
             if not branch or not has_effective_permission(self._account(), company, "MD.EMPLOYEE.IMPORT", branch_id=branch.pk) or not has_effective_permission(self._account(), company, "MD.EMPLOYEE.CREATE", branch_id=branch.pk):
                 errors.append({"row": number, "error": "Chi nhánh không hợp lệ hoặc ngoài phạm vi."})
                 continue
-            serializer = EmployeeSerializer(data={"company": str(company.pk), "branch": str(branch.pk), "employee_code": row.get("employee_code", ""), "full_name": row.get("full_name", ""), "email": row.get("email", ""), "phone": row.get("phone", ""), "status": "ACTIVE"}, context={"request": request})
+            serializer = EmployeeSerializer(data={"company": str(company.pk), "branch": str(branch.pk), "employee_code": row.get("employee_code", ""), "full_name": row.get("full_name", ""), "contract_type": row.get("contract_type", ""), "email": row.get("email", ""), "phone": row.get("phone", ""), "status": "ACTIVE"}, context={"request": request})
             if not serializer.is_valid():
                 errors.append({"row": number, "error": serializer.errors})
                 continue

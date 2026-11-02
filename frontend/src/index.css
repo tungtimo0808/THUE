@@ -114,8 +114,14 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #87965a;
-  outline-offset: 3px;
+  outline: 2px solid rgba(0, 82, 204, 0.35);
+  outline-offset: 1px;
+}
+.admin-workspace button:focus-visible,
+.admin-workspace a:focus-visible,
+.admin-workspace input:focus-visible,
+.admin-workspace select:focus-visible {
+  outline: none;
 }
 input,
 select {
@@ -130,8 +136,8 @@ input::placeholder {
 }
 
 /* Ensure borderless inputs inside custom containers, bordered wrappers, and combo boxes fill their container */
-div[style*="border"] > input:not([type="checkbox"]):not([type="radio"]):not([type="button"]),
-div[style*="border"] > select,
+div[style*="border:"] > input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not(.admin-input),
+div[style*="border:"] > select:not(.admin-select),
 .misa-combo-input input,
 .misa-voucher-combo-input input {
   height: 100% !important;
@@ -570,3 +576,14 @@ table caption {
   max-height: 96vh;
 }
 
+
+/* UI audit 2026-10-27: ô nhập/chọn trong bảng của modal không bị bóp quá nhỏ.
+   Bảng sẽ cuộn ngang (khung đã đổi sang overflowX: auto) thay vì cắt chữ. */
+div[style*="position: fixed"] td > input:not([type="checkbox"]):not([type="radio"]),
+div[style*="position: fixed"] td > select,
+.misa-modal-card td > input:not([type="checkbox"]):not([type="radio"]),
+.misa-modal-card td > select,
+[role="dialog"] td > input:not([type="checkbox"]):not([type="radio"]),
+[role="dialog"] td > select {
+  min-width: 100px;
+}

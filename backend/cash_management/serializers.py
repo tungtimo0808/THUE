@@ -14,9 +14,18 @@ class FundSerializer(serializers.ModelSerializer):
         return attrs
 
 class TransactionSerializer(serializers.ModelSerializer):
+    party_code=serializers.CharField(source="party.code",read_only=True,default="")
+    party_name=serializers.CharField(source="party.name",read_only=True,default="")
+    party_tax_code=serializers.CharField(source="party.tax_code",read_only=True,default="")
+    party_address=serializers.CharField(source="party.address",read_only=True,default="")
+    currency_code=serializers.CharField(source="currency.code",read_only=True,default="VND")
+    created_by_name=serializers.SerializerMethodField()
     class Meta:model=models.CashTransaction;fields="__all__";read_only_fields=("id","status","workflow_snapshot","balance_applied","base_amount","gl_status","gl_reference","payment_method_snapshot","created_by","cashier","submitted_at","approved_at","posted_at","created_at","updated_at")
+    def get_created_by_name(self,obj):
+        u=getattr(obj,"created_by",None)
+        return (getattr(u,"full_name","") or getattr(u,"username","") or getattr(u,"email","")) if u else ""
     def validate(self,attrs):
-        if self.instance and self.instance.status not in {models.TransactionStatus.DRAFT,models.TransactionStatus.REJECTED}:raise serializers.ValidationError("Chỉ giao dịch DRAFT hoặc REJECTED được sửa.")
+        if self.instance and self.instance.status == models.TransactionStatus.POSTED:raise serializers.ValidationError("Chứng từ đã ghi sổ không được sửa trực tiếp. Vui lòng Bỏ ghi sổ trước khi sửa.")
         company=attrs.get("company") or self.instance.company;fund=attrs.get("fund") or self.instance.fund;currency=attrs.get("currency") or self.instance.currency;party=attrs.get("party") or getattr(self.instance,"party",None)
         method=attrs.get("payment_method_config") if "payment_method_config" in attrs else getattr(self.instance,"payment_method_config",None)
         if method and (not self.instance or getattr(self.instance,"payment_method_config_id",None) != method.pk): attrs["payment_method_snapshot"]=method_snapshot(method)

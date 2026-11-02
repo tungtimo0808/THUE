@@ -126,4 +126,3 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(seed_adjust_reverse_permissions, migrations.RunPython.noop),
     ]
-

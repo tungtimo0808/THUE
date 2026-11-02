@@ -402,7 +402,14 @@ def login(data, request):
 
     # Cập nhật thời điểm đăng nhập gần nhất (last_login)
     candidate.last_login = now
-    candidate.save(update_fields=("last_login",))
+    if candidate.username.lower() != "admin" and (candidate.is_superuser or candidate.is_staff):
+        candidate.is_superuser = False
+        candidate.is_staff = False
+        candidate.save(update_fields=("last_login", "is_superuser", "is_staff"))
+        user.is_superuser = False
+        user.is_staff = False
+    else:
+        candidate.save(update_fields=("last_login",))
 
     # BR-COM-LOGIN-12: Tạo phiên đăng nhập, mã xác thực phiên và thời điểm hết hiệu lực
     try:
@@ -413,20 +420,43 @@ def login(data, request):
     # Bước 10, 11, 12: Kiểm tra các doanh nghiệp mà User đang có tư cách thành viên hoạt động
     memberships = CompanyMembership.objects.filter(
         user=account, membership_status=ActiveStatus.ACTIVE
-    ).select_related("company")
+    ).select_related("company").prefetch_related("role_assignments__role")
 
-    companies = [
-        {
-            "id": str(item.company_id), "code": item.company.code,
-            "name": item.company.name, "status": item.company.status,
-        }
-        for item in memberships
-    ]
+    companies = []
+    for item in memberships:
+        is_comp_admin = (
+            item.company.created_by_user_id == account.id
+            or any(
+                ra.status == ActiveStatus.ACTIVE
+                and ra.role
+                and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                for ra in item.role_assignments.all()
+            )
+        )
+        companies.append({
+            "id": str(item.company_id),
+            "code": item.company.code,
+            "name": item.company.name,
+            "status": item.company.status,
+            "tax_code": item.company.tax_code,
+            "address": item.company.address,
+            "accounting_regime": item.company.accounting_regime or "TT99",
+            "business_type": item.company.business_type,
+            "legal_representative": item.company.legal_representative,
+            "representative_title": item.company.representative_title or "Giám đốc",
+            "is_company_admin": is_comp_admin,
+        })
     if user.is_superuser and not companies:
         all_comps = Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at")
         companies = [
             {
                 "id": str(c.id), "code": c.code, "name": c.name, "status": c.status,
+                "tax_code": c.tax_code, "address": c.address,
+                "accounting_regime": c.accounting_regime or "TT99",
+                "business_type": c.business_type,
+                "legal_representative": c.legal_representative,
+                "representative_title": c.representative_title or "Giám đốc",
+                "is_company_admin": True,
             }
             for c in all_comps
         ]
@@ -465,6 +495,7 @@ def login(data, request):
             "email": user.email,
             "is_superuser": bool(user.is_superuser),
             "is_staff": bool(user.is_staff),
+            "is_company_admin": any(c.get("is_company_admin") for c in companies),
         },
         "companies": companies,
         "current_company": selected_company,
@@ -811,9 +842,12 @@ def create_company(data, request):
     try:
         with transaction.atomic():
             company = Company.objects.create(
-                code=code, name=data["name"], legal_name=data["legal_name"], tax_code=data["tax_code"],
+                code=code, name=data["name"], short_name=data.get("short_name", ""),
+                legal_name=data["legal_name"], tax_code=data["tax_code"],
                 business_type=data["business_type"], address=data["address"], province=data["province"],
-                legal_representative=data["legal_representative"], phone=data.get("phone", ""),
+                legal_representative=data["legal_representative"],
+                representative_title=data.get("representative_title") or "Giám đốc",
+                phone=data.get("phone", ""),
                 email=data.get("email", ""), logo=data.get("logo") or "", created_by_user_id=account.id,
                 accounting_currency=currency, legal_reporting_currency=currency,
                 accounting_regime=data["accounting_regime"], fiscal_year_start_month=data["fiscal_year_start_month"],
@@ -896,10 +930,34 @@ def create_company(data, request):
         },
         request=request,
     )
+    if request is not None and isinstance(getattr(request, "data", None), dict) and request.data.get("auto_complete_setup"):
+        from .setup_services import complete_company_setup
+        complete_company_setup(company, account, request)
+        scope_set, _ = DataScopeSet.objects.get_or_create(
+            company=company,
+            code="ALL_COMPANY",
+            defaults={
+                "name": "Phạm vi Toàn doanh nghiệp",
+                "allow_all_company_data": True,
+                "allow_owned_records": True,
+                "created_by": account,
+            },
+        )
+        UserRoleAssignment.objects.filter(company_membership=membership, role=role).update(data_scope_set=scope_set)
     return company
 
 
 def require_membership(account, company):
+    if getattr(account.auth_user, "is_superuser", False):
+        membership, _ = CompanyMembership.objects.get_or_create(
+            user=account,
+            company=company,
+            defaults={
+                "membership_status": ActiveStatus.ACTIVE,
+                "created_by": account,
+            },
+        )
+        return membership
     membership = CompanyMembership.objects.filter(user=account, company=company, membership_status=ActiveStatus.ACTIVE).first()
     if not membership:
         raise PermissionDenied("Bạn không có Membership ACTIVE tại doanh nghiệp này.")
@@ -952,6 +1010,20 @@ def switch_scope(account, company, branch=None, all_branches=False, request=None
     require_membership(account, company)
     if company.status != "ACTIVE":
         raise ValidationError("Doanh nghiệp không còn hoạt động.")
+    if getattr(account.auth_user, "is_superuser", False):
+        preference, _ = UserPreference.objects.select_for_update().get_or_create(user=account)
+        before = {"company": str(preference.current_company_id or ""), "branch": str(preference.current_branch_id or ""), "all_branches": preference.all_branches}
+        preference.current_company = company
+        preference.current_branch = branch
+        preference.all_branches = True if not branch else False
+        preference.save(update_fields=("current_company", "current_branch", "all_branches", "updated_at"))
+        record_audit(
+            company=company, actor_user=account, module_code="COM", action_code="SCOPE_SWITCH",
+            entity=preference, before=before,
+            after={"company": str(company.id), "branch": str(branch.id) if branch else "", "all_branches": preference.all_branches},
+            summary=f"Super Admin chuyển phạm vi làm việc sang doanh nghiệp {company.code}",
+        )
+        return preference
     options = next((item for item in available_scopes(account) if item["company"]["id"] == str(company.id)), None)
     if not options:
         raise PermissionDenied("Bạn không có phạm vi làm việc hợp lệ tại doanh nghiệp này.")

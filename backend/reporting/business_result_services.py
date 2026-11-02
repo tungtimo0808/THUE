@@ -27,6 +27,7 @@ from iam.models import (
 from iam.permissions import assignment_permission_codes, effective_assignments
 from master_data.models import Currency
 from organization.models import Branch, Company
+from reporting.statement_forms import attach_run_file
 from reporting.models import (
     FinancialStatementAccountMapping,
     FinancialStatementAdjustment,
@@ -225,6 +226,38 @@ B02_DN_LINES: list[tuple] = [
         ],
     ),
     (
+        "22.1",
+        "7.1. Lãi từ đánh giá lại tài khoản ngoại tệ",
+        "B",
+        "Hoạt động BĐSĐT, tài chính và chi phí hoạt động",
+        "",
+        "22",
+        2,
+        "MEMO",
+        "",
+        False,
+        True,
+        [
+            ("515", "CREDIT_TURNOVER", 1, {"net_fx_revaluation": True}),
+        ],
+    ),
+    (
+        "22.2",
+        "7.2. Doanh thu hoạt động tài chính",
+        "B",
+        "Hoạt động BĐSĐT, tài chính và chi phí hoạt động",
+        "",
+        "22",
+        2,
+        "MEMO",
+        "",
+        False,
+        True,
+        [
+            ("515", "CREDIT_TURNOVER", 1, {"net_fx_revaluation": True}),
+        ],
+    ),
+    (
         "23",
         "8. Chi phí tài chính",
         "B",
@@ -241,8 +274,40 @@ B02_DN_LINES: list[tuple] = [
         ],
     ),
     (
+        "23.1",
+        "8.1. Lỗ từ đánh giá lại tài khoản ngoại tệ",
+        "B",
+        "Hoạt động BĐSĐT, tài chính và chi phí hoạt động",
+        "",
+        "23",
+        2,
+        "MEMO",
+        "",
+        False,
+        True,
+        [
+            ("635", "NET_DEBIT_TURNOVER", 1, {"net_fx_revaluation": True}),
+        ],
+    ),
+    (
+        "23.2",
+        "8.2. Chi phí tài chính",
+        "B",
+        "Hoạt động BĐSĐT, tài chính và chi phí hoạt động",
+        "",
+        "23",
+        2,
+        "MEMO",
+        "",
+        False,
+        True,
+        [
+            ("635", "NET_DEBIT_TURNOVER", 1, {"net_fx_revaluation": True}),
+        ],
+    ),
+    (
         "24",
-        "- Trong đó: Chi phí đi vay",
+        "- Trong đó: Chi phí lãi vay",
         "B",
         "Hoạt động BĐSĐT, tài chính và chi phí hoạt động",
         "",
@@ -883,7 +948,7 @@ def ensure_b02_templates_seeded():
     else:
         v_dn = b02_dn.versions.filter(is_active=True).first()
         v_b02b = b02b_dn.versions.filter(is_active=True).first()
-        if not v_dn or v_dn.lines.count() != 21 or not v_b02b or v_b02b.lines.count() != 4:
+        if not v_dn or v_dn.lines.count() != len(B02_DN_LINES) or not v_b02b or v_b02b.lines.count() != 4:
             needs_seed = True
     if needs_seed:
         seed_business_result_uc_rpt_04()
@@ -1650,13 +1715,16 @@ def _compute_slot_b02_data(
     # Finalize FX revaluation netting into 22 or 23
     r22 = r22_non_fx
     r23 = r23_non_fx
+    r22_fx = r23_fx = ZERO
     if fx_reval_lines:
         net_fx = sum((amt for amt, _ in fx_reval_lines), ZERO)
         if net_fx >= ZERO:
+            r22_fx = net_fx
             r22 += net_fx
             for _, jd in fx_reval_lines:
                 contrib_jls["22"].append(jd)
         else:
+            r23_fx = abs(net_fx)
             r23 += abs(net_fx)
             for _, jd in fx_reval_lines:
                 contrib_jls["23"].append(jd)
@@ -1765,7 +1833,11 @@ def _compute_slot_b02_data(
         "20": r20,
         "21": r21,
         "22": r22,
+        "22.1": r22_fx,
+        "22.2": r22_non_fx,
         "23": r23,
+        "23.1": r23_fx,
+        "23.2": r23_non_fx,
         "24": r24,
         "25": r25,
         "26": r26,
@@ -2485,9 +2557,9 @@ def validate_business_result_run(run: FinancialStatementRun) -> dict[str, Any]:
             if ok_22 else "Lỗi EF-15/EF-16: B02b-DN sai số lượng chỉ tiêu hoặc mã [31] dùng nhầm Mapping của B02a-DN.",
         )
     else:
-        ok_22 = len(lines) == 21
+        ok_22 = len(lines) == len(B02_DN_LINES)
         _add_val(
-            "RPT-B02-VAL-22", "ALL", "", Decimal("21"), Decimal(str(len(lines))),
+            "RPT-B02-VAL-22", "ALL", "", Decimal(len(B02_DN_LINES)), Decimal(str(len(lines))),
             "BLOCKER", "PASSED" if ok_22 else "FAILED",
             f"Mẫu {legal_code} có đầy đủ 21 chỉ tiêu chuẩn Thông tư 99/2025/TT-BTC.",
         )
@@ -3954,6 +4026,11 @@ def export_business_result_run(request, run_id: str) -> dict[str, Any]:
         "run": run_header,
         "lines": lines_payload["lines"],
         "summary": lines_payload["summary"],
+        **attach_run_file(
+            {}, run, company, lines_payload["lines"], data, title="BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH",
+            period=f"Năm {run.fiscal_year}", labels=("Năm nay", "Năm trước"),
+            keys=("raw_current_period_amount", "raw_comparative_period_amount"), export_format=export_format,
+        ),
         "signatures": {
             "preparer_title": "Người lập biểu",
             "chief_accountant_title": "Kế toán trưởng",

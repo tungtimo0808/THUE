@@ -8,7 +8,7 @@ import ReportScheduleDialog from "./ReportScheduleDialog";
 import ReportTemplateDialog from "./ReportTemplateDialog";
 import { CATALOGUE_PARAMETER_DEFINITIONS } from "./catalogue-report-parameters";
 import SalesOrderDetailParameters from "./SalesOrderDetailParameters";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Search,
   Star,
@@ -30,6 +30,50 @@ import {
 } from "lucide-react";
 import "./misa-reports.css";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
+import { useApiSession } from "./ApiSession";
+import { FinancialFormFrame } from "./FinancialForm";
+import { request } from "./live-api";
+import { createApiWriter, executeReportExportUcRpt15, errorText } from "./misa-api-writes";
+
+const TT99_FORM_TABS = [
+  ["B01-DN", "B01 - DN: Báo cáo tình hình tài chính"],
+  ["B02-DN", "B02 - DN: Báo cáo kết quả hoạt động kinh doanh"],
+  ["B03-DN", "B03 - DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)"],
+  ["B03-DN-GT", "B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)"],
+] as const;
+
+/** Vietnamese-formatted amounts ("14.500.000", "-1.250,5") as numbers; codes such as "001" stay text. */
+function previewNumber(text: string): number | null {
+  if (!/^-?(0|[1-9]\d{0,2}(\.\d{3})*|[1-9]\d*)(,\d+)?$/.test(text)) return null;
+  return Number(text.replace(/\./g, "").replace(",", "."));
+}
+
+/** The columns and rows of a preview table as the UC-RPT-15 export engine takes them. */
+function previewTableData(table: HTMLTableElement) {
+  const headers = Array.from(table.tHead?.rows[table.tHead.rows.length - 1]?.cells ?? []);
+  const rows = Array.from(table.tBodies).flatMap((body) => Array.from(body.rows)).map((tr) => {
+    const row: Record<string, string | number | boolean> = {};
+    let index = 0;
+    for (const cell of Array.from(tr.cells)) {
+      const text = cell.innerText.trim();
+      row[`col_${index}`] = previewNumber(text) ?? text;
+      // A merged cell (e.g. the total label) leaves the columns it spans empty.
+      for (let span = 1; span < cell.colSpan; span += 1) row[`col_${index + span}`] = "";
+      if (cell.colSpan > 1) row.is_subtotal = true;
+      index += cell.colSpan;
+    }
+    return row;
+  });
+  // A column holding any text is exported as text, so codes such as "001" keep their zeros;
+  // the others stay untyped and the engine writes their amounts as numbers.
+  const columns = headers.map((cell, index) => {
+    const key = `col_${index}`;
+    const hasText = rows.some((row) => typeof row[key] === "string" && row[key] !== "" && !row.is_subtotal);
+    return { key, label: cell.innerText.trim(), ...(hasText ? { type: "text" } : {}) };
+  });
+  // The preview already carries its own total row.
+  return { columns, rows, options: { include_grand_total: false } };
+}
 
 import MisaTrialBalanceManagementReport from "./MisaTrialBalanceManagementReport";
 import MisaStateObligationsReport from "./MisaStateObligationsReport";
@@ -39,6 +83,7 @@ import MisaBusinessResultReport from "./MisaBusinessResultReport";
 import MisaCashFlowDirectReport from "./MisaCashFlowDirectReport";
 import MisaCashFlowIndirectReport from "./MisaCashFlowIndirectReport";
 import MisaFinancialNotesReport from "./MisaFinancialNotesReport";
+import MisaTT133FinancialReport, { TT133_REPORTS } from "./MisaTT133FinancialReport";
 import MisaInterimFinancialPositionReport from "./MisaInterimFinancialPositionReport";
 import MisaInterimBusinessResultReport from "./MisaInterimBusinessResultReport";
 import MisaInterimCashFlowDirectReport from "./MisaInterimCashFlowDirectReport";
@@ -191,6 +236,18 @@ export const CATEGORY_STRUCTURES: Record<string, CategoryStructure> = {
           ["B02 - DN: Báo cáo kết quả hoạt động kinh doanh", "B03a - DN: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP trực tiếp)"],
           ["B03 - DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)", "B03a - DN - GT: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP gián tiếp)"],
           ["B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)", null],
+        ],
+      },
+      {
+        id: "financial_tt133",
+        title: "Báo cáo tài chính theo Thông tư 133",
+        collapsible: true,
+        defaultOpen: true,
+        rows: [
+          ["B01a-DNN: Báo cáo tình hình tài chính", "B01b-DNN: Báo cáo tình hình tài chính (ngắn hạn, dài hạn)"],
+          ["B02-DNN: Báo cáo kết quả hoạt động kinh doanh", "B03-DNN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)"],
+          ["B03-DNN-GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)", "B09-DNN: Thuyết minh báo cáo tài chính"],
+          ["F01-DNN: Bảng cân đối tài khoản", null],
         ],
       },
     ],
@@ -858,7 +915,7 @@ const REPORTS_BY_CATEGORY: Record<string, string[]> = {
 export default function MisaReportCenterWorkspace({ notify,initialCategory="favorites",initialReport=null,embedded=false }: MisaReportCenterWorkspaceProps) {
   // Subtabs: "all" (Tất cả) | "saved" (Báo cáo đã lưu) | "schedule" (Lịch gửi báo cáo định kỳ)
   const [activeSubtab, setActiveSubtab] = useState<"all" | "saved" | "schedule">("all");
-  
+
   // Left category active ID
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
 
@@ -878,6 +935,97 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const [reportVisibilityMode, setReportVisibilityMode] = useState(false);
   const [reportVisibilityDraft, setReportVisibilityDraft] = useState<Record<string, boolean>>({});
   const [selectedReport, setSelectedReport] = useState<string | null>(initialReport);
+  const [previewPeriod, setPreviewPeriod] = useState<string>("Năm nay (2026)");
+  const [previewUnit, setPreviewUnit] = useState<string>("Công ty Cổ phần Giải pháp Số Việt");
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null);
+  const [companyRegime, setCompanyRegime] = useState<string>("TT99");
+  const { token: sessionToken, companyId: sessionCompanyId } = useApiSession();
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sessionToken || !sessionCompanyId) return;
+    request<any>(`/api/v1/organization/companies/${sessionCompanyId}/`, sessionToken)
+      .then((res) => {
+        const reg = String(res?.accounting_regime || "").toUpperCase();
+        if (reg.includes("133")) setCompanyRegime("TT133");
+        else if (reg.includes("200")) setCompanyRegime("TT200");
+        else if (reg) setCompanyRegime("TT99");
+      })
+      .catch(() => {});
+  }, [sessionToken, sessionCompanyId]);
+
+  const deriveReportCode = (name: string | null): string => {
+    const text = String(name || "").trim();
+    if (!text) return "RPT-CENTER";
+    const codeMatch = text.match(/^([A-Z0-9]+(?:\s*-\s*[A-Z0-9]+)+)/i);
+    if (codeMatch) return codeMatch[1].replace(/\s+/g, "").toUpperCase();
+    if (/thuyết minh|b09/i.test(text)) return "RPT-B09";
+    if (/tài sản cố định/i.test(text)) return "S21-DN";
+    if (/chi phí sản xuất/i.test(text)) return "S36-DN";
+    if (/giá thành/i.test(text)) return "S37-DN";
+    return "RPT-CENTER";
+  };
+
+  const handleExportPreviewReport = async (format: "XLSX" | "PDF" | "CSV" | "DOCX" | "PRINT") => {
+    // UC-RPT-15: export or print exactly the table the preview shows.
+    const table = previewRef.current?.querySelector("table");
+    if (!selectedReport || !table || exportingFormat) return;
+    setExportingFormat(format);
+    const reportCode = deriveReportCode(selectedReport);
+    const { columns: previewColumns, rows: previewRows, options: previewOptions } = previewTableData(table);
+    try {
+      const writer = createApiWriter(sessionCompanyId || "", (path, init) =>
+        request(path, sessionToken || undefined, init),
+      );
+      const res = await executeReportExportUcRpt15(
+        writer,
+        {
+          report_code: reportCode,
+          title: selectedReport,
+          output_format: format,
+          export_scope: "CURRENT_VIEW",
+          columns: previewColumns,
+          rows: previewRows,
+          options: previewOptions,
+          parameters: {
+            period: previewPeriod,
+            unit: previewUnit,
+            language: reportLang,
+          },
+        },
+        sessionToken || undefined,
+      );
+      if (format === "PRINT") {
+        notify?.(`Đã chuẩn bị bản in báo cáo (${res.fileName}).`);
+      } else {
+        const label = format === "XLSX" ? "Excel" : format;
+        notify?.(`Đã xuất khẩu báo cáo ra ${label} (${res.fileName}) thành công.`);
+      }
+    } catch (err) {
+      if (format === "PRINT") {
+        window.print();
+        notify?.("Đang chuẩn bị dữ liệu in báo cáo...");
+      } else {
+        // Fallback client-side CSV download if offline
+        const headerLine = previewColumns.map((c) => `"${c.label}"`).join(";");
+        const dataLines = previewRows.map((r) =>
+          previewColumns.map((c) => `"${String((r as any)[c.key] ?? "")}"`).join(";"),
+        );
+        const csvContent = [headerLine, ...dataLines].join("\r\n");
+        const url = URL.createObjectURL(
+          new Blob(["\uFEFF", csvContent], { type: "text/csv;charset=utf-8;" }),
+        );
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${reportCode.toLowerCase()}.csv`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+        notify?.(`Đã xuất khẩu báo cáo (${errorText(err)} — tải bản dự phòng).`);
+      }
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   // Print Announcement Modal
   const [isPrintBannerModalOpen, setIsPrintBannerModalOpen] = useState<boolean>(false);
@@ -949,7 +1097,48 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const column2 = displayedReports.filter((_, idx) => idx % 2 === 1);
 
   const activeCategoryObj = REPORT_CATEGORIES.find((c) => c.id === activeCategory);
-  const currentStructure = !searchKeyword ? CATEGORY_STRUCTURES[activeCategory] : null;
+  const currentStructure = useMemo(() => {
+    if (searchKeyword) return null;
+    const base = CATEGORY_STRUCTURES[activeCategory];
+    if (!base || activeCategory !== "financial") return base;
+    const mainGroup = base.groups.find((g) => g.id === "financial_main");
+    const tt133Group = base.groups.find((g) => g.id === "financial_tt133");
+    if (!mainGroup || !tt133Group) return base;
+    if (companyRegime === "TT133") {
+      return {
+        ...base,
+        groups: [
+          {
+            ...tt133Group,
+            title: "Báo cáo tài chính theo Thông tư 133/2016/TT-BTC (Chế độ đang áp dụng)",
+            collapsible: false,
+            defaultOpen: true,
+          },
+          {
+            ...mainGroup,
+            title: "Báo cáo tài chính theo Thông tư 99/2025/TT-BTC & Thông tư 200/2014/TT-BTC (Tham khảo)",
+            collapsible: true,
+            defaultOpen: false,
+          },
+        ],
+      };
+    }
+    const activeTitle =
+      companyRegime === "TT200"
+        ? "Báo cáo tài chính theo Thông tư 200/2014/TT-BTC (Chế độ đang áp dụng)"
+        : "Báo cáo tài chính theo Thông tư 99/2025/TT-BTC (Chế độ đang áp dụng)";
+    return {
+      ...base,
+      groups: [
+        {
+          ...mainGroup,
+          title: activeTitle,
+          collapsible: false,
+        },
+        tt133Group,
+      ],
+    };
+  }, [searchKeyword, activeCategory, companyRegime]);
 
   const renderVisibilitySwitch = (reportName: string) => reportVisibilityMode && <button
     type="button" role="switch" aria-label={`Hiển thị ${reportName}`}
@@ -1008,6 +1197,14 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
   const contractReportType = (Object.keys(CONTRACT_REPORT_TITLES) as Array<keyof typeof CONTRACT_REPORT_TITLES>).find(type => CONTRACT_REPORT_TITLES[type] === selectedReport);
   const salesSummaryType = (Object.keys(SALES_SUMMARY_TITLES) as Array<keyof typeof SALES_SUMMARY_TITLES>).find(type => SALES_SUMMARY_TITLES[type] === selectedReport);
+  const tt133Report = TT133_REPORTS.find(([code, label]) => selectedReport === `${code}: ${label}`);
+  if (tt133Report) {
+    return (
+      <FinancialFormFrame>
+        <MisaTT133FinancialReport key={tt133Report[0]} initialCode={tt133Report[0]} onBack={() => setSelectedReport(null)} />
+      </FinancialFormFrame>
+    );
+  }
   if (salesSummaryType) {
     return <MisaSalesSummaryReports key={salesSummaryType} reportType={salesSummaryType} onBack={() => setSelectedReport(null)} notify={notify} />;
   }
@@ -1035,10 +1232,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
   if (selectedReport === "B01 - DN: Báo cáo tình hình tài chính") {
     return (
-      <MisaFinancialPositionReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B01-DN" onSelect={setSelectedReport}>
+        <MisaFinancialPositionReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1047,10 +1243,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B02-DN: Báo cáo kết quả hoạt động kinh doanh"
   ) {
     return (
-      <MisaBusinessResultReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B02-DN" onSelect={setSelectedReport}>
+        <MisaBusinessResultReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1059,10 +1254,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B03-DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)"
   ) {
     return (
-      <MisaCashFlowDirectReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B03-DN" onSelect={setSelectedReport}>
+        <MisaCashFlowDirectReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1071,10 +1265,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B03-DN-GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)"
   ) {
     return (
-      <MisaCashFlowIndirectReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B03-DN-GT" onSelect={setSelectedReport}>
+        <MisaCashFlowIndirectReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1083,10 +1276,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B09-DN: Thuyết minh báo cáo tài chính"
   ) {
     return (
-      <MisaFinancialNotesReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame>
+        <MisaFinancialNotesReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -2328,7 +2520,11 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             <div style={{ padding: "12px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ color: "#475569" }}>Kỳ báo cáo:</span>
-                <select style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}>
+                <select
+                  style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}
+                  value={previewPeriod}
+                  onChange={(e) => setPreviewPeriod(e.target.value)}
+                >
                   <option>Năm nay (2026)</option>
                   <option>Quý này (Quý 3/2026)</option>
                   <option>Tháng này (Tháng 09/2026)</option>
@@ -2337,7 +2533,11 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ color: "#475569" }}>Đơn vị:</span>
-                <select style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}>
+                <select
+                  style={{ height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff" }}
+                  value={previewUnit}
+                  onChange={(e) => setPreviewUnit(e.target.value)}
+                >
                   <option>Tung</option>
                   <option>Công ty Cổ phần Giải pháp Số Việt</option>
                   <option>Văn phòng Tổng công ty</option>
@@ -2348,7 +2548,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             </div>
 
             {/* Report Table Preview */}
-            <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+            <div ref={previewRef} style={{ padding: 20, overflowY: "auto", flex: 1 }}>
               {canonicalReportName(selectedReport) === canonicalReportName("S21-DN: Sổ tài sản cố định") && <S21AssetRegisterPreview />}
               {canonicalReportName(selectedReport) === canonicalReportName("Thẻ tài sản cố định") && <FixedAssetCardPreview />}
               {canonicalReportName(selectedReport) === canonicalReportName("Báo cáo chi tiết tình hình thực hiện đơn đặt hàng") && <SalesOrderExecutionPreview />}
@@ -2419,6 +2619,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             >
               <button
                 type="button"
+                disabled={Boolean(exportingFormat)}
                 style={{
                   height: 34,
                   padding: "0 16px",
@@ -2431,15 +2632,17 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  cursor: "pointer",
+                  cursor: exportingFormat ? "wait" : "pointer",
+                  opacity: exportingFormat ? 0.7 : 1,
                 }}
-                onClick={() => notify?.("Đã xuất khẩu báo cáo ra Excel thành công.")}
+                onClick={() => void handleExportPreviewReport("XLSX")}
               >
                 <Download size={14} />
-                <span>Xuất Excel</span>
+                <span>{exportingFormat === "XLSX" ? "Đang xuất Excel..." : "Xuất Excel"}</span>
               </button>
               <button
                 type="button"
+                disabled={Boolean(exportingFormat)}
                 style={{
                   height: 34,
                   padding: "0 16px",
@@ -2452,12 +2655,36 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  cursor: "pointer",
+                  cursor: exportingFormat ? "wait" : "pointer",
+                  opacity: exportingFormat ? 0.7 : 1,
                 }}
-                onClick={() => notify?.("Đang chuẩn bị dữ liệu in báo cáo...")}
+                onClick={() => void handleExportPreviewReport("PDF")}
+              >
+                <Download size={14} />
+                <span>{exportingFormat === "PDF" ? "Đang xuất PDF..." : "Xuất PDF"}</span>
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(exportingFormat)}
+                style={{
+                  height: 34,
+                  padding: "0 16px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#334155",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: exportingFormat ? "wait" : "pointer",
+                  opacity: exportingFormat ? 0.7 : 1,
+                }}
+                onClick={() => void handleExportPreviewReport("PRINT")}
               >
                 <Printer size={14} />
-                <span>In báo cáo</span>
+                <span>{exportingFormat === "PRINT" ? "Đang chuẩn bị in..." : "In báo cáo"}</span>
               </button>
               <button
                 type="button"
@@ -2510,7 +2737,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-    
+
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Trình in thông minh mới của Sổ Việt ERP</h3>
               </div>
               <button
@@ -2558,5 +2785,3 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     </div>
   );
 }
-
-

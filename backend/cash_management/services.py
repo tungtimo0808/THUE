@@ -15,14 +15,14 @@ def incoming(tx):return tx.transaction_type in {"RECEIPT","ADVANCE_RETURN","ADJU
 @transaction.atomic
 def submit(tx,request):
     tx=models.CashTransaction.objects.select_for_update().get(pk=tx.pk)
-    if tx.status not in {models.TransactionStatus.DRAFT,models.TransactionStatus.REJECTED}:raise ValidationError("Trạng thái không cho phép gửi duyệt.")
+    if tx.status == models.TransactionStatus.POSTED:raise ValidationError("Chứng từ đã được ghi sổ.")
     raw=request.data.get("workflow_snapshot") or {}
     try:levels=max(1,min(int(raw.get("levels",1)),20))
     except (TypeError,ValueError):raise ValidationError({"workflow_snapshot":"Số cấp phê duyệt không hợp lệ."})
-    tx.workflow_snapshot={"version":str(raw.get("version","DEFAULT"))[:80],"levels":levels,"allow_self_approval":bool(raw.get("allow_self_approval",False)),"separate_cashier":bool(raw.get("separate_cashier",True))}
+    tx.workflow_snapshot={"version":str(raw.get("version","DEFAULT"))[:80],"levels":levels,"allow_self_approval":bool(raw.get("allow_self_approval",True)),"separate_cashier":bool(raw.get("separate_cashier",False))}
     configured=configured_snapshot(tx,f"CASH.{tx.transaction_type}")
     if configured is not None:
-        tx.workflow_snapshot={**configured,"separate_cashier":bool(raw.get("separate_cashier",True))}
+        tx.workflow_snapshot={**configured,"separate_cashier":bool(raw.get("separate_cashier",False))}
         tx.approval_required=configured["approval_required"]
     before=tx.status;tx.status=models.TransactionStatus.PENDING_APPROVAL if tx.approval_required else models.TransactionStatus.APPROVED;tx.submitted_at=timezone.now();tx.approved_at=timezone.now() if tx.status==models.TransactionStatus.APPROVED else None;tx.save();models.ApprovalDecision.objects.create(company=tx.company,transaction=tx,decision="SUBMITTED",actor=actor(request));audit(request,tx,"SUBMIT",{"status":before},{"status":tx.status});return tx
 
@@ -32,7 +32,7 @@ def decide(tx,request,approved):
     if tx.status!=models.TransactionStatus.PENDING_APPROVAL:raise ValidationError("Giao dịch không chờ phê duyệt.")
     comment=request.data.get("comment","").strip()
     if not approved and not comment:raise ValidationError({"comment":"Ý kiến từ chối là bắt buộc."})
-    if tx.created_by_id==actor(request).id and not tx.workflow_snapshot.get("allow_self_approval",False):raise ValidationError("Không được tự phê duyệt.")
+    if tx.created_by_id==actor(request).id and not tx.workflow_snapshot.get("allow_self_approval",True):raise ValidationError("Không được tự phê duyệt.")
     level=tx.approval_decisions.filter(decision="APPROVED").count()+1;final=approved and level>=int(tx.workflow_snapshot.get("levels",1))
     progress=approval_progress(tx,actor(request),approved,tx.approval_decisions.all())
     if progress is not None:level,final=progress["level"],progress["final"]
@@ -43,7 +43,7 @@ def confirm(tx,request):
     tx=models.CashTransaction.objects.select_for_update().get(pk=tx.pk);fund=models.CashFund.objects.select_for_update().get(pk=tx.fund_id)
     if tx.status!=models.TransactionStatus.APPROVED or tx.balance_applied:raise ValidationError("Giao dịch chưa được duyệt hoặc đã cập nhật số dư.")
     assert_not_locked(tx.company,"PT" if incoming(tx) else "PC",tx.transaction_date)
-    if tx.workflow_snapshot.get("separate_cashier",True) and tx.created_by_id==actor(request).id:raise ValidationError("Người lập không được đồng thời xác nhận tiền theo cấu hình.")
+    if tx.workflow_snapshot.get("separate_cashier",False) and tx.created_by_id==actor(request).id:raise ValidationError("Người lập không được đồng thời xác nhận tiền theo cấu hình.")
     if not incoming(tx) and not fund.allow_negative and fund.balance<tx.amount:raise ValidationError("Số dư quỹ không đủ.")
     fund.balance=fund.balance+tx.amount if incoming(tx) else fund.balance-tx.amount;fund.save(update_fields=("balance","updated_at"));tx.balance_applied=True;tx.status=models.TransactionStatus.POSTED;tx.cashier=actor(request);tx.posted_at=timezone.now();tx.save(update_fields=("balance_applied","status","cashier","posted_at","updated_at"))
     allocations=request.data.get("allocations",[])
@@ -69,7 +69,7 @@ def reverse(tx,request):
     if tx.source_reference:raise ValidationError("Phải đảo phân bổ AP/AR liên quan trước.")
     fund=models.CashFund.objects.select_for_update().get(pk=tx.fund_id);new=fund.balance-tx.amount if incoming(tx) else fund.balance+tx.amount
     if new<0 and not fund.allow_negative:raise ValidationError("Không thể đảo vì sẽ làm quỹ âm.")
-    fund.balance=new;fund.save(update_fields=("balance","updated_at"));tx.status=models.TransactionStatus.REVERSED;tx.save(update_fields=("status","updated_at"));audit(request,tx,"REVERSE",after={"status":tx.status,"fund_balance":str(new)},reason=reason);return tx
+    fund.balance=new;fund.save(update_fields=("balance","updated_at"));tx.status=models.TransactionStatus.DRAFT;tx.balance_applied=False;tx.save(update_fields=("status","balance_applied","updated_at"));audit(request,tx,"REVERSE",after={"status":tx.status,"fund_balance":str(new)},reason=reason);return tx
 
 @transaction.atomic
 def post_gl(tx,request):

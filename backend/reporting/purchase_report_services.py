@@ -1126,7 +1126,7 @@ def _build_rpt_0051(
             posting_date__gte=d_from,
             posting_date__lte=d_to,
             status="POSTED",
-        ).exclude(entry_type="REVERSAL").prefetch_related("lines", "lines__account").order_by("posting_date", "entry_number")
+        ).exclude(entry_type="REVERSAL").prefetch_related("lines", "lines__account").order_by("posting_date", "number")
 
         only_unpaid = params.get("only_unpaid_immediate") in (True, "true", "1")
 
@@ -1163,9 +1163,9 @@ def _build_rpt_0051(
                 {
                     "posting_date": je.posting_date.isoformat(),
                     "document_date": je.posting_date.isoformat(),
-                    "document_no": je.entry_number,
+                    "document_no": je.number,
                     "invoice_date": je.posting_date.isoformat(),
-                    "invoice_number": je.entry_number,
+                    "invoice_number": je.number,
                     "description": je.description or "Mua hàng trong kỳ",
                     "merchandise_amount": merch,
                     "material_amount": mat,

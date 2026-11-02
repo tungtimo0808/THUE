@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-27",
+  "revision": "0a2241a",
+  "environment": {
+    "type": "local SQLite copy, Django DRF APIClient in process, DEBUG=True",
+    "database_bytes": 18620416,
+    "sample_company": "ABC",
+    "companies": 5,
+    "sample_company_items": 18,
+    "sample_company_categories": 3,
+    "sample_company_warehouses": 6,
+    "sample_company_parties": 32,
+    "sample_company_posted_entries": 33,
+    "sample_company_journal_lines": 105,
+    "all_journal_lines": 207,
+    "limitations": [
+      "No production or staging traffic; Docker Compose had no running containers",
+      "APIClient bypasses network, reverse proxy and browser rendering",
+      "SQLite SQL timing is rounded to milliseconds and is not reliable for individual fast queries",
+      "First item request includes Python/Django import warmup"
+    ]
+  },
+  "measurements": [
+    {"endpoint": "items", "first_wall_ms": 1249.7, "second_wall_ms": 7.1, "queries": 1, "response_bytes": 21029},
+    {"endpoint": "categories", "first_wall_ms": 3.0, "second_wall_ms": 2.5, "queries": 1, "response_bytes": 2015},
+    {"endpoint": "warehouses", "first_wall_ms": 8.2, "second_wall_ms": 5.6, "queries": 4, "response_bytes": 3954},
+    {"endpoint": "accounts", "first_wall_ms": 35.2, "second_wall_ms": 35.0, "queries": 65, "response_bytes": 55971, "rows": 64, "child_count_queries": 64},
+    {"endpoint": "tt133_b01", "first_wall_ms": 16.0, "second_wall_ms": 6.1, "queries": 5, "response_bytes": 5463},
+    {"endpoint": "dashboard", "first_wall_ms": 187.4, "second_wall_ms": 7.6, "first_queries": 216, "second_queries": 17, "first_response_bytes": 28297, "second_response_bytes": 28296}
+  ],
+  "experiments_without_code_change": {
+    "account_children_count": {"candidate_queries": 1, "candidate_rows": 64, "candidate_wall_ms": [2.55, 0.56, 0.49, 0.46], "counts_match_existing": true, "caveat": "Candidate ORM projection, not a complete API replacement"},
+    "journal_line_explain": {"default_ordering": "USE TEMP B-TREE FOR ORDER BY", "explicit_empty_ordering": "temporary sort absent", "caveat": "SQLite plan on 105 sample journal lines; PostgreSQL plan not measured"}
+  },
+  "build": {"npm_run_build_exit": 2, "typescript_error_lines": 398, "vite_direct_build_exit": 0, "largest_report_chunk_bytes": 1521483, "xlsx_chunk_bytes": 492276}
+}

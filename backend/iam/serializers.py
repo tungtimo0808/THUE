@@ -181,10 +181,31 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def _assignments(self, obj):
-        cache = self.context.setdefault("_membership_assignments", {})
-        if obj.pk not in cache:
-            cache[obj.pk] = list(effective_assignments(obj.user, obj.company, skip_sync=True))
-        return cache[obj.pk]
+        by_company = self.context.setdefault("_company_assignments_map", {})
+        if obj.company_id not in by_company:
+            at = timezone.now()
+            qs = (
+                UserRoleAssignment.objects.filter(
+                    company_membership__company_id=obj.company_id,
+                    company_membership__membership_status__in=("ACTIVE", "SCHEDULED_LOCK", "END_SCHEDULED"),
+                    role__status=RoleStatus.ACTIVE,
+                    status="ACTIVE",
+                    valid_from__lte=at,
+                )
+                .filter(Q(valid_to__isnull=True) | Q(valid_to__gte=at))
+                .filter(Q(data_scope_set__isnull=True) | Q(data_scope_set__status="ACTIVE"))
+                .select_related("role", "data_scope_set", "company_membership__user__auth_user")
+                .prefetch_related(
+                    "role__role_permissions__permission__resource",
+                    "role__role_bundles__bundle__permissionbundleitem_set__permission__resource",
+                )
+            )
+            mapping = {}
+            for a in qs:
+                if a.company_membership.user.auth_user.is_active:
+                    mapping.setdefault(a.company_membership_id, []).append(a)
+            by_company[obj.company_id] = mapping
+        return by_company[obj.company_id].get(obj.pk, [])
 
     def get_role_assignments(self, obj) -> list[dict]:
         return [
