@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronRight, Clock, RefreshCw } from "lucide-react";
-import { apiClient } from "./apiClient";
+import { apiClient, getSelectedCompanyId } from "./apiClient";
 import "./misa-analysis.css";
 
 export type MisaFinancialAnalysisWorkspaceProps = {
@@ -59,7 +59,7 @@ export default function MisaFinancialAnalysisWorkspace({ notify }: MisaFinancial
 
   const loadAnalysisFromBackend = useCallback((showToast = false) => {
     apiClient
-      .get<any>("/api/v1/reports/tt99-financial-statements/?year=2026")
+      .get<any>(`/api/v1/reports/tt99-financial-statements/?year=2026&company_id=${encodeURIComponent(getSelectedCompanyId())}`)
       .then((res) => {
         if (res && res.b01_dn && res.b02_dn) {
           const b01 = res.b01_dn;

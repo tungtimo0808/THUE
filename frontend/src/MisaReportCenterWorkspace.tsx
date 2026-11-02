@@ -8,7 +8,7 @@ import ReportScheduleDialog from "./ReportScheduleDialog";
 import ReportTemplateDialog from "./ReportTemplateDialog";
 import { CATALOGUE_PARAMETER_DEFINITIONS } from "./catalogue-report-parameters";
 import SalesOrderDetailParameters from "./SalesOrderDetailParameters";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Search,
   Star,
@@ -31,8 +31,49 @@ import {
 import "./misa-reports.css";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import { useApiSession } from "./ApiSession";
+import { FinancialFormFrame } from "./FinancialForm";
 import { request } from "./live-api";
 import { createApiWriter, executeReportExportUcRpt15, errorText } from "./misa-api-writes";
+
+const TT99_FORM_TABS = [
+  ["B01-DN", "B01 - DN: Báo cáo tình hình tài chính"],
+  ["B02-DN", "B02 - DN: Báo cáo kết quả hoạt động kinh doanh"],
+  ["B03-DN", "B03 - DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)"],
+  ["B03-DN-GT", "B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)"],
+] as const;
+
+/** Vietnamese-formatted amounts ("14.500.000", "-1.250,5") as numbers; codes such as "001" stay text. */
+function previewNumber(text: string): number | null {
+  if (!/^-?(0|[1-9]\d{0,2}(\.\d{3})*|[1-9]\d*)(,\d+)?$/.test(text)) return null;
+  return Number(text.replace(/\./g, "").replace(",", "."));
+}
+
+/** The columns and rows of a preview table as the UC-RPT-15 export engine takes them. */
+function previewTableData(table: HTMLTableElement) {
+  const headers = Array.from(table.tHead?.rows[table.tHead.rows.length - 1]?.cells ?? []);
+  const rows = Array.from(table.tBodies).flatMap((body) => Array.from(body.rows)).map((tr) => {
+    const row: Record<string, string | number | boolean> = {};
+    let index = 0;
+    for (const cell of Array.from(tr.cells)) {
+      const text = cell.innerText.trim();
+      row[`col_${index}`] = previewNumber(text) ?? text;
+      // A merged cell (e.g. the total label) leaves the columns it spans empty.
+      for (let span = 1; span < cell.colSpan; span += 1) row[`col_${index + span}`] = "";
+      if (cell.colSpan > 1) row.is_subtotal = true;
+      index += cell.colSpan;
+    }
+    return row;
+  });
+  // A column holding any text is exported as text, so codes such as "001" keep their zeros;
+  // the others stay untyped and the engine writes their amounts as numbers.
+  const columns = headers.map((cell, index) => {
+    const key = `col_${index}`;
+    const hasText = rows.some((row) => typeof row[key] === "string" && row[key] !== "" && !row.is_subtotal);
+    return { key, label: cell.innerText.trim(), ...(hasText ? { type: "text" } : {}) };
+  });
+  // The preview already carries its own total row.
+  return { columns, rows, options: { include_grand_total: false } };
+}
 
 import MisaTrialBalanceManagementReport from "./MisaTrialBalanceManagementReport";
 import MisaStateObligationsReport from "./MisaStateObligationsReport";
@@ -899,6 +940,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const [exportingFormat, setExportingFormat] = useState<string | null>(null);
   const [companyRegime, setCompanyRegime] = useState<string>("TT99");
   const { token: sessionToken, companyId: sessionCompanyId } = useApiSession();
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!sessionToken || !sessionCompanyId) return;
@@ -926,52 +968,12 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   };
 
   const handleExportPreviewReport = async (format: "XLSX" | "PDF" | "CSV" | "DOCX" | "PRINT") => {
-    if (!selectedReport || exportingFormat) return;
+    // UC-RPT-15: export or print exactly the table the preview shows.
+    const table = previewRef.current?.querySelector("table");
+    if (!selectedReport || !table || exportingFormat) return;
     setExportingFormat(format);
     const reportCode = deriveReportCode(selectedReport);
-    const previewColumns = [
-      { key: "item_code", label: "Mã hàng / Đối tượng", type: "code" },
-      { key: "item_name", label: "Tên mặt hàng / Đối tượng", type: "text" },
-      { key: "unit", label: "ĐVT", type: "text" },
-      { key: "quantity", label: "Số lượng", type: "quantity" },
-      { key: "unit_price", label: "Đơn giá", type: "amount" },
-      { key: "amount", label: "Thành tiền", type: "amount" },
-    ];
-    const previewRows = [
-      {
-        item_code: "HH001",
-        item_name: "Máy tính để bàn Dell Vostro",
-        unit: "Bộ",
-        quantity: 15,
-        unit_price: 14500000,
-        amount: 217500000,
-      },
-      {
-        item_code: "HH002",
-        item_name: "Màn hình LG 27 inch 4K",
-        unit: "Chiếc",
-        quantity: 20,
-        unit_price: 6200000,
-        amount: 124000000,
-      },
-      {
-        item_code: "DV001",
-        item_name: "Phần mềm bản quyền Microsoft Office 365",
-        unit: "Gói",
-        quantity: 50,
-        unit_price: 1800000,
-        amount: 90000000,
-      },
-      {
-        item_code: "TOTAL",
-        item_name: "TỔNG CỘNG",
-        unit: "",
-        quantity: 85,
-        unit_price: "",
-        amount: 431500000,
-        row_type: "TOTAL",
-      },
-    ];
+    const { columns: previewColumns, rows: previewRows, options: previewOptions } = previewTableData(table);
     try {
       const writer = createApiWriter(sessionCompanyId || "", (path, init) =>
         request(path, sessionToken || undefined, init),
@@ -985,6 +987,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
           export_scope: "CURRENT_VIEW",
           columns: previewColumns,
           rows: previewRows,
+          options: previewOptions,
           parameters: {
             period: previewPeriod,
             unit: previewUnit,
@@ -1200,7 +1203,11 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const salesSummaryType = (Object.keys(SALES_SUMMARY_TITLES) as Array<keyof typeof SALES_SUMMARY_TITLES>).find(type => SALES_SUMMARY_TITLES[type] === selectedReport);
   const tt133Report = TT133_REPORTS.find(([code, label]) => selectedReport === `${code}: ${label}`);
   if (tt133Report) {
-    return <MisaTT133FinancialReport key={tt133Report[0]} initialCode={tt133Report[0]} onBack={() => setSelectedReport(null)} />;
+    return (
+      <FinancialFormFrame>
+        <MisaTT133FinancialReport key={tt133Report[0]} initialCode={tt133Report[0]} onBack={() => setSelectedReport(null)} />
+      </FinancialFormFrame>
+    );
   }
   if (salesSummaryType) {
     return <MisaSalesSummaryReports key={salesSummaryType} reportType={salesSummaryType} onBack={() => setSelectedReport(null)} notify={notify} />;
@@ -1229,10 +1236,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
 
   if (selectedReport === "B01 - DN: Báo cáo tình hình tài chính") {
     return (
-      <MisaFinancialPositionReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B01-DN" onSelect={setSelectedReport}>
+        <MisaFinancialPositionReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1241,10 +1247,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B02-DN: Báo cáo kết quả hoạt động kinh doanh"
   ) {
     return (
-      <MisaBusinessResultReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B02-DN" onSelect={setSelectedReport}>
+        <MisaBusinessResultReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1253,10 +1258,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B03-DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)"
   ) {
     return (
-      <MisaCashFlowDirectReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B03-DN" onSelect={setSelectedReport}>
+        <MisaCashFlowDirectReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1265,10 +1269,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B03-DN-GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)"
   ) {
     return (
-      <MisaCashFlowIndirectReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame tabs={TT99_FORM_TABS} active="B03-DN-GT" onSelect={setSelectedReport}>
+        <MisaCashFlowIndirectReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -1277,10 +1280,9 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     selectedReport === "B09-DN: Thuyết minh báo cáo tài chính"
   ) {
     return (
-      <MisaFinancialNotesReport
-        onBack={() => setSelectedReport(null)}
-        notify={notify}
-      />
+      <FinancialFormFrame>
+        <MisaFinancialNotesReport onBack={() => setSelectedReport(null)} notify={notify} />
+      </FinancialFormFrame>
     );
   }
 
@@ -2550,7 +2552,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             </div>
 
             {/* Report Table Preview */}
-            <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+            <div ref={previewRef} style={{ padding: 20, overflowY: "auto", flex: 1 }}>
               {canonicalReportName(selectedReport) === canonicalReportName("S21-DN: Sổ tài sản cố định") && <S21AssetRegisterPreview />}
               {canonicalReportName(selectedReport) === canonicalReportName("Thẻ tài sản cố định") && <FixedAssetCardPreview />}
               {canonicalReportName(selectedReport) === canonicalReportName("Báo cáo chi tiết tình hình thực hiện đơn đặt hàng") && <SalesOrderExecutionPreview />}

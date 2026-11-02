@@ -1036,9 +1036,9 @@ def _build_rpt_0078(
         for line in qs:
             ret_qty = Decimal("0.00")
             ret_amt = Decimal("0.00")
-            for r_line in getattr(line, "return_lines", []):
-                ret_qty += getattr(r_line, "quantity", Decimal("0.00"))
-                ret_amt += getattr(r_line, "amount", Decimal("0.00"))
+            for r_line in line.return_lines.filter(sale_return__status="POSTED"):
+                ret_qty += r_line.return_quantity
+                ret_amt += r_line.line_total
 
             raw_lines.append(
                 {
@@ -1060,7 +1060,7 @@ def _build_rpt_0078(
                     "uom_name": getattr(line.uom, "name", ""),
                     "gross_sold_quantity": line.quantity,
                     "unit_price": line.unit_price,
-                    "gross_sales_amount": line.pre_tax_amount,
+                    "gross_sales_amount": line.quantity * line.unit_price,
                     "sales_discount_amount": getattr(line, "discount_amount", Decimal("0.00")),
                     "returned_quantity": ret_qty,
                     "sales_return_amount": ret_amt,
@@ -2092,7 +2092,7 @@ def _build_rpt_0128(
         for line in qs:
             del_qty = getattr(line, "delivered_quantity", Decimal("0.00"))
             c_qty = line.quantity if line.quantity > Decimal("0.00") else None
-            c_val = line.total_amount
+            c_val = line.line_total
             ful_val = del_qty * line.unit_price
 
             raw_contracts.append(

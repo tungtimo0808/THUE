@@ -10,12 +10,15 @@ from organization.models import Company
 
 from .permissions import ReportingPermission
 from .models import TT133NoteText
-from .tt133_reports import NOTE_SECTIONS, REPORTS, build_report
+from .statement_forms import attach_file, signature_from
+from .tt133_reports import NOTE_SECTIONS, REPORTS, build_report, tt133_statement
 
 
 class TT133FinancialReportViewSet(ViewSet):
     permission_classes = (ReportingPermission,)
-    iam_permissions = {"GET": "RPT.FINANCIAL.VIEW", "PATCH": "RPT.FINANCIAL_NOTES.PREPARE"}
+    iam_permissions = {
+        "GET": "RPT.FINANCIAL.VIEW", "POST": "RPT.FINANCIAL.VIEW", "PATCH": "RPT.FINANCIAL_NOTES.PREPARE",
+    }
 
     def _scope(self, request):
         try:
@@ -37,6 +40,18 @@ class TT133FinancialReportViewSet(ViewSet):
         if code not in REPORTS:
             raise ValidationError({"template_code": "Mẫu báo cáo TT133 không hợp lệ."})
         return Response(build_report(company, year, code))
+
+    @action(detail=False, methods=["post"], url_path="export")
+    def export_file(self, request):
+        company, year = self._scope(request)
+        code = request.data.get("template_code", "B01a-DNN")
+        if code not in REPORTS:
+            raise ValidationError({"template_code": "Mẫu báo cáo TT133 không hợp lệ."})
+        export_format = str(request.data.get("export_format") or "PDF").upper()
+        if export_format not in ("EXCEL", "XLSX", "PDF"):
+            raise ValidationError({"export_format": "Định dạng xuất không hợp lệ."})
+        statement = tt133_statement(company, build_report(company, year, code), signature_from(request.data))
+        return Response(attach_file({"export_status": "READY"}, statement, export_format, f"{code}_{company.code}_{year}"))
 
     @action(detail=False, methods=["patch"], url_path="notes")
     def notes(self, request):

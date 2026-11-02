@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
+import { exportCashFlow, exportErrorText } from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -381,6 +382,14 @@ export default function MisaCashFlowDirectReport({
   // Saved reports modal
   const [isSavedReportsOpen, setIsSavedReportsOpen] = useState(false);
   const [rows, setRows] = useState<CashFlowItem[]>(BASE_CASH_FLOW_DATA);
+
+  const handleExportReport = async (format: "EXCEL" | "PDF") => {
+    try {
+      notify?.(`Đã xuất báo cáo: ${await exportCashFlow("DIRECT", format)}`);
+    } catch (error) {
+      notify?.(`Không xuất được báo cáo. ${exportErrorText(error)}`);
+    }
+  };
 
   const loadReportFromBackend = useCallback(async () => {
     try {
@@ -789,7 +798,7 @@ export default function MisaCashFlowDirectReport({
               fontSize: 12.5,
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đang chuẩn bị lệnh in lưu chuyển tiền tệ...")}
+            onClick={() => void handleExportReport("PDF")}
           >
             <Printer size={14} />
             <ChevronDown size={12} />
@@ -810,9 +819,7 @@ export default function MisaCashFlowDirectReport({
               fontSize: 12.5,
               cursor: "pointer",
             }}
-            onClick={() =>
-              notify?.("Đã xuất khẩu báo cáo lưu chuyển tiền tệ ra Excel.")
-            }
+            onClick={() => void handleExportReport("EXCEL")}
           >
             <Download size={14} />
             <ChevronDown size={12} />

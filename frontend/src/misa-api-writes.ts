@@ -7090,6 +7090,7 @@ export async function executeReportExportUcRpt15(w: ApiWriter, d: Row = {}, auth
     ...(defaultTemplateCode ? { template_code: defaultTemplateCode } : {}),
     columns: d.columns || [],
     rows: d.rows || [],
+    options: d.options || {},
     parameters: d.parameters || {},
   });
 

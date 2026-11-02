@@ -51,9 +51,14 @@ def source_module_request(request, **data):
     for key in ("version", "expected_version", "original_version"):
         payload.pop(key, None)
     payload.update(data)
+    return gl_request(request, payload)
+
+
+def gl_request(request, data):
+    """Request-shaped GL input carrying only `data`, on behalf of the caller's user."""
     return SimpleNamespace(
         user=request.user,
-        data=payload,
+        data=data,
         META=getattr(request, "META", {}),
         headers=getattr(request, "headers", {}),
         method=getattr(request, "method", "POST"),

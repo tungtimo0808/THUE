@@ -117,6 +117,8 @@
 
 /* Stepper Component */
 .auth-stepper {
+  list-style: none;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1154,3 +1156,32 @@
   transform: translateY(-1px);
 }
 
+
+/* Shared by the registration and recovery steps of AuthLayout. */
+.auth-login-card .account-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+.auth-login-card .account-dev-code { border-radius: 12px; font-size: 13px; }
+.auth-login-card a.auth-submit-btn { text-decoration: none; box-sizing: border-box; }
+.auth-hint { color: #64748b; font-size: 12px; line-height: 1.5; }
+.auth-note { margin: 0 0 16px; color: #475569; font-size: 14px; line-height: 1.6; }
+.auth-note a { color: #0284c7; font-weight: 600; }
+.auth-text-button {
+  display: block;
+  margin: 14px auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0284c7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-text-button:disabled { opacity: 0.6; cursor: not-allowed; }
+.auth-form-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9; }

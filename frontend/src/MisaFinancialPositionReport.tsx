@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
+import { exportErrorText, readFormSignature, saveStatementFile } from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -586,8 +587,10 @@ export default function MisaFinancialPositionReport({
           company_id: cid,
           export_format: format,
           official_submission: format === "XML",
+          ...readFormSignature(),
         },
       );
+      if (format !== "XML") saveStatementFile(res);
       notify?.(`Đã kết xuất ${res.template_code} (v${currentRun.run_version}) định dạng ${format} chuẩn TT99/2025/TT-BTC.`);
     } catch (err: any) {
       notify?.(err?.message || `Chặn xuất ${format} do báo cáo chưa đạt kiểm tra cân đối.`);

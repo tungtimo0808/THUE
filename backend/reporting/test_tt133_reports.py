@@ -81,19 +81,19 @@ class TT133FinancialReportsTests(TestCase):
                 self.assertTrue(response.data["has_data"])
                 self.assertTrue(response.data["rows"])
                 if code == "B02-DNN":
-                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"]}
+                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"] if row["current"] is not None}
                     self.assertEqual(values["01"], 300)
                     self.assertEqual(values["60"], 200)
                 if code == "B01a-DNN":
-                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"]}
+                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"] if row["current"] is not None}
                     self.assertEqual(values["110"], 1200)
                     self.assertEqual(values["200"], values["500"])
                 if code == "B03-DNN":
-                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"]}
+                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"] if row["current"] is not None}
                     self.assertEqual(values["50"], 200)
                     self.assertEqual(values["70"], 1200)
                 if code == "B03-DNN-GT":
-                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"]}
+                    values = {row["code"]: Decimal(row["current"]) for row in response.data["rows"] if row["current"] is not None}
                     self.assertEqual(values["50"], 200)
                     self.assertEqual(values["70"], 1200)
                 if code == "B09-DNN":

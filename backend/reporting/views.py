@@ -9,7 +9,9 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, ViewSet
 
 from audit_log.services import record_audit
 from general_ledger.models import JournalEntry
-from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission
+from iam.permissions import (
+    CompanyMemberMixin, assignment_permission_codes, effective_assignments, has_effective_permission,
+)
 from organization.models import Company
 
 from . import (
@@ -213,7 +215,7 @@ class ReportExportViewSet(ReadOnlyModelViewSet):
         return self.queryset.filter(run__company_id=company) if company else self.queryset.none()
 
 
-class FinancialStatementTT99ViewSet(ViewSet):
+class FinancialStatementTT99ViewSet(CompanyMemberMixin, ViewSet):
     """
     API tổng hợp trực tiếp Bộ Báo cáo tài chính theo Thông tư 99/2025/TT-BTC từ Sổ Cái (JournalEntry / JournalLine):
     - B01-DN: Báo cáo tình hình tài chính
@@ -221,19 +223,6 @@ class FinancialStatementTT99ViewSet(ViewSet):
     - B03-DN: Báo cáo lưu chuyển tiền tệ (Trực tiếp & Gián tiếp)
     - B09-DN: Bản thuyết minh báo cáo tài chính
     """
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or request.data.get("company_id")
-            or request.data.get("company")
-        )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        return Company.objects.first()
 
     def list(self, request):
         from django.db.models import Sum
@@ -1902,36 +1891,11 @@ class AssetReportViewSet(ViewSet):
         return Response(asset_report_services.export_asset_report_run_payload(run_id, fmt=fmt, user=request.user, request=request))
 
 
-class UnifiedExportViewSet(ViewSet):
+class UnifiedExportViewSet(CompanyMemberMixin, ViewSet):
     """
     UC-RPT-15: In hoặc Export báo cáo (Print & Export Engine).
     Hệ thống kết xuất và in ấn dùng chung cho các phân hệ UC-RPT-01 đến UC-RPT-14.
     """
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
-    def _get_company_id(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            return str(company_id)
-        comp = Company.objects.first()
-        return str(comp.id) if comp else "DEFAULT-COMPANY"
-
     def capabilities(self, request, report_code=None):
         caps = unified_export_services.get_export_capabilities(report_code)
         return Response(caps)
@@ -2036,36 +2000,11 @@ class UnifiedExportViewSet(ViewSet):
         return Response(result)
 
 
-class DrilldownViewSet(ViewSet):
+class DrilldownViewSet(CompanyMemberMixin, ViewSet):
     """
     UC-RPT-14: Universal Report Data Drill-Down & Lineage ViewSet.
     Cung cấp các API truy vết chi tiết số liệu dùng chung cho toàn bộ các nhóm báo cáo.
     """
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            comp = Company.objects.filter(pk=company_id).first()
-            if comp:
-                return comp
-        return Company.objects.first()
-
-    def _get_company_id(self, request):
-        company_id = (
-            request.query_params.get("company_id")
-            or (request.data.get("company_id") if isinstance(request.data, dict) else None)
-            or (request.data.get("company") if isinstance(request.data, dict) else None)
-        )
-        if company_id:
-            return str(company_id)
-        comp = Company.objects.first()
-        return str(comp.id) if comp else "DEFAULT-COMPANY"
-
     def _resolve_data(self, request):
         if hasattr(request.data, "dict"):
             return request.data.dict()

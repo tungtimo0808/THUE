@@ -351,7 +351,9 @@ class PaymentViewSet(BaseViewSet):
         return qs
 
     def create(self, request, *args, **kwargs):
-        if "action" not in request.data and ("external_type" in request.data or "payment_method_config" in request.data) and "payment_method" not in request.data:
+        # Only bank/cash imports (external_type) may create a confirmed payment directly;
+        # every other payment goes through a payment request.
+        if "action" not in request.data and "external_type" in request.data and "payment_method" not in request.data:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             config = serializer.validated_data.get("payment_method_config")

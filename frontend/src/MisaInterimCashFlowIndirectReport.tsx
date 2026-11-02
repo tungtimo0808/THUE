@@ -339,7 +339,7 @@ export default function MisaInterimCashFlowIndirectReport({
             return;
           }
         }
-        const res = await apiClient.get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}`);
+        const res = await apiClient.get<any>(`/api/v1/reports/tt99-financial-statements/?year=${year}&company_id=${encodeURIComponent(getSelectedCompanyId())}`);
         if (res?.b03_indirect) {
           setRowsData(
             FULL_B03A_GT_DATA.map((r) => {
