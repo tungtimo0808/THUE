@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import mixins,serializers as drf_serializers
 from rest_framework.decorators import action
+from iam.permissions import CompanyMemberMixin
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
@@ -438,27 +439,8 @@ class ApprovalViewSet(ReadOnlyModelViewSet):
         c=self.request.query_params.get("company_id");return self.queryset.filter(company_id=c) if c else self.queryset.none()
 
 
-class BankRuleViewSet(GenericViewSet):
+class BankRuleViewSet(CompanyMemberMixin, GenericViewSet):
     """API quản lý Quy tắc tự động hạch toán ngân hàng điện tử lưu trữ trực tiếp trong PostgreSQL."""
-    permission_classes = ()
-
-    def _resolve_company(self, request):
-        from organization.models import Company
-        cid = request.query_params.get("company_id") or request.data.get("company_id") or request.data.get("company")
-        if cid:
-            comp = Company.objects.filter(pk=cid).first()
-            if comp:
-                return comp
-        account = getattr(getattr(request, "user", None), "iam_account", None)
-        if account:
-            pref = getattr(account, "preference", None)
-            if pref and pref.current_company_id:
-                return pref.current_company
-            mem = account.memberships.filter(membership_status="ACTIVE").select_related("company").first()
-            if mem and mem.company:
-                return mem.company
-        return Company.objects.first()
-
     def list(self, request):
         from common_services.models import CoreCompanySetting
         company = self._resolve_company(request)

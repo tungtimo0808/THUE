@@ -401,19 +401,14 @@ def unpost(voucher, request):
     else:
         receipt.save(update_fields=("allocated_amount",))
     if voucher.journal_entry_id:
-        from general_ledger.services import reverse as reverse_journal
-        proxy = type("RequestProxy", (), {
-            "user": request.user, "data": {
-                "reason": reason, "period": str(period.pk),
-                "posting_date": voucher.allocation_date,
-                "number": f"REV-GL-{voucher.number}-{voucher.posting_count}",
-                "from_source_module": True,
-                "auto_post": True,
-            },
-            "META": request.META, "headers": request.headers,
-            "method": request.method, "path": request.path,
-        })()
-        reverse_journal(voucher.journal_entry, proxy)
+        from general_ledger.services import gl_request, reverse as reverse_journal
+        reverse_journal(voucher.journal_entry, gl_request(request, {
+            "reason": reason, "period": str(period.pk),
+            "posting_date": voucher.allocation_date,
+            "number": f"REV-GL-{voucher.number}-{voucher.posting_count}",
+            "from_source_module": True,
+            "auto_post": True,
+        }))
         voucher.journal_entry = None
     voucher.status = "DRAFT"
     voucher.unposted_by = request.user.iam_account

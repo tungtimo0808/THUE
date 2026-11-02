@@ -132,7 +132,7 @@ class CatalogImportTests(TestCase):
         for target, content in (
             ("customers", "code,name\nCUS1,Customer one\n"),
             ("suppliers", "code,name\nSUP1,Supplier one\n"),
-            ("employees", "employee_code,full_name,branch\nEMP1,Employee one,HQ\n"),
+            ("employees", "employee_code,full_name,branch,contract_type\nEMP1,Employee one,HQ,RESIDENT_LONG\n"),
             ("units-of-measure", "code,name,symbol,measurement_type,decimal_places\nPCS,Piece,pcs,COUNT,0\n"),
             ("items", "code,name,item_type,base_uom,track_inventory\nSERV1,Service one,SERVICE,PCS,false\n"),
         ):
@@ -175,7 +175,7 @@ class CatalogImportTests(TestCase):
         UserRoleAssignment.objects.create(company_membership=membership, role=role, data_scope_set=scope,
             valid_from=timezone.now() - timedelta(minutes=1), assigned_by=self.user.iam_account)
         self.client.force_authenticate(ordinary)
-        batch_id = self.upload("employees", "employee_code,full_name,branch\nE1,Allowed employee,A\nE2,Blocked employee,B\n", error_mode="PARTIAL")
+        batch_id = self.upload("employees", "employee_code,full_name,branch,contract_type\nE1,Allowed employee,A,RESIDENT_LONG\nE2,Blocked employee,B,RESIDENT_LONG\n", error_mode="PARTIAL")
         preview = self.client.post(self.endpoint(batch_id, "preview"), {}, format="json")
         self.assertEqual(preview.status_code, 200, preview.data)
         self.assertEqual(preview.data["error_rows"], 1)

@@ -744,3 +744,37 @@ class SalesOrderUcSal02Tests(TestCase):
         # 4. Check eligible lines remainder after creation (10 - 6 = 4)
         el_resp2 = self.client.get(el_url)
         self.assertEqual(Decimal(el_resp2.data[0]["remaining_eligible_quantity"]), Decimal("4"))
+
+
+    def test_14_invoice_request_number_follows_company_numbering_rule(self):
+        """Invoice requests take their number from the active numbering rule when one exists."""
+        from common_services.models import DocumentNumberingRule
+        from master_data.models import DocumentType
+
+        doc_type, _ = DocumentType.objects.get_or_create(
+            code="SAL.INVOICE_REQUEST",
+            defaults={"module_code": "SAL", "name": "Đề nghị lập hóa đơn", "document_class": "SALES"},
+        )
+        DocumentNumberingRule.objects.create(
+            company=self.company, code="SAL_DNHD", name="Đề nghị lập hóa đơn", document_type=doc_type,
+            prefix="DNHD", effective_from=self.today.replace(month=1, day=1), status="ACTIVE",
+            created_by=self.maker_user.iam_account,
+        )
+        order = SalesOrder.objects.create(
+            company=self.company, customer=self.customer, currency=self.currency,
+            document_date=self.today, number="SO-INV-2", status=DocumentStatus.APPROVED,
+            invoicing_policy="ORDER", created_by=self.maker_user.iam_account,
+        )
+        line = SalesOrderLine.objects.create(
+            order=order, line_no=1, item=self.item_goods, uom=self.uom_cai,
+            warehouse=self.warehouse, quantity=Decimal("2"), unit_price=Decimal("100000"),
+            tax_rate=self.vat10,
+        )
+
+        response = self.client.post(
+            f"/api/v1/sales/orders/{order.id}/create-invoice-request/{self.query}",
+            {"lines": [{"order_line": str(line.id), "quantity": "2"}]}, format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(InvoiceRequest.objects.get(pk=response.data["id"]).number, f"DNHD-{self.today.year}-000001")

@@ -849,8 +849,11 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     khối chữ ký 3 cột và watermark trạng thái.
     """
     options = options or {}
-    paper_size = (options.get("paper_size") or "A4").upper()
-    orientation = (options.get("orientation") or "PORTRAIT").lower()
+    # Both values are written into the page unescaped, so only known ones pass.
+    paper_size = str(options.get("paper_size") or "A4").upper()
+    paper_size = paper_size if paper_size in ("A3", "A4", "A5") else "A4"
+    orientation = str(options.get("orientation") or "PORTRAIT").lower()
+    orientation = orientation if orientation in ("portrait", "landscape") else "portrait"
     page_css = f"{paper_size.lower()} {orientation}"
 
     columns = normalize_columns(dataset.get("columns", []))

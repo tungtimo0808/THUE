@@ -1,6 +1,8 @@
+from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.permissions import BasePermission
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from .models import ActiveStatus, CompanyMembership, RoleStatus, UserPermissionOverride, UserRoleAssignment
 
@@ -256,6 +258,32 @@ def has_other_effective_system_admin(company, *, excluded_user=None, excluded_ro
     if excluded_assignment:
         queryset = queryset.exclude(pk=excluded_assignment.pk)
     return queryset.exists()
+
+
+class CompanyMemberMixin:
+    """Signed-in access to one company the user belongs to, named by the request."""
+    permission_classes = (IsAuthenticated,)
+
+    def _resolve_company(self, request):
+        from organization.models import Company
+
+        data = request.data if isinstance(request.data, dict) else {}
+        company_id = request.query_params.get("company_id") or data.get("company_id") or data.get("company")
+        if not company_id:
+            raise ValidationError({"company_id": "Phải xác định doanh nghiệp làm việc (company_id)."})
+        try:
+            company = Company.objects.get(pk=company_id)
+        except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+            raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
+        if not request.user.is_superuser and not CompanyMembership.objects.filter(
+            user=getattr(request.user, "iam_account", None), company=company,
+            membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+        ).exists():
+            raise PermissionDenied("Người dùng không thuộc doanh nghiệp này.")
+        return company
+
+    def _get_company_id(self, request):
+        return str(self._resolve_company(request).id)
 
 
 class HasIamPermission(BasePermission):

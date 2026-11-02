@@ -478,7 +478,7 @@ export default function MisaInterimBusinessResultReport({
       }
 
       try {
-        const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/?year=${fYear}`);
+        const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/?year=${fYear}&company_id=${encodeURIComponent(getSelectedCompanyId())}`);
         if (res?.b02_dn) {
           const base = fCode === "B02b-DN" ? FULL_B02B_DATA : FULL_B02A_DATA;
           setRowsData(
