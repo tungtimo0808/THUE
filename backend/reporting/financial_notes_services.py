@@ -13,6 +13,8 @@ import re
 import unicodedata
 import uuid
 from collections import defaultdict
+
+from reporting.statement_forms import Column, Row, Statement, attach_file, signature_from
 from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
@@ -4887,6 +4889,24 @@ def approve_b09_run_action(user: Any, run_id: Any) -> dict[str, Any]:
     }
 
 
+def _b09_outline_file(run, sections, data, export_format):
+    rows = []
+    for section in sections:
+        rows.append(Row([section["section_name"], section["section_code"], ""], bold=True))
+        rows += [
+            Row([item["note_title"], item["note_code"], item["content_status"]], indent=1)
+            for item in section["items"]
+        ]
+    statement = Statement(
+        company_name=run.company.name, company_address=run.company.address or "", tax_code=run.company.tax_code or "",
+        form_code=run.template.legal_form_code, legal_basis=run.template_version.legal_circular or "",
+        title="BẢN THUYẾT MINH BÁO CÁO TÀI CHÍNH", period=f"Năm {run.fiscal_year}",
+        columns=[Column("Nội dung", 80), Column("Mã", 14), Column("Trạng thái", 26)], rows=rows,
+        signature=signature_from(data),
+    )
+    return attach_file({}, statement, export_format, f"{run.template.legal_form_code}_{run.company.code}_{run.fiscal_year}")
+
+
 def export_b09_run_action(user: Any, run_id: Any, body_data: dict[str, Any] | None = None) -> dict[str, Any]:
     run = _get_b09_run_checked(user, run_id, PERM_B09_EXPORT)
     fmt = str((body_data or {}).get("export_format") or "PDF").upper()
@@ -4903,4 +4923,5 @@ def export_b09_run_action(user: Any, run_id: Any, body_data: dict[str, Any] | No
         "exported_at": timezone.now().isoformat(),
         "header": header,
         "sections": secs["sections"],
+        **_b09_outline_file(run, secs["sections"], body_data or {}, fmt),
     }

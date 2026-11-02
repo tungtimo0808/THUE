@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
+import { exportErrorText, readFormSignature, saveStatementFile } from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -120,6 +121,28 @@ const BASE_INCOME_DATA: IncomeStatementItem[] = [
     accountRef: "TK 515",
   },
   {
+    id: "22.1",
+    name: "7.1. Lãi từ đánh giá lại tài khoản ngoại tệ",
+    code: "22.1",
+    note: "",
+    currentPeriod: 0,
+    previousPeriod: 0,
+    indent: true,
+    isClickable: false,
+    accountRef: "TK 515",
+  },
+  {
+    id: "22.2",
+    name: "7.2. Doanh thu hoạt động tài chính",
+    code: "22.2",
+    note: "",
+    currentPeriod: 0,
+    previousPeriod: 0,
+    indent: true,
+    isClickable: false,
+    accountRef: "TK 515",
+  },
+  {
     id: "23",
     name: "8. Chi phí tài chính",
     code: "23",
@@ -130,8 +153,30 @@ const BASE_INCOME_DATA: IncomeStatementItem[] = [
     accountRef: "TK 635",
   },
   {
+    id: "23.1",
+    name: "8.1. Lỗ từ đánh giá lại tài khoản ngoại tệ",
+    code: "23.1",
+    note: "",
+    currentPeriod: 0,
+    previousPeriod: 0,
+    indent: true,
+    isClickable: false,
+    accountRef: "TK 635",
+  },
+  {
+    id: "23.2",
+    name: "8.2. Chi phí tài chính",
+    code: "23.2",
+    note: "",
+    currentPeriod: 0,
+    previousPeriod: 0,
+    indent: true,
+    isClickable: false,
+    accountRef: "TK 635",
+  },
+  {
     id: "24",
-    name: "- Trong đó: Chi phí đi vay",
+    name: "- Trong đó: Chi phí lãi vay",
     code: "24",
     note: "",
     currentPeriod: 0,
@@ -492,15 +537,18 @@ export default function MisaBusinessResultReport({
             export_format: exportFormat,
             display_unit: displayUnit,
             hide_zero_lines: hideZero,
+            ...readFormSignature(),
           }
         );
+        saveStatementFile(res);
         notify?.(`Đã kết xuất tệp ${res?.file_name || `${formCode}.${exportFormat === "EXCEL" ? "xlsx" : "pdf"}`} thành công.`);
         return;
-      } catch {
-        // Fallback notification
+      } catch (error) {
+        notify?.(`Không xuất được báo cáo. ${exportErrorText(error)}`);
+        return;
       }
     }
-    notify?.(`Đã xuất khẩu báo cáo ${formCode} (${exportFormat}) thành công.`);
+    notify?.("Chưa có báo cáo để xuất. Hãy lập báo cáo trước.");
   };
 
   // Open drawer helper

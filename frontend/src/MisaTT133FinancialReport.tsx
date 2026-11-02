@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, Download, Printer, RefreshCw } from "lucide-react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
+import { exportErrorText, readFormSignature, saveStatementFile } from "./FinancialForm";
 import "./misa-tt133-report.css";
 
 export const TT133_REPORTS = [
@@ -43,10 +44,6 @@ function money(value: string | null | undefined) {
   if (value == null || value === "") return "—";
   const number = Number(value);
   return Number.isFinite(number) ? number.toLocaleString("vi-VN", { maximumFractionDigits: 2 }) : value;
-}
-
-function csvEscape(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
 }
 
 export default function MisaTT133FinancialReport({
@@ -105,22 +102,17 @@ export default function MisaTT133FinancialReport({
 
   useEffect(() => { void load(); }, [load]);
 
-  function downloadCsv() {
-    if (!report) return;
-    const isTrial = code === "F01-DNN";
-    const headings = isTrial
-      ? ["Số tài khoản", "Tên tài khoản", "Dư Nợ đầu năm", "Dư Có đầu năm", "Phát sinh Nợ", "Phát sinh Có", "Dư Nợ cuối năm", "Dư Có cuối năm"]
-      : code === "B09-DNN" ? ["Mã số", "Chỉ tiêu", "Năm nay", "Năm trước", "Thuyết minh"] : ["Mã số", "Chỉ tiêu", "Năm nay", "Năm trước"];
-    const values = report.rows.map((row) => isTrial
-      ? [row.code, row.name, row.opening_debit, row.opening_credit, row.period_debit, row.period_credit, row.closing_debit, row.closing_credit]
-      : code === "B09-DNN" ? [row.code, row.name, row.current, row.previous, row.narrative] : [row.code, row.name, row.current, row.previous]);
-    const csv = [headings, ...values].map((cells) => cells.map((cell) => csvEscape(String(cell ?? ""))).join(",")).join("\r\n");
-    const href = URL.createObjectURL(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = href;
-    link.download = `TT133_${code}_${year}.csv`;
-    link.click();
-    URL.revokeObjectURL(href);
+  async function exportFile(format: "EXCEL" | "PDF") {
+    try {
+      const companyId = getSelectedCompanyId();
+      const response: any = await apiClient.post(
+        `/api/v1/reports/tt133-financial-statements/export/?company_id=${encodeURIComponent(companyId)}&year=${year}`,
+        { template_code: code, export_format: format, ...readFormSignature() },
+      );
+      saveStatementFile(response);
+    } catch (cause) {
+      setError(exportErrorText(cause));
+    }
   }
 
   return <main className="tt133-report">
@@ -130,7 +122,8 @@ export default function MisaTT133FinancialReport({
       <span className="tt133-toolbar-spacer" />
       <label>Năm <input type="number" min="1900" max="2100" value={year} onChange={(event) => setYear(Number(event.target.value))} /></label>
       <button type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={16} /> Lấy lại dữ liệu</button>
-      <button type="button" onClick={downloadCsv} disabled={!report}><Download size={16} /> Xuất CSV</button>
+      <button type="button" onClick={() => void exportFile("EXCEL")} disabled={!report}><Download size={16} /> Xuất Excel</button>
+      <button type="button" onClick={() => void exportFile("PDF")} disabled={!report}><Download size={16} /> Xuất PDF</button>
       <button type="button" onClick={() => window.print()} disabled={!report}><Printer size={16} /> In</button>
     </div>
     <div className="tt133-tabs" role="tablist" aria-label="Mẫu báo cáo TT133">

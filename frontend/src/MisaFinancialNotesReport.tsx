@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
+import { exportErrorText, readFormSignature, saveStatementFile } from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -483,10 +484,11 @@ export default function MisaFinancialNotesReport({
       const cid = getSelectedCompanyId();
       const res: any = await apiClient.post(
         `/api/v1/reports/financial-notes/runs/${encodeURIComponent(activeRun.run_id)}/export/`,
-        { company_id: cid, export_format: format }
+        { company_id: cid, export_format: format, ...readFormSignature() }
       );
+      if (format !== "DOCX") saveStatementFile(res);
       notify?.(
-        `Đã khởi tạo lệnh kết xuất ${res?.legal_form_code || templateCode} định dạng ${format} (Mã: ${res?.export_id || "OK"}).`
+        `Đã kết xuất ${res?.legal_form_code || templateCode} định dạng ${format} (Mã: ${res?.export_id || "OK"}).`
       );
     } catch (err: any) {
       notify?.(err?.response?.data?.detail || "Không thể kết xuất Thuyết minh BCTC.");

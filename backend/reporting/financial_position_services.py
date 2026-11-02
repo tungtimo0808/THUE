@@ -19,6 +19,7 @@ from general_ledger.models import Account, AccountBalance, AccountingPeriod, Jou
 from iam.models import Permission
 from master_data.models import Currency
 from organization.models import Branch, Company
+from reporting.statement_forms import attach_run_file
 from reporting.models import (
     FinancialStatementAccountMapping,
     FinancialStatementAdjustment,
@@ -2669,7 +2670,8 @@ def _get_detail_group_key(jl: JournalLine) -> str:
     for k in ("party_code", "customer_code", "supplier_code", "employee_code", "subledger_key", "tax_type", "contract_no", "contract", "classification"):
         if dims.get(k):
             return f"DIM:{k}:{dims[k]}"
-    return f"JL:{jl.id}"
+    # Without a sub-ledger detail the whole account nets, so a settled balance does not show on both sides.
+    return "ACCOUNT"
 
 
 def _evaluate_mapping_on_lines(
@@ -4857,4 +4859,10 @@ def export_financial_position_run(company: Company, user, run_id: str, payload: 
         "lines_count": len(xml_items),
         "indicators": xml_items,
         "xml_payload": {"indicators": xml_items},
+        **attach_run_file(
+            {}, run, company, lines_serialized, data, title="BÁO CÁO TÌNH HÌNH TÀI CHÍNH",
+            period=f"Tại ngày {run.as_of_date:%d} tháng {run.as_of_date:%m} năm {run.as_of_date:%Y}",
+            labels=("Số cuối năm", "Số đầu năm"), keys=("raw_closing_amount", "raw_opening_amount"),
+            export_format=export_format,
+        ),
     }

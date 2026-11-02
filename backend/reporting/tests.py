@@ -3137,12 +3137,12 @@ class BusinessResultUcRpt04Tests(TestCase):
         self.assertEqual(tpl_res.status_code, 200)
         by_legal = {t["legal_form_code"]: t for t in tpl_res.data["templates"]}
         self.assertEqual(set(by_legal.keys()), {"B02-DN", "B02-DNKLT", "B02a-DN", "B02b-DN"})
-        self.assertEqual(by_legal["B02-DN"]["indicator_count"], 21)
+        self.assertEqual(by_legal["B02-DN"]["indicator_count"], 25)
         self.assertEqual(by_legal["B02-DN"]["value_slot_count"], 2)
         self.assertEqual(by_legal["B02-DN"]["table_column_count"], 5)
-        self.assertEqual(by_legal["B02-DNKLT"]["indicator_count"], 21)
+        self.assertEqual(by_legal["B02-DNKLT"]["indicator_count"], 25)
         self.assertEqual(by_legal["B02-DNKLT"]["going_concern_status"], "NON_GOING_CONCERN")
-        self.assertEqual(by_legal["B02a-DN"]["indicator_count"], 21)
+        self.assertEqual(by_legal["B02a-DN"]["indicator_count"], 25)
         self.assertEqual(by_legal["B02a-DN"]["value_slot_count"], 4)
         self.assertEqual(by_legal["B02a-DN"]["table_column_count"], 7)
         self.assertEqual(by_legal["B02b-DN"]["indicator_count"], 4)
@@ -3259,7 +3259,7 @@ class BusinessResultUcRpt04Tests(TestCase):
             format="json",
         )
         self.assertEqual(res_b02a.status_code, 201)
-        self.assertEqual(res_b02a.data["total_template_lines"], 21)
+        self.assertEqual(res_b02a.data["total_template_lines"], 25)
         self.assertEqual(len(res_b02a.data["run"]["table_columns"]), 7)
         b02a_map = {ln["indicator_code"]: ln for ln in res_b02a.data["lines"]}
         slots_01 = b02a_map["01"]["slots_by_code"]
