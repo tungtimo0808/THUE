@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
+import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
   adjustGeneralBusinessVoucher,
@@ -140,7 +141,7 @@ export type CompanyInfo = {
   id: string;
   name: string;
   short?: string;
-  accounting_regime?: "TT99" | "TT133" | "TT200" | string;
+  accounting_regime?: "TT99" | "TT133" | "TT200" | "TT58" | string;
 };
 
 export type MisaLedgerWorkspaceProps = {
@@ -204,12 +205,21 @@ export default function MisaLedgerWorkspace({
   const { token: apiToken, companies: apiCompanies } = useApiSession();
   const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
   const currentTab = tab || "process";
-  const activeRegimeCode =
+  const rawRegimeCode =
     company.accounting_regime ||
     (apiCompanies || []).find((c: any) => c.id === company.id)?.accounting_regime ||
     "TT99";
+  const activeRegimeCode = String(rawRegimeCode).toUpperCase().includes("58")
+    ? "TT58"
+    : String(rawRegimeCode).toUpperCase().includes("133")
+    ? "TT133"
+    : String(rawRegimeCode).toUpperCase().includes("200")
+    ? "TT200"
+    : "TT99";
   const activeCircularLabel =
-    activeRegimeCode === "TT133"
+    activeRegimeCode === "TT58"
+      ? "Thông tư 58/2026/TT-BTC (DN siêu nhỏ)"
+      : activeRegimeCode === "TT133"
       ? "Thông tư 133/2016/TT-BTC (DNNVV)"
       : activeRegimeCode === "TT200"
       ? "Thông tư 200/2014/TT-BTC"
@@ -5290,7 +5300,7 @@ export default function MisaLedgerWorkspace({
       : "Nguyễn Văn Hùng";
     setAdvReqRequester(defaultEmpName);
     setAdvReqDepartment(resolveDepartmentNameForEmployee(defaultEmpName));
-    setAdvReqAmount("15,000,000");
+    setAdvReqAmount("15.000.000");
     setAdvReqPurpose(
       "Công tác phí và chi phí tiếp khách tại thị trường miền Trung từ ngày 15/10 đến 22/10",
     );
@@ -5304,7 +5314,7 @@ export default function MisaLedgerWorkspace({
     setEditingAdvReqNumber(item.id);
     setAdvReqRequester(item.employee || "");
     setAdvReqDepartment(item.dept || "");
-    setAdvReqAmount(Number(item.amount || 0).toLocaleString("en-US"));
+    setAdvReqAmount(Number(item.amount || 0).toLocaleString("vi-VN"));
     setAdvReqPurpose(item.reason || "");
     setAdvReqError("");
     setIsSubmittingAdvReq(false);
@@ -5330,7 +5340,7 @@ export default function MisaLedgerWorkspace({
       return;
     }
 
-    const normalizedAmountStr = rawAmountStr.replace(/,/g, "").replace(/\s+/g, "");
+    const normalizedAmountStr = rawAmountStr.replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(/,/g, "").replace(/\s+/g, "");
     const amountNum = Number(normalizedAmountStr);
     if (!/^-?\d+(\.\d+)?$/.test(normalizedAmountStr) || !Number.isFinite(amountNum)) {
       setAdvReqError("Số tiền đề nghị quyết toán không hợp lệ.");
@@ -5743,7 +5753,9 @@ export default function MisaLedgerWorkspace({
                       : "1px solid #a7f3d0",
                 }}
               >
-                {activeRegimeCode === "TT133"
+                {activeRegimeCode === "TT58"
+                  ? "Chế độ kế toán: Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ) · 20 TK rút gọn cốt lõi · Kết chuyển trực tiếp TK 511, 632, 642, 821 → 911 → 421 · Bộ BCTC: B01-DNSN, B02-DNSN"
+                  : activeRegimeCode === "TT133"
                   ? "Chế độ kế toán: Thông tư 133/2016/TT-BTC (DNNVV) · 101 TK chuẩn · Kết chuyển TK 632, 6421, 6422 → 911 · Bộ BCTC: B01a/b-DNN, B02-DNN, B03-DNN, B09-DNN"
                   : activeRegimeCode === "TT200"
                   ? "Chế độ kế toán: Thông tư 200/2014/TT-BTC · 135 TK chuẩn · Kết chuyển TK 621, 622, 627 → 154 & 632, 641, 642 → 911 · Bộ BCTC: B01-DN, B02-DN, B03-DN, B09-DN"
@@ -8379,8 +8391,8 @@ export default function MisaLedgerWorkspace({
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>
                         {correctionModal.mode === "ADJUSTMENT"
-                          ? `UC-GL-06: Điều chỉnh bút toán gốc ${correctionModal.sourceItem.id}`
-                          : `UC-GL-06: Đảo bút toán gốc ${correctionModal.sourceItem.id}`}
+                          ? `Điều chỉnh bút toán gốc ${correctionModal.sourceItem.id}`
+                          : `Đảo bút toán gốc ${correctionModal.sourceItem.id}`}
                       </div>
                       <button
                         type="button"
@@ -8438,9 +8450,9 @@ export default function MisaLedgerWorkspace({
                         <div>
                           <label style={{ display: "block", color: "#475569", marginBottom: 4 }}>Số tiền điều chỉnh *</label>
                           <input
-                            value={correctionModal.adjAmount}
-                            onChange={(e) => setCorrectionModal((p) => ({ ...p, adjAmount: e.target.value }))}
-                            style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                            value={formatMoneyInput(correctionModal.adjAmount, { emptyZero: true })}
+                            onChange={(e) => setCorrectionModal((p) => ({ ...p, adjAmount: parseMoneyInputString(e.target.value, { emptyWhenBlank: true }) }))}
+                            style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #cbd5e1", textAlign: "right" }}
                           />
                         </div>
                         <div>
@@ -8451,10 +8463,10 @@ export default function MisaLedgerWorkspace({
                             style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #cbd5e1" }}
                           >
                             <option value="GENERAL">Điều chỉnh tổng hợp</option>
-                            <option value="INCREASE_AMOUNT">AF-07: Tăng số tiền thiếu</option>
-                            <option value="DECREASE_AMOUNT">AF-08: Giảm số tiền thừa</option>
-                            <option value="RECLASSIFY_ACCOUNT">AF-09: Điều chỉnh sai tài khoản</option>
-                            <option value="RECLASSIFY_DIMENSION">AF-10: Điều chỉnh đối tượng/chiều</option>
+                            <option value="INCREASE_AMOUNT">Tăng số tiền thiếu</option>
+                            <option value="DECREASE_AMOUNT">Giảm số tiền thừa</option>
+                            <option value="RECLASSIFY_ACCOUNT">Điều chỉnh sai tài khoản</option>
+                            <option value="RECLASSIFY_DIMENSION">Điều chỉnh đối tượng/chiều</option>
                           </select>
                         </div>
                       </div>
@@ -8480,17 +8492,17 @@ export default function MisaLedgerWorkspace({
                             }
                             style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #cbd5e1" }}
                           >
-                            <option value="FULL">AF-11: Đảo toàn bộ</option>
-                            <option value="PARTIAL">AF-12: Đảo một phần</option>
+                            <option value="FULL">Đảo toàn bộ</option>
+                            <option value="PARTIAL">Đảo một phần</option>
                           </select>
                         </div>
                         {correctionModal.reversalScope === "PARTIAL" && (
                           <div>
                             <label style={{ display: "block", color: "#475569", marginBottom: 4 }}>Số tiền đảo một phần *</label>
                             <input
-                              value={correctionModal.reversalAmount}
-                              onChange={(e) => setCorrectionModal((p) => ({ ...p, reversalAmount: e.target.value }))}
-                              style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                              value={formatMoneyInput(correctionModal.reversalAmount, { emptyZero: true })}
+                              onChange={(e) => setCorrectionModal((p) => ({ ...p, reversalAmount: parseMoneyInputString(e.target.value, { emptyWhenBlank: true }) }))}
+                              style={{ width: "100%", padding: "6px 8px", borderRadius: 4, border: "1px solid #cbd5e1", textAlign: "right" }}
                             />
                           </div>
                         )}
@@ -8516,7 +8528,7 @@ export default function MisaLedgerWorkspace({
                         onClick={() => { void handleSaveCorrectionModal(true); }}
                         style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#00a862", color: "#fff", fontWeight: 600, cursor: "pointer" }}
                       >
-                        Cất và Ghi sổ (UC-GL-05)
+                        Cất và Ghi sổ
                       </button>
                     </div>
                   </div>
@@ -9588,9 +9600,9 @@ export default function MisaLedgerWorkspace({
                           }}
                         >
                           <div>
-                            <strong>Cảnh báo phiên bản lỗi thời (OUTDATED - EF-28, BR-GL-FS-76):</strong>{" "}
+                            <strong>Cảnh báo phiên bản lỗi thời (OUTDATED):</strong>{" "}
                             {activeBatch.outdated_reason ||
-                              "Số liệu Sổ cái (UC-GL-05/10) hoặc trạng thái Khóa sổ kỳ kế toán (UC-GL-12) đã thay đổi sau thời điểm lập phiên bản này. Hệ thống chặn chốt chính thức phiên bản cũ."}
+                              "Số liệu Sổ cái hoặc trạng thái Khóa sổ kỳ kế toán đã thay đổi sau thời điểm lập phiên bản này. Hệ thống chặn chốt chính thức phiên bản cũ."}
                           </div>
                         </div>
                       )}
@@ -10833,7 +10845,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Lock size={18} color="#00a862" />
                   <span style={{ fontSize: 15.5, fontWeight: 700, color: "#0f172a" }}>
-                    Khóa sổ kỳ kế toán & Kiểm tra điều kiện trước khóa (UC-GL-12)
+                    Khóa sổ kỳ kế toán & Kiểm tra điều kiện trước khóa
                   </span>
                   <span
                     style={{
@@ -10860,7 +10872,7 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
                   Ngăn phát sinh hoặc sửa đổi chứng từ làm ảnh hưởng số liệu đã chốt; bảo vệ bằng Watermark chống lệch dữ liệu sau khi kiểm tra:{" "}
-                  <code>{periodChecklistWatermark}</code> (BR-GL-LOCK-32, EF-12)
+                  <code>{periodChecklistWatermark}</code>
                 </div>
               </div>
               <button
@@ -10878,7 +10890,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>
-                    Khóa sổ đến ngày (BR-GL-LOCK-06):
+                    Khóa sổ đến ngày:
                   </label>
                   <input
                     type="text"
@@ -10895,7 +10907,7 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>
-                    Phạm vi khóa sổ (AF-01 / AF-02):
+                    Phạm vi khóa sổ:
                   </label>
                   <select
                     value={periodLockScope}
@@ -10963,7 +10975,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <strong style={{ fontSize: 12.5, color: "#0f172a" }}>
-                    Checklist Kiểm tra Điều kiện Trước khi Khóa Sổ (Bước 5–28 / BR-GL-LOCK-09..31)
+                    Checklist Kiểm tra Điều kiện Trước khi Khóa Sổ
                   </strong>
                   <button
                     type="button"
@@ -11062,7 +11074,7 @@ export default function MisaLedgerWorkspace({
                     onChange={(e) => setAcknowledgeLockWarnings(e.target.checked)}
                   />
                   <span>
-                    Xác nhận tiếp tục khóa sổ nếu chỉ có Cảnh báo (<code>WARNING</code>) và không có Lỗi chặn (<code>BLOCKER</code>) (BR-GL-LOCK-31)
+                    Xác nhận tiếp tục khóa sổ nếu chỉ có Cảnh báo (<code>WARNING</code>) và không có Lỗi chặn (<code>BLOCKER</code>)
                   </span>
                 </label>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -11083,7 +11095,7 @@ export default function MisaLedgerWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    Mở Tổng hợp Số dư (UC-GL-10)
+                    Mở Tổng hợp Số dư
                   </button>
                   <button
                     type="button"
@@ -11102,7 +11114,7 @@ export default function MisaLedgerWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    Mở Đối chiếu Phân hệ (UC-GL-11)
+                    Mở Đối chiếu Phân hệ
                   </button>
                 </div>
               </div>
@@ -11118,7 +11130,7 @@ export default function MisaLedgerWorkspace({
                   lineHeight: 1.4,
                 }}
               >
-                Lưu ý (BR-GL-LOCK-36..44): Sau khi khóa sổ, hệ thống chặn tạo mới, sửa, xóa, Ghi sổ (Post), Bỏ ghi sổ (Unpost), Điều chỉnh hoặc Đảo bút toán có Ngày hạch toán thuộc phạm vi đã khóa; dữ liệu đã POSTED chỉ được phép xem báo cáo và truy vết kiểm toán.
+                Lưu ý: Sau khi khóa sổ, hệ thống chặn tạo mới, sửa, xóa, Ghi sổ (Post), Bỏ ghi sổ (Unpost), Điều chỉnh hoặc Đảo bút toán có Ngày hạch toán thuộc phạm vi đã khóa; dữ liệu đã POSTED chỉ được phép xem báo cáo và truy vết kiểm toán.
               </div>
             </div>
 
@@ -11161,7 +11173,7 @@ export default function MisaLedgerWorkspace({
                   cursor: "pointer",
                 }}
               >
-                Thực hiện Khóa sổ (Bước 31–42)
+                Thực hiện Khóa sổ
               </button>
             </div>
           </div>
@@ -11212,7 +11224,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Unlock size={18} color="#0284c7" />
                 <span style={{ fontSize: 15.5, fontWeight: 700, color: "#0f172a" }}>
-                  Bỏ khóa / Mở lại sổ kỳ kế toán & Nhật ký Audit (UC-GL-12)
+                  Bỏ khóa / Mở lại sổ kỳ kế toán & Nhật ký Audit
                 </span>
                 {reopenWorkflowStatus !== "NONE" && (
                   <span
@@ -11269,7 +11281,7 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div>
                   <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>
-                    Phạm vi mở khóa (AF-23 / AF-24):
+                    Phạm vi mở khóa:
                   </label>
                   <select
                     value={reopenScope}
@@ -11283,14 +11295,14 @@ export default function MisaLedgerWorkspace({
                     }}
                   >
                     <option value="FULL_PERIOD">FULL_PERIOD — Mở lại toàn bộ kỳ kế toán</option>
-                    <option value="DOCUMENT_TYPE">DOCUMENT_TYPE — Chỉ mở khóa một số loại chứng từ (AF-24)</option>
+                    <option value="DOCUMENT_TYPE">DOCUMENT_TYPE — Chỉ mở khóa một số loại chứng từ</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>
-                  Lý do mở lại kỳ kế toán <span style={{ color: "#dc2626" }}>* (Bắt buộc - BR-GL-LOCK-46, EF-17)</span>:
+                  Lý do mở lại kỳ kế toán <span style={{ color: "#dc2626" }}>* (Bắt buộc)</span>:
                 </label>
                 <input
                   type="text"
@@ -11314,7 +11326,7 @@ export default function MisaLedgerWorkspace({
                     checked={requireReopenApproval}
                     onChange={(e) => setRequireReopenApproval(e.target.checked)}
                   />
-                  <span>Yêu cầu phê duyệt mở lại kỳ qua Workflow kiểm soát nội bộ (AF-21 / EF-18)</span>
+                  <span>Yêu cầu phê duyệt mở lại kỳ qua Workflow kiểm soát nội bộ</span>
                 </label>
 
                 {reopenWorkflowStatus === "PENDING_APPROVAL" && (
@@ -11353,7 +11365,7 @@ export default function MisaLedgerWorkspace({
                         cursor: "pointer",
                       }}
                     >
-                      Từ chối (REJECT - EF-18)
+                      Từ chối (REJECT)
                     </button>
                   </div>
                 )}
@@ -11371,7 +11383,7 @@ export default function MisaLedgerWorkspace({
                     color: "#0f172a",
                   }}
                 >
-                  Lịch sử Khóa / Bỏ khóa sổ kỳ kế toán (Audit Trail — BR-GL-LOCK-38, 60)
+                  Lịch sử Khóa / Bỏ khóa sổ kỳ kế toán (Audit Trail)
                 </div>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
                   <thead>
@@ -11444,7 +11456,7 @@ export default function MisaLedgerWorkspace({
                   cursor: "pointer",
                 }}
               >
-                Đồng ý Bỏ khóa (Bước 43–62)
+                Đồng ý Bỏ khóa
               </button>
             </div>
           </div>
@@ -12363,7 +12375,7 @@ export default function MisaLedgerWorkspace({
                   padding: "7px 22px",
                   borderRadius: 4,
                   border: "none",
-                  background: "#00a862",
+            
                   color: "#ffffff",
                   fontWeight: 600,
                   fontSize: 13,
@@ -13680,23 +13692,23 @@ export default function MisaLedgerWorkspace({
                             value={tRow.partnerName}
                             onChange={(e) => {
                               const newRows = [...taxInvoiceRows];
-                              newRows[tIdx].partnerName = e.target.value;
+                              newRows[tIdx] = { ...newRows[tIdx], partnerName: e.target.value };
                               setTaxInvoiceRows(newRows);
                             }}
-                            style={{ width: "100%", border: "none", outline: "none", fontSize: 13 }}
                           />
                         </td>
-                        <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                        <td style={{ padding: "6px 8px", textAlign: "center" }}>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (taxInvoiceRows.length > 1) {
-                                setTaxInvoiceRows(taxInvoiceRows.filter((r) => r.id !== tRow.id));
-                              }
+                            onClick={() => setTaxInvoiceRows(taxInvoiceRows.filter((_, idx) => idx !== tIdx))}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              color: "#ef4444",
+                              cursor: "pointer",
+                              padding: 4,
                             }}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444" }}
                           >
-                            <Trash2 size={15} />
                           </button>
                         </td>
                       </tr>
@@ -14299,7 +14311,7 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                        Chọn Đề nghị quyết toán tạm ứng đã duyệt (UC-GL-01):
+                        Chọn Đề nghị quyết toán tạm ứng đã duyệt:
                       </div>
                       {advanceRequests.filter((r) => r.rawStatus === "APPROVED" || r.status === "Đã duyệt").length === 0 ? (
                         <div style={{ fontSize: 12, color: "#64748b", padding: "4px 0" }}>
@@ -15708,7 +15720,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Lưu & Ghi sổ (UC-GL-05)
+                  Lưu & Ghi sổ
                 </button>
 
                 {/* Split Button: Lưu và In ˅ (Exact Match to Screenshot 1) */}
@@ -15913,28 +15925,11 @@ export default function MisaLedgerWorkspace({
                     border: "1px solid #cbd5e1",
                     fontSize: 13,
                     fontWeight: 600,
+                    color: "#0f172a",
                   }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: 12.5, fontWeight: 500, color: "#475569", display: "block", marginBottom: 4 }}>
-                  Mục đích / Diễn giải: <span style={{ color: "#dc2626" }}>*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  aria-label="Mục đích / Diễn giải"
-                  value={advReqPurpose}
-                  onChange={(e) => {
-                    setAdvReqPurpose(e.target.value);
-                    if (advReqError) setAdvReqError("");
-                  }}
-                  placeholder="Mô tả nội dung, lý do của khoản chi cần quyết toán..."
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13 }}
                 />
               </div>
             </div>
-
             <div
               style={{
                 display: "flex",
@@ -15945,6 +15940,21 @@ export default function MisaLedgerWorkspace({
                 borderTop: "1px solid #e2e8f0",
               }}
             >
+              <button
+                type="button"
+                onClick={() => setAddAdvanceRequestModalOpen(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#fff",
+                  color: "#334155",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Hủy
+              </button>
               <button
                 type="button"
                 disabled={isSubmittingAdvReq}
@@ -16772,31 +16782,26 @@ export default function MisaLedgerWorkspace({
                         <thead>
                           <tr style={{ background: "#f1f5f9" }}>
                             <th style={{ border: "1px solid #cbd5e1", padding: 7 }}>Tài khoản</th>
-                            <th style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "left" }}>Bên Nợ (Theo TK đối ứng)</th>
-                            <th style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "left" }}>Bên Có (Theo TK đối ứng)</th>
-                            <th style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "right" }}>Tổng PS Nợ</th>
-                            <th style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "right" }}>Tổng PS Có</th>
+               
+                          <th style={{ border: "1px solid #cbd5e1", padding: 7 }}>TK đối ứng</th>
+                          <th style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "right" }}>Phát sinh Nợ</th>
+                          <th style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "right" }}>Phát sinh Có</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(uc14BookResult?.t_account_summary || []).map((tRow: any, tIdx: number) => (
+                          <tr key={tIdx}>
+                            <td style={{ border: "1px solid #cbd5e1", padding: 7, fontWeight: 700 }}>{tRow.account_code}</td>
+                            <td style={{ border: "1px solid #cbd5e1", padding: 7 }}>{tRow.contra_account_code || "-"}</td>
+                            <td style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "right" }}>
+                              {Number(tRow.debit_amount || 0).toLocaleString("vi-VN")} ₫
+                            </td>
+                            <td style={{ border: "1px solid #cbd5e1", padding: 7, textAlign: "right" }}>
+                              {Number(tRow.credit_amount || 0).toLocaleString("vi-VN")} ₫
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {(uc14BookResult?.t_account_summaries || []).map((t: any) => (
-                            <tr key={t.account_code}>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7, fontWeight: 700 }}>{t.account_code} - {t.account_name}</td>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7 }}>
-                                {Object.entries(t.debit_by_reciprocal || {}).map(([rk, rv]) => (
-                                  <div key={rk}>ĐƯ {rk}: <strong>{apiNumber(rv as any).toLocaleString("vi-VN")}</strong></div>
-                                ))}
-                              </td>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7 }}>
-                                {Object.entries(t.credit_by_reciprocal || {}).map(([rk, rv]) => (
-                                  <div key={rk}>ĐƯ {rk}: <strong>{apiNumber(rv as any).toLocaleString("vi-VN")}</strong></div>
-                                ))}
-                              </td>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700 }}>{apiNumber(t.total_debit).toLocaleString("vi-VN")}</td>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700 }}>{apiNumber(t.total_credit).toLocaleString("vi-VN")}</td>
-                            </tr>
-                          ))}
-                        </tbody>
+                        ))}
+                      </tbody>
                       </table>
                     </div>
                   </div>
@@ -17678,7 +17683,7 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <option value="AUTO_POST">AUTO_POST - Tự động ghi sổ ngay</option>
-                      <option value="UNPOSTED">UNPOSTED - Lưu chưa ghi sổ (chờ UC-GL-05)</option>
+                      <option value="UNPOSTED">UNPOSTED - Lưu chưa ghi sổ</option>
                       <option value="WORKFLOW">WORKFLOW - Chuyển phê duyệt</option>
                     </select>
                   </div>
@@ -17933,7 +17938,7 @@ export default function MisaLedgerWorkspace({
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Phân bổ chi phí bán hàng, quản lý doanh nghiệp và chi phí khác (UC-GL-07)
+                  Phân bổ chi phí bán hàng, quản lý doanh nghiệp và chi phí khác
                 </h3>
                 <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 4 }}>
                   Tập hợp chi phí nguồn đã ghi sổ (POSTED), phân bổ theo tiêu thức và tạo chứng từ phân bổ có truy vết hai chiều
@@ -18083,16 +18088,16 @@ export default function MisaLedgerWorkspace({
                       fontSize: 13,
                     }}
                   >
-                    <option value="FIXED_PERCENT">Tỷ lệ cố định (%) (AF-04)</option>
-                    <option value="COEFFICIENT">Hệ số phân bổ (AF-05)</option>
-                    <option value="REVENUE">Theo doanh thu trong kỳ (AF-06)</option>
-                    <option value="DIRECT_COST">Theo chi phí trực tiếp (AF-06)</option>
-                    <option value="BASIS_VALUE">Theo tiêu thức giá trị/sản lượng (AF-06)</option>
-                    <option value="DIRECT_AMOUNT">Theo số tiền trực tiếp (AF-07)</option>
+                    <option value="FIXED_PERCENT">Tỷ lệ cố định (%)</option>
+                    <option value="COEFFICIENT">Hệ số phân bổ</option>
+                    <option value="REVENUE">Theo doanh thu trong kỳ</option>
+                    <option value="DIRECT_COST">Theo chi phí trực tiếp</option>
+                    <option value="BASIS_VALUE">Theo tiêu thức giá trị/sản lượng</option>
+                    <option value="DIRECT_AMOUNT">Theo số tiền trực tiếp</option>
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>Quy tắc xử lý làm tròn (AF-10)</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>Quy tắc xử lý làm tròn</label>
                   <select
                     value={allocRoundingMethod}
                     onChange={(e) => setAllocRoundingMethod(e.target.value as any)}
@@ -19047,107 +19052,89 @@ export default function MisaLedgerWorkspace({
                                 fontWeight: 600,
                                 color: "#0f172a",
                               }}
-                            >
-                              {it.revaluedValue.toLocaleString("vi-VN")} ₫
-                            </td>
-                            <td
-                              style={{
-                                padding: "8px 10px",
-                                textAlign: "right",
-                                fontWeight: 700,
-                                color:
-                                  it.differenceAmount > 0
-                                    ? "#15803d"
-                                    : it.differenceAmount < 0
-                                      ? "#b91c1c"
-                                      : "#64748b",
-                              }}
-                            >
-                              {it.differenceAmount > 0 ? "+" : ""}
-                              {it.differenceAmount.toLocaleString("vi-VN")} ₫
-                            </td>
-                            <td style={{ padding: "8px 10px" }}>
-                              {it.fxImpactType === "GAIN" ? (
-                                <span
-                                  style={{
-                                    padding: "2px 7px",
-                                    borderRadius: 4,
-                                    background: "#dcfce7",
-                                    color: "#15803d",
-                                    fontWeight: 700,
-                                    fontSize: 11,
-                                  }}
-                                >
-                                  Lãi tỷ giá (GAIN)
-                                </span>
-                              ) : it.fxImpactType === "LOSS" ? (
-                                <span
-                                  style={{
-                                    padding: "2px 7px",
-                                    borderRadius: 4,
-                                    background: "#fee2e2",
-                                    color: "#b91c1c",
-                                    fontWeight: 700,
-                                    fontSize: 11,
-                                  }}
-                                >
-                                  Lỗ tỷ giá (LOSS)
-                                </span>
-                              ) : (
-                                <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                                  Không phát sinh (AF-07)
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: "8px 10px", fontWeight: 700 }}>
-                              {it.debitAccountCode && it.creditAccountCode ? (
-                                <span style={{ color: "#1e3a8a" }}>
-                                  Nợ {it.debitAccountCode} / Có {it.creditAccountCode}
-                                </span>
-                              ) : (
-                                <span style={{ color: "#94a3b8" }}>Bỏ qua (0 ₫)</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Summary Cards */}
-                  {(() => {
-                    const selected = fxRevalItems.filter((it) => it.selected);
-                    const totalGain = selected
-                      .filter((it) => it.fxImpactType === "GAIN")
-                      .reduce((s, it) => s + Math.abs(it.differenceAmount), 0);
-                    const totalLoss = selected
-                      .filter((it) => it.fxImpactType === "LOSS")
-                      .reduce((s, it) => s + Math.abs(it.differenceAmount), 0);
-                    const netDiff = totalGain - totalLoss;
-                    const totalAccounting = totalGain + totalLoss;
-                    return (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(4, 1fr)",
-                          gap: 12,
-                        }}
-                      >
-                        <div
+                        >
+                          {it.revaluedValueAfter.toLocaleString("vi-VN")} ₫
+                        </td>
+                        <td
                           style={{
-                            padding: 12,
-                            borderRadius: 8,
-                            background: "#f0fdf4",
-                            border: "1px solid #bbf7d0",
+                            padding: "8px 10px",
+                            textAlign: "right",
+                            fontWeight: 700,
+                            color:
+                              it.differenceNature === "GAIN"
+                                ? "#15803d"
+                                : it.differenceNature === "LOSS"
+                                  ? "#b91c1c"
+                                  : "#64748b",
                           }}
                         >
-                          <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>
-                            Tổng Lãi tỷ giá đánh giá lại (Có TK 4131)
-                          </div>
-                          <div style={{ fontSize: 17, fontWeight: 800, color: "#15803d", marginTop: 4 }}>
-                            +{totalGain.toLocaleString("vi-VN")} ₫
-                          </div>
-                        </div>
+                          {it.differenceAmount > 0 ? "+" : ""}
+                          {it.differenceAmount.toLocaleString("vi-VN")} ₫
+                        </td>
+                        <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: 999,
+                              fontSize: "0.7rem",
+                              fontWeight: 700,
+                              background:
+                                it.differenceNature === "GAIN"
+                                  ? "#dcfce7"
+                                  : it.differenceNature === "LOSS"
+                                    ? "#fee2e2"
+                                    : "#f1f5f9",
+                              color:
+                                it.differenceNature === "GAIN"
+                                  ? "#166534"
+                                  : it.differenceNature === "LOSS"
+                                    ? "#991b1b"
+                                    : "#475569",
+                            }}
+                          >
+                            {it.differenceNature === "GAIN"
+                              ? "Lãi tỷ giá"
+                              : it.differenceNature === "LOSS"
+                                ? "Lỗ tỷ giá"
+                                : "Không chênh lệch"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 600, color: "#1d4ed8" }}>
+                          Nợ {it.debitAcc} / Có {it.creditAcc}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {(() => {
+                const selectedItems = fxRevalItems.filter((i) => i.selected);
+                const totalGain = selectedItems
+                  .filter((i) => i.differenceNature === "GAIN")
+                  .reduce((sum, i) => sum + Math.abs(i.differenceAmount), 0);
+                const totalLoss = selectedItems
+                  .filter((i) => i.differenceNature === "LOSS")
+                  .reduce((sum, i) => sum + Math.abs(i.differenceAmount), 0);
+                const netDiff = totalGain - totalLoss;
+                const totalAccounting = totalGain + totalLoss;
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 14 }}>
+                    <div
+                      style={{
+                        background: "#f0fdf4",
+                        border: "1px solid #bbf7d0",
+                        borderRadius: 6,
+                        padding: "10px 14px",
+                      }}
+                    >
+                      <div style={{ fontSize: "0.72rem", color: "#166534", fontWeight: 600 }}>
+                        Tổng Lãi tỷ giá đánh giá lại (Có TK 4131)
+                      </div>
+                      <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#15803d", marginTop: 4 }}>
+                        +{totalGain.toLocaleString("vi-VN")} ₫
+                      </div>
+                    </div>
                         <div
                           style={{
                             padding: 12,
@@ -19917,7 +19904,7 @@ export default function MisaLedgerWorkspace({
                   marginRight: 8,
                 }}
               >
-                Chuyển sang Đối chiếu GL ↔ Phân hệ (UC-GL-11)
+                Chuyển sang Đối chiếu GL ↔ Phân hệ
               </button>
               <button
                 type="button"
@@ -20228,7 +20215,7 @@ export default function MisaLedgerWorkspace({
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "right" }}>Chênh lệch (GL - PH)</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Trạng thái</th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "left" }}>
-                      Nguyên nhân dự kiến (BR-GL-REC-46)
+                      Nguyên nhân dự kiến
                     </th>
                     <th style={{ padding: "8px", border: "1px solid #cbd5e1", textAlign: "center" }}>Truy vết 2 phía</th>
                   </tr>
@@ -20311,7 +20298,7 @@ export default function MisaLedgerWorkspace({
                             cursor: "pointer",
                           }}
                         >
-                          Drill-down (Bước 39)
+                          Chi tiết
                         </button>
                       </td>
                     </tr>
@@ -20332,7 +20319,7 @@ export default function MisaLedgerWorkspace({
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <strong style={{ fontSize: 13, color: "#0f172a" }}>
-                      Truy vết 2 phía (Sổ cái GL ↔ Phân hệ chi tiết) — Khóa: {glRecSelectedLine.reconciliationKey} (BR-GL-REC-48, 49, 93)
+                      Truy vết 2 phía (Sổ cái GL ↔ Phân hệ chi tiết) — Khóa: {glRecSelectedLine.reconciliationKey}
                     </strong>
                     <button
                       type="button"
@@ -20353,7 +20340,7 @@ export default function MisaLedgerWorkspace({
                     {/* Left: GL Entries */}
                     <div style={{ background: "#ffffff", padding: 10, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                       <div style={{ fontWeight: 700, fontSize: 12, color: "#0f766e", marginBottom: 6 }}>
-                        Danh sách Bút toán Sổ cái GL (POSTED) — Bước 40
+                        Danh sách Bút toán Sổ cái GL (POSTED)
                       </div>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
                         <thead>
@@ -20382,7 +20369,7 @@ export default function MisaLedgerWorkspace({
                     {/* Right: Subledger Vouchers */}
                     <div style={{ background: "#ffffff", padding: 10, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                       <div style={{ fontWeight: 700, fontSize: 12, color: "#b45309", marginBottom: 6 }}>
-                        Danh sách Chứng từ Phân hệ nguồn — Bước 41
+                        Danh sách Chứng từ Phân hệ nguồn
                       </div>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
                         <thead>

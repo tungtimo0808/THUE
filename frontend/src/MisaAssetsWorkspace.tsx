@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
@@ -4517,7 +4518,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     }
     setDeprAccountingRows(Array.from(grouped.values()).map(({ sourceCodes: _s, ...rest }) => rest));
     setDeprIsDirty(true);
-    notify("Đã gộp các dòng hạch toán có cùng cặp tài khoản và đối tượng chi phí (UC-FA-04 AF05).");
+    notify("Đã gộp các dòng hạch toán có cùng cặp tài khoản và đối tượng chi phí.");
   };
 
   // UC-FA-04 Main Flow (Steps 7–22) & Exception Flows (EF01–EF21): Ghi sổ chứng từ khấu hao
@@ -7072,7 +7073,7 @@ ${entries.length
                   type="button"
                   onClick={() =>
                     notify(
-                      "UC-FA-02: Chỉ cho phép cập nhật thông tin nhận diện và hồ sơ bổ sung. Các chỉ tiêu kế toán, nguyên giá, khấu hao, loại tài sản và đơn vị sử dụng được khóa bảo vệ."
+                      "Chỉ cho phép cập nhật thông tin nhận diện và hồ sơ bổ sung. Các chỉ tiêu kế toán, nguyên giá, khấu hao, loại tài sản và đơn vị sử dụng được khóa bảo vệ."
                     )
                   }
                   style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}
@@ -7116,7 +7117,7 @@ ${entries.length
                   }}
                 >
                   <span>
-                    <strong>Chế độ Cập nhật thông tin tài sản (UC-FA-02):</strong> Bạn có thể sửa <strong>Tên tài sản</strong>, <strong>Thông tin khác</strong> (Nước SX, Năm SX, Số hiệu), <strong>Bộ phận cấu thành</strong>, <strong>Dụng cụ phụ tùng</strong> và số hiệu tham chiếu <strong>Nguồn gốc hình thành</strong>. Các chỉ tiêu kế toán được giữ nguyên.
+                    <strong>Chế độ Cập nhật thông tin tài sản:</strong> Bạn có thể sửa <strong>Tên tài sản</strong>, <strong>Thông tin khác</strong> (Nước SX, Năm SX, Số hiệu), <strong>Bộ phận cấu thành</strong>, <strong>Dụng cụ phụ tùng</strong> và số hiệu tham chiếu <strong>Nguồn gốc hình thành</strong>. Các chỉ tiêu kế toán được giữ nguyên.
                   </span>
                 </div>
               )}
@@ -7430,7 +7431,7 @@ ${entries.length
                       }}
                     >
                       <span>
-                        Chỉ tiêu kế toán (Nguyên giá, Hao mòn lũy kế, Giá trị còn lại, Thời gian sử dụng, Tài khoản) không được phép chỉnh sửa trực tiếp tại UC-FA-02.
+                        Chỉ tiêu kế toán (Nguyên giá, Hao mòn lũy kế, Giá trị còn lại, Thời gian sử dụng, Tài khoản) không được phép chỉnh sửa trực tiếp tại màn hình này.
                       </span>
                       <button
                         type="button"
@@ -8522,9 +8523,10 @@ ${entries.length
                           Nguyên giá
                         </label>
                         <input
-                          type="number"
-                          value={openingOriginalCost || ""}
-                          onChange={(e) => handleOriginalCostChange(Number(e.target.value))}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(openingOriginalCost, { emptyZero: true })}
+                          onChange={(e) => handleOriginalCostChange(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
                         />
@@ -8578,9 +8580,10 @@ ${entries.length
                           Giá trị tính KH
                         </label>
                         <input
-                          type="number"
-                          value={openingDeprCostValue || ""}
-                          onChange={(e) => setOpeningDeprCostValue(Number(e.target.value))}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(openingDeprCostValue, { emptyZero: true })}
+                          onChange={(e) => setOpeningDeprCostValue(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
                         />
@@ -8590,9 +8593,10 @@ ${entries.length
                           Giá trị KH tháng
                         </label>
                         <input
-                          type="number"
-                          value={openingDeprMonthValue || ""}
-                          onChange={(e) => setOpeningDeprMonthValue(Number(e.target.value))}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(openingDeprMonthValue, { emptyZero: true })}
+                          onChange={(e) => setOpeningDeprMonthValue(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
                         />
@@ -8602,9 +8606,10 @@ ${entries.length
                           Giá trị KH năm
                         </label>
                         <input
-                          type="number"
-                          value={openingDeprYearValue || ""}
-                          onChange={(e) => setOpeningDeprYearValue(Number(e.target.value))}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(openingDeprYearValue, { emptyZero: true })}
+                          onChange={(e) => setOpeningDeprYearValue(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
                         />
@@ -8629,9 +8634,10 @@ ${entries.length
                           Hao mòn lũy kế
                         </label>
                         <input
-                          type="number"
-                          value={openingAccumulatedDepr || ""}
-                          onChange={(e) => handleAccumulatedDeprChange(Number(e.target.value))}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(openingAccumulatedDepr, { emptyZero: true })}
+                          onChange={(e) => handleAccumulatedDeprChange(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
                         />
@@ -8641,8 +8647,8 @@ ${entries.length
                           Giá trị còn lại
                         </label>
                         <input
-                          type="number"
-                          value={openingRemainingValue || ""}
+                          type="text"
+                          value={formatMoneyInput(openingRemainingValue, { emptyZero: true })}
                           readOnly
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 700, color: "#16a34a", background: "#f8fafc", outline: "none", textAlign: "right", boxSizing: "border-box" }}
                         />
@@ -8721,10 +8727,11 @@ ${entries.length
                           Giá trị tính KH theo luật
                         </label>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           disabled={!openingLimitTaxLaw}
-                          value={openingTaxLawValue || ""}
-                          onChange={(e) => setOpeningTaxLawValue(Number(e.target.value))}
+                          value={formatMoneyInput(openingTaxLawValue, { emptyZero: true })}
+                          onChange={(e) => setOpeningTaxLawValue(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", background: openingLimitTaxLaw ? "#ffffff" : "#f1f5f9", boxSizing: "border-box" }}
                         />
@@ -8734,10 +8741,11 @@ ${entries.length
                           Giá trị KH tháng theo luật
                         </label>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           disabled={!openingLimitTaxLaw}
-                          value={openingTaxLawMonthValue || ""}
-                          onChange={(e) => setOpeningTaxLawMonthValue(Number(e.target.value))}
+                          value={formatMoneyInput(openingTaxLawMonthValue, { emptyZero: true })}
+                          onChange={(e) => setOpeningTaxLawMonthValue(parseMoneyInput(e.target.value))}
                           placeholder="0"
                           style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none", textAlign: "right", background: openingLimitTaxLaw ? "#ffffff" : "#f1f5f9", boxSizing: "border-box" }}
                         />
@@ -10289,7 +10297,7 @@ ${entries.length
                         color: "#334155",
                         cursor: "pointer",
                       }}
-                      title="Lưu chứng từ ở trạng thái Chưa ghi sổ (UC-FA-03 AF20)"
+                      title="Lưu chứng từ ở trạng thái Chưa ghi sổ"
                     >
                       Lưu
                     </button>
@@ -10308,7 +10316,7 @@ ${entries.length
                         color: "#334155",
                         cursor: "pointer",
                       }}
-                      title="Lưu chứng từ và in bảng tính khấu hao (UC-FA-03 AF15)"
+                      title="Lưu chứng từ và in bảng tính khấu hao"
                     >
                       Lưu và in
                     </button>
@@ -10328,7 +10336,7 @@ ${entries.length
                         color: "#ffffff",
                         cursor: "pointer",
                       }}
-                      title="Ghi nhận khấu hao vào Sổ cái và cập nhật Hao mòn lũy kế / Giá trị còn lại (UC-FA-04)"
+                      title="Ghi nhận khấu hao vào Sổ cái và cập nhật Hao mòn lũy kế / Giá trị còn lại"
                     >
                       Ghi sổ
                     </button>
@@ -10797,13 +10805,14 @@ ${entries.length
                               </td>
                               <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
                                 <input
-                                  type="number"
-                                  value={row.origAfter || ""}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatMoneyInput(row.origAfter, { emptyZero: true })}
                                   aria-label={`Nguyên giá sau điều chỉnh dòng ${idx + 1}`}
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
-                                    if (apiConnected) { updateRevalRow(idx, { origAfter: Number(e.target.value) }); return; }
-                                    const val = Number(e.target.value);
+                                    const val = parseMoneyInput(e.target.value);
+                                    if (apiConnected) { updateRevalRow(idx, { origAfter: val }); return; }
                                     const updated = [...revalRows];
                                     updated[idx].origAfter = val;
                                     updated[idx].origDiff = val - (updated[idx].origBefore || 0);
@@ -10875,13 +10884,14 @@ ${entries.length
                               </td>
                               <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
                                 <input
-                                  type="number"
-                                  value={row.deprAfter || ""}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatMoneyInput(row.deprAfter, { emptyZero: true })}
                                   aria-label={`Hao mòn lũy kế sau điều chỉnh dòng ${idx + 1}`}
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
-                                    if (apiConnected) { updateRevalRow(idx, { deprAfter: Number(e.target.value) }); return; }
-                                    const d = Number(e.target.value);
+                                    const d = parseMoneyInput(e.target.value);
+                                    if (apiConnected) { updateRevalRow(idx, { deprAfter: d }); return; }
                                     const updated = [...revalRows];
                                     updated[idx].deprAfter = d;
                                     updated[idx].deprDiff = d - (updated[idx].deprBefore || 0);
@@ -10924,13 +10934,14 @@ ${entries.length
                               </td>
                               <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
                                 <input
-                                  type="number"
-                                  value={row.valAfter || ""}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatMoneyInput(row.valAfter, { emptyZero: true })}
                                   aria-label={`Giá trị tính khấu hao sau điều chỉnh dòng ${idx + 1}`}
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
-                                    if (apiConnected) { updateRevalRow(idx, { valAfter: Number(e.target.value) }); return; }
-                                    const v = Number(e.target.value);
+                                    const v = parseMoneyInput(e.target.value);
+                                    if (apiConnected) { updateRevalRow(idx, { valAfter: v }); return; }
                                     const updated = [...revalRows];
                                     updated[idx].valAfter = v;
                                     updated[idx].valDiff = v - (updated[idx].valBefore || 0);
@@ -10963,13 +10974,14 @@ ${entries.length
                               {/* GTKH tháng sau điều chỉnh */}
                               <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
                                 <input
-                                  type="number"
-                                  value={row.monthlyDeprAfter || ""}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatMoneyInput(row.monthlyDeprAfter, { emptyZero: true })}
                                   aria-label={`GTKH tháng sau điều chỉnh dòng ${idx + 1}`}
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
-                                    updated[idx].monthlyDeprAfter = Number(e.target.value);
+                                    updated[idx].monthlyDeprAfter = parseMoneyInput(e.target.value);
                                     setRevalRows(updated);
                                   }}
                                   placeholder=""
@@ -10979,13 +10991,14 @@ ${entries.length
                               {/* GTKH tháng theo luật sau điều chỉnh */}
                               <td style={{ padding: "2px 4px", borderRight: "1px dotted #cbd5e1" }}>
                                 <input
-                                  type="number"
-                                  value={row.monthlyDeprLawAfter || ""}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatMoneyInput(row.monthlyDeprLawAfter, { emptyZero: true })}
                                   aria-label={`GTKH tháng theo luật dòng ${idx + 1}`}
                                   disabled={revalReadOnly}
                                   onChange={(e) => {
                                     const updated = [...revalRows];
-                                    updated[idx].monthlyDeprLawAfter = e.target.value === "" ? null : Number(e.target.value);
+                                    updated[idx].monthlyDeprLawAfter = e.target.value === "" ? null : parseMoneyInput(e.target.value);
                                     setRevalRows(updated);
                                   }}
                                   placeholder=""
@@ -11151,13 +11164,14 @@ ${entries.length
                             </td>
                             <td style={{ padding: "3px 6px", borderRight: "1px solid #e2e8f0" }}>
                               <input
-                                type="number"
-                                value={acc.amount || ""}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(acc.amount, { emptyZero: true })}
                                 aria-label={`Số tiền bút toán ${idx + 1}`}
                                 disabled={revalReadOnly}
                                 onChange={(e) => {
                                   const updated = [...revalAccountingRows];
-                                  updated[idx].amount = Number(e.target.value);
+                                  updated[idx].amount = parseMoneyInput(e.target.value);
                                   setRevalAccountingRows(updated);
                                 }}
                                 style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, outline: "none", textAlign: "right", boxSizing: "border-box" }}
@@ -12082,7 +12096,7 @@ ${entries.length
                           style={{ display: "block", width: "100%", height: 28, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 8px", boxSizing: "border-box" }} />
                       </label>
                       <label style={{ fontSize: 12, color: "#334155" }}>Giá trị góp vốn được chấp thuận (để trống nếu bằng giá trị còn lại)
-                        <input type="number" min="0" value={decAgreedInvestmentValue} onChange={(e) => { setDecAgreedInvestmentValue(e.target.value); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }}
+                        <input type="text" inputMode="numeric" value={formatMoneyInput(decAgreedInvestmentValue)} onChange={(e) => { setDecAgreedInvestmentValue(parseMoneyInputString(e.target.value)); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }}
                           style={{ display: "block", width: "100%", height: 28, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 8px", boxSizing: "border-box" }} />
                       </label>
                     </>
@@ -12090,7 +12104,7 @@ ${entries.length
                   {decReason === "Phát hiện thiếu khi kiểm kê" && <>
                     <label style={{ fontSize: 12 }}><input type="checkbox" checked={decHasProcessingDecision} onChange={(e) => { setDecHasProcessingDecision(e.target.checked); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} /> Đã có quyết định xử lý tài sản thiếu</label>
                     {decHasProcessingDecision && <label style={{ fontSize: 12 }}>Số tiền phải bồi thường
-                      <input type="number" min="0" value={decCompensationAmount} onChange={(e) => { setDecCompensationAmount(e.target.value); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} style={{ display: "block", width: "100%", height: 28, boxSizing: "border-box" }} />
+                      <input type="text" inputMode="numeric" value={formatMoneyInput(decCompensationAmount)} onChange={(e) => { setDecCompensationAmount(parseMoneyInputString(e.target.value)); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} style={{ display: "block", width: "100%", height: 28, boxSizing: "border-box" }} />
                     </label>}
                   </>}
                   {decReason === "Nhượng bán, thanh lý" && <label style={{ fontSize: 12 }}><input type="checkbox" checked={decIsWelfareAsset} onChange={(e) => { setDecIsWelfareAsset(e.target.checked); setDecAccountingRows([]); setDecAccountingCustomEdited(false); setDecIsDirty(true); }} /> Tài sản dùng cho phúc lợi</label>}
@@ -12458,11 +12472,12 @@ ${entries.length
                           </td>
                           <td style={{ padding: "4px 8px", textAlign: "right" }}>
                             <input
-                              type="number"
-                              value={ae.amount}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(ae.amount)}
                               onChange={(e) => {
                                 const current = decAccountingRows.length > 0 ? [...decAccountingRows] : buildDecAccountingRows(decRows, decReason);
-                                current[idx] = { ...current[idx], amount: Number(e.target.value) || 0 };
+                                current[idx] = { ...current[idx], amount: parseMoneyInput(e.target.value) };
                                 setDecAccountingRows(current);
                                 setDecAccountingCustomEdited(true);
                                 setDecIsDirty(true);
@@ -12634,7 +12649,7 @@ ${entries.length
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
                   type="button"
-                  onClick={() => notify("Hướng dẫn: Bảng kiểm kê tài sản cố định (UC-FA-08)")}
+                  onClick={() => notify("Hướng dẫn: Bảng kiểm kê tài sản cố định")}
                   style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}
                   title="Trợ giúp"
                 >
@@ -14892,14 +14907,14 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{globalIdx}</td>
                     <td
                       onClick={() => openAssetDetailModal(row)}
-                      title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ (UC-FA-02)"
+                      title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ"
                       style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
                     >
                       {row.code}
                     </td>
                     <td
                       onClick={() => openAssetDetailModal(row)}
-                      title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ (UC-FA-02)"
+                      title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ"
                       style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
                     >
                       {row.name}

@@ -15,6 +15,7 @@ import {
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import "./live-account.css";
 
 export default function LiveCompanySelect() {
@@ -554,19 +555,21 @@ export default function LiveCompanySelect() {
                 <label className="auth-label">
                   Loại hình doanh nghiệp (Theo Luật DN 2020) <span style={{ color: "#dc2626" }}>*</span>
                 </label>
-                <select
-                  className="auth-input"
-                  style={{ paddingLeft: 12, paddingRight: 12, height: 40, background: "#ffffff" }}
+                <MisaDropdownSelect
+                  fullWidth
+                  searchable={false}
+                  buttonStyle={{ height: 40, borderRadius: 10 }}
                   value={newBusinessType}
-                  onChange={(e) => setNewBusinessType(e.target.value)}
-                >
-                  <option value="LLC_ONE_MEMBER">Công ty TNHH Một thành viên</option>
-                  <option value="LLC_MULTI_MEMBER">Công ty TNHH Hai thành viên trở lên</option>
-                  <option value="JOINT_STOCK">Công ty Cổ phần (CTCP)</option>
-                  <option value="PRIVATE_ENTERPRISE">Doanh nghiệp tư nhân (DNTN)</option>
-                  <option value="PARTNERSHIP">Công ty Hợp danh</option>
-                  <option value="OTHER">Loại hình khác (HTX / Đơn vị phụ thuộc)</option>
-                </select>
+                  onChange={(val) => setNewBusinessType(val)}
+                  options={[
+                    { value: "LLC_ONE_MEMBER", label: "Công ty TNHH Một thành viên" },
+                    { value: "LLC_MULTI_MEMBER", label: "Công ty TNHH Hai thành viên trở lên" },
+                    { value: "JOINT_STOCK", label: "Công ty Cổ phần (CTCP)" },
+                    { value: "PRIVATE_ENTERPRISE", label: "Doanh nghiệp tư nhân (DNTN)" },
+                    { value: "PARTNERSHIP", label: "Công ty Hợp danh" },
+                    { value: "OTHER", label: "Loại hình khác (HTX / Đơn vị phụ thuộc)" },
+                  ]}
+                />
               </div>
 
               {/* Row 4: Các trường ngắn gom cùng 1 dòng (4 cols + 4 cols + 4 cols): Người đại diện, Chức danh, Tỉnh/Thành phố */}
@@ -586,100 +589,57 @@ export default function LiveCompanySelect() {
 
               <div className="auth-field" style={{ gridColumn: "span 4" }}>
                 <label className="auth-label">Chức danh người đại diện</label>
-                <select
-                  className="auth-input"
-                  style={{ paddingLeft: 12, paddingRight: 12, height: 40, background: "#ffffff" }}
+                <MisaDropdownSelect
+                  fullWidth
+                  searchable={false}
+                  buttonStyle={{ height: 40, borderRadius: 10 }}
                   value={newRepTitle}
-                  onChange={(e) => setNewRepTitle(e.target.value)}
-                >
-                  <option value="Giám đốc">Giám đốc</option>
-                  <option value="Tổng Giám đốc">Tổng Giám đốc</option>
-                  <option value="Chủ tịch Hội đồng thành viên">Chủ tịch Hội đồng thành viên</option>
-                  <option value="Chủ tịch Hội đồng quản trị">Chủ tịch Hội đồng quản trị</option>
-                  <option value="Chủ tịch Công ty">Chủ tịch Công ty</option>
-                  <option value="Chủ doanh nghiệp">Chủ doanh nghiệp</option>
-                </select>
+                  onChange={(val) => setNewRepTitle(val)}
+                  options={[
+                    { value: "Giám đốc", label: "Giám đốc" },
+                    { value: "Tổng Giám đốc", label: "Tổng Giám đốc" },
+                    { value: "Chủ tịch Hội đồng thành viên", label: "Chủ tịch Hội đồng thành viên" },
+                    { value: "Chủ tịch Hội đồng quản trị", label: "Chủ tịch Hội đồng quản trị" },
+                    { value: "Chủ tịch Công ty", label: "Chủ tịch Công ty" },
+                    { value: "Chủ doanh nghiệp", label: "Chủ doanh nghiệp" },
+                  ]}
+                />
               </div>
 
               <div className="auth-field" style={{ gridColumn: "span 4" }}>
                 <label className="auth-label">
                   Tỉnh / Thành phố <span style={{ color: "#dc2626" }}>*</span>
                 </label>
-                <select
-                  className="auth-input"
-                  style={{ paddingLeft: 12, paddingRight: 12, height: 40, background: "#ffffff" }}
+                <MisaDropdownSelect
+                  fullWidth
+                  buttonStyle={{ height: 40, borderRadius: 10 }}
                   value={newProvince}
-                  onChange={(e) => setNewProvince(e.target.value)}
-                  required
-                >
-                  <optgroup label="Thành phố trực thuộc Trung ương">
-                    <option value="Hà Nội">Thành phố Hà Nội</option>
-                    <option value="Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
-                    <option value="Hải Phòng">Thành phố Hải Phòng</option>
-                    <option value="Đà Nẵng">Thành phố Đà Nẵng</option>
-                    <option value="Cần Thơ">Thành phố Cần Thơ</option>
-                    <option value="Huế">Thành phố Huế</option>
-                  </optgroup>
-                  <optgroup label="Các Tỉnh">
-                    <option value="An Giang">Tỉnh An Giang</option>
-                    <option value="Bà Rịa - Vũng Tàu">Tỉnh Bà Rịa - Vũng Tàu</option>
-                    <option value="Bắc Giang">Tỉnh Bắc Giang</option>
-                    <option value="Bắc Kạn">Tỉnh Bắc Kạn</option>
-                    <option value="Bạc Liêu">Tỉnh Bạc Liêu</option>
-                    <option value="Bắc Ninh">Tỉnh Bắc Ninh</option>
-                    <option value="Bến Tre">Tỉnh Bến Tre</option>
-                    <option value="Bình Định">Tỉnh Bình Định</option>
-                    <option value="Bình Dương">Tỉnh Bình Dương</option>
-                    <option value="Bình Phước">Tỉnh Bình Phước</option>
-                    <option value="Bình Thuận">Tỉnh Bình Thuận</option>
-                    <option value="Cà Mau">Tỉnh Cà Mau</option>
-                    <option value="Cao Bằng">Tỉnh Cao Bằng</option>
-                    <option value="Đắk Lắk">Tỉnh Đắk Lắk</option>
-                    <option value="Đắk Nông">Tỉnh Đắk Nông</option>
-                    <option value="Điện Biên">Tỉnh Điện Biên</option>
-                    <option value="Đồng Nai">Tỉnh Đồng Nai</option>
-                    <option value="Đồng Tháp">Tỉnh Đồng Tháp</option>
-                    <option value="Gia Lai">Tỉnh Gia Lai</option>
-                    <option value="Hà Giang">Tỉnh Hà Giang</option>
-                    <option value="Hà Nam">Tỉnh Hà Nam</option>
-                    <option value="Hà Tĩnh">Tỉnh Hà Tĩnh</option>
-                    <option value="Hải Dương">Tỉnh Hải Dương</option>
-                    <option value="Hậu Giang">Tỉnh Hậu Giang</option>
-                    <option value="Hòa Bình">Tỉnh Hòa Bình</option>
-                    <option value="Hưng Yên">Tỉnh Hưng Yên</option>
-                    <option value="Khánh Hòa">Tỉnh Khánh Hòa</option>
-                    <option value="Kiên Giang">Tỉnh Kiên Giang</option>
-                    <option value="Kon Tum">Tỉnh Kon Tum</option>
-                    <option value="Lai Châu">Tỉnh Lai Châu</option>
-                    <option value="Lâm Đồng">Tỉnh Lâm Đồng</option>
-                    <option value="Lạng Sơn">Tỉnh Lạng Sơn</option>
-                    <option value="Lào Cai">Tỉnh Lào Cai</option>
-                    <option value="Long An">Tỉnh Long An</option>
-                    <option value="Nam Định">Tỉnh Nam Định</option>
-                    <option value="Nghệ An">Tỉnh Nghệ An</option>
-                    <option value="Ninh Bình">Tỉnh Ninh Bình</option>
-                    <option value="Ninh Thuận">Tỉnh Ninh Thuận</option>
-                    <option value="Phú Thọ">Tỉnh Phú Thọ</option>
-                    <option value="Phú Yên">Tỉnh Phú Yên</option>
-                    <option value="Quảng Bình">Tỉnh Quảng Bình</option>
-                    <option value="Quảng Nam">Tỉnh Quảng Nam</option>
-                    <option value="Quảng Ngãi">Tỉnh Quảng Ngãi</option>
-                    <option value="Quảng Ninh">Tỉnh Quảng Ninh</option>
-                    <option value="Quảng Trị">Tỉnh Quảng Trị</option>
-                    <option value="Sóc Trăng">Tỉnh Sóc Trăng</option>
-                    <option value="Sơn La">Tỉnh Sơn La</option>
-                    <option value="Tây Ninh">Tỉnh Tây Ninh</option>
-                    <option value="Thái Bình">Tỉnh Thái Bình</option>
-                    <option value="Thái Nguyên">Tỉnh Thái Nguyên</option>
-                    <option value="Thanh Hóa">Tỉnh Thanh Hóa</option>
-                    <option value="Tiền Giang">Tỉnh Tiền Giang</option>
-                    <option value="Trà Vinh">Tỉnh Trà Vinh</option>
-                    <option value="Tuyên Quang">Tỉnh Tuyên Quang</option>
-                    <option value="Vĩnh Long">Tỉnh Vĩnh Long</option>
-                    <option value="Vĩnh Phúc">Tỉnh Vĩnh Phúc</option>
-                    <option value="Yên Bái">Tỉnh Yên Bái</option>
-                  </optgroup>
-                </select>
+                  onChange={(val) => setNewProvince(val)}
+                  searchPlaceholder="Tìm nhanh Tỉnh / Thành phố..."
+                  options={[
+                    ...["Hà Nội", "Hồ Chí Minh", "Hải Phòng", "Đà Nẵng", "Cần Thơ", "Huế"].map((c) => ({
+                      value: c,
+                      label: `Thành phố ${c}`,
+                      group: "Thành phố trực thuộc Trung ương",
+                    })),
+                    ...[
+                      "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
+                      "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau",
+                      "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
+                      "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang",
+                      "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+                      "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An",
+                      "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam",
+                      "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh",
+                      "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Tiền Giang", "Trà Vinh", "Tuyên Quang",
+                      "Vĩnh Long", "Vĩnh Phúc", "Yên Bái",
+                    ].map((p) => ({
+                      value: p,
+                      label: `Tỉnh ${p}`,
+                      group: "Các Tỉnh",
+                    })),
+                  ]}
+                />
               </div>
 
               {/* Row 5: Địa chỉ trụ sở đăng ký kinh doanh — Nội dung dài, để trọn 1 dòng (12 cols) */}
@@ -724,24 +684,25 @@ export default function LiveCompanySelect() {
 
               <div className="auth-field" style={{ gridColumn: "span 4" }}>
                 <label className="auth-label">Tháng bắt đầu năm tài chính</label>
-                <select
-                  className="auth-input"
-                  style={{ paddingLeft: 12, paddingRight: 12, height: 40, background: "#ffffff" }}
+                <MisaDropdownSelect
+                  fullWidth
+                  searchable={false}
+                  buttonStyle={{ height: 40, borderRadius: 10 }}
                   value={newFiscalMonth}
-                  onChange={(e) => setNewFiscalMonth(Number(e.target.value))}
-                >
-                  <option value={1}>Tháng 01 (01/01 – 31/12 Chuẩn VN)</option>
-                  <option value={4}>Tháng 04 (01/04 – 31/03 năm sau)</option>
-                  <option value={7}>Tháng 07 (01/07 – 30/06 năm sau)</option>
-                  <option value={10}>Tháng 10 (01/10 – 30/09 năm sau)</option>
-                  {Array.from({ length: 12 }, (_, idx) => idx + 1)
-                    .filter((m) => ![1, 4, 7, 10].includes(m))
-                    .map((m) => (
-                      <option key={m} value={m}>
-                        Tháng {String(m).padStart(2, "0")} hàng năm
-                      </option>
-                    ))}
-                </select>
+                  onChange={(val) => setNewFiscalMonth(Number(val))}
+                  options={[
+                    { value: 1, label: "Tháng 01 (01/01 – 31/12 Chuẩn VN)" },
+                    { value: 4, label: "Tháng 04 (01/04 – 31/03 năm sau)" },
+                    { value: 7, label: "Tháng 07 (01/07 – 30/06 năm sau)" },
+                    { value: 10, label: "Tháng 10 (01/10 – 30/09 năm sau)" },
+                    ...Array.from({ length: 12 }, (_, idx) => idx + 1)
+                      .filter((m) => ![1, 4, 7, 10].includes(m))
+                      .map((m) => ({
+                        value: m,
+                        label: `Tháng ${String(m).padStart(2, "0")} hàng năm`,
+                      })),
+                  ]}
+                />
               </div>
 
               {/* Row 7: Chế độ kế toán áp dụng — Nội dung dài kèm diễn giải hệ thống TK & BCTC, để trọn 1 dòng (12 cols) */}
@@ -749,28 +710,51 @@ export default function LiveCompanySelect() {
                 <label className="auth-label">
                   Chế độ kế toán áp dụng <span style={{ color: "#dc2626" }}>*</span>
                 </label>
-                <select
-                  className="auth-input"
-                  style={{ paddingLeft: 12, paddingRight: 12, height: 40, background: "#ffffff" }}
+                <MisaDropdownSelect
+                  fullWidth
+                  searchable={false}
+                  buttonStyle={{ height: 40, borderRadius: 10 }}
                   value={newAccountingRegime}
-                  onChange={(e) => setNewAccountingRegime(e.target.value)}
-                >
-                  <option value="TT99">
-                    Thông tư 99/2025/TT-BTC — Chế độ kế toán Doanh nghiệp (Chuẩn mới áp dụng từ 01/01/2026)
-                  </option>
-                  <option value="TT133">
-                    Thông tư 133/2016/TT-BTC — Chế độ kế toán Doanh nghiệp nhỏ và vừa (SME)
-                  </option>
-                  <option value="TT200">
-                    Thông tư 200/2014/TT-BTC — Chế độ kế toán Doanh nghiệp (Áp dụng cho kỳ kế toán trước 2026)
-                  </option>
-                </select>
+                  onChange={(val) => setNewAccountingRegime(val)}
+                  options={[
+                    {
+                      value: "TT99",
+                      label: "Thông tư 99/2025/TT-BTC — Chế độ kế toán Doanh nghiệp chuẩn mới",
+                      badge: "21 Vai trò đầy đủ",
+                      badgeBg: "#fffbeb",
+                      badgeColor: "#b45309",
+                    },
+                    {
+                      value: "TT200",
+                      label: "Thông tư 200/2014/TT-BTC — Chế độ kế toán Doanh nghiệp vừa & lớn",
+                      badge: "14 Vai trò + 7 dự phòng",
+                      badgeBg: "#f5f3ff",
+                      badgeColor: "#7c3aed",
+                    },
+                    {
+                      value: "TT133",
+                      label: "Thông tư 133/2016/TT-BTC — Chế độ kế toán Doanh nghiệp nhỏ & vừa (SME)",
+                      badge: "8 Vai trò + 13 dự phòng",
+                      badgeBg: "#f0f9ff",
+                      badgeColor: "#0284c7",
+                    },
+                    {
+                      value: "TT58",
+                      label: "Thông tư 58/2026/TT-BTC — Chế độ kế toán Doanh nghiệp siêu nhỏ / HKD",
+                      badge: "3 Vai trò tinh gọn",
+                      badgeBg: "#ecfdf5",
+                      badgeColor: "#047857",
+                    },
+                  ]}
+                />
                 <span style={{ fontSize: 12, color: "#475569", marginTop: 6, display: "block", lineHeight: 1.45 }}>
-                  {newAccountingRegime === "TT133"
-                    ? "Khởi tạo Hệ thống 101 TK chuẩn TT133 (dùng TK 154, 6421/6422, 2111..2113, 1386) & Bộ Báo cáo tài chính B01a/B01b/B02/B03/B09-DNN."
+                  {newAccountingRegime === "TT58"
+                    ? "Khởi tạo Hệ thống TK rút gọn theo Thông tư 58/2026/TT-BTC (DN siêu nhỏ, thay thế TT132/2018) & kích hoạt sẵn 3 Role tinh gọn (Admin, Giám đốc, Kế toán phụ trách)."
+                    : newAccountingRegime === "TT133"
+                    ? "Khởi tạo Hệ thống 101 TK chuẩn TT133 (dùng TK 154, 6421/6422, 2111..2113, 1386), Bộ BCTC B01a/B01b-DNN & kích hoạt sẵn 8 Role SME cốt lõi."
                     : newAccountingRegime === "TT200"
-                    ? "Khởi tạo Hệ thống 135 TK chuẩn TT200 (TK 621/622/627, 641/642, 244) & hỗ trợ công cụ chuyển đổi số dư sang Thông tư 99/2025/TT-BTC."
-                    : "Khởi tạo Hệ thống 138 TK chuẩn TT99/2025/TT-BTC (bổ sung TK 215 - Tài sản sinh học, TK 332 - Phải trả cổ tức/lợi nhuận, TK 158) & Bộ BCTC B01/B02/B03/B09-DN."}
+                    ? "Khởi tạo Hệ thống 135 TK chuẩn TT200 (TK 621/622/627, 641/642, 244) & kích hoạt sẵn 14 Role chuyên môn cho DN vừa và lớn."
+                    : "Khởi tạo Hệ thống 138 TK chuẩn TT99/2025/TT-BTC (bổ sung TK 215, TK 332, TK 158), Bộ BCTC B01/B02/B03/B09-DN & kích hoạt đầy đủ 21 Role chuẩn."}
                 </span>
               </div>
 
@@ -828,15 +812,25 @@ export default function LiveCompanySelect() {
               {filteredCompanies.map((c) => {
                 const isSelected = companyId === c.id;
                 const rawReg = String(c.accounting_regime || "TT99").toUpperCase();
-                const regCode = rawReg.includes("133") ? "TT133" : rawReg.includes("200") ? "TT200" : "TT99";
+                const regCode = rawReg.includes("58")
+                  ? "TT58"
+                  : rawReg.includes("133")
+                  ? "TT133"
+                  : rawReg.includes("200")
+                  ? "TT200"
+                  : "TT99";
                 const regBadgeLabel =
-                  regCode === "TT133"
+                  regCode === "TT58"
+                    ? "TT 58/2026 (Siêu nhỏ)"
+                    : regCode === "TT133"
                     ? "TT 133/2016 (SME)"
                     : regCode === "TT200"
                     ? "TT 200/2014"
                     : "TT 99/2025";
                 const regBadgeColor =
-                  regCode === "TT133"
+                  regCode === "TT58"
+                    ? { bg: "#ecfdf5", fg: "#047857", border: "#6ee7b7" }
+                    : regCode === "TT133"
                     ? { bg: "#fef3c7", fg: "#b45309", border: "#fde68a" }
                     : regCode === "TT200"
                     ? { bg: "#e0e7ff", fg: "#1d4ed8", border: "#c7d2fe" }
@@ -881,11 +875,13 @@ export default function LiveCompanySelect() {
                       </div>
 
                       <div className="company-portal-card-body">
-                        {regCode === "TT133"
-                          ? "Hệ thống 101 TK chuẩn TT133 (TK 154, 6421/6422, 2111..2113) & Bộ BCTC B01a/B01b-DNN."
+                        {regCode === "TT58"
+                          ? "Hệ thống TK rút gọn chuẩn TT58/2026/TT-BTC (Doanh nghiệp siêu nhỏ - 3 Role tinh gọn) & BCTC B01-DNSN."
+                          : regCode === "TT133"
+                          ? "Hệ thống 101 TK chuẩn TT133 (TK 154, 6421/6422, 2111..2113 - 8 Role SME) & Bộ BCTC B01a/B01b-DNN."
                           : regCode === "TT200"
-                          ? "Hệ thống 135 TK chuẩn TT200 (TK 621/622/627, 641/642) & Bộ BCTC B01/B02/B03/B09-DN."
-                          : "Hệ thống 138 TK chuẩn TT99/2025/TT-BTC (bổ sung TK 215, 332, 158) & Bộ BCTC B01/B02/B03/B09-DN."}
+                          ? "Hệ thống 135 TK chuẩn TT200 (TK 621/622/627, 641/642 - 14 Role) & Bộ BCTC B01/B02/B03/B09-DN."
+                          : "Hệ thống 138 TK chuẩn TT99/2025/TT-BTC (bổ sung TK 215, 332, 158 - 21 Role) & Bộ BCTC B01/B02/B03/B09-DN."}
                       </div>
                     </div>
 

@@ -227,9 +227,10 @@ def init_chart_of_accounts_from_template(
     Hỗ trợ phạm vi rút gọn cho doanh nghiệp nhỏ / một người (AF-02, AF-19, BR-COA-52).
     """
     regime_aliases = {
-        "TT99": "TT99", "99": "TT99",
+        "TT99": "TT99", "99": "TT99", "CIRCULAR_99": "TT99",
         "TT200": "TT200", "CIRCULAR_200": "TT200", "200": "TT200",
         "TT133": "TT133", "CIRCULAR_133": "TT133", "133": "TT133",
+        "TT58": "TT58", "CIRCULAR_58": "TT58", "58": "TT58",
     }
     raw_regime = (regime or "TT99").upper()
     if raw_regime not in regime_aliases:

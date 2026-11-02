@@ -1615,7 +1615,7 @@ _DEPR_REGIME_ALIASES = {
     "TT133": "TT133", "133": "TT133", "CIRCULAR_133": "TT133",
     "TT58": "TT58", "58": "TT58", "CIRCULAR_58": "TT58",
 }
-_DEPR_GL_REGIMES = ("TT99", "TT200", "TT133")
+_DEPR_GL_REGIMES = ("TT99", "TT200", "TT133", "TT58")
 
 
 def _normalize_depr_regime(raw):
@@ -1673,8 +1673,8 @@ def _is_valid_depr_expense_code(code, account_regime):
     code = str(code or "").strip()
     if not code:
         return False
-    if account_regime == "TT133":
-        # TT133 has no 621/622/623/627/641; selling/admin depreciation goes to 6421/6422.
+    if account_regime in ("TT133", "TT58"):
+        # TT133/TT58 has no 621/622/623/627/641; selling/admin depreciation goes to 6421/6422.
         return code == "642" or code.startswith(("6421", "6422", "154", "241", "632", "811"))
     return code.startswith(VALID_DEPR_DEBIT_PREFIXES)
 

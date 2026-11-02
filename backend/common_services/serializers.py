@@ -606,11 +606,15 @@ class CompanySummarySerializer(serializers.Serializer):
 
 
 class CompanyJoinRequestSerializer(serializers.ModelSerializer):
+    company_code = serializers.CharField(source="company.code", read_only=True)
     company_name = serializers.CharField(source="company.name", read_only=True)
     company_tax_code = serializers.CharField(source="company.tax_code", read_only=True)
     company_address = serializers.CharField(source="company.address", read_only=True)
     company_status = serializers.CharField(source="company.status", read_only=True)
     requester_name = serializers.CharField(source="requester.display_name", read_only=True)
+    requester_email = serializers.EmailField(source="requester.auth_user.email", read_only=True)
+    requester_phone = serializers.CharField(source="requester.phone", read_only=True)
+    decided_by_name = serializers.CharField(source="decided_by.display_name", read_only=True, allow_null=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     invitation_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
     message = serializers.CharField(

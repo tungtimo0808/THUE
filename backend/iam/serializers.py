@@ -337,15 +337,24 @@ class RoleReadSerializer(serializers.ModelSerializer):
     permission_count = serializers.SerializerMethodField()
     active_user_count = serializers.SerializerMethodField()
     role_class = serializers.SerializerMethodField()
+    role_group = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
         fields = (
-            "id", "company", "code", "name", "description", "role_type", "role_class",
+            "id", "company", "code", "name", "description", "role_type", "role_class", "role_group",
             "is_system_admin", "source_role", "status", "permission_codes", "permission_count",
             "active_user_count", "created_by", "created_at", "updated_by", "updated_at",
         )
         read_only_fields = fields
+
+    def get_role_group(self, obj) -> str:
+        from .role_services import ROLE_GROUP_BY_CODE
+        if obj.code in ROLE_GROUP_BY_CODE:
+            return ROLE_GROUP_BY_CODE[obj.code]
+        if obj.is_system_admin:
+            return "System"
+        return "Custom" if obj.role_type == "CUSTOM" else "Accounting"
 
     def get_permission_codes(self, obj) -> list[str]:
         codes = set(obj.role_permissions.filter(

@@ -409,7 +409,7 @@ class PlatformCompanyViewSet(ViewSet):
         from .models import DataScopeSet
         seed_standard_roles_for_company(company, actor_account)
 
-        admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
+        admin_role = Role.objects.filter(company=company, code__in=("ROLE_ADMIN", "COMPANY_ADMIN")).first()
         if not admin_role:
             admin_role = Role.objects.filter(company=company, is_system_admin=True).first()
 
@@ -544,7 +544,10 @@ class PlatformCompanyViewSet(ViewSet):
                     branch=branch,
                     defaults={"include_descendants": True},
                 )
-                admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
+                admin_role = (
+                    Role.objects.filter(company=company, code__in=("ROLE_ADMIN", "COMPANY_ADMIN")).first()
+                    or Role.objects.filter(company=company, is_system_admin=True).first()
+                )
                 if admin_role and membership is not None:
                     UserRoleAssignment.objects.get_or_create(
                         company_membership=membership,
@@ -603,7 +606,7 @@ class PlatformUserViewSet(ViewSet):
                     is_comp_admin = False
                     for ra in m.role_assignments.all():
                         if ra.status == ActiveStatus.ACTIVE and ra.role:
-                            is_role_admin = bool(ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                            is_role_admin = bool(ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
                             if is_role_admin:
                                 is_comp_admin = True
                             role_items.append({
@@ -699,64 +702,10 @@ class PlatformUserViewSet(ViewSet):
         return Response({"message": f"Đã cập nhật mật khẩu mới cho người dùng {target.username}."})
 
 
-# --- SEED STANDARD ROLES FOR COMPANY ---
-STANDARD_ROLE_DEFINITIONS = [
-    {
-        "code": "KT_TRUONG",
-        "name": "Kế toán trưởng",
-        "description": "Toàn quyền quản lý tài chính, kiểm soát sổ cái, phê duyệt chứng từ, khóa/mở kỳ kế toán.",
-        "permission_prefixes": [
-            "GL.", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
-        ],
-    },
-    {
-        "code": "KT_BANHANG",
-        "name": "Kế toán bán hàng & Công nợ phải thu",
-        "description": "Lập báo giá, đơn hàng, hóa đơn bán hàng, theo dõi công nợ khách hàng và đối chiếu công nợ.",
-        "permission_prefixes": [
-            "SAL.", "AR.", "MD.PARTY.", "RPT.",
-        ],
-    },
-    {
-        "code": "KT_MUAHANG",
-        "name": "Kế toán mua hàng & Công nợ phải trả",
-        "description": "Lập đơn mua, hóa đơn mua hàng, theo dõi nợ nhà cung cấp và thanh toán chi phí mua hàng.",
-        "permission_prefixes": [
-            "PUR.", "AP.", "MD.PARTY.", "RPT.",
-        ],
-    },
-    {
-        "code": "THU_QUY",
-        "name": "Thủ quỹ",
-        "description": "Xác nhận thu/chi tiền mặt, nộp tiền ngân hàng, kiểm kê quỹ tiền mặt.",
-        "permission_prefixes": [
-            "CASH.TRANSACTION.VIEW", "CASH.TRANSACTION.CONFIRM", "CASH.COUNT.", "CASH.FUND.VIEW", "RPT.",
-        ],
-    },
-    {
-        "code": "KT_KHO",
-        "name": "Thủ kho & Kế toán kho",
-        "description": "Nhập kho, xuất kho, điều chuyển kho, kiểm kê hàng hóa, theo dõi thẻ kho.",
-        "permission_prefixes": [
-            "INV.", "MD.ITEM.", "MD.WAREHOUSE.", "MD.UOM.", "RPT.",
-        ],
-    },
-    {
-        "code": "NVKD",
-        "name": "Nhân viên kinh doanh",
-        "description": "Lập báo giá cho khách, tạo đơn đặt hàng, tra cứu tồn kho và thông tin khách hàng.",
-        "permission_prefixes": [
-            "SAL.QUOTATION.VIEW", "SAL.QUOTATION.CREATE", "SAL.QUOTATION.EDIT",
-            "SAL.ORDER.VIEW", "SAL.ORDER.CREATE", "MD.PARTY.VIEW", "INV.BALANCE.VIEW",
-        ],
-    },
-]
-
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def seed_standard_roles_view(request):
-    """Initializes standard business roles for a specific company."""
+    """Initializes standard business roles, applies a regime role preset, or toggles an individual standard role."""
     company_id = request.query_params.get("company_id") or request.data.get("company_id")
     if not company_id:
         raise ValidationError({"company_id": "Vui lòng chọn doanh nghiệp cần khởi tạo Role mẫu."})
@@ -769,11 +718,49 @@ def seed_standard_roles_view(request):
         ).exists():
             raise PermissionDenied("Bạn không có quyền khởi tạo vai trò cho doanh nghiệp này.")
 
-    from iam.role_services import seed_standard_roles_for_company
-    created_roles = seed_standard_roles_for_company(company, actor_account)
+    # Hỗ trợ bật/tắt nhanh từng Role chuẩn (AVAILABLE <-> ACTIVE)
+    toggle_role_id = request.data.get("toggle_role_id")
+    toggle_role_code = request.data.get("toggle_role_code")
+    if toggle_role_id or toggle_role_code:
+        role_qs = Role.objects.filter(company=company)
+        target_role = role_qs.filter(pk=toggle_role_id).first() if toggle_role_id else role_qs.filter(code=toggle_role_code).first()
+        if not target_role:
+            raise ValidationError({"role": "Không tìm thấy vai trò trong doanh nghiệp."})
+        if target_role.is_system_admin or target_role.code in ("ROLE_ADMIN", "COMPANY_ADMIN"):
+            raise ValidationError({"role": "Vai trò Quản trị doanh nghiệp là bắt buộc, không thể tạm ẩn."})
+        desired_status = request.data.get("status")
+        if desired_status not in (RoleStatus.ACTIVE, RoleStatus.AVAILABLE, RoleStatus.INACTIVE):
+            desired_status = RoleStatus.AVAILABLE if target_role.status == RoleStatus.ACTIVE else RoleStatus.ACTIVE
+        if desired_status != RoleStatus.ACTIVE and target_role.user_assignments.filter(status=ActiveStatus.ACTIVE).exists():
+            raise ValidationError({"role": f"Vai trò '{target_role.name}' đang được gán cho nhân sự hoạt động. Vui lòng chuyển vai trò của nhân sự trước khi tạm ẩn."})
+        target_role.status = desired_status
+        target_role.save(update_fields=("status", "updated_at"))
+        return Response({
+            "message": f"Đã chuyển vai trò '{target_role.name}' sang trạng thái {'Đang sử dụng (ACTIVE)' if desired_status == RoleStatus.ACTIVE else 'Có sẵn trong danh mục (AVAILABLE)'}.",
+            "role_id": str(target_role.id),
+            "role_code": target_role.code,
+            "status": target_role.status,
+        })
+
+    preset = request.data.get("preset") or request.query_params.get("preset")
+    force_preset = bool(preset) or bool(request.data.get("force_preset"))
+
+    from iam.role_services import resolve_regime_preset_key, seed_standard_roles_for_company
+    preset_key = resolve_regime_preset_key(preset or company.accounting_regime)
+    created_roles = seed_standard_roles_for_company(
+        company, actor_account, preset=preset_key, force_preset_status=force_preset
+    )
+    active_count = sum(1 for r in created_roles if r["status"] == RoleStatus.ACTIVE)
+    available_count = len(created_roles) - active_count
 
     return Response({
-        "message": f"Đã khởi tạo thành công {len(created_roles)} vai trò mẫu cho công ty {company.name}.",
+        "message": (
+            f"Đã đồng bộ danh mục {len(created_roles)} vai trò chuẩn theo mô hình {preset_key} "
+            f"({active_count} vai trò đang kích hoạt sử dụng, {available_count} vai trò dự phòng có sẵn)."
+        ),
+        "preset": preset_key,
+        "active_count": active_count,
+        "available_count": available_count,
         "roles": created_roles,
     })
 
@@ -806,7 +793,7 @@ def assign_member_role_view(request):
         ).exists() or CompanyMembership.objects.filter(
             company=company,
             user=actor,
-            role_assignments__role__code__in=["COMPANY_ADMIN", "ADMIN"],
+            role_assignments__role__code__in=["COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"],
             membership_status=ActiveStatus.ACTIVE,
         ).exists()
         if not is_admin:

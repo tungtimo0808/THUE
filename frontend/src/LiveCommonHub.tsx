@@ -166,7 +166,7 @@ export default function LiveCommonHub() {
 
   return <main className="account-page"><section className="account-card account-wide">
     <Link to="/login">← Phiên làm việc</Link>
-    <p className="account-eyebrow">COM-09 → COM-12</p>
+    <p className="account-eyebrow">TIỆN ÍCH CHUNG</p>
     <h1>Dùng chung</h1>
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link>.</p> : <>
       <nav className="account-tabs" aria-label="Chức năng dùng chung">

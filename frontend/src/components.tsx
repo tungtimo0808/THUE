@@ -5,6 +5,7 @@ import {
   type ReactNode,
   type FormEvent,
 } from "react";
+import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import {
   X,
   Plus,
@@ -347,14 +348,11 @@ export function DocumentForm({
                 <label>
                   Số tiền <span>*</span>
                   <input
-                    type="number"
+                    type="text"
                     inputMode="numeric"
                     required
-                    min="1"
-                    max="999999999999"
-                    step="1"
-                    value={l.amount}
-                    onChange={(e) => updateLine(l.id, "amount", e.target.value)}
+                    value={formatMoneyInput(l.amount)}
+                    onChange={(e) => updateLine(l.id, "amount", parseMoneyInputString(e.target.value))}
                     aria-label={`Số tiền dòng ${i + 1}`}
                   />
                 </label>

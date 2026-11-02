@@ -626,7 +626,11 @@ class AccountingRegime(models.TextChoices):
     CIRCULAR_99 = "CIRCULAR_99", "Thông tư 99/2025/TT-BTC (Chế độ kế toán Doanh nghiệp)"
     TT99 = "TT99", "Thông tư 99/2025/TT-BTC"
     CIRCULAR_200 = "CIRCULAR_200", "Thông tư 200/2014/TT-BTC (Doanh nghiệp lớn)"
+    TT200 = "TT200", "Thông tư 200/2014/TT-BTC"
     CIRCULAR_133 = "CIRCULAR_133", "Thông tư 133/2016/TT-BTC (Doanh nghiệp vừa và nhỏ)"
+    TT133 = "TT133", "Thông tư 133/2016/TT-BTC"
+    CIRCULAR_58 = "CIRCULAR_58", "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ)"
+    TT58 = "TT58", "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ)"
     CIRCULAR_88 = "CIRCULAR_88", "Thông tư 88/2021/TT-BTC (Hộ kinh doanh / một người)"
     IFRS = "IFRS", "Chuẩn mực Báo cáo Tài chính Quốc tế"
 

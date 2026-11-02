@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import {
   HelpCircle,
   X,
@@ -744,7 +745,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     void openingRequest("print/", { category: targetCat })
       .then((res) => {
         if (res?.print_status === "ERROR") {
-          notify?.(res.message || "EF-17: Không thể khởi tạo bản in. Dữ liệu đã lưu vẫn được giữ nguyên.");
+          notify?.(res.message || "Không thể khởi tạo bản in. Dữ liệu đã lưu vẫn được giữ nguyên.");
           return;
         }
         setPrintPreviewData(res);
@@ -1089,7 +1090,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       .catch((err: any) => notify?.(err?.message || "Không kiểm tra được số dư đầu kỳ."));
   };
   const regimeFullLabel =
-    accountingRegime === "TT133"
+    accountingRegime === "TT58" || accountingRegime === "CIRCULAR_58"
+      ? "TT58 — Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ)"
+      : accountingRegime === "TT133"
       ? "TT133 — Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ và vừa)"
       : accountingRegime === "TT200"
       ? "TT200 — Thông tư 200/2014/TT-BTC"
@@ -1665,7 +1668,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
                 <div style={{ padding: "12px 20px" }}>
                   <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
-                    Trạng thái cân đối ({accountingRegime === "TT133" ? "TT 133/2016/TT-BTC" : accountingRegime === "TT200" ? "TT 200/2014/TT-BTC" : "TT 99/2025/TT-BTC"} · BR09)
+                    Trạng thái cân đối ({accountingRegime === "TT58" || accountingRegime === "CIRCULAR_58" ? "TT 58/2026/TT-BTC" : accountingRegime === "TT133" ? "TT 133/2016/TT-BTC" : accountingRegime === "TT200" ? "TT 200/2014/TT-BTC" : "TT 99/2025/TT-BTC"} · BR09)
                   </span>
                   {isBalanced ? (
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#00a862", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
@@ -2074,7 +2077,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
           <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Hình thức theo dõi đang chọn (AF-08, BR28)</span>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Hình thức theo dõi đang chọn</span>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#00a862", marginTop: 4 }}>{wipSubtab}</div>
               </div>
               <div style={{ padding: "12px 20px" }}>
@@ -2164,10 +2167,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <td style={{ padding: "6px 12px" }}><input className="misa-opening-input" aria-label={`Tên tài khoản dòng ${idx + 1}`} value={row.name || ""} onChange={(e) => setAccountRows(accountRows.map((item, i) => i === idx ? { ...item, name: e.target.value } : item))} /></td>
                         <td style={{ padding: "6px 12px" }}>
                           <input
-                            type="number"
-                            value={row.debit}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.debit)}
                             onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
+                              const val = parseMoneyInput(e.target.value);
                               const next = [...accountRows];
                               next[idx].debit = val;
                               setAccountRows(next);
@@ -2178,10 +2182,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </td>
                         <td style={{ padding: "6px 12px" }}>
                           <input
-                            type="number"
-                            value={row.credit}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.credit)}
                             onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
+                              const val = parseMoneyInput(e.target.value);
                               const next = [...accountRows];
                               next[idx].credit = val;
                               setAccountRows(next);
@@ -2255,8 +2260,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           <td><input type="text" className="misa-opening-input" value={dr.object_code || ""} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], object_code: e.target.value }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12 }} /></td>
                           <td><input type="text" className="misa-opening-input" value={dr.object_name || ""} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], object_name: e.target.value }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12 }} /></td>
                           <td><input type="text" className="misa-opening-input" value={dr.dimension || ""} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], dimension: e.target.value }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12 }} /></td>
-                          <td><input type="number" className="misa-opening-input" value={dr.debit || 0} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], debit: Number(e.target.value) || 0 }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
-                          <td><input type="number" className="misa-opening-input" value={dr.credit || 0} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], credit: Number(e.target.value) || 0 }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(dr.debit || 0)} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], debit: parseMoneyInput(e.target.value) }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(dr.credit || 0)} onChange={(e) => { const n = [...accountDetailRows]; n[dIdx] = { ...n[dIdx], credit: parseMoneyInput(e.target.value) }; setAccountDetailRows(n); }} style={{ height: 26, fontSize: 12, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "center" }}><Trash2 size={13} color="#ef4444" style={{ cursor: "pointer" }} onClick={() => setAccountDetailRows(accountDetailRows.filter((_, i) => i !== dIdx))} /></td>
                         </tr>
                       ))}
@@ -2359,7 +2364,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </div>
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field">
-                  <label className="misa-opening-label">Loại tiền (AF-12)</label>
+                  <label className="misa-opening-label">Loại tiền</label>
                   <select className="misa-opening-select" value={bankCurrency} onChange={(e) => { setBankCurrency(e.target.value); setBankExchangeRate(e.target.value === "VND" ? 1 : 0); }}>
                     <option value="VND">VND - Đồng Việt Nam</option>
                     <option value="USD">USD - Đô la Mỹ</option>
@@ -2373,11 +2378,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Dư Nợ ({bankCurrency})</label>
-                  <input aria-label="Dư Nợ ngân hàng đầu kỳ" type="number" className="misa-opening-input" value={bankDebit} onChange={(e) => setBankDebit(Number(e.target.value) || 0)} />
+                  <input aria-label="Dư Nợ ngân hàng đầu kỳ" type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(bankDebit)} onChange={(e) => setBankDebit(parseMoneyInput(e.target.value))} />
                 </div>
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Dư Có ({bankCurrency})</label>
-                  <input aria-label="Dư Có ngân hàng đầu kỳ" type="number" className="misa-opening-input" value={bankCredit} onChange={(e) => setBankCredit(Number(e.target.value) || 0)} />
+                  <input aria-label="Dư Có ngân hàng đầu kỳ" type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(bankCredit)} onChange={(e) => setBankCredit(parseMoneyInput(e.target.value))} />
                 </div>
               </div>
             </div>
@@ -2438,11 +2443,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Dư Nợ</label>
-                  <input type="number" className="misa-opening-input" value={partnerDebit} onChange={(e) => setPartnerDebit(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(partnerDebit)} onChange={(e) => setPartnerDebit(parseMoneyInput(e.target.value))} />
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Dư Có</label>
-                  <input type="number" className="misa-opening-input" value={partnerCredit} onChange={(e) => setPartnerCredit(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(partnerCredit)} onChange={(e) => setPartnerCredit(parseMoneyInput(e.target.value))} />
                 </div>
               </div>
 
@@ -2472,7 +2477,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           {customerInvoices.map((inv, idx) => (
                             <tr key={idx}>
                               {(["invoiceDate", "invoiceNo", "dueDate", "invoiceAmount", "remainingAmount", "advanceAmount", "employee"] as const).map((field) => (
-                                <td key={field}><input type={field.toLowerCase().includes("amount") ? "number" : "text"} className="misa-opening-input" aria-label={`${field} khách hàng ${idx + 1}`} value={inv[field] ?? ""} onChange={(e) => setCustomerInvoices(customerInvoices.map((row, i) => i === idx ? { ...row, [field]: field.toLowerCase().includes("amount") ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                                <td key={field}><input type="text" inputMode={field.toLowerCase().includes("amount") ? "numeric" : undefined} className="misa-opening-input" aria-label={`${field} khách hàng ${idx + 1}`} value={field.toLowerCase().includes("amount") ? formatMoneyInput(inv[field]) : (inv[field] ?? "")} onChange={(e) => setCustomerInvoices(customerInvoices.map((row, i) => i === idx ? { ...row, [field]: field.toLowerCase().includes("amount") ? parseMoneyInput(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12, textAlign: field.toLowerCase().includes("amount") ? "right" : "left" }} /></td>
                               ))}
                               <td><button type="button" aria-label={`Xóa hóa đơn khách hàng ${idx + 1}`} onClick={() => setCustomerInvoices(customerInvoices.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
                             </tr>
@@ -2514,7 +2519,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           {customerDimensions.map((dim, idx) => (
                             <tr key={idx}>
                               {(["employee", "department", "project", "order", "contract", "debit", "credit"] as const).map((field) => (
-                                <td key={field}><input type={field === "debit" || field === "credit" ? "number" : "text"} className="misa-opening-input" aria-label={`${field} chi tiết khách hàng ${idx + 1}`} value={dim[field] ?? ""} onChange={(e) => setCustomerDimensions(customerDimensions.map((row, i) => i === idx ? { ...row, [field]: field === "debit" || field === "credit" ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                                <td key={field}><input type="text" inputMode={field === "debit" || field === "credit" ? "numeric" : undefined} className="misa-opening-input" aria-label={`${field} chi tiết khách hàng ${idx + 1}`} value={field === "debit" || field === "credit" ? formatMoneyInput(dim[field]) : (dim[field] ?? "")} onChange={(e) => setCustomerDimensions(customerDimensions.map((row, i) => i === idx ? { ...row, [field]: field === "debit" || field === "credit" ? parseMoneyInput(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12, textAlign: field === "debit" || field === "credit" ? "right" : "left" }} /></td>
                               ))}
                               <td><button type="button" aria-label={`Xóa chi tiết khách hàng ${idx + 1}`} onClick={() => setCustomerDimensions(customerDimensions.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
                             </tr>
@@ -2582,11 +2587,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Dư Nợ</label>
-                  <input type="number" className="misa-opening-input" value={supplierDebit} onChange={(e) => setSupplierDebit(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(supplierDebit)} onChange={(e) => setSupplierDebit(parseMoneyInput(e.target.value))} />
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Dư Có</label>
-                  <input type="number" className="misa-opening-input" value={supplierCredit} onChange={(e) => setSupplierCredit(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(supplierCredit)} onChange={(e) => setSupplierCredit(parseMoneyInput(e.target.value))} />
                 </div>
               </div>
 
@@ -2616,7 +2621,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           {supplierInvoices.map((inv, idx) => (
                             <tr key={idx}>
                               {(["invoiceDate", "invoiceNo", "dueDate", "invoiceAmount", "remainingAmount", "advanceAmount", "employee"] as const).map((field) => (
-                                <td key={field}><input type={field.toLowerCase().includes("amount") ? "number" : "text"} className="misa-opening-input" aria-label={`${field} nhà cung cấp ${idx + 1}`} value={inv[field] ?? ""} onChange={(e) => setSupplierInvoices(supplierInvoices.map((row, i) => i === idx ? { ...row, [field]: field.toLowerCase().includes("amount") ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                                <td key={field}><input type="text" inputMode={field.toLowerCase().includes("amount") ? "numeric" : undefined} className="misa-opening-input" aria-label={`${field} nhà cung cấp ${idx + 1}`} value={field.toLowerCase().includes("amount") ? formatMoneyInput(inv[field]) : (inv[field] ?? "")} onChange={(e) => setSupplierInvoices(supplierInvoices.map((row, i) => i === idx ? { ...row, [field]: field.toLowerCase().includes("amount") ? parseMoneyInput(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12, textAlign: field.toLowerCase().includes("amount") ? "right" : "left" }} /></td>
                               ))}
                               <td><button type="button" aria-label={`Xóa hóa đơn nhà cung cấp ${idx + 1}`} onClick={() => setSupplierInvoices(supplierInvoices.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
                             </tr>
@@ -2658,7 +2663,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           {supplierDimensions.map((dim, idx) => (
                             <tr key={idx}>
                               {(["employee", "department", "project", "order", "contract", "debit", "credit"] as const).map((field) => (
-                                <td key={field}><input type={field === "debit" || field === "credit" ? "number" : "text"} className="misa-opening-input" aria-label={`${field} chi tiết nhà cung cấp ${idx + 1}`} value={dim[field] ?? ""} onChange={(e) => setSupplierDimensions(supplierDimensions.map((row, i) => i === idx ? { ...row, [field]: field === "debit" || field === "credit" ? Number(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12 }} /></td>
+                                <td key={field}><input type="text" inputMode={field === "debit" || field === "credit" ? "numeric" : undefined} className="misa-opening-input" aria-label={`${field} chi tiết nhà cung cấp ${idx + 1}`} value={field === "debit" || field === "credit" ? formatMoneyInput(dim[field]) : (dim[field] ?? "")} onChange={(e) => setSupplierDimensions(supplierDimensions.map((row, i) => i === idx ? { ...row, [field]: field === "debit" || field === "credit" ? parseMoneyInput(e.target.value) : e.target.value } : row))} style={{ height: 26, fontSize: 12, textAlign: field === "debit" || field === "credit" ? "right" : "left" }} /></td>
                               ))}
                               <td><button type="button" aria-label={`Xóa chi tiết nhà cung cấp ${idx + 1}`} onClick={() => setSupplierDimensions(supplierDimensions.filter((_, i) => i !== idx))}><Trash2 size={13} /></button></td>
                             </tr>
@@ -2719,11 +2724,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Dư Nợ</label>
-                  <input type="number" className="misa-opening-input" value={employeeDebit} onChange={(e) => setEmployeeDebit(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(employeeDebit)} onChange={(e) => setEmployeeDebit(parseMoneyInput(e.target.value))} />
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Dư Có</label>
-                  <input type="number" className="misa-opening-input" value={employeeCredit} onChange={(e) => setEmployeeCredit(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(employeeCredit)} onChange={(e) => setEmployeeCredit(parseMoneyInput(e.target.value))} />
                 </div>
               </div>
             </div>
@@ -2785,7 +2790,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Giá trị tồn</label>
-                  <input type="number" className="misa-opening-input" value={inventoryVal} onChange={(e) => setInventoryVal(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(inventoryVal)} onChange={(e) => setInventoryVal(parseMoneyInput(e.target.value))} />
                 </div>
               </div>
             </div>
@@ -2923,8 +2928,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     </label>
                     <input
                       type="text"
-                      value={toolAllocatedVal}
-                      onChange={(e) => setToolAllocatedVal(e.target.value)}
+                      inputMode="numeric"
+                      value={formatMoneyInput(toolAllocatedVal)}
+                      onChange={(e) => setToolAllocatedVal(parseMoneyInputString(e.target.value))}
                       style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, textAlign: "right", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
@@ -2935,8 +2941,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     </label>
                     <input
                       type="text"
-                      value={toolRemainingVal}
-                      onChange={(e) => setToolRemainingVal(e.target.value)}
+                      inputMode="numeric"
+                      value={formatMoneyInput(toolRemainingVal)}
+                      onChange={(e) => setToolRemainingVal(parseMoneyInputString(e.target.value))}
                       style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, textAlign: "right", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
@@ -3042,8 +3049,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     </label>
                     <input
                       type="text"
-                      value={toolPeriodAllocAmount}
-                      onChange={(e) => setToolPeriodAllocAmount(e.target.value)}
+                      inputMode="numeric"
+                      value={formatMoneyInput(toolPeriodAllocAmount)}
+                      onChange={(e) => setToolPeriodAllocAmount(parseMoneyInputString(e.target.value))}
                       style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, textAlign: "right", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
@@ -3094,8 +3102,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     </label>
                     <input
                       type="text"
-                      value={toolUnitPrice}
-                      onChange={(e) => setToolUnitPrice(e.target.value)}
+                      inputMode="numeric"
+                      value={formatMoneyInput(toolUnitPrice)}
+                      onChange={(e) => setToolUnitPrice(parseMoneyInputString(e.target.value))}
                       style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, textAlign: "right", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
@@ -3106,8 +3115,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     </label>
                     <input
                       type="text"
-                      value={toolTotalAmount}
-                      onChange={(e) => setToolTotalAmount(e.target.value)}
+                      inputMode="numeric"
+                      value={formatMoneyInput(toolTotalAmount)}
+                      onChange={(e) => setToolTotalAmount(parseMoneyInputString(e.target.value))}
                       style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", fontSize: 13, textAlign: "right", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
@@ -3488,7 +3498,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     allocRows: toolAllocRows,
                   };
                    if (!await persistOpening("save-item/", { category: "tools", item: newTool, editing_id: editingItemId, action_mode: "SAVE_AND_ADD" })) return;
-                  notify?.(`Đã lưu CCDC ${toolCode} thành công! Mời tiếp tục khai báo (AF-01).`);
+                  notify?.(`Đã lưu CCDC ${toolCode} thành công! Mời tiếp tục khai báo.`);
                   setEditingItemId(null);
                   setToolCode("");
                   setToolName("");
@@ -4017,9 +4027,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </label>
                       <input
                         type="text"
-                        value={assetOriginalCost}
+                        inputMode="numeric"
+                        value={formatMoneyInput(assetOriginalCost)}
                         onChange={(e) => {
-                          const val = e.target.value;
+                          const val = parseMoneyInputString(e.target.value);
                           setAssetOriginalCost(val);
                           setAssetDeprCost(val);
                           const orig = Number(val) || 0;
@@ -4045,9 +4056,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
                         disabled={assetNoDepreciation}
-                        value={assetNoDepreciation ? "0" : assetDeprCost}
-                        onChange={(e) => setAssetDeprCost(e.target.value)}
+                        value={formatMoneyInput(assetNoDepreciation ? "0" : assetDeprCost)}
+                        onChange={(e) => setAssetDeprCost(parseMoneyInputString(e.target.value))}
                         style={{
                           width: "100%",
                           height: 28,
@@ -4068,9 +4080,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </label>
                       <input
                         type="text"
-                        value={assetAccumDepr}
+                        inputMode="numeric"
+                        value={formatMoneyInput(assetAccumDepr)}
                         onChange={(e) => {
-                          const val = e.target.value;
+                          const val = parseMoneyInputString(e.target.value);
                           setAssetAccumDepr(val);
                           const orig = Number(assetOriginalCost) || 0;
                           const accum = Number(val) || 0;
@@ -4121,9 +4134,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
                         disabled={assetNoDepreciation}
-                        value={assetNoDepreciation ? "0" : assetMonthDeprVal}
-                        onChange={(e) => setAssetMonthDeprVal(e.target.value)}
+                        value={formatMoneyInput(assetNoDepreciation ? "0" : assetMonthDeprVal)}
+                        onChange={(e) => setAssetMonthDeprVal(parseMoneyInputString(e.target.value))}
                         style={{
                           width: "100%",
                           height: 28,
@@ -4144,8 +4158,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </label>
                       <input
                         type="text"
-                        value={assetRemainingVal}
-                        onChange={(e) => setAssetRemainingVal(e.target.value)}
+                        inputMode="numeric"
+                        value={formatMoneyInput(assetRemainingVal)}
+                        onChange={(e) => setAssetRemainingVal(parseMoneyInputString(e.target.value))}
                         style={{
                           width: "100%",
                           height: 28,
@@ -4191,9 +4206,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </label>
                       <input
                         type="text"
+                        inputMode="numeric"
                         disabled={assetNoDepreciation}
-                        value={assetNoDepreciation ? "0" : assetYearDeprVal}
-                        onChange={(e) => setAssetYearDeprVal(e.target.value)}
+                        value={formatMoneyInput(assetNoDepreciation ? "0" : assetYearDeprVal)}
+                        onChange={(e) => setAssetYearDeprVal(parseMoneyInputString(e.target.value))}
                         style={{
                           width: "100%",
                           height: 28,
@@ -4230,9 +4246,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </label>
                         <input
                           type="text"
+                          inputMode="numeric"
                           disabled={!assetTaxLimitChecked}
-                          value={assetTaxLawDeprCost}
-                          onChange={(e) => setAssetTaxLawDeprCost(e.target.value)}
+                          value={formatMoneyInput(assetTaxLawDeprCost)}
+                          onChange={(e) => setAssetTaxLawDeprCost(parseMoneyInputString(e.target.value))}
                           style={{
                             width: "100%",
                             height: 28,
@@ -4253,9 +4270,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </label>
                         <input
                           type="text"
+                          inputMode="numeric"
                           disabled={!assetTaxLimitChecked}
-                          value={assetTaxLawMonthDeprVal}
-                          onChange={(e) => setAssetTaxLawMonthDeprVal(e.target.value)}
+                          value={formatMoneyInput(assetTaxLawMonthDeprVal)}
+                          onChange={(e) => setAssetTaxLawMonthDeprVal(parseMoneyInputString(e.target.value))}
                           style={{
                             width: "100%",
                             height: 28,
@@ -4658,10 +4676,11 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
                                 type="text"
-                                value={row.value}
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.value)}
                                 onChange={(e) => {
                                   const next = [...assetAccessoryRows];
-                                  next[idx].value = e.target.value;
+                                  next[idx].value = parseMoneyInputString(e.target.value);
                                   setAssetAccessoryRows(next);
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5131,7 +5150,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     noDepreciation: assetNoDepreciation,
                   };
                    if (!await persistOpening("save-item/", { category: "assets", item: newAsset, editing_id: editingItemId, action_mode: "SAVE_AND_ADD" })) return;
-                  notify?.(`Đã lưu tài sản cố định ${assetCode} thành công! Mời tiếp tục khai báo (AF-01).`);
+                  notify?.(`Đã lưu tài sản cố định ${assetCode} thành công! Mời tiếp tục khai báo.`);
                   setEditingItemId(null);
                   setAssetCode("");
                   setAssetName("");
@@ -5290,11 +5309,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.rawMaterial}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.rawMaterial)}
                               onChange={(e) => {
                                 const next = [...wipThcpRows];
-                                next[idx].rawMaterial = Number(e.target.value) || 0;
+                                next[idx].rawMaterial = parseMoneyInput(e.target.value);
                                 setWipThcpRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5302,11 +5322,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.labor}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.labor)}
                               onChange={(e) => {
                                 const next = [...wipThcpRows];
-                                next[idx].labor = Number(e.target.value) || 0;
+                                next[idx].labor = parseMoneyInput(e.target.value);
                                 setWipThcpRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5314,11 +5335,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.general}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.general)}
                               onChange={(e) => {
                                 const next = [...wipThcpRows];
-                                next[idx].general = Number(e.target.value) || 0;
+                                next[idx].general = parseMoneyInput(e.target.value);
                                 setWipThcpRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5399,11 +5421,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
-                                type="number"
-                                value={row.rawMaterial}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.rawMaterial)}
                                 onChange={(e) => {
                                   const next = [...wipProjectRows];
-                                  next[idx].rawMaterial = Number(e.target.value) || 0;
+                                  next[idx].rawMaterial = parseMoneyInput(e.target.value);
                                   setWipProjectRows(next);
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5411,11 +5434,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
-                                type="number"
-                                value={row.labor}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.labor)}
                                 onChange={(e) => {
                                   const next = [...wipProjectRows];
-                                  next[idx].labor = Number(e.target.value) || 0;
+                                  next[idx].labor = parseMoneyInput(e.target.value);
                                   setWipProjectRows(next);
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5423,11 +5447,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
-                                type="number"
-                                value={row.machinery}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.machinery)}
                                 onChange={(e) => {
                                   const next = [...wipProjectRows];
-                                  next[idx].machinery = Number(e.target.value) || 0;
+                                  next[idx].machinery = parseMoneyInput(e.target.value);
                                   setWipProjectRows(next);
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5435,11 +5460,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
-                                type="number"
-                                value={row.general}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.general)}
                                 onChange={(e) => {
                                   const next = [...wipProjectRows];
-                                  next[idx].general = Number(e.target.value) || 0;
+                                  next[idx].general = parseMoneyInput(e.target.value);
                                   setWipProjectRows(next);
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5447,19 +5473,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
-                                type="number"
-                                value={rowTotal}
+                                type="text"
+                                value={formatMoneyInput(rowTotal)}
                                 readOnly
                                 style={{ width: "100%", height: 26, border: "1px solid #e2e8f0", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, background: "#f8fafc", outline: "none", fontWeight: 600 }}
                               />
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <input
-                                type="number"
-                                value={row.accepted}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.accepted)}
                                 onChange={(e) => {
                                   const next = [...wipProjectRows];
-                                  next[idx].accepted = Number(e.target.value) || 0;
+                                  next[idx].accepted = parseMoneyInput(e.target.value);
                                   setWipProjectRows(next);
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5548,11 +5575,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.rawMaterial}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.rawMaterial)}
                               onChange={(e) => {
                                 const next = [...wipOrderRows];
-                                next[idx].rawMaterial = Number(e.target.value) || 0;
+                                next[idx].rawMaterial = parseMoneyInput(e.target.value);
                                 setWipOrderRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5560,11 +5588,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.labor}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.labor)}
                               onChange={(e) => {
                                 const next = [...wipOrderRows];
-                                next[idx].labor = Number(e.target.value) || 0;
+                                next[idx].labor = parseMoneyInput(e.target.value);
                                 setWipOrderRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5572,11 +5601,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.general}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.general)}
                               onChange={(e) => {
                                 const next = [...wipOrderRows];
-                                next[idx].general = Number(e.target.value) || 0;
+                                next[idx].general = parseMoneyInput(e.target.value);
                                 setWipOrderRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5656,11 +5686,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.rawMaterial}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.rawMaterial)}
                               onChange={(e) => {
                                 const next = [...wipContractRows];
-                                next[idx].rawMaterial = Number(e.target.value) || 0;
+                                next[idx].rawMaterial = parseMoneyInput(e.target.value);
                                 setWipContractRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5668,11 +5699,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.labor}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.labor)}
                               onChange={(e) => {
                                 const next = [...wipContractRows];
-                                next[idx].labor = Number(e.target.value) || 0;
+                                next[idx].labor = parseMoneyInput(e.target.value);
                                 setWipContractRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5680,11 +5712,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <input
-                              type="number"
-                              value={row.general}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.general)}
                               onChange={(e) => {
                                 const next = [...wipContractRows];
-                                next[idx].general = Number(e.target.value) || 0;
+                                next[idx].general = parseMoneyInput(e.target.value);
                                 setWipContractRows(next);
                               }}
                               style={{ width: "100%", height: 26, border: "1px solid #cbd5e1", borderRadius: 3, padding: "0 6px", textAlign: "right", fontSize: 13, outline: "none" }}
@@ -5938,7 +5971,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Số tiền *</label>
-                  <input type="number" className="misa-opening-input" value={prepaidAmount} onChange={(e) => setPrepaidAmount(Number(e.target.value) || 0)} />
+                  <input type="text" inputMode="numeric" className="misa-opening-input" value={formatMoneyInput(prepaidAmount)} onChange={(e) => setPrepaidAmount(parseMoneyInput(e.target.value))} />
                 </div>
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Số kỳ phân bổ (Tháng)</label>
@@ -5962,7 +5995,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         <div className="misa-opening-modal-overlay" onClick={() => setExcelModalOpen(false)}>
           <div className="misa-opening-modal large" style={{ maxWidth: 820 }} onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
-              <h3 className="misa-opening-modal-title">Nhập số dư ban đầu từ Excel – {activeCategory?.title} (AF-03)</h3>
+              <h3 className="misa-opening-modal-title">Nhập số dư ban đầu từ Excel – {activeCategory?.title}</h3>
               <X size={18} color="#64748b" style={{ cursor: "pointer" }} onClick={() => setExcelModalOpen(false)} />
             </div>
             <div className="misa-opening-modal-body">
@@ -5996,7 +6029,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         <div className="misa-opening-modal-overlay" onClick={() => setVoucherListModalOpen(false)}>
           <div className="misa-opening-modal large" style={{ maxWidth: 960 }} onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
-              <h3 className="misa-opening-modal-title">Danh sách chứng từ / bản ghi số dư đầu kỳ (AF-09)</h3>
+              <h3 className="misa-opening-modal-title">Danh sách chứng từ / bản ghi số dư đầu kỳ</h3>
               <X size={18} color="#64748b" style={{ cursor: "pointer" }} onClick={() => setVoucherListModalOpen(false)} />
             </div>
             <div className="misa-opening-modal-body" style={{ maxHeight: 480, overflowY: "auto" }}>
@@ -6065,7 +6098,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setPrintModalOpen(false)}>Đóng</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => { window.print(); }}>In chứng từ (AF-13)</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => { window.print(); }}>In chứng từ</button>
             </div>
           </div>
         </div>

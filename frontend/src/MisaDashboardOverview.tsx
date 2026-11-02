@@ -124,14 +124,18 @@ export function MisaDashboardOverview({
   }, [sessionCompanies, effectiveCompanyId]);
 
   const circularFullLabel =
-    activeAccountingRegime === "TT133"
+    activeAccountingRegime === "TT58" || activeAccountingRegime === "CIRCULAR_58"
+      ? "Thông tư 58/2026/TT-BTC (DN siêu nhỏ)"
+      : activeAccountingRegime === "TT133"
       ? "Thông tư 133/2016/TT-BTC (DNNVV)"
       : activeAccountingRegime === "TT200"
       ? "Thông tư 200/2014/TT-BTC"
       : "Thông tư 99/2025/TT-BTC";
 
   const dash06RegimeSubtitle =
-    activeAccountingRegime === "TT133"
+    activeAccountingRegime === "TT58" || activeAccountingRegime === "CIRCULAR_58"
+      ? "Tổng hợp từ Sổ kế toán TK rút gọn (511, 632, 642, 821 → 911) theo Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ)"
+      : activeAccountingRegime === "TT133"
       ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 6421, 6422), 7, 8 theo Thông tư 133/2016/TT-BTC (DNNVV)"
       : activeAccountingRegime === "TT200"
       ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 641, 642), 7, 8 theo Thông tư 200/2014/TT-BTC"

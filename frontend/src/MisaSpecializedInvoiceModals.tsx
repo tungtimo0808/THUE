@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import {
   X,
   HelpCircle,
@@ -773,7 +774,7 @@ export function SaleInvoiceAdjustmentModal({
                 <td></td>
                 <td></td>
                 <td></td>
-                <td style={{ textAlign: "right", padding: "0 8px" }}>{totalQuantity.toFixed(2).replace(".", ",")}</td>
+                <td style={{ textAlign: "right", padding: "0 8px" }}>{formatVnDecimal(totalQuantity)}</td>
                 <td style={{ textAlign: "right", padding: "0 8px" }}>0,00</td>
                 <td style={{ textAlign: "right", padding: "0 8px" }}>{formatVND(totalGoods)}</td>
                 <td></td>
@@ -836,10 +837,11 @@ export function SaleInvoiceAdjustmentModal({
                   </td>
                   <td style={{ textAlign: "right", padding: "2px 6px" }}>
                     <input
-                      type="number"
-                      value={row.unitPrice}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyInput(row.unitPrice)}
                       aria-label={`Đơn giá điều chỉnh dòng ${idx + 1}`}
-                      onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
+                      onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                       style={{ width: "100%", height: 24, border: "none", outline: "none", fontSize: 12, textAlign: "right" }}
                     />
                   </td>

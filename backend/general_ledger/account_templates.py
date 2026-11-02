@@ -703,6 +703,16 @@ TT133_ACCOUNTS: List[Dict[str, Any]] = [
 
 
 # =====================================================================
+# THÔNG TƯ 58/2026/TT-BTC (Chế độ kế toán Doanh nghiệp siêu nhỏ, hiệu lực 01/07/2026, thay thế TT132/2018/TT-BTC)
+# Rút gọn từ hệ thống tài khoản TT133 gồm các tài khoản cốt lõi thiết yếu cho DN siêu nhỏ
+# =====================================================================
+
+TT58_ACCOUNTS: List[Dict[str, Any]] = [
+    dict(acc) for acc in TT133_ACCOUNTS if acc.get("is_essential", False)
+]
+
+
+# =====================================================================
 # THÔNG TƯ 99/2025/TT-BTC (Chế độ kế toán Doanh nghiệp mới nhất, hiệu lực 01/01/2026)
 # Kế thừa danh mục chuẩn và bổ sung các tài khoản đặc thù mới theo Thông tư 99/2025/TT-BTC
 # =====================================================================
@@ -716,13 +726,20 @@ TT99_ACCOUNTS: List[Dict[str, Any]] = [
 
 
 def get_template_accounts(regime: str = "TT99", scope: str = "FULL") -> List[Dict[str, Any]]:
-    """Lấy danh sách tài khoản theo mẫu chế độ kế toán (TT99, TT200, TT133) và phạm vi (FULL / ESSENTIAL)."""
+    """Lấy danh sách tài khoản theo mẫu chế độ kế toán (TT99, TT200, TT133, TT58) và phạm vi (FULL / ESSENTIAL)."""
     regime_upper = (regime or "TT99").upper()
-    if regime_upper not in {"TT99", "99", "TT133", "CIRCULAR_133", "133", "TT200", "CIRCULAR_200", "200"}:
+    if regime_upper not in {
+        "TT99", "99", "CIRCULAR_99",
+        "TT133", "CIRCULAR_133", "133",
+        "TT200", "CIRCULAR_200", "200",
+        "TT58", "CIRCULAR_58", "58",
+    }:
         raise ValueError("Chế độ kế toán không hợp lệ.")
     if (scope or "FULL").upper() not in {"FULL", "ESSENTIAL"}:
         raise ValueError("Phạm vi mẫu không hợp lệ.")
-    if regime_upper in ("TT133", "CIRCULAR_133", "133"):
+    if regime_upper in ("TT58", "CIRCULAR_58", "58"):
+        accounts = TT58_ACCOUNTS
+    elif regime_upper in ("TT133", "CIRCULAR_133", "133"):
         accounts = TT133_ACCOUNTS
     elif regime_upper in ("TT200", "CIRCULAR_200", "200"):
         accounts = TT200_ACCOUNTS

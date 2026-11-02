@@ -80,7 +80,9 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
   }
   const activeRegime = chart?.accounting_regime || "TT99";
   const regimeInfoText =
-    activeRegime === "TT133"
+    activeRegime === "TT58" || activeRegime === "CIRCULAR_58"
+      ? "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ / Hộ kinh doanh, thay thế TT132/2018 từ 01/07/2026) · Đặc trưng: Danh mục TK rút gọn cốt lõi (111, 112, 131, 152, 156, 211, 331, 333, 334, 411, 421, 511, 632, 642, 821, 911) hoặc chế độ sổ đơn giản."
+      : activeRegime === "TT133"
       ? "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ và vừa — DNNVV) · Đặc trưng: TK 154 tập hợp trực tiếp (không có 621, 622, 627), TK 6421/6422 (gộp 641 vào 642), TK 2111/2112/2113, TK 1386."
       : activeRegime === "TT200"
       ? "Thông tư 200/2014/TT-BTC (Chế độ kế toán Doanh nghiệp) · Đặc trưng: Tập hợp giá thành qua TK 621, 622, 627 → 154; Chi phí bán hàng TK 641 & QLDN TK 642; TK 244, 34311..34313."
@@ -90,7 +92,7 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
     {onBack && <button type="button" onClick={onBack} style={{ marginBottom: 10, padding: "5px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontWeight: 600 }}>← Danh mục</button>}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
       <div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0284c7", textTransform: "uppercase" }}>MD-09 · DANH MỤC HỆ THỐNG TÀI KHOẢN</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0284c7", textTransform: "uppercase" }}>DANH MỤC HỆ THỐNG TÀI KHOẢN</div>
         <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "2px 0 0" }}>Hệ thống tài khoản kế toán ({activeRegime}) — Tổng số: {chartAccounts.length} tài khoản</h1>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -108,7 +110,12 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
     </div>
     {!token || !companyId ? <p>Cần đăng nhập và chọn doanh nghiệp.</p> : <>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}
-      {chart?.accounting_regime === "TT58" ? <p>Bộ dữ liệu này áp dụng chế độ sổ kế toán theo Thông tư 58.</p> : <>
+      {(chart?.accounting_regime === "TT58" || chart?.accounting_regime === "CIRCULAR_58") && (
+        <p style={{ marginBottom: 10, fontSize: 12.5, color: "#047857", fontWeight: 600 }}>
+          Bộ dữ liệu này áp dụng chế độ sổ kế toán theo Thông tư 58 (Thông tư 58/2026/TT-BTC cho Doanh nghiệp siêu nhỏ).
+        </p>
+      )}
+      {chart?.accounting_regime === "TT58" && chartAccounts.length === 0 ? null : <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm theo số hiệu hoặc tên tài khoản (VD: 154, 215, 332, 6421...)" style={{ width: 380, height: 34, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 12px", fontSize: 13 }} />
         <div style={{ display: "flex", gap: 8 }}>
