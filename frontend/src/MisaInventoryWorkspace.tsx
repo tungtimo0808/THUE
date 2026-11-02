@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
@@ -3434,7 +3435,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.warehouse}</td>
                   <td style={{ padding: "8px 10px" }}>{row.purpose}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{row.difference}</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{typeof row.difference === "number" ? row.difference.toLocaleString("vi-VN") : row.difference}</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
                     <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{({ DRAFT: "Nháp", COUNTED: "Chờ xử lý chênh lệch", ADJUSTED: "Đã hoàn thành", CANCELLED: "Đã hủy" } as Record<string, string>)[row.status] || row.status}</span>
                   </td>
@@ -4105,7 +4106,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   </td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{item.nature || (item as any).type || "Hàng hóa"}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", color: "#1e293b" }}>
-                    {item.stockQty.toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(item.stockQty)}
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "right", color: "#1e293b" }}>
                     {item.stockValue.toLocaleString("vi-VN")}
@@ -4135,7 +4136,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 <td style={{ padding: "8px 10px" }}></td>
                 <td style={{ padding: "8px 10px" }}></td>
                 <td style={{ padding: "8px 10px", textAlign: "right", color: "#1e293b" }}>
-                  {totalQty.toFixed(2).replace(".", ",")}
+                  {formatVnDecimal(totalQty)}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right", color: "#1e293b" }}>
                   {totalVal.toLocaleString("vi-VN")}
@@ -4858,11 +4859,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <input
-                            type="number"
-                            step="any"
-                            value={row.price}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.price)}
                             onChange={(e) => {
-                              const price = Number(e.target.value) || 0;
+                              const price = parseMoneyInput(e.target.value);
                               setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price, amount: r.qty * price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
@@ -4923,7 +4924,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     <tr style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", fontWeight: 700 }}>
                       <td colSpan={receiptShowAccounts ? 6 : 4} style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                        {receiptRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                        {formatVnDecimal(receiptRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                       </td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
@@ -5872,14 +5873,14 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <input
-                            type="number"
-                            step="any"
-                            value={row.price}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.price)}
                             aria-label={`Đơn giá dòng ${idx + 1}`}
                             readOnly={Boolean(row.saleLineId) || (otherIssueMode && Boolean(itemByCode(row.itemCode)) && itemByCode(row.itemCode)?.valuation_method !== "SPECIFIC")}
                             title={row.saleLineId || otherIssueMode ? "Đơn giá xuất kho đề xuất theo giá bình quân tồn kho; giá chính thức được xác định theo phương pháp tính giá khi ghi sổ" : undefined}
                             onChange={(e) => {
-                              const price = Number(e.target.value) || 0;
+                              const price = parseMoneyInput(e.target.value);
                               setIssueRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price, amount: r.qty * price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
@@ -5941,7 +5942,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     <tr style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", fontWeight: 700 }}>
                       <td colSpan={issueShowAccounts ? 6 : 4} style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                        {issueRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                        {formatVnDecimal(issueRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                       </td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
@@ -7419,14 +7420,14 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         </td>
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <input
-                            type="number"
-                            step="any"
-                            value={row.price}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.price)}
                             aria-label={`Đơn giá chuyển dòng ${idx + 1}`}
                             readOnly={apiConnected && Boolean(itemByCode(row.itemCode)) && itemByCode(row.itemCode)?.valuation_method !== "SPECIFIC"}
                             title={apiConnected ? "Đơn giá điều chuyển theo giá trị ghi sổ (phương pháp tính giá xuất kho); giá chính thức được xác định khi ghi sổ" : undefined}
                             onChange={(e) => {
-                              const price = Number(e.target.value) || 0;
+                              const price = parseMoneyInput(e.target.value);
                               setTransferRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price, amount: (r.qty || 0) * price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
@@ -7467,7 +7468,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}
                       ></td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                        {transferRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                        {formatVnDecimal(transferRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                       </td>
                       <td style={{ padding: "8px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
                         0,00
@@ -7855,7 +7856,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       {(apiNumber(selectedCountLine.variance_quantity) > 0 ? [["SURPLUS", "Hàng thừa chưa ghi nhận"], ["OTHER", "Nguyên nhân khác"]] : [["OTHER", "Nguyên nhân khác"]]).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
                     </select></label>
                     <label>Số lượng xử lý<input type="number" min="0.0001" value={resolutionQuantity} onChange={(e) => setResolutionQuantity(Number(e.target.value))} style={{ display: "block", width: "100%", height: 30 }} /></label>
-                    <label>Đơn giá đề xuất<input type="number" min="0" value={resolutionPrice} onChange={(e) => setResolutionPrice(Number(e.target.value))} style={{ display: "block", width: "100%", height: 30 }} /></label>
+                    <label>Đơn giá đề xuất<input type="text" inputMode="numeric" value={formatMoneyInput(resolutionPrice)} onChange={(e) => setResolutionPrice(parseMoneyInput(e.target.value))} style={{ display: "block", width: "100%", height: 30 }} /></label>
                     <label style={{ gridColumn: "span 2" }}>Diễn giải nguyên nhân<input value={resolutionExplanation} onChange={(e) => setResolutionExplanation(e.target.value)} style={{ display: "block", width: "100%", height: 30 }} /></label>
                     <label>Căn cứ xác định giá trị<input value={resolutionBasis} onChange={(e) => setResolutionBasis(e.target.value)} style={{ display: "block", width: "100%", height: 30 }} /></label>
                   </div>
@@ -8350,7 +8351,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         <tr style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", fontWeight: 700 }}>
                           <td colSpan={4} style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                            {prodOrderProductRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                            {formatVnDecimal(prodOrderProductRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                           </td>
                           <td colSpan={4}></td>
                         </tr>
@@ -9016,11 +9017,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                             </td>
                             <td style={{ padding: "4px 4px", borderRight: "1px solid #e2e8f0" }}>
                               <input
-                                type="number"
-                                step="any"
-                                value={row.price}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.price)}
                                 onChange={(e) => {
-                                  const price = Number(e.target.value) || 0;
+                                  const price = parseMoneyInput(e.target.value);
                                   setAssemblyProductRows((prev) =>
                                     prev.map((r, i) => (i === idx ? { ...r, price, amount: (r.qty || 0) * price } : r))
                                   );
@@ -9056,7 +9057,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         <tr style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", fontWeight: 700 }}>
                           <td colSpan={4} style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                            {assemblyProductRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                            {formatVnDecimal(assemblyProductRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                           </td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
@@ -9687,11 +9688,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                             </td>
                             <td style={{ padding: "4px 4px", borderRight: "1px solid #e2e8f0" }}>
                               <input
-                                type="number"
-                                step="any"
-                                value={row.price}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.price)}
                                 onChange={(e) => {
-                                  const price = Number(e.target.value) || 0;
+                                  const price = parseMoneyInput(e.target.value);
                                   setDisassemblyGoodRows((prev) =>
                                     prev.map((r, i) => (i === idx ? { ...r, price, amount: (r.qty || 0) * price } : r))
                                   );
@@ -9727,7 +9728,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         <tr style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", fontWeight: 700 }}>
                           <td colSpan={4} style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                            {disassemblyGoodRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                            {formatVnDecimal(disassemblyGoodRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                           </td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "8px 6px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>

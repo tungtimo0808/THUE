@@ -69,6 +69,7 @@ import {
   SmartSearchResults,
   TabSettingsModal,
   WorkModeModal,
+  getRoleWorkspaceSpec,
 } from "./GlobalShellPanels";
 import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
@@ -587,12 +588,15 @@ function ReferenceWorkspace() {
 
   const activeCompanyRegime = useMemo(() => {
     const raw = String((company as any)?.accounting_regime || "TT99").toUpperCase();
+    if (raw.includes("58")) return "TT58";
     if (raw.includes("133")) return "TT133";
     if (raw.includes("200")) return "TT200";
     return "TT99";
   }, [company]);
   const activeRegimeShortBadge =
-    activeCompanyRegime === "TT133"
+    activeCompanyRegime === "TT58"
+      ? "TT58/2026 (Siêu nhỏ)"
+      : activeCompanyRegime === "TT133"
       ? "TT133/2016 (SME)"
       : activeCompanyRegime === "TT200"
       ? "TT200/2014"
@@ -669,7 +673,36 @@ function ReferenceWorkspace() {
     [info, setInfo] = useState(""),
     [settingsSearch, setSettingsSearch] = useState(""),
     [query, setQuery] = useState(""),
-    [workMode, setWorkMode] = useState("Kế toán");
+    [workMode, setWorkMode] = useState("ROLE_CHIEF_ACCOUNTANT"),
+    [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!apiToken || !company?.id) return;
+    let active = true;
+    request<any>(`/api/v1/iam/company-users/?company_id=${encodeURIComponent(company.id)}`, apiToken)
+      .then((res) => {
+        if (!active) return;
+        const list = Array.isArray(res) ? res : res?.results || [];
+        const myEmail = String(apiSession?.user?.email || "").toLowerCase();
+        const me = list.find((m: any) => String(m.email || "").toLowerCase() === myEmail);
+        if (me && Array.isArray(me.role_assignments) && me.role_assignments.length > 0) {
+          const codes = me.role_assignments.map((ra: any) => String(ra.role_code || "")).filter(Boolean);
+          setAssignedRoleCodes(codes);
+          if (codes.length > 0) {
+            const spec = getRoleWorkspaceSpec(codes[0]);
+            setWorkMode(spec.code);
+          }
+        } else {
+          setAssignedRoleCodes(["ROLE_CHIEF_ACCOUNTANT"]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [apiToken, company?.id, apiSession?.user?.email]);
+
+  const activeRoleSpec = useMemo(() => getRoleWorkspaceSpec(workMode), [workMode]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
@@ -721,7 +754,9 @@ function ReferenceWorkspace() {
       id: "sys-tt99",
       category: "system" as const,
       code:
-        activeCompanyRegime === "TT133"
+        activeCompanyRegime === "TT58"
+          ? "Thông tư 58/2026"
+          : activeCompanyRegime === "TT133"
           ? "Thông tư 133/2016"
           : activeCompanyRegime === "TT200"
           ? "Thông tư 200/2014"
@@ -729,11 +764,13 @@ function ReferenceWorkspace() {
       kindLabel: "Chế độ kế toán",
       kind: "info" as const,
       description:
-        activeCompanyRegime === "TT133"
-          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp nhỏ và vừa theo Thông tư 133/2016/TT-BTC (101 TK, Bộ BCTC B01a/B01b-DNN, B02-DNN, B03-DNN, B09-DNN)."
+        activeCompanyRegime === "TT58"
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp siêu nhỏ theo Thông tư 58/2026/TT-BTC (20 TK rút gọn cốt lõi, 3 Role tinh gọn mặc định, Bộ BCTC B01-DNSN, B02-DNSN)."
+          : activeCompanyRegime === "TT133"
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp nhỏ và vừa theo Thông tư 133/2016/TT-BTC (101 TK, 8 Role cốt lõi, Bộ BCTC B01a/B01b-DNN, B02-DNN, B03-DNN, B09-DNN)."
           : activeCompanyRegime === "TT200"
-          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp theo Thông tư 200/2014/TT-BTC (135 TK, Bộ BCTC B01/B02/B03/B09-DN)."
-          : "Hệ thống đã cập nhật đầy đủ Hệ thống 138 TK, sổ quỹ S07-DN, S07a-DN và bộ BCTC B01/B02/B03/B09-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp theo Thông tư 200/2014/TT-BTC (135 TK, 14 Role chuyên môn, Bộ BCTC B01/B02/B03/B09-DN)."
+          : "Hệ thống đã cập nhật đầy đủ Hệ thống 138 TK, 21 Role chuẩn, sổ quỹ S07-DN, S07a-DN và bộ BCTC B01/B02/B03/B09-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
       partner: "Bộ Tài chính",
       amount: 0,
       date: "20/09/2026 08:30",
@@ -874,6 +911,75 @@ function ReferenceWorkspace() {
 
   const renderWorkspaceContentForModule = (targetModuleId: string, targetTab?: string) => {
     const activeTab = targetTab || (referenceTabs[targetModuleId]?.[0]?.[0] || "transactions");
+
+    if (
+      activeRoleSpec.allowedModules.length > 0 &&
+      !activeRoleSpec.allowedModules.includes(targetModuleId)
+    ) {
+      const targetModInfo = referenceNav.find((m) => m.id === targetModuleId);
+      const fallbackModId = activeRoleSpec.allowedModules.find((id) => id !== "overview") || "overview";
+      const fallbackModInfo = referenceNav.find((m) => m.id === fallbackModId);
+      return (
+        <div style={{ padding: "32px 24px", maxWidth: 680, margin: "24px auto" }}>
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #fde68a",
+              borderRadius: 12,
+              padding: "24px 28px",
+              boxShadow: "0 4px 16px rgba(15, 23, 42, 0.05)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#b45309", fontWeight: 700, fontSize: 16 }}>
+              <ShieldCheck size={22} />
+              <span>Giới hạn phân hệ theo Vai trò: {activeRoleSpec.name}</span>
+            </div>
+            <p style={{ margin: "10px 0 14px", fontSize: 13.5, color: "#334155", lineHeight: 1.5 }}>
+              Phân hệ <strong>{targetModInfo?.label || targetModuleId}</strong> không nằm trong phạm vi nghiệp vụ của vai trò{" "}
+              <strong>{activeRoleSpec.name}</strong> ({activeRoleSpec.groupVi}).
+            </p>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "12px 14px", fontSize: 12.5, color: "#475569", marginBottom: 16 }}>
+              <div><strong>Trách nhiệm & Quyền hạn của {activeRoleSpec.name}:</strong></div>
+              <div style={{ marginTop: 4 }}>{activeRoleSpec.capabilitiesSummary}</div>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => navigate(href(`/${fallbackModId}`))}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#00a862",
+                  color: "#ffffff",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Mở phân hệ {fallbackModInfo?.label || "Tổng quan"} →
+              </button>
+              <button
+                type="button"
+                onClick={() => setPanel("mode")}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  color: "#1e293b",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Chuyển đổi Vai trò làm việc (21 Role)
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     if (activeTab === "extended-apis" && targetModuleId in MODULE_EXTENDED_APIS) {
       return (
@@ -1220,7 +1326,13 @@ function ReferenceWorkspace() {
                   {(apiCompanies.length > 0 ? apiCompanies : companies).map((c) => {
                     const isSelected = c.id === company.id;
                     const rawReg = String((c as any).accounting_regime || "TT99").toUpperCase();
-                    const cReg = rawReg.includes("133") ? "TT133" : rawReg.includes("200") ? "TT200" : "TT99";
+                    const cReg = rawReg.includes("58")
+                      ? "TT58"
+                      : rawReg.includes("133")
+                      ? "TT133"
+                      : rawReg.includes("200")
+                      ? "TT200"
+                      : "TT99";
                     return (
                       <button
                         key={c.id}
@@ -1438,10 +1550,11 @@ function ReferenceWorkspace() {
           </div>
           <button
             className="ref-work-mode"
-            aria-label={`Chế độ làm việc: ${workMode}`}
+            aria-label={`Chế độ làm việc: ${activeRoleSpec.shortLabel}`}
+            title={`${activeRoleSpec.name} (${activeRoleSpec.code}): ${activeRoleSpec.capabilitiesSummary}`}
             onClick={() => setPanel("mode")}
           >
-            {workMode} <ChevronDown size={13} />
+            {activeRoleSpec.shortLabel} <ChevronDown size={13} />
           </button>
           <button
             className="ref-icon secondary-tool"
@@ -1623,6 +1736,7 @@ function ReferenceWorkspace() {
         <SidebarNavigation
           moduleId={moduleId}
           href={href}
+          allowedModules={activeRoleSpec.allowedModules}
           onNavigate={() => setMobileOpen(false)}
           onOpenAI={() => {
             navigate(href("/cash/transactions"));
@@ -2119,7 +2233,16 @@ function ReferenceWorkspace() {
       {panel === "mode" && (
         <WorkModeModal
           current={workMode}
-          onChange={setWorkMode}
+          activeRegime={activeCompanyRegime}
+          assignedRoleCodes={assignedRoleCodes}
+          onChange={(nextRoleCode) => {
+            const spec = getRoleWorkspaceSpec(nextRoleCode);
+            setWorkMode(spec.code);
+            setNotice(`✓ Đã chuyển sang Vai trò làm việc: ${spec.name} (Mở ${spec.allowedModules.length} phân hệ)`);
+            if (!spec.allowedModules.includes(moduleId)) {
+              navigate(href(`/${spec.allowedModules[0] || "overview"}`));
+            }
+          }}
           onClose={() => setPanel(null)}
         />
       )}
@@ -2149,25 +2272,34 @@ function ReferenceWorkspace() {
         >
           <div className="modal-body">
             {panel === "quick" ? (
-              <div className="quick-create-groups">
-                {quickCreateGroups.map((group) => (
-                  <section key={group.title}>
-                    <h3>{group.title}</h3>
-                    {group.items.map((item) => (
-                      <button
-                        key={item.label}
-                        onClick={() => {
-                          setPanel(null);
-                          navigate(href(item.path));
-                        }}
-                      >
-                        <Plus size={15} />
-                        {item.label}
-                      </button>
+              activeRoleSpec.allowedQuickCreateTitles.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", color: "#475569", fontSize: 13.5 }}>
+                  Vai trò hiện tại (<strong>{activeRoleSpec.name}</strong>) thuộc nhóm{" "}
+                  <strong>{activeRoleSpec.groupVi}</strong> (chỉ xem báo cáo, kiểm soát hoặc phê duyệt), không trực tiếp lập chứng từ hạch toán mới.
+                </div>
+              ) : (
+                <div className="quick-create-groups">
+                  {quickCreateGroups
+                    .filter((group) => activeRoleSpec.allowedQuickCreateTitles.includes(group.title))
+                    .map((group) => (
+                      <section key={group.title}>
+                        <h3>{group.title}</h3>
+                        {group.items.map((item) => (
+                          <button
+                            key={item.label}
+                            onClick={() => {
+                              setPanel(null);
+                              navigate(href(item.path));
+                            }}
+                          >
+                            <Plus size={15} />
+                            {item.label}
+                          </button>
+                        ))}
+                      </section>
                     ))}
-                  </section>
-                ))}
-              </div>
+                </div>
+              )
             ) : panel === "help" ? (
               <>
                 <p>

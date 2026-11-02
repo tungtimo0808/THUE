@@ -84,7 +84,7 @@ export default function LiveCompanyProfile() {
 
   return <main className="account-page"><section className="account-card account-wide">
     <Link to="/login">← Phiên làm việc</Link>
-    <p className="account-eyebrow">SYS-02</p>
+    <p className="account-eyebrow">HỒ SƠ DOANH NGHIỆP</p>
     <h1>Thông tin doanh nghiệp</h1>
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp. <Link to="/company-setup">Khởi tạo doanh nghiệp</Link>.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => selectCompany(event.target.value)}>{companies.map(company =>

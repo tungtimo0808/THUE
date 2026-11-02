@@ -1,4 +1,5 @@
 import {useState,useEffect} from 'react';
+import {formatMoneyInput,parseMoneyInput} from './formatMoney';
 import {apiClient,getSelectedCompanyId} from './apiClient';
 import {cashLedger,forecastCash,type CashEntry} from './cash-operations';
 import {auditedPeriodRange} from './audited-report-parameters';
@@ -30,5 +31,5 @@ export default function MisaCashForecastWorkspace({entries,companyId='minh-an',o
  </section>;
 }
 function GroupRows({group,rows,total,print,onChange,onDelete}:{group:'A'|'B'|'C';rows:ForecastRow[];total:number;print:boolean;onChange:(id:string,field:'name'|'amount',value:string|number)=>void;onDelete:(id:string)=>void}){
- return <><tr className="ce-total"><td>{group}</td><td>{groupNames[group]}</td><td>{total.toLocaleString('vi-VN')}</td>{!print&&<td/>}</tr>{rows.map((row,index)=><tr key={row.id}><td>{index+1}</td><td><input readOnly={print} aria-label={`Tên chỉ tiêu ${group}${index+1}`} value={row.name} onChange={e=>onChange(row.id,'name',e.target.value)}/></td><td><input type="number" readOnly={print} min={group==='A'?undefined:0} aria-label={`Số tiền ${row.name}`} value={row.amount} onChange={e=>{const amount=Number(e.target.value);onChange(row.id,'amount',Number.isFinite(amount)?group==='A'?amount:Math.max(0,amount):0);}}/></td>{!print&&<td><button aria-label={`Xóa chỉ tiêu ${row.name}`} onClick={()=>onDelete(row.id)}>×</button></td>}</tr>)}</>;
+ return <><tr className="ce-total"><td>{group}</td><td>{groupNames[group]}</td><td>{total.toLocaleString('vi-VN')}</td>{!print&&<td/>}</tr>{rows.map((row,index)=><tr key={row.id}><td>{index+1}</td><td><input readOnly={print} aria-label={`Tên chỉ tiêu ${group}${index+1}`} value={row.name} onChange={e=>onChange(row.id,'name',e.target.value)}/></td><td><input type="text" inputMode="numeric" readOnly={print} aria-label={`Số tiền ${row.name}`} value={formatMoneyInput(row.amount)} onChange={e=>{const amount=parseMoneyInput(e.target.value);onChange(row.id,'amount',Number.isFinite(amount)?group==='A'?amount:Math.max(0,amount):0);}}/></td>{!print&&<td><button aria-label={`Xóa chỉ tiêu ${row.name}`} onClick={()=>onDelete(row.id)}>×</button></td>}</tr>)}</>;
 }

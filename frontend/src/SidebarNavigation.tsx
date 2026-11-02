@@ -12,6 +12,7 @@ type SidebarNavigationProps = {
   onNavigate: () => void;
   onOpenAI?: () => void;
   onExchangeRate?: () => void;
+  allowedModules?: string[];
 };
 
 export function SidebarNavigation({
@@ -20,6 +21,7 @@ export function SidebarNavigation({
   onNavigate,
   onOpenAI,
   onExchangeRate,
+  allowedModules,
 }: SidebarNavigationProps) {
   const [openModule, setOpenModule] = useState<string | null>(null);
   const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number } | null>(null);
@@ -142,7 +144,7 @@ export function SidebarNavigation({
 
       {/* 3. Phân hệ modules */}
       {referenceNav
-        .filter((module) => module.id !== "overview")
+        .filter((module) => module.id !== "overview" && (!allowedModules || allowedModules.length === 0 || allowedModules.includes(module.id)))
         .map((module) => {
           const isOpen = openModule === module.id;
           const isActive = moduleId === module.id;

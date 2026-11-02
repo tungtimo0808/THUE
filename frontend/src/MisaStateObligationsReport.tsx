@@ -548,7 +548,7 @@ export default function MisaStateObligationsReport({
                         textDecoration: !isHead && row.prevBalance ? "underline" : "none",
                         cursor: !isHead && row.prevBalance ? "pointer" : "default",
                       }}
-                      title={!isHead && row.prevBalance ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                      title={!isHead && row.prevBalance ? "Nhấp để xem chi tiết chứng từ" : undefined}
                     >
                       {formatVal(row.prevBalance)}
                     </td>
@@ -564,7 +564,7 @@ export default function MisaStateObligationsReport({
                         textDecoration: !isHead && row.periodDue ? "underline" : "none",
                         cursor: !isHead && row.periodDue ? "pointer" : "default",
                       }}
-                      title={!isHead && row.periodDue ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                      title={!isHead && row.periodDue ? "Nhấp để xem chi tiết chứng từ" : undefined}
                     >
                       {formatVal(row.periodDue)}
                     </td>
@@ -578,7 +578,7 @@ export default function MisaStateObligationsReport({
                         textDecoration: !isHead && row.periodPaid ? "underline" : "none",
                         cursor: !isHead && row.periodPaid ? "pointer" : "default",
                       }}
-                      title={!isHead && row.periodPaid ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                      title={!isHead && row.periodPaid ? "Nhấp để xem chi tiết chứng từ" : undefined}
                     >
                       {formatVal(row.periodPaid)}
                     </td>
@@ -594,7 +594,7 @@ export default function MisaStateObligationsReport({
                         textDecoration: !isHead && row.accumDue ? "underline" : "none",
                         cursor: !isHead && row.accumDue ? "pointer" : "default",
                       }}
-                      title={!isHead && row.accumDue ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                      title={!isHead && row.accumDue ? "Nhấp để xem chi tiết chứng từ" : undefined}
                     >
                       {formatVal(row.accumDue)}
                     </td>
@@ -608,7 +608,7 @@ export default function MisaStateObligationsReport({
                         textDecoration: !isHead && row.accumPaid ? "underline" : "none",
                         cursor: !isHead && row.accumPaid ? "pointer" : "default",
                       }}
-                      title={!isHead && row.accumPaid ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                      title={!isHead && row.accumPaid ? "Nhấp để xem chi tiết chứng từ" : undefined}
                     >
                       {formatVal(row.accumPaid)}
                     </td>
@@ -623,7 +623,7 @@ export default function MisaStateObligationsReport({
                         textDecoration: !isHead && row.closingDue ? "underline" : "none",
                         cursor: !isHead && row.closingDue ? "pointer" : "default",
                       }}
-                      title={!isHead && row.closingDue ? "Nhấp để xem drill-down chứng từ (UC-RPT-14)" : undefined}
+                      title={!isHead && row.closingDue ? "Nhấp để xem chi tiết chứng từ" : undefined}
                     >
                       {formatVal(row.closingDue)}
                     </td>
@@ -957,7 +957,7 @@ export default function MisaStateObligationsReport({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: 10 }}>
               <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
-                Chi tiết Drill-down chỉ tiêu thuế (UC-RPT-14)
+                Chi tiết Drill-down chỉ tiêu thuế
               </h4>
               <button
                 type="button"

@@ -1,4 +1,5 @@
 import LedgerAccountField from "./LedgerAccountField";
+import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import VoucherDateField from "./VoucherDateField";
@@ -1140,7 +1141,7 @@ export function SupplierPaymentModal({
                       <td style={{ textAlign: "center" }}>{inv.account}</td>
                       <td>{inv.terms}</td>
                       <td><input aria-label={`Tỷ lệ chiết khấu ${inv.voucherCode}`} type="number" min="0" max="100" value={inv.discountRate || 0} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountRate:Math.min(100,Math.max(0,Number(e.target.value)||0))}:row))}/></td>
-                      <td><input aria-label={`Tiền chiết khấu ${inv.voucherCode}`} type="number" min="0" value={inv.discountAmount || 0} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountAmount:Math.max(0,Number(e.target.value)||0)}:row))}/></td>
+                      <td><input aria-label={`Tiền chiết khấu ${inv.voucherCode}`} type="text" inputMode="numeric" value={formatMoneyInput(inv.discountAmount || 0)} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountAmount:Math.max(0,parseMoneyInput(e.target.value))}:row))}/></td>
                       <td><input aria-label={`TK chiết khấu ${inv.voucherCode}`} value={inv.discountAccount || "515"} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountAccount:e.target.value}:row))}/></td>
                     </tr>
                   ))}
@@ -3608,13 +3609,14 @@ export function CreateVoucherModal({
                         debit, credit: bankCreditCode, amount: Number(item.amount) };
                     }));
                   }} />{label} · hạn {debt.due_date || "—"} · còn {formatVND(Number(debt.balance))}
-                  {selected && <><input aria-label={`Số trả ${label}`} type="number" min="0" max={Number(debt.balance)}
-                    value={selected.amount} onChange={event => {
-                      const next = bankAllocations.map(item => item.payable === debt.id ? { ...item, amount: event.target.value } : item);
+                  {selected && <><input aria-label={`Số trả ${label}`} type="text" inputMode="numeric"
+                    value={formatMoneyInput(selected.amount)} onChange={event => {
+                      const clean = parseMoneyInputString(event.target.value, { emptyWhenBlank: false });
+                      const next = bankAllocations.map(item => item.payable === debt.id ? { ...item, amount: clean } : item);
                       setBankAllocations(next); setRows(previous => previous.map((row, index) => ({ ...row, amount: Number(next[index]?.amount || 0) })));
-                    }} /><input aria-label={`Chiết khấu ${label}`} type="number" min="0" max={Number(debt.balance)}
-                    value={selected.discount} onChange={event => setBankAllocations(previous => previous.map(item =>
-                      item.payable === debt.id ? { ...item, discount: event.target.value } : item))} /></>}
+                    }} /><input aria-label={`Chiết khấu ${label}`} type="text" inputMode="numeric"
+                    value={formatMoneyInput(selected.discount)} onChange={event => setBankAllocations(previous => previous.map(item =>
+                      item.payable === debt.id ? { ...item, discount: parseMoneyInputString(event.target.value, { emptyWhenBlank: false }) } : item))} /></>}
                 </label>;
               })}
             </div>}
@@ -3653,8 +3655,9 @@ export function CreateVoucherModal({
                       return { ...rows[0], id: String(index + 1), description: reason, debit: receiptCurrency?.code === "VND" ? "1111" : "1112", credit: account?.code || "131", amount: Number(item.amount) };
                     }));
                   }} />{debt.code || debt.source_document_number} · còn {formatVND(Number(debt.balance))}
-                  {selected && <input aria-label={`Số tiền thu ${debt.code || debt.source_document_number}`} type="number" min="0" max={Number(debt.balance)} value={selected.amount} onChange={event => {
-                    const next = allocations.map(item => item.receivable === debt.id ? { ...item, amount: event.target.value } : item);
+                  {selected && <input aria-label={`Số tiền thu ${debt.code || debt.source_document_number}`} type="text" inputMode="numeric" value={formatMoneyInput(selected.amount)} onChange={event => {
+                    const clean = parseMoneyInputString(event.target.value, { emptyWhenBlank: false });
+                    const next = allocations.map(item => item.receivable === debt.id ? { ...item, amount: clean } : item);
                     setAllocations(next); setRows(previous => previous.map((row, index) => ({ ...row, amount: Number(next[index]?.amount || 0) })));
                   }} />}
                 </label>;
@@ -7014,11 +7017,10 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
                     Số tiền dự kiến (VNĐ)
                   </label>
                   <input
-                    type="number"
-                    min={1000}
-                    step={1000}
-                    value={newItem.amount}
-                    onChange={(e) => setNewItem({ ...newItem, amount: Number(e.target.value) })}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatMoneyInput(newItem.amount)}
+                    onChange={(e) => setNewItem({ ...newItem, amount: parseMoneyInput(e.target.value) })}
                     style={{ width: "100%", height: 34, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 10px", fontSize: 13 }}
                     required
                   />
@@ -9979,12 +9981,13 @@ export default function MisaCashWorkspace({
                                 <strong>{formatVND(Number(row.amount) || 0)}</strong>
                               ) : (
                                 <input
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="misa-voucher-input"
                                   style={{ height: 28, width: "100%", textAlign: "right", fontWeight: 700 }}
-                                  value={row.amount}
+                                  value={formatMoneyInput(row.amount)}
                                   onChange={(e) => {
-                                    const val = Number(e.target.value) || 0;
+                                    const val = parseMoneyInput(e.target.value);
                                     setEditCashRows((rows) =>
                                       rows.map((r, i) => (i === idx ? { ...r, amount: val } : r)),
                                     );

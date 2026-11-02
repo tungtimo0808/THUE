@@ -792,7 +792,7 @@ export function MisaTaxReportModal({
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: 10 }}>
                 <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
-                  Chi tiết Drill-down chỉ tiêu thuế (UC-RPT-14)
+                  Chi tiết Drill-down chỉ tiêu thuế
                 </h4>
                 <button
                   type="button"

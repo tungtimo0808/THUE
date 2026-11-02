@@ -63,7 +63,7 @@ def is_company_admin_member(user_account, company):
     ).filter(
         Q(valid_to__isnull=True) | Q(valid_to__gte=now)
     ).filter(
-        Q(role__is_system_admin=True) | Q(role__code="COMPANY_ADMIN")
+        Q(role__is_system_admin=True) | Q(role__code__in=("COMPANY_ADMIN", "ROLE_ADMIN"))
     ).exists()
 
 
@@ -130,7 +130,7 @@ def effective_assignments(user_account, company, at=None, skip_sync=False):
 
 
 def assignment_permission_codes(assignment):
-    if getattr(assignment.role, "is_system_admin", False) or getattr(assignment.role, "code", "") == "COMPANY_ADMIN":
+    if getattr(assignment.role, "is_system_admin", False) or getattr(assignment.role, "code", "") in ("COMPANY_ADMIN", "ROLE_ADMIN"):
         from .models import Permission
         return set(
             Permission.objects.filter(

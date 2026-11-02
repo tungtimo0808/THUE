@@ -1006,7 +1006,7 @@ export default function MisaFinancialNotesReport({
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <AlertTriangle size={16} color="#dc2626" />
             <span>
-              <strong>Cảnh báo STALE (EF-28):</strong> Dữ liệu bút toán Sổ cái (GL) hoặc báo cáo
+              <strong>Cảnh báo dữ liệu thay đổi:</strong> Dữ liệu bút toán Sổ cái (GL) hoặc báo cáo
               B01/B02/B03 đã thay đổi sau thời điểm lập bản thuyết minh này.
             </span>
           </div>
@@ -2266,7 +2266,7 @@ export default function MisaFinancialNotesReport({
               ) : (
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-                    Lý do đánh dấu Không áp dụng (bắt buộc theo EF-10):{" "}
+                    Lý do đánh dấu Không áp dụng (bắt buộc):{" "}
                     <span style={{ color: "#dc2626" }}>*</span>
                   </label>
                   <textarea

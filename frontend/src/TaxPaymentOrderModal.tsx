@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { request } from "./live-api";
 import { errorText } from "./misa-api-writes";
 import type { TaxObligationRow } from "./TaxObligationPanel";
@@ -77,8 +78,8 @@ export default function TaxPaymentOrderModal({ companyId, token, obligations, in
             onChange={(e) => patch(row.id, { content: e.target.value })} style={{ width: "100%" }} /></td>
           <td><input aria-label={`Tiểu mục ${row.period_code}`} value={entries[row.id]?.subitem_code || ""} disabled={!entries[row.id]?.selected}
             onChange={(e) => patch(row.id, { subitem_code: e.target.value })} style={{ width: 80 }} /></td>
-          <td><input aria-label={`Số tiền ${row.period_code}`} type="number" min="0" max={row.outstanding_amount} value={entries[row.id]?.amount || ""}
-            disabled={!entries[row.id]?.selected} onChange={(e) => patch(row.id, { amount: e.target.value })} style={{ width: 120 }} /></td>
+          <td><input aria-label={`Số tiền ${row.period_code}`} type="text" inputMode="numeric" value={formatMoneyInput(entries[row.id]?.amount || "")}
+            disabled={!entries[row.id]?.selected} onChange={(e) => patch(row.id, { amount: parseMoneyInputString(e.target.value) })} style={{ width: 120 }} /></td>
         </tr>)}</tbody>
       </table></div>
       <div style={{ textAlign: "right", marginTop: 14, fontWeight: 700 }}>Tổng số tiền nộp: {money(total)} đ</div>

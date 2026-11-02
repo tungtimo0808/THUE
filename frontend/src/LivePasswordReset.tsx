@@ -69,7 +69,7 @@ export default function LivePasswordReset() {
 
   return <main className="account-page"><section className="account-card">
     <Link to="/login">← Đăng nhập</Link>
-    <p className="account-eyebrow">COM-05</p>
+    <p className="account-eyebrow">BẢO MẬT TÀI KHOẢN</p>
     <h1>Đặt lại mật khẩu</h1>
     {error && <p className="account-error" role="alert">{error}</p>}
     {message && <p className="account-message" role="status">{message}</p>}

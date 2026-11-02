@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatVnDecimal } from "./formatMoney";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
@@ -5878,7 +5879,7 @@ export default function MisaSalesWorkspace({
                   </td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{it.nature}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                    {(it.stockQty || 0).toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(it.stockQty || 0)}
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>
                     {(it.stockValue || 0).toLocaleString("vi-VN")}
@@ -5915,7 +5916,7 @@ export default function MisaSalesWorkspace({
                 <td style={{ padding: "8px 10px" }}></td>
                 <td style={{ padding: "8px 10px" }}></td>
                 <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                  {totalStockQty.toFixed(2).replace(".", ",")}
+                  {formatVnDecimal(totalStockQty)}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right" }}>
                   {totalStockVal.toLocaleString("vi-VN")}

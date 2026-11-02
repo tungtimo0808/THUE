@@ -70,7 +70,7 @@ export default function LiveProfile() {
 
   return <main className="account-page"><section className="account-card account-wide">
     <Link to="/login">← Phiên làm việc</Link>
-    <p className="account-eyebrow">COM-06 / COM-07</p>
+    <p className="account-eyebrow">TÀI KHOẢN CÁ NHÂN</p>
     <h1>Hồ sơ cá nhân</h1>
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link> để xem hồ sơ.</p> : <>
       {error && <p className="account-error" role="alert">{error}</p>}

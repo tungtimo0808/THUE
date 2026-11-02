@@ -91,7 +91,7 @@ export default function LivePermissions() {
     run(() => request(`/api/v1/iam/permission-overrides/?company_id=${companyId}`, token, { method: "POST", body: JSON.stringify({ company_membership: memberId, permission_code: permissionCode, effect, reason: reason.trim() }) }), "Đã lưu quyền trực tiếp.");
   }
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">SYS-07</p><h1>Phân quyền Role và User</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">PHÂN QUYỀN HỆ THỐNG</p><h1>Phân quyền Role và User</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setRoleId(""); setMemberId(""); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

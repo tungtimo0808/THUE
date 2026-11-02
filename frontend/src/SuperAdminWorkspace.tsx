@@ -31,6 +31,7 @@ import {
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
+import MisaDropdownSelect from "./MisaDropdownSelect";
 import "./admin-workspaces.css";
 
 type TabKey = "overview" | "companies" | "users" | "audit";
@@ -989,7 +990,13 @@ export default function SuperAdminWorkspace() {
                                   : "admin-badge-suspended"
                               }`}
                             >
-                              {comp.status}
+                              {comp.status === "ACTIVE"
+                                ? "Đang hoạt động"
+                                : comp.status === "PENDING_SETUP"
+                                ? "Chờ thiết lập"
+                                : comp.status === "SUSPENDED"
+                                ? "Tạm đình chỉ"
+                                : "Ngừng hoạt động"}
                             </span>
                           </td>
                           <td>
@@ -1026,12 +1033,12 @@ export default function SuperAdminWorkspace() {
                         style={{
                           padding: "0.6rem 0",
                           borderBottom: "1px solid #f1f5f9",
-                          fontSize: "0.82rem",
+                          fontSize: "13.1px",
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <strong>{log.action}</strong>
-                          <span style={{ color: "var(--admin-text-muted)", fontSize: "0.75rem" }}>
+                          <span style={{ color: "var(--admin-text-muted)", fontSize: "12px" }}>
                             {new Date(log.occurred_at).toLocaleTimeString("vi-VN")}
                           </span>
                         </div>
@@ -1064,17 +1071,19 @@ export default function SuperAdminWorkspace() {
                       value={companySearch}
                       onChange={(e) => setCompanySearch(e.target.value)}
                     />
-                    <select
-                      className="admin-select"
+                    <MisaDropdownSelect
                       value={companyStatusFilter}
-                      onChange={(e) => setCompanyStatusFilter(e.target.value)}
-                    >
-                      <option value="">Tất cả trạng thái</option>
-                      <option value="ACTIVE">ACTIVE (Đang hoạt động)</option>
-                      <option value="PENDING_SETUP">PENDING_SETUP (Chờ thiết lập)</option>
-                      <option value="SUSPENDED">SUSPENDED (Tạm đình chỉ)</option>
-                      <option value="INACTIVE">INACTIVE (Ngừng hoạt động)</option>
-                    </select>
+                      onChange={(val) => setCompanyStatusFilter(val)}
+                      minWidth={195}
+                      searchable={false}
+                      options={[
+                        { value: "", label: "Tất cả trạng thái" },
+                        { value: "ACTIVE", label: "Đang hoạt động", badge: "Online", badgeBg: "#dcfce7", badgeColor: "#166534" },
+                        { value: "PENDING_SETUP", label: "Chờ thiết lập", badge: "Chờ", badgeBg: "#fef3c7", badgeColor: "#92400e" },
+                        { value: "SUSPENDED", label: "Tạm đình chỉ", badge: "Khóa", badgeBg: "#fee2e2", badgeColor: "#991b1b" },
+                        { value: "INACTIVE", label: "Ngừng hoạt động", badge: "Ngừng", badgeBg: "#f1f5f9", badgeColor: "#475569" },
+                      ]}
+                    />
                   </div>
                   <button className="admin-btn admin-btn-primary" onClick={() => setShowCreateCompanyModal(true)}>
                     <Plus size={15} /> Thêm doanh nghiệp mới
@@ -1104,10 +1113,10 @@ export default function SuperAdminWorkspace() {
                           {c.admin ? (
                             <div>
                               <strong style={{ color: "#0369a1" }}>{c.admin.display_name}</strong>
-                              <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{c.admin.email || c.admin.phone}</div>
+                              <div style={{ fontSize: "12px", color: "#64748b" }}>{c.admin.email || c.admin.phone}</div>
                             </div>
                           ) : (
-                            <span style={{ color: "#94a3b8", fontSize: "0.82rem" }}>Chưa chỉ định</span>
+                            <span style={{ color: "#94a3b8", fontSize: "13.1px" }}>Chưa chỉ định</span>
                           )}
                         </td>
                         <td>{c.members_count} người</td>
@@ -1121,7 +1130,13 @@ export default function SuperAdminWorkspace() {
                                 : "admin-badge-suspended"
                             }`}
                           >
-                            {c.status}
+                            {c.status === "ACTIVE"
+                              ? "Đang hoạt động"
+                              : c.status === "PENDING_SETUP"
+                              ? "Chờ thiết lập"
+                              : c.status === "SUSPENDED"
+                              ? "Tạm đình chỉ"
+                              : "Ngừng hoạt động"}
                           </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
@@ -1195,7 +1210,7 @@ export default function SuperAdminWorkspace() {
                 <span className="admin-users-sidebar-title">
                   <Building2 size={16} style={{ color: "#2563eb" }} /> Danh mục Đơn vị
                 </span>
-                <span style={{ fontSize: "0.74rem", color: "#64748b", fontWeight: 600 }}>
+                <span style={{ fontSize: "11.8px", color: "#64748b", fontWeight: 600 }}>
                   {companies.length} công ty
                 </span>
               </div>
@@ -1205,7 +1220,7 @@ export default function SuperAdminWorkspace() {
                   <input
                     type="text"
                     className="admin-input"
-                    style={{ width: "100%", paddingLeft: 30, fontSize: "0.8rem", background: "#f8fafc" }}
+                    style={{ width: "100%", paddingLeft: 30, fontSize: "12.8px", background: "#f8fafc" }}
                     placeholder="Tìm công ty..."
                     value={sidebarCompanySearch}
                     onChange={(e) => setSidebarCompanySearch(e.target.value)}
@@ -1294,7 +1309,7 @@ export default function SuperAdminWorkspace() {
               {/* SINGLE UNIFIED CLEAN TOOLBAR */}
               <div className="admin-users-toolbar">
                 <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexWrap: "wrap" }}>
-                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
                     {selectedUserGroup === "ALL_COMPANIES"
                       ? "Danh sách Nhân sự theo Doanh nghiệp"
                       : selectedUserGroup === "SUPER_ADMINS"
@@ -1327,28 +1342,32 @@ export default function SuperAdminWorkspace() {
                     />
                   </div>
 
-                  <select
-                    className="admin-select"
+                  <MisaDropdownSelect
                     value={userRoleFilter}
-                    onChange={(e) => setUserRoleFilter(e.target.value as any)}
-                  >
-                    <option value="ALL">Tất cả vai trò ({userFilterCounts.all})</option>
-                    <option value="COMPANY_ADMIN">Chủ sở hữu / Admin DN ({userFilterCounts.companyAdminCount})</option>
-                    <option value="STAFF">Nhân sự Kế toán ({userFilterCounts.staffCount})</option>
-                    <option value="SUPER">Super Admin ({userFilterCounts.superCount})</option>
-                    {userFilterCounts.lockedCount > 0 && (
-                      <option value="LOCKED">Tài khoản bị khóa ({userFilterCounts.lockedCount})</option>
-                    )}
-                  </select>
+                    onChange={(val) => setUserRoleFilter(val as any)}
+                    minWidth={225}
+                    searchable={false}
+                    options={[
+                      { value: "ALL", label: `Tất cả vai trò (${userFilterCounts.all})` },
+                      { value: "COMPANY_ADMIN", label: `Chủ sở hữu / Admin DN (${userFilterCounts.companyAdminCount})` },
+                      { value: "STAFF", label: `Nhân sự Kế toán (${userFilterCounts.staffCount})` },
+                      { value: "SUPER", label: `Super Admin (${userFilterCounts.superCount})` },
+                      ...(userFilterCounts.lockedCount > 0
+                        ? [{ value: "LOCKED", label: `Tài khoản bị khóa (${userFilterCounts.lockedCount})` }]
+                        : []),
+                    ]}
+                  />
 
-                  <select
-                    className="admin-select"
+                  <MisaDropdownSelect
                     value={userViewMode}
-                    onChange={(e) => setUserViewMode(e.target.value as "by_company" | "flat")}
-                  >
-                    <option value="by_company">Hiển thị: Theo Công ty</option>
-                    <option value="flat">Hiển thị: Danh sách phẳng</option>
-                  </select>
+                    onChange={(val) => setUserViewMode(val as "by_company" | "flat")}
+                    minWidth={195}
+                    searchable={false}
+                    options={[
+                      { value: "by_company", label: "Hiển thị: Theo Công ty" },
+                      { value: "flat", label: "Hiển thị: Danh sách phẳng" },
+                    ]}
+                  />
 
                   <button type="button" className="admin-btn admin-btn-secondary" onClick={loadUsers} title="Làm mới">
                     <RefreshCw size={14} />
@@ -1461,7 +1480,7 @@ export default function SuperAdminWorkspace() {
                                             </span>
                                             <div>
                                               <div style={{ fontWeight: 600, color: "#0f172a" }}>{u.display_name}</div>
-                                              <div style={{ fontSize: "0.74rem", color: "#64748b" }}>
+                                              <div style={{ fontSize: "11.8px", color: "#64748b" }}>
                                                 @{u.username}
                                                 {otherCount > 0 && (
                                                   <span
@@ -1481,7 +1500,7 @@ export default function SuperAdminWorkspace() {
                                         <td>
                                           <div style={{ color: "#334155" }}>{u.email || "—"}</div>
                                           {u.phone && u.phone !== u.username && (
-                                            <div style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{u.phone}</div>
+                                            <div style={{ fontSize: "11.8px", color: "#94a3b8" }}>{u.phone}</div>
                                           )}
                                         </td>
                                         <td>
@@ -1581,14 +1600,14 @@ export default function SuperAdminWorkspace() {
                                 </span>
                                 <div>
                                   <div style={{ fontWeight: 600, color: "#0f172a" }}>{u.display_name}</div>
-                                  <div style={{ fontSize: "0.74rem", color: "#64748b" }}>@{u.username}</div>
+                                  <div style={{ fontSize: "11.8px", color: "#64748b" }}>@{u.username}</div>
                                 </div>
                               </div>
                             </td>
                             <td>
                               <div style={{ color: "#334155" }}>{u.email || "—"}</div>
                               {u.phone && u.phone !== u.username && (
-                                <div style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{u.phone}</div>
+                                <div style={{ fontSize: "11.8px", color: "#94a3b8" }}>{u.phone}</div>
                               )}
                             </td>
                             <td>
@@ -1599,7 +1618,7 @@ export default function SuperAdminWorkspace() {
                                   </div>
                                   {u.memberships.length > 1 && (
                                     <div
-                                      style={{ fontSize: "0.74rem", color: "#64748b", cursor: "help" }}
+                                      style={{ fontSize: "11.8px", color: "#64748b", cursor: "help" }}
                                       title={u.memberships.map((m) => `${m.company_code} - ${m.company_name}`).join("\n")}
                                     >
                                       và +{u.memberships.length - 1} doanh nghiệp khác
@@ -1761,16 +1780,19 @@ export default function SuperAdminWorkspace() {
                 </div>
                 <div className="admin-form-group">
                   <label>Chế độ kế toán áp dụng</label>
-                  <select
-                    className="admin-select"
+                  <MisaDropdownSelect
+                    fullWidth
+                    searchable={false}
                     value={companyForm.accounting_regime}
-                    onChange={(e) => setCompanyForm({ ...companyForm, accounting_regime: e.target.value })}
-                  >
-                    <option value="TT99">Thông tư 99/2025/TT-BTC (Chính thức áp dụng từ 01/01/2026 - Chuẩn mực mới)</option>
-                    <option value="TT200">Thông tư 200/2014/TT-BTC (Doanh nghiệp vừa và lớn)</option>
-                    <option value="TT133">Thông tư 133/2016/TT-BTC (Doanh nghiệp vừa và nhỏ)</option>
-                    <option value="TT88">Thông tư 88/2021/TT-BTC (Hộ kinh doanh)</option>
-                  </select>
+                    onChange={(val) => setCompanyForm({ ...companyForm, accounting_regime: val })}
+                    options={[
+                      { value: "TT99", label: "Thông tư 99/2025/TT-BTC (Chuẩn mực mới - 21 Vai trò)", badge: "21 Vai trò", badgeBg: "#fffbeb", badgeColor: "#b45309" },
+                      { value: "TT200", label: "Thông tư 200/2014/TT-BTC (Doanh nghiệp vừa & lớn - 14 Vai trò)", badge: "14 Vai trò", badgeBg: "#f5f3ff", badgeColor: "#7c3aed" },
+                      { value: "TT133", label: "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ & vừa SME - 8 Vai trò)", badge: "8 Vai trò", badgeBg: "#f0f9ff", badgeColor: "#0284c7" },
+                      { value: "TT58", label: "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ - 3 Vai trò)", badge: "3 Vai trò", badgeBg: "#ecfdf5", badgeColor: "#047857" },
+                      { value: "TT88", label: "Thông tư 88/2021/TT-BTC (Hộ kinh doanh cá thể)", badge: "HKD", badgeBg: "#f1f5f9", badgeColor: "#475569" },
+                    ]}
+                  />
                 </div>
                 <div className="admin-form-group">
                   <label>Địa chỉ trụ sở</label>
@@ -1784,18 +1806,19 @@ export default function SuperAdminWorkspace() {
                 </div>
                 <div className="admin-form-group">
                   <label>Chỉ định Quản trị viên (Chủ sở hữu Workspace)</label>
-                  <select
-                    className="admin-select"
+                  <MisaDropdownSelect
+                    fullWidth
                     value={companyForm.admin_user_id}
-                    onChange={(e) => setCompanyForm({ ...companyForm, admin_user_id: e.target.value })}
-                  >
-                    <option value="">-- Mặc định (Tài khoản Super Admin hiện tại) --</option>
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.display_name} ({u.username} - {u.email || "Chưa có email"})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setCompanyForm({ ...companyForm, admin_user_id: val })}
+                    searchPlaceholder="Tìm người dùng theo tên, email..."
+                    options={[
+                      { value: "", label: "-- Mặc định (Tài khoản Super Admin hiện tại) --" },
+                      ...users.map((u) => ({
+                        value: u.id,
+                        label: `${u.display_name} (${u.email || u.username})`,
+                      })),
+                    ]}
+                  />
                   <small style={{ color: "var(--admin-text-muted)", marginTop: "0.25rem", display: "block" }}>
                     Người dùng được chọn sẽ được gán vai trò Chủ sở hữu và toàn quyền quản trị workspace này.
                   </small>
@@ -1829,25 +1852,26 @@ export default function SuperAdminWorkspace() {
               </button>
             </div>
             <div className="admin-modal-body">
-              <p style={{ fontSize: "0.85rem", color: "var(--admin-text-muted)", marginBottom: "1rem" }}>
+              <p style={{ fontSize: "13.6px", color: "var(--admin-text-muted)", marginBottom: "1rem" }}>
                 Doanh nghiệp: <strong>{assignAdminCompany.name} ({assignAdminCompany.code})</strong>
               </p>
               <div className="admin-form-group">
                 <label>Chọn người dùng làm Quản trị viên (Chủ sở hữu Workspace) (*)</label>
-                <select
-                  className="admin-select"
+                <MisaDropdownSelect
+                  fullWidth
                   value={selectedAdminUserId}
-                  onChange={(e) => setSelectedAdminUserId(e.target.value)}
-                >
-                  <option value="">-- Chọn người dùng --</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.display_name} ({u.username} - {u.email || "Chưa có email"})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedAdminUserId(val)}
+                  searchPlaceholder="Tìm người dùng theo tên, email..."
+                  options={[
+                    { value: "", label: "-- Chọn người dùng --" },
+                    ...users.map((u) => ({
+                      value: u.id,
+                      label: `${u.display_name} (${u.email || u.username})`,
+                    })),
+                  ]}
+                />
                 <small style={{ color: "var(--admin-text-muted)", marginTop: "0.4rem", display: "block" }}>
-                  Người dùng được chọn sẽ được gán quyền Quản trị viên doanh nghiệp (COMPANY_ADMIN) và sở hữu toàn quyền không gian làm việc này.
+                  Người dùng được chọn sẽ được gán quyền Quản trị viên doanh nghiệp và sở hữu toàn quyền không gian làm việc này.
                 </small>
               </div>
             </div>

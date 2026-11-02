@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import {
   Activity,
   ArrowRight,
@@ -1075,9 +1076,10 @@ export function MisaSystemUtilitiesModal({
                 <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
                   <span style={{ fontWeight: 600, color: "#334155" }}>Số tiền thanh toán (VND)</span>
                   <input
-                    type="number"
-                    value={qrAmount}
-                    onChange={(e) => setQrAmount(e.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatMoneyInput(qrAmount)}
+                    onChange={(e) => setQrAmount(parseMoneyInputString(e.target.value))}
                     style={{
                       padding: "8px 10px",
                       borderRadius: 6,

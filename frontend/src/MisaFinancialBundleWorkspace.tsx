@@ -399,7 +399,7 @@ export default function MisaFinancialBundleWorkspace({
       const res = await fetchFinancialStatementLineSourcesUcRpt02(w, runId, lineId);
       setDrilldownPayload(res);
     } catch (err: any) {
-      setErrorMsg(err?.message || "Không thể truy vết nguồn số liệu chỉ tiêu (UC-RPT-14).");
+      setErrorMsg(err?.message || "Không thể truy vết nguồn số liệu chỉ tiêu.");
     } finally {
       setLoading(false);
     }
@@ -469,7 +469,7 @@ export default function MisaFinancialBundleWorkspace({
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Layers size={18} color="#00a862" />
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-              UC-RPT-02 – Quản lý & Xem Bộ Báo Cáo Tài Chính (Thông tư 99/2025/TT-BTC)
+              Quản lý & Xem Bộ Báo Cáo Tài Chính (Thông tư 99/2025/TT-BTC)
             </h3>
           </div>
           <p style={{ margin: "4px 0 0", fontSize: 12.5, color: "#64748b" }}>
@@ -931,7 +931,7 @@ export default function MisaFinancialBundleWorkspace({
                     {activeStatementLines.legal_form_code} – {activeStatementLines.statement_title} (Run v{activeStatementLines.run_version})
                   </h4>
                   <div style={{ fontSize: 12, color: "#64748b" }}>
-                    Kỳ: {activeStatementLines.period_name} ({activeStatementLines.period_start_date} → {activeStatementLines.period_end_date}) | Nhấn vào dòng chỉ tiêu để truy vết nguồn Sổ cái (UC-RPT-14).
+                    Kỳ: {activeStatementLines.period_name} ({activeStatementLines.period_start_date} → {activeStatementLines.period_end_date}) | Nhấn vào dòng chỉ tiêu để truy vết nguồn Sổ cái.
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

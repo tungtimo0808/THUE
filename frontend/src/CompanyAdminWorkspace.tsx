@@ -37,6 +37,7 @@ import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
+import MisaDropdownSelect, { DropdownOption } from "./MisaDropdownSelect";
 import "./admin-workspaces.css";
 
 type TabKey = "overview" | "personnel" | "roles" | "config";
@@ -54,10 +55,11 @@ interface CompanyInfo {
 }
 
 export function formatAccountingRegime(val?: string) {
-  if (!val || val === "TT99" || val === "CIRCULAR_99") return "Thông tư 99/2025/TT-BTC";
-  if (val === "TT200" || val === "CIRCULAR_200") return "Thông tư 200/2014/TT-BTC";
-  if (val === "TT133" || val === "CIRCULAR_133") return "Thông tư 133/2016/TT-BTC";
-  if (val === "TT88" || val === "CIRCULAR_88") return "Thông tư 88/2021/TT-BTC";
+  if (!val || val === "TT99" || val === "CIRCULAR_99") return "Thông tư 99/2025/TT-BTC (Chuẩn mực mới - Đầy đủ)";
+  if (val === "TT200" || val === "CIRCULAR_200") return "Thông tư 200/2014/TT-BTC (Doanh nghiệp vừa & lớn)";
+  if (val === "TT133" || val === "CIRCULAR_133") return "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ & vừa - SME)";
+  if (val === "TT58" || val === "CIRCULAR_58") return "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ)";
+  if (val === "TT88" || val === "CIRCULAR_88") return "Thông tư 88/2021/TT-BTC (Hộ kinh doanh)";
   return val;
 }
 
@@ -87,6 +89,10 @@ interface RoleItem {
   name: string;
   description: string;
   role_type: string;
+  role_group?: string;
+  is_system_admin?: boolean;
+  permission_count?: number;
+  active_user_count?: number;
   status: string;
   updated_at: string;
 }
@@ -148,19 +154,61 @@ interface MemberItem {
   joined_at?: string;
 }
 
+interface AdminJoinRequestItem {
+  id: string;
+  requester: string;
+  requester_name: string;
+  requester_email?: string;
+  requester_phone?: string;
+  message: string;
+  status: string;
+  status_display?: string;
+  decision_reason?: string;
+  internal_note?: string;
+  decided_by_name?: string | null;
+  decided_at?: string | null;
+  expires_at?: string | null;
+  created_at: string;
+}
+
 const ROLE_RANK_MAP: Record<string, number> = {
+  ROLE_SUPER_ADMIN: 1,
+  ROLE_ADMIN: 10,
   COMPANY_ADMIN: 10,
   ADMIN: 10,
+  ROLE_DIRECTOR: 15,
+  ROLE_CHIEF_ACCOUNTANT: 20,
   KT_TRUONG: 20,
-  THU_QUY: 30,
-  KT_BANHANG: 40,
-  KT_MUAHANG: 50,
-  KT_KHO: 60,
-  NVKD: 70,
+  ROLE_GENERAL_ACCOUNTANT: 25,
+  ROLE_TAX_ACCOUNTANT: 30,
+  ROLE_AP_ACCOUNTANT: 35,
+  ROLE_AR_ACCOUNTANT: 36,
+  ROLE_PURCHASE_ACCOUNTANT: 40,
+  KT_MUAHANG: 40,
+  ROLE_SALES_ACCOUNTANT: 42,
+  KT_BANHANG: 42,
+  ROLE_CASH_ACCOUNTANT: 45,
+  ROLE_BANK_ACCOUNTANT: 46,
+  ROLE_INVENTORY_ACCOUNTANT: 50,
+  ROLE_ASSET_ACCOUNTANT: 52,
+  ROLE_CCDC_ACCOUNTANT: 54,
+  ROLE_TREASURER: 60,
+  THU_QUY: 60,
+  ROLE_STOREKEEPER: 65,
+  KT_KHO: 65,
+  ROLE_PURCHASER: 70,
+  ROLE_SALESPERSON: 72,
+  NVKD: 72,
+  ROLE_APPROVER: 80,
+  ROLE_AUDITOR: 85,
+  ROLE_REPORT_VIEWER: 90,
 };
 
+const isAdminRoleCode = (code?: string) =>
+  code === "ROLE_ADMIN" || code === "COMPANY_ADMIN" || code === "ADMIN" || code === "ROLE_SUPER_ADMIN";
+
 const getMemberRank = (m: MemberItem): number => {
-  if (m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")) return 1;
+  if (m.role_assignments?.some((r) => isAdminRoleCode(r.role_code))) return 1;
   const assignments = m.role_assignments || [];
   let best = 999;
   for (const a of assignments) {
@@ -175,15 +223,120 @@ const getMemberRank = (m: MemberItem): number => {
 };
 
 const ROLE_DISPLAY_NAMES: Record<string, string> = {
-  COMPANY_ADMIN: "Quản trị viên Doanh nghiệp (Chủ sở hữu)",
-  ADMIN: "Quản trị viên Doanh nghiệp",
+  ROLE_SUPER_ADMIN: "Super Admin (Quản trị Nền tảng)",
+  ROLE_ADMIN: "Quản trị doanh nghiệp",
+  COMPANY_ADMIN: "Quản trị doanh nghiệp",
+  ADMIN: "Quản trị doanh nghiệp",
+  ROLE_DIRECTOR: "Giám đốc",
+  ROLE_CHIEF_ACCOUNTANT: "Kế toán trưởng",
   KT_TRUONG: "Kế toán trưởng",
+  ROLE_GENERAL_ACCOUNTANT: "Kế toán tổng hợp",
+  ROLE_TAX_ACCOUNTANT: "Kế toán thuế",
+  ROLE_AP_ACCOUNTANT: "Kế toán phải trả",
+  ROLE_AR_ACCOUNTANT: "Kế toán phải thu",
+  ROLE_PURCHASE_ACCOUNTANT: "Kế toán mua hàng",
+  KT_MUAHANG: "Kế toán mua hàng",
+  ROLE_SALES_ACCOUNTANT: "Kế toán bán hàng",
+  KT_BANHANG: "Kế toán bán hàng",
+  ROLE_CASH_ACCOUNTANT: "Kế toán tiền mặt",
+  ROLE_BANK_ACCOUNTANT: "Kế toán ngân hàng",
+  ROLE_INVENTORY_ACCOUNTANT: "Kế toán kho",
+  ROLE_ASSET_ACCOUNTANT: "Kế toán tài sản (TSCĐ)",
+  ROLE_CCDC_ACCOUNTANT: "Kế toán CCDC",
+  ROLE_TREASURER: "Thủ quỹ",
   THU_QUY: "Thủ quỹ",
-  KT_BANHANG: "Kế toán bán hàng & Công nợ phải thu",
-  KT_MUAHANG: "Kế toán mua hàng & Công nợ phải trả",
-  KT_KHO: "Thủ kho & Kế toán kho",
-  NVKD: "Nhân viên kinh doanh",
+  ROLE_STOREKEEPER: "Thủ kho",
+  KT_KHO: "Thủ kho",
+  ROLE_PURCHASER: "Nhân viên mua hàng",
+  ROLE_SALESPERSON: "Nhân viên bán hàng",
+  NVKD: "Nhân viên bán hàng",
+  ROLE_APPROVER: "Người phê duyệt",
+  ROLE_AUDITOR: "Kiểm tra / Kiểm toán",
+  ROLE_REPORT_VIEWER: "Người xem báo cáo",
 };
+
+const ROLE_GROUP_MAP: Record<
+  string,
+  { group: string; label: string; groupVi: string; color: string; bg: string; badgeColor: string; badgeBg: string }
+> = {
+  ROLE_ADMIN: { group: "System", label: "Quản trị hệ thống", groupVi: "Quản trị hệ thống", color: "#92400e", bg: "#fef3c7", badgeColor: "#92400e", badgeBg: "#fef3c7" },
+  COMPANY_ADMIN: { group: "System", label: "Quản trị hệ thống", groupVi: "Quản trị hệ thống", color: "#92400e", bg: "#fef3c7", badgeColor: "#92400e", badgeBg: "#fef3c7" },
+  ROLE_DIRECTOR: { group: "Management", label: "Ban Giám đốc", groupVi: "Ban Giám đốc", color: "#6b21a8", bg: "#f3e8ff", badgeColor: "#6b21a8", badgeBg: "#f3e8ff" },
+  ROLE_CHIEF_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_GENERAL_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_TAX_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_AP_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_AR_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_PURCHASE_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_SALES_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_CASH_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_BANK_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_INVENTORY_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_ASSET_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_CCDC_ACCOUNTANT: { group: "Accounting", label: "Kế toán", groupVi: "Kế toán", color: "#1e40af", bg: "#dbeafe", badgeColor: "#1e40af", badgeBg: "#dbeafe" },
+  ROLE_TREASURER: { group: "Operation", label: "Vận hành", groupVi: "Vận hành", color: "#065f46", bg: "#d1fae5", badgeColor: "#065f46", badgeBg: "#d1fae5" },
+  ROLE_STOREKEEPER: { group: "Operation", label: "Vận hành", groupVi: "Vận hành", color: "#065f46", bg: "#d1fae5", badgeColor: "#065f46", badgeBg: "#d1fae5" },
+  ROLE_PURCHASER: { group: "Operation", label: "Vận hành", groupVi: "Vận hành", color: "#065f46", bg: "#d1fae5", badgeColor: "#065f46", badgeBg: "#d1fae5" },
+  ROLE_SALESPERSON: { group: "Operation", label: "Vận hành", groupVi: "Vận hành", color: "#065f46", bg: "#d1fae5", badgeColor: "#065f46", badgeBg: "#d1fae5" },
+  ROLE_APPROVER: { group: "Approval", label: "Phê duyệt", groupVi: "Phê duyệt", color: "#9a3412", bg: "#ffedd5", badgeColor: "#9a3412", badgeBg: "#ffedd5" },
+  ROLE_AUDITOR: { group: "Control", label: "Kiểm soát", groupVi: "Kiểm soát", color: "#3730a3", bg: "#e0e7ff", badgeColor: "#3730a3", badgeBg: "#e0e7ff" },
+  ROLE_REPORT_VIEWER: { group: "View Only", label: "Chỉ xem", groupVi: "Chỉ xem", color: "#475569", bg: "#f1f5f9", badgeColor: "#475569", badgeBg: "#f1f5f9" },
+};
+
+const REGIME_ROLE_PRESETS = [
+  {
+    key: "TT58",
+    label: "TT58/2026 — DN Siêu nhỏ",
+    title: "TT58/2026 — DN Siêu nhỏ",
+    subtitle: "3 Vai trò cốt lõi (Gọn nhẹ, kiêm nhiệm)",
+    badge: "3 Vai trò",
+    activeCount: 3,
+    count: 3,
+    color: "#047857",
+    badgeColor: "#047857",
+    badgeBg: "#ecfdf5",
+    desc: "Phù hợp doanh nghiệp siêu nhỏ / hộ kinh doanh: Quản trị DN, Giám đốc và Kế toán phụ trách chung.",
+  },
+  {
+    key: "TT133",
+    label: "TT133/2016 — DN Nhỏ & Vừa (SME)",
+    title: "TT133/2016 — DN Nhỏ & Vừa (SME)",
+    subtitle: "8 Vai trò tiêu chuẩn SME",
+    badge: "8 Vai trò",
+    activeCount: 8,
+    count: 8,
+    color: "#0284c7",
+    badgeColor: "#0284c7",
+    badgeBg: "#f0f9ff",
+    desc: "Phù hợp doanh nghiệp nhỏ và vừa: tách Kế toán trưởng, KT Tổng hợp, KT Thuế, KT Bán hàng, Thủ quỹ, Thủ kho.",
+  },
+  {
+    key: "TT200",
+    label: "TT200/2014 — DN Vừa & Lớn",
+    title: "TT200/2014 — DN Vừa & Lớn",
+    subtitle: "14 Vai trò chuyên môn hóa",
+    badge: "14 Vai trò",
+    activeCount: 14,
+    count: 14,
+    color: "#7c3aed",
+    badgeColor: "#7c3aed",
+    badgeBg: "#f5f3ff",
+    desc: "Phù hợp doanh nghiệp có phòng kế toán tách biệt Công nợ Phải thu, Phải trả, Tiền mặt, Ngân hàng, Kho.",
+  },
+  {
+    key: "TT99",
+    label: "TT99/2025 — Chuẩn mực Đầy đủ",
+    title: "TT99/2025 — Chuẩn mực Đầy đủ",
+    subtitle: "Toàn bộ 21 Vai trò chuyên trách",
+    badge: "21 Vai trò",
+    activeCount: 21,
+    count: 21,
+    color: "#b45309",
+    badgeColor: "#b45309",
+    badgeBg: "#fffbeb",
+    desc: "Bộ máy đầy đủ 21 vai trò: Quản trị, Giám đốc, 12 vị trí Kế toán chuyên sâu, 4 Vận hành, Phê duyệt, Kiểm toán & Xem báo cáo.",
+  },
+];
 
 const formatRoleDisplayName = (code: string, originalName?: string): string => {
   if (ROLE_DISPLAY_NAMES[code]) {
@@ -271,51 +424,519 @@ const PERMISSION_TRANSLATION_MAP: Record<string, { module: string; name: string;
   "SYS.ROLE.EDIT": { module: "Quản trị hệ thống", name: "Chỉnh sửa ma trận quyền", desc: "Thiết lập quyền hạn chi tiết cho từng vai trò" },
 };
 
-const translatePermissionCode = (code: string): { module: string; name: string; desc: string } => {
-  if (PERMISSION_TRANSLATION_MAP[code]) {
-    return PERMISSION_TRANSLATION_MAP[code];
+export type PermTierKey = "VIEW" | "EDIT" | "APPROVE" | "EXPORT" | "ADMIN";
+
+export const PERM_TIER_META: Record<
+  PermTierKey,
+  { label: string; shortLabel: string; color: string; bg: string; border: string }
+> = {
+  VIEW: {
+    label: "Xem & Tra cứu",
+    shortLabel: "Xem",
+    color: "#1d4ed8",
+    bg: "#eff6ff",
+    border: "#bfdbfe",
+  },
+  EDIT: {
+    label: "Lập & Sửa chứng từ",
+    shortLabel: "Lập & Sửa",
+    color: "#047857",
+    bg: "#ecfdf5",
+    border: "#a7f3d0",
+  },
+  APPROVE: {
+    label: "Duyệt & Ghi sổ",
+    shortLabel: "Duyệt / Ghi sổ",
+    color: "#6d28d9",
+    bg: "#f5f3ff",
+    border: "#ddd6fe",
+  },
+  EXPORT: {
+    label: "In & Xuất / Nhập file",
+    shortLabel: "In & Xuất file",
+    color: "#0f766e",
+    bg: "#f0fdfa",
+    border: "#99f6e4",
+  },
+  ADMIN: {
+    label: "Xóa / Khóa / Thiết lập",
+    shortLabel: "Xóa / Khóa",
+    color: "#b45309",
+    bg: "#fffbeb",
+    border: "#fde68a",
+  },
+};
+
+const MODULE_NAMES_VI: Record<string, string> = {
+  CASH: "Quỹ tiền mặt",
+  BANK: "Tiền gửi ngân hàng",
+  SAL: "Bán hàng & Doanh thu",
+  PUR: "Mua hàng & Chi phí",
+  INV: "Kho & Vật tư hàng hóa",
+  AR: "Công nợ phải thu",
+  AP: "Công nợ phải trả",
+  FA: "Tài sản cố định & CCDC",
+  PAYROLL: "Tiền lương & Nhân sự",
+  COST: "Giá thành sản xuất",
+  TAX: "Thuế & Hóa đơn điện tử",
+  GL: "Sổ cái & Tổng hợp",
+  RPT: "Báo cáo & Phân tích",
+  MD: "Danh mục dùng chung",
+  SYS: "Quản trị & Hệ thống",
+  COM: "Quản trị & Hệ thống",
+};
+
+const FEATURE_NAMES_VI: Record<string, string> = {
+  ADJUSTMENT: "Điều chỉnh công nợ & số liệu",
+  ADJUSTMENT_VOUCHER: "Chứng từ điều chỉnh công nợ",
+  ALLOCATION: "Phân bổ thanh toán & chi phí",
+  ALLOCATION_VOUCHER: "Chứng từ phân bổ công nợ",
+  APPROVAL: "Phê duyệt chứng từ nghiệp vụ",
+  DOCUMENT: "Chứng từ & Hồ sơ đính kèm",
+  INVOICE: "Hóa đơn & Chứng từ thanh toán",
+  INPUT_INVOICE: "Hóa đơn mua vào (Đầu vào)",
+  COMMERCIAL_INVOICE: "Hóa đơn thương mại",
+  DISCOUNT_INVOICE: "Hóa đơn chiết khấu thương mại",
+  SALES_INVOICE: "Hóa đơn bán hàng (Đầu ra)",
+  INVOICE_REQUEST: "Đề nghị xuất hóa đơn",
+  NETTING: "Bù trừ công nợ hai chiều",
+  NETTING_VOUCHER: "Chứng từ bù trừ công nợ",
+  OFFSET: "Đối trừ chứng từ thanh toán",
+  PAYABLE: "Tổng hợp công nợ phải trả NCC",
+  RECEIVABLE: "Tổng hợp công nợ phải thu khách hàng",
+  PAYMENT: "Phiếu chi & Thanh toán tiền",
+  PAYMENT_REQUEST: "Đề nghị thanh toán",
+  PAYMENT_REMINDER: "Thông báo nhắc nợ khách hàng",
+  RECONCILIATION: "Đối chiếu công nợ & Sao kê",
+  REPORT: "Báo cáo chuyên đề phân hệ",
+  TRACKING: "Theo dõi tiến độ & Tuổi nợ",
+  DUE_TRACKING: "Theo dõi công nợ đến hạn / quá hạn",
+  COLLECTION_PLAN: "Kế hoạch thu hồi công nợ",
+  CONFIRMATION: "Biên bản xác nhận công nợ",
+  CREDIT_POLICY: "Chính sách hạn mức tín dụng",
+  RECEIPT: "Phiếu thu & Nhận tiền",
+  RECEIPT_VOUCHER: "Chứng từ phiếu thu tiền",
+  ACCOUNT: "Danh mục tài khoản",
+  BANK_ACCOUNT: "Tài khoản ngân hàng doanh nghiệp",
+  INTEGRATION: "Kết nối ngân hàng điện tử",
+  LOAN: "Khế ước vay & Theo dõi khoản vay",
+  REVALUATION: "Đánh giá lại chênh lệch tỷ giá",
+  FX_REVALUATION: "Đánh giá lại ngoại tệ cuối kỳ",
+  STATEMENT: "Sao kê ngân hàng & Sổ phụ",
+  TRANSACTION: "Giao dịch thu / chi tiền",
+  TRANSFER: "Chuyển tiền nội bộ / Chuyển kho",
+  ADVANCE: "Tạm ứng nhân viên",
+  ADVANCE_REQUEST: "Đề nghị tạm ứng",
+  ADVANCE_SETTLEMENT: "Quyết toán tạm ứng",
+  COUNT: "Kiểm kê thực tế định kỳ",
+  FUND: "Danh mục quỹ & Tồn quỹ tiền mặt",
+  AI: "Trợ lý thông minh AI Kế toán",
+  DASHBOARD: "Bảng điều khiển & Chỉ số tài chính",
+  JOIN_REQUEST: "Phê duyệt yêu cầu gia nhập công ty",
+  NOTIFICATION: "Thông báo nghiệp vụ hệ thống",
+  SEARCH: "Tra cứu nhanh dữ liệu toàn hệ thống",
+  SETTING: "Thiết lập tham số hệ thống",
+  PERIOD: "Kỳ kế toán & Khóa sổ định kỳ",
+  ASSET: "Hồ sơ Tài sản cố định & CCDC",
+  CALCULATION: "Tính khấu hao & Tính giá thành",
+  CATEGORY: "Nhóm phân loại tài sản / danh mục",
+  GL: "Hạch toán bút toán Sổ cái",
+  BALANCE: "Số dư tài khoản & Bảng cân đối",
+  BUDGET: "Ngân sách & Dự toán thu chi",
+  CLOSING: "Bút toán kết chuyển lãi lỗ cuối kỳ",
+  GENERAL_VOUCHER: "Chứng từ nghiệp vụ khác (NVK)",
+  JOURNAL: "Sổ nhật ký chung & Định khoản",
+  LEDGER: "Sổ cái & Sổ chi tiết tài khoản",
+  SUBLEDGER_INGESTION: "Đồng bộ chứng từ phân hệ vào Sổ cái",
+  ASSEMBLY: "Lệnh lắp ráp & Tháo dỡ hàng hóa",
+  LOT_SERIAL: "Quản lý Số lô & Hạn sử dụng",
+  POLICY: "Chính sách giá & Định mức tồn kho",
+  PRODUCTION: "Nhập kho thành phẩm & Xuất sản xuất",
+  VALUATION: "Tính giá xuất kho tự động",
+  COMMON: "Danh mục chuẩn dùng chung",
+  EMPLOYEE: "Hồ sơ Nhân sự & Nhân viên",
+  EXPENSE_ITEM: "Danh mục Khoản mục chi phí",
+  ITEM: "Danh mục Vật tư, Hàng hóa, Dịch vụ",
+  ITEM_GROUP: "Nhóm Vật tư, Hàng hóa",
+  ORGANIZATION: "Cơ cấu tổ chức (Chi nhánh / Phòng ban)",
+  PARTY: "Danh mục Khách hàng & Nhà cung cấp",
+  PAYMENT_METHOD: "Phương thức thanh toán",
+  PAYMENT_TERM: "Điều khoản thanh toán",
+  STATISTICAL_CODE: "Mã thống kê / Dự án / Hợp đồng",
+  TAX_RATE: "Danh mục Thuế suất",
+  TAX_TYPE: "Danh mục sắc thuế",
+  UOM: "Danh mục Đơn vị tính",
+  WAREHOUSE: "Danh mục Kho hàng",
+  ATTENDANCE: "Bảng chấm công nhân sự",
+  PROFILE: "Hồ sơ lương & Hợp đồng lao động",
+  SHEET: "Bảng tính lương & Phiếu lương",
+  CONTRACT: "Hợp đồng kinh tế (Mua / Bán)",
+  COST: "Chi phí mua hàng & Phân bổ",
+  DISCOUNT: "Chiết khấu thương mại",
+  GOODS: "Chứng từ mua hàng hóa",
+  ORDER: "Đơn đặt hàng (PO / SO)",
+  REQUEST: "Đề nghị mua sắm vật tư",
+  RETURN: "Trả lại hàng mua",
+  SERVICE: "Chứng từ mua dịch vụ & Chi phí",
+  SUPPLIER_RISK: "Kiểm soát rủi ro Hóa đơn & MST",
+  BUSINESS_RESULT: "Báo cáo Kết quả HĐKD (B02-DN)",
+  "BUSINESS_RESULT.DETAIL": "Chi tiết Kết quả HĐKD",
+  CASH_FLOW: "Báo cáo Lưu chuyển tiền tệ (B03-DN)",
+  "CASH_FLOW.DETAIL": "Chi tiết Lưu chuyển tiền tệ",
+  CENTER: "Báo cáo theo Trung tâm chi phí",
+  COMMERCE: "Báo cáo Bán hàng & Thương mại",
+  CONFIG: "Thiết lập mẫu & công thức báo cáo",
+  DEBT: "Báo cáo Tổng hợp & Chi tiết Công nợ",
+  FINANCIAL: "Bảng Cân đối kế toán & Bộ BCTC",
+  "FINANCIAL.DETAIL": "Chi tiết chỉ tiêu Báo cáo tài chính",
+  FINANCIAL_NOTES: "Thuyết minh Báo cáo tài chính (B09-DN)",
+  INVENTORY: "Báo cáo Xuất - Nhập - Tồn kho",
+  MANAGEMENT: "Báo cáo Quản trị & Phân tích tài chính",
+  MONEY: "Sổ quỹ tiền mặt & Sổ tiền gửi",
+  TAX: "Báo cáo & Bảng kê Thuế GTGT, TNDN",
+  COGS: "Tính & Kết chuyển Giá vốn hàng bán",
+  DELIVERY: "Phiếu xuất kho kiêm vận chuyển",
+  GOODS_SALE: "Chứng từ bán hàng hóa",
+  QUOTATION: "Báo giá khách hàng",
+  SALES_ALLOWANCE: "Giảm giá hàng bán",
+  SALES_RETURN: "Hàng bán bị trả lại",
+  SERVICE_SALE: "Chứng từ bán dịch vụ",
+  LINK: "Liên kết chứng từ gốc",
+  AUDIT: "Nhật ký kiểm toán & Truy vết hệ thống",
+  COMPANY_PROFILE: "Hồ sơ pháp lý Doanh nghiệp",
+  MEMBERSHIP: "Hồ sơ thành viên doanh nghiệp",
+  MODULE: "Cấu hình bật / tắt phân hệ",
+  NUMBERING: "Quy tắc sinh số chứng từ tự động",
+  ORG_ASSIGNMENT: "Phân công chi nhánh / phòng ban",
+  ORG_STRUCTURE: "Sơ đồ tổ chức doanh nghiệp",
+  PERMISSION: "Danh mục quyền hạn hệ thống",
+  ROLE: "Vai trò nghiệp vụ & Phân quyền",
+  ROLE_ASSIGNMENT: "Bổ nhiệm & Đổi vai trò nhân sự",
+  USER: "Tài khoản người dùng",
+  WORKFLOW: "Quy trình phê duyệt đa cấp",
+  CONNECTOR: "Kết nối Thuế điện tử & Hóa đơn điện tử",
+  EXPORT: "Kết xuất XML / Excel tờ khai thuế",
+  FILING: "Lập & Nộp tờ khai thuế định kỳ",
+  OBLIGATION: "Theo dõi nghĩa vụ thuế phải nộp",
+  SUMMARY: "Bảng tổng hợp nghĩa vụ thuế",
+  OPENING_BALANCE: "Khai báo Số dư đầu kỳ",
+};
+
+const ACTION_NAMES_VI: Record<string, { label: string; tier: PermTierKey }> = {
+  VIEW: { label: "Xem & tra cứu", tier: "VIEW" },
+  DETAIL_VIEW: { label: "Xem chi tiết chứng từ", tier: "VIEW" },
+  DRILLDOWN: { label: "Truy vết chứng từ gốc", tier: "VIEW" },
+  VIEW_HISTORY: { label: "Xem lịch sử thay đổi", tier: "VIEW" },
+  VIEW_USERS: { label: "Xem danh sách nhân sự", tier: "VIEW" },
+  VIEW_IMPACT: { label: "Xem phạm vi ảnh hưởng", tier: "VIEW" },
+  VIEW_SECURITY: { label: "Xem thiết lập bảo mật", tier: "VIEW" },
+  VIEW_SENSITIVE: { label: "Xem dữ liệu nhạy cảm", tier: "VIEW" },
+  VIEW_UNMASKED: { label: "Xem đầy đủ thông tin", tier: "VIEW" },
+  TRACK: { label: "Theo dõi tiến độ", tier: "VIEW" },
+  CHECK: { label: "Kiểm tra đối chiếu", tier: "VIEW" },
+  CHECK_TX: { label: "Kiểm tra giao dịch", tier: "VIEW" },
+  CHECK_EFFECTIVE: { label: "Kiểm tra quyền thực tế", tier: "VIEW" },
+  SEARCH: { label: "Tìm kiếm dữ liệu", tier: "VIEW" },
+  STATUS: { label: "Xem trạng thái", tier: "VIEW" },
+
+  CREATE: { label: "Tạo mới chứng từ", tier: "EDIT" },
+  CREATE_FOR_OTHERS: { label: "Lập hộ chứng từ", tier: "EDIT" },
+  EDIT: { label: "Chỉnh sửa thông tin", tier: "EDIT" },
+  EDIT_PAYMENT_TERM: { label: "Sửa điều khoản thanh toán", tier: "EDIT" },
+  EDIT_SUSPENDED: { label: "Sửa bản ghi tạm dừng", tier: "EDIT" },
+  SUBMIT: { label: "Trình duyệt chứng từ", tier: "EDIT" },
+  PREPARE: { label: "Lập dự thảo báo cáo", tier: "EDIT" },
+  CLONE: { label: "Sao chép mẫu", tier: "EDIT" },
+  GENERATE: { label: "Tổng hợp số liệu tự động", tier: "EDIT" },
+  CALCULATE: { label: "Chạy tính toán số liệu", tier: "EDIT" },
+  COUNT: { label: "Nhập số liệu kiểm kê", tier: "EDIT" },
+  ADJUST: { label: "Lập điều chỉnh chênh lệch", tier: "EDIT" },
+  ALLOCATE: { label: "Phân bổ số liệu", tier: "EDIT" },
+  MATCH: { label: "Khớp đúng chứng từ", tier: "EDIT" },
+  RECONCILE: { label: "Đối soát sao kê", tier: "EDIT" },
+  TRANSFER: { label: "Thực hiện điều chuyển", tier: "EDIT" },
+  SETTLE: { label: "Quyết toán khoản mục", tier: "EDIT" },
+  RECEIVE: { label: "Xác nhận tiếp nhận", tier: "EDIT" },
+  PAY: { label: "Thực hiện chi trả", tier: "EDIT" },
+  PAYMENT: { label: "Lập thanh toán", tier: "EDIT" },
+  ISSUE: { label: "Phát hành chứng từ / hóa đơn", tier: "EDIT" },
+  SEND: { label: "Gửi chứng từ / thông báo", tier: "EDIT" },
+  SEND_EMAIL: { label: "Gửi email thông báo", tier: "EDIT" },
+  REMIND: { label: "Gửi thư nhắc nợ", tier: "EDIT" },
+  RESPOND: { label: "Phản hồi yêu cầu", tier: "EDIT" },
+  ANNEX: { label: "Lập phụ lục hợp đồng", tier: "EDIT" },
+  EXTEND: { label: "Gia hạn hợp đồng", tier: "EDIT" },
+  USE: { label: "Sử dụng tính năng", tier: "EDIT" },
+  RUN: { label: "Chạy quy trình", tier: "EDIT" },
+  AGGREGATE: { label: "Tổng hợp dữ liệu", tier: "EDIT" },
+  BULK: { label: "Thao tác hàng loạt", tier: "EDIT" },
+  MOVE: { label: "Di chuyển phân nhóm", tier: "EDIT" },
+  MERGE: { label: "Gộp bản ghi trùng", tier: "EDIT" },
+  LINK: { label: "Liên kết chứng từ", tier: "EDIT" },
+  UNLINK: { label: "Gỡ liên kết chứng từ", tier: "EDIT" },
+  REPLACE: { label: "Thay thế hóa đơn / chứng từ", tier: "EDIT" },
+
+  APPROVE: { label: "Phê duyệt chứng từ", tier: "APPROVE" },
+  REJECT: { label: "Từ chối phê duyệt", tier: "APPROVE" },
+  POST: { label: "Ghi sổ cái kế toán", tier: "APPROVE" },
+  POST_DIRECT: { label: "Ghi sổ trực tiếp", tier: "APPROVE" },
+  UNPOST: { label: "Bỏ ghi sổ kế toán", tier: "APPROVE" },
+  REVERSE: { label: "Đảo bút toán ghi sổ", tier: "APPROVE" },
+  CONFIRM: { label: "Xác nhận thực thu / thực xuất", tier: "APPROVE" },
+  SIGN: { label: "Ký số điện tử", tier: "APPROVE" },
+  VALIDATE: { label: "Kiểm duyệt tính hợp lệ", tier: "APPROVE" },
+  REVIEW: { label: "Soát xét số liệu", tier: "APPROVE" },
+  ACCEPT: { label: "Chấp thuận nghiệm thu", tier: "APPROVE" },
+  PUBLISH: { label: "Công bố ban hành", tier: "APPROVE" },
+  REQUEST_REVISION: { label: "Yêu cầu chỉnh sửa lại", tier: "APPROVE" },
+  ADJUST_CONFIRMED: { label: "Điều chỉnh phiếu đã xác nhận", tier: "APPROVE" },
+
+  PRINT: { label: "In chứng từ & sổ sách", tier: "EXPORT" },
+  EXPORT: { label: "Xuất file Excel / PDF / XML", tier: "EXPORT" },
+  IMPORT: { label: "Nhập khẩu dữ liệu từ Excel", tier: "EXPORT" },
+
+  DELETE: { label: "Xóa chứng từ nháp", tier: "ADMIN" },
+  CANCEL: { label: "Hủy bỏ chứng từ", tier: "ADMIN" },
+  CANCEL_POSTED: { label: "Hủy chứng từ đã ghi sổ", tier: "ADMIN" },
+  DEACTIVATE: { label: "Ngừng sử dụng danh mục", tier: "ADMIN" },
+  REACTIVATE: { label: "Kích hoạt lại bản ghi", tier: "ADMIN" },
+  DISPOSE: { label: "Thanh lý / Ghi giảm tài sản", tier: "ADMIN" },
+  LIQUIDATE: { label: "Thanh lý hợp đồng", tier: "ADMIN" },
+  TERMINATE: { label: "Chấm dứt hiệu lực", tier: "ADMIN" },
+  CLOSE: { label: "Đóng / Tất toán", tier: "ADMIN" },
+  CLOSE_PERIOD: { label: "Khóa kỳ kế toán", tier: "ADMIN" },
+  REOPEN_PERIOD: { label: "Mở lại kỳ kế toán đã khóa", tier: "ADMIN" },
+  LOCK: { label: "Khóa bảo vệ dữ liệu", tier: "ADMIN" },
+  UNLOCK: { label: "Mở khóa dữ liệu", tier: "ADMIN" },
+  REFUND: { label: "Hoàn tiền giao dịch", tier: "ADMIN" },
+  CONFIGURE: { label: "Thiết lập cấu hình", tier: "ADMIN" },
+  CONFIG: { label: "Cấu hình tham số", tier: "ADMIN" },
+  CONNECT: { label: "Thiết lập kết nối tích hợp", tier: "ADMIN" },
+  SYNC: { label: "Đồng bộ dữ liệu tích hợp", tier: "ADMIN" },
+  ASSIGN_ROLE: { label: "Gán vai trò nhân sự", tier: "ADMIN" },
+  REVOKE_ROLE: { label: "Thu hồi vai trò", tier: "ADMIN" },
+  ASSIGN_SCOPE: { label: "Phân quyền phạm vi dữ liệu", tier: "ADMIN" },
+  ASSIGN_UNIT: { label: "Phân công đơn vị phụ trách", tier: "ADMIN" },
+  DIRECT_PERMISSION: { label: "Cấp quyền đặc thù riêng", tier: "ADMIN" },
+  LINK_USER: { label: "Liên kết tài khoản đăng nhập", tier: "ADMIN" },
+  LINK_EMPLOYEE: { label: "Liên kết hồ sơ nhân viên", tier: "ADMIN" },
+  EXIT_REQUEST: { label: "Xử lý thôi việc / thu hồi quyền", tier: "ADMIN" },
+  MANAGE: { label: "Quản trị toàn diện", tier: "ADMIN" },
+  MANUAL_OVERRIDE: { label: "Ghi đè kiểm soát đặc biệt", tier: "ADMIN" },
+  OVERRIDE: { label: "Vượt hạn mức kiểm soát", tier: "ADMIN" },
+  RETRY: { label: "Thực hiện lại tác vụ", tier: "ADMIN" },
+  RETRY_ISSUE: { label: "Phát hành lại hóa đơn lỗi", tier: "ADMIN" },
+  RESOLVE: { label: "Xử lý sự cố nghiệp vụ", tier: "ADMIN" },
+  INCIDENT: { label: "Quản lý cảnh báo rủi ro", tier: "ADMIN" },
+  REFRESH: { label: "Làm mới dữ liệu", tier: "VIEW" },
+};
+
+const parsePermissionDetails = (
+  code: string
+): {
+  moduleKey: string;
+  module: string;
+  featureKey: string;
+  featureName: string;
+  tier: PermTierKey;
+  actionLabel: string;
+  name: string;
+  desc: string;
+} => {
+  // Handle special standalone codes like OPENING_BALANCE_VIEW or RPT_FINANCIAL_VIEW
+  if (code.startsWith("OPENING_BALANCE_")) {
+    const act = code.replace("OPENING_BALANCE_", "");
+    const actInfo = ACTION_NAMES_VI[act] || { label: "Thao tác số dư đầu kỳ", tier: "EDIT" as PermTierKey };
+    return {
+      moduleKey: "GL",
+      module: "Sổ cái & Tổng hợp",
+      featureKey: "GL.OPENING_BALANCE",
+      featureName: "Khai báo Số dư đầu kỳ",
+      tier: actInfo.tier,
+      actionLabel: actInfo.label,
+      name: `${actInfo.label} — Số dư đầu kỳ`,
+      desc: `${actInfo.label} đối với số dư tài khoản, công nợ và tồn kho đầu kỳ`,
+    };
   }
+
+  if (code.startsWith("RPT_") && !code.includes(".")) {
+    const rest = code.replace("RPT_", "");
+    let fKey = "FINANCIAL";
+    let act = "VIEW";
+    for (const candidate of ["BUSINESS_RESULT", "CASH_FLOW", "FINANCIAL_NOTES", "FINANCIAL"]) {
+      if (rest.startsWith(candidate + "_")) {
+        fKey = candidate;
+        act = rest.slice(candidate.length + 1).replace("DETAIL_VIEW", "DETAIL_VIEW");
+        break;
+      }
+    }
+    const fName = FEATURE_NAMES_VI[fKey] || "Bộ Báo cáo tài chính";
+    const actInfo = ACTION_NAMES_VI[act] || { label: "Xem & xử lý báo cáo", tier: "VIEW" as PermTierKey };
+    return {
+      moduleKey: "RPT",
+      module: "Báo cáo & Phân tích",
+      featureKey: `RPT.${fKey}`,
+      featureName: fName,
+      tier: actInfo.tier,
+      actionLabel: actInfo.label,
+      name: `${actInfo.label} — ${fName}`,
+      desc: `${actInfo.label} trong ${fName}`,
+    };
+  }
+
   const parts = code.split(".");
-  const prefix = parts[0] || "KHAC";
+  const rawPrefix = parts[0] || "SYS";
+  const moduleKey = rawPrefix === "COM" ? "SYS" : rawPrefix;
+  const module = MODULE_NAMES_VI[moduleKey] || "Nghiệp vụ kế toán";
   const action = parts[parts.length - 1] || "VIEW";
-  const mid = parts.slice(1, -1).join(" ");
+  const midKey = parts.slice(1, -1).join(".") || rawPrefix;
 
-  const MODULE_NAMES: Record<string, string> = {
-    CASH: "Quỹ tiền mặt",
-    BANK: "Tiền gửi ngân hàng",
-    SAL: "Bán hàng & Doanh thu",
-    PUR: "Mua hàng & Chi phí",
-    INV: "Kho hàng hóa",
-    AR: "Công nợ phải thu",
-    AP: "Công nợ phải trả",
-    GL: "Sổ cái & Tổng hợp",
-    TAX: "Thuế & Kê khai",
-    RPT: "Báo cáo & Phân tích",
-    MD: "Danh mục dùng chung",
-    SYS: "Quản trị hệ thống",
+  const featureName =
+    FEATURE_NAMES_VI[midKey] ||
+    FEATURE_NAMES_VI[parts[1] || ""] ||
+    (PERMISSION_TRANSLATION_MAP[code] ? PERMISSION_TRANSLATION_MAP[code].name : `Nghiệp vụ ${module}`);
+
+  const actInfo = ACTION_NAMES_VI[action] || { label: "Thực hiện nghiệp vụ", tier: "EDIT" as PermTierKey };
+
+  if (PERMISSION_TRANSLATION_MAP[code]) {
+    return {
+      moduleKey,
+      module,
+      featureKey: `${moduleKey}.${midKey}`,
+      featureName,
+      tier: actInfo.tier,
+      actionLabel: actInfo.label,
+      name: PERMISSION_TRANSLATION_MAP[code].name,
+      desc: PERMISSION_TRANSLATION_MAP[code].desc,
+    };
+  }
+
+  return {
+    moduleKey,
+    module,
+    featureKey: `${moduleKey}.${midKey}`,
+    featureName,
+    tier: actInfo.tier,
+    actionLabel: actInfo.label,
+    name: `${actInfo.label} — ${featureName}`,
+    desc: `Cho phép ${actInfo.label.toLowerCase()} tại mục ${featureName.toLowerCase()} (${module})`,
   };
+};
 
-  const ACTION_NAMES: Record<string, string> = {
-    VIEW: "Xem và tra cứu",
-    CREATE: "Thêm mới chứng từ / bản ghi",
-    EDIT: "Chỉnh sửa thông tin",
-    DELETE: "Xóa dữ liệu",
-    CONFIRM: "Xác nhận nghiệp vụ",
-    APPROVE: "Phê duyệt chứng từ",
-    PRINT: "In ấn chứng từ & sổ sách",
-    EXPORT: "Xuất dữ liệu Excel / PDF",
-    ADJUST: "Điều chỉnh chênh lệch",
-    COUNT: "Kiểm kê số liệu",
-    POST: "Ghi sổ cái kế toán",
-    UNPOST: "Bỏ ghi sổ cái kế toán",
+const translatePermissionCode = (code: string): { module: string; name: string; desc: string } => {
+  const d = parsePermissionDetails(code);
+  return { module: d.module, name: d.name, desc: d.desc };
+};
+
+export interface GroupedFeaturePermission {
+  featureKey: string;
+  featureName: string;
+  module: string;
+  codes: string[];
+  tiers: Record<PermTierKey, string[]>;
+}
+
+const groupPermissionCodesByModuleAndFeature = (
+  codes: string[],
+  searchQuery = ""
+): Record<string, GroupedFeaturePermission[]> => {
+  const q = searchQuery.toLowerCase().trim();
+  const byModule: Record<string, Record<string, GroupedFeaturePermission>> = {};
+
+  codes.forEach((code) => {
+    const d = parsePermissionDetails(code);
+    if (
+      q &&
+      !d.featureName.toLowerCase().includes(q) &&
+      !d.module.toLowerCase().includes(q) &&
+      !d.name.toLowerCase().includes(q) &&
+      !d.actionLabel.toLowerCase().includes(q)
+    ) {
+      return;
+    }
+    if (!byModule[d.module]) byModule[d.module] = {};
+    if (!byModule[d.module][d.featureKey]) {
+      byModule[d.module][d.featureKey] = {
+        featureKey: d.featureKey,
+        featureName: d.featureName,
+        module: d.module,
+        codes: [],
+        tiers: { VIEW: [], EDIT: [], APPROVE: [], EXPORT: [], ADMIN: [] },
+      };
+    }
+    const fg = byModule[d.module][d.featureKey];
+    fg.codes.push(code);
+    fg.tiers[d.tier].push(code);
+  });
+
+  const result: Record<string, GroupedFeaturePermission[]> = {};
+  Object.entries(byModule).forEach(([mod, featMap]) => {
+    result[mod] = Object.values(featMap);
+  });
+  return result;
+};
+
+const summarizeMemberPermissions = (
+  codes: string[] | undefined,
+  isCompanyAdmin: boolean
+): { buttonLabel: string; badgeSummary: string; moduleCount: number; featureCount: number } => {
+  const list = codes || [];
+  if (isCompanyAdmin || list.length >= 600) {
+    return {
+      buttonLabel: "Toàn quyền",
+      badgeSummary: "Toàn quyền (15 phân hệ)",
+      moduleCount: 15,
+      featureCount: 65,
+    };
+  }
+  if (list.length === 0) {
+    return {
+      buttonLabel: "Chưa cấp quyền",
+      badgeSummary: "Chưa có quyền",
+      moduleCount: 0,
+      featureCount: 0,
+    };
+  }
+  const modules = new Set<string>();
+  const features = new Set<string>();
+  list.forEach((c) => {
+    const d = parsePermissionDetails(c);
+    modules.add(d.moduleKey);
+    features.add(d.featureKey);
+  });
+  return {
+    buttonLabel: `Quyền hạn (${modules.size} phân hệ)`,
+    badgeSummary: `${modules.size} phân hệ · ${features.size} nghiệp vụ`,
+    moduleCount: modules.size,
+    featureCount: features.size,
   };
+};
 
-  const module = MODULE_NAMES[prefix] || `Phân hệ ${prefix}`;
-  const actionName = ACTION_NAMES[action] || action;
-  const name = `${actionName} (${module}${mid ? ` - ${mid}` : ""})`;
-  const desc = `Quyền ${actionName.toLowerCase()} trong ${module.toLowerCase()}`;
-
-  return { module, name, desc };
+const formatRoleScopeSummary = (role: RoleItem): string => {
+  if (isAdminRoleCode(role.code) || role.code === "ROLE_CHIEF_ACCOUNTANT" || (role.permission_count || 0) >= 600) {
+    return "Toàn quyền (15 phân hệ)";
+  }
+  if (role.code === "ROLE_DIRECTOR") return "Giám sát & Phê duyệt toàn công ty";
+  if (role.code === "ROLE_GENERAL_ACCOUNTANT") return "Sổ cái, BCTC & Tổng hợp số liệu";
+  if (role.code === "ROLE_TAX_ACCOUNTANT") return "Chuyên trách Thuế & Hóa đơn";
+  if (role.code === "ROLE_AP_ACCOUNTANT") return "Chuyên trách Công nợ Phải trả";
+  if (role.code === "ROLE_AR_ACCOUNTANT") return "Chuyên trách Công nợ Phải thu";
+  if (role.code === "ROLE_PURCHASE_ACCOUNTANT") return "Chuyên trách Kế toán Mua hàng";
+  if (role.code === "ROLE_SALES_ACCOUNTANT") return "Chuyên trách Kế toán Bán hàng";
+  if (role.code === "ROLE_CASH_ACCOUNTANT") return "Chuyên trách Kế toán Tiền mặt";
+  if (role.code === "ROLE_BANK_ACCOUNTANT") return "Chuyên trách Kế toán Ngân hàng";
+  if (role.code === "ROLE_INVENTORY_ACCOUNTANT") return "Chuyên trách Kế toán Kho";
+  if (role.code === "ROLE_ASSET_ACCOUNTANT") return "Chuyên trách Tài sản cố định";
+  if (role.code === "ROLE_CCDC_ACCOUNTANT") return "Chuyên trách Công cụ dụng cụ";
+  if (role.code === "ROLE_TREASURER") return "Vận hành Thu / Chi & Tồn quỹ";
+  if (role.code === "ROLE_STOREKEEPER") return "Vận hành Nhập / Xuất & Tồn kho";
+  if (role.code === "ROLE_PURCHASER") return "Lập đơn mua & Theo dõi NCC";
+  if (role.code === "ROLE_SALESPERSON") return "Báo giá & Lập đơn bán hàng";
+  if (role.code === "ROLE_APPROVER") return "Phê duyệt chứng từ theo luồng";
+  if (role.code === "ROLE_AUDITOR") return "Kiểm toán & Tra cứu độc lập";
+  if (role.code === "ROLE_REPORT_VIEWER") return "Xem báo cáo & Chỉ số quản trị";
+  if (!role.permission_count) return "Chưa thiết lập quyền";
+  return "Vai trò nghiệp vụ tùy chỉnh";
 };
 
 export default function CompanyAdminWorkspace() {
@@ -349,12 +970,25 @@ export default function CompanyAdminWorkspace() {
   const [modules, setModules] = useState<ModuleSetting[]>([]);
   const [periods, setPeriods] = useState<FiscalPeriod[]>([]);
   const [numberingRules, setNumberingRules] = useState<NumberingRule[]>([]);
+  const [joinRequests, setJoinRequests] = useState<AdminJoinRequestItem[]>([]);
+  const [joinStatusFilter, setJoinStatusFilter] = useState<string>("PENDING");
+  const [decidingJoinReq, setDecidingJoinReq] = useState<{
+    item: AdminJoinRequestItem;
+    decision: "APPROVED" | "REJECTED";
+    roleId: string;
+    reason: string;
+    internalNote: string;
+    reactivate: boolean;
+  } | null>(null);
+  const [joinDecideSaving, setJoinDecideSaving] = useState<boolean>(false);
 
   // Search & Filter
   const [memberSearch, setMemberSearch] = useState<string>("");
   const [memberRoleFilter, setMemberRoleFilter] = useState<string>("");
   const [memberScopeFilter, setMemberScopeFilter] = useState<"all" | "admin" | "staff">("all");
   const [roleSearch, setRoleSearch] = useState<string>("");
+  const [roleStatusFilter, setRoleStatusFilter] = useState<"ACTIVE" | "AVAILABLE" | "ALL">("ALL");
+  const [roleGroupFilter, setRoleGroupFilter] = useState<string>("ALL");
 
   // Role Matrix Management
   const [selectedRole, setSelectedRole] = useState<RoleItem | null>(null);
@@ -381,7 +1015,7 @@ export default function CompanyAdminWorkspace() {
     phone: "",
     department_id: "",
     position_id: "",
-    role_code: "KT_TRUONG",
+    role_code: "ROLE_CHIEF_ACCOUNTANT",
   });
 
   const [showRoleModal, setShowRoleModal] = useState<boolean>(false);
@@ -470,12 +1104,13 @@ export default function CompanyAdminWorkspace() {
       }
 
       // Load essential personnel & org data
-      const [memRes, empRes, deptRes, posRes, roleRes] = await Promise.allSettled([
+      const [memRes, empRes, deptRes, posRes, roleRes, joinRes] = await Promise.allSettled([
         request<MemberItem[] | { results: MemberItem[] }>(`/api/v1/iam/memberships/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<EmployeeItem[] | { results: EmployeeItem[] }>(`/api/v1/organization/employees/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/departments/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/positions/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<RoleItem[] | { results: RoleItem[] }>(`/api/v1/iam/roles/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<AdminJoinRequestItem[] | { results: AdminJoinRequestItem[] }>(`/api/v1/common/company-join-requests/?company_id=${effectiveCompanyId}`, effectiveToken),
       ]);
 
       if (memRes.status === "fulfilled") {
@@ -501,6 +1136,10 @@ export default function CompanyAdminWorkspace() {
         if (roleList.length > 0 && !selectedRole) {
           setSelectedRole(roleList[0]);
         }
+      }
+      if (joinRes.status === "fulfilled") {
+        const val = joinRes.value;
+        setJoinRequests(Array.isArray(val) ? val : val.results || []);
       }
     } catch (err: any) {
       setAlertMsg({ type: "error", text: err.message || "Không thể tải dữ liệu nhân sự doanh nghiệp." });
@@ -569,21 +1208,44 @@ export default function CompanyAdminWorkspace() {
       });
   }, [selectedRole, token, companyId]);
 
-  // Handle Seeding 6 Standard Business Roles
-  const handleSeedStandardRoles = async () => {
+  // Handle Seeding 21 Standard Business Roles & Applying Regime Role Presets
+  const handleSeedStandardRoles = async (presetKey?: string) => {
     if (!token || !companyId) return;
     setLoading(true);
     setAlertMsg(null);
     try {
       const res: any = await request(`/api/v1/iam/roles/seed-standard/?company_id=${companyId}`, token, {
         method: "POST",
+        body: JSON.stringify(
+          presetKey
+            ? { company_id: companyId, preset: presetKey, force_preset: true }
+            : { company_id: companyId }
+        ),
       });
-      setAlertMsg({ type: "success", text: res.message || "Đã khởi tạo thành công bộ vai trò mẫu nghiệp vụ!" });
-      loadWorkspaceData();
+      setAlertMsg({ type: "success", text: res.message || "Đã đồng bộ danh mục 21 vai trò chuẩn theo quy mô doanh nghiệp!" });
+      await loadWorkspaceData();
     } catch (err: any) {
-      setAlertMsg({ type: "error", text: err.message || "Lỗi khi khởi tạo vai trò mẫu." });
+      setAlertMsg({ type: "error", text: err.message || "Lỗi khi đồng bộ vai trò mẫu." });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleRoleStatus = async (role: RoleItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!token || !companyId) return;
+    try {
+      const res: any = await request(`/api/v1/iam/roles/seed-standard/?company_id=${companyId}`, token, {
+        method: "POST",
+        body: JSON.stringify({
+          company_id: companyId,
+          toggle_role_id: role.id,
+        }),
+      });
+      setAlertMsg({ type: "success", text: res.message || `Đã cập nhật trạng thái vai trò ${role.name}.` });
+      await loadWorkspaceData();
+    } catch (err: any) {
+      setAlertMsg({ type: "error", text: err.message || "Không thể đổi trạng thái vai trò." });
     }
   };
 
@@ -613,6 +1275,9 @@ export default function CompanyAdminWorkspace() {
     }
   };
 
+  const [matrixViewMode, setMatrixViewMode] = useState<"grouped" | "detailed">("grouped");
+  const [modalPermViewMode, setModalPermViewMode] = useState<"grouped" | "detailed">("grouped");
+
   // Toggle single permission code
   const togglePermission = (code: string) => {
     setSelectedPermCodes((prev) => {
@@ -622,6 +1287,21 @@ export default function CompanyAdminWorkspace() {
       } else {
         next.add(code);
       }
+      return next;
+    });
+  };
+
+  // Toggle a batch of permission codes (for 1-click feature/tier/module assignment)
+  const togglePermissionBatch = (codes: string[], forceState?: boolean) => {
+    if (!codes.length) return;
+    setSelectedPermCodes((prev) => {
+      const next = new Set(prev);
+      const allSelected = codes.every((c) => next.has(c));
+      const shouldAdd = forceState !== undefined ? forceState : !allSelected;
+      codes.forEach((c) => {
+        if (shouldAdd) next.add(c);
+        else next.delete(c);
+      });
       return next;
     });
   };
@@ -657,7 +1337,7 @@ export default function CompanyAdminWorkspace() {
         phone: "",
         department_id: "",
         position_id: "",
-        role_code: "KT_TRUONG",
+        role_code: "ROLE_CHIEF_ACCOUNTANT",
       });
       loadWorkspaceData();
     } catch (err: any) {
@@ -688,36 +1368,51 @@ export default function CompanyAdminWorkspace() {
     }
   };
 
-  // Group permissions by prefix/module for intuitive matrix view
+  // Group permissions by clean Vietnamese module for detailed view
   const groupedPermissions = useMemo(() => {
     const groups: Record<string, PermissionItem[]> = {};
     const q = permSearch.toLowerCase().trim();
 
     allPermissions.forEach((p) => {
-      if (q && !p.code.toLowerCase().includes(q) && !p.description.toLowerCase().includes(q)) {
+      const d = parsePermissionDetails(p.code);
+      if (
+        q &&
+        !d.name.toLowerCase().includes(q) &&
+        !d.featureName.toLowerCase().includes(q) &&
+        !d.module.toLowerCase().includes(q) &&
+        !(p.description || "").toLowerCase().includes(q)
+      ) {
         return;
       }
-      const prefix = p.code.split(".")[0] || "KHAC";
-      let groupName = "Chức năng khác";
-      if (prefix === "SYS") groupName = "Hệ thống & Người dùng (SYS)";
-      else if (prefix === "CASH") groupName = "Quỹ tiền mặt (CASH)";
-      else if (prefix === "BANK") groupName = "Tiền gửi ngân hàng (BANK)";
-      else if (prefix === "SAL") groupName = "Bán hàng & Hóa đơn đầu ra (SAL)";
-      else if (prefix === "PUR") groupName = "Mua hàng & Chi phí (PUR)";
-      else if (prefix === "INV") groupName = "Kho & Hàng tồn kho (INV)";
-      else if (prefix === "GL") groupName = "Sổ cái & Tổng hợp (GL)";
-      else if (prefix === "TAX") groupName = "Thuế & Kê khai (TAX)";
-      else if (prefix === "RPT") groupName = "Báo cáo & Phân tích (RPT)";
-      else if (prefix === "MD") groupName = "Danh mục đối tượng, kho, hàng (MD)";
-      else if (prefix === "AP") groupName = "Công nợ phải trả (AP)";
-      else if (prefix === "AR") groupName = "Công nợ phải thu (AR)";
-
-      if (!groups[groupName]) groups[groupName] = [];
-      groups[groupName].push(p);
+      if (!groups[d.module]) groups[d.module] = [];
+      groups[d.module].push(p);
     });
 
     return groups;
   }, [allPermissions, permSearch]);
+
+  // Group 941 atomic permissions into ~65 clean accounting features by module
+  const groupedMatrixFeatures = useMemo(() => {
+    return groupPermissionCodesByModuleAndFeature(
+      allPermissions.map((p) => p.code),
+      permSearch
+    );
+  }, [allPermissions, permSearch]);
+
+  const selectedRoleSummary = useMemo(() => {
+    const codes = Array.from(selectedPermCodes);
+    const modules = new Set<string>();
+    const features = new Set<string>();
+    codes.forEach((c) => {
+      const d = parsePermissionDetails(c);
+      modules.add(d.moduleKey);
+      features.add(d.featureKey);
+    });
+    return {
+      moduleCount: modules.size,
+      featureCount: features.size,
+    };
+  }, [selectedPermCodes]);
 
   // Handle Assign Role to Member
   const handleAssignRole = async (e: React.FormEvent) => {
@@ -752,7 +1447,7 @@ export default function CompanyAdminWorkspace() {
   const ownerMember = useMemo(() => {
     return (
       members.find((m) =>
-        m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")
+        m.role_assignments?.some((r) => isAdminRoleCode(r.role_code))
       ) || members[0]
     );
   }, [members]);
@@ -760,9 +1455,96 @@ export default function CompanyAdminWorkspace() {
   const adminMembersCount = useMemo(() => {
     return members.filter(
       (m) =>
-        m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN")
+        m.role_assignments?.some((r) => isAdminRoleCode(r.role_code))
     ).length;
   }, [members]);
+
+  const activeRoles = useMemo(() => {
+    return roles
+      .filter((r) => r.status === "ACTIVE")
+      .sort((a, b) => (ROLE_RANK_MAP[a.code] || 500) - (ROLE_RANK_MAP[b.code] || 500));
+  }, [roles]);
+
+  const availableRolesCount = useMemo(() => {
+    return roles.filter((r) => r.status === "AVAILABLE" || r.status === "INACTIVE").length;
+  }, [roles]);
+
+  const filteredJoinRequests = useMemo(() => {
+    if (!joinStatusFilter) return joinRequests;
+    return joinRequests.filter((jr) => jr.status === joinStatusFilter);
+  }, [joinRequests, joinStatusFilter]);
+
+  const openDecideJoinModal = (item: AdminJoinRequestItem, decision: "APPROVED" | "REJECTED") => {
+    const defaultRole =
+      roles.find((r) => r.status === "ACTIVE" && (r.code === "ROLE_GENERAL_ACCOUNTANT" || r.code === "ROLE_SALES_ACCOUNTANT" || r.code === "ROLE_CHIEF_ACCOUNTANT")) ||
+      roles.find((r) => r.status === "ACTIVE" && !isAdminRoleCode(r.code)) ||
+      null;
+    setDecidingJoinReq({
+      item,
+      decision,
+      roleId: defaultRole ? defaultRole.id : "",
+      reason: "",
+      internalNote: "",
+      reactivate: false,
+    });
+  };
+
+  const handleDecideJoinRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!decidingJoinReq) return;
+    const effectiveToken = token || localStorage.getItem("erp_token") || "";
+    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || (companies.length > 0 ? companies[0].id : "");
+    if (!effectiveToken || !effectiveCompanyId) return;
+
+    if (decidingJoinReq.decision === "REJECTED" && !decidingJoinReq.reason.trim()) {
+      setAlertMsg({ type: "error", text: "Vui lòng nhập lý do từ chối yêu cầu tham gia." });
+      return;
+    }
+
+    setJoinDecideSaving(true);
+    setAlertMsg(null);
+    try {
+      const payload: Record<string, any> = {
+        company: effectiveCompanyId,
+        decision: decidingJoinReq.decision,
+        reason: decidingJoinReq.reason.trim(),
+        internal_note: decidingJoinReq.internalNote.trim(),
+      };
+      if (decidingJoinReq.decision === "APPROVED") {
+        if (decidingJoinReq.roleId) {
+          payload.role_assignments = [{ role: decidingJoinReq.roleId }];
+        }
+        payload.reactivate_membership = decidingJoinReq.reactivate;
+      }
+
+      await request(
+        `/api/v1/common/company-join-requests/${decidingJoinReq.item.id}/decide/?company_id=${encodeURIComponent(effectiveCompanyId)}`,
+        effectiveToken,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      setAlertMsg({
+        type: "success",
+        text:
+          decidingJoinReq.decision === "APPROVED"
+            ? `Đã chấp thuận ${decidingJoinReq.item.requester_name} gia nhập doanh nghiệp và cấp quyền thành viên!`
+            : `Đã từ chối yêu cầu gia nhập của ${decidingJoinReq.item.requester_name}.`,
+      });
+      setDecidingJoinReq(null);
+      await loadWorkspaceData();
+    } catch (err: any) {
+      setAlertMsg({ type: "error", text: err.message || "Không thể xử lý yêu cầu tham gia." });
+    } finally {
+      setJoinDecideSaving(false);
+    }
+  };
+
+  const pendingJoinRequestsCount = useMemo(() => {
+    return joinRequests.filter((jr) => jr.status === "PENDING").length;
+  }, [joinRequests]);
 
   // Filtered and sorted members for Tab 2 (sorted from HIGHEST rank to LOWEST rank)
   const filteredMembers = useMemo(() => {
@@ -776,7 +1558,7 @@ export default function CompanyAdminWorkspace() {
         (m.employee_code && m.employee_code.toLowerCase().includes(q));
 
       const isCompanyAdmin =
-        m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN") ||
+        m.role_assignments?.some((r) => isAdminRoleCode(r.role_code)) ||
         m.id === ownerMember?.id;
 
       const matchScope =
@@ -961,12 +1743,27 @@ export default function CompanyAdminWorkspace() {
           onClick={() => setActiveTab("personnel")}
         >
           <Users size={16} /> 2. Nhân sự & Phân quyền ({members.length})
+          {pendingJoinRequestsCount > 0 && (
+            <span
+              style={{
+                marginLeft: 6,
+                padding: "1px 7px",
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 700,
+                background: "#ef4444",
+                color: "#ffffff",
+              }}
+            >
+              {pendingJoinRequestsCount} chờ duyệt
+            </span>
+          )}
         </button>
         <button
           className={`admin-nav-tab ${activeTab === "roles" ? "active" : ""}`}
           onClick={() => setActiveTab("roles")}
         >
-          <ShieldCheck size={16} /> 3. Vai trò & Ma trận phân quyền ({roles.length})
+          <ShieldCheck size={16} /> 3. Vai trò & Ma trận phân quyền ({activeRoles.length}/{roles.length})
         </button>
         <button
           className={`admin-nav-tab ${activeTab === "config" ? "active" : ""}`}
@@ -997,8 +1794,8 @@ export default function CompanyAdminWorkspace() {
                   <ShieldCheck size={22} />
                 </div>
                 <div className="admin-kpi-data">
-                  <h4>Vai trò phân quyền</h4>
-                  <p>{roles.length}</p>
+                  <h4>Vai trò đang bật</h4>
+                  <p>{activeRoles.length} <span style={{ fontSize: "13.6px", fontWeight: 500, color: "#64748b" }}>/ {roles.length} chuẩn</span></p>
                 </div>
               </div>
               <div className="admin-kpi-card">
@@ -1048,7 +1845,7 @@ export default function CompanyAdminWorkspace() {
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Chế độ kế toán áp dụng</td>
-                        <td><strong>{formatAccountingRegime(companyInfo?.accounting_regime || "TT99")}</strong> (Áp dụng chính thức từ 01/01/2026 theo Bộ Tài chính)</td>
+                        <td><strong>{formatAccountingRegime(companyInfo?.accounting_regime || "TT99")}</strong></td>
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Địa chỉ trụ sở</td>
@@ -1076,9 +1873,9 @@ export default function CompanyAdminWorkspace() {
                   <button
                     className="admin-btn admin-btn-secondary"
                     style={{ justifyContent: "flex-start" }}
-                    onClick={handleSeedStandardRoles}
+                    onClick={() => handleSeedStandardRoles()}
                   >
-                    <Sparkles size={16} style={{ color: "var(--admin-primary)" }} /> Khởi tạo sẵn 6 vai trò mẫu nghiệp vụ (Kế toán trưởng, Thủ quỹ, Bán hàng, Mua hàng...)
+                    <Sparkles size={16} style={{ color: "var(--admin-primary)" }} /> Đồng bộ danh mục 21 vai trò chuẩn & Preset theo Chế độ kế toán (TT58 / TT133 / TT200 / TT99)
                   </button>
                   <button
                     className="admin-btn admin-btn-secondary"
@@ -1097,13 +1894,29 @@ export default function CompanyAdminWorkspace() {
                   >
                     <ShieldCheck size={16} /> Tinh chỉnh ma trận quyền cho từng Role
                   </button>
-                  <Link
-                    to="/join-requests-admin"
+                  <button
                     className="admin-btn admin-btn-secondary"
                     style={{ justifyContent: "flex-start" }}
+                    onClick={() => setActiveTab("personnel")}
                   >
                     <UserCheck size={16} /> Duyệt nhân sự xin gia nhập doanh nghiệp
-                  </Link>
+                    {pendingJoinRequestsCount > 0 && (
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          background: "#fef2f2",
+                          color: "#dc2626",
+                          border: "1px solid #fecaca",
+                        }}
+                      >
+                        {pendingJoinRequestsCount} yêu cầu mới
+                      </span>
+                    )}
+                  </button>
                   <Link
                     to="/fiscal-periods"
                     className="admin-btn admin-btn-secondary"
@@ -1154,14 +1967,14 @@ export default function CompanyAdminWorkspace() {
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1e293b" }}>
+                    <span style={{ fontWeight: 700, fontSize: "15.2px", color: "#1e293b" }}>
                       Quản trị viên Doanh nghiệp (Chủ tài khoản):
                     </span>
                     <span className="admin-badge admin-badge-gold">
-                      👑 {members.find(m => m.role_assignments?.some(r => r.role_code === "COMPANY_ADMIN"))?.email || companyInfo?.legal_representative || "Admin Doanh nghiệp"}
+                      👑 {members.find(m => m.role_assignments?.some(r => isAdminRoleCode(r.role_code)))?.email || companyInfo?.legal_representative || "Admin Doanh nghiệp"}
                     </span>
                   </div>
-                  <p style={{ margin: "0.2rem 0 0", fontSize: "0.825rem", color: "#475569" }}>
+                  <p style={{ margin: "0.2rem 0 0", fontSize: "13.2px", color: "#475569" }}>
                     Quản trị viên Doanh nghiệp nắm toàn quyền quản trị và phân bổ vai trò cho toàn bộ nhân sự trong doanh nghiệp <strong>{companyInfo?.name}</strong>. Các tài khoản còn lại thuộc doanh nghiệp và được cấp quyền theo vai trò nghiệp vụ.
                   </p>
                 </div>
@@ -1170,10 +1983,10 @@ export default function CompanyAdminWorkspace() {
                 <button
                   className="admin-btn admin-btn-light"
                   style={{ background: "#ffffff", color: "var(--admin-primary)", border: "1px solid #bfdbfe" }}
-                  onClick={handleSeedStandardRoles}
-                  title="Khởi tạo sẵn 6 vai trò mẫu"
+                  onClick={() => handleSeedStandardRoles()}
+                  title="Đồng bộ danh mục 21 vai trò chuẩn theo Chế độ kế toán"
                 >
-                  <Sparkles size={14} /> Khởi tạo 6 vai trò mẫu
+                  <Sparkles size={14} /> Đồng bộ Role theo Thông tư
                 </button>
                 <button
                   className="admin-btn admin-btn-primary"
@@ -1218,8 +2031,8 @@ export default function CompanyAdminWorkspace() {
                   <ShieldCheck size={20} />
                 </div>
                 <div className="admin-kpi-data">
-                  <h4>Bộ vai trò hiện có</h4>
-                  <p>{roles.length} vai trò</p>
+                  <h4>Bộ vai trò đang bật</h4>
+                  <p>{activeRoles.length} <span style={{ fontSize: "13.1px", fontWeight: 500, color: "#64748b" }}>/ {roles.length} chuẩn</span></p>
                 </div>
               </div>
             </div>
@@ -1240,27 +2053,36 @@ export default function CompanyAdminWorkspace() {
                       onChange={(e) => setMemberSearch(e.target.value)}
                       style={{ minWidth: 220 }}
                     />
-                    <select
-                      className="admin-select"
+                    <MisaDropdownSelect
                       value={memberScopeFilter}
-                      onChange={(e) => setMemberScopeFilter(e.target.value as any)}
-                    >
-                      <option value="all">Tất cả phân cấp</option>
-                      <option value="admin">👑 Chỉ Admin Doanh nghiệp</option>
-                      <option value="staff">👤 Chỉ Nhân sự nghiệp vụ</option>
-                    </select>
-                    <select
-                      className="admin-select"
+                      onChange={(val) => setMemberScopeFilter(val as any)}
+                      minWidth={195}
+                      searchable={false}
+                      options={[
+                        { value: "all", label: "Tất cả phân cấp" },
+                        { value: "admin", label: "👑 Chỉ Admin Doanh nghiệp" },
+                        { value: "staff", label: "👤 Chỉ Nhân sự nghiệp vụ" },
+                      ]}
+                    />
+                    <MisaDropdownSelect
                       value={memberRoleFilter}
-                      onChange={(e) => setMemberRoleFilter(e.target.value)}
-                    >
-                      <option value="">Tất cả vai trò</option>
-                      {roles.map((r) => (
-                        <option key={r.id} value={r.code}>
-                          {formatRoleDisplayName(r.code, r.name)}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMemberRoleFilter(val)}
+                      minWidth={220}
+                      searchPlaceholder="Tìm vai trò nghiệp vụ..."
+                      options={[
+                        { value: "", label: "Tất cả vai trò đang dùng" },
+                        ...activeRoles.map((r) => {
+                          const gInfo = ROLE_GROUP_MAP[r.code];
+                          return {
+                            value: r.code,
+                            label: formatRoleDisplayName(r.code, r.name),
+                            badge: gInfo?.groupVi,
+                            badgeBg: gInfo?.badgeBg,
+                            badgeColor: gInfo?.badgeColor,
+                          };
+                        }),
+                      ]}
+                    />
                   </div>
                 </div>
               </div>
@@ -1286,7 +2108,7 @@ export default function CompanyAdminWorkspace() {
                     ) : (
                       filteredMembers.map((m) => {
                         const isCompanyAdmin =
-                          m.role_assignments?.some((r) => r.role_code === "COMPANY_ADMIN" || r.role_code === "ADMIN") ||
+                          m.role_assignments?.some((r) => isAdminRoleCode(r.role_code)) ||
                           m.id === ownerMember?.id;
 
                         return (
@@ -1306,7 +2128,7 @@ export default function CompanyAdminWorkspace() {
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontWeight: 700,
-                                    fontSize: "0.9rem",
+                                    fontSize: "14.4px",
                                     boxShadow: isCompanyAdmin ? "0 1px 3px rgba(234, 179, 8, 0.4)" : "none",
                                     border: isCompanyAdmin ? "2px solid #eab308" : "1px solid #93c5fd",
                                     flexShrink: 0,
@@ -1316,16 +2138,16 @@ export default function CompanyAdminWorkspace() {
                                 </div>
                                 <div>
                                   <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                                    <strong style={{ fontSize: "0.9rem", color: isCompanyAdmin ? "#92400e" : "#1e293b" }}>
+                                    <strong style={{ fontSize: "14.4px", color: isCompanyAdmin ? "#92400e" : "#1e293b" }}>
                                       {m.full_name || m.email}
                                     </strong>
                                     {isCompanyAdmin && <Sparkles size={13} color="#eab308" />}
                                   </div>
-                                  <div style={{ fontSize: "0.8rem", color: "#64748b", fontFamily: "monospace" }}>
+                                  <div style={{ fontSize: "12.8px", color: "#64748b", fontFamily: "monospace" }}>
                                     {m.email}
                                   </div>
                                   {m.phone && (
-                                    <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                                    <div style={{ fontSize: "12px", color: "#94a3b8" }}>
                                       SĐT: {m.phone}
                                     </div>
                                   )}
@@ -1349,17 +2171,20 @@ export default function CompanyAdminWorkspace() {
                                   m.role_assignments.map((ra) => {
                                     let badgeClass = "admin-badge-role";
                                     let icon = <Briefcase size={12} />;
-                                    if (ra.role_code === "COMPANY_ADMIN" || ra.role_code === "ADMIN") {
+                                    if (isAdminRoleCode(ra.role_code)) {
                                       badgeClass = "admin-badge-gold";
                                       icon = <Sparkles size={12} />;
-                                    } else if (ra.role_code === "KT_TRUONG") {
+                                    } else if (ra.role_code === "ROLE_DIRECTOR") {
+                                      badgeClass = "admin-badge-gold";
+                                      icon = <ShieldCheck size={12} />;
+                                    } else if (ra.role_code === "ROLE_CHIEF_ACCOUNTANT" || ra.role_code === "KT_TRUONG") {
                                       badgeClass = "admin-badge-purple";
                                       icon = <ShieldCheck size={12} />;
-                                    } else if (ra.role_code === "THU_QUY") {
+                                    } else if (ra.role_code === "ROLE_TREASURER" || ra.role_code === "THU_QUY" || ra.role_code === "ROLE_CASH_ACCOUNTANT" || ra.role_code === "ROLE_BANK_ACCOUNTANT") {
                                       badgeClass = "admin-badge-active";
-                                    } else if (ra.role_code === "KT_BANHANG") {
+                                    } else if (ra.role_code === "ROLE_SALES_ACCOUNTANT" || ra.role_code === "KT_BANHANG" || ra.role_code === "ROLE_AR_ACCOUNTANT") {
                                       badgeClass = "admin-badge-blue";
-                                    } else if (ra.role_code === "KT_MUAHANG") {
+                                    } else if (ra.role_code === "ROLE_PURCHASE_ACCOUNTANT" || ra.role_code === "KT_MUAHANG" || ra.role_code === "ROLE_AP_ACCOUNTANT") {
                                       badgeClass = "admin-badge-pending";
                                     }
                                     return (
@@ -1381,7 +2206,7 @@ export default function CompanyAdminWorkspace() {
                                   {m.employee_department_name || "Phòng Kế toán - Tài chính"}
                                 </span>
                                 {m.employee_code && (
-                                  <div style={{ fontSize: "0.75rem", color: "var(--admin-text-muted)" }}>
+                                  <div style={{ fontSize: "12px", color: "var(--admin-text-muted)" }}>
                                     Mã NV: {m.employee_code}
                                   </div>
                                 )}
@@ -1397,7 +2222,7 @@ export default function CompanyAdminWorkspace() {
                                   style={{ whiteSpace: "nowrap", flexShrink: 0 }}
                                   onClick={() => {
                                     setAssignModalMember(m);
-                                    setTargetRoleCode(m.role_assignments[0]?.role_code || "KT_TRUONG");
+                                    setTargetRoleCode(m.role_assignments[0]?.role_code || "ROLE_CHIEF_ACCOUNTANT");
                                     setAssignReason(`Admin phân công vai trò cho ${m.full_name || m.email}`);
                                   }}
                                   title="Đổi vai trò và phân quyền nghiệp vụ cho nhân sự này"
@@ -1413,9 +2238,9 @@ export default function CompanyAdminWorkspace() {
                                     setSelectedModalModule("ALL");
                                     setCollapsedModules({});
                                   }}
-                                  title="Xem danh sách quyền thực tế"
+                                  title="Xem phạm vi phân hệ và quyền nghiệp vụ được cấp"
                                 >
-                                  <KeyRound size={13} /> Quyền ({m.effective_permissions?.length || 0})
+                                  <KeyRound size={13} /> {summarizeMemberPermissions(m.effective_permissions, isCompanyAdmin).buttonLabel}
                                 </button>
                               </div>
                             </td>
@@ -1454,7 +2279,7 @@ export default function CompanyAdminWorkspace() {
                       >
                         <div>
                           <strong>{dept.name}</strong>
-                          <span style={{ marginLeft: "0.5rem", color: "var(--admin-text-muted)", fontSize: "0.8rem" }}>
+                          <span style={{ marginLeft: "0.5rem", color: "var(--admin-text-muted)", fontSize: "12.8px" }}>
                             ({dept.code})
                           </span>
                         </div>
@@ -1466,21 +2291,114 @@ export default function CompanyAdminWorkspace() {
               </div>
 
               <div className="admin-card">
-                <div className="admin-card-header">
-                  <h3>
-                    <UserCheck size={18} /> Phê duyệt Gia nhập Doanh nghiệp
+                <div className="admin-card-header" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                  <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <UserCheck size={18} /> Phê duyệt Gia nhập Doanh nghiệp ({joinRequests.length})
+                    {pendingJoinRequestsCount > 0 && (
+                      <span className="admin-badge admin-badge-pending">
+                        {pendingJoinRequestsCount} chờ duyệt
+                      </span>
+                    )}
                   </h3>
-                  <Link to="/join-requests-admin" className="admin-btn admin-btn-secondary admin-btn-sm">
-                    Xem toàn bộ
-                  </Link>
+                  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <MisaDropdownSelect
+                      value={joinStatusFilter}
+                      onChange={(val) => setJoinStatusFilter(val)}
+                      minWidth={175}
+                      searchable={false}
+                      options={[
+                        { value: "PENDING", label: `Chờ xử lý (${pendingJoinRequestsCount})` },
+                        { value: "APPROVED", label: `Đã duyệt (${joinRequests.filter((j) => j.status === "APPROVED").length})` },
+                        { value: "REJECTED", label: `Từ chối (${joinRequests.filter((j) => j.status === "REJECTED").length})` },
+                        { value: "", label: `Tất cả (${joinRequests.length})` },
+                      ]}
+                    />
+                    <Link to="/join-requests-admin" className="admin-btn admin-btn-secondary admin-btn-sm">
+                      Mở trang riêng
+                    </Link>
+                  </div>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-                    Nhân viên khi đăng ký tài khoản có thể gửi yêu cầu gia nhập vào doanh nghiệp. Admin có quyền duyệt để nhân viên chính thức truy cập hệ thống.
-                  </p>
-                  <Link to="/join-requests-admin" className="admin-btn admin-btn-primary">
-                    Mở trang xét duyệt yêu cầu gia nhập
-                  </Link>
+                  {filteredJoinRequests.length === 0 ? (
+                    <div style={{ padding: "1.25rem 0.5rem", textAlign: "center", color: "var(--admin-text-muted)", fontSize: "13.6px" }}>
+                      {joinStatusFilter === "PENDING"
+                        ? "Hiện không có yêu cầu xin gia nhập nào đang chờ duyệt."
+                        : "Không có yêu cầu gia nhập nào ở trạng thái này."}
+                    </div>
+                  ) : (
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                      {filteredJoinRequests.map((req) => (
+                        <li
+                          key={req.id}
+                          style={{
+                            padding: "0.85rem 1rem",
+                            border: req.status === "PENDING" ? "1px solid #fde68a" : "1px solid #e2e8f0",
+                            background: req.status === "PENDING" ? "#fffbeb" : "#f8fafc",
+                            borderRadius: 8,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            gap: "0.75rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 220 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                              <strong style={{ fontSize: "14.7px", color: "#0f172a" }}>{req.requester_name}</strong>
+                              <span
+                                className={`admin-badge ${
+                                  req.status === "APPROVED"
+                                    ? "admin-badge-active"
+                                    : req.status === "PENDING"
+                                    ? "admin-badge-pending"
+                                    : "admin-badge-suspended"
+                                }`}
+                              >
+                                {req.status_display || (req.status === "PENDING" ? "Chờ xử lý" : req.status === "APPROVED" ? "Đã duyệt" : req.status)}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: "12.8px", color: "#475569", marginTop: 3 }}>
+                              Email: <strong>{req.requester_email || "—"}</strong>
+                              {req.requester_phone ? <> · SĐT: <strong>{req.requester_phone}</strong></> : null}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: 2 }}>
+                              Gửi lúc: {new Date(req.created_at).toLocaleString("vi-VN")}
+                            </div>
+                            {req.message && (
+                              <div style={{ fontSize: "13.1px", color: "#1e293b", marginTop: 6, background: "#ffffff", padding: "6px 10px", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                                <strong>Lời nhắn:</strong> {req.message}
+                              </div>
+                            )}
+                            {req.decision_reason && (
+                              <div style={{ fontSize: "12.5px", color: req.status === "REJECTED" ? "#b91c1c" : "#047857", marginTop: 4 }}>
+                                <strong>Lý do xử lý:</strong> {req.decision_reason}
+                              </div>
+                            )}
+                          </div>
+                          {req.status === "PENDING" && (
+                            <div style={{ display: "flex", gap: "0.45rem", alignItems: "center" }}>
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn-primary admin-btn-sm"
+                                style={{ background: "#059669", borderColor: "#047857" }}
+                                onClick={() => openDecideJoinModal(req, "APPROVED")}
+                              >
+                                <Check size={14} /> Chấp thuận
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-btn admin-btn-secondary admin-btn-sm"
+                                style={{ color: "#b91c1c", borderColor: "#fca5a5", background: "#ffffff" }}
+                                onClick={() => openDecideJoinModal(req, "REJECTED")}
+                              >
+                                <X size={14} /> Từ chối
+                              </button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>
@@ -1490,74 +2408,351 @@ export default function CompanyAdminWorkspace() {
         {/* ================= TAB 3: ROLES & PERMISSION MATRIX ================= */}
         {activeTab === "roles" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
-                  Ma trận Vai trò & Phân quyền Chi tiết (RBAC)
+                <h2 style={{ margin: 0, fontSize: "18.4px", fontWeight: 700 }}>
+                  Ma trận 21 Vai trò Chuẩn & Phân bổ theo 4 Thông tư Chế độ Kế toán
                 </h2>
-                <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.825rem", color: "var(--admin-text-muted)" }}>
-                  Chọn một vai trò bên trái để cấu hình chi tiết danh mục quyền được phép Xem, Lập, Sửa, Duyệt, Ghi sổ...
+                <p style={{ margin: "0.25rem 0 0 0", fontSize: "13.2px", color: "var(--admin-text-muted)" }}>
+                  Hệ thống cung cấp đủ <strong>21 vai trò chuẩn</strong> nhưng chỉ bật số lượng Role phù hợp với quy mô doanh nghiệp (tránh rối cho DN siêu nhỏ TT58). Bạn có thể chuyển đổi Preset hoặc Bật/Tắt từng Role bất kỳ lúc nào.
                 </p>
               </div>
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <button className="admin-btn admin-btn-primary" onClick={handleSeedStandardRoles}>
-                  <Sparkles size={15} /> Khởi tạo 6 vai trò mẫu
+              <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                <button className="admin-btn admin-btn-primary" onClick={() => handleSeedStandardRoles()}>
+                  <Sparkles size={15} /> Đồng bộ theo Thông tư công ty ({companyInfo?.accounting_regime || "TT99"})
                 </button>
                 <button className="admin-btn admin-btn-secondary" onClick={() => setShowRoleModal(true)}>
-                  <Plus size={15} /> Tạo vai trò mới
+                  <Plus size={15} /> Tạo vai trò tùy chỉnh
                 </button>
               </div>
+            </div>
+
+            {/* 4-REGIME ROLE PRESET SELECTOR CARDS */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(235px, 1fr))",
+                gap: "0.85rem",
+                marginBottom: "1.25rem",
+              }}
+            >
+              {REGIME_ROLE_PRESETS.map((preset) => {
+                const companyRegime = (companyInfo?.accounting_regime || "").toUpperCase();
+                const isCompanyRegime =
+                  (preset.key === "TT58" && companyRegime.includes("58")) ||
+                  (preset.key === "TT133" && companyRegime.includes("133")) ||
+                  (preset.key === "TT200" && companyRegime.includes("200")) ||
+                  (preset.key === "TT99" && (companyRegime.includes("99") || !companyRegime));
+                const isCurrentCountMatch = activeRoles.length === preset.activeCount;
+                return (
+                  <div
+                    key={preset.key}
+                    style={{
+                      background: isCurrentCountMatch ? "linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)" : "#ffffff",
+                      border: isCurrentCountMatch ? `2px solid ${preset.color}` : "1px solid #e2e8f0",
+                      borderRadius: "10px",
+                      padding: "0.9rem 1rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: "0.55rem",
+                      boxShadow: isCurrentCountMatch ? "0 4px 12px rgba(37, 99, 235, 0.08)" : "0 1px 2px rgba(15, 23, 42, 0.03)",
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.4rem", marginBottom: "0.3rem" }}>
+                        <span
+                          style={{
+                            fontSize: "11.5px",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            background: `${preset.color}15`,
+                            color: preset.color,
+                          }}
+                        >
+                          {preset.badge}
+                        </span>
+                        {isCompanyRegime && (
+                          <span style={{ fontSize: "11.2px", fontWeight: 700, color: "#059669", background: "#ecfdf5", padding: "2px 6px", borderRadius: 4 }}>
+                            Thông tư hiện tại
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: "14.7px", color: "#0f172a" }}>{preset.label}</div>
+                      <div style={{ fontSize: "12.5px", fontWeight: 600, color: preset.color, marginTop: 2 }}>{preset.subtitle}</div>
+                      <p style={{ fontSize: "12.2px", color: "#64748b", margin: "0.35rem 0 0", lineHeight: 1.4 }}>{preset.desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-sm"
+                      style={{
+                        width: "100%",
+                        justifyContent: "center",
+                        background: isCurrentCountMatch ? preset.color : "#f8fafc",
+                        color: isCurrentCountMatch ? "#ffffff" : "#1e293b",
+                        border: isCurrentCountMatch ? `1px solid ${preset.color}` : "1px solid #cbd5e1",
+                        fontWeight: 600,
+                      }}
+                      onClick={() => handleSeedStandardRoles(preset.key)}
+                    >
+                      {isCurrentCountMatch ? `✓ Đang áp dụng (${preset.activeCount} Role)` : `Áp dụng bộ ${preset.activeCount} Role (${preset.key})`}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="admin-matrix-layout">
               {/* Role Sidebar */}
               <div className="admin-role-sidebar">
-                <div style={{ padding: "0.75rem", borderBottom: "1px solid var(--admin-border)", backgroundColor: "#f8fafc" }}>
+                <div style={{ padding: "0.75rem", borderBottom: "1px solid var(--admin-border)", backgroundColor: "#f8fafc", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <input
                     type="text"
                     className="admin-input"
                     style={{ width: "100%" }}
-                    placeholder="Tìm vai trò..."
+                    placeholder="Tìm kiếm vai trò nghiệp vụ..."
                     value={roleSearch}
                     onChange={(e) => setRoleSearch(e.target.value)}
+                  />
+                  <div style={{ display: "flex", gap: "0.35rem" }}>
+                    <button
+                      type="button"
+                      onClick={() => setRoleStatusFilter("ALL")}
+                      style={{
+                        flex: 1,
+                        padding: "4px 6px",
+                        fontSize: "11.7px",
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        border: roleStatusFilter === "ALL" ? "1px solid #2563eb" : "1px solid #cbd5e1",
+                        background: roleStatusFilter === "ALL" ? "#eff6ff" : "#ffffff",
+                        color: roleStatusFilter === "ALL" ? "#1d4ed8" : "#475569",
+                      }}
+                    >
+                      Tất cả ({roles.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRoleStatusFilter("ACTIVE")}
+                      style={{
+                        flex: 1,
+                        padding: "4px 6px",
+                        fontSize: "11.7px",
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        border: roleStatusFilter === "ACTIVE" ? "1px solid #059669" : "1px solid #cbd5e1",
+                        background: roleStatusFilter === "ACTIVE" ? "#ecfdf5" : "#ffffff",
+                        color: roleStatusFilter === "ACTIVE" ? "#047857" : "#475569",
+                      }}
+                    >
+                      Đang bật ({activeRoles.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRoleStatusFilter("AVAILABLE")}
+                      style={{
+                        flex: 1,
+                        padding: "4px 6px",
+                        fontSize: "11.7px",
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        border: roleStatusFilter === "AVAILABLE" ? "1px solid #d97706" : "1px solid #cbd5e1",
+                        background: roleStatusFilter === "AVAILABLE" ? "#fffbeb" : "#ffffff",
+                        color: roleStatusFilter === "AVAILABLE" ? "#b45309" : "#475569",
+                      }}
+                    >
+                      Dự phòng ({availableRolesCount})
+                    </button>
+                  </div>
+                  <MisaDropdownSelect
+                    fullWidth
+                    searchable={false}
+                    value={roleGroupFilter}
+                    onChange={(val) => setRoleGroupFilter(val)}
+                    buttonStyle={{ height: 34, fontSize: "12.8px" }}
+                    options={[
+                      { value: "ALL", label: "Tất cả nhóm vai trò (7 nhóm)" },
+                      { value: "System", label: "Nhóm Quản trị Hệ thống", badge: "Quản trị", badgeBg: "#fef3c7", badgeColor: "#92400e" },
+                      { value: "Management", label: "Nhóm Ban Giám đốc", badge: "Điều hành", badgeBg: "#f3e8ff", badgeColor: "#6b21a8" },
+                      { value: "Accounting", label: "Nhóm Kế toán Chuyên môn (12 vai trò)", badge: "Kế toán", badgeBg: "#dbeafe", badgeColor: "#1e40af" },
+                      { value: "Operation", label: "Nhóm Vận hành Kho / Quỹ / Mua / Bán", badge: "Vận hành", badgeBg: "#d1fae5", badgeColor: "#065f46" },
+                      { value: "Approval", label: "Nhóm Phê duyệt chứng từ", badge: "Phê duyệt", badgeBg: "#ffedd5", badgeColor: "#9a3412" },
+                      { value: "Control", label: "Nhóm Kiểm soát / Kiểm toán", badge: "Kiểm soát", badgeBg: "#e0e7ff", badgeColor: "#3730a3" },
+                      { value: "View Only", label: "Nhóm Xem báo cáo", badge: "Chỉ xem", badgeBg: "#f1f5f9", badgeColor: "#475569" },
+                    ]}
                   />
                 </div>
                 <div style={{ maxHeight: "650px", overflowY: "auto" }}>
                   {roles
-                    .filter((r) => !roleSearch || r.name.toLowerCase().includes(roleSearch.toLowerCase()) || r.code.toLowerCase().includes(roleSearch.toLowerCase()))
-                    .map((r) => (
-                      <div
-                        key={r.id}
-                        className={`admin-role-item ${selectedRole?.id === r.id ? "active" : ""}`}
-                        onClick={() => setSelectedRole(r)}
-                      >
-                        <div className="admin-role-code">{formatRoleDisplayName(r.code, r.name)}</div>
-                        <div className="admin-role-name">
-                          {r.role_type === "STANDARD" ? "Mẫu nghiệp vụ chuẩn" : "Vai trò tùy biến"}
+                    .filter((r) => {
+                      if (roleStatusFilter === "ACTIVE" && r.status !== "ACTIVE") return false;
+                      if (roleStatusFilter === "AVAILABLE" && r.status === "ACTIVE") return false;
+                      const rGroup = r.role_group || ROLE_GROUP_MAP[r.code]?.group || "Custom";
+                      if (roleGroupFilter !== "ALL" && rGroup !== roleGroupFilter) return false;
+                      if (!roleSearch) return true;
+                      const q = roleSearch.toLowerCase();
+                      return (
+                        r.name.toLowerCase().includes(q) ||
+                        r.code.toLowerCase().includes(q) ||
+                        formatRoleDisplayName(r.code, r.name).toLowerCase().includes(q)
+                      );
+                    })
+                    .map((r) => {
+                      const groupInfo = ROLE_GROUP_MAP[r.code] || {
+                        group: r.role_group || "Custom",
+                        groupVi: "Tùy chỉnh",
+                        badgeBg: "#f1f5f9",
+                        badgeColor: "#475569",
+                      };
+                      const isActiveRole = r.status === "ACTIVE";
+                      return (
+                        <div
+                          key={r.id}
+                          className={`admin-role-item ${selectedRole?.id === r.id ? "active" : ""}`}
+                          onClick={() => setSelectedRole(r)}
+                          style={{ opacity: isActiveRole ? 1 : 0.78 }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.4rem" }}>
+                            <div className="admin-role-code" style={{ fontSize: "13.8px" }}>
+                              {formatRoleDisplayName(r.code, r.name)}
+                            </div>
+                            {!isAdminRoleCode(r.code) && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleToggleRoleStatus(r, e)}
+                                title={isActiveRole ? "Tạm ẩn vai trò này khỏi danh sách phân công" : "Kích hoạt vai trò này để sử dụng trong công ty"}
+                                style={{
+                                  fontSize: "10.9px",
+                                  fontWeight: 700,
+                                  padding: "2px 7px",
+                                  borderRadius: 999,
+                                  cursor: "pointer",
+                                  border: isActiveRole ? "1px solid #bbf7d0" : "1px solid #cbd5e1",
+                                  background: isActiveRole ? "#dcfce7" : "#f1f5f9",
+                                  color: isActiveRole ? "#166534" : "#475569",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {isActiveRole ? "Đang bật" : "+ Bật dùng"}
+                              </button>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
+                            <span
+                              style={{
+                                fontSize: "10.9px",
+                                fontWeight: 600,
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                                background: groupInfo.badgeBg,
+                                color: groupInfo.badgeColor,
+                              }}
+                            >
+                              {groupInfo.groupVi}
+                            </span>
+                            <span style={{ fontSize: "11.2px", color: "#64748b" }}>
+                              {formatRoleScopeSummary(r)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </div>
 
               {/* Permission Matrix for Selected Role */}
               <div className="admin-card" style={{ marginBottom: 0 }}>
-                <div className="admin-card-header">
+                <div className="admin-card-header" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
                   <div>
                     <h3>
-                      <ShieldCheck size={18} /> Phân quyền cho vai trò: <strong>{formatRoleDisplayName(selectedRole?.code || "", selectedRole?.name)}</strong>
+                      <ShieldCheck size={18} /> Phân quyền cho vai trò:{" "}
+                      <strong>{formatRoleDisplayName(selectedRole?.code || "", selectedRole?.name)}</strong>
                     </h3>
-                    <span style={{ fontSize: "0.8rem", color: "var(--admin-text-muted)" }}>
-                      Đang cấp <strong>{selectedPermCodes.size}</strong> quyền trong hệ thống.
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          background: "#eff6ff",
+                          color: "#1d4ed8",
+                          border: "1px solid #bfdbfe",
+                        }}
+                      >
+                        {selectedRoleSummary.moduleCount}/15 phân hệ nghiệp vụ
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          background: "#f0fdf4",
+                          color: "#15803d",
+                          border: "1px solid #bbf7d0",
+                        }}
+                      >
+                        {selectedRoleSummary.featureCount} nhóm nghiệp vụ được cấp
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        background: "#f1f5f9",
+                        padding: 3,
+                        borderRadius: 8,
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setMatrixViewMode("grouped")}
+                        style={{
+                          padding: "4px 10px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          borderRadius: 6,
+                          border: "none",
+                          cursor: "pointer",
+                          background: matrixViewMode === "grouped" ? "#ffffff" : "transparent",
+                          color: matrixViewMode === "grouped" ? "#1d4ed8" : "#64748b",
+                          boxShadow: matrixViewMode === "grouped" ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                        }}
+                      >
+                        Theo nghiệp vụ (Gọn)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMatrixViewMode("detailed")}
+                        style={{
+                          padding: "4px 10px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          borderRadius: 6,
+                          border: "none",
+                          cursor: "pointer",
+                          background: matrixViewMode === "detailed" ? "#ffffff" : "transparent",
+                          color: matrixViewMode === "detailed" ? "#1d4ed8" : "#64748b",
+                          boxShadow: matrixViewMode === "detailed" ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                        }}
+                      >
+                        Chi tiết thao tác
+                      </button>
+                    </div>
                     <input
                       type="text"
                       className="admin-input"
-                      placeholder="Lọc mã quyền / mô tả..."
+                      placeholder="Tìm nghiệp vụ / phân hệ..."
                       value={permSearch}
                       onChange={(e) => setPermSearch(e.target.value)}
+                      style={{ width: 200 }}
                     />
                     <button
                       className="admin-btn admin-btn-success"
@@ -1569,8 +2764,192 @@ export default function CompanyAdminWorkspace() {
                   </div>
                 </div>
 
-                <div className="admin-card-body" style={{ maxHeight: "600px", overflowY: "auto" }}>
-                  {Object.keys(groupedPermissions).length === 0 ? (
+                <div className="admin-card-body admin-custom-scroll" style={{ maxHeight: "620px", overflowY: "auto" }}>
+                  {matrixViewMode === "grouped" ? (
+                    Object.keys(groupedMatrixFeatures).length === 0 ? (
+                      <p style={{ color: "var(--admin-text-muted)", textAlign: "center", padding: "2rem" }}>
+                        Không tìm thấy nghiệp vụ phù hợp.
+                      </p>
+                    ) : (
+                      Object.entries(groupedMatrixFeatures).map(([moduleTitle, features]) => {
+                        const moduleAllCodes = features.flatMap((f) => f.codes);
+                        const moduleSelectedCount = moduleAllCodes.filter((c) => selectedPermCodes.has(c)).length;
+                        const isModuleAllSelected = moduleAllCodes.length > 0 && moduleSelectedCount === moduleAllCodes.length;
+                        const moduleViewCodes = features.flatMap((f) => f.tiers.VIEW);
+
+                        return (
+                          <div
+                            key={moduleTitle}
+                            style={{
+                              marginBottom: "1.1rem",
+                              border: "1px solid #e2e8f0",
+                              borderRadius: 10,
+                              overflow: "hidden",
+                              background: "#ffffff",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                                gap: "0.5rem",
+                                padding: "0.55rem 0.85rem",
+                                backgroundColor: "#f8fafc",
+                                borderBottom: "1px solid #e2e8f0",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <strong style={{ fontSize: "14.1px", color: "#0f172a" }}>{moduleTitle}</strong>
+                                <span
+                                  style={{
+                                    fontSize: "11.5px",
+                                    fontWeight: 600,
+                                    padding: "1px 7px",
+                                    borderRadius: 999,
+                                    background: moduleSelectedCount > 0 ? "#dbeafe" : "#f1f5f9",
+                                    color: moduleSelectedCount > 0 ? "#1e40af" : "#64748b",
+                                  }}
+                                >
+                                  {features.length} nghiệp vụ
+                                </span>
+                              </div>
+                              <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                                {moduleViewCodes.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      togglePermissionBatch(moduleAllCodes, false);
+                                      togglePermissionBatch(moduleViewCodes, true);
+                                    }}
+                                    style={{
+                                      fontSize: "11.5px",
+                                      fontWeight: 600,
+                                      padding: "3px 8px",
+                                      borderRadius: 6,
+                                      border: "1px solid #bfdbfe",
+                                      background: "#eff6ff",
+                                      color: "#1d4ed8",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Chỉ cấp quyền Xem
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => togglePermissionBatch(moduleAllCodes, !isModuleAllSelected)}
+                                  style={{
+                                    fontSize: "11.5px",
+                                    fontWeight: 600,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    border: isModuleAllSelected ? "1px solid #fca5a5" : "1px solid #bbf7d0",
+                                    background: isModuleAllSelected ? "#fef2f2" : "#f0fdf4",
+                                    color: isModuleAllSelected ? "#b91c1c" : "#15803d",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {isModuleAllSelected ? "Bỏ chọn phân hệ" : "Chọn cả phân hệ"}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", flexDirection: "column" }}>
+                              {features.map((feat, fIdx) => {
+                                const featSelectedCount = feat.codes.filter((c) => selectedPermCodes.has(c)).length;
+                                const isFeatAll = feat.codes.length > 0 && featSelectedCount === feat.codes.length;
+                                const isFeatPartial = featSelectedCount > 0 && !isFeatAll;
+
+                                return (
+                                  <div
+                                    key={feat.featureKey}
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                      gap: "0.75rem",
+                                      flexWrap: "wrap",
+                                      padding: "0.6rem 0.85rem",
+                                      borderBottom: fIdx === features.length - 1 ? "none" : "1px solid #f1f5f9",
+                                      background: featSelectedCount > 0 ? "#fcfdff" : "#ffffff",
+                                    }}
+                                  >
+                                    <label
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.55rem",
+                                        cursor: "pointer",
+                                        minWidth: 220,
+                                        flex: 1,
+                                      }}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isFeatAll}
+                                        ref={(el) => {
+                                          if (el) el.indeterminate = isFeatPartial;
+                                        }}
+                                        onChange={() => togglePermissionBatch(feat.codes, !isFeatAll)}
+                                      />
+                                      <span
+                                        style={{
+                                          fontWeight: 600,
+                                          fontSize: "13.3px",
+                                          color: featSelectedCount > 0 ? "#0f172a" : "#475569",
+                                        }}
+                                      >
+                                        {feat.featureName}
+                                      </span>
+                                    </label>
+
+                                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                                      {(["VIEW", "EDIT", "APPROVE", "EXPORT", "ADMIN"] as PermTierKey[]).map((tierKey) => {
+                                        const tierCodes = feat.tiers[tierKey];
+                                        if (!tierCodes || tierCodes.length === 0) return null;
+                                        const tierMeta = PERM_TIER_META[tierKey];
+                                        const activeCount = tierCodes.filter((c) => selectedPermCodes.has(c)).length;
+                                        const isActive = activeCount > 0;
+                                        const isAllTier = activeCount === tierCodes.length;
+
+                                        return (
+                                          <button
+                                            key={tierKey}
+                                            type="button"
+                                            onClick={() => togglePermissionBatch(tierCodes, !isAllTier)}
+                                            title={`${tierMeta.label} (${activeCount}/${tierCodes.length} thao tác)`}
+                                            style={{
+                                              display: "inline-flex",
+                                              alignItems: "center",
+                                              gap: 4,
+                                              padding: "3px 9px",
+                                              borderRadius: 999,
+                                              fontSize: "11.7px",
+                                              fontWeight: 600,
+                                              cursor: "pointer",
+                                              transition: "all 0.15s ease",
+                                              border: isActive ? `1px solid ${tierMeta.border}` : "1px solid #e2e8f0",
+                                              background: isActive ? tierMeta.bg : "#f8fafc",
+                                              color: isActive ? tierMeta.color : "#94a3b8",
+                                            }}
+                                          >
+                                            {isActive ? <Check size={11} strokeWidth={3} /> : null}
+                                            <span>{tierMeta.shortLabel}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )
+                  ) : Object.keys(groupedPermissions).length === 0 ? (
                     <p style={{ color: "var(--admin-text-muted)", textAlign: "center", padding: "2rem" }}>
                       Không tìm thấy quyền phù hợp.
                     </p>
@@ -1580,7 +2959,7 @@ export default function CompanyAdminWorkspace() {
                         <div
                           style={{
                             fontWeight: 700,
-                            fontSize: "0.9rem",
+                            fontSize: "14.4px",
                             padding: "0.4rem 0.6rem",
                             backgroundColor: "#f1f5f9",
                             borderRadius: "4px",
@@ -1597,7 +2976,6 @@ export default function CompanyAdminWorkspace() {
                             return (
                               <label
                                 key={perm.id}
-                                title={`Mã hệ thống: ${perm.code}`}
                                 style={{
                                   display: "flex",
                                   alignItems: "flex-start",
@@ -1607,7 +2985,7 @@ export default function CompanyAdminWorkspace() {
                                   border: isChecked ? "1px solid #bfdbfe" : "1px solid #e2e8f0",
                                   backgroundColor: isChecked ? "#eff6ff" : "#ffffff",
                                   cursor: "pointer",
-                                  fontSize: "0.8rem",
+                                  fontSize: "12.8px",
                                   transition: "all 0.15s ease",
                                 }}
                               >
@@ -1619,10 +2997,10 @@ export default function CompanyAdminWorkspace() {
                                 />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ fontWeight: 600, color: isChecked ? "var(--admin-primary)" : "#1e293b", lineHeight: 1.35 }}>
-                                    {permInfo.name || perm.description || perm.code}
+                                    {permInfo.name}
                                   </div>
-                                  <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: "0.2rem", lineHeight: 1.35 }}>
-                                    {permInfo.desc || perm.description}
+                                  <div style={{ fontSize: "11.8px", color: "#64748b", marginTop: "0.2rem", lineHeight: 1.35 }}>
+                                    {permInfo.desc}
                                   </div>
                                 </div>
                               </label>
@@ -1653,10 +3031,10 @@ export default function CompanyAdminWorkspace() {
                   </Link>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.6px", marginBottom: "1rem" }}>
                     Khai báo và đối chiếu số dư ban đầu cho riêng doanh nghiệp <strong>{companyInfo?.name}</strong>. Dữ liệu số dư hoàn toàn biệt lập theo từng workspace.
                   </p>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "0.85rem" }}>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "13.6px" }}>
                     <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
                       <span>Phạm vi lưu trữ:</span>
                       <strong style={{ color: "var(--admin-primary)" }}>Workspace riêng biệt</strong>
@@ -1686,7 +3064,7 @@ export default function CompanyAdminWorkspace() {
                   </Link>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.6px", marginBottom: "1rem" }}>
                     Bật hoặc tắt các phân hệ nghiệp vụ tùy theo mô hình hoạt động (thương mại, dịch vụ, sản xuất).
                   </p>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -1720,7 +3098,7 @@ export default function CompanyAdminWorkspace() {
                   </Link>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.6px", marginBottom: "1rem" }}>
                     Kiểm soát việc ghi sổ chứng từ theo từng tháng. Khi khóa kỳ, người dùng không thể lập hoặc sửa chứng từ trước ngày khóa.
                   </p>
                   <div className="admin-table-container">
@@ -1763,7 +3141,7 @@ export default function CompanyAdminWorkspace() {
                   </Link>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.6px", marginBottom: "1rem" }}>
                     Quy định định dạng tiền tố và độ dài số thứ tự cho các loại phiếu thu, phiếu chi, hóa đơn, phiếu nhập/xuất kho.
                   </p>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -1798,7 +3176,7 @@ export default function CompanyAdminWorkspace() {
                   </Link>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.6px", marginBottom: "1rem" }}>
                     Ghi vết toàn bộ hành vi: Ai đã thêm, sửa, xóa, duyệt chứng từ, thay đổi tài khoản ngân hàng hoặc đổi cấu hình phân quyền trong công ty.
                   </p>
                   <Link to="/audit-logs" className="admin-btn admin-btn-primary">
@@ -1875,48 +3253,71 @@ export default function CompanyAdminWorkspace() {
                 </div>
                 <div className="admin-form-group">
                   <label>Phòng ban / Đơn vị trực thuộc</label>
-                  <select
-                    className="admin-select"
+                  <MisaDropdownSelect
+                    fullWidth
                     value={employeeFormData.department_id}
-                    onChange={(e) => setEmployeeFormData({ ...employeeFormData, department_id: e.target.value })}
-                  >
-                    <option value="">Chọn phòng ban</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setEmployeeFormData({ ...employeeFormData, department_id: val })}
+                    searchPlaceholder="Tìm phòng ban..."
+                    options={[
+                      { value: "", label: "Chọn phòng ban" },
+                      ...departments.map((d) => ({
+                        value: d.id,
+                        label: d.name,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div className="admin-form-group">
                   <label>Chức danh / Vị trí công việc</label>
-                  <select
-                    className="admin-select"
+                  <MisaDropdownSelect
+                    fullWidth
                     value={employeeFormData.position_id}
-                    onChange={(e) => setEmployeeFormData({ ...employeeFormData, position_id: e.target.value })}
-                  >
-                    <option value="">Chọn chức danh</option>
-                    {positions.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setEmployeeFormData({ ...employeeFormData, position_id: val })}
+                    searchPlaceholder="Tìm chức danh..."
+                    options={[
+                      { value: "", label: "Chọn chức danh" },
+                      ...positions.map((p) => ({
+                        value: p.id,
+                        label: p.name,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div className="admin-form-group">
-                  <label>Vai trò Phân quyền Nghiệp vụ</label>
-                  <select
-                    className="admin-select"
+                  <label>Vai trò Phân quyền Nghiệp vụ (theo Chế độ kế toán {companyInfo?.accounting_regime || "TT99"})</label>
+                  <MisaDropdownSelect
+                    fullWidth
                     value={employeeFormData.role_code}
-                    onChange={(e) => setEmployeeFormData({ ...employeeFormData, role_code: e.target.value })}
-                  >
-                    <option value="">-- Chưa gán vai trò (Phân quyền sau) --</option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.code}>
-                        {formatRoleDisplayName(r.code, r.name)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setEmployeeFormData({ ...employeeFormData, role_code: val })}
+                    searchPlaceholder="Tìm nhanh vai trò nghiệp vụ..."
+                    options={[
+                      { value: "", label: "-- Chưa gán vai trò (Phân quyền sau) --" },
+                      ...activeRoles.map((r) => {
+                        const gInfo = ROLE_GROUP_MAP[r.code];
+                        return {
+                          value: r.code,
+                          label: formatRoleDisplayName(r.code, r.name),
+                          group: `Vai trò đang bật tại doanh nghiệp (${activeRoles.length})`,
+                          badge: gInfo?.groupVi || "Chuẩn",
+                          badgeBg: gInfo?.badgeBg || "#f1f5f9",
+                          badgeColor: gInfo?.badgeColor || "#475569",
+                        };
+                      }),
+                      ...roles
+                        .filter((r) => r.status !== "ACTIVE")
+                        .map((r) => {
+                          const gInfo = ROLE_GROUP_MAP[r.code];
+                          return {
+                            value: r.code,
+                            label: formatRoleDisplayName(r.code, r.name),
+                            group: `Vai trò chuyên sâu dự phòng (${availableRolesCount})`,
+                            badge: gInfo?.groupVi ? `${gInfo.groupVi} · Dự phòng` : "Dự phòng",
+                            badgeBg: "#fffbeb",
+                            badgeColor: "#b45309",
+                          };
+                        }),
+                    ]}
+                  />
                 </div>
               </div>
               <div className="admin-modal-footer">
@@ -2025,16 +3426,16 @@ export default function CompanyAdminWorkspace() {
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                    <span style={{ color: "#64748b", fontSize: "0.825rem" }}>Nhân sự được phân vai trò:</span>
-                    <strong style={{ fontSize: "0.9rem", color: "#1e293b" }}>{assignModalMember.full_name || assignModalMember.email}</strong>
+                    <span style={{ color: "#64748b", fontSize: "13.2px" }}>Nhân sự được phân vai trò:</span>
+                    <strong style={{ fontSize: "14.4px", color: "#1e293b" }}>{assignModalMember.full_name || assignModalMember.email}</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                    <span style={{ color: "#64748b", fontSize: "0.825rem" }}>Email đăng nhập:</span>
-                    <code style={{ fontSize: "0.825rem" }}>{assignModalMember.email}</code>
+                    <span style={{ color: "#64748b", fontSize: "13.2px" }}>Email đăng nhập:</span>
+                    <code style={{ fontSize: "13.2px" }}>{assignModalMember.email}</code>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "#64748b", fontSize: "0.825rem" }}>Vai trò hiện tại:</span>
-                    <span style={{ fontWeight: 600, color: "var(--admin-primary)", fontSize: "0.825rem" }}>
+                    <span style={{ color: "#64748b", fontSize: "13.2px" }}>Vai trò hiện tại:</span>
+                    <span style={{ fontWeight: 600, color: "var(--admin-primary)", fontSize: "13.2px" }}>
                       {formatRoleDisplayName(assignModalMember.role_assignments[0]?.role_code, assignModalMember.role_assignments[0]?.role_name) || "Chưa gán vai trò"}
                     </span>
                   </div>
@@ -2042,19 +3443,39 @@ export default function CompanyAdminWorkspace() {
 
                 <div className="admin-form-group">
                   <label>Chọn Vai trò Nghiệp vụ Mới (*)</label>
-                  <select
-                    className="admin-select"
-                    required
+                  <MisaDropdownSelect
+                    fullWidth
                     value={targetRoleCode}
-                    onChange={(e) => setTargetRoleCode(e.target.value)}
-                  >
-                    <option value="">-- Chọn vai trò nghiệp vụ --</option>
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.code}>
-                        {formatRoleDisplayName(r.code, r.name)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setTargetRoleCode(val)}
+                    searchPlaceholder="Tìm nhanh vai trò nghiệp vụ (VD: Kế toán thuế, Thủ quỹ...)"
+                    options={[
+                      { value: "", label: "-- Chọn vai trò nghiệp vụ --" },
+                      ...activeRoles.map((r) => {
+                        const gInfo = ROLE_GROUP_MAP[r.code];
+                        return {
+                          value: r.code,
+                          label: formatRoleDisplayName(r.code, r.name),
+                          group: `Vai trò đang bật tại doanh nghiệp (${activeRoles.length})`,
+                          badge: gInfo?.groupVi || "Đang bật",
+                          badgeBg: gInfo?.badgeBg || "#f0fdf4",
+                          badgeColor: gInfo?.badgeColor || "#166534",
+                        };
+                      }),
+                      ...roles
+                        .filter((r) => r.status !== "ACTIVE")
+                        .map((r) => {
+                          const gInfo = ROLE_GROUP_MAP[r.code];
+                          return {
+                            value: r.code,
+                            label: formatRoleDisplayName(r.code, r.name),
+                            group: `Vai trò chuyên sâu dự phòng (${availableRolesCount})`,
+                            badge: gInfo?.groupVi ? `${gInfo.groupVi} · Dự phòng` : "Dự phòng",
+                            badgeBg: "#fffbeb",
+                            badgeColor: "#b45309",
+                          };
+                        }),
+                    ]}
+                  />
                 </div>
 
                 {/* Role Description Preview */}
@@ -2065,7 +3486,7 @@ export default function CompanyAdminWorkspace() {
                       border: "1px solid #bbf7d0",
                       padding: "0.75rem 1rem",
                       borderRadius: "6px",
-                      fontSize: "0.8rem",
+                      fontSize: "12.8px",
                       color: "#166534",
                       marginBottom: "1rem",
                     }}
@@ -2107,10 +3528,13 @@ export default function CompanyAdminWorkspace() {
         </div>
       )}
 
-      {/* MODAL: Xem danh sách quyền thực tế của Member (Đã Việt hóa & Nhóm nghiệp vụ) */}
+      {/* MODAL: Xem danh sách quyền thực tế của Member (Đã Việt hóa & Gom gọn theo Nghiệp vụ) */}
       {viewingPermsMember && (() => {
         const rawPerms = viewingPermsMember.effective_permissions || [];
         const q = viewingPermSearch.toLowerCase().trim();
+        const isViewingMemberAdmin = viewingPermsMember.role_assignments?.some((r) => isAdminRoleCode(r.role_code));
+        const memberPermSummary = summarizeMemberPermissions(rawPerms, !!isViewingMemberAdmin);
+        const groupedModalFeatures = groupPermissionCodesByModuleAndFeature(rawPerms, viewingPermSearch);
 
         const translated = rawPerms.map((code) => {
           const info = translatePermissionCode(code);
@@ -2122,8 +3546,7 @@ export default function CompanyAdminWorkspace() {
           return (
             p.name.toLowerCase().includes(q) ||
             p.desc.toLowerCase().includes(q) ||
-            p.module.toLowerCase().includes(q) ||
-            p.code.toLowerCase().includes(q)
+            p.module.toLowerCase().includes(q)
           );
         });
 
@@ -2148,7 +3571,7 @@ export default function CompanyAdminWorkspace() {
 
         const roleNames = viewingPermsMember.role_assignments.map((r) => formatRoleDisplayName(r.role_code, r.role_name)).join(", ") || "Chưa phân vai trò";
 
-        const allModules = Object.keys(grouped);
+        const allModules = Object.keys(modalPermViewMode === "grouped" ? groupedModalFeatures : grouped);
         const isAllCollapsed = allModules.length > 0 && allModules.every((m) => !!collapsedModules[m]);
 
         const toggleCollapseAll = () => {
@@ -2170,18 +3593,20 @@ export default function CompanyAdminWorkspace() {
           }));
         };
 
+        const totalGroupedFeatures = Object.values(groupedModalFeatures).reduce((acc, arr) => acc + arr.length, 0);
+
         return (
           <div className="admin-modal-backdrop" onClick={() => setViewingPermsMember(null)}>
             <div
               className="admin-modal admin-modal-lg"
               style={{
-                maxWidth: 920,
+                maxWidth: 940,
                 width: "95vw",
                 maxHeight: "88vh",
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                borderRadius: "12px",
+                borderRadius: "14px",
                 boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -2190,10 +3615,25 @@ export default function CompanyAdminWorkspace() {
                 <div>
                   <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <KeyRound size={20} color="var(--admin-primary)" />
-                    Quyền hạn thực tế: {viewingPermsMember.full_name || viewingPermsMember.email}
+                    Phạm vi quyền hạn: {viewingPermsMember.full_name || viewingPermsMember.email}
                   </h3>
-                  <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "0.25rem" }}>
-                    Vai trò nghiệp vụ: <strong style={{ color: "var(--admin-primary)" }}>{roleNames}</strong> • Tổng cộng: <strong>{rawPerms.length} quyền nghiệp vụ</strong>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "12.8px", color: "#64748b", marginTop: "0.3rem", flexWrap: "wrap" }}>
+                    <span>
+                      Vai trò: <strong style={{ color: "var(--admin-primary)" }}>{roleNames}</strong>
+                    </span>
+                    <span>•</span>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        background: "#eff6ff",
+                        color: "#1d4ed8",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {memberPermSummary.badgeSummary}
+                    </span>
                   </div>
                 </div>
                 <button
@@ -2215,13 +3655,13 @@ export default function CompanyAdminWorkspace() {
                   overflow: "hidden",
                 }}
               >
-                {/* Search bar & Collapse All button inside modal */}
-                <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexShrink: 0 }}>
-                  <div style={{ position: "relative", flex: 1 }}>
+                {/* Search bar, View Mode Toggle & Collapse All button inside modal */}
+                <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexShrink: 0, flexWrap: "wrap" }}>
+                  <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
                     <input
                       type="text"
                       className="admin-input"
-                      placeholder="Tìm kiếm quyền theo tên chức năng, nghiệp vụ hoặc phân hệ..."
+                      placeholder="Tìm kiếm theo nghiệp vụ (VD: Hóa đơn bán hàng, Phiếu thu, Tờ khai thuế)..."
                       value={viewingPermSearch}
                       onChange={(e) => setViewingPermSearch(e.target.value)}
                       style={{ width: "100%", paddingLeft: "2.35rem" }}
@@ -2248,11 +3688,55 @@ export default function CompanyAdminWorkspace() {
                       </button>
                     )}
                   </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      background: "#f1f5f9",
+                      padding: 3,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setModalPermViewMode("grouped")}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: "none",
+                        cursor: "pointer",
+                        background: modalPermViewMode === "grouped" ? "#ffffff" : "transparent",
+                        color: modalPermViewMode === "grouped" ? "#1d4ed8" : "#64748b",
+                        boxShadow: modalPermViewMode === "grouped" ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                      }}
+                    >
+                      Theo nghiệp vụ ({totalGroupedFeatures})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModalPermViewMode("detailed")}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: "none",
+                        cursor: "pointer",
+                        background: modalPermViewMode === "detailed" ? "#ffffff" : "transparent",
+                        color: modalPermViewMode === "detailed" ? "#1d4ed8" : "#64748b",
+                        boxShadow: modalPermViewMode === "detailed" ? "0 1px 2px rgba(15,23,42,0.08)" : "none",
+                      }}
+                    >
+                      Chi tiết thao tác
+                    </button>
+                  </div>
                   {allModules.length > 1 && (
                     <button
                       type="button"
                       className="admin-btn admin-btn-secondary"
-                      style={{ fontSize: "0.75rem", padding: "0 0.75rem", whiteSpace: "nowrap", flexShrink: 0 }}
+                      style={{ fontSize: "12px", padding: "0 0.75rem", whiteSpace: "nowrap", flexShrink: 0 }}
                       onClick={toggleCollapseAll}
                     >
                       {isAllCollapsed ? "Mở rộng tất cả" : "Thu gọn tất cả"}
@@ -2261,7 +3745,7 @@ export default function CompanyAdminWorkspace() {
                 </div>
 
                 {/* Module Quick Filter Chips */}
-                {Object.keys(grouped).length > 1 && (
+                {allModules.length > 1 && (
                   <div
                     className="admin-chips-scroll"
                     style={{ flexShrink: 0 }}
@@ -2283,30 +3767,36 @@ export default function CompanyAdminWorkspace() {
                       }}
                       onClick={() => setSelectedModalModule("ALL")}
                     >
-                      Tất cả ({filtered.length})
+                      Tất cả ({allModules.length} phân hệ)
                     </button>
-                    {Object.entries(grouped).map(([modName, items]) => (
-                      <button
-                        type="button"
-                        key={modName}
-                        style={{
-                          padding: "4px 10px",
-                          borderRadius: "14px",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          border: selectedModalModule === modName ? "1px solid #0284c7" : "1px solid #e2e8f0",
-                          background: selectedModalModule === modName ? "#eff6ff" : "#ffffff",
-                          color: selectedModalModule === modName ? "#0284c7" : "#64748b",
-                          whiteSpace: "nowrap",
-                          flexShrink: 0,
-                          transition: "all 0.15s ease",
-                        }}
-                        onClick={() => setSelectedModalModule(modName)}
-                      >
-                        {modName} ({items.length})
-                      </button>
-                    ))}
+                    {allModules.map((modName) => {
+                      const countLabel =
+                        modalPermViewMode === "grouped"
+                          ? `${groupedModalFeatures[modName]?.length || 0} nghiệp vụ`
+                          : `${grouped[modName]?.length || 0}`;
+                      return (
+                        <button
+                          type="button"
+                          key={modName}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "14px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            border: selectedModalModule === modName ? "1px solid #0284c7" : "1px solid #e2e8f0",
+                            background: selectedModalModule === modName ? "#eff6ff" : "#ffffff",
+                            color: selectedModalModule === modName ? "#0284c7" : "#64748b",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                            transition: "all 0.15s ease",
+                          }}
+                          onClick={() => setSelectedModalModule(modName)}
+                        >
+                          {modName} ({countLabel})
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -2318,7 +3808,7 @@ export default function CompanyAdminWorkspace() {
                     minHeight: 0,
                     overflowY: "auto",
                     border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
+                    borderRadius: "10px",
                     padding: "0.85rem",
                     background: "#f8fafc",
                   }}
@@ -2327,10 +3817,120 @@ export default function CompanyAdminWorkspace() {
                     <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "#94a3b8" }}>
                       Chưa có quyền hạn nào được kích hoạt cho tài khoản này. Vui lòng dùng nút "Đổi vai trò" để phân bổ vai trò nghiệp vụ.
                     </div>
-                  ) : filtered.length === 0 ? (
+                  ) : allModules.length === 0 ? (
                     <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "#94a3b8" }}>
-                      Không tìm thấy quyền hạn nào khớp với từ khóa "<strong>{viewingPermSearch}</strong>".
+                      Không tìm thấy nghiệp vụ nào khớp với từ khóa "<strong>{viewingPermSearch}</strong>".
                     </div>
+                  ) : modalPermViewMode === "grouped" ? (
+                    Object.entries(groupedModalFeatures)
+                      .filter(([moduleName]) => selectedModalModule === "ALL" || selectedModalModule === moduleName)
+                      .map(([moduleName, features]) => {
+                        const isCollapsed = collapsedModules[moduleName];
+                        return (
+                          <div
+                            key={moduleName}
+                            style={{
+                              background: "#ffffff",
+                              borderRadius: "10px",
+                              border: "1px solid #e2e8f0",
+                              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                              marginBottom: "0.85rem",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              onClick={() => toggleModuleCollapse(moduleName)}
+                              style={{
+                                background: "#f1f5f9",
+                                padding: "0.6rem 0.9rem",
+                                borderBottom: isCollapsed ? "none" : "1px solid #e2e8f0",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                cursor: "pointer",
+                                userSelect: "none",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "13.8px", color: "#1e293b" }}>
+                                {getModuleIcon(moduleName)}
+                                <span>{moduleName}</span>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <span className="admin-badge admin-badge-blue" style={{ fontSize: "11.5px", padding: "0.15rem 0.55rem" }}>
+                                  {features.length} nghiệp vụ
+                                </span>
+                                {isCollapsed ? <ChevronDown size={16} color="#64748b" /> : <ChevronUp size={16} color="#64748b" />}
+                              </div>
+                            </div>
+                            {!isCollapsed && (
+                              <div style={{ display: "flex", flexDirection: "column" }}>
+                                {features.map((feat, fIdx) => (
+                                  <div
+                                    key={feat.featureKey}
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                      gap: "0.75rem",
+                                      flexWrap: "wrap",
+                                      padding: "0.6rem 0.9rem",
+                                      borderBottom: fIdx === features.length - 1 ? "none" : "1px solid #f1f5f9",
+                                    }}
+                                  >
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", minWidth: 220, flex: 1 }}>
+                                      <div
+                                        style={{
+                                          width: 20,
+                                          height: 20,
+                                          borderRadius: "50%",
+                                          background: "#dcfce7",
+                                          color: "#166534",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        <Check size={12} strokeWidth={3} />
+                                      </div>
+                                      <span style={{ fontWeight: 600, fontSize: "13.4px", color: "#0f172a" }}>
+                                        {feat.featureName}
+                                      </span>
+                                    </div>
+                                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                                      {(["VIEW", "EDIT", "APPROVE", "EXPORT", "ADMIN"] as PermTierKey[]).map((tierKey) => {
+                                        const tierCodes = feat.tiers[tierKey];
+                                        if (!tierCodes || tierCodes.length === 0) return null;
+                                        const tierMeta = PERM_TIER_META[tierKey];
+                                        return (
+                                          <span
+                                            key={tierKey}
+                                            style={{
+                                              display: "inline-flex",
+                                              alignItems: "center",
+                                              gap: 4,
+                                              padding: "2px 9px",
+                                              borderRadius: 999,
+                                              fontSize: "11.7px",
+                                              fontWeight: 600,
+                                              border: `1px solid ${tierMeta.border}`,
+                                              background: tierMeta.bg,
+                                              color: tierMeta.color,
+                                            }}
+                                          >
+                                            <Check size={10} strokeWidth={3} />
+                                            {tierMeta.shortLabel}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
                   ) : (
                     Object.entries(grouped)
                       .filter(([moduleName]) => selectedModalModule === "ALL" || selectedModalModule === moduleName)
@@ -2341,7 +3941,7 @@ export default function CompanyAdminWorkspace() {
                             key={moduleName}
                             style={{
                               background: "#ffffff",
-                              borderRadius: "8px",
+                              borderRadius: "10px",
                               border: "1px solid #e2e8f0",
                               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
                               marginBottom: "0.85rem",
@@ -2361,13 +3961,13 @@ export default function CompanyAdminWorkspace() {
                                 userSelect: "none",
                               }}
                             >
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "0.85rem", color: "#1e293b" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, fontSize: "13.6px", color: "#1e293b" }}>
                                 {getModuleIcon(moduleName)}
                                 <span>{moduleName}</span>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <span className="admin-badge admin-badge-blue" style={{ fontSize: "0.7rem", padding: "0.15rem 0.5rem" }}>
-                                  {items.length} quyền
+                                <span className="admin-badge admin-badge-blue" style={{ fontSize: "11.2px", padding: "0.15rem 0.5rem" }}>
+                                  {items.length} thao tác
                                 </span>
                                 {isCollapsed ? <ChevronDown size={16} color="#64748b" /> : <ChevronUp size={16} color="#64748b" />}
                               </div>
@@ -2412,10 +4012,10 @@ export default function CompanyAdminWorkspace() {
                                       <Check size={12} strokeWidth={3} />
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontWeight: 600, fontSize: "0.825rem", color: "#0f172a", lineHeight: 1.3 }}>
+                                      <div style={{ fontWeight: 600, fontSize: "13.2px", color: "#0f172a", lineHeight: 1.3 }}>
                                         {item.name}
                                       </div>
-                                      <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: "0.2rem", lineHeight: 1.3 }}>
+                                      <div style={{ fontSize: "11.8px", color: "#64748b", marginTop: "0.2rem", lineHeight: 1.3 }}>
                                         {item.desc}
                                       </div>
                                     </div>
@@ -2431,8 +4031,8 @@ export default function CompanyAdminWorkspace() {
               </div>
 
               <div className="admin-modal-footer" style={{ flexShrink: 0 }}>
-                <div style={{ marginRight: "auto", fontSize: "0.8rem", color: "#64748b" }}>
-                  Đang hiển thị <strong>{filtered.length}</strong> / {rawPerms.length} quyền được cấp
+                <div style={{ marginRight: "auto", fontSize: "12.8px", color: "#64748b" }}>
+                  Phạm vi được cấp: <strong>{memberPermSummary.badgeSummary}</strong>
                 </div>
                 <button
                   type="button"
@@ -2446,6 +4046,136 @@ export default function CompanyAdminWorkspace() {
           </div>
         );
       })()}
+
+      {/* MODAL: Phê duyệt / Từ chối Yêu cầu Gia nhập Doanh nghiệp */}
+      {decidingJoinReq && (
+        <div className="admin-modal-backdrop" onClick={() => setDecidingJoinReq(null)}>
+          <div className="admin-modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>
+                {decidingJoinReq.decision === "APPROVED" ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#047857" }}>
+                    <UserCheck size={20} /> Chấp thuận gia nhập doanh nghiệp
+                  </span>
+                ) : (
+                  <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#b91c1c" }}>
+                    <ShieldAlert size={20} /> Từ chối yêu cầu gia nhập
+                  </span>
+                )}
+              </h3>
+              <button className="admin-modal-close" onClick={() => setDecidingJoinReq(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleDecideJoinRequest}>
+              <div className="admin-modal-body" style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+                <div style={{ padding: "0.75rem 1rem", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontWeight: 700, fontSize: "15.2px", color: "#0f172a" }}>
+                    {decidingJoinReq.item.requester_name}
+                  </div>
+                  <div style={{ fontSize: "13.1px", color: "#475569", marginTop: 2 }}>
+                    Email: <strong>{decidingJoinReq.item.requester_email || "—"}</strong>
+                    {decidingJoinReq.item.requester_phone ? <> · SĐT: <strong>{decidingJoinReq.item.requester_phone}</strong></> : null}
+                  </div>
+                  {decidingJoinReq.item.message && (
+                    <div style={{ fontSize: "13.1px", color: "#334155", marginTop: 6 }}>
+                      <strong>Lời nhắn:</strong> {decidingJoinReq.item.message}
+                    </div>
+                  )}
+                </div>
+
+                {decidingJoinReq.decision === "APPROVED" && (
+                  <div className="admin-form-group">
+                    <label className="admin-label">Phân bổ Vai trò nghiệp vụ ngay khi gia nhập</label>
+                    <MisaDropdownSelect
+                      fullWidth
+                      value={decidingJoinReq.roleId}
+                      onChange={(val) => setDecidingJoinReq({ ...decidingJoinReq, roleId: val })}
+                      searchPlaceholder="Tìm nhanh vai trò nghiệp vụ..."
+                      options={[
+                        { value: "", label: "-- Chưa gán vai trò cụ thể (Phân công sau) --" },
+                        ...roles
+                          .filter((r) => r.status === "ACTIVE")
+                          .map((r) => {
+                            const gInfo = ROLE_GROUP_MAP[r.code];
+                            return {
+                              value: r.id,
+                              label: formatRoleDisplayName(r.code, r.name),
+                              badge: gInfo?.groupVi || "Đang bật",
+                              badgeBg: gInfo?.badgeBg || "#f0fdf4",
+                              badgeColor: gInfo?.badgeColor || "#166534",
+                            };
+                          }),
+                      ]}
+                    />
+                  </div>
+                )}
+
+                <div className="admin-form-group">
+                  <label className="admin-label">
+                    {decidingJoinReq.decision === "APPROVED" ? "Ghi chú / Lý do chấp thuận (gửi cho nhân sự)" : "Lý do từ chối (bắt buộc) *"}
+                  </label>
+                  <textarea
+                    className="admin-input"
+                    rows={3}
+                    required={decidingJoinReq.decision === "REJECTED"}
+                    placeholder={
+                      decidingJoinReq.decision === "APPROVED"
+                        ? "Ví dụ: Chào mừng bạn gia nhập phòng kế toán doanh nghiệp..."
+                        : "Nhập lý do từ chối để thông báo cho người gửi..."
+                    }
+                    value={decidingJoinReq.reason}
+                    onChange={(e) => setDecidingJoinReq({ ...decidingJoinReq, reason: e.target.value })}
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Ghi chú nội bộ (chỉ Admin nhìn thấy)</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Ghi chú hồ sơ nội bộ (nếu có)..."
+                    value={decidingJoinReq.internalNote}
+                    onChange={(e) => setDecidingJoinReq({ ...decidingJoinReq, internalNote: e.target.value })}
+                  />
+                </div>
+
+                {decidingJoinReq.decision === "APPROVED" && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "13.3px", color: "#475569", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={decidingJoinReq.reactivate}
+                      onChange={(e) => setDecidingJoinReq({ ...decidingJoinReq, reactivate: e.target.checked })}
+                    />
+                    Kích hoạt lại nếu tài khoản này từng là thành viên cũ của công ty
+                  </label>
+                )}
+              </div>
+              <div className="admin-modal-footer">
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setDecidingJoinReq(null)}>
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="admin-btn admin-btn-primary"
+                  style={
+                    decidingJoinReq.decision === "APPROVED"
+                      ? { background: "#059669", borderColor: "#047857" }
+                      : { background: "#dc2626", borderColor: "#b91c1c" }
+                  }
+                  disabled={joinDecideSaving}
+                >
+                  {joinDecideSaving
+                    ? "Đang xử lý..."
+                    : decidingJoinReq.decision === "APPROVED"
+                    ? "Xác nhận Chấp thuận"
+                    : "Xác nhận Từ chối"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
