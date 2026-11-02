@@ -7123,9 +7123,20 @@ export async function executeReportExportUcRpt15(w: ApiWriter, d: Row = {}, auth
   );
 
   // Step 4: Download binary/HTML artifact
-  const token =
-    authToken ||
-    (typeof localStorage !== "undefined" ? localStorage.getItem("erp_token") || "" : "");
+  const readStoredToken = () => {
+    if (typeof localStorage === "undefined") return "";
+    try {
+      const raw = localStorage.getItem("erp_api_session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.token) return String(parsed.token);
+      }
+      return localStorage.getItem("erp_token") || "";
+    } catch {
+      return "";
+    }
+  };
+  const token = authToken || readStoredToken();
   const response = await fetch(downloadUrl, {
     method: "GET",
     headers: token ? { Authorization: `Bearer ${token}` } : {},

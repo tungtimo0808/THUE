@@ -268,7 +268,13 @@ class CompanyMemberMixin:
         from organization.models import Company
 
         data = request.data if isinstance(request.data, dict) else {}
-        company_id = request.query_params.get("company_id") or data.get("company_id") or data.get("company")
+        company_id = (
+            request.query_params.get("company_id")
+            or data.get("company_id")
+            or data.get("company")
+            or request.headers.get("X-Company-ID")
+            or request.META.get("HTTP_X_COMPANY_ID")
+        )
         if not company_id:
             raise ValidationError({"company_id": "Phải xác định doanh nghiệp làm việc (company_id)."})
         try:
