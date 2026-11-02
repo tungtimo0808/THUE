@@ -35,7 +35,8 @@ export default function LiveLogin() {
   // If user is already logged in, redirect straight to company selection
   useEffect(() => {
     if (!restoring && token) {
-      const redirect = params.get("redirect");
+      const rawRedirect = params.get("redirect");
+      const redirect = rawRedirect && !rawRedirect.startsWith("/join") ? rawRedirect : null;
       navigate(redirect ? `/select-company?redirect=${encodeURIComponent(redirect)}` : "/select-company", { replace: true });
     }
   }, [restoring, token, navigate, params]);
@@ -49,8 +50,9 @@ export default function LiveLogin() {
     try {
       await signIn(identifier.trim(), password);
       // After successful login, proceed to the dedicated Company selection screen
-      const redirect = params.get("redirect");
-      navigate(redirect ? `/select-company?redirect=${encodeURIComponent(redirect)}` : "/select-company");
+      const rawRedirect = params.get("redirect");
+      const redirect = rawRedirect && !rawRedirect.startsWith("/join") ? rawRedirect : null;
+      navigate(redirect ? `/select-company?redirect=${encodeURIComponent(redirect)}` : "/select-company", { replace: true });
     } catch (cause) {
       setError(
         cause instanceof Error

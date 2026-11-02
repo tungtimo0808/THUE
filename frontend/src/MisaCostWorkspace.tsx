@@ -1326,7 +1326,36 @@ if (apiConnected) {
     orders: "Đơn hàng",
     contracts: "Hợp đồng",
   } as Record<string, string>)[currentTab] || "Sản xuất liên tục - Hệ số, tỷ lệ";
-  const currentSubtabData = COST_PROCESS_DATA[subtab] || COST_PROCESS_DATA.simple;
+  const baseSubtabData = COST_PROCESS_DATA[subtab] || COST_PROCESS_DATA.simple;
+  const activeCostRegime =
+    (company as any)?.accounting_regime ||
+    "TT99";
+  const currentSubtabData = {
+    ...baseSubtabData,
+    videoSubtitle:
+      activeCostRegime === "TT133"
+        ? "THÔNG TƯ 133 (SME)"
+        : activeCostRegime === "TT200"
+        ? "THÔNG TƯ 200"
+        : "THÔNG TƯ 99",
+    row1: (baseSubtabData.row1 || []).map((s) => {
+      if (activeCostRegime === "TT133") {
+        if (s.step === 4) {
+          return {
+            ...s,
+            desc: "Xuất kho nguyên vật liệu hạch toán trực tiếp Nợ TK 154 (Chi tiết yếu tố NVL - TT133 không dùng TK 621)",
+          };
+        }
+        if (s.step === 5) {
+          return {
+            ...s,
+            desc: "Tập hợp chi phí nhân công, khấu hao, phân bổ CCDC trực tiếp vào Nợ TK 154 (TT133 không dùng TK 622, 627)",
+          };
+        }
+      }
+      return s;
+    }),
+  };
   const records = INITIAL_COST_PERIODS[currentTab] || [];
   const filteredRecords = records.filter(
     (r) =>
@@ -1431,12 +1460,46 @@ if (apiConnected) {
                   fontWeight: 700,
                   color: "#1e293b",
                   textAlign: "center",
-                  margin: "0 0 32px 0",
+                  margin: "0 0 10px 0",
                   letterSpacing: 0.2,
                 }}
               >
                 {currentSubtabData.headerTitle}
               </h2>
+              <div
+                data-testid="costing-regime-banner"
+                style={{
+                  margin: "0 auto 22px auto",
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background:
+                    activeCostRegime === "TT133"
+                      ? "#eff6ff"
+                      : activeCostRegime === "TT200"
+                      ? "#fffbeb"
+                      : "#ecfdf5",
+                  color:
+                    activeCostRegime === "TT133"
+                      ? "#1d4ed8"
+                      : activeCostRegime === "TT200"
+                      ? "#b45309"
+                      : "#047857",
+                  border:
+                    activeCostRegime === "TT133"
+                      ? "1px solid #bfdbfe"
+                      : activeCostRegime === "TT200"
+                      ? "1px solid #fde68a"
+                      : "1px solid #a7f3d0",
+                }}
+              >
+                {activeCostRegime === "TT133"
+                  ? "Chế độ TT 133/2016/TT-BTC (DNNVV): Hạch toán chi phí SXKD trực tiếp vào TK 154 (theo yếu tố NVL, Nhân công, SXC — không dùng TK 621, 622, 627)"
+                  : activeCostRegime === "TT200"
+                  ? "Chế độ TT 200/2014/TT-BTC: Tập hợp chi phí qua TK 621, 622, 627 và kết chuyển sang TK 154 cuối kỳ"
+                  : "Chế độ TT 99/2025/TT-BTC: Tập hợp chi phí qua TK 621, 622, 627 và kết chuyển sang TK 154 cuối kỳ"}
+              </div>
 
               {/* S-curve Interactive Flow Diagram */}
               <div

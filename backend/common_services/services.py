@@ -438,13 +438,25 @@ def login(data, request):
             "code": item.company.code,
             "name": item.company.name,
             "status": item.company.status,
+            "tax_code": item.company.tax_code,
+            "address": item.company.address,
+            "accounting_regime": item.company.accounting_regime or "TT99",
+            "business_type": item.company.business_type,
+            "legal_representative": item.company.legal_representative,
+            "representative_title": item.company.representative_title or "Giám đốc",
             "is_company_admin": is_comp_admin,
         })
     if user.is_superuser and not companies:
         all_comps = Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at")
         companies = [
             {
-                "id": str(c.id), "code": c.code, "name": c.name, "status": c.status, "is_company_admin": True,
+                "id": str(c.id), "code": c.code, "name": c.name, "status": c.status,
+                "tax_code": c.tax_code, "address": c.address,
+                "accounting_regime": c.accounting_regime or "TT99",
+                "business_type": c.business_type,
+                "legal_representative": c.legal_representative,
+                "representative_title": c.representative_title or "Giám đốc",
+                "is_company_admin": True,
             }
             for c in all_comps
         ]
@@ -830,9 +842,12 @@ def create_company(data, request):
     try:
         with transaction.atomic():
             company = Company.objects.create(
-                code=code, name=data["name"], legal_name=data["legal_name"], tax_code=data["tax_code"],
+                code=code, name=data["name"], short_name=data.get("short_name", ""),
+                legal_name=data["legal_name"], tax_code=data["tax_code"],
                 business_type=data["business_type"], address=data["address"], province=data["province"],
-                legal_representative=data["legal_representative"], phone=data.get("phone", ""),
+                legal_representative=data["legal_representative"],
+                representative_title=data.get("representative_title") or "Giám đốc",
+                phone=data.get("phone", ""),
                 email=data.get("email", ""), logo=data.get("logo") or "", created_by_user_id=account.id,
                 accounting_currency=currency, legal_reporting_currency=currency,
                 accounting_regime=data["accounting_regime"], fiscal_year_start_month=data["fiscal_year_start_month"],

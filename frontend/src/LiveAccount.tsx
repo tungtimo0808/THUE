@@ -48,7 +48,7 @@ export default function LiveAccount() {
       });
       if (!result.verified) throw new Error("Backend chưa xác nhận tài khoản.");
       setCode(""); setDevOtp(""); setStep("complete");
-      setMessage("Tài khoản đã được xác thực. Bạn có thể đăng nhập và tham gia doanh nghiệp.");
+      setMessage("Tài khoản đã được xác thực thành công. Bạn có thể đăng nhập vào hệ thống.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Mã xác thực không hợp lệ."); }
     finally { setBusy(false); }
   }
@@ -108,7 +108,7 @@ export default function LiveAccount() {
           <button type="submit" disabled={busy}>Đổi email</button>
         </form>
       </>}
-      {step === "complete" && <Link className="account-primary-link" to="/join">Đăng nhập và tham gia doanh nghiệp</Link>}
+      {step === "complete" && <Link className="account-primary-link" to="/login">Đăng nhập vào hệ thống</Link>}
     </div>
   </main>;
 }

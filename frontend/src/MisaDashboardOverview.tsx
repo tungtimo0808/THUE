@@ -107,6 +107,36 @@ export function MisaDashboardOverview({
     return "";
   }, [propCompanyId, companyId, searchParams, sessionCompanies]);
 
+  const activeAccountingRegime = useMemo(() => {
+    const found = (sessionCompanies || []).find((c: any) => c.id === effectiveCompanyId);
+    if (found?.accounting_regime) return String(found.accounting_regime);
+    try {
+      const rawSession = localStorage.getItem("erp_api_session");
+      if (rawSession) {
+        const parsed = JSON.parse(rawSession);
+        const match = (parsed?.companies || []).find((c: any) => c.id === effectiveCompanyId);
+        if (match?.accounting_regime) return String(match.accounting_regime);
+      }
+    } catch {
+      // ignore
+    }
+    return "TT99";
+  }, [sessionCompanies, effectiveCompanyId]);
+
+  const circularFullLabel =
+    activeAccountingRegime === "TT133"
+      ? "Thông tư 133/2016/TT-BTC (DNNVV)"
+      : activeAccountingRegime === "TT200"
+      ? "Thông tư 200/2014/TT-BTC"
+      : "Thông tư 99/2025/TT-BTC";
+
+  const dash06RegimeSubtitle =
+    activeAccountingRegime === "TT133"
+      ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 6421, 6422), 7, 8 theo Thông tư 133/2016/TT-BTC (DNNVV)"
+      : activeAccountingRegime === "TT200"
+      ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 641, 642), 7, 8 theo Thông tư 200/2014/TT-BTC"
+      : "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 641, 642), 7, 8 theo Thông tư 99/2025/TT-BTC";
+
   const urlPeriod = searchParams.get("period") || propPeriod || "2026-12";
   const [selectedPeriod, setSelectedPeriod] = useState<string>(urlPeriod);
   const [selectedBranchId, setSelectedBranchId] = useState<string>(searchParams.get("branch_id") || "");
@@ -480,6 +510,35 @@ export function MisaDashboardOverview({
                 : hasApiSession
                   ? "Đang đồng bộ Sổ cái…"
                   : "Chế độ xem thử ngoại tuyến"}
+            </span>
+            <span
+              data-testid="dashboard-regime-badge"
+              style={{
+                fontSize: 11.5,
+                padding: "2px 10px",
+                borderRadius: 999,
+                fontWeight: 700,
+                background:
+                  activeAccountingRegime === "TT133"
+                    ? "#eff6ff"
+                    : activeAccountingRegime === "TT200"
+                    ? "#fffbeb"
+                    : "#ecfdf5",
+                color:
+                  activeAccountingRegime === "TT133"
+                    ? "#1d4ed8"
+                    : activeAccountingRegime === "TT200"
+                    ? "#b45309"
+                    : "#047857",
+                border:
+                  activeAccountingRegime === "TT133"
+                    ? "1px solid #bfdbfe"
+                    : activeAccountingRegime === "TT200"
+                    ? "1px solid #fde68a"
+                    : "1px solid #a7f3d0",
+              }}
+            >
+              Chế độ: {circularFullLabel}
             </span>
             {filterInfo.from_date && (
               <span style={{ fontSize: 12, color: "#475569" }}>
@@ -859,7 +918,7 @@ export function MisaDashboardOverview({
             <div>
               <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>Doanh thu, chi phí và lợi nhuận</h2>
               <p style={{ fontSize: 12, color: "#64748b", margin: "2px 0 0" }}>
-                Tổng hợp từ Sổ cái TK loại 5, 6, 7, 8 theo Thông tư 99/2025/TT-BTC
+                {dash06RegimeSubtitle}
               </p>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
@@ -1558,7 +1617,7 @@ export function MisaDashboardOverview({
               }`
             : "Chế độ xem thử ngoại tuyến · Đăng nhập để kết nối Sổ cái chính thức"}
         </span>
-        <span>Sổ Việt ERP · Thông tư 99/2025/TT-BTC</span>
+        <span>Sổ Việt ERP · {circularFullLabel}</span>
       </div>
 
       {/* MODAL DRILL-DOWN TRUY VẾT CHỈ TIÊU KPI (MF-06, AF-06..AF-08, BR-RPT-DASH-60..63) */}

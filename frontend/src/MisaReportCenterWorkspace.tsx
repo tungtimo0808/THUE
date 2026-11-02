@@ -8,7 +8,7 @@ import ReportScheduleDialog from "./ReportScheduleDialog";
 import ReportTemplateDialog from "./ReportTemplateDialog";
 import { CATALOGUE_PARAMETER_DEFINITIONS } from "./catalogue-report-parameters";
 import SalesOrderDetailParameters from "./SalesOrderDetailParameters";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   Star,
@@ -897,7 +897,20 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const [previewPeriod, setPreviewPeriod] = useState<string>("Năm nay (2026)");
   const [previewUnit, setPreviewUnit] = useState<string>("Công ty Cổ phần Giải pháp Số Việt");
   const [exportingFormat, setExportingFormat] = useState<string | null>(null);
+  const [companyRegime, setCompanyRegime] = useState<string>("TT99");
   const { token: sessionToken, companyId: sessionCompanyId } = useApiSession();
+
+  useEffect(() => {
+    if (!sessionToken || !sessionCompanyId) return;
+    request<any>(`/api/v1/organization/companies/${sessionCompanyId}/`, sessionToken)
+      .then((res) => {
+        const reg = String(res?.accounting_regime || "").toUpperCase();
+        if (reg.includes("133")) setCompanyRegime("TT133");
+        else if (reg.includes("200")) setCompanyRegime("TT200");
+        else if (reg) setCompanyRegime("TT99");
+      })
+      .catch(() => {});
+  }, [sessionToken, sessionCompanyId]);
 
   const deriveReportCode = (name: string | null): string => {
     const text = String(name || "").trim();
@@ -1081,7 +1094,48 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   const column2 = displayedReports.filter((_, idx) => idx % 2 === 1);
 
   const activeCategoryObj = REPORT_CATEGORIES.find((c) => c.id === activeCategory);
-  const currentStructure = !searchKeyword ? CATEGORY_STRUCTURES[activeCategory] : null;
+  const currentStructure = useMemo(() => {
+    if (searchKeyword) return null;
+    const base = CATEGORY_STRUCTURES[activeCategory];
+    if (!base || activeCategory !== "financial") return base;
+    const mainGroup = base.groups.find((g) => g.id === "financial_main");
+    const tt133Group = base.groups.find((g) => g.id === "financial_tt133");
+    if (!mainGroup || !tt133Group) return base;
+    if (companyRegime === "TT133") {
+      return {
+        ...base,
+        groups: [
+          {
+            ...tt133Group,
+            title: "Báo cáo tài chính theo Thông tư 133/2016/TT-BTC (Chế độ đang áp dụng)",
+            collapsible: false,
+            defaultOpen: true,
+          },
+          {
+            ...mainGroup,
+            title: "Báo cáo tài chính theo Thông tư 99/2025/TT-BTC & Thông tư 200/2014/TT-BTC (Tham khảo)",
+            collapsible: true,
+            defaultOpen: false,
+          },
+        ],
+      };
+    }
+    const activeTitle =
+      companyRegime === "TT200"
+        ? "Báo cáo tài chính theo Thông tư 200/2014/TT-BTC (Chế độ đang áp dụng)"
+        : "Báo cáo tài chính theo Thông tư 99/2025/TT-BTC (Chế độ đang áp dụng)";
+    return {
+      ...base,
+      groups: [
+        {
+          ...mainGroup,
+          title: activeTitle,
+          collapsible: false,
+        },
+        tt133Group,
+      ],
+    };
+  }, [searchKeyword, activeCategory, companyRegime]);
 
   const renderVisibilitySwitch = (reportName: string) => reportVisibilityMode && <button
     type="button" role="switch" aria-label={`Hiển thị ${reportName}`}

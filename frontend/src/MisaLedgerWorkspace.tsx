@@ -134,11 +134,13 @@ import {
 import amisStory1 from "./assets/amis_story_1.jpg";
 import amisStory2 from "./assets/amis_story_2.jpg";
 import amisStory3 from "./assets/amis_story_3.jpg";
+import AccountCatalogWorkspace from "./AccountCatalogWorkspace";
 
 export type CompanyInfo = {
   id: string;
   name: string;
   short?: string;
+  accounting_regime?: "TT99" | "TT133" | "TT200" | string;
 };
 
 export type MisaLedgerWorkspaceProps = {
@@ -202,6 +204,16 @@ export default function MisaLedgerWorkspace({
   const { token: apiToken, companies: apiCompanies } = useApiSession();
   const writer = createApiWriter(company.id, (path, init) => request(path, apiToken, init));
   const currentTab = tab || "process";
+  const activeRegimeCode =
+    company.accounting_regime ||
+    (apiCompanies || []).find((c: any) => c.id === company.id)?.accounting_regime ||
+    "TT99";
+  const activeCircularLabel =
+    activeRegimeCode === "TT133"
+      ? "Thông tư 133/2016/TT-BTC (DNNVV)"
+      : activeRegimeCode === "TT200"
+      ? "Thông tư 200/2014/TT-BTC"
+      : "Thông tư 99/2025/TT-BTC";
 
   // --- Interactive Popovers on Workflow Nodes (Image 1 & 2) ---
   const [showLockMenu, setShowLockMenu] = useState(false);
@@ -558,7 +570,7 @@ export default function MisaLedgerWorkspace({
       book_type: bType,
       book_title: foundMeta.label,
       form_code: foundMeta.label.split(":")[0] || "S03b-DN",
-      circular_ref: "Thông tư 99/2025/TT-BTC",
+      circular_ref: activeCircularLabel,
       is_official_book: foundMeta.isOfficial,
       company_id: company.id,
       company_name: company.name,
@@ -5703,7 +5715,40 @@ export default function MisaLedgerWorkspace({
         {/* ========================================================================= */}
         {currentTab === "process" && (
           <>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div
+                data-testid="ledger-regime-banner"
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background:
+                    activeRegimeCode === "TT133"
+                      ? "#eff6ff"
+                      : activeRegimeCode === "TT200"
+                      ? "#fffbeb"
+                      : "#ecfdf5",
+                  color:
+                    activeRegimeCode === "TT133"
+                      ? "#1d4ed8"
+                      : activeRegimeCode === "TT200"
+                      ? "#b45309"
+                      : "#047857",
+                  border:
+                    activeRegimeCode === "TT133"
+                      ? "1px solid #bfdbfe"
+                      : activeRegimeCode === "TT200"
+                      ? "1px solid #fde68a"
+                      : "1px solid #a7f3d0",
+                }}
+              >
+                {activeRegimeCode === "TT133"
+                  ? "Chế độ kế toán: Thông tư 133/2016/TT-BTC (DNNVV) · 101 TK chuẩn · Kết chuyển TK 632, 6421, 6422 → 911 · Bộ BCTC: B01a/b-DNN, B02-DNN, B03-DNN, B09-DNN"
+                  : activeRegimeCode === "TT200"
+                  ? "Chế độ kế toán: Thông tư 200/2014/TT-BTC · 135 TK chuẩn · Kết chuyển TK 621, 622, 627 → 154 & 632, 641, 642 → 911 · Bộ BCTC: B01-DN, B02-DN, B03-DN, B09-DN"
+                  : "Chế độ kế toán: Thông tư 99/2025/TT-BTC (Mới nhất 2026) · 138 TK chuẩn · Kết chuyển TK 621, 622, 627 → 154 & 632, 641, 642 → 911 · Bộ BCTC: B01-DN, B02-DN, B03-DN, B09-DN"}
+              </div>
               <button type="button" onClick={() => setGlReconciliationModalOpen(true)} style={{ padding: "8px 16px", border: "1px solid #0f766e", borderRadius: 6, background: "#ffffff", color: "#0f766e", fontWeight: 600, cursor: "pointer" }}>
                 Đối chiếu số liệu
               </button>
@@ -9841,7 +9886,7 @@ export default function MisaLedgerWorkspace({
                                   Số đầu năm / Kỳ trước
                                 </th>
                                 <th style={{ padding: "8px 12px", textAlign: "left", width: 250 }}>
-                                  Công thức / Mapping GL (TT99)
+                                  Công thức / Mapping GL ({activeRegimeCode})
                                 </th>
                                 <th style={{ padding: "8px 12px", textAlign: "center", width: 110 }}>
                                   Truy vết GL
@@ -9920,7 +9965,7 @@ export default function MisaLedgerWorkspace({
                           Hiển thị {allReportRows.length} báo cáo tài chính thuộc {statementBatches.length} phiên bản
                         </span>
                         <div style={{ fontWeight: 500, color: "#1e293b" }}>
-                          Chế độ kế toán áp dụng: Thông tư 99/2025/TT-BTC (Chính thức từ 01/01/2026 • Không tự động plug số chênh lệch BR-GL-FS-85)
+                          Chế độ kế toán áp dụng: {activeCircularLabel} (Không tự động plug số chênh lệch BR-GL-FS-85)
                         </div>
                       </div>
                     </>
@@ -12000,12 +12045,28 @@ export default function MisaLedgerWorkspace({
                                 { code: "B03 - DNKLT - GT", key: "B03-DN-GT", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp gián tiếp - DNKLT)" },
                                 { code: "B09 - DNKLT", key: "B09-DN", name: "Bản thuyết minh Báo cáo tài chính (Không đáp ứng giả định hoạt động liên tục)" },
                               ]
+                            : activeRegimeCode === "TT133"
+                            ? [
+                                { code: "B01a - DNN", key: "B01-DN", name: "Báo cáo tình hình tài chính (Mẫu B01a-DNN / B01b-DNN theo Thông tư 133)" },
+                                { code: "B02 - DNN", key: "B02-DN", name: "Báo cáo kết quả hoạt động kinh doanh (Mẫu B02-DNN theo Thông tư 133)" },
+                                { code: "B03 - DNN", key: "B03-DN", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp trực tiếp - Mẫu B03-DNN)" },
+                                { code: "B03 - DNN - GT", key: "B03-DN-GT", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp gián tiếp - Mẫu B03-DNN)" },
+                                { code: "B09 - DNN", key: "B09-DN", name: "Bản thuyết minh Báo cáo tài chính (Mẫu B09-DNN theo Thông tư 133)" },
+                              ]
+                            : activeRegimeCode === "TT200"
+                            ? [
+                                { code: "B01 - DN", key: "B01-DN", name: "Bảng cân đối kế toán (Mẫu B01-DN theo Thông tư 200/2014/TT-BTC)" },
+                                { code: "B02 - DN", key: "B02-DN", name: "Báo cáo kết quả hoạt động kinh doanh (Mẫu B02-DN theo Thông tư 200)" },
+                                { code: "B03 - DN", key: "B03-DN", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp trực tiếp - Mẫu B03-DN)" },
+                                { code: "B03 - DN - GT", key: "B03-DN-GT", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp gián tiếp - Mẫu B03-DN)" },
+                                { code: "B09 - DN", key: "B09-DN", name: "Bản thuyết minh Báo cáo tài chính (Mẫu B09-DN theo Thông tư 200)" },
+                              ]
                             : [
-                                { code: "B01 - DN", key: "B01-DN", name: "Báo cáo tình hình tài chính" },
-                                { code: "B02 - DN", key: "B02-DN", name: "Báo cáo kết quả hoạt động kinh doanh" },
+                                { code: "B01 - DN", key: "B01-DN", name: "Báo cáo tình hình tài chính (Mẫu B01-DN theo Thông tư 99/2025/TT-BTC)" },
+                                { code: "B02 - DN", key: "B02-DN", name: "Báo cáo kết quả hoạt động kinh doanh (Mẫu B02-DN theo Thông tư 99)" },
                                 { code: "B03 - DN", key: "B03-DN", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp trực tiếp)" },
                                 { code: "B03 - DN - GT", key: "B03-DN-GT", name: "Báo cáo lưu chuyển tiền tệ (Phương pháp gián tiếp)" },
-                                { code: "B09 - DN", key: "B09-DN", name: "Bản thuyết minh Báo cáo tài chính" },
+                                { code: "B09 - DN", key: "B09-DN", name: "Bản thuyết minh Báo cáo tài chính (Mẫu B09-DN theo Thông tư 99)" },
                               ]
                           ).map((item) => (
                             <tr
@@ -16151,7 +16212,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Printer size={15} />
-                  <span>In sổ (TT99)</span>
+                  <span>In sổ ({activeRegimeCode})</span>
                 </button>
                 <button
                   type="button"
@@ -16217,7 +16278,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "grid", gridTemplateColumns: "2.2fr 0.9fr 1fr 1fr 1fr 0.9fr 0.9fr auto", gap: 8, alignItems: "end" }}>
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 3 }}>
-                    Loại Sổ kế toán / Chế độ tra cứu (16 chế độ TT99)
+                    Loại Sổ kế toán / Chế độ tra cứu (16 chế độ {activeRegimeCode})
                   </label>
                   <select
                     value={uc14BookType}
@@ -16474,7 +16535,7 @@ export default function MisaLedgerWorkspace({
               {/* Left: Book / Inquiry Content */}
               <div style={{ padding: "18px 22px", overflowY: "auto" }}>
                 <div style={{ textAlign: "center", marginBottom: 14 }}>
-                  <div style={{ fontSize: 12.5, color: "#64748b" }}>{company.name} • Mẫu biểu: {uc14BookResult?.form_code || "S03b-DN"} ({uc14BookResult?.circular_ref || "Thông tư 99/2025/TT-BTC"})</div>
+                  <div style={{ fontSize: 12.5, color: "#64748b" }}>{company.name} • Mẫu biểu: {uc14BookResult?.form_code || "S03b-DN"} ({uc14BookResult?.circular_ref || activeCircularLabel})</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", textTransform: "uppercase", marginTop: 2 }}>
                     {uc14BookResult?.book_title || previewReportName}
                   </div>
@@ -16931,16 +16992,16 @@ export default function MisaLedgerWorkspace({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 600, background: "#ffffff", borderRadius: 8, padding: 20 }}
+            style={{ width: "min(1200px, 95vw)", maxHeight: "90vh", overflowY: "auto", background: "#ffffff", borderRadius: 8, padding: 20 }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <span style={{ fontSize: 16, fontWeight: 700 }}>Hệ thống tài khoản kế toán</span>
-              <button onClick={() => setChartOfAccountsModalOpen(false)} style={{ border: "none", background: "none" }}><X size={18} /></button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <span style={{ fontSize: 16, fontWeight: 700 }}>
+                Hệ thống tài khoản kế toán ({activeCircularLabel})
+              </span>
+              <button onClick={() => setChartOfAccountsModalOpen(false)} style={{ border: "none", background: "none", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <div style={{ fontSize: 13, color: "#475569" }}>
-              Danh mục hệ thống tài khoản chuẩn mực theo Thông tư 99/2025/TT-BTC.
-            </div>
-            <div style={{ marginTop: 16, textAlign: "right" }}>
+            <AccountCatalogWorkspace />
+            <div style={{ marginTop: 12, textAlign: "right" }}>
               <button
                 type="button"
                 onClick={() => setChartOfAccountsModalOpen(false)}

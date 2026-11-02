@@ -117,6 +117,12 @@ def complete_company_setup(company, actor, request=None):
     _ensure_gl_periods(company, fiscal_year)
     if not Account.objects.filter(company=company).exists():
         init_chart_of_accounts_from_template(company, regime=company.accounting_regime, user=actor)
+    try:
+        from general_ledger.services import seed_default_closing_rules, seed_default_financial_statement_mappings
+        seed_default_closing_rules(company, actor)
+        seed_default_financial_statement_mappings(company, actor)
+    except Exception:
+        pass
     create_default_numbering_rules_for_company(company, actor)
     _ensure_tax_rates(company, today)
     _ensure_units(company)

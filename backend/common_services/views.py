@@ -364,6 +364,12 @@ class MyCompaniesView(APIView):
                     "code": x.code,
                     "name": x.name,
                     "status": x.status,
+                    "tax_code": x.tax_code,
+                    "address": x.address,
+                    "accounting_regime": x.accounting_regime or "TT99",
+                    "business_type": x.business_type,
+                    "legal_representative": x.legal_representative,
+                    "representative_title": x.representative_title or "Giám đốc",
                     "is_company_admin": True,
                 }
                 for x in companies
@@ -380,6 +386,12 @@ class MyCompaniesView(APIView):
                 "code": x.company.code,
                 "name": x.company.name,
                 "status": x.company.status,
+                "tax_code": x.company.tax_code,
+                "address": x.company.address,
+                "accounting_regime": x.company.accounting_regime or "TT99",
+                "business_type": x.company.business_type,
+                "legal_representative": x.company.legal_representative,
+                "representative_title": x.company.representative_title or "Giám đốc",
                 "is_company_admin": (
                     x.company.created_by_user_id == account.id
                     or any(

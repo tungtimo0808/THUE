@@ -123,16 +123,44 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
       if (!found) throw new FormDataError(`Chưa có loại tiền ${code}.`);
       return found;
     },
-    /** Exact postable account, otherwise the first postable sub-account (e.g. 156 → 1561). */
+    /** Exact postable account, otherwise the first postable sub-account (e.g. 156 → 1561), with cross-regime fallbacks (TT99 / TT133 / TT200). */
     async account(code: unknown, label = "tài khoản") {
       const wanted = String(code ?? "").trim();
       if (!wanted) throw new FormDataError(`Chưa nhập ${label}.`);
       const rows = (await list("accounts")).filter((row) => row.status === "ACTIVE");
-      let found: Row | undefined = rows.find((row) => row.code === wanted && row.is_postable)
-        || rows.filter((row) => row.is_postable && String(row.code).startsWith(wanted)).sort((a, b) => String(a.code).localeCompare(String(b.code)))[0];
-      // Forms may name a detail account the chart does not have (33311 → 3331).
-      for (let size = wanted.length - 1; !found && size >= 3; size -= 1) {
-        found = rows.find((row) => row.code === wanted.slice(0, size) && row.is_postable);
+      const findByCode = (target: string): Row | undefined => {
+        let hit: Row | undefined = rows.find((row) => row.code === target && row.is_postable)
+          || rows.filter((row) => row.is_postable && String(row.code).startsWith(target)).sort((a, b) => String(a.code).localeCompare(String(b.code)))[0];
+        for (let size = target.length - 1; !hit && size >= 3; size -= 1) {
+          hit = rows.find((row) => row.code === target.slice(0, size) && row.is_postable);
+        }
+        return hit;
+      };
+      let found = findByCode(wanted);
+      if (!found) {
+        // Cross-regime fallback aliases (TT99 <-> TT133 <-> TT200)
+        const fallbacks: string[] = [];
+        if (wanted.startsWith("641")) fallbacks.push("6421", "642");
+        else if (wanted === "642" || /^642[3-8]$/.test(wanted)) fallbacks.push("6422", "6428", "642");
+        else if (wanted === "6421") fallbacks.push("6418", "6411", "641", "642");
+        else if (wanted === "6422") fallbacks.push("6428", "6421", "642");
+        else if (/^62[1237]/.test(wanted)) fallbacks.push("154");
+        else if (wanted.startsWith("521")) fallbacks.push("5111", "511");
+        else if (wanted.startsWith("212")) fallbacks.push("2112", "211");
+        else if (wanted.startsWith("213")) fallbacks.push("2113", "211");
+        else if (wanted === "2142" || wanted === "2143") fallbacks.push("2141", "214");
+        else if (wanted.startsWith("244")) fallbacks.push("1386", "1388", "242");
+        else if (wanted === "1386") fallbacks.push("244", "1388");
+        else if (wanted === "1113") fallbacks.push("1111", "111");
+        else if (wanted === "1123") fallbacks.push("1121", "112");
+        else if (wanted.startsWith("215")) fallbacks.push("2111", "211");
+        else if (wanted.startsWith("332")) fallbacks.push("3388", "338");
+        else if (wanted.startsWith("158")) fallbacks.push("152", "156");
+        else if (wanted === "2295") fallbacks.push("2294", "229");
+        for (const alt of fallbacks) {
+          found = findByCode(alt);
+          if (found) break;
+        }
       }
       if (!found) throw new FormDataError(`Tài khoản ${wanted} chưa có trong hệ thống tài khoản.`);
       return found;

@@ -78,17 +78,79 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
       const url = URL.createObjectURL(await response.blob()); const link = document.createElement("a"); link.href = url; link.download = "he-thong-tai-khoan.xlsx"; link.click(); URL.revokeObjectURL(url);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không thể xuất Excel."); }
   }
-  return <main className="account-page"><section className="account-card account-wide">
-    {onBack && <button type="button" onClick={onBack}>← Danh mục</button>}
-    <p className="account-eyebrow">MD-09</p><h1>Hệ thống tài khoản</h1>
+  const activeRegime = chart?.accounting_regime || "TT99";
+  const regimeInfoText =
+    activeRegime === "TT133"
+      ? "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ và vừa — DNNVV) · Đặc trưng: TK 154 tập hợp trực tiếp (không có 621, 622, 627), TK 6421/6422 (gộp 641 vào 642), TK 2111/2112/2113, TK 1386."
+      : activeRegime === "TT200"
+      ? "Thông tư 200/2014/TT-BTC (Chế độ kế toán Doanh nghiệp) · Đặc trưng: Tập hợp giá thành qua TK 621, 622, 627 → 154; Chi phí bán hàng TK 641 & QLDN TK 642; TK 244, 34311..34313."
+      : "Thông tư 99/2025/TT-BTC (Hiệu lực từ 01/01/2026 thay thế TT200) · Đặc trưng: Bổ sung TK 215 (Tài sản sinh học), TK 332 (Phải trả cổ tức/lợi nhuận), TK 158 (Nguyên liệu, vật liệu tại kho bảo thuế), TK 2295.";
+  const filteredAccounts = chartAccounts.filter(item => `${item.code} ${item.name}`.toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi")));
+  return <div style={{ width: "100%", background: "#ffffff", borderRadius: 8, padding: "12px 16px" }}>
+    {onBack && <button type="button" onClick={onBack} style={{ marginBottom: 10, padding: "5px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontWeight: 600 }}>← Danh mục</button>}
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+      <div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0284c7", textTransform: "uppercase" }}>MD-09 · DANH MỤC HỆ THỐNG TÀI KHOẢN</div>
+        <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "2px 0 0" }}>Hệ thống tài khoản kế toán ({activeRegime}) — Tổng số: {chartAccounts.length} tài khoản</h1>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
+          Bộ tài khoản:
+          <select value={chartId} onChange={event => setChartId(event.target.value)} style={{ height: 34, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 10px", fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
+            <option value="">Chọn bộ tài khoản</option>
+            {charts.map(item => <option key={item.id} value={item.id}>{item.name} · {item.accounting_regime} ({chartAccounts.length} TK)</option>)}
+          </select>
+        </label>
+      </div>
+    </div>
+    <div data-testid="coa-regime-banner" style={{ marginBottom: 12, padding: "8px 14px", borderRadius: 6, fontSize: 12.5, fontWeight: 600, background: activeRegime === "TT133" ? "#eff6ff" : activeRegime === "TT200" ? "#fffbeb" : "#ecfdf5", color: activeRegime === "TT133" ? "#1d4ed8" : activeRegime === "TT200" ? "#b45309" : "#047857", border: activeRegime === "TT133" ? "1px solid #bfdbfe" : activeRegime === "TT200" ? "1px solid #fde68a" : "1px solid #a7f3d0" }}>
+      {regimeInfoText}
+    </div>
     {!token || !companyId ? <p>Cần đăng nhập và chọn doanh nghiệp.</p> : <>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}
-      <label>Bộ tài khoản<select value={chartId} onChange={event => setChartId(event.target.value)}><option value="">Chọn bộ tài khoản</option>{charts.map(item => <option key={item.id} value={item.id}>{item.name} · {item.accounting_regime}</option>)}</select></label>
       {chart?.accounting_regime === "TT58" ? <p>Bộ dữ liệu này áp dụng chế độ sổ kế toán theo Thông tư 58.</p> : <>
-      <div className="account-actions"><label>Tìm theo số hoặc tên<input value={query} onChange={event => setQuery(event.target.value)} /></label><button type="button" onClick={() => open("create")} disabled={!chartId}>Thêm</button><button type="button" onClick={() => setReload(value => value + 1)}>Làm mới</button><button type="button" onClick={exportExcel} disabled={!chartId}>Xuất Excel</button></div>
-      <table><thead><tr><th>Số tài khoản</th><th>Tên tài khoản</th><th>Tên tiếng Anh</th><th>Tính chất</th><th>Theo dõi chi tiết theo</th><th>Trạng thái</th><th>Chức năng</th></tr></thead><tbody>
-        {chartAccounts.filter(item => `${item.code} ${item.name}`.toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))).map(item => <tr key={item.id}><td style={{ paddingLeft: `${item.account_level * 12}px` }}>{item.code}</td><td>{item.name}</td><td>{item.name_en}</td><td>{balances.find(pair => pair[0] === item.normal_balance)?.[1]}</td><td>{Object.entries(item.dimension_requirements || {}).filter(([, level]) => level !== "NOT_USED").map(([key, level]) => `${dimensions.find(pair => pair[0] === key)?.[1] || key}: ${levels.find(pair => pair[0] === level)?.[1] || level}`).join(", ")}</td><td>{item.status === "ACTIVE" ? "Đang sử dụng" : "Ngừng sử dụng"}</td><td><div className="account-actions"><button type="button" onClick={() => open("edit", item)}>Sửa</button><button type="button" onClick={() => open("create", item, true)}>Nhân bản</button><button type="button" onClick={() => changeStatus(item)} disabled={busy}>{item.status === "ACTIVE" ? "Ngừng sử dụng" : "Sử dụng lại"}</button><button type="button" onClick={() => open("transfer", item)}>Chuyển TK</button><button type="button" onClick={() => remove(item)} disabled={busy}>Xóa</button></div></td></tr>)}
-      </tbody></table></>}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+        <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm theo số hiệu hoặc tên tài khoản (VD: 154, 215, 332, 6421...)" style={{ width: 380, height: 34, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 12px", fontSize: 13 }} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => open("create")} disabled={!chartId} style={{ height: 34, padding: "0 14px", borderRadius: 6, background: "#00a862", color: "#fff", border: "none", fontWeight: 600, cursor: "pointer" }}>+ Thêm tài khoản</button>
+          <button type="button" onClick={() => setReload(value => value + 1)} style={{ height: 34, padding: "0 12px", borderRadius: 6, background: "#f8fafc", color: "#334155", border: "1px solid #cbd5e1", fontWeight: 600, cursor: "pointer" }}>Làm mới</button>
+          <button type="button" onClick={exportExcel} disabled={!chartId} style={{ height: 34, padding: "0 12px", borderRadius: 6, background: "#f8fafc", color: "#0284c7", border: "1px solid #bae6fd", fontWeight: 600, cursor: "pointer" }}>Xuất Excel</button>
+        </div>
+      </div>
+      <div style={{ maxHeight: 460, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+          <thead style={{ position: "sticky", top: 0, background: "#f1f5f9", zIndex: 1 }}>
+            <tr style={{ borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+              <th style={{ padding: "8px 12px", textAlign: "left", width: 110 }}>Số tài khoản</th>
+              <th style={{ padding: "8px 12px", textAlign: "left" }}>Tên tài khoản (Tiếng Việt)</th>
+              <th style={{ padding: "8px 12px", textAlign: "left", width: 220 }}>Tên tiếng Anh</th>
+              <th style={{ padding: "8px 12px", textAlign: "left", width: 100 }}>Tính chất</th>
+              <th style={{ padding: "8px 12px", textAlign: "left", width: 190 }}>Theo dõi chi tiết</th>
+              <th style={{ padding: "8px 12px", textAlign: "center", width: 105 }}>Trạng thái</th>
+              <th style={{ padding: "8px 12px", textAlign: "center", width: 190 }}>Chức năng</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredAccounts.map(item => (
+              <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9", background: item.account_level === 1 ? "#f8fafc" : "#ffffff", fontWeight: item.account_level === 1 ? 700 : 400 }}>
+                <td style={{ padding: "7px 12px", paddingLeft: `${12 + (item.account_level - 1) * 14}px`, color: "#00a862", fontWeight: 700 }}>{item.code}</td>
+                <td style={{ padding: "7px 12px", color: "#0f172a" }}>{item.name}</td>
+                <td style={{ padding: "7px 12px", color: "#64748b", fontSize: 12 }}>{item.name_en}</td>
+                <td style={{ padding: "7px 12px", color: "#334155" }}>{balances.find(pair => pair[0] === item.normal_balance)?.[1]}</td>
+                <td style={{ padding: "7px 12px", color: "#475569", fontSize: 11.5 }}>{Object.entries(item.dimension_requirements || {}).filter(([, level]) => level !== "NOT_USED").map(([key, level]) => `${dimensions.find(pair => pair[0] === key)?.[1] || key}`).join(", ") || "—"}</td>
+                <td style={{ padding: "7px 12px", textAlign: "center", color: item.status === "ACTIVE" ? "#059669" : "#94a3b8", fontWeight: 600 }}>{item.status === "ACTIVE" ? "Đang sử dụng" : "Ngừng SD"}</td>
+                <td style={{ padding: "7px 8px", textAlign: "center" }}>
+                  <div style={{ display: "inline-flex", gap: 4 }}>
+                    <button type="button" onClick={() => open("edit", item)} style={{ padding: "2px 7px", fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}>Sửa</button>
+                    <button type="button" onClick={() => open("create", item, true)} style={{ padding: "2px 7px", fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}>Nhân bản</button>
+                    <button type="button" onClick={() => open("transfer", item)} style={{ padding: "2px 7px", fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}>Chuyển TK</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div></>}
       {mode && <form className="account-change-email" onSubmit={save}><h2>{mode === "create" ? "Thêm tài khoản" : mode === "edit" ? "Sửa tài khoản" : "Chuyển tài khoản hạch toán"}</h2>
         {mode === "transfer" ? <><p>Chỉ chuyển các dòng bút toán nháp ở kỳ đang mở. Tài khoản có số dư, bút toán đã ghi sổ hoặc tham chiếu nghiệp vụ khác sẽ bị từ chối.</p><label>Tài khoản nhận<select value={targetId} onChange={event => setTargetId(event.target.value)} required><option value="">Chọn tài khoản nhận</option>{chartAccounts.filter(item => item.id !== selected?.id && item.status === "ACTIVE" && item.is_postable && item.account_type === selected?.account_type && item.normal_balance === selected?.normal_balance).map(item => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></label><label><input type="checkbox" checked={deleteSource} onChange={event => setDeleteSource(event.target.checked)} /> Xóa tài khoản nguồn nếu đã hết tham chiếu</label></> : <>
           <label>Số tài khoản<input value={form.code} onChange={event => setForm(current => ({ ...current, code: event.target.value }))} required /></label>
@@ -101,5 +163,5 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
         <div className="account-actions"><button type="submit" disabled={busy}>Thực hiện</button><button type="button" onClick={() => setMode(null)}>Hủy</button></div>
       </form>}
     </>}
-  </section></main>;
+  </div>;
 }

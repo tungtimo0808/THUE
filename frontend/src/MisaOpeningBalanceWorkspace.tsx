@@ -515,9 +515,40 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     setBookkeepingMethod("");
     if (!companyId) return;
     openingRequest("")
-      .then((res) => {
+      .then(async (res) => {
         if (!mounted || !res) return;
         applyBackendOpeningResponse(res);
+        if (!Array.isArray(res.accounts) || res.accounts.length === 0) {
+          try {
+            const coaRes = await request<any>(
+              `/api/v1/general-ledger/accounts/?company_id=${encodeURIComponent(companyId)}&page_size=500`,
+              token || undefined,
+            );
+            const coaList = Array.isArray(coaRes)
+              ? coaRes
+              : Array.isArray(coaRes?.results)
+              ? coaRes.results
+              : [];
+            if (mounted && coaList.length > 0) {
+              const balanceSheetAccounts = coaList
+                .filter((acc: any) => {
+                  const code = String(acc.code || "");
+                  return ["1", "2", "3", "4"].includes(code.charAt(0));
+                })
+                .sort((a: any, b: any) => String(a.code || "").localeCompare(String(b.code || "")))
+                .map((acc: any) => ({
+                  account: String(acc.code || ""),
+                  name: String(acc.name || ""),
+                  debit: 0,
+                  credit: 0,
+                  isParent: !acc.is_postable,
+                }));
+              setAccountRows(balanceSheetAccounts);
+            }
+          } catch {
+            // Keep empty if CoA fetch fails
+          }
+        }
       })
       .catch((err: any) => { if (mounted) notify?.(err?.message || "Không tải được số dư ban đầu."); });
     return () => {
@@ -1057,13 +1088,21 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       .then((res) => setOpeningCheck(res))
       .catch((err: any) => notify?.(err?.message || "Không kiểm tra được số dư đầu kỳ."));
   };
+  const regimeFullLabel =
+    accountingRegime === "TT133"
+      ? "TT133 — Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ và vừa)"
+      : accountingRegime === "TT200"
+      ? "TT200 — Thông tư 200/2014/TT-BTC"
+      : accountingRegime === "TT99"
+      ? "TT99 — Thông tư 99/2025/TT-BTC (Hiệu lực 01/01/2026)"
+      : accountingRegime || "TT99 — Thông tư 99/2025/TT-BTC";
   if (!activeCategoryId) {
     return (
       <div className="misa-opening-container">
         <div className="misa-opening-hub">
           <h2 className="misa-opening-hub-title">Nhập số dư ban đầu</h2>
           <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 14px", fontSize: 12.5, color: "#475569" }}>
-            <span>Ngày bắt đầu hạch toán: <strong>{startDate}</strong> · Chế độ: <strong>{accountingRegime}</strong>{bookkeepingMethod === "SIMPLE" ? " (sổ đơn)" : ""}</span>
+            <span>Ngày bắt đầu hạch toán: <strong>{startDate}</strong> · Chế độ: <strong>{regimeFullLabel}</strong>{bookkeepingMethod === "SIMPLE" ? " (sổ đơn)" : ""}</span>
             <button type="button" className="misa-opening-btn-secondary" data-testid="opening-check" onClick={runOpeningCheck}>Kiểm tra số dư đầu kỳ</button>
           </div>
           {accountingRegime === "TT58" && bookkeepingMethod === "SIMPLE" && (
@@ -1625,7 +1664,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   </div>
                 </div>
                 <div style={{ padding: "12px 20px" }}>
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Trạng thái cân đối (TT 99/2025/TT-BTC · BR09)</span>
+                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+                    Trạng thái cân đối ({accountingRegime === "TT133" ? "TT 133/2016/TT-BTC" : accountingRegime === "TT200" ? "TT 200/2014/TT-BTC" : "TT 99/2025/TT-BTC"} · BR09)
+                  </span>
                   {isBalanced ? (
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#00a862", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
                       <Check size={16} />

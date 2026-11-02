@@ -585,7 +585,19 @@ function ReferenceWorkspace() {
     setTimeout(() => setIsSwitchingContext(false), 280);
   };
 
-  const datasetLabel = dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026";
+  const activeCompanyRegime = useMemo(() => {
+    const raw = String((company as any)?.accounting_regime || "TT99").toUpperCase();
+    if (raw.includes("133")) return "TT133";
+    if (raw.includes("200")) return "TT200";
+    return "TT99";
+  }, [company]);
+  const activeRegimeShortBadge =
+    activeCompanyRegime === "TT133"
+      ? "TT133/2016 (SME)"
+      : activeCompanyRegime === "TT200"
+      ? "TT200/2014"
+      : "TT99/2025";
+  const datasetLabel = `${dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026"} · ${activeRegimeShortBadge}`;
   const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
   const periodLabel = period.startsWith("2026-") ? `K${Number(period.slice(5))}.2026` : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
@@ -708,14 +720,24 @@ function ReferenceWorkspace() {
     {
       id: "sys-tt99",
       category: "system" as const,
-      code: "Thông tư 99/2025",
+      code:
+        activeCompanyRegime === "TT133"
+          ? "Thông tư 133/2016"
+          : activeCompanyRegime === "TT200"
+          ? "Thông tư 200/2014"
+          : "Thông tư 99/2025",
       kindLabel: "Chế độ kế toán",
       kind: "info" as const,
-      description: "Hệ thống đã cập nhật đầy đủ sổ quỹ S07-DN, S07a-DN và báo cáo B03-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
+      description:
+        activeCompanyRegime === "TT133"
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp nhỏ và vừa theo Thông tư 133/2016/TT-BTC (101 TK, Bộ BCTC B01a/B01b-DNN, B02-DNN, B03-DNN, B09-DNN)."
+          : activeCompanyRegime === "TT200"
+          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp theo Thông tư 200/2014/TT-BTC (135 TK, Bộ BCTC B01/B02/B03/B09-DN)."
+          : "Hệ thống đã cập nhật đầy đủ Hệ thống 138 TK, sổ quỹ S07-DN, S07a-DN và bộ BCTC B01/B02/B03/B09-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
       partner: "Bộ Tài chính",
       amount: 0,
       date: "20/09/2026 08:30",
-      actionUrl: "/cash/reports",
+      actionUrl: "/reports",
     },
   ];
 
@@ -1197,6 +1219,8 @@ function ReferenceWorkspace() {
                 <div className="ref-cluster-popover-list">
                   {(apiCompanies.length > 0 ? apiCompanies : companies).map((c) => {
                     const isSelected = c.id === company.id;
+                    const rawReg = String((c as any).accounting_regime || "TT99").toUpperCase();
+                    const cReg = rawReg.includes("133") ? "TT133" : rawReg.includes("200") ? "TT200" : "TT99";
                     return (
                       <button
                         key={c.id}
@@ -1208,10 +1232,24 @@ function ReferenceWorkspace() {
                           }
                           context("company", c.id);
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name}`);
+                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name} (${cReg})`);
                         }}
                       >
-                        <span className="ref-cluster-item-name">{c.name}</span>
+                        <span className="ref-cluster-item-name" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span>{c.name}</span>
+                          <span
+                            style={{
+                              fontSize: 10.5,
+                              fontWeight: 700,
+                              padding: "1px 6px",
+                              borderRadius: 999,
+                              background: cReg === "TT133" ? "#fef3c7" : cReg === "TT200" ? "#e0e7ff" : "#dcfce7",
+                              color: cReg === "TT133" ? "#b45309" : cReg === "TT200" ? "#1d4ed8" : "#047857",
+                            }}
+                          >
+                            {cReg}
+                          </span>
+                        </span>
                         {isSelected && <Check size={14} className="ref-cluster-check" />}
                       </button>
                     );

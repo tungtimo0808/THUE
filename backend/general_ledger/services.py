@@ -7782,8 +7782,8 @@ def _validate_closing_account(company, account, role_label="Tài khoản kết c
 
 def seed_default_closing_rules(company, request=None):
     """
-    Hỗ trợ khởi tạo bộ Quy tắc kết chuyển lãi lỗ chuẩn Thông tư 99/2025/TT-BTC & TT200
-    từ danh mục tài khoản thực tế của doanh nghiệp (521->511; 511,515,711->911; 911->632,635,641,642,811,821; 911<->4212).
+    Hỗ trợ khởi tạo bộ Quy tắc kết chuyển lãi lỗ chuẩn theo chế độ kế toán của doanh nghiệp (TT99, TT200, TT133)
+    từ danh mục tài khoản thực tế của doanh nghiệp (521->511; 511,515,711->911; 911->632,635,641/642,811,821; 911<->4212).
     """
     acc_911 = models.Account.objects.filter(company=company, code="911", status="ACTIVE").first()
     if not acc_911:
@@ -7792,6 +7792,7 @@ def seed_default_closing_rules(company, request=None):
         models.Account.objects.filter(company=company, code="4212", status="ACTIVE").first()
         or models.Account.objects.filter(company=company, code__startswith="421", status="ACTIVE", is_postable=True).first()
     )
+    is_tt133 = str(getattr(company, "accounting_regime", "") or "").upper() in ("TT133", "CIRCULAR_133", "133")
     created_rules = []
     specs = [
         ("KC-521", "Kết chuyển các khoản giảm trừ doanh thu sang 511", "521", "511", "REVENUE_DEDUCTION", "DEBIT_DEST_CREDIT_SOURCE", 10),
@@ -7801,14 +7802,42 @@ def seed_default_closing_rules(company, request=None):
         ("KC-632", "Kết chuyển Giá vốn hàng bán từ 911", "632", "911", "EXPENSE", "DEBIT_DEST_CREDIT_SOURCE", 50),
         ("KC-635", "Kết chuyển Chi phí tài chính từ 911", "635", "911", "EXPENSE", "DEBIT_DEST_CREDIT_SOURCE", 60),
         ("KC-641", "Kết chuyển Chi phí bán hàng từ 911", "641", "911", "EXPENSE", "DEBIT_DEST_CREDIT_SOURCE", 70),
-        ("KC-642", "Kết chuyển Chi phí quản lý doanh nghiệp từ 911", "642", "911", "EXPENSE", "DEBIT_DEST_CREDIT_SOURCE", 80),
+        (
+            "KC-642",
+            "Kết chuyển Chi phí quản lý kinh doanh (6421, 6422) từ 911" if is_tt133 else "Kết chuyển Chi phí quản lý doanh nghiệp từ 911",
+            "642",
+            "911",
+            "EXPENSE",
+            "DEBIT_DEST_CREDIT_SOURCE",
+            80,
+        ),
         ("KC-811", "Kết chuyển Chi phí khác từ 911", "811", "911", "EXPENSE", "DEBIT_DEST_CREDIT_SOURCE", 90),
         ("KC-821", "Kết chuyển Chi phí thuế TNDN từ 911", "821", "911", "EXPENSE", "DEBIT_DEST_CREDIT_SOURCE", 100),
     ]
+    parent_ids = set(
+        models.Account.objects.filter(company=company, parent__isnull=False, status="ACTIVE").values_list("parent_id", flat=True)
+    )
     for code, name, src_pfx, dst_code, rtype, direction, seq in specs:
-        src_acc = models.Account.objects.filter(company=company, code=src_pfx, status="ACTIVE", is_postable=True).first()
-        dst_acc = models.Account.objects.filter(company=company, code=dst_code, status="ACTIVE", is_postable=True).first()
-        if dst_acc and (src_acc or models.Account.objects.filter(company=company, code__startswith=src_pfx, status="ACTIVE", is_postable=True).exists()):
+        src_acc = (
+            models.Account.objects.filter(company=company, code=src_pfx, status="ACTIVE", is_postable=True)
+            .exclude(pk__in=parent_ids)
+            .first()
+        )
+        dst_acc = (
+            models.Account.objects.filter(company=company, code=dst_code, status="ACTIVE", is_postable=True)
+            .exclude(pk__in=parent_ids)
+            .first()
+            or models.Account.objects.filter(company=company, code__startswith=dst_code, status="ACTIVE", is_postable=True)
+            .exclude(pk__in=parent_ids)
+            .order_by("code")
+            .first()
+        )
+        if dst_acc and (
+            src_acc
+            or models.Account.objects.filter(company=company, code__startswith=src_pfx, status="ACTIVE", is_postable=True)
+            .exclude(pk__in=parent_ids)
+            .exists()
+        ):
             rule_obj, _ = models.ClosingRule.objects.update_or_create(
                 company=company,
                 code=code,
@@ -7882,6 +7911,9 @@ def _compute_closing_source_dataset(company, period, closing_to_date, rules, exc
             "error_code": "CLOSING_RULE_SEQUENCE_CONFLICT",
         })
 
+    parent_ids = set(
+        models.Account.objects.filter(company=company, parent__isnull=False, status="ACTIVE").values_list("parent_id", flat=True)
+    )
     # Kiểm tra hiệu lực tài khoản trên tất cả các Rule (EF-12, EF-13, EF-14)
     for r in rules:
         if r.destination_account_id is None:
@@ -7889,9 +7921,38 @@ def _compute_closing_source_dataset(company, period, closing_to_date, rules, exc
                 "destination_account": f"Quy tắc '{r.code}' thiếu tài khoản đích (EF-13).",
                 "error_code": "MISSING_DESTINATION_ACCOUNT",
             })
+        if (not r.destination_account.is_postable or r.destination_account_id in parent_ids) and r.result_type == "REVENUE_DEDUCTION":
+            leaf_dst = (
+                models.Account.objects.filter(
+                    company=company,
+                    code__startswith=r.destination_account.code,
+                    status="ACTIVE",
+                    is_postable=True,
+                )
+                .exclude(pk__in=parent_ids)
+                .order_by("code")
+                .first()
+            )
+            if leaf_dst:
+                r.destination_account = leaf_dst
+                r.destination_account_id = leaf_dst.id
         _validate_closing_account(company, r.destination_account, f"Tài khoản đích của quy tắc {r.code}", posting_date=closing_to_date)
         if r.source_account_id:
-            _validate_closing_account(company, r.source_account, f"Tài khoản nguồn của quy tắc {r.code}", posting_date=closing_to_date)
+            if r.include_subaccounts and (not r.source_account.is_postable or r.source_account_id in parent_ids):
+                has_leaf = (
+                    models.Account.objects.filter(
+                        company=company,
+                        code__startswith=r.source_account.code,
+                        status="ACTIVE",
+                        is_postable=True,
+                    )
+                    .exclude(pk__in=parent_ids)
+                    .exists()
+                )
+                if not has_leaf:
+                    _validate_closing_account(company, r.source_account, f"Tài khoản nguồn của quy tắc {r.code}", posting_date=closing_to_date)
+            else:
+                _validate_closing_account(company, r.source_account, f"Tài khoản nguồn của quy tắc {r.code}", posting_date=closing_to_date)
         elif not str(r.source_account_prefix or "").strip():
             raise ValidationError({
                 "source_account": f"Quy tắc '{r.code}' thiếu tài khoản nguồn (EF-12).",
@@ -7933,7 +7994,7 @@ def _compute_closing_source_dataset(company, period, closing_to_date, rules, exc
         d_val = (ln.debit or Decimal("0")).quantize(Decimal("0.0001"))
         c_val = (ln.credit or Decimal("0")).quantize(Decimal("0.0001"))
         fingerprint_tokens.append(f"{ln.entry_id}:{ln.id}:{aid}:{d_val}:{c_val}:{ln.entry.version}")
-        if ln.entry_id in active_closing_entry_ids or ln.entry.entry_type == "CLOSING":
+        if (ln.entry_id in active_closing_entry_ids or ln.entry.entry_type == "CLOSING") and not str(ln.entry.source_event_id or "").startswith("COST:"):
             cur_closed = already_closed_by_account.get(aid, {"debit": Decimal("0"), "credit": Decimal("0")})
             cur_closed["debit"] += d_val
             cur_closed["credit"] += c_val
@@ -7977,7 +8038,9 @@ def _compute_closing_source_dataset(company, period, closing_to_date, rules, exc
                         code__startswith=rule.source_account.code,
                         status="ACTIVE",
                         is_postable=True,
-                    ).order_by("code")
+                    )
+                    .exclude(pk__in=parent_ids)
+                    .order_by("code")
                 )
             else:
                 candidate_accounts = [rule.source_account]
@@ -7988,7 +8051,9 @@ def _compute_closing_source_dataset(company, period, closing_to_date, rules, exc
                     code__startswith=str(rule.source_account_prefix).strip(),
                     status="ACTIVE",
                     is_postable=True,
-                ).order_by("code")
+                )
+                .exclude(pk__in=parent_ids)
+                .order_by("code")
             )
 
         for src_acc in candidate_accounts:
@@ -16879,9 +16944,10 @@ def _default_tt99_mapping_definitions():
 def seed_default_financial_statement_mappings(company, mapping_version="TT99-2025-V1", request=None):
     """
     UC-GL-13 (Section 1.1.E, BR-GL-FS-07..15, 53..59):
-    Khởi tạo bộ quy tắc mapping chuẩn theo Thông tư 99/2025/TT-BTC cho doanh nghiệp.
+    Khởi tạo bộ quy tắc mapping chuẩn theo chế độ kế toán của doanh nghiệp (TT99, TT200, TT133).
     """
     defs = _default_tt99_mapping_definitions()
+    is_tt133 = str(getattr(company, "accounting_regime", "") or "").upper() in ("TT133", "CIRCULAR_133", "133")
     created_or_existing = []
     for (form_code, cf_method), rules in defs.items():
         for (
@@ -16898,6 +16964,15 @@ def seed_default_financial_statement_mappings(company, mapping_version="TT99-202
             sign_val,
             formula_expr,
         ) in rules:
+            effective_prefixes = list(prefixes)
+            effective_formula = formula_expr
+            if is_tt133 and form_code == "B02-DN":
+                if ind_code == "25":
+                    effective_prefixes = ["6421", "641"]
+                    effective_formula = "Phát sinh Nợ TK 6421 (Chi phí bán hàng - TT133)"
+                elif ind_code == "26":
+                    effective_prefixes = ["6422"]
+                    effective_formula = "Phát sinh Nợ TK 6422 (Chi phí quản lý doanh nghiệp - TT133)"
             obj, _ = models.FinancialStatementMappingRule.objects.update_or_create(
                 company=company,
                 mapping_version=mapping_version,
@@ -16914,10 +16989,10 @@ def seed_default_financial_statement_mappings(company, mapping_version="TT99-202
                     "is_mandatory": True,
                     "is_custom_indicator": False,
                     "source_type": src_type,
-                    "account_prefixes": prefixes,
+                    "account_prefixes": effective_prefixes,
                     "balance_side": bal_side,
                     "sign": sign_val,
-                    "formula_expression": formula_expr,
+                    "formula_expression": effective_formula,
                     "is_active": True,
                 },
             )
@@ -17539,7 +17614,7 @@ def _collect_gl_data_slice(company, from_date, to_date, branch_id=None):
         pdate = ln.entry.posting_date
         etype = ln.entry.entry_type
         if from_date <= pdate <= to_date and etype != "OPENING":
-            if acode.startswith("911") or etype == "CLOSING":
+            if (acode.startswith("911") or etype == "CLOSING") and not str(ln.entry.source_event_id or "").startswith("COST:"):
                 closing_entry_ids.add(ln.entry_id)
 
     for ln in all_lines:
@@ -17597,6 +17672,7 @@ def _collect_gl_data_slice(company, from_date, to_date, branch_id=None):
             period_lines.append(ln)
 
     return {
+        "company": company,
         "opening_acc_map": opening_acc_map,
         "closing_acc_map": closing_acc_map,
         "opening_partner_map": opening_partner_map,
@@ -17756,8 +17832,9 @@ def _compute_b01_values(gl_slice, include_provisional_pnl=True, overrides=None):
         )
 
         # B. TÀI SẢN DÀI HẠN (200)
-        val_210, brk_210, trc_210 = _sum_acc(acc_map, ("215",), mode="NET_DEBIT")
-        _set_leaf("210", val_210, brk_210, trc_210)
+        val_210_cost, brk_210c, trc_210c = _sum_acc(acc_map, ("215",), mode="NET_DEBIT")
+        val_210_prov, brk_210p, trc_210p = _sum_acc(acc_map, ("2295",), mode="NET_CREDIT")
+        _set_leaf("210", val_210_cost - val_210_prov, brk_210c + brk_210p, sorted(set(trc_210c + trc_210p)))
 
         val_222, brk_222, trc_222 = _sum_acc(acc_map, ("211",), mode="NET_DEBIT")
         val_223_raw, brk_223, trc_223 = _sum_acc(acc_map, ("214",), exclude_prefixes=("2142", "2143", "2147"), mode="NET_CREDIT")
@@ -17823,7 +17900,7 @@ def _compute_b01_values(gl_slice, include_provisional_pnl=True, overrides=None):
 
         val_314, brk_314, trc_314 = _sum_acc(acc_map, ("334",), mode="NET_CREDIT")
         val_315, brk_315, trc_315 = _sum_acc(acc_map, ("335",), mode="NET_CREDIT")
-        val_319, brk_319, trc_319 = _sum_acc(acc_map, ("338", "344"), mode="NET_CREDIT")
+        val_319, brk_319, trc_319 = _sum_acc(acc_map, ("338", "344", "332"), mode="NET_CREDIT")
         val_320, brk_320, trc_320 = _sum_acc(acc_map, ("341",), mode="NET_CREDIT")
         val_321, brk_321, trc_321 = _sum_acc(acc_map, ("352",), mode="NET_CREDIT")
         val_322, brk_322, trc_322 = _sum_acc(acc_map, ("353",), mode="NET_CREDIT")
@@ -17961,7 +18038,7 @@ def _compute_b02_values(gl_slice, prior_slice=None, overrides=None):
         b = {}
         t = {}
         v["01"], b["01"], t["01"] = _turn(("511",), "CREDIT")
-        v["02"], b["02"], t["02"] = _turn(("521",), "DEBIT")
+        v["02"], b["02"], t["02"] = _turn(("521", "511"), "DEBIT")
         v["10"] = v["01"] - v["02"]
         b["10"] = b["01"] + b["02"]
         t["10"] = sorted(set(t["01"] + t["02"]))
@@ -17974,8 +18051,13 @@ def _compute_b02_values(gl_slice, prior_slice=None, overrides=None):
         v["21"], b["21"], t["21"] = _turn(("515",), "CREDIT")
         v["22"], b["22"], t["22"] = _turn(("635",), "DEBIT")
         v["23"], b["23"], t["23"] = v["22"], b["22"], t["22"]
-        v["25"], b["25"], t["25"] = _turn(("641",), "DEBIT")
-        v["26"], b["26"], t["26"] = _turn(("642",), "DEBIT")
+        company_regime = str(getattr(sl.get("company"), "accounting_regime", "") or "").upper()
+        if company_regime in ("TT133", "CIRCULAR_133", "133") or any(ln.account.code in ("6421", "6422") for ln in op_lines) and not any(ln.account.code.startswith("641") for ln in op_lines):
+            v["25"], b["25"], t["25"] = _turn(("6421", "641"), "DEBIT")
+            v["26"], b["26"], t["26"] = _turn(("6422", "6423", "6424", "6425", "6426", "6427", "6428"), "DEBIT")
+        else:
+            v["25"], b["25"], t["25"] = _turn(("641",), "DEBIT")
+            v["26"], b["26"], t["26"] = _turn(("642",), "DEBIT")
 
         v["30"] = v["20"] + v["21"] - v["22"] - v["25"] - v["26"]
         b["30"] = []
@@ -18615,10 +18697,16 @@ def generate_financial_statements(company, data, request=None):
     # AF-13, BR-GL-FS-38, 39: Kế thừa thông tin chung từ lần lập gần nhất cho Thuyết minh BCTC (KHÔNG sao chép số liệu kỳ trước)
     reuse_latest = bool(req_data.get("reuse_latest_notes") or req_data.get("reuseLatest") or False)
     inherited_batch = None
+    regime_code = str(getattr(company, "accounting_regime", "TT99") or "TT99").upper()
+    regime_label_map = {
+        "TT133": "Thông tư 133/2016/TT-BTC (Chế độ kế toán Doanh nghiệp nhỏ và vừa)",
+        "TT200": "Thông tư 200/2014/TT-BTC (Chế độ kế toán Doanh nghiệp)",
+        "TT99": "Thông tư 99/2025/TT-BTC (Áp dụng từ 01/01/2026)",
+    }
     default_general_info = {
         "company_name": company.name,
         "tax_code": getattr(company, "tax_code", "") or "0101234567",
-        "accounting_regime": "Thông tư 99/2025/TT-BTC (Áp dụng từ 01/01/2026)",
+        "accounting_regime": regime_label_map.get(regime_code, regime_label_map["TT99"]),
         "presentation_currency": pres_currency.code if pres_currency else "VND",
         "going_concern_statement": (
             "Báo cáo tài chính được lập trên cơ sở giả định doanh nghiệp hoạt động liên tục (Mẫu DN)."

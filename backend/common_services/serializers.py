@@ -465,6 +465,7 @@ class CompanyBootstrapSerializer(serializers.Serializer):
         error_messages={"invalid": "Mã doanh nghiệp chỉ gồm chữ in hoa, chữ thường, số hoặc dấu gạch dưới/ngang."}
     )
     name = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    short_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     legal_name = serializers.CharField(
         max_length=255,
         error_messages={"required": "Vui lòng nhập Tên doanh nghiệp.", "blank": "Vui lòng nhập Tên doanh nghiệp."}
@@ -489,6 +490,7 @@ class CompanyBootstrapSerializer(serializers.Serializer):
         max_length=255,
         error_messages={"required": "Vui lòng nhập Người đại diện theo pháp luật.", "blank": "Vui lòng nhập Người đại diện theo pháp luật."}
     )
+    representative_title = serializers.CharField(max_length=100, required=False, allow_blank=True, default="Giám đốc")
     phone = serializers.CharField(max_length=30, required=False, allow_blank=True)
     email = serializers.EmailField(
         required=False, allow_blank=True,
@@ -597,6 +599,10 @@ class CompanySummarySerializer(serializers.Serializer):
     tax_code = serializers.CharField(required=False)
     address = serializers.CharField(required=False, allow_blank=True)
     status = serializers.CharField(required=False)
+    accounting_regime = serializers.CharField(required=False, allow_blank=True)
+    business_type = serializers.CharField(required=False, allow_blank=True)
+    legal_representative = serializers.CharField(required=False, allow_blank=True)
+    representative_title = serializers.CharField(required=False, allow_blank=True)
 
 
 class CompanyJoinRequestSerializer(serializers.ModelSerializer):
