@@ -122,8 +122,9 @@ class RegistrationSerializer(serializers.Serializer):
     password_confirm = serializers.CharField(write_only=True, min_length=8, max_length=64, required=False)
     confirm_password = serializers.CharField(write_only=True, min_length=8, max_length=64, required=False)
     terms_accepted = serializers.BooleanField(write_only=True)
-    terms_version = serializers.CharField(max_length=40, write_only=True, default="current")
-    privacy_version = serializers.CharField(max_length=40, write_only=True, default="current")
+    privacy_accepted = serializers.BooleanField(write_only=True, required=False, default=True)
+    terms_version = serializers.CharField(max_length=40, write_only=True, default="2026.1-ToS")
+    privacy_version = serializers.CharField(max_length=40, write_only=True, default="2026.1-PDPL-91/2025")
 
     def validate(self, attrs):
         from iam.models import UserAccount
@@ -177,9 +178,11 @@ class RegistrationSerializer(serializers.Serializer):
         if password != confirm_pwd:
             raise serializers.ValidationError({"password_confirm": "Xác nhận mật khẩu không khớp."})
 
-        # BR-COM-REG-CONSENT-01: Đồng ý điều khoản
+        # BR-COM-REG-CONSENT-01: Đồng ý điều khoản và chính sách bảo vệ dữ liệu cá nhân tách bạch (Luật 91/2025/QH15 & NĐ 356/2025/NĐ-CP)
         if not attrs.get("terms_accepted"):
-            raise serializers.ValidationError({"terms_accepted": "Bạn phải chủ động đồng ý với điều khoản sử dụng và chính sách bảo mật."})
+            raise serializers.ValidationError({"terms_accepted": "Bạn phải chủ động đồng ý với điều khoản sử dụng hệ thống."})
+        if attrs.get("privacy_accepted") is False:
+            raise serializers.ValidationError({"privacy_accepted": "Bạn phải chủ động đồng ý cho phép xử lý dữ liệu cá nhân theo Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15)."})
 
         # BR-COM-REG-DATA-02 & 03: Hệ thống tự sinh username cho auth_user; người dùng không nhập username
         attrs["username"] = str(self.initial_data.get("username") or normalized_phone).strip()[:150]

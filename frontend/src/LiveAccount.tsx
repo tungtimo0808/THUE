@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { KeyRound, Lock, Mail, Phone, User } from "lucide-react";
-import { AuthField, AuthLayout, AuthSubmit } from "./AuthLayout";
+import { AuthField, AuthLayout, AuthSubmit, LegalPolicyModal, type LegalDocTab } from "./AuthLayout";
 import { request } from "./live-api";
 
 const STEPS = ["Thông tin", "Xác thực email", "Hoàn tất"] as const;
@@ -17,7 +17,9 @@ export default function LiveAccount() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [accepted, setAccepted] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalDocTab | null>(null);
   const [challenge, setChallenge] = useState("");
   const [code, setCode] = useState("");
   const [devOtp, setDevOtp] = useState("");
@@ -29,11 +31,23 @@ export default function LiveAccount() {
   async function register(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (password !== confirmPassword) { setError("Mật khẩu xác nhận không khớp."); return; }
+    if (!acceptedTerms) { setError("Bạn cần đồng ý với Điều khoản sử dụng hệ thống."); return; }
+    if (!acceptedPrivacy) { setError("Bạn cần đồng ý cho phép xử lý dữ liệu cá nhân theo Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15)."); return; }
     setBusy(true); setError(""); setMessage("");
     try {
       const result = await request<RegistrationResponse>("/api/v1/common/auth/register/", undefined, {
         method: "POST",
-        body: JSON.stringify({ full_name: fullName, email, phone, password, password_confirm: confirmPassword, terms_accepted: accepted }),
+        body: JSON.stringify({
+          full_name: fullName,
+          email,
+          phone,
+          password,
+          password_confirm: confirmPassword,
+          terms_accepted: acceptedTerms && acceptedPrivacy,
+          privacy_accepted: acceptedPrivacy,
+          terms_version: "2026.1-ToS",
+          privacy_version: "2026.1-PDPL-91/2025",
+        }),
       });
       setPassword(""); setConfirmPassword("");
       setChallenge(result.challenge);
@@ -100,8 +114,52 @@ export default function LiveAccount() {
           <AuthField id="reg-confirm" label="Xác nhận mật khẩu" icon={Lock} type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} placeholder="••••••••" autoComplete="new-password" minLength={8} required />
           <small className="auth-hint">Mật khẩu cần 8–64 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</small>
           <label className="auth-checkbox-label">
-            <input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} required />
-            <span>Tôi đồng ý với điều khoản sử dụng và chính sách bảo mật.</span>
+            <input type="checkbox" checked={acceptedTerms} onChange={event => setAcceptedTerms(event.target.checked)} required />
+            <span>
+              Tôi đã đọc và đồng ý với{" "}
+              <button
+                type="button"
+                onClick={() => setLegalTab("terms")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "#0284c7",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                }}
+              >
+                Điều khoản sử dụng hệ thống
+              </button>
+              .
+            </span>
+          </label>
+          <label className="auth-checkbox-label">
+            <input type="checkbox" checked={acceptedPrivacy} onChange={event => setAcceptedPrivacy(event.target.checked)} required />
+            <span>
+              Tôi đồng ý cho phép thu thập, xử lý dữ liệu cá nhân theo{" "}
+              <button
+                type="button"
+                onClick={() => setLegalTab("privacy")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "#0284c7",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                }}
+              >
+                Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15 & NĐ 356/2025/NĐ-CP)
+              </button>
+              .
+            </span>
           </label>
           <AuthSubmit busy={busy} busyLabel="Đang tạo tài khoản…">Tạo tài khoản</AuthSubmit>
         </form>
@@ -122,6 +180,7 @@ export default function LiveAccount() {
         </>
       )}
       {step === "complete" && <Link className="auth-submit-btn" to="/login">Đăng nhập vào hệ thống</Link>}
+      <LegalPolicyModal openTab={legalTab} onClose={() => setLegalTab(null)} onSwitchTab={setLegalTab} />
     </AuthLayout>
   );
 }
