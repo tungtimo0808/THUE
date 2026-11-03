@@ -130,10 +130,16 @@
 }
 .md-table th,
 .md-table td {
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-bottom: 1px solid #e0e4e8;
   border-right: 1px solid #e0e4e8;
-  height: auto;
+  height: 38px;
+  max-height: 38px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  box-sizing: border-box;
 }
 .md-table th:first-child {
   width: 32px;
@@ -209,13 +215,41 @@
 .md-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 24px;
+  gap: 16px 24px;
+  align-items: start;
 }
 .md-fields > label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   position: relative;
+  font-weight: 500;
+  color: #334155;
+}
+.md-fields > label:has(textarea) {
+  grid-column: 1 / -1;
+}
+.md-fields > label > input:not([type="checkbox"]):not([type="radio"]),
+.md-fields > label > select,
+.md-tab-content label > input:not([type="checkbox"]):not([type="radio"]),
+.md-tab-content label > select {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  box-sizing: border-box !important;
+  width: 100%;
+}
+.md-fields > label > textarea {
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  resize: vertical;
+  box-sizing: border-box;
+  width: 100%;
 }
 .md-fields em {
   color: #c52b22;
@@ -263,11 +297,20 @@
 }
 .md-editor > footer {
   display: flex;
+  align-items: center;
   justify-content: end;
-  gap: 12px;
-  padding: 16px 24px;
+  gap: 10px;
+  padding: 14px 24px;
   background: #f5f6f7;
   border-top: 1px solid #e0e4e8;
+}
+.md-editor > footer > button {
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 14px;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 .md-editor .md-primary {
   background: #009b60;

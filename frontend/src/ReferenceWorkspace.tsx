@@ -679,7 +679,7 @@ function ReferenceWorkspace() {
   useEffect(() => {
     if (!apiToken || !company?.id) return;
     let active = true;
-    request<any>(`/api/v1/iam/company-users/?company_id=${encodeURIComponent(company.id)}`, apiToken)
+    request<any>(`/api/v1/iam/memberships/?company_id=${encodeURIComponent(company.id)}`, apiToken)
       .then((res) => {
         if (!active) return;
         const list = Array.isArray(res) ? res : res?.results || [];

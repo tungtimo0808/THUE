@@ -46,7 +46,7 @@ import {
 } from "./MisaInvoiceCollectionModals";
 import { AIAssistantModal } from "./MisaCashWorkspace";
 import { formatVND } from "./MisaPurchaseModals";
-import { SaleQuoteModal, SaleOrderModal, SaleContractModal } from "./MisaSalesModals";
+import { SaleQuoteModal, SaleOrderModal, SaleContractModal, SAMPLE_SALE_CUSTOMERS, SAMPLE_SALE_ITEMS } from "./MisaSalesModals";
 import {
   SaleInvoiceModal,
   SaleReturnModal,
@@ -532,19 +532,48 @@ export default function MisaSalesWorkspace({
     if (!apiConnected) return;
     const customerName = (row: any) => row.customer_name || row.buyer_name ||
       apiRows.customers?.find((customer) => customer.id === row.customer)?.name || "";
-    if (apiRows.customers) setCustomers(apiRows.customers.map((row) => ({
-      id: row.id, code: row.code || "", name: row.name || "",
-      taxCode: row.tax_code || "",
-      address: (row.addresses?.find((entry: any) => entry.is_default) || row.addresses?.[0])?.address_line || "",
-      phone: (row.contacts?.find((entry: any) => entry.is_default) || row.contacts?.[0])?.phone || "",
-      debt: apiRows.receivables?.filter((debt) => debt.customer === row.id)
-        .reduce((total, debt) => total + apiNumber(debt.balance), 0) || 0,
-    })));
-    if (apiRows.items) setInventoryItemsList(apiRows.items.map((row) => ({
-      id: row.id, code: row.code || "", name: row.name || "",
-      vatPolicy: "", nature: row.item_type || "Hàng hóa", stockQty: 0,
-      stockValue: 0, unit: apiUnitName(apiRows.units, row.base_uom),
-    })));
+    if (apiRows.customers) {
+      const mappedCusts = apiRows.customers.map((row) => ({
+        id: row.id, code: row.code || "", name: row.name || "",
+        taxCode: row.tax_code || "",
+        address: (row.addresses?.find((entry: any) => entry.is_default) || row.addresses?.[0])?.address_line || "",
+        phone: (row.contacts?.find((entry: any) => entry.is_default) || row.contacts?.[0])?.phone || "",
+        debt: apiRows.receivables?.filter((debt) => debt.customer === row.id)
+          .reduce((total, debt) => total + apiNumber(debt.balance), 0) || 0,
+      }));
+      setCustomers(mappedCusts);
+      if (mappedCusts.length > 0) {
+        SAMPLE_SALE_CUSTOMERS.splice(0, SAMPLE_SALE_CUSTOMERS.length, ...mappedCusts.map((c) => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          taxCode: c.taxCode,
+          address: c.address,
+          phone: c.phone,
+          type: "Tổ chức",
+        })));
+      }
+    }
+    if (apiRows.items) {
+      const mappedItems = apiRows.items.map((row) => ({
+        id: row.id, code: row.code || "", name: row.name || "",
+        vatPolicy: "", nature: row.item_type || "Hàng hóa", stockQty: 0,
+        stockValue: 0, unit: apiUnitName(apiRows.units, row.base_uom),
+        salePrice: Number(row.default_sales_price || row.standard_cost || 0),
+      }));
+      setInventoryItemsList(mappedItems);
+      if (mappedItems.length > 0) {
+        SAMPLE_SALE_ITEMS.splice(0, SAMPLE_SALE_ITEMS.length, ...mappedItems.map((it) => ({
+          id: it.id,
+          code: it.code,
+          name: it.name,
+          unit: it.unit || "Cái",
+          price: it.salePrice || 0,
+          vat: 10,
+          stock: 100,
+        })));
+      }
+    }
     if (apiRows.quotes) setQuotes(apiRows.quotes.map((row) => ({
       id: row.id, code: row.number || "", date: apiDate(row.document_date),
       expiryDate: apiDate(row.valid_until), customer: customerName(row),
@@ -1107,12 +1136,14 @@ export default function MisaSalesWorkspace({
         onSave={async (newCust, andAddNew) => {
           if (apiConnected && token) {
             try {
+              const rawTax = (newCust.taxCode || "").replace(/\s+/g, "");
+              const validTax = /^\d{10}(\d{3})?$/.test(rawTax) ? rawTax : undefined;
               await createCustomer(token, _company.id, {
-                code: newCust.code,
+                code: (newCust.code || "").trim() || "AUTO",
                 name: newCust.name,
                 party_type: newCust.customerType === "individual" ? "INDIVIDUAL" : "ORGANIZATION",
                 legal_name: newCust.name,
-                tax_code: newCust.taxCode || "",
+                ...(validTax ? { tax_code: validTax } : {}),
               });
               reloadApi();
               if (!andAddNew) setShowCustomerModal(false);

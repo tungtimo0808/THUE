@@ -89,14 +89,32 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
     return fetchJson(scoped(path), { method: "POST", body: form });
   };
 
-  async function byCode(name: string, code: unknown, label: string) {
+  async function byCode(name: string, code: unknown, label: string, fallbackName?: unknown) {
     const wanted = String(code ?? "").trim();
-    if (!wanted) throw new FormDataError(`Chưa chọn ${label}.`);
+    const wantedName = String(fallbackName ?? "").trim();
+    if (!wanted && !wantedName) throw new FormDataError(`Chưa chọn ${label}.`);
     const rows = await list(name);
-    const found = rows.find((row) => String(row.code).toLowerCase() === wanted.toLowerCase())
-      || rows.find((row) => String(row.name).toLowerCase() === wanted.toLowerCase());
-    if (!found) throw new FormDataError(`${label[0].toUpperCase()}${label.slice(1)} "${wanted}" chưa có trong danh mục.`);
-    return found;
+    const found = (wanted && (rows.find((row) => String(row.code).toLowerCase() === wanted.toLowerCase())
+      || rows.find((row) => String(row.name).toLowerCase() === wanted.toLowerCase())))
+      || (wantedName && (rows.find((row) => String(row.name).toLowerCase() === wantedName.toLowerCase())
+      || rows.find((row) => String(row.code).toLowerCase() === wantedName.toLowerCase())));
+    if (found) return found;
+    if (name === "customers" || name === "parties") {
+      const displayName = wantedName || wanted;
+      const cleanCode = wanted ? wanted.toUpperCase() : "AUTO";
+      const created = await post(name === "customers" ? "/api/v1/master-data/customers/" : "/api/v1/master-data/parties/", {
+        code: cleanCode,
+        name: displayName,
+        legal_name: displayName,
+        party_type: "ORGANIZATION",
+        status: "ACTIVE",
+      });
+      cache.delete(name);
+      cache.delete("customers");
+      cache.delete("parties");
+      return created;
+    }
+    throw new FormDataError(`${label[0].toUpperCase()}${label.slice(1)} "${wanted || wantedName}" chưa có trong danh mục.`);
   }
 
   return {
@@ -108,8 +126,8 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
     action,
     upload,
     invalidate: () => cache.clear(),
-    supplier: (code: unknown) => byCode("parties", code, "nhà cung cấp"),
-    customer: (code: unknown) => byCode("customers", code, "khách hàng"),
+    supplier: (code: unknown, fallbackName?: unknown) => byCode("parties", code, "nhà cung cấp", fallbackName),
+    customer: (code: unknown, fallbackName?: unknown) => byCode("customers", code, "khách hàng", fallbackName),
     item: (code: unknown) => byCode("items", code, "mã hàng"),
     async branch() {
       const rows = await list("branches");
@@ -2578,10 +2596,23 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
   if (!currency) throw new FormDataError("Không tìm thấy loại tiền của quỹ.");
   const rate = num(d.exchangeRate ?? 1);
   if (rate <= 0 || (currency.code === "VND" && rate !== 1)) throw new FormDataError("Tỷ giá không hợp lệ.");
-  const partyText = String(d.partnerCode || d.partner || "").trim().toLowerCase();
-  const parties = partyText ? await w.list(businessType.startsWith("CUSTOMER") ? "customers" : "parties") : [];
-  const party = parties.find(row => String(row.code).toLowerCase() === partyText || String(row.name).toLowerCase() === partyText);
-  if (businessType.startsWith("CUSTOMER") && !party) throw new FormDataError("Vui lòng chọn khách hàng trong danh mục.");
+  const rawCode = String(d.partnerCode || "").trim();
+  const rawName = String(d.partner || d.person || "").trim();
+  const partyText = (rawCode || rawName).toLowerCase();
+  const [customersList, partiesList] = partyText
+    ? await Promise.all([w.list("customers"), w.list("parties")])
+    : [[], []];
+  const combinedParties = [...customersList, ...partiesList];
+  let party = combinedParties.find(row =>
+    (rawCode && String(row.code).toLowerCase() === rawCode.toLowerCase()) ||
+    (rawName && String(row.name).toLowerCase() === rawName.toLowerCase()) ||
+    String(row.code).toLowerCase() === partyText ||
+    String(row.name).toLowerCase() === partyText
+  );
+  if (!party && (rawCode || rawName) && businessType !== "EMPLOYEE_RETURN" && businessType !== "BANK_WITHDRAWAL") {
+    party = await w.customer(rawCode || "AUTO", rawName || rawCode);
+  }
+  if (businessType.startsWith("CUSTOMER") && !party) throw new FormDataError("Vui lòng chọn hoặc nhập mã/tên khách hàng.");
   const employee = businessType === "EMPLOYEE_RETURN"
     ? (await w.list("/api/v1/organization/employees/")).find(row => row.id === d.employeeId)
     : undefined;
@@ -2592,20 +2623,27 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
   if (businessType === "BANK_WITHDRAWAL" && !bank) throw new FormDataError("Vui lòng chọn tài khoản ngân hàng nguồn.");
   const rawLines = Array.isArray(d.rows) ? d.rows : [];
   if (!rawLines.length) throw new FormDataError("Phiếu thu cần ít nhất một dòng hạch toán.");
+  const resolvedPartnerCode = String(party?.code || rawCode || "");
+  const resolvedPartnerName = String(party?.name || rawName || "");
   const lines = [];
   for (const [index, row] of rawLines.entries()) {
     if (!String(row.description || "").trim()) throw new FormDataError(`Dòng ${index + 1}: vui lòng nhập diễn giải.`);
     if (num(row.amount) <= 0) throw new FormDataError(`Dòng ${index + 1}: số tiền phải lớn hơn 0.`);
     const debit = await w.account(row.debit, `TK Nợ dòng ${index + 1}`);
     const credit = await w.account(row.credit, `TK Có dòng ${index + 1}`);
-    lines.push({ description: String(row.description).trim(), debit_account: debit.id, debit_code: debit.code,
-      credit_account: credit.id, credit_code: credit.code, amount: String(num(row.amount)), dimensions: row.dimensions || {} });
+    lines.push({
+      description: String(row.description).trim(), debit_account: debit.id, debit_code: debit.code,
+      credit_account: credit.id, credit_code: credit.code, amount: String(num(row.amount)),
+      partner_code: String(row.partnerCode || resolvedPartnerCode),
+      partner_name: String(row.partnerName || resolvedPartnerName),
+      dimensions: row.dimensions || {},
+    });
   }
   const amount = lines.reduce((sum, row) => sum + num(row.amount), 0);
   const allocations = Array.isArray(d.allocations) ? d.allocations : [];
   if (businessType === "CUSTOMER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn chứng từ công nợ cần thu.");
   const date = toApiDate(d.date);
-  const payerPayee = String(d.person || party?.name || employee?.full_name || "").trim();
+  const payerPayee = String(d.person || resolvedPartnerName || employee?.full_name || "").trim();
   const rawMasterDesc = String(d.description || "").trim();
   const firstLineDesc = String(lines[0]?.description || "").trim();
   const isBareDesc = !rawMasterDesc || /^(thu tiền của|chi tiền cho|tạm ứng cho|thu hoàn ứng sau khi quyết toán tạm ứng cho|chi mua ngoài có hóa đơn cho|trả các khoản vay cho)$/i.test(rawMasterDesc);
@@ -2619,6 +2657,7 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
     currency: fund.currency, exchange_rate: String(rate), amount: String(amount),
     description: resolvedMasterDesc, attachments: d.attachedFiles || [],
     receipt_details: { posting_date: toApiDate(d.postDate || d.date), payer_address: String(d.address || ""),
+      partner_code: resolvedPartnerCode, partner_name: resolvedPartnerName,
       original_documents: String(d.originalDocsCount || ""), employee: employee?.id || null,
       bank_account: bank?.id || null, lines, allocations },
   });
@@ -2701,10 +2740,21 @@ export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d:
     const counter = await w.account(receipt ? row.credit : row.debit, receipt ? "TK Có" : "TK Nợ");
     lines.push({ account: counter.id, amount: String(num(row.amount)), description: String(row.description || d.description || "") });
   }
-  const partnerText = String(d.partnerCode || d.partner || "").trim().toLowerCase();
+  const rawPartnerCode = String(d.partnerCode || "").trim();
+  const rawPartnerName = String(d.partner || d.person || "").trim();
+  const partnerText = (rawPartnerCode || rawPartnerName).toLowerCase();
   const parties = partnerText ? await w.list("parties") : [];
-  const party = parties.find((row) => String(row.code).toLowerCase() === partnerText)
-    || parties.find((row) => String(row.name).toLowerCase() === partnerText);
+  let party = parties.find((row) =>
+    (rawPartnerCode && String(row.code).toLowerCase() === rawPartnerCode.toLowerCase()) ||
+    (rawPartnerName && String(row.name).toLowerCase() === rawPartnerName.toLowerCase()) ||
+    String(row.code).toLowerCase() === partnerText ||
+    String(row.name).toLowerCase() === partnerText
+  );
+  if (!party && (rawPartnerCode || rawPartnerName)) {
+    party = receipt
+      ? await w.customer(rawPartnerCode || "AUTO", rawPartnerName || rawPartnerCode)
+      : await w.supplier(rawPartnerCode || "AUTO", rawPartnerName || rawPartnerCode);
+  }
   const date = toApiDate(d.postDate || d.date);
   const counterpart = String(d.person || party?.name || d.partner || "").trim() || (receipt ? "Người nộp tiền" : "Người nhận tiền");
   const rawVoucherDesc = String(d.description || "").trim();
