@@ -1,4 +1,5 @@
 import { useState, useId, useEffect } from "react";
+import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
@@ -1329,29 +1330,42 @@ if (apiConnected) {
     contracts: "Hợp đồng",
   } as Record<string, string>)[currentTab] || "Sản xuất liên tục - Hệ số, tỷ lệ";
   const baseSubtabData = COST_PROCESS_DATA[subtab] || COST_PROCESS_DATA.simple;
-  const activeCostRegime =
-    (company as any)?.accounting_regime ||
-    "TT99";
+  const rawCostRegime = String((company as any)?.accounting_regime || "TT99").toUpperCase();
+  const activeCostRegime = rawCostRegime.includes("58")
+    ? "TT58"
+    : rawCostRegime.includes("133")
+    ? "TT133"
+    : rawCostRegime.includes("200")
+    ? "TT200"
+    : "TT99";
   const currentSubtabData = {
     ...baseSubtabData,
     videoSubtitle:
-      activeCostRegime === "TT133"
+      activeCostRegime === "TT58"
+        ? "THÔNG TƯ 58 (SIÊU NHỎ)"
+        : activeCostRegime === "TT133"
         ? "THÔNG TƯ 133 (SME)"
         : activeCostRegime === "TT200"
         ? "THÔNG TƯ 200"
         : "THÔNG TƯ 99",
     row1: (baseSubtabData.row1 || []).map((s) => {
-      if (activeCostRegime === "TT133") {
+      if (activeCostRegime === "TT133" || activeCostRegime === "TT58") {
         if (s.step === 4) {
           return {
             ...s,
-            desc: "Xuất kho nguyên vật liệu hạch toán trực tiếp Nợ TK 154 (Chi tiết yếu tố NVL - TT133 không dùng TK 621)",
+            desc:
+              activeCostRegime === "TT58"
+                ? "Xuất kho nguyên vật liệu hạch toán trực tiếp Nợ TK 154 / TK 632 (Thông tư 58 rút gọn không mở TK 621)"
+                : "Xuất kho nguyên vật liệu hạch toán trực tiếp Nợ TK 154 (Chi tiết yếu tố NVL - TT133 không dùng TK 621)",
           };
         }
         if (s.step === 5) {
           return {
             ...s,
-            desc: "Tập hợp chi phí nhân công, khấu hao, phân bổ CCDC trực tiếp vào Nợ TK 154 (TT133 không dùng TK 622, 627)",
+            desc:
+              activeCostRegime === "TT58"
+                ? "Tập hợp chi phí nhân công, khấu hao trực tiếp vào Nợ TK 154 / TK 642 (Thông tư 58 không dùng TK 622, 627)"
+                : "Tập hợp chi phí nhân công, khấu hao, phân bổ CCDC trực tiếp vào Nợ TK 154 (TT133 không dùng TK 622, 627)",
           };
         }
       }
@@ -1496,7 +1510,9 @@ if (apiConnected) {
                       : "1px solid #a7f3d0",
                 }}
               >
-                {activeCostRegime === "TT133"
+                {activeCostRegime === "TT58"
+                  ? "Chế độ TT 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ): Hạch toán chi phí SXKD rút gọn trực tiếp vào TK 154 / TK 632 (không mở TK 621, 622, 627)"
+                  : activeCostRegime === "TT133"
                   ? "Chế độ TT 133/2016/TT-BTC (DNNVV): Hạch toán chi phí SXKD trực tiếp vào TK 154 (theo yếu tố NVL, Nhân công, SXC — không dùng TK 621, 622, 627)"
                   : activeCostRegime === "TT200"
                   ? "Chế độ TT 200/2014/TT-BTC: Tập hợp chi phí qua TK 621, 622, 627 và kết chuyển sang TK 154 cuối kỳ"
@@ -11021,11 +11037,12 @@ if (apiConnected) {
                       </td>
                       <td style={{ padding: "6px 10px" }}>
                         <input
-                          type="number"
-                          value={line.amount}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(line.amount)}
                           onChange={(e) => {
                             const newLines = [...voucherLines];
-                            newLines[idx].amount = Number(e.target.value);
+                            newLines[idx].amount = parseMoneyInput(e.target.value);
                             setVoucherLines(newLines);
                           }}
                           style={{ width: "100%", border: "1px solid #cbd5e1", borderRadius: 3, padding: "4px 6px", fontSize: 12, textAlign: "right" }}
@@ -15733,9 +15750,10 @@ if (apiConnected) {
                         </td>
                         <td style={{ padding: "2px 12px", borderRight: "1px dotted #cbd5e1", textAlign: "right" }}>
                           <input
-                            type="number"
-                            value={row.estimatedValue}
-                            onChange={(e) => handleEstimateValueChange(row.id, Number(e.target.value))}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.estimatedValue)}
+                            onChange={(e) => handleEstimateValueChange(row.id, parseMoneyInput(e.target.value))}
                             style={{
                               width: "100%",
                               height: 28,
@@ -15751,9 +15769,10 @@ if (apiConnected) {
                         <td style={{ padding: "2px 12px 2px 8px", textAlign: "right", position: "relative" }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
                             <input
-                              type="number"
-                              value={row.previousYearValue}
-                              onChange={(e) => handlePreviousYearValueChange(row.id, Number(e.target.value))}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.previousYearValue)}
+                              onChange={(e) => handlePreviousYearValueChange(row.id, parseMoneyInput(e.target.value))}
                               style={{
                                 width: "100%",
                                 height: 28,
@@ -16962,8 +16981,9 @@ function CostNormEditor({ rows, columns, value, onChange }: {
             {columns.map(([field, , fallback]) => (
               <td key={field} style={{ padding: "6px 12px" }}>
                 <input
-                  value={value(row.code, field, fallback(row.code))}
-                  onChange={(e) => onChange(row.code, field, e.target.value.replace(/[^\d.]/g, ""))}
+                  inputMode="numeric"
+                  value={formatMoneyInput(value(row.code, field, fallback(row.code)))}
+                  onChange={(e) => onChange(row.code, field, parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                   style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }}
                 />
               </td>

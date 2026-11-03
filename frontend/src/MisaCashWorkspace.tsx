@@ -1,4 +1,5 @@
 import LedgerAccountField from "./LedgerAccountField";
+import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import VoucherDateField from "./VoucherDateField";
@@ -1140,7 +1141,7 @@ export function SupplierPaymentModal({
                       <td style={{ textAlign: "center" }}>{inv.account}</td>
                       <td>{inv.terms}</td>
                       <td><input aria-label={`Tỷ lệ chiết khấu ${inv.voucherCode}`} type="number" min="0" max="100" value={inv.discountRate || 0} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountRate:Math.min(100,Math.max(0,Number(e.target.value)||0))}:row))}/></td>
-                      <td><input aria-label={`Tiền chiết khấu ${inv.voucherCode}`} type="number" min="0" value={inv.discountAmount || 0} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountAmount:Math.max(0,Number(e.target.value)||0)}:row))}/></td>
+                      <td><input aria-label={`Tiền chiết khấu ${inv.voucherCode}`} type="text" inputMode="numeric" value={formatMoneyInput(inv.discountAmount || 0)} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountAmount:Math.max(0,parseMoneyInput(e.target.value))}:row))}/></td>
                       <td><input aria-label={`TK chiết khấu ${inv.voucherCode}`} value={inv.discountAccount || "515"} disabled={!inv.checked} onChange={e=>setInvoices(prev=>prev.map(row=>row.id===inv.id?{...row,discountAccount:e.target.value}:row))}/></td>
                     </tr>
                   ))}
@@ -2652,15 +2653,15 @@ export function CreateVoucherModal({
   const [currentCategory, setCurrentCategory] = useState<"cash" | "bank">(voucherCategory);
   const isBank = currentCategory === "bank";
   const isReceipt = kind === "receipt";
-  const { companyId } = useApiSession();
-  const { rows: receiptCatalog } = useMisaApiLists(isReceipt && !isBank ? companyId : "", {
+  const { companyId, token } = useApiSession();
+  const { rows: receiptCatalog, reload: reloadReceiptCatalog } = useMisaApiLists(companyId, {
     funds: "/api/v1/cash/funds/", branches: "/api/v1/organization/branches/", currencies: "/api/v1/master-data/currencies/",
     customers: "/api/v1/master-data/customers/", parties: "/api/v1/master-data/parties/", employees: "/api/v1/organization/employees/",
     bankAccounts: "/api/v1/master-data/company-bank-accounts/",
     receivables: "/api/v1/accounts-receivable/receivables/",
     accounts: "/api/v1/general-ledger/accounts/",
   }, message => setToastMessage(message));
-  const { rows: bankPaymentCatalog } = useMisaApiLists(!isReceipt && isBank ? companyId : "", {
+  const { rows: bankPaymentCatalog, reload: reloadBankPaymentCatalog } = useMisaApiLists(!isReceipt && isBank ? companyId : "", {
     profiles: "/api/v1/bank/accounts/", bankAccounts: "/api/v1/master-data/company-bank-accounts/",
     branches: "/api/v1/organization/branches/", parties: "/api/v1/master-data/parties/",
     partyBankAccounts: "/api/v1/master-data/party-bank-accounts/", banks: "/api/v1/master-data/banks/",
@@ -2733,13 +2734,48 @@ export function CreateVoucherModal({
         String(row.code).startsWith(type.id === "advance" ? "141" : "331"))?.code || type.defaultDebit
     : type.defaultDebit;
   const suggestedBankDebit = bankDebitFor(currentType);
-  const receiptPartnerChoices = !isReceipt && isBank ?
-    currentType.id === "advance" ? (bankPaymentCatalog.employees || []).filter(row => row.status === "ACTIVE").map(row => ({ code: row.employee_code, name: row.full_name, person: row.full_name, address: row.address || "", bankAccount: "", bankName: "" })) :
-    (bankPaymentCatalog.parties || []).filter(row => row.status === "ACTIVE").map(row => ({ code: row.code, name: row.name, person: row.name, address: "", bankAccount: "", bankName: "" })) :
-    !isReceipt || isBank ? currentType.samplePartners :
-    currentType.id === "advance_refund" ? (receiptCatalog.employees || []).filter(row => row.status === "ACTIVE").map(row => ({ code: row.employee_code, name: row.full_name, person: row.full_name, address: row.address || "", bankAccount: "", bankName: "" })) :
-    ["customer", "customer_invoice"].includes(currentType.id) ? (receiptCatalog.customers || []).map(row => ({ code: row.code, name: row.name, person: row.name, address: row.address || "", bankAccount: "", bankName: "" })) :
-    (receiptCatalog.parties || []).map(row => ({ code: row.code, name: row.name, person: row.name, address: row.address || "", bankAccount: "", bankName: "" }));
+  const receiptPartnerChoices = useMemo(() => {
+    if (currentType.id === "advance" || currentType.id === "advance_refund") {
+      const empSource = (receiptCatalog.employees?.length ? receiptCatalog.employees : bankPaymentCatalog.employees) || [];
+      return empSource
+        .filter((row: any) => row.status === "ACTIVE")
+        .map((row: any) => ({
+          code: row.employee_code,
+          name: row.full_name,
+          person: row.full_name,
+          address: row.address || "",
+          phone: row.phone || "",
+          bankAccount: "",
+          bankName: "",
+        }));
+    }
+    const custRows = (receiptCatalog.customers || []).filter((r: any) => !r.status || r.status === "ACTIVE");
+    const partyRows = [
+      ...(receiptCatalog.parties || []),
+      ...(bankPaymentCatalog.parties || []),
+    ].filter((r: any) => !r.status || r.status === "ACTIVE");
+    const primary = ["customer", "customer_invoice"].includes(currentType.id)
+      ? [...custRows, ...partyRows]
+      : [...partyRows, ...custRows];
+    const seen = new Set<string>();
+    const merged: Array<{ code: string; name: string; person: string; address: string; taxCode?: string; phone?: string; bankAccount: string; bankName: string }> = [];
+    for (const row of primary) {
+      const c = String(row.code || "").trim();
+      if (!c || seen.has(c.toLowerCase())) continue;
+      seen.add(c.toLowerCase());
+      merged.push({
+        code: c,
+        name: String(row.name || ""),
+        person: String(row.representative || row.name || ""),
+        address: String(row.address || row.addresses?.[0]?.address_line || ""),
+        taxCode: String(row.tax_code || ""),
+        phone: String(row.phone || row.contacts?.[0]?.phone || ""),
+        bankAccount: "",
+        bankName: "",
+      });
+    }
+    return merged.length > 0 || companyId ? merged : (currentType.samplePartners || []);
+  }, [currentType, receiptCatalog.customers, receiptCatalog.parties, receiptCatalog.employees, bankPaymentCatalog.parties, bankPaymentCatalog.employees, companyId]);
 
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
@@ -3043,6 +3079,39 @@ export function CreateVoucherModal({
           }
           : r
       )
+    );
+  };
+
+  const handlePartnerCodeChange = (val: string) => {
+    setPartnerCode(val);
+    const trimmed = val.trim().toLowerCase();
+    const matched = trimmed ? receiptPartnerChoices.find((p) => String(p.code).toLowerCase() === trimmed) : undefined;
+    if (matched) {
+      setPartnerName(matched.name);
+      setPerson(matched.person || matched.name);
+      if (matched.address) setAddress(matched.address);
+    }
+    setRows((prev) =>
+      prev.map((r, i) =>
+        i === 0
+          ? {
+              ...r,
+              partnerCode: val,
+              ...(matched ? { partnerName: matched.name } : {}),
+            }
+          : r,
+      ),
+    );
+  };
+
+  const handlePartnerNameChange = (val: string) => {
+    const oldName = partnerName;
+    setPartnerName(val);
+    if (!person || person === oldName) {
+      setPerson(val);
+    }
+    setRows((prev) =>
+      prev.map((r, i) => (i === 0 ? { ...r, partnerName: val } : r)),
     );
   };
 
@@ -3608,13 +3677,14 @@ export function CreateVoucherModal({
                         debit, credit: bankCreditCode, amount: Number(item.amount) };
                     }));
                   }} />{label} · hạn {debt.due_date || "—"} · còn {formatVND(Number(debt.balance))}
-                  {selected && <><input aria-label={`Số trả ${label}`} type="number" min="0" max={Number(debt.balance)}
-                    value={selected.amount} onChange={event => {
-                      const next = bankAllocations.map(item => item.payable === debt.id ? { ...item, amount: event.target.value } : item);
+                  {selected && <><input aria-label={`Số trả ${label}`} type="text" inputMode="numeric"
+                    value={formatMoneyInput(selected.amount)} onChange={event => {
+                      const clean = parseMoneyInputString(event.target.value, { emptyWhenBlank: false });
+                      const next = bankAllocations.map(item => item.payable === debt.id ? { ...item, amount: clean } : item);
                       setBankAllocations(next); setRows(previous => previous.map((row, index) => ({ ...row, amount: Number(next[index]?.amount || 0) })));
-                    }} /><input aria-label={`Chiết khấu ${label}`} type="number" min="0" max={Number(debt.balance)}
-                    value={selected.discount} onChange={event => setBankAllocations(previous => previous.map(item =>
-                      item.payable === debt.id ? { ...item, discount: event.target.value } : item))} /></>}
+                    }} /><input aria-label={`Chiết khấu ${label}`} type="text" inputMode="numeric"
+                    value={formatMoneyInput(selected.discount)} onChange={event => setBankAllocations(previous => previous.map(item =>
+                      item.payable === debt.id ? { ...item, discount: parseMoneyInputString(event.target.value, { emptyWhenBlank: false }) } : item))} /></>}
                 </label>;
               })}
             </div>}
@@ -3653,8 +3723,9 @@ export function CreateVoucherModal({
                       return { ...rows[0], id: String(index + 1), description: reason, debit: receiptCurrency?.code === "VND" ? "1111" : "1112", credit: account?.code || "131", amount: Number(item.amount) };
                     }));
                   }} />{debt.code || debt.source_document_number} · còn {formatVND(Number(debt.balance))}
-                  {selected && <input aria-label={`Số tiền thu ${debt.code || debt.source_document_number}`} type="number" min="0" max={Number(debt.balance)} value={selected.amount} onChange={event => {
-                    const next = allocations.map(item => item.receivable === debt.id ? { ...item, amount: event.target.value } : item);
+                  {selected && <input aria-label={`Số tiền thu ${debt.code || debt.source_document_number}`} type="text" inputMode="numeric" value={formatMoneyInput(selected.amount)} onChange={event => {
+                    const clean = parseMoneyInputString(event.target.value, { emptyWhenBlank: false });
+                    const next = allocations.map(item => item.receivable === debt.id ? { ...item, amount: clean } : item);
                     setAllocations(next); setRows(previous => previous.map((row, index) => ({ ...row, amount: Number(next[index]?.amount || 0) })));
                   }} />}
                 </label>;
@@ -3737,7 +3808,7 @@ export function CreateVoucherModal({
                             className="misa-voucher-input"
                             onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
                             value={partnerCode}
-                            onChange={(e) => setPartnerCode(e.target.value)}
+                            onChange={(e) => handlePartnerCodeChange(e.target.value)}
                           />
                           <div className="misa-voucher-combo-actions">
                             <button
@@ -3780,7 +3851,7 @@ export function CreateVoucherModal({
                         type="text"
                         className="misa-voucher-input"
                         value={partnerName}
-                        onChange={(e) => setPartnerName(e.target.value)}
+                        onChange={(e) => handlePartnerNameChange(e.target.value)}
                       />
                     </div>
                   </div>
@@ -3933,7 +4004,7 @@ export function CreateVoucherModal({
                     </>
                   ) : currentType.hasYearField ? (
                     <>
-                      <div className="misa-voucher-row-main" style={{ alignItems: "center" }}>
+                      <div className="misa-voucher-row-main">
                         <div className="misa-voucher-field" style={{ flex: 1 }}>
                           <label>Nội dung thanh toán</label>
                           <div className="misa-voucher-reason-wrapper">
@@ -4002,7 +4073,7 @@ export function CreateVoucherModal({
                     </>
                   ) : (
                     <>
-                      <div className="misa-voucher-row-main" style={{ alignItems: "center" }}>
+                      <div className="misa-voucher-row-main">
                         <div className="misa-voucher-field" style={{ flex: 1 }}>
                           <label>Nội dung thanh toán</label>
                           <div className="misa-voucher-reason-wrapper">
@@ -4074,7 +4145,7 @@ export function CreateVoucherModal({
                             className="misa-voucher-input"
                             onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
                             value={partnerCode}
-                            onChange={(e) => setPartnerCode(e.target.value)}
+                            onChange={(e) => handlePartnerCodeChange(e.target.value)}
                           />
                           <div className="misa-voucher-combo-actions">
                             <button
@@ -4117,7 +4188,7 @@ export function CreateVoucherModal({
                         type="text"
                         className="misa-voucher-input"
                         value={partnerName}
-                        onChange={(e) => setPartnerName(e.target.value)}
+                        onChange={(e) => handlePartnerNameChange(e.target.value)}
                       />
                     </div>
                   </div>
@@ -4186,7 +4257,7 @@ export function CreateVoucherModal({
                       </div>
 
                       {/* Row 4: Nhân viên thu nợ (nếu có) + Lý do thu */}
-                      <div className="misa-voucher-row-main" style={{ alignItems: "center" }}>
+                      <div className="misa-voucher-row-main">
                         {currentType.hasEmployeeField && (
                           <div className="misa-voucher-field" style={{ width: 240, flexShrink: 0 }}>
                             <label>{currentType.employeeLabel || "Nhân viên thu nợ"}</label>
@@ -4297,7 +4368,7 @@ export function CreateVoucherModal({
                       </div>
 
                       {/* Row 3: Nhân viên (nếu có) + Lý do nộp + Kèm theo [Số lượng] chứng từ gốc */}
-                      <div className="misa-voucher-row-main" style={{ alignItems: "center" }}>
+                      <div className="misa-voucher-row-main">
                         {currentType.hasEmployeeField && (
                           <div className="misa-voucher-field" style={{ width: 240, flexShrink: 0 }}>
                             <label>Nhân viên</label>
@@ -4410,7 +4481,7 @@ export function CreateVoucherModal({
                             className="misa-voucher-input"
                             onKeyDown={event=>{if(event.key==="F3"){event.preventDefault();setPartnerSearch(true);setShowPartnerDropdown(true);}}}
                             value={partnerCode}
-                            onChange={(e) => setPartnerCode(e.target.value)}
+                            onChange={(e) => handlePartnerCodeChange(e.target.value)}
                           />
                           <div className="misa-voucher-combo-actions">
                             <button
@@ -4453,7 +4524,7 @@ export function CreateVoucherModal({
                         type="text"
                         className="misa-voucher-input"
                         value={partnerName}
-                        onChange={(e) => setPartnerName(e.target.value)}
+                        onChange={(e) => handlePartnerNameChange(e.target.value)}
                       />
                     </div>
                   </div>
@@ -5455,7 +5526,7 @@ export function CreateVoucherModal({
         {/* Modal Tham chiếu chứng từ */}
         {referenceCodes.length>0&&<p>Tham chiếu: {referenceCodes.join(", ")}</p>}
         <datalist id="voucher-ledger-account-options">{MISA_REPORT_ACCOUNTS.map(account=><option key={account.code} value={account.code}>{account.name}</option>)}</datalist>
-        {quickDirectory&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickDirectory(null)}>Đóng thêm nhanh</button>{quickDirectory==="Nhà cung cấp"?<SupplierModal onClose={()=>setQuickDirectory(null)} onSubmit={data=>{setPartnerCode(data.code||"");setPartnerName(data.name||"");setQuickDirectory(null);}}/>:<MisaDirectoryWorkspace key={quickDirectory} initialName={quickDirectory} initialCreate legacy={null} notify={()=>{}} onEditorClose={()=>setQuickDirectory(null)} onEntrySaved={values=>{const code=Object.entries(values).find(([key])=>/^Mã|^Số tài khoản/.test(key))?.[1]||"";if(quickDirectory==="Nhân viên")setEmployee(code);else if(quickDirectory==="Tài khoản ngân hàng")setBankAccount(code);else setPartnerCode(code);setQuickDirectory(null);}}/>}</div>}
+        {quickDirectory&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickDirectory(null)}>Đóng thêm nhanh</button>{quickDirectory==="Nhà cung cấp"?<SupplierModal onClose={()=>setQuickDirectory(null)} onSubmit={async data=>{let savedCode=data.code||"";let savedName=data.name||"";if(token&&companyId&&(savedCode||savedName)){try{const rawTax=String(data.taxCode||"").trim().replace(/[\s-]/g,"");const created=await request<any>(`/api/v1/master-data/parties/?company_id=${encodeURIComponent(companyId)}`,token,{method:"POST",body:JSON.stringify({company:companyId,code:savedCode||"AUTO",name:savedName||savedCode,legal_name:savedName||savedCode,party_type:"ORGANIZATION",status:"ACTIVE",tax_code:/^\d{10}(\d{3})?$/.test(rawTax)?rawTax:null})});if(created?.code)savedCode=String(created.code);if(created?.name)savedName=String(created.name);}catch{}}handleSelectPartner({code:savedCode,name:savedName,person:data.contactName||savedName,address:data.address||""});reloadReceiptCatalog();reloadBankPaymentCatalog();setQuickDirectory(null);}}/>:<MisaDirectoryWorkspace key={quickDirectory} initialName={quickDirectory} initialCreate legacy={null} notify={()=>{}} onEditorClose={()=>setQuickDirectory(null)} onEntrySaved={values=>{const code=Object.entries(values).find(([key])=>/^Mã(?! số)(?: |$)|^Số tài khoản/.test(key))?.[1]||values["Mã khách hàng"]||values["Mã nhà cung cấp"]||values["Mã"]||"";const name=Object.entries(values).find(([key])=>/^Tên(?: |$)|^Họ và tên$/.test(key))?.[1]||Object.entries(values).find(([key])=>/^Tên/.test(key))?.[1]||"";const addr=values["Địa chỉ"]||values["Thông tin liên hệ:Địa chỉ"]||"";if(quickDirectory==="Nhân viên")setEmployee(code);else if(quickDirectory==="Tài khoản ngân hàng")setBankAccount(code);else handleSelectPartner({code,name:name||partnerName,person:name||person||partnerName,address:addr||address});reloadReceiptCatalog();reloadBankPaymentCatalog();setQuickDirectory(null);}}/>}</div>}
         {showRefModal&&<CashReferencePicker onClose={()=>setShowRefModal(false)} onSelect={codes=>{setReferenceCodes(codes);setShowRefModal(false);}}/>}
       </div>
     </div>
@@ -7014,11 +7085,10 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
                     Số tiền dự kiến (VNĐ)
                   </label>
                   <input
-                    type="number"
-                    min={1000}
-                    step={1000}
-                    value={newItem.amount}
-                    onChange={(e) => setNewItem({ ...newItem, amount: Number(e.target.value) })}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatMoneyInput(newItem.amount)}
+                    onChange={(e) => setNewItem({ ...newItem, amount: parseMoneyInput(e.target.value) })}
                     style={{ width: "100%", height: 34, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 10px", fontSize: 13 }}
                     required
                   />
@@ -7555,9 +7625,10 @@ function mapCashTransaction(row: ApiCashTransaction) {
   const resolvedDesc = isBarePrefix && firstLineDesc && firstLineDesc.length > rawDesc.length
     ? firstLineDesc
     : (isBarePrefix && row.payer_payee && /\b(của|cho)$/i.test(rawDesc) ? `${rawDesc} ${row.payer_payee}` : (row.description || firstLineDesc || ""));
-  const resolvedPartner = row.payer_payee || row.party_name || "";
+  const resolvedPartner = row.payer_payee || row.party_name || (row.receipt_details as any)?.partner_name || "";
   const resolvedPartnerCode =
     row.party_code ||
+    (row.receipt_details as any)?.partner_code ||
     (row.receipt_details?.lines?.[0] as any)?.partner_code ||
     (row.party ? `DT-${String(row.party).slice(0, 6).toUpperCase()}` : resolvedPartner ? "DT001" : "");
   const resolvedAddress =
@@ -9986,12 +10057,13 @@ export default function MisaCashWorkspace({
                                 <strong>{formatVND(Number(row.amount) || 0)}</strong>
                               ) : (
                                 <input
-                                  type="number"
+                                  type="text"
+                                  inputMode="numeric"
                                   className="misa-voucher-input"
                                   style={{ height: 28, width: "100%", textAlign: "right", fontWeight: 700 }}
-                                  value={row.amount}
+                                  value={formatMoneyInput(row.amount)}
                                   onChange={(e) => {
-                                    const val = Number(e.target.value) || 0;
+                                    const val = parseMoneyInput(e.target.value);
                                     setEditCashRows((rows) =>
                                       rows.map((r, i) => (i === idx ? { ...r, amount: val } : r)),
                                     );

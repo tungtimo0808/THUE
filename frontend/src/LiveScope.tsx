@@ -42,7 +42,7 @@ export default function LiveScope() {
 
   return <main className="account-page"><section className="account-card">
     <Link to="/login">← Phiên làm việc</Link>
-    <p className="account-eyebrow">COM-08</p>
+    <p className="account-eyebrow">KHÔNG GIAN LÀM VIỆC</p>
     <h1>Phạm vi làm việc</h1>
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link>.</p> : <>
       {error && <p className="account-error" role="alert">{error}</p>}

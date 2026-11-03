@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatMoneyInput, parseMoneyInput } from "./formatMoney";
 import {
   X,
   HelpCircle,
@@ -1395,11 +1396,11 @@ export function SaleCommercialInvoiceModal({
                     {/* Đơn giá */}
                     <td style={{ padding: "1px 6px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
                       <input
-                        type="number"
-                        step="any"
-                        value={row.unitPrice}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(row.unitPrice)}
                         onChange={(e) =>
-                          handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)
+                          handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))
                         }
                         style={{
                           width: "100%",

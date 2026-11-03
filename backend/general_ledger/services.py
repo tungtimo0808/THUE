@@ -7797,7 +7797,7 @@ def seed_default_closing_rules(company, request=None):
         models.Account.objects.filter(company=company, code="4212", status="ACTIVE").first()
         or models.Account.objects.filter(company=company, code__startswith="421", status="ACTIVE", is_postable=True).first()
     )
-    is_tt133 = str(getattr(company, "accounting_regime", "") or "").upper() in ("TT133", "CIRCULAR_133", "133")
+    is_tt133 = str(getattr(company, "accounting_regime", "") or "").upper() in ("TT133", "CIRCULAR_133", "133", "TT58", "CIRCULAR_58", "58")
     created_rules = []
     specs = [
         ("KC-521", "Kết chuyển các khoản giảm trừ doanh thu sang 511", "521", "511", "REVENUE_DEDUCTION", "DEBIT_DEST_CREDIT_SOURCE", 10),
@@ -16952,7 +16952,7 @@ def seed_default_financial_statement_mappings(company, mapping_version="TT99-202
     Khởi tạo bộ quy tắc mapping chuẩn theo chế độ kế toán của doanh nghiệp (TT99, TT200, TT133).
     """
     defs = _default_tt99_mapping_definitions()
-    is_tt133 = str(getattr(company, "accounting_regime", "") or "").upper() in ("TT133", "CIRCULAR_133", "133")
+    is_tt133 = str(getattr(company, "accounting_regime", "") or "").upper() in ("TT133", "CIRCULAR_133", "133", "TT58", "CIRCULAR_58", "58")
     created_or_existing = []
     for (form_code, cf_method), rules in defs.items():
         for (
@@ -18057,7 +18057,7 @@ def _compute_b02_values(gl_slice, prior_slice=None, overrides=None):
         v["22"], b["22"], t["22"] = _turn(("635",), "DEBIT")
         v["23"], b["23"], t["23"] = v["22"], b["22"], t["22"]
         company_regime = str(getattr(sl.get("company"), "accounting_regime", "") or "").upper()
-        if company_regime in ("TT133", "CIRCULAR_133", "133"):
+        if company_regime in ("TT133", "CIRCULAR_133", "133", "TT58", "CIRCULAR_58", "58"):
             v["25"], b["25"], t["25"] = _turn(("6421", "641"), "DEBIT")
             v["26"], b["26"], t["26"] = _turn(("642",), "DEBIT", exclude=("6421",))
         else:
@@ -18704,6 +18704,7 @@ def generate_financial_statements(company, data, request=None):
     inherited_batch = None
     regime_code = str(getattr(company, "accounting_regime", "TT99") or "TT99").upper()
     regime_label_map = {
+        "TT58": "Thông tư 58/2026/TT-BTC (Chế độ kế toán Doanh nghiệp siêu nhỏ)",
         "TT133": "Thông tư 133/2016/TT-BTC (Chế độ kế toán Doanh nghiệp nhỏ và vừa)",
         "TT200": "Thông tư 200/2014/TT-BTC (Chế độ kế toán Doanh nghiệp)",
         "TT99": "Thông tư 99/2025/TT-BTC (Áp dụng từ 01/01/2026)",

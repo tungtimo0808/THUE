@@ -1,4 +1,5 @@
 import {CASH_PERIODS} from "./cash-report-periods";
+import {formatMoneyInput,parseMoneyInput} from "./formatMoney";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import CashColumnDialog from "./CashColumnDialog";
 import {defaultBankColumns,readBankColumns} from "./bank-columns";
@@ -1256,12 +1257,13 @@ export default function MisaBankWorkspace({
                               <strong>{formatVND(Number(row.amount) || 0)}</strong>
                             ) : (
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="misa-voucher-input"
                                 style={{ height: 28, width: "100%", textAlign: "right", fontWeight: 700 }}
-                                value={row.amount}
+                                value={formatMoneyInput(row.amount)}
                                 onChange={(e) => {
-                                  const val = Number(e.target.value) || 0;
+                                  const val = parseMoneyInput(e.target.value);
                                   setEditBankRows((rows) => rows.map((r, i) => (i === idx ? { ...r, amount: val } : r)));
                                 }}
                               />

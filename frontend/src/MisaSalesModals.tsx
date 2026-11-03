@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import {
   X,
   HelpCircle,
@@ -1019,9 +1020,10 @@ export function SaleQuoteModal({
                     {/* Đơn giá */}
                     <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                       <input
-                        type="number"
-                        value={it.unitPrice}
-                        onChange={(e) => handleItemChange(idx, "unitPrice", e.target.value)}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(it.unitPrice)}
+                        onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                         style={{
                           width: "100%",
                           border: "none",
@@ -1101,7 +1103,7 @@ export function SaleQuoteModal({
                   <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                   <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                   <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
-                    {totalQuantity.toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(totalQuantity)}
                   </td>
                   <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                   <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
@@ -2722,9 +2724,10 @@ export function SaleOrderModal({
                     {/* Đơn giá */}
                     <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                       <input
-                        type="number"
-                        value={it.unitPrice}
-                        onChange={(e) => handleItemChange(idx, "unitPrice", e.target.value)}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(it.unitPrice)}
+                        onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                         style={{
                           width: "100%",
                           border: "none",
@@ -2820,13 +2823,13 @@ export function SaleOrderModal({
                   <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                   <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                   <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
-                    {totalQuantity.toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(totalQuantity)}
                   </td>
                   <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
-                    {totalSoldQty.toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(totalSoldQty)}
                   </td>
                   <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
-                    {totalExportedQty.toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(totalExportedQty)}
                   </td>
                   <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                   <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
@@ -4630,9 +4633,10 @@ export function SaleContractModal({
                           {/* Đơn giá */}
                           <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                             <input
-                              type="number"
-                              value={it.unitPrice}
-                              onChange={(e) => handleItemChange(idx, "unitPrice", e.target.value)}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(it.unitPrice)}
+                              onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                               style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5 }}
                             />
                           </td>
@@ -4699,10 +4703,10 @@ export function SaleContractModal({
                         <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                         <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                         <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
-                          {totalReqQty.toFixed(2).replace(".", ",")}
+                          {formatVnDecimal(totalReqQty)}
                         </td>
                         <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>
-                          {totalDeliveredQty.toFixed(2).replace(".", ",")}
+                          {formatVnDecimal(totalDeliveredQty)}
                         </td>
                         <td style={{ borderRight: "1px solid #cbd5e1" }}></td>
                         <td style={{ borderRight: "1px solid #cbd5e1", textAlign: "right", padding: "2px 8px" }}>

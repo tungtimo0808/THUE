@@ -124,14 +124,18 @@ export function MisaDashboardOverview({
   }, [sessionCompanies, effectiveCompanyId]);
 
   const circularFullLabel =
-    activeAccountingRegime === "TT133"
+    activeAccountingRegime === "TT58" || activeAccountingRegime === "CIRCULAR_58"
+      ? "Thông tư 58/2026/TT-BTC (DN siêu nhỏ)"
+      : activeAccountingRegime === "TT133"
       ? "Thông tư 133/2016/TT-BTC (DNNVV)"
       : activeAccountingRegime === "TT200"
       ? "Thông tư 200/2014/TT-BTC"
       : "Thông tư 99/2025/TT-BTC";
 
   const dash06RegimeSubtitle =
-    activeAccountingRegime === "TT133"
+    activeAccountingRegime === "TT58" || activeAccountingRegime === "CIRCULAR_58"
+      ? "Tổng hợp từ Sổ kế toán TK rút gọn (511, 632, 642, 821 → 911) theo Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ)"
+      : activeAccountingRegime === "TT133"
       ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 6421, 6422), 7, 8 theo Thông tư 133/2016/TT-BTC (DNNVV)"
       : activeAccountingRegime === "TT200"
       ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 641, 642), 7, 8 theo Thông tư 200/2014/TT-BTC"
@@ -711,6 +715,7 @@ export function MisaDashboardOverview({
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
           gap: 12,
+          alignItems: "stretch",
         }}
       >
         {kpiCards.map((card) => {
@@ -725,6 +730,11 @@ export function MisaDashboardOverview({
                 padding: 16,
                 cursor: "pointer",
                 transition: "box-shadow 0.15s ease",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxSizing: "border-box",
                 borderTop: `3px solid ${
                   card.tone === "blue"
                     ? "#2563eb"
@@ -805,10 +815,11 @@ export function MisaDashboardOverview({
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))",
           gap: 16,
+          alignItems: "stretch",
         }}
       >
         {/* DASH-05: Biểu đồ dòng tiền thu – chi */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
             <div>
               <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>Biểu đồ dòng tiền thu – chi</h2>
@@ -913,7 +924,7 @@ export function MisaDashboardOverview({
         </section>
 
         {/* DASH-06: Doanh thu, chi phí và lợi nhuận */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
             <div>
               <h2 style={{ fontSize: 15, margin: 0, color: "#0f172a" }}>Doanh thu, chi phí và lợi nhuận</h2>
@@ -1055,10 +1066,11 @@ export function MisaDashboardOverview({
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 520px), 1fr))",
           gap: 16,
+          alignItems: "stretch",
         }}
       >
         {/* DASH-07: Công nợ phải thu */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
               <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Công nợ phải thu khách hàng</h2>
@@ -1146,7 +1158,7 @@ export function MisaDashboardOverview({
         </section>
 
         {/* DASH-08: Công nợ phải trả */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
               <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Công nợ phải trả nhà cung cấp</h2>
@@ -1234,7 +1246,7 @@ export function MisaDashboardOverview({
         </section>
 
         {/* DASH-09: Tổng quan tồn kho */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
               <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Tổng quan tồn kho vật tư, hàng hóa</h2>
@@ -1255,6 +1267,34 @@ export function MisaDashboardOverview({
             >
               Chi tiết tồn kho
             </button>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 6,
+              fontSize: 11.5,
+              background: "#f8fafc",
+              padding: 8,
+              borderRadius: 6,
+              marginBottom: 10,
+            }}
+          >
+            <div>
+              <span style={{ color: "#64748b", display: "block" }}>Giá trị tồn kho</span>
+              <strong>{fmtMoney(dash09.inventory_total_value ?? dash09.total_inventory_value ?? w09.value ?? 0)}</strong>
+            </div>
+            <div>
+              <span style={{ color: "#64748b", display: "block" }}>Mặt hàng theo dõi</span>
+              <strong>{dash09.active_sku_count ?? dash09.active_item_count ?? inventorySummaryRows.length ?? 0} mặt hàng</strong>
+            </div>
+            <div>
+              <span style={{ color: "#64748b", display: "block" }}>Cảnh báo dưới tối thiểu</span>
+              <strong style={{ color: Number(dash09.below_minimum_stock_count ?? dash09.below_min_stock_count ?? 0) > 0 ? "#dc2626" : "#059669" }}>
+                {dash09.below_minimum_stock_count ?? dash09.below_min_stock_count ?? 0} mặt hàng
+              </strong>
+            </div>
           </div>
 
           <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
@@ -1308,7 +1348,7 @@ export function MisaDashboardOverview({
         </section>
 
         {/* DASH-10: Tổng quan nghĩa vụ thuế */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
               <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Tổng quan nghĩa vụ thuế (TK 133 / 333)</h2>
@@ -1390,10 +1430,11 @@ export function MisaDashboardOverview({
           display: "grid",
           gridTemplateColumns: "1fr 1.5fr",
           gap: 16,
+          alignItems: "stretch",
         }}
       >
         {/* DASH-11: Danh sách công việc cần xử lý */}
-        <section className="card" style={{ padding: 16 }}>
+        <section className="card" style={{ padding: 16, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
               <h2 style={{ fontSize: 14.5, margin: 0, color: "#0f172a" }}>Công việc cần xử lý</h2>
@@ -1457,7 +1498,7 @@ export function MisaDashboardOverview({
         </section>
 
         {/* DASH-12: Danh sách chứng từ gần đây */}
-        <section className="card" style={{ padding: 16, overflow: "visible", position: "relative", zIndex: 20 }}>
+        <section className="card" style={{ padding: 16, overflow: "visible", position: "relative", zIndex: 20, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
           <div
             style={{
               display: "flex",

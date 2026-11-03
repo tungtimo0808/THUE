@@ -147,8 +147,11 @@ class Command(BaseCommand):
         OrganizationAssignment.objects.filter(membership__in=super_mems).delete()
         super_mems.delete()
 
-        # Membership for company owner (admin_iam) -> Ensure single COMPANY_ADMIN role
-        admin_role = Role.objects.filter(company=company, code="COMPANY_ADMIN").first()
+        # Membership for company owner (admin_iam) -> Ensure single ROLE_ADMIN / COMPANY_ADMIN role
+        admin_role = (
+            Role.objects.filter(company=company, code__in=("ROLE_ADMIN", "COMPANY_ADMIN")).first()
+            or Role.objects.filter(company=company, is_system_admin=True).first()
+        )
         for user_target in [admin_iam]:
             m, _ = CompanyMembership.objects.get_or_create(
                 company=company,

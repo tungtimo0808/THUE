@@ -1045,7 +1045,7 @@ export default function MisaFinancialPositionReport({
             <strong>
               {currentRun.opening_source === "PRIOR_APPROVED_B01"
                 ? "B01 kỳ trước đã duyệt"
-                : "Sổ cái & Số dư đầu kỳ (UC-GL-15)"}
+                : "Sổ cái & Số dư đầu kỳ"}
             </strong>{" "}
             • Kỳ: <strong>{currentRun.fiscal_period_code}</strong> ({currentRun.reporting_scope})
           </div>
@@ -1234,7 +1234,7 @@ export default function MisaFinancialPositionReport({
               <span style={{ color: validationData.is_balanced ? "#15803d" : "#b91c1c", fontWeight: 600 }}>
                 {validationData.is_balanced
                   ? "✓ Cân đối: Tổng Tài sản (280) = Tổng Nguồn vốn (440)"
-                  : `✗ Lệch cân đối (280 vs 440): Cuối kỳ ${validationData.closing_balance_check?.difference || 0} | Đầu năm ${validationData.opening_balance_check?.difference || 0}`}
+                  : `✗ Lệch cân đối (280 vs 440): Cuối kỳ ${Number(validationData.closing_balance_check?.difference || 0).toLocaleString("vi-VN")} | Đầu năm ${Number(validationData.opening_balance_check?.difference || 0).toLocaleString("vi-VN")}`}
               </span>
             </div>
           )}
@@ -1608,7 +1608,7 @@ export default function MisaFinancialPositionReport({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-                Thuyết minh BCTC: Mục {selectedNoteModal.code} (B09-DN – UC-RPT-06)
+                Thuyết minh BCTC: Mục {selectedNoteModal.code} (Mẫu B09-DN)
               </h3>
               <button type="button" onClick={() => setSelectedNoteModal(null)} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
                 <X size={18} />

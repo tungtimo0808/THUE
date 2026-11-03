@@ -429,7 +429,7 @@ def login(data, request):
             or any(
                 ra.status == ActiveStatus.ACTIVE
                 and ra.role
-                and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
                 for ra in item.role_assignments.all()
             )
         )

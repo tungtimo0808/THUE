@@ -280,7 +280,7 @@ test.describe("UC-RPT Master E2E UI Audit & Cross-Module Verification", () => {
         await clickableCell.click();
         await page.waitForTimeout(500);
         // Verify Drilldown submodal opened
-        const drillModal = page.locator("text=Chi tiết Drill-down chỉ tiêu thuế (UC-RPT-14)").first();
+        const drillModal = page.locator("text=Chi tiết Drill-down chỉ tiêu thuế").first();
         if (await drillModal.isVisible()) {
           await expect(drillModal).toBeVisible();
           await page.screenshot({ path: `${artifactDir}/audit_uc_rpt_14_drilldown_modal.png` });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 
@@ -88,8 +89,8 @@ export default function BankMatchDialog({ line, companyId, branchId, onClose, on
           return <tr key={candidate.id}><td><input type="checkbox" aria-label={`Chọn chứng từ ${candidate.number}`} checked={Boolean(allocation)} onChange={() => toggle(candidate)} /></td>
             <td>{candidate.transaction_date}</td><td>{candidate.number}</td><td>{["RECEIPT", "INTEREST", "OTHER_IN"].includes(candidate.transaction_type) ? "Thu" : "Chi"}</td>
             <td>{candidate.counterparty_name}</td><td>{candidate.description}</td><td className="br-number">{money(candidate.amount)}</td><td className="br-number">{money(candidate.remaining_amount)}</td>
-            <td>{allocation && <input aria-label={`Số tiền ghép ${candidate.number}`} type="number" min="0.0001" max={candidate.remaining_amount} step="0.0001" value={allocation.matched_amount}
-              onChange={(event) => setAllocations((current) => current.map((entry) => entry.transaction === candidate.id ? { ...entry, matched_amount: event.target.value } : entry))} />}</td></tr>;
+            <td>{allocation && <input aria-label={`Số tiền ghép ${candidate.number}`} type="text" inputMode="numeric" value={formatMoneyInput(allocation.matched_amount)}
+              onChange={(event) => setAllocations((current) => current.map((entry) => entry.transaction === candidate.id ? { ...entry, matched_amount: parseMoneyInputString(event.target.value) } : entry))} />}</td></tr>;
         })}
         {!filtered.length && <tr><td colSpan={9}>Không có chứng từ đủ điều kiện phù hợp.</td></tr>}
       </tbody></table></div>}

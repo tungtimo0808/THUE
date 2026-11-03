@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { Filter, RefreshCw, Search, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
@@ -360,10 +361,10 @@ export default function IncomingInvoiceIntake({ notify }: { notify: (message: st
         {chosenCandidate && <div className="erp3-link-allocation">
           <h4>Phân bổ cho {chosenCandidate.number}</h4>
           <p>Hóa đơn còn {money(linkSummary?.remaining_amount || selected.total_amount)}; chứng từ còn {money(chosenCandidate.remaining_amount)}.</p>
-          <label>Tiền trước thuế <input aria-label="Tiền trước thuế liên kết" type="number" min="0" step="0.01"
-            value={beforeTax} onChange={(event) => setBeforeTax(event.target.value)} /></label>
-          <label>Tiền thuế <input aria-label="Tiền thuế liên kết" type="number" min="0" step="0.01"
-            value={taxAllocation} onChange={(event) => setTaxAllocation(event.target.value)} /></label>
+          <label>Tiền trước thuế <input aria-label="Tiền trước thuế liên kết" type="text" inputMode="numeric"
+            value={formatMoneyInput(beforeTax)} onChange={(event) => setBeforeTax(parseMoneyInputString(event.target.value))} /></label>
+          <label>Tiền thuế <input aria-label="Tiền thuế liên kết" type="text" inputMode="numeric"
+            value={formatMoneyInput(taxAllocation)} onChange={(event) => setTaxAllocation(parseMoneyInputString(event.target.value))} /></label>
           <p>Tổng liên kết: {money(Number(beforeTax || 0) + Number(taxAllocation || 0))}</p>
           <label>Ghi chú / lý do đối chiếu <input aria-label="Ghi chú liên kết" value={linkNotes}
             onChange={(event) => setLinkNotes(event.target.value)} placeholder="Cần ghi lý do nếu hóa đơn chờ xem xét thủ công" /></label>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import {
   X,
@@ -1424,8 +1425,9 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
                           type="text"
-                          value={salePrice}
-                          onChange={(e) => setSalePrice(e.target.value)}
+                          inputMode="numeric"
+                          value={formatMoneyInput(salePrice)}
+                          onChange={(e) => setSalePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -1602,9 +1604,10 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       </label>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
-                          type="number"
-                          value={fixedPurchasePrice}
-                          onChange={(e) => setFixedPurchasePrice(e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(fixedPurchasePrice)}
+                          onChange={(e) => setFixedPurchasePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -1619,9 +1622,10 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       </label>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
-                          type="number"
-                          value={latestPurchasePrice}
-                          onChange={(e) => setLatestPurchasePrice(e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(latestPurchasePrice)}
+                          onChange={(e) => setLatestPurchasePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -1639,9 +1643,10 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       </label>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
-                          type="number"
-                          value={salePrice}
-                          onChange={(e) => setSalePrice(e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(salePrice)}
+                          onChange={(e) => setSalePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -1859,8 +1864,9 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
                           type="text"
-                          value={fixedPurchasePrice}
-                          onChange={(e) => setFixedPurchasePrice(e.target.value)}
+                          inputMode="numeric"
+                          value={formatMoneyInput(fixedPurchasePrice)}
+                          onChange={(e) => setFixedPurchasePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -1876,8 +1882,9 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
                           type="text"
-                          value={latestPurchasePrice}
-                          onChange={(e) => setLatestPurchasePrice(e.target.value)}
+                          inputMode="numeric"
+                          value={formatMoneyInput(latestPurchasePrice)}
+                          onChange={(e) => setLatestPurchasePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -1893,8 +1900,9 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <input
                           type="text"
-                          value={salePrice}
-                          onChange={(e) => setSalePrice(e.target.value)}
+                          inputMode="numeric"
+                          value={formatMoneyInput(salePrice)}
+                          onChange={(e) => setSalePrice(parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                           style={{ flex: 1, height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right" }}
                         />
                         <button type="button" style={{ height: 30, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", cursor: "pointer" }}>
@@ -2363,10 +2371,11 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                             <td style={{ padding: "6px 8px", textAlign: "right" }}>
                               <input
                                 type="text"
-                                value={conv.salePrice1}
+                                inputMode="numeric"
+                                value={formatMoneyInput(conv.salePrice1)}
                                 onChange={(e) => {
                                   const list = [...conversionUnits];
-                                  list[idx].salePrice1 = e.target.value;
+                                  list[idx].salePrice1 = parseMoneyInputString(e.target.value, { emptyWhenBlank: false });
                                   setConversionUnits(list);
                                 }}
                                 style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, textAlign: "right" }}

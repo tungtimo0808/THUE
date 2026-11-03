@@ -412,7 +412,7 @@ class MyCompaniesView(APIView):
                     or any(
                         ra.status == ActiveStatus.ACTIVE
                         and ra.role
-                        and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ADMIN"))
+                        and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
                         for ra in x.role_assignments.all()
                     )
                 ),
@@ -564,7 +564,7 @@ class MyJoinRequestViewSet(ModelViewSet):
                 entity_type="CompanyJoinRequest", entity_id=req.id,
                 event_key=f"join-request:{req.id}:expired",
             )
-        return CompanyJoinRequest.objects.filter(requester=services.iam_user(self.request)).select_related("company", "requester", "decided_by")
+        return CompanyJoinRequest.objects.filter(requester=services.iam_user(self.request)).select_related("company", "requester__auth_user", "decided_by")
 
     def perform_create(self, serializer):
         company = serializer.validated_data.get("company")
@@ -582,7 +582,7 @@ class MyJoinRequestViewSet(ModelViewSet):
 class CompanyJoinRequestAdminViewSet(ReadOnlyModelViewSet):
     permission_classes = (CommonCompanyPermission,)
     serializer_class = AdminCompanyJoinRequestSerializer
-    queryset = CompanyJoinRequest.objects.select_related("company", "requester", "decided_by")
+    queryset = CompanyJoinRequest.objects.select_related("company", "requester__auth_user", "decided_by")
     iam_permissions = {"GET": "COM.JOIN_REQUEST.VIEW"}
 
     def _decision_permission(self):

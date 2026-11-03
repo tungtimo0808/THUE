@@ -39,7 +39,7 @@ def _role_code(value, company, *, current=None):
     code = value.strip().upper()
     if not re.fullmatch(r"[A-Z][A-Z0-9_]{1,79}", code):
         raise ValidationError({"code": "Mã Role phải gồm chữ in hoa, số hoặc dấu gạch dưới."})
-    if code in {"ADMIN", "COMPANY_ADMIN", "SYSTEM_ADMIN"} or code.startswith(("SYS_", "SYSTEM_", "PLATFORM_")):
+    if code in {"ADMIN", "COMPANY_ADMIN", "SYSTEM_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"} or code.startswith(("SYS_", "SYSTEM_", "PLATFORM_")):
         raise ValidationError({"code": "Mã Role dành riêng cho hệ thống."})
     existing = Role.objects.filter(company=company, code__iexact=code)
     if current:
@@ -255,131 +255,422 @@ def set_role_active(*, role_id, company, actor, active, data, request=None, is_p
     return role
 
 
+# =====================================================================
+# DANH MỤC 21 ROLE CHUẨN NỘI BỘ DOANH NGHIỆP (SRS Mục 2.5.4)
+# (Không tính ROLE_SUPER_ADMIN cấp Platform và ROLE_CUSTOM do DN tự tạo)
+# =====================================================================
+
 STANDARD_ROLE_DEFINITIONS = [
+    # A. Nhóm quản trị và quản lý (System & Management)
     {
-        "code": "KT_TRUONG",
+        "code": "ROLE_ADMIN",
+        "name": "Quản trị doanh nghiệp",
+        "group": "System",
+        "is_system_admin": True,
+        "description": "Quản lý user, role, permission, chi nhánh và cấu hình hệ thống của doanh nghiệp.",
+        "permission_prefixes": ["*"],
+    },
+    {
+        "code": "ROLE_DIRECTOR",
+        "name": "Giám đốc",
+        "group": "Management",
+        "description": "Theo dõi tình hình tài chính, xem báo cáo điều hành và phê duyệt nghiệp vụ theo thẩm quyền.",
+        "permission_prefixes": [
+            "COM.DASHBOARD", "RPT.", "RPT_", "SYS.AUDIT", "SYS.COMPANY_PROFILE.VIEW", "SYS.WORKFLOW",
+            "AP.APPROVAL", "AR.APPROVAL", "BANK.APPROVAL", "CASH.APPROVAL", "FA.APPROVAL",
+            "GL.APPROVAL", "INV.APPROVAL", "PUR.APPROVAL", "SAL.APPROVAL",
+            "GL.LEDGER.VIEW", "GL.BALANCE.VIEW", "GL.JOURNAL.VIEW",
+            "CASH.FUND.VIEW", "BANK.ACCOUNT.VIEW", "BANK.STATEMENT.VIEW",
+            "AR.RECEIVABLE.VIEW", "AP.PAYABLE.VIEW", "INV.BALANCE.VIEW", "TAX.SUMMARY.VIEW",
+        ],
+        "allowed_suffixes": [".VIEW", "_VIEW", ".EXPORT", "_EXPORT", ".PRINT", "_PRINT", ".APPROVE", ".REJECT"],
+    },
+    # B. Nhóm kế toán (Accounting)
+    {
+        "code": "ROLE_CHIEF_ACCOUNTANT",
         "name": "Kế toán trưởng",
-        "description": "Toàn quyền quản lý tài chính, kiểm soát sổ cái, phê duyệt chứng từ, khóa/mở kỳ kế toán.",
+        "group": "Accounting",
+        "description": "Kiểm soát toàn bộ nghiệp vụ kế toán, duyệt chứng từ, ghi/bỏ ghi sổ, khóa kỳ kế toán và lập BCTC.",
         "permission_prefixes": [
-            "GL.", "OPENING_BALANCE_", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.", "TAX.", "RPT.", "AP.", "AR.", "COST.", "SYS.AUDIT",
+            "GL.", "OPENING_BALANCE_", "CASH.", "BANK.", "PUR.", "SAL.", "INV.", "FA.",
+            "TAX.", "RPT.", "RPT_", "AP.", "AR.", "COST.", "PAYROLL.", "MD.",
+            "SYS.PERIOD", "SYS.POLICY", "SYS.NUMBERING", "SYS.AUDIT", "COM.DASHBOARD",
         ],
     },
     {
-        "code": "KT_BANHANG",
-        "name": "Kế toán bán hàng & Công nợ phải thu",
-        "description": "Lập báo giá, đơn hàng, hóa đơn bán hàng, theo dõi công nợ khách hàng và đối chiếu công nợ.",
+        "code": "ROLE_GENERAL_ACCOUNTANT",
+        "name": "Kế toán tổng hợp",
+        "group": "Accounting",
+        "description": "Tổng hợp số liệu, sổ cái, bút toán tổng hợp, phân bổ, kết chuyển cuối kỳ, đối chiếu và lập báo cáo.",
         "permission_prefixes": [
-            "SAL.", "AR.", "MD.PARTY.", "RPT.",
+            "GL.", "OPENING_BALANCE_", "COST.", "RPT.", "RPT_",
+            "TAX.RECONCILIATION", "TAX.SUMMARY", "MD.ACCOUNT", "MD.EXPENSE_ITEM",
+            "MD.STATISTICAL_CODE", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE", ".UNLOCK", ".LOCK_PERIOD"],
+    },
+    {
+        "code": "ROLE_TAX_ACCOUNTANT",
+        "name": "Kế toán thuế",
+        "group": "Accounting",
+        "description": "Quản lý thuế GTGT (VAT), TNDN, TNCN, hóa đơn điện tử, tờ khai và báo cáo thuế.",
+        "permission_prefixes": [
+            "TAX.", "RPT.TAX", "RPT.FINANCIAL", "RPT_FINANCIAL",
+            "SAL.SALES_INVOICE", "PUR.INPUT_INVOICE", "MD.TAX_RATE", "MD.TAX_TYPE",
+            "MD.PARTY.VIEW", "GL.LEDGER.VIEW", "GL.BALANCE.VIEW", "COM.DASHBOARD",
         ],
     },
     {
-        "code": "KT_MUAHANG",
-        "name": "Kế toán mua hàng & Công nợ phải trả",
-        "description": "Lập đơn mua, hóa đơn mua hàng, theo dõi nợ nhà cung cấp và thanh toán chi phí mua hàng.",
+        "code": "ROLE_AP_ACCOUNTANT",
+        "name": "Kế toán phải trả",
+        "group": "Accounting",
+        "description": "Quản lý hóa đơn đầu vào, nhà cung cấp, công nợ phải trả, đối chiếu và đề nghị thanh toán.",
         "permission_prefixes": [
-            "PUR.", "AP.", "MD.PARTY.", "RPT.",
+            "AP.", "PUR.INPUT_INVOICE", "PUR.RECONCILIATION", "PUR.RETURN",
+            "MD.PARTY", "MD.PAYMENT_TERM", "RPT.DEBT", "COM.DASHBOARD",
         ],
+        "excluded_suffixes": [".APPROVE"],
     },
     {
-        "code": "THU_QUY",
+        "code": "ROLE_AR_ACCOUNTANT",
+        "name": "Kế toán phải thu",
+        "group": "Accounting",
+        "description": "Quản lý hóa đơn bán hàng, khách hàng, công nợ phải thu, đối chiếu và thu hồi công nợ.",
+        "permission_prefixes": [
+            "AR.", "SAL.SALES_INVOICE", "SAL.COMMERCIAL_INVOICE", "SAL.SALES_RETURN",
+            "SAL.SALES_ALLOWANCE", "MD.PARTY", "MD.PAYMENT_TERM", "RPT.DEBT", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_PURCHASE_ACCOUNTANT",
+        "name": "Kế toán mua hàng",
+        "group": "Accounting",
+        "description": "Theo dõi nghiệp vụ mua hàng, chứng từ mua, nhận hàng, chi phí mua và nhà cung cấp.",
+        "permission_prefixes": [
+            "PUR.", "AP.INVOICE", "AP.PAYABLE.VIEW", "MD.PARTY", "MD.ITEM",
+            "MD.UOM", "MD.WAREHOUSE.VIEW", "RPT.COMMERCE", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_SALES_ACCOUNTANT",
+        "name": "Kế toán bán hàng",
+        "group": "Accounting",
+        "description": "Ghi nhận bán hàng, doanh thu, hóa đơn đầu ra và chứng từ bán hàng.",
+        "permission_prefixes": [
+            "SAL.", "AR.RECEIVABLE.VIEW", "MD.PARTY", "MD.ITEM", "MD.UOM",
+            "RPT.COMMERCE", "RPT.BUSINESS_RESULT", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_CASH_ACCOUNTANT",
+        "name": "Kế toán tiền mặt",
+        "group": "Accounting",
+        "description": "Lập và hạch toán phiếu thu, phiếu chi, tạm ứng và nghiệp vụ liên quan đến tiền mặt.",
+        "permission_prefixes": [
+            "CASH.", "GL.ADVANCE_REQUEST", "GL.ADVANCE_SETTLEMENT",
+            "MD.PARTY.VIEW", "MD.EMPLOYEE.VIEW", "RPT.MONEY", "RPT.CASH_FLOW", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_BANK_ACCOUNTANT",
+        "name": "Kế toán ngân hàng",
+        "group": "Accounting",
+        "description": "Hạch toán thu/chi qua ngân hàng, ủy nhiệm chi, chuyển tiền và đối soát sao kê ngân hàng.",
+        "permission_prefixes": [
+            "BANK.", "MD.BANK_ACCOUNT", "MD.PARTY.VIEW", "RPT.MONEY", "RPT.CASH_FLOW", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_INVENTORY_ACCOUNTANT",
+        "name": "Kế toán kho",
+        "group": "Accounting",
+        "description": "Hạch toán nhập, xuất, điều chuyển, kiểm kê và tính giá trị hàng tồn kho.",
+        "permission_prefixes": [
+            "INV.", "COST.", "MD.ITEM", "MD.ITEM_GROUP", "MD.WAREHOUSE", "MD.UOM", "RPT.INVENTORY", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_ASSET_ACCOUNTANT",
+        "name": "Kế toán tài sản",
+        "group": "Accounting",
+        "description": "Ghi tăng, ghi giảm, điều chuyển, tính khấu hao và quản lý tài sản cố định (TSCĐ).",
+        "permission_prefixes": [
+            "FA.", "MD.ORGANIZATION.VIEW", "RPT.ASSET", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    {
+        "code": "ROLE_CCDC_ACCOUNTANT",
+        "name": "Kế toán CCDC",
+        "group": "Accounting",
+        "description": "Quản lý công cụ dụng cụ, ghi tăng/giảm, xuất dùng và phân bổ chi phí CCDC.",
+        "permission_prefixes": [
+            "GL.ALLOCATION", "FA.ASSET.VIEW", "FA.COUNT", "FA.REPORT",
+            "INV.TRANSACTION.VIEW", "MD.EXPENSE_ITEM", "RPT.ASSET", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".APPROVE"],
+    },
+    # C. Nhóm vận hành (Operation) — Không có quyền Ghi sổ cái (POST/UNPOST/REVERSE) hoặc Phê duyệt (APPROVE)
+    {
+        "code": "ROLE_TREASURER",
         "name": "Thủ quỹ",
-        "description": "Xác nhận thu/chi tiền mặt, nộp tiền ngân hàng, kiểm kê quỹ tiền mặt.",
+        "group": "Operation",
+        "description": "Thực hiện và xác nhận thu/chi tiền mặt thực tế, theo dõi sổ quỹ và kiểm kê tồn quỹ.",
         "permission_prefixes": [
-            "CASH.TRANSACTION.VIEW", "CASH.TRANSACTION.CONFIRM", "CASH.COUNT.", "CASH.FUND.VIEW", "RPT.",
+            "CASH.TRANSACTION.VIEW", "CASH.TRANSACTION.CONFIRM", "CASH.COUNT.",
+            "CASH.FUND.VIEW", "CASH.ADVANCE.VIEW", "RPT.MONEY.VIEW", "RPT.MONEY.PRINT", "COM.DASHBOARD",
         ],
+        "excluded_suffixes": [".POST", ".UNPOST", ".REVERSE", ".DELETE", ".APPROVE"],
     },
     {
-        "code": "KT_KHO",
-        "name": "Thủ kho & Kế toán kho",
-        "description": "Nhập kho, xuất kho, điều chuyển kho, kiểm kê hàng hóa, theo dõi thẻ kho.",
+        "code": "ROLE_STOREKEEPER",
+        "name": "Thủ kho",
+        "group": "Operation",
+        "description": "Xác nhận nhập/xuất kho thực tế, kiểm kê kho và quản lý số lượng tồn kho.",
         "permission_prefixes": [
-            "INV.", "MD.ITEM.", "MD.WAREHOUSE.", "MD.UOM.", "RPT.",
+            "INV.TRANSACTION", "INV.BALANCE.VIEW", "INV.COUNT", "INV.LOT_SERIAL",
+            "MD.ITEM.VIEW", "MD.WAREHOUSE.VIEW", "MD.UOM.VIEW", "RPT.INVENTORY.VIEW", "RPT.INVENTORY.PRINT", "COM.DASHBOARD",
         ],
+        "excluded_suffixes": [".POST", ".UNPOST", ".REVERSE", ".DELETE", ".APPROVE"],
     },
     {
-        "code": "NVKD",
-        "name": "Nhân viên kinh doanh",
-        "description": "Lập báo giá cho khách, tạo đơn đặt hàng, tra cứu tồn kho và thông tin khách hàng.",
+        "code": "ROLE_PURCHASER",
+        "name": "Nhân viên mua hàng",
+        "group": "Operation",
+        "description": "Lập đề nghị mua hàng, đơn đặt hàng mua, hợp đồng mua và theo dõi tiến độ giao hàng NCC.",
         "permission_prefixes": [
-            "SAL.QUOTATION.VIEW", "SAL.QUOTATION.CREATE", "SAL.QUOTATION.EDIT",
-            "SAL.ORDER.VIEW", "SAL.ORDER.CREATE", "MD.PARTY.VIEW", "INV.BALANCE.VIEW",
+            "PUR.REQUEST", "PUR.ORDER", "PUR.CONTRACT", "PUR.RECEIPT.VIEW",
+            "PUR.TRACKING", "MD.PARTY.VIEW", "MD.ITEM.VIEW", "INV.BALANCE.VIEW", "COM.DASHBOARD",
         ],
+        "excluded_suffixes": [".POST", ".UNPOST", ".REVERSE", ".APPROVE"],
+    },
+    {
+        "code": "ROLE_SALESPERSON",
+        "name": "Nhân viên bán hàng",
+        "group": "Operation",
+        "description": "Lập báo giá, tạo đơn bán hàng, quản lý thông tin khách hàng và theo dõi quá trình giao hàng.",
+        "permission_prefixes": [
+            "SAL.QUOTATION", "SAL.ORDER", "SAL.CONTRACT", "SAL.DELIVERY.VIEW",
+            "SAL.TRACKING", "MD.PARTY.VIEW", "MD.ITEM.VIEW", "INV.BALANCE.VIEW", "COM.DASHBOARD",
+        ],
+        "excluded_suffixes": [".POST", ".UNPOST", ".REVERSE", ".APPROVE"],
+    },
+    # D. Nhóm phê duyệt, kiểm soát & xem báo cáo (Approval, Control, View Only)
+    {
+        "code": "ROLE_APPROVER",
+        "name": "Người phê duyệt",
+        "group": "Approval",
+        "description": "Thực hiện phê duyệt hoặc từ chối chứng từ/nghiệp vụ theo quy trình (workflow) được cấu hình.",
+        "permission_prefixes": [
+            "AP.", "AR.", "BANK.", "CASH.", "FA.", "GL.", "INV.", "PUR.", "SAL.",
+            "SYS.WORKFLOW.VIEW", "COM.DASHBOARD",
+        ],
+        "allowed_suffixes": [".APPROVE", ".REJECT", ".APPROVAL.VIEW", ".WORKFLOW.VIEW", ".DASHBOARD.VIEW"],
+    },
+    {
+        "code": "ROLE_AUDITOR",
+        "name": "Kiểm tra / Kiểm toán",
+        "group": "Control",
+        "description": "Tra cứu chứng từ, sổ kế toán, báo cáo tài chính và nhật ký kiểm toán (Audit Log); chỉ đọc.",
+        "permission_prefixes": [
+            "SYS.AUDIT", "RPT.", "RPT_", "GL.", "OPENING_BALANCE_VIEW",
+            "TAX.", "FA.", "INV.", "AP.", "AR.", "CASH.", "BANK.", "PUR.", "SAL.", "COST.", "COM.DASHBOARD",
+        ],
+        "allowed_suffixes": [".VIEW", "_VIEW", ".EXPORT", "_EXPORT", ".PRINT", "_PRINT"],
+    },
+    {
+        "code": "ROLE_REPORT_VIEWER",
+        "name": "Người xem báo cáo",
+        "group": "View Only",
+        "description": "Chỉ được xem các bảng điều khiển (Dashboard) và báo cáo được cấp quyền, không sửa chứng từ.",
+        "permission_prefixes": [
+            "COM.DASHBOARD", "RPT.", "RPT_",
+        ],
+        "allowed_suffixes": [".VIEW", "_VIEW", ".EXPORT", "_EXPORT", ".PRINT", "_PRINT"],
     },
 ]
 
+ROLE_GROUP_BY_CODE = {item["code"]: item["group"] for item in STANDARD_ROLE_DEFINITIONS}
+ROLE_GROUP_BY_CODE["COMPANY_ADMIN"] = "System"
+ROLE_GROUP_BY_CODE["ROLE_SUPER_ADMIN"] = "System"
 
-def seed_standard_roles_for_company(company, actor=None):
+LEGACY_ROLE_CODE_MAP = {
+    "COMPANY_ADMIN": "ROLE_ADMIN",
+    "KT_TRUONG": "ROLE_CHIEF_ACCOUNTANT",
+    "KT_BANHANG": "ROLE_SALES_ACCOUNTANT",
+    "KT_MUAHANG": "ROLE_PURCHASE_ACCOUNTANT",
+    "THU_QUY": "ROLE_TREASURER",
+    "KT_KHO": "ROLE_STOREKEEPER",
+    "NVKD": "ROLE_SALESPERSON",
+}
+
+# =====================================================================
+# PHÂN BỐ ROLE THEO 4 THÔNG TƯ / QUY MÔ DOANH NGHIỆP (SRS Mục 2.5.8 & 2.5.9)
+# - Các Role trong danh sách của Thông tư sẽ ở trạng thái ACTIVE (Đang sử dụng).
+# - Các Role còn lại trong 21 Role chuẩn sẽ ở trạng thái AVAILABLE (Có sẵn trong danh mục,
+#   Admin doanh nghiệp có thể bật thêm bất kỳ lúc nào mà không làm rối giao diện).
+# =====================================================================
+
+ROLE_PRESETS_BY_REGIME = {
+    # Preset 1: Thông tư 58/2026/TT-BTC — Doanh nghiệp siêu nhỏ (3 Role ACTIVE)
+    "TT58": [
+        "ROLE_ADMIN",
+        "ROLE_DIRECTOR",
+        "ROLE_CHIEF_ACCOUNTANT",
+    ],
+    # Preset 2: Thông tư 133/2016/TT-BTC — Doanh nghiệp nhỏ & vừa SME (8 Role ACTIVE)
+    "TT133": [
+        "ROLE_ADMIN",
+        "ROLE_DIRECTOR",
+        "ROLE_CHIEF_ACCOUNTANT",
+        "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_TAX_ACCOUNTANT",
+        "ROLE_SALES_ACCOUNTANT",
+        "ROLE_TREASURER",
+        "ROLE_STOREKEEPER",
+    ],
+    # Preset 3: Thông tư 200/2014/TT-BTC — Doanh nghiệp vừa & lớn (14 Role ACTIVE)
+    "TT200": [
+        "ROLE_ADMIN",
+        "ROLE_DIRECTOR",
+        "ROLE_CHIEF_ACCOUNTANT",
+        "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_TAX_ACCOUNTANT",
+        "ROLE_AP_ACCOUNTANT",
+        "ROLE_AR_ACCOUNTANT",
+        "ROLE_PURCHASE_ACCOUNTANT",
+        "ROLE_SALES_ACCOUNTANT",
+        "ROLE_CASH_ACCOUNTANT",
+        "ROLE_BANK_ACCOUNTANT",
+        "ROLE_INVENTORY_ACCOUNTANT",
+        "ROLE_TREASURER",
+        "ROLE_STOREKEEPER",
+    ],
+    # Preset 4: Thông tư 99/2025/TT-BTC — Doanh nghiệp lớn / Đầy đủ chuyên trách (21 Role ACTIVE)
+    "TT99": [item["code"] for item in STANDARD_ROLE_DEFINITIONS],
+}
+
+
+def resolve_regime_preset_key(raw_regime_or_preset: str | None) -> str:
+    val = str(raw_regime_or_preset or "").strip().upper()
+    if val in ("TT58", "CIRCULAR_58", "58", "MICRO", "PRESET_1"):
+        return "TT58"
+    if val in ("TT133", "CIRCULAR_133", "133", "SME", "SMALL", "PRESET_2"):
+        return "TT133"
+    if val in ("TT200", "CIRCULAR_200", "200", "MEDIUM", "PRESET_3"):
+        return "TT200"
+    return "TT99"
+
+
+def _migrate_legacy_roles_for_company(company):
+    """Chuyển đổi các mã Role cũ (KT_TRUONG, THU_QUY, COMPANY_ADMIN...) sang mã chuẩn SRS ROLE_*."""
+    for old_code, new_code in LEGACY_ROLE_CODE_MAP.items():
+        old_role = Role.objects.filter(company=company, code=old_code).first()
+        if not old_role:
+            continue
+        new_role = Role.objects.filter(company=company, code=new_code).first()
+        if not new_role:
+            old_role.code = new_code
+            old_role.role_type = RoleType.STANDARD
+            if new_code == "ROLE_ADMIN":
+                old_role.is_system_admin = True
+            old_role.save(update_fields=("code", "role_type", "is_system_admin", "updated_at"))
+        else:
+            # Chuyển toàn bộ nhân sự đang gán old_role sang new_role rồi xóa old_role
+            for assign in list(UserRoleAssignment.objects.filter(role=old_role)):
+                if not UserRoleAssignment.objects.filter(
+                    company_membership=assign.company_membership, role=new_role
+                ).exists():
+                    assign.role = new_role
+                    assign.save(update_fields=("role",))
+                else:
+                    assign.delete()
+            old_role.delete()
+
+
+def seed_standard_roles_for_company(company, actor=None, preset: str | None = None, force_preset_status: bool = False):
     """
-    Idempotently seeds COMPANY_ADMIN with full 929 permissions,
-    plus the 6 standard operational accounting roles for the given company.
+    Khởi tạo đầy đủ 21 Role chuẩn theo SRS Mục 2.5 cho doanh nghiệp,
+    đồng thời tự động bật (ACTIVE) số lượng Role phù hợp với Thông tư / Quy mô doanh nghiệp
+    (TT58: 3 Role, TT133: 8 Role, TT200: 14 Role, TT99: 21 Role) và để các Role còn lại ở AVAILABLE.
     """
     created_roles = []
+    preset_key = resolve_regime_preset_key(preset or getattr(company, "accounting_regime", "TT99"))
+    active_codes_for_preset = set(ROLE_PRESETS_BY_REGIME.get(preset_key, ROLE_PRESETS_BY_REGIME["TT99"]))
+
     with transaction.atomic():
+        _migrate_legacy_roles_for_company(company)
         all_perms = list(Permission.objects.filter(status=ActiveStatus.ACTIVE).select_related("resource"))
 
-        # 1. Ensure COMPANY_ADMIN role has full enterprise permissions (929 perms)
-        admin_role, _ = Role.objects.get_or_create(
-            company=company,
-            code="COMPANY_ADMIN",
-            defaults={
-                "name": "Admin doanh nghiệp",
-                "description": "Quản trị viên Doanh nghiệp (Chủ sở hữu) nắm toàn quyền quản trị và nghiệp vụ.",
-                "role_type": RoleType.STANDARD,
-                "status": RoleStatus.ACTIVE,
-                "is_system_admin": True,
-                "created_by": actor,
-                "updated_by": actor,
-            },
-        )
-        existing_admin_perm_ids = set(RolePermission.objects.filter(role=admin_role).values_list("permission_id", flat=True))
-        new_admin_grants = [
-            RolePermission(role=admin_role, permission=p, effect="ALLOW")
-            for p in all_perms if p.id not in existing_admin_perm_ids
-        ]
-        if new_admin_grants:
-            RolePermission.objects.bulk_create(new_admin_grants)
-
-        # Gán vai trò COMPANY_ADMIN (Chủ sở hữu) cho tài khoản khởi tạo/chủ doanh nghiệp
-        if actor:
-            actor_mem = CompanyMembership.objects.filter(company=company, user=actor).first()
-            if actor_mem:
-                UserRoleAssignment.objects.get_or_create(
-                    company_membership=actor_mem,
-                    role=admin_role,
-                    defaults={
-                        "status": ActiveStatus.ACTIVE,
-                        "assigned_by": actor,
-                        "assign_reason": "Chủ sở hữu / Quản trị viên doanh nghiệp",
-                    },
-                )
-
-        created_roles.append({
-            "code": admin_role.code,
-            "name": admin_role.name,
-            "created": False,
-            "permission_count": len(all_perms),
-        })
-
-        # 2. Seed standard 6 roles
         for role_def in STANDARD_ROLE_DEFINITIONS:
+            code = role_def["code"]
+            is_admin = bool(role_def.get("is_system_admin", False))
+            should_be_active = is_admin or (code in active_codes_for_preset)
+            target_status = RoleStatus.ACTIVE if should_be_active else RoleStatus.AVAILABLE
+
             role, created = Role.objects.get_or_create(
                 company=company,
-                code=role_def["code"],
+                code=code,
                 defaults={
                     "name": role_def["name"],
                     "description": role_def["description"],
                     "role_type": RoleType.STANDARD,
-                    "status": RoleStatus.ACTIVE,
+                    "status": target_status,
+                    "is_system_admin": is_admin,
                     "created_by": actor,
                     "updated_by": actor,
                 },
             )
 
+            update_fields = []
+            if role.name != role_def["name"]:
+                role.name = role_def["name"]
+                update_fields.append("name")
+            if role.description != role_def["description"]:
+                role.description = role_def["description"]
+                update_fields.append("description")
+            if is_admin and not role.is_system_admin:
+                role.is_system_admin = True
+                update_fields.append("is_system_admin")
+
+            if not created and force_preset_status:
+                # Nếu Role đang có nhân sự ACTIVE được gán thì giữ ACTIVE để không làm mất quyền nhân sự
+                has_assigned_users = role.user_assignments.filter(status=ActiveStatus.ACTIVE).exists()
+                desired_status = RoleStatus.ACTIVE if (should_be_active or has_assigned_users) else RoleStatus.AVAILABLE
+                if role.status != desired_status:
+                    role.status = desired_status
+                    update_fields.append("status")
+
+            if update_fields:
+                update_fields.append("updated_at")
+                role.save(update_fields=tuple(update_fields))
+
             prefixes = role_def["permission_prefixes"]
-            matched_perms = [
-                p for p in all_perms
-                if any(p.code.startswith(prefix) for prefix in prefixes)
-            ]
+            allowed_suffixes = role_def.get("allowed_suffixes")
+            excluded_suffixes = role_def.get("excluded_suffixes")
+
+            if "*" in prefixes or is_admin:
+                matched_perms = all_perms
+            else:
+                matched_perms = []
+                for p in all_perms:
+                    if not any(p.code.startswith(prefix) for prefix in prefixes):
+                        continue
+                    if allowed_suffixes and not any(p.code.endswith(sfx) or sfx in p.code for sfx in allowed_suffixes):
+                        continue
+                    if excluded_suffixes and any(p.code.endswith(sfx) or sfx in p.code for sfx in excluded_suffixes):
+                        continue
+                    matched_perms.append(p)
+
+            target_perm_ids = {p.id for p in matched_perms}
+            if force_preset_status and role.role_type == RoleType.STANDARD and not is_admin:
+                RolePermission.objects.filter(role=role).exclude(permission_id__in=target_perm_ids).delete()
 
             existing_perm_ids = set(RolePermission.objects.filter(role=role).values_list("permission_id", flat=True))
             new_grants = [
@@ -389,12 +680,29 @@ def seed_standard_roles_for_company(company, actor=None):
             if new_grants:
                 RolePermission.objects.bulk_create(new_grants)
 
+            if is_admin and actor:
+                actor_mem = CompanyMembership.objects.filter(company=company, user=actor).first()
+                if actor_mem:
+                    UserRoleAssignment.objects.get_or_create(
+                        company_membership=actor_mem,
+                        role=role,
+                        defaults={
+                            "status": ActiveStatus.ACTIVE,
+                            "assigned_by": actor,
+                            "assign_reason": "Chủ sở hữu / Quản trị viên doanh nghiệp",
+                        },
+                    )
+
             created_roles.append({
+                "id": str(role.id),
                 "code": role.code,
                 "name": role.name,
+                "group": role_def["group"],
+                "status": role.status,
                 "created": created,
                 "permission_count": len(matched_perms),
             })
 
     return created_roles
+
 

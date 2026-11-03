@@ -949,7 +949,8 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     request<any>(`/api/v1/organization/companies/${sessionCompanyId}/`, sessionToken)
       .then((res) => {
         const reg = String(res?.accounting_regime || "").toUpperCase();
-        if (reg.includes("133")) setCompanyRegime("TT133");
+        if (reg.includes("58")) setCompanyRegime("TT58");
+        else if (reg.includes("133")) setCompanyRegime("TT133");
         else if (reg.includes("200")) setCompanyRegime("TT200");
         else if (reg) setCompanyRegime("TT99");
       })
@@ -1106,13 +1107,16 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
     const mainGroup = base.groups.find((g) => g.id === "financial_main");
     const tt133Group = base.groups.find((g) => g.id === "financial_tt133");
     if (!mainGroup || !tt133Group) return base;
-    if (companyRegime === "TT133") {
+    if (companyRegime === "TT133" || companyRegime === "TT58") {
       return {
         ...base,
         groups: [
           {
             ...tt133Group,
-            title: "Báo cáo tài chính theo Thông tư 133/2016/TT-BTC (Chế độ đang áp dụng)",
+            title:
+              companyRegime === "TT58"
+                ? "Báo cáo tài chính rút gọn theo Thông tư 58/2026/TT-BTC — Doanh nghiệp siêu nhỏ (Chế độ đang áp dụng)"
+                : "Báo cáo tài chính theo Thông tư 133/2016/TT-BTC (Chế độ đang áp dụng)",
             collapsible: false,
             defaultOpen: true,
           },

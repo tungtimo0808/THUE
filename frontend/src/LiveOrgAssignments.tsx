@@ -89,7 +89,7 @@ export default function LiveOrgAssignments() {
     await run(() => request(`/api/v1/iam/organization-assignments/${item.id}/revoke/?company_id=${companyId}`, token, { method: "POST", body: JSON.stringify({ version: item.version, reason: reason.trim() }) }), "Đã kết thúc phân công.");
   }
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">SYS-09</p><h1>Phân công người dùng vào đơn vị</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">TỔ CHỨC & ĐƠN VỊ</p><h1>Phân công người dùng vào đơn vị</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); reset(); setMemberId(""); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
@@ -1975,10 +1976,11 @@ export default function MisaToolsWorkspace({
                   <div>
                     <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 2 }}>Đơn giá</label>
                     <input
-                      type="number"
-                      value={singlePrice}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyInput(singlePrice)}
                       onChange={(e) => {
-                        const p = Number(e.target.value) || 0;
+                        const p = parseMoneyInput(e.target.value);
                         setSinglePrice(p);
                         const tot = p * singleQty;
                         setSingleAmount(tot);
@@ -1991,10 +1993,11 @@ export default function MisaToolsWorkspace({
                   <div>
                     <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 2 }}>Thành tiền</label>
                     <input
-                      type="number"
-                      value={singleAmount}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyInput(singleAmount)}
                       onChange={(e) => {
-                        const a = Number(e.target.value) || 0;
+                        const a = parseMoneyInput(e.target.value);
                         setSingleAmount(a);
                         if (singleAllocMonths > 0) setSingleMonthlyAlloc(Math.round(a / singleAllocMonths));
                       }}
@@ -2131,7 +2134,7 @@ export default function MisaToolsWorkspace({
                       <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
                         <td colSpan={3} style={{ borderRight: "1px solid #e2e8f0" }}></td>
                         <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                          {singleDeptRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                          {formatVnDecimal(singleDeptRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                         </td>
                         <td></td>
                       </tr>
@@ -2613,10 +2616,11 @@ export default function MisaToolsWorkspace({
                       </td>
                       <td style={{ padding: "2px 4px", borderRight: "1px solid #e2e8f0" }}>
                         <input
-                          type="number"
-                          value={row.price}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(row.price)}
                           onChange={(e) => {
-                            const p = Number(e.target.value) || 0;
+                            const p = parseMoneyInput(e.target.value);
                             setBatchRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price: p, amount: p * r.qty } : r)));
                           }}
                           style={{ width: "100%", height: 24, border: "1px solid transparent", textAlign: "right", outline: "none", fontSize: 12 }}
@@ -2669,7 +2673,7 @@ export default function MisaToolsWorkspace({
                       Tổng
                     </td>
                     <td style={{ padding: "6px 4px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
-                      {batchRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                      {formatVnDecimal(batchRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                     </td>
                     <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
                     <td style={{ padding: "6px 4px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
@@ -2834,7 +2838,7 @@ export default function MisaToolsWorkspace({
                         <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
                           <td colSpan={3} style={{ borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "6px 8px", textAlign: "right" }}>
-                            {batchDeptRows.reduce((sum, r) => sum + (r.qty || 0), 0).toFixed(2).replace(".", ",")}
+                            {formatVnDecimal(batchDeptRows.reduce((sum, r) => sum + (r.qty || 0), 0))}
                           </td>
                         </tr>
                       </tbody>
@@ -4865,10 +4869,11 @@ export default function MisaToolsWorkspace({
                           {/* Giá trị còn lại - Sau điều chỉnh */}
                           <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                             <input
-                              type="number"
-                              value={row.remainingAfter || ""}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(row.remainingAfter, { emptyZero: true })}
                               onChange={(e) => {
-                                const newAfter = Number(e.target.value) || 0;
+                                const newAfter = parseMoneyInput(e.target.value);
                                 setAdjustmentRows((prev) =>
                                   prev.map((r) => {
                                     if (r.id === row.id) {
@@ -6318,10 +6323,11 @@ export default function MisaToolsWorkspace({
                         {/* Giá trị còn lại của CCDC ghi giảm */}
                         <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                           <input
-                            type="number"
-                            value={row.remainingValue || ""}
+                            type="text"
+                            inputMode="numeric"
+                            value={formatMoneyInput(row.remainingValue, { emptyZero: true })}
                             onChange={(e) => {
-                              const val = Number(e.target.value) || 0;
+                              const val = parseMoneyInput(e.target.value);
                               setDecreaseRows((prev) =>
                                 prev.map((r) => (r.id === row.id ? { ...r, remainingValue: val } : r))
                               );
@@ -11961,9 +11967,10 @@ export default function MisaToolsWorkspace({
                         Số tiền
                       </label>
                       <input
-                        type="number"
-                        value={form1Amount}
-                        onChange={(e) => setForm1Amount(Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(form1Amount)}
+                        onChange={(e) => setForm1Amount(parseMoneyInput(e.target.value))}
                         style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box", textAlign: "right" }}
                       />
                     </div>
@@ -12230,10 +12237,11 @@ export default function MisaToolsWorkspace({
                                 </td>
                                 <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
                                   <input
-                                    type="number"
-                                    value={doc.amount}
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={formatMoneyInput(doc.amount)}
                                     onChange={(e) => {
-                                      const val = Number(e.target.value) || 0;
+                                      const val = parseMoneyInput(e.target.value);
                                       const nextDocs = form1SourceDocs.map((d, i) => (i === idx ? { ...d, amount: val } : d));
                                       setForm1SourceDocs(nextDocs);
                                       setForm1Amount(nextDocs.reduce((s, d) => s + (d.amount || 0), 0));
@@ -12578,10 +12586,11 @@ export default function MisaToolsWorkspace({
                         Số tiền
                       </label>
                       <input
-                        type="number"
-                        value={form2Amount}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(form2Amount)}
                         onChange={(e) => {
-                          const val = Number(e.target.value);
+                          const val = parseMoneyInput(e.target.value);
                           setForm2Amount(val);
                           setForm2MonthlyAlloc(Math.round(form2AllocMonths > 0 ? val / form2AllocMonths : 0));
                           setForm2RemainingAmount(Math.max(0, val - form2AllocatedAmount));
@@ -12595,9 +12604,10 @@ export default function MisaToolsWorkspace({
                         Số tiền phân bổ hàng kỳ
                       </label>
                       <input
-                        type="number"
-                        value={form2MonthlyAlloc}
-                        onChange={(e) => setForm2MonthlyAlloc(Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(form2MonthlyAlloc)}
+                        onChange={(e) => setForm2MonthlyAlloc(parseMoneyInput(e.target.value))}
                         style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box", textAlign: "right" }}
                       />
                     </div>
@@ -12610,10 +12620,11 @@ export default function MisaToolsWorkspace({
                         Số tiền đã phân bổ
                       </label>
                       <input
-                        type="number"
-                        value={form2AllocatedAmount}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(form2AllocatedAmount)}
                         onChange={(e) => {
-                          const val = Number(e.target.value);
+                          const val = parseMoneyInput(e.target.value);
                           setForm2AllocatedAmount(val);
                           setForm2RemainingAmount(Math.max(0, form2Amount - val));
                         }}
@@ -12626,9 +12637,10 @@ export default function MisaToolsWorkspace({
                         Số tiền phân bổ còn lại
                       </label>
                       <input
-                        type="number"
-                        value={form2RemainingAmount}
-                        onChange={(e) => setForm2RemainingAmount(Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(form2RemainingAmount)}
+                        onChange={(e) => setForm2RemainingAmount(parseMoneyInput(e.target.value))}
                         style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box", textAlign: "right" }}
                       />
                     </div>
@@ -14274,10 +14286,11 @@ export default function MisaToolsWorkspace({
                             </td>
                             <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
                               <input
-                                type="number"
-                                value={row.remainingAmount}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(row.remainingAmount)}
                                 onChange={(e) => {
-                                  const val = Number(e.target.value);
+                                  const val = parseMoneyInput(e.target.value);
                                   setPrepaidDecreaseDetailRows(prepaidDecreaseDetailRows.map((r) => r.id === row.id ? { ...r, remainingAmount: val } : r));
                                 }}
                                 style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, textAlign: "right" }}

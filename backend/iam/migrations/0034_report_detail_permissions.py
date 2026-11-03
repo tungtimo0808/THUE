@@ -10,7 +10,7 @@ AREAS = {
     "RPT.INVENTORY.DETAIL": "Giá trị, giá vốn và đối chiếu tồn kho",
     "RPT.ASSET.DETAIL": "Chi tiết và đối chiếu báo cáo tài sản",
 }
-GRANTED_ROLES = ("COMPANY_ADMIN", "SYSTEM_ADMIN", "KT_TRUONG")
+GRANTED_ROLES = ("COMPANY_ADMIN", "SYSTEM_ADMIN", "KT_TRUONG", "ROLE_ADMIN", "ROLE_CHIEF_ACCOUNTANT")
 
 
 def seed(apps, schema_editor):

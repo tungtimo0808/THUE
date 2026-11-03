@@ -1,4 +1,5 @@
 import {CASH_PERIODS,cashPeriodDates} from "./cash-report-periods";
+import {formatMoneyInput} from "./formatMoney";
 import {currentCashDate} from './cash-date';
 import { useState, useMemo } from "react";
 import {
@@ -581,7 +582,8 @@ export function SingleCustomerInvoiceCollectionModal({
                 <span style={{ fontSize: 12.5, color: "#374151" }}>Nhập số thu</span>
                 <input
                   type="text"
-                  value={quickAmount}
+                  inputMode="numeric"
+                  value={formatMoneyInput(quickAmount)}
                   onChange={(e) => handleQuickAmountChange(e.target.value)}
                   style={{
                     height: 30,
@@ -1500,7 +1502,8 @@ export function MultiCustomerInvoiceCollectionModal({
                 <span style={{ fontSize: 12.5, color: "#374151" }}>Nhập số thu</span>
                 <input
                   type="text"
-                  value={quickAmount}
+                  inputMode="numeric"
+                  value={formatMoneyInput(quickAmount)}
                   onChange={(e) => handleQuickAmountChange(e.target.value)}
                   style={{
                     height: 30,

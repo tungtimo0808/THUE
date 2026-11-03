@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatMoneyInput, parseMoneyInput } from "./formatMoney";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import {
   X,
@@ -1481,9 +1482,10 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                   Hạn mức nợ (VND)
                 </label>
                 <input
-                  type="number"
-                  value={creditLimit}
-                  onChange={(e) => setCreditLimit(Number(e.target.value))}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMoneyInput(creditLimit)}
+                  onChange={(e) => setCreditLimit(parseMoneyInput(e.target.value))}
                   style={{
                     width: "100%",
                     height: 30,

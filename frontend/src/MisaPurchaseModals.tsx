@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatMoneyInput, formatVnDecimal, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import {
   X,
   HelpCircle,
@@ -903,9 +904,10 @@ export function PurchaseOrderModal({
                     </td>
                     <td>
                       <input
-                        type="number"
-                        value={row.unitPrice}
-                        onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(row.unitPrice)}
+                        onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                         style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }}
                       />
                     </td>
@@ -1859,9 +1861,10 @@ export function PurchaseContractModal({
                   <div>
                     <label className="misa-purchase-label">Giá trị thanh lý</label>
                     <input
-                      type="number"
-                      value={liquidationAmount}
-                      onChange={(e) => setLiquidationAmount(Number(e.target.value) || 0)}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyInput(liquidationAmount)}
+                      onChange={(e) => setLiquidationAmount(parseMoneyInput(e.target.value))}
                       style={{
                         width: "100%",
                         height: 28,
@@ -2358,9 +2361,10 @@ export function PurchaseContractModal({
                       </td>
                       <td>
                         <input
-                          type="number"
-                          value={row.unitPrice}
-                          onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(row.unitPrice)}
+                          onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                           style={{
                             width: "100%",
                             height: 26,
@@ -4273,7 +4277,7 @@ export function PurchaseVoucherModal({
                           )}
                           <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                           <td><input type="number" value={row.quantity} onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                          <td><input type="number" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.unitPrice)} onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
                           <td><input type="number" value={row.vatRate} onChange={(e) => handleItemChange(idx, "vatRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right" }}>{formatVND(row.vatAmount || 0)}</td>
@@ -4313,7 +4317,7 @@ export function PurchaseVoucherModal({
                           )}
                           <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                           <td><input type="number" value={row.quantity} onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                          <td><input type="number" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.unitPrice)} onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
                           <td><input type="number" value={row.vatRate} onChange={(e) => handleItemChange(idx, "vatRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right" }}>{formatVND(row.vatAmount || 0)}</td>
@@ -4353,17 +4357,17 @@ export function PurchaseVoucherModal({
                           )}
                           <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                           <td><input type="number" value={row.quantity} onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                          <td><input type="number" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.unitPrice)} onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
                           {paymentOption === "unpaid" ? (
                             <>
-                              <td><input type="number" value={row.fobPrice || 0} onChange={(e) => handleItemChange(idx, "fobPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                              <td><input type="number" value={row.customsFee || 0} onChange={(e) => handleItemChange(idx, "customsFee", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                              <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.fobPrice || 0)} onChange={(e) => handleItemChange(idx, "fobPrice", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                              <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.customsFee || 0)} onChange={(e) => handleItemChange(idx, "customsFee", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                             </>
                           ) : (
                             <>
-                              <td><input type="number" value={row.customsFee || 0} onChange={(e) => handleItemChange(idx, "customsFee", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                              <td><input type="number" value={row.inwardFee || 0} onChange={(e) => handleItemChange(idx, "inwardFee", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                              <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.customsFee || 0)} onChange={(e) => handleItemChange(idx, "customsFee", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                              <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.inwardFee || 0)} onChange={(e) => handleItemChange(idx, "inwardFee", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                             </>
                           )}
                         </>
@@ -4399,10 +4403,10 @@ export function PurchaseVoucherModal({
                           )}
                           <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                           <td><input type="number" value={row.quantity} onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                          <td><input type="number" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.unitPrice)} onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
-                          <td><input type="number" value={row.customsFee || 0} onChange={(e) => handleItemChange(idx, "customsFee", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                          <td><input type="number" value={row.purchaseCost || 0} onChange={(e) => handleItemChange(idx, "purchaseCost", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.customsFee || 0)} onChange={(e) => handleItemChange(idx, "customsFee", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                          <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.purchaseCost || 0)} onChange={(e) => handleItemChange(idx, "purchaseCost", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                           <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND((row.amount || 0) + (row.customsFee || 0) + (row.purchaseCost || 0))}</td>
                         </>
                       )}
@@ -4422,7 +4426,7 @@ export function PurchaseVoucherModal({
                     </td>
                     <td colSpan={!isWarehouse ? (showAccounts ? 3 : 1) : (showAccounts ? 4 : 2)}></td>
                     <td style={{ textAlign: "right", padding: "6px 10px" }}>
-                      {items.reduce((s, it) => s + (Number(it.quantity) || 0), 0).toFixed(2).replace(".", ",")}
+                      {formatVnDecimal(items.reduce((s, it) => s + (Number(it.quantity) || 0), 0))}
                     </td>
                     <td></td>
                     <td style={{ textAlign: "right", padding: "6px 10px" }}>
@@ -5247,7 +5251,7 @@ export function PurchaseReturnModal({
                     {showAccounts && <td><input type="text" value={row.stockAccount} onChange={(e) => handleItemChange(idx, "stockAccount", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>}
                     <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                     <td><input type="number" value={row.quantity} onChange={(e) => handleItemChange(idx, "quantity", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td><input type="number" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                    <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.unitPrice)} onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                     <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)}</td>
                     <td><input type="number" value={row.vatRate} onChange={(e) => handleItemChange(idx, "vatRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                     <td style={{ textAlign: "right" }}>{formatVND(row.vatAmount)}</td>
@@ -6631,9 +6635,10 @@ export function PurchaseDiscountModal({
                     </td>
                     <td>
                       <input
-                        type="number"
-                        value={row.unitPrice}
-                        onChange={(e) => handleItemChange(idx, "unitPrice", Number(e.target.value) || 0)}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatMoneyInput(row.unitPrice)}
+                        onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                         style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right", background: "transparent" }}
                       />
                     </td>
@@ -7808,9 +7813,10 @@ export function SupplierModal({
                 <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>Số nợ tối đa</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder="0"
-                  value={maxDebt}
-                  onChange={(e) => setMaxDebt(e.target.value)}
+                  value={formatMoneyInput(maxDebt)}
+                  onChange={(e) => setMaxDebt(parseMoneyInputString(e.target.value))}
                   style={{ width: "100%", height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5 }}
                 />
               </div>
@@ -8060,11 +8066,12 @@ export function SupplierModal({
                           </td>
                           <td style={{ padding: "6px" }}>
                             <input
-                              type="number"
-                              value={it.price}
+                              type="text"
+                              inputMode="numeric"
+                              value={formatMoneyInput(it.price)}
                               onChange={(e) => {
                                 const next = [...supplierItems];
-                                next[idx] = { ...next[idx], price: Number(e.target.value) || 0 };
+                                next[idx] = { ...next[idx], price: parseMoneyInput(e.target.value) };
                                 setSupplierItems(next);
                               }}
                               style={{ width: "100%", height: 26, padding: "0 6px", textAlign: "right", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12 }}
@@ -10058,8 +10065,9 @@ export function PurchaseServiceModal({
                     <td>
                       <input
                         type="text"
-                        value={row.unitPrice}
-                        onChange={(e) => handleItemChange(idx, "unitPrice", e.target.value)}
+                        inputMode="numeric"
+                        value={formatMoneyInput(row.unitPrice)}
+                        onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))}
                         style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }}
                       />
                     </td>
@@ -10085,7 +10093,7 @@ export function PurchaseServiceModal({
                   </td>
                   <td colSpan={showAccount ? 5 : 3}></td>
                   <td style={{ textAlign: "right", padding: "6px 10px" }}>
-                    {items.reduce((s, it) => s + parseVnNumber(it.quantity), 0).toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(items.reduce((s, it) => s + parseVnNumber(it.quantity), 0))}
                   </td>
                   <td></td>
                   <td style={{ textAlign: "right", padding: "6px 10px" }}>
@@ -11626,14 +11634,15 @@ export function PurchaseMultiInvoiceModal({
                     <td><input type="text" value={row.partnerName} onChange={(e) => handleItemChange(idx, "partnerName", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                     <td><input type="text" value={row.unit} onChange={(e) => handleItemChange(idx, "unit", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>
                     <td><input type="text" value={row.quantity} onChange={(e) => handleItemChange(idx, "quantity", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                    <td><input type="text" value={row.unitPrice} onChange={(e) => handleItemChange(idx, "unitPrice", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
+                    <td><input type="text" inputMode="numeric" value={formatMoneyInput(row.unitPrice)} onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInputString(e.target.value, { emptyWhenBlank: false }))} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                     <td style={{ textAlign: "right", fontWeight: 600 }}>{row.amount === 0 ? "0" : formatVND(row.amount)}</td>
                     {!isWarehouse && (
                       <td>
                         <input
-                          type="number"
-                          value={row.purchaseExpense || 0}
-                          onChange={(e) => handleItemChange(idx, "purchaseExpense", Number(e.target.value) || 0)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatMoneyInput(row.purchaseExpense || 0)}
+                          onChange={(e) => handleItemChange(idx, "purchaseExpense", parseMoneyInput(e.target.value))}
                           style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }}
                         />
                       </td>
@@ -11653,7 +11662,7 @@ export function PurchaseMultiInvoiceModal({
                   </td>
                   <td colSpan={isWarehouse ? (showAccount ? 6 : 4) : (showAccount ? 5 : 3)}></td>
                   <td style={{ textAlign: "right", padding: "6px 10px" }}>
-                    {items.reduce((s, it) => s + parseVnNumber(it.quantity), 0).toFixed(2).replace(".", ",")}
+                    {formatVnDecimal(items.reduce((s, it) => s + parseVnNumber(it.quantity), 0))}
                   </td>
                   <td></td>
                   <td style={{ textAlign: "right", padding: "6px 10px" }}>

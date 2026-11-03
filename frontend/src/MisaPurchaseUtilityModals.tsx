@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatMoneyInput, parseMoneyInput } from "./formatMoney";
 import {
   X,
   HelpCircle,
@@ -287,10 +288,10 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                       <td style={{ padding: "6px 8px", textAlign: "right", color: "#64748b" }}>{formatVND(doc.unOffsetAmount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
                         <input
-                          type="number"
-                          value={doc.offsetAmount}
+                          type="text" inputMode="numeric"
+                          value={formatMoneyInput(doc.offsetAmount)}
                           onChange={(e) => {
-                            const val = parseInt(e.target.value || "0", 10);
+                            const val = parseMoneyInput(e.target.value);
                             setPaymentDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, offsetAmount: val, selected: val > 0 } : d)));
                           }}
                           style={{ width: 110, height: 26, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right", fontWeight: 600 }}
@@ -346,10 +347,10 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                       <td style={{ padding: "6px 8px", textAlign: "right", color: "#64748b" }}>{formatVND(doc.unOffsetAmount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
                         <input
-                          type="number"
-                          value={doc.offsetAmount}
+                          type="text" inputMode="numeric"
+                          value={formatMoneyInput(doc.offsetAmount)}
                           onChange={(e) => {
-                            const val = parseInt(e.target.value || "0", 10);
+                            const val = parseMoneyInput(e.target.value);
                             setDebtDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, offsetAmount: val, selected: val > 0 } : d)));
                           }}
                           style={{ width: 110, height: 26, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right", fontWeight: 600 }}
@@ -1270,10 +1271,10 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(doc.amount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
                         <input
-                          type="number"
-                          value={doc.clearingAmount}
+                          type="text" inputMode="numeric"
+                          value={formatMoneyInput(doc.clearingAmount)}
                           onChange={(e) => {
-                            const val = parseInt(e.target.value || "0", 10);
+                            const val = parseMoneyInput(e.target.value);
                             setReceivableDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, clearingAmount: val, selected: val > 0 } : d)));
                           }}
                           style={{ width: 120, height: 26, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right", fontWeight: 600 }}
@@ -1325,10 +1326,10 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(doc.amount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
                         <input
-                          type="number"
-                          value={doc.clearingAmount}
+                          type="text" inputMode="numeric"
+                          value={formatMoneyInput(doc.clearingAmount)}
                           onChange={(e) => {
-                            const val = parseInt(e.target.value || "0", 10);
+                            const val = parseMoneyInput(e.target.value);
                             setPayableDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, clearingAmount: val, selected: val > 0 } : d)));
                           }}
                           style={{ width: 120, height: 26, padding: "0 6px", border: "1px solid #d1d5db", borderRadius: 4, textAlign: "right", fontWeight: 600 }}

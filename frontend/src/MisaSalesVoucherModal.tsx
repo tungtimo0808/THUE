@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatMoneyInput, parseMoneyInput } from "./formatMoney";
 import {
   X,
   RotateCcw,
@@ -3351,9 +3352,10 @@ export function SaleVoucherModal({
                           <>
                             <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                               <input
-                                type="number"
-                                value={it.exportTaxBase || 0}
-                                onChange={(e) => handleItemChange(idx, "exportTaxBase", Number(e.target.value) || 0)}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatMoneyInput(it.exportTaxBase || 0)}
+                                onChange={(e) => handleItemChange(idx, "exportTaxBase", parseMoneyInput(e.target.value))}
                                 style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5 }}
                               />
                             </td>

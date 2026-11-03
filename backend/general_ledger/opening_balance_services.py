@@ -196,13 +196,35 @@ def _resolve_setup(company, config: dict) -> dict:
     """MF-02, BR-GL-OB-01/02/44/48: start date, regime and bookkeeping method of the data set."""
     first_period = models.AccountingPeriod.objects.filter(company=company).order_by("start_date").first()
     start = _parse_date(config.get("accounting_start_date")) or (first_period.start_date if first_period else None)
-    raw_regime = str(company.accounting_regime or "").upper()
+    if not start:
+        start_month = int(getattr(company, "fiscal_year_start_month", 1) or 1)
+        if start_month < 1 or start_month > 12:
+            start_month = 1
+        start = date(timezone.localdate().year, start_month, 1)
+        if not first_period:
+            import calendar
+            last_day = calendar.monthrange(start.year, start.month)[1]
+            first_period, _ = models.AccountingPeriod.objects.get_or_create(
+                company=company,
+                code=f"{start.year}-{start.month:02d}",
+                defaults={
+                    "name": f"Tháng {start.month:02d}/{start.year}",
+                    "fiscal_year": start.year,
+                    "period_number": 1,
+                    "start_date": start,
+                    "end_date": date(start.year, start.month, last_day),
+                    "status": "OPEN",
+                },
+            )
+    raw_regime = str(company.accounting_regime or "TT99").upper()
     regime = {
         "CIRCULAR_99": "TT99",
         "CIRCULAR_200": "TT200",
         "CIRCULAR_133": "TT133",
         "CIRCULAR_58": "TT58",
     }.get(raw_regime, raw_regime)
+    if regime not in UC_GL_15_CIRCULARS:
+        regime = "TT99"
     if not start or regime not in UC_GL_15_CIRCULARS:
         _fail("SETUP_MISSING", "Doanh nghiệp chưa thiết lập ngày bắt đầu hạch toán hoặc chế độ kế toán hợp lệ.")
     method = str(getattr(company, "bookkeeping_method", "") or "DOUBLE_ENTRY").upper()
