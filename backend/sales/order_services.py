@@ -851,14 +851,14 @@ def create_invoice_request_from_order(request, order, lines_payload, number=None
     if not number:
         from organization.models import Company
         Company.objects.select_for_update().get(pk=order.company_id)
+        from common_services.numbering_services import generate_document_number
+        doc_type = DocumentType.objects.filter(code__in=["SAL.INVOICE_REQUEST", "DXHD", "INVOICE_REQUEST"]).first()
         try:
-            from common_services.numbering_services import generate_document_number
-            doc_type = DocumentType.objects.filter(code__in=["SAL.INVOICE_REQUEST", "DXHD", "INVOICE_REQUEST"]).first()
-            if doc_type:
-                req_number = generate_document_number(order.company, doc_type, timezone.localdate())
-            else:
-                raise ValueError("Doc type not configured")
-        except Exception:
+            if not doc_type:
+                raise ValidationError("Chưa cấu hình loại chứng từ đề nghị lập hóa đơn.")
+            req_number = generate_document_number(order.company, doc_type, document_date=timezone.localdate())
+        except ValidationError:
+            # A company without a numbering rule still gets a unique temporary number.
             import uuid
             seq = models.InvoiceRequest.objects.filter(company=order.company).count() + 1
             req_number = f"DXHD-{timezone.localdate().strftime('%Y%m%d')}-{seq:04d}-{uuid.uuid4().hex[:4].upper()}"

@@ -19,6 +19,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface SupplierPayableRow {
   supplierCode: string;
   supplierName: string;
@@ -88,8 +90,8 @@ export default function MisaSupplierPayablesSummaryReport({
   // Drawer Parameters State matching Screenshot 1 & 2
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [selectedAccount, setSelectedAccount] = useState("331");
   const [supplierGroup, setSupplierGroup] = useState("");
   const [selectedSupplierCode, setSelectedSupplierCode] = useState("NCC00001");
@@ -102,8 +104,8 @@ export default function MisaSupplierPayablesSummaryReport({
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftAccount, setDraftAccount] = useState("331");
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [draftSupplierGroup, setDraftSupplierGroup] = useState("");

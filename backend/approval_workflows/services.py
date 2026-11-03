@@ -116,7 +116,7 @@ def create_workflow(*, company, actor, data, request=None):
 
 @transaction.atomic
 def update_draft(*, version_id, actor, data, request=None):
-    version = WorkflowVersion.objects.select_for_update().select_related("workflow__company").get(pk=version_id)
+    version = WorkflowVersion.objects.select_for_update(of=("self",)).select_related("workflow__company").get(pk=version_id)
     authorize(actor, version.workflow.company)
     if version.status != "DRAFT":
         raise ValidationError("Chỉ bản DRAFT được chỉnh sửa.")
@@ -138,7 +138,7 @@ def update_draft(*, version_id, actor, data, request=None):
 
 @transaction.atomic
 def new_version(*, workflow, actor, request=None):
-    workflow = Workflow.objects.select_for_update().select_related("company").get(pk=workflow.pk)
+    workflow = Workflow.objects.select_for_update(of=("self",)).select_related("company").get(pk=workflow.pk)
     authorize(actor, workflow.company)
     if workflow.versions.filter(status="DRAFT").exists():
         raise ValidationError("Workflow đã có một bản DRAFT.")
@@ -241,7 +241,7 @@ def check_version(version, samples=None):
 
 @transaction.atomic
 def activate(*, version_id, actor, version_token, request=None):
-    version = WorkflowVersion.objects.select_for_update().select_related("workflow__company", "workflow__document_type").get(pk=version_id)
+    version = WorkflowVersion.objects.select_for_update(of=("self",)).select_related("workflow__company", "workflow__document_type").get(pk=version_id)
     authorize(actor, version.workflow.company)
     if version.status != "DRAFT":
         raise ValidationError("Chỉ bản DRAFT được kích hoạt.")
@@ -250,7 +250,7 @@ def activate(*, version_id, actor, version_token, request=None):
     result = check_version(version)
     if result["errors"]:
         raise ValidationError(result)
-    old = version.workflow.versions.select_for_update().filter(status__in=("ACTIVE", "SCHEDULED")).exclude(pk=version.pk)
+    old = version.workflow.versions.select_for_update(of=("self",)).filter(status__in=("ACTIVE", "SCHEDULED")).exclude(pk=version.pk)
     for item in old:
         if version.effective_from <= item.effective_from:
             raise ValidationError({"effective_from": "Phiên bản mới phải bắt đầu sau phiên bản đang áp dụng."})
@@ -274,7 +274,7 @@ def activate(*, version_id, actor, version_token, request=None):
 
 @transaction.atomic
 def stop(*, version_id, actor, version_token, request=None):
-    version = WorkflowVersion.objects.select_for_update().select_related("workflow__company").get(pk=version_id)
+    version = WorkflowVersion.objects.select_for_update(of=("self",)).select_related("workflow__company").get(pk=version_id)
     authorize(actor, version.workflow.company)
     if version.updated_at != version_token:
         raise WorkflowConflict()
@@ -290,7 +290,7 @@ def stop(*, version_id, actor, version_token, request=None):
 
 @transaction.atomic
 def archive(*, version_id, actor, version_token, request=None):
-    version = WorkflowVersion.objects.select_for_update().select_related("workflow__company").get(pk=version_id)
+    version = WorkflowVersion.objects.select_for_update(of=("self",)).select_related("workflow__company").get(pk=version_id)
     authorize(actor, version.workflow.company)
     if version.updated_at != version_token:
         raise WorkflowConflict()
@@ -307,12 +307,12 @@ def archive(*, version_id, actor, version_token, request=None):
 @transaction.atomic
 def synchronize(company=None):
     today = timezone.localdate()
-    due = WorkflowVersion.objects.select_for_update().select_related("workflow__company").filter(
+    due = WorkflowVersion.objects.select_for_update(of=("self",)).select_related("workflow__company").filter(
         status="SCHEDULED", effective_from__lte=today)
     if company:
         due = due.filter(workflow__company=company)
     for version in due:
-        old = version.workflow.versions.select_for_update().filter(status="ACTIVE").exclude(pk=version.pk)
+        old = version.workflow.versions.select_for_update(of=("self",)).filter(status="ACTIVE").exclude(pk=version.pk)
         for item in old:
             before = snapshot(item)
             item.status = "INACTIVE"

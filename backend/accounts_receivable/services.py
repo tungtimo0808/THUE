@@ -862,7 +862,7 @@ def update_debt(debt):
         models.ReceivableStatus.PAID
         if debt.balance == 0
         else models.ReceivableStatus.PARTIALLY_PAID
-        if debt.balance < debt.original_amount + debt.adjustment_amount
+        if debt.collected_amount or debt.netted_amount
         else models.ReceivableStatus.OPEN
     )
     debt.save()
@@ -912,7 +912,7 @@ def allocate(receipt, request):
 
         # Sequentially allocate to installments
         rem = amount
-        schedules=[target] if target else debt.schedules.select_for_update().filter(balance__gt=0).order_by("installment_no")
+        schedules=[target] if target else debt.schedules.select_for_update(of=("self",)).filter(balance__gt=0).order_by("installment_no")
         for sched in schedules:
             alloc_sched = min(rem, sched.balance)
             sched.collected_amount += alloc_sched
@@ -981,7 +981,7 @@ def post_netting(obj, request):
 
     # Sequentially allocate netting to installments
     rem = obj.amount
-    for sched in debt.schedules.select_for_update().filter(balance__gt=0).order_by("installment_no"):
+    for sched in debt.schedules.select_for_update(of=("self",)).filter(balance__gt=0).order_by("installment_no"):
         alloc_sched = min(rem, sched.balance)
         sched.collected_amount += alloc_sched
         sched.balance -= alloc_sched
@@ -1015,7 +1015,7 @@ def reverse_netting(obj, request):
     update_debt(debt)
 
     rem = obj.amount
-    for sched in debt.schedules.select_for_update().order_by("-installment_no"):
+    for sched in debt.schedules.select_for_update(of=("self",)).order_by("-installment_no"):
         if sched.collected_amount > 0:
             restore_sched = min(rem, sched.collected_amount)
             sched.collected_amount -= restore_sched

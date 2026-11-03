@@ -22,6 +22,8 @@ import {
   Info,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface IncomeStatementItem {
   id: string;
   name: string;
@@ -317,8 +319,8 @@ export default function MisaBusinessResultReport({
   const [formCode, setFormCode] = useState<"B02-DN" | "B02-DNKLT">("B02-DN");
   const [displayUnit, setDisplayUnit] = useState<"VND" | "THOUSAND_VND" | "MILLION_VND">("VND");
   const [period, setPeriod] = useState("Năm nay");
-  const [fromDate, setFromDate] = useState("01/01/2026");
-  const [toDate, setToDate] = useState("31/12/2026");
+  const [fromDate, setFromDate] = useState(`01/01/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [fetchFromSaved, setFetchFromSaved] = useState(false);
   const [hideZero, setHideZero] = useState(false);
 
@@ -326,8 +328,8 @@ export default function MisaBusinessResultReport({
   const [draftFormCode, setDraftFormCode] = useState<"B02-DN" | "B02-DNKLT">("B02-DN");
   const [draftDisplayUnit, setDraftDisplayUnit] = useState<"VND" | "THOUSAND_VND" | "MILLION_VND">("VND");
   const [draftPeriod, setDraftPeriod] = useState("Năm nay");
-  const [draftFromDate, setDraftFromDate] = useState("01/01/2026");
-  const [draftToDate, setDraftToDate] = useState("31/12/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/01/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [draftFetchFromSaved, setDraftFetchFromSaved] = useState(false);
   const [draftHideZero, setDraftHideZero] = useState(false);
 

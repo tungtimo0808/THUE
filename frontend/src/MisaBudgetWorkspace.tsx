@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import "./misa-budget.css";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export type CompanyInfo = {
   id: string;
   name: string;
@@ -371,7 +373,7 @@ export default function MisaBudgetWorkspace({
 
   // Tab 1 Filters
   const [selectedUnit, setSelectedUnit] = useState<string>("Tung");
-  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
   const [lastUpdated, setLastUpdated] = useState<string>("11:05");
   const { token } = useApiSession();
   useEffect(() => {
@@ -404,7 +406,7 @@ export default function MisaBudgetWorkspace({
 
   // Settings Modal form values (Thiết lập ngày bắt đầu năm ngân sách)
   const [settingsStartDate, setSettingsStartDate] = useState<string>("01/01");
-  const [settingsApplyYear, setSettingsApplyYear] = useState<number>(2026);
+  const [settingsApplyYear, setSettingsApplyYear] = useState<number>(CURRENT_YEAR);
 
   // Tab 3 Reports State
   const [reportSearch, setReportSearch] = useState<string>("");

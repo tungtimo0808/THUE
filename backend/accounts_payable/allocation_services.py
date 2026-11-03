@@ -12,7 +12,7 @@ from . import models, services
 
 
 def _lock(queryset):
-    return queryset.select_for_update() if connection.features.has_select_for_update else queryset
+    return queryset.select_for_update(of=("self",)) if connection.features.has_select_for_update else queryset
 
 
 def _money(value, field="amount"):

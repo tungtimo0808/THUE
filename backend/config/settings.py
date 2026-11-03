@@ -19,7 +19,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'development-only-change-me')
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*' if DEBUG else '').split(',') if host.strip()]
 
 
 def _env_list(name, default=''):
@@ -198,6 +198,18 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_SCHEMA_CLASS': 'common_services.schema.ResourceGroupedAutoSchema',
+    'DEFAULT_THROTTLE_RATES': {
+        'auth': None if 'test' in sys.argv else os.getenv('AUTH_THROTTLE_RATE', '20/min'),
+    },
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plain': {'format': '%(asctime)s %(levelname)s %(name)s %(message)s'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'}},
+    'root': {'handlers': ['console'], 'level': os.getenv('LOG_LEVEL', 'INFO')},
+    'loggers': {'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False}},
 }
 
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.locmem.EmailBackend')
@@ -218,9 +230,12 @@ COMMON_AI_PROVIDER_URL = os.getenv('COMMON_AI_PROVIDER_URL', '')
 COMMON_AI_PROVIDER_API_KEY = os.getenv('COMMON_AI_PROVIDER_API_KEY', '')
 COMMON_AI_TIMEOUT_SECONDS = int(os.getenv('COMMON_AI_TIMEOUT_SECONDS', '20'))
 
+# Issuing an e-invoice without a provider only produces made-up numbers, so it stays a test-only behaviour.
+EINVOICE_SIMULATION = os.getenv('EINVOICE_SIMULATION', str('test' in sys.argv)) == 'True'
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_MINUTES', '30'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_DAYS', '7'))),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'TOKEN_REFRESH_SERIALIZER': 'common_services.authentication.RevocableTokenRefreshSerializer',
@@ -278,7 +293,7 @@ SPECTACULAR_SETTINGS = {
 
 
 # CORS Settings
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', str(DEBUG)) == 'True'
 CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS')
 CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
 

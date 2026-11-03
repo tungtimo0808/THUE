@@ -18,6 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from organization.models import Company
 
 from . import account_services, models, serializers, services
@@ -784,8 +785,8 @@ class BalanceAggregationRunViewSet(ReadOnlyModelViewSet):
     }
     filter_backends = (SearchFilter, OrderingFilter)
     search_fields = ("period__code", "status", "watermark")
-    ordering_fields = ("created_at", "period__code")
-    ordering = ("-created_at",)
+    ordering_fields = ("started_at", "period__code")
+    ordering = ("-started_at",)
 
     def _resolve_company(self, request):
         comp_id = (

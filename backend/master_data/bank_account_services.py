@@ -240,7 +240,7 @@ def set_default_bank_account(account: CompanyBankAccount, confirm_replace=False,
         raise ValidationError({"confirm_replace": "Đã có tài khoản mặc định cùng phạm vi và đồng tiền. Cần xác nhận thay thế."})
 
     with transaction.atomic():
-        for prev in current_default.select_for_update():
+        for prev in current_default.select_for_update(of=("self",)):
             prev_before = get_bank_account_snapshot(prev)
             prev.is_default = False
             prev.save(update_fields=("is_default",))

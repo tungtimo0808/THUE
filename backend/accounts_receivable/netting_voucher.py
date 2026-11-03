@@ -485,7 +485,7 @@ def post_voucher(voucher, request):
             sched.save(update_fields=("collected_amount", "balance", "status", "updated_at"))
         elif rec.schedules.filter(balance__gt=0).exists():
             rem = line.amount
-            for s in rec.schedules.select_for_update().filter(balance__gt=0).order_by("installment_no"):
+            for s in rec.schedules.select_for_update(of=("self",)).filter(balance__gt=0).order_by("installment_no"):
                 alloc = min(rem, s.balance)
                 s.collected_amount += alloc
                 s.balance -= alloc
@@ -625,7 +625,7 @@ def unpost_voucher(voucher, request):
             sched.save(update_fields=("collected_amount", "balance", "status", "updated_at"))
         elif rec.schedules.filter(collected_amount__gt=0).exists():
             rem = line.amount
-            for s in rec.schedules.select_for_update().order_by("-installment_no"):
+            for s in rec.schedules.select_for_update(of=("self",)).order_by("-installment_no"):
                 if s.collected_amount > ZERO:
                     rest = min(rem, s.collected_amount)
                     s.collected_amount -= rest

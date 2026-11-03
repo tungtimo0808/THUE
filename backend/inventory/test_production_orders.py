@@ -10,7 +10,7 @@ class ProductionOrderTests(FounderCompanyMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.client.post(self.url, {"company": str(self.company.pk)}, format="json")
-        role = Role.objects.get(company=self.company, code="COMPANY_ADMIN")
+        role = Role.objects.get(company=self.company, code__in=("ROLE_ADMIN", "COMPANY_ADMIN"))
         have = set(role.role_permissions.values_list("permission_id", flat=True))
         RolePermission.objects.bulk_create([RolePermission(role=role, permission=p) for p in Permission.objects.exclude(id__in=have)])
         unit = UnitOfMeasure.objects.filter(company=self.company).first()

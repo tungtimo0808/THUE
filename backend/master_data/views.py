@@ -961,7 +961,7 @@ class WarehouseViewSet(mixins.DestroyModelMixin, MasterDataViewSet):
         current = models.Warehouse.objects.filter(company=row.company, warehouse_scope=row.warehouse_scope, branch_id=row.branch_id, project_id=row.project_id, is_default=True).exclude(pk=row.pk)
         if current.exists() and request.data.get("confirm_replace") is not True:
             raise ValidationError({"confirm_replace": "Cần xác nhận thay kho mặc định hiện tại."})
-        for previous in current.select_for_update():
+        for previous in current.select_for_update(of=("self",)):
             before = self._snapshot(previous)
             previous.is_default = False
             previous.save(update_fields=("is_default",))

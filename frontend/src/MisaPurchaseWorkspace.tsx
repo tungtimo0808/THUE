@@ -5070,7 +5070,7 @@ export default function MisaPurchaseWorkspace({
                 textAlign: "center",
                 zIndex: 10,
               }}
-              onClick={() => navigateTo("invoice-processing")}
+              onClick={() => navigate(href ? href("/invoices/incoming/inbox") : "/invoices/incoming/inbox")}
               title="Xử lý hóa đơn đầu vào"
             >
               <span className="ref-business-icon process" style={{ marginBottom: 6 }}>

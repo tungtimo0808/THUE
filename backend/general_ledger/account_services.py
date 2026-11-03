@@ -309,6 +309,9 @@ def init_chart_of_accounts_from_template(
         account_map[code] = acc
         created_accounts.append(acc)
 
+    # BR-COA-14: tài khoản đã có tài khoản con là tài khoản tổng hợp, không nhận bút toán.
+    Account.objects.filter(company=company, chart_of_accounts=chart, is_postable=True, children__status=AccountStatus.ACTIVE).update(is_postable=False)
+
     # Ghi Audit Log tổng hợp (BR-COA-60, 61)
     user_account = _resolve_iam_user(user)
     record_audit(
@@ -510,7 +513,7 @@ def transfer_account(*, source: Account, target: Account, version: int, user=Non
         raise ValidationError("Tài khoản nhận không phù hợp với dữ liệu cần chuyển.")
     if source.balances.exists():
         raise ValidationError("Tài khoản còn số dư. Không thể chuyển tự động.")
-    lines = list(source.journal_lines.select_related("entry__period").select_for_update())
+    lines = list(source.journal_lines.select_related("entry__period").select_for_update(of=("self",)))
     if any(line.entry.status != "DRAFT" or line.entry.period.status != "OPEN" for line in lines):
         raise ValidationError("Không thể chuyển tài khoản vì có dữ liệu thuộc kỳ đã khóa hoặc đã ghi sổ.")
     # Other models hold business references. Reassigning them could alter posted documents.

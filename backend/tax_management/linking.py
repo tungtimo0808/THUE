@@ -115,7 +115,7 @@ def candidates(invoice, request):
 
 @transaction.atomic
 def link_purchase(invoice, request):
-    invoice = models.TaxInvoice.objects.select_for_update().select_related("company", "currency").get(pk=invoice.pk)
+    invoice = models.TaxInvoice.objects.select_for_update(of=("self",)).select_related("company", "currency").get(pk=invoice.pk)
     if invoice.direction != "INPUT" or invoice.status in {"CANCELLED", "REPLACED"}:
         raise ValidationError("Hóa đơn không thể liên kết chứng từ mua hàng.")
     run = invoice.validation_runs.first()
@@ -128,7 +128,7 @@ def link_purchase(invoice, request):
         purchase_id = uuid.UUID(str(request.data.get("purchase_id")))
     except (ValueError, TypeError):
         raise ValidationError({"purchase_id": "Chứng từ mua hàng không hợp lệ."})
-    purchase = GoodsPurchase.objects.select_for_update().select_related("supplier", "company").filter(
+    purchase = GoodsPurchase.objects.select_for_update(of=("self",)).select_related("supplier", "company").filter(
         pk=purchase_id, company=invoice.company).first()
     if not purchase or purchase.status != "POSTED":
         raise ValidationError({"purchase_id": "Chứng từ không tồn tại hoặc chưa ghi sổ."})
@@ -183,7 +183,7 @@ def link_purchase(invoice, request):
 
 @transaction.atomic
 def unlink_purchase(invoice, request):
-    invoice = models.TaxInvoice.objects.select_for_update().select_related("currency").get(pk=invoice.pk)
+    invoice = models.TaxInvoice.objects.select_for_update(of=("self",)).select_related("currency").get(pk=invoice.pk)
     reason = str(request.data.get("reason") or "").strip()
     if len(reason) < 10:
         raise ValidationError({"reason": "Cần ghi lý do gỡ liên kết (ít nhất 10 ký tự)."})

@@ -48,6 +48,7 @@ from tax_management.models import (
     TaxSummary,
 )
 
+from .report_access import granted_report_permissions, report_company
 from .models import (
     ReportDefinition,
     ReportExport,
@@ -984,25 +985,7 @@ def ensure_tax_reports_seeded() -> None:
 # ============================================================================
 
 def get_user_tax_permissions(user=None, request=None) -> set[str]:
-    """Resolve user permissions for UC-RPT-07."""
-    if request is not None:
-        header_perms = request.headers.get("X-Tax-Permissions") or request.query_params.get("mock_permissions")
-        if header_perms is not None:
-            if header_perms.strip() == "NONE":
-                return set()
-            return {p.strip() for p in header_perms.split(",") if p.strip()}
-
-    if user is not None and getattr(user, "is_authenticated", False):
-        custom_perms = getattr(user, "tax_permissions", None)
-        if custom_perms is not None:
-            return set(custom_perms)
-        if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-            return set(ALL_TAX_PERMISSIONS)
-        # Default authenticated user permissions
-        return {PERM_TAX_VIEW, PERM_TAX_DETAIL_VIEW, PERM_TAX_RECON_VIEW, PERM_TAX_EXPORT}
-
-    # Anonymous/test fallback unless explicitly restricted via X-Tax-Permissions
-    return {PERM_TAX_VIEW, PERM_TAX_DETAIL_VIEW, PERM_TAX_RECON_VIEW, PERM_TAX_EXPORT}
+    return granted_report_permissions(user, request, "tax", ALL_TAX_PERMISSIONS)
 
 
 def check_tax_report_permission(user, request, required_perm: str) -> None:
@@ -1012,24 +995,10 @@ def check_tax_report_permission(user, request, required_perm: str) -> None:
 
 
 def resolve_tax_company_scope(request=None, params: dict | None = None) -> tuple[str, str | None]:
-    """Validate and resolve company_id and branch_id scope (BR-RPT07-02)."""
     params = params or {}
-    company_id = str(
-        params.get("company_id")
-        or (request.query_params.get("company_id") if request else "")
-        or "DEFAULT-COMPANY"
-    ).strip()
-
-    allowed_companies_header = request.headers.get("X-Allowed-Companies") if request else None
-    if allowed_companies_header:
-        allowed_companies = {c.strip() for c in allowed_companies_header.split(",") if c.strip()}
-        if company_id not in allowed_companies:
-            raise PermissionDenied(f"Không có quyền truy cập dữ liệu thuế của doanh nghiệp '{company_id}'.")
-
-    branch_id = params.get("branch_id") or (request.query_params.get("branch_id") if request else None)
-    if branch_id:
-        branch_id = str(branch_id).strip()
-    return company_id, branch_id
+    company = report_company(request, params)
+    branch_id = params.get("branch_id") or request.query_params.get("branch_id")
+    return str(company.id), str(branch_id).strip() if branch_id else None
 
 
 def parse_period_dates(
@@ -5266,7 +5235,7 @@ def get_tax_declaration_indicators_payload(declaration_id: str, user=None, reque
         tax_period_code=period_str or "2026-07",
     )
     rows, summary, _ = _build_rpt_tax_08(
-        "DEFAULT-COMPANY",
+        str(report_company(request).id),
         None,
         d_from,
         d_to,

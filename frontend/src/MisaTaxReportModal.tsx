@@ -23,6 +23,8 @@ import {
   openCellContextUcRpt14,
 } from "./misa-api-writes";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface TaxReportModalProps {
   reportCode: string;
   reportName: string;
@@ -52,8 +54,8 @@ export function MisaTaxReportModal({
 
   // Parameter State
   const [periodPreset, setPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("2026-10-01");
-  const [toDate, setToDate] = useState("2026-10-31");
+  const [fromDate, setFromDate] = useState(`${CURRENT_YEAR}-10-01`);
+  const [toDate, setToDate] = useState(`${CURRENT_YEAR}-10-31`);
   const [formVersion, setFormVersion] = useState("TT80_2021_V1");
   const [onlyDifferences, setOnlyDifferences] = useState(false);
 

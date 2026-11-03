@@ -16,6 +16,8 @@ import {
   UserCheck,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MisaDebtReconciliationReportProps {
   onBack: () => void;
   notify?: (msg: string) => void;
@@ -60,9 +62,9 @@ export default function MisaDebtReconciliationReport({
   // Drawer state
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
-  const [noticeDate, setNoticeDate] = useState("07/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [noticeDate, setNoticeDate] = useState(`07/10/${CURRENT_YEAR}`);
   const [supplierGroup, setSupplierGroup] = useState("");
   const [showDetailedExpenses, setShowDetailedExpenses] = useState(false);
   const [hideZeroEndingBalance, setHideZeroEndingBalance] = useState(false);
@@ -73,9 +75,9 @@ export default function MisaDebtReconciliationReport({
 
   // Draft state inside drawer
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
-  const [draftNoticeDate, setDraftNoticeDate] = useState("07/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [draftNoticeDate, setDraftNoticeDate] = useState(`07/10/${CURRENT_YEAR}`);
   const [draftSupplierGroup, setDraftSupplierGroup] = useState("");
   const [draftShowDetailedExpenses, setDraftShowDetailedExpenses] = useState(false);
   const [draftHideZeroEnding, setDraftHideZeroEnding] = useState(false);

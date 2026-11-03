@@ -197,8 +197,7 @@ def check_drilldown_permissions(user: Any, company_id: str, required_perm: str =
         iam_acc = getattr(user, "iam_account", None)
         if iam_acc:
             from iam.permissions import has_effective_permission
-            if not (has_effective_permission(user, required_perm, company_id=company_id) or
-                    has_effective_permission(user, "RPT_VIEW", company_id=company_id)):
+            if not has_effective_permission(iam_acc, comp, "RPT.FINANCIAL.DRILLDOWN"):
                 raise PermissionDenied(f"Người dùng không có quyền {required_perm}.")
         else:
             raise PermissionDenied(f"Người dùng không có quyền {required_perm}.")

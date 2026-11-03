@@ -12,6 +12,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface PeriodicAccountRow {
   code: string;
   name: string;
@@ -109,18 +111,18 @@ export default function MisaTimePeriodicTrialBalanceReport({
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [periodType, setPeriodType] = useState<"month" | "quarter">("month");
   const [fromMonth, setFromMonth] = useState(1);
-  const [fromYear, setFromYear] = useState(2026);
+  const [fromYear, setFromYear] = useState(CURRENT_YEAR);
   const [toMonth, setToMonth] = useState(10);
-  const [toYear, setToYear] = useState(2026);
+  const [toYear, setToYear] = useState(CURRENT_YEAR);
   const [accountLevel, setAccountLevel] = useState("1");
   const [showTwoSideBalance, setShowTwoSideBalance] = useState(true);
 
   // Temporary drawer draft state
   const [draftPeriodType, setDraftPeriodType] = useState<"month" | "quarter">("month");
   const [draftFromMonth, setDraftFromMonth] = useState(1);
-  const [draftFromYear, setDraftFromYear] = useState(2026);
+  const [draftFromYear, setDraftFromYear] = useState(CURRENT_YEAR);
   const [draftToMonth, setDraftToMonth] = useState(10);
-  const [draftToYear, setDraftToYear] = useState(2026);
+  const [draftToYear, setDraftToYear] = useState(CURRENT_YEAR);
   const [draftAccountLevel, setDraftAccountLevel] = useState("1");
   const [draftShowTwoSideBalance, setDraftShowTwoSideBalance] = useState(true);
 

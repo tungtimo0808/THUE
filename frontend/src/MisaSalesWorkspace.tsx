@@ -719,7 +719,19 @@ export default function MisaSalesWorkspace({
   const requestTaxIssue = async (invoice: any) => {
     if (!token || issuingTaxInvoiceId) return;
     const connector = (apiRows.taxConnectors || []).find((row) => row.is_active && row.channel === "EINVOICE");
-    if (!connector) { notify("Chưa có kết nối hóa đơn điện tử đang hoạt động. Cấu hình kết nối trước khi phát hành."); return; }
+    if (!connector) {
+      const issuedNumber = window.prompt("Chưa kết nối nhà cung cấp hóa đơn điện tử.\nNếu đã phát hành ở phần mềm hóa đơn của bạn, hãy nhập số hóa đơn để ghi nhận:");
+      if (!issuedNumber?.trim()) return;
+      setIssuingTaxInvoiceId(invoice.id);
+      try {
+        await request(`/api/v1/tax/invoices/${invoice.id}/record-external-issue/?company_id=${_company.id}`, token,
+          { method: "POST", body: JSON.stringify({ invoice_number: issuedNumber.trim() }) });
+        notify("Đã ghi nhận hóa đơn đã phát hành.");
+        reloadApi();
+      } catch (error) { notify(error instanceof Error ? error.message : "Không ghi nhận được hóa đơn."); }
+      finally { setIssuingTaxInvoiceId(""); }
+      return;
+    }
     setIssuingTaxInvoiceId(invoice.id);
     try {
       if (invoice.status !== "VALIDATED") {

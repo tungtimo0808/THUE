@@ -13,7 +13,7 @@ from . import models, services, tracking_services
 
 
 def _lock(qs):
-    return qs.select_for_update() if connection.features.has_select_for_update else qs
+    return qs.select_for_update(of=("self",)) if connection.features.has_select_for_update else qs
 
 
 def _balance_amount(value):

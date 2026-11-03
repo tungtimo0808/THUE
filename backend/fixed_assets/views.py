@@ -701,7 +701,7 @@ class TransactionViewSet(CompanyViewSet):
         )
         try:
             with transaction.atomic():
-                for tx in records.select_for_update():
+                for tx in records.select_for_update(of=("self",)):
                     snapshot = dict(tx.after_snapshot or {})
                     existing = [entry for entry in snapshot.get("attachments", []) if not (
                         entry.get("name") == upload.name and entry.get("size") == upload.size and not entry.get("storage_path")

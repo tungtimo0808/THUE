@@ -14,6 +14,8 @@ import {
   Table as TableIcon,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface StructureAnalysisRow {
   target: string;
   code: string;
@@ -233,17 +235,17 @@ export default function MisaAssetCapitalStructureAnalysisReport({
   // Drawer Parameters State matching Screenshot 3
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriod, setReportPeriod] = useState("Tháng 10");
-  const [year, setYear] = useState(2026);
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [fromPreparedReport, setFromPreparedReport] = useState(false);
   const [hideZeroRows, setHideZeroRows] = useState(false);
 
   // Drawer draft state
   const [draftReportPeriod, setDraftReportPeriod] = useState("Tháng 10");
-  const [draftYear, setDraftYear] = useState(2026);
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftYear, setDraftYear] = useState(CURRENT_YEAR);
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftFromPreparedReport, setDraftFromPreparedReport] = useState(false);
   const [draftHideZeroRows, setDraftHideZeroRows] = useState(false);
 

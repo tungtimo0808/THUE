@@ -2285,7 +2285,12 @@ def compute_dash_07_receivables(ctx: DashboardContext, top_n: int = 5) -> dict[s
         if posted_adjs:
             adj_up_to = sum((_to_decimal(a.amount) for a in posted_adjs if a.adjustment_date <= as_of), ZERO)
         else:
-            adj_up_to = _to_decimal(rec.adjustment_amount)
+            # adjustment_amount is positive for a decrease on vouchers and for an increase on adjustments,
+            # so the signed effect comes from the balance the document really carries.
+            adj_up_to = (
+                _to_decimal(rec.balance) + _to_decimal(rec.collected_amount)
+                + _to_decimal(rec.netted_amount) - orig
+            )
 
         open_fc = max(orig + adj_up_to - collected_as_of - netted_as_of, ZERO)
         open_base = open_fc * rate

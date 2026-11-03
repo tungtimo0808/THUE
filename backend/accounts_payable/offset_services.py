@@ -15,7 +15,7 @@ from .allocation_services import _payable_number, _posting_date
 
 
 def _lock(qs):
-    return qs.select_for_update() if connection.features.has_select_for_update else qs
+    return qs.select_for_update(of=("self",)) if connection.features.has_select_for_update else qs
 
 
 def _amount(value):
@@ -290,7 +290,7 @@ def cancel_offset(request, voucher, reason):
         debt.netted_amount -= line.amount
         debt.balance += line.amount
         debt.status = (ar_models.ReceivableStatus.PAID if debt.balance == 0 else
-                       ar_models.ReceivableStatus.PARTIALLY_PAID if debt.balance < debt.original_amount + debt.adjustment_amount
+                       ar_models.ReceivableStatus.PARTIALLY_PAID if debt.collected_amount or debt.netted_amount
                        else ar_models.ReceivableStatus.OPEN)
         debt.save(update_fields=("netted_amount", "balance", "status", "updated_at"))
         for allocation in line.schedule_allocations:

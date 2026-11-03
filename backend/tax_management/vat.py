@@ -153,7 +153,7 @@ def calculate(period, request):
 
 @transaction.atomic
 def create_document(calculation, request):
-    calculation = models.VatCalculation.objects.select_for_update().select_related("period", "company").get(pk=calculation.pk)
+    calculation = models.VatCalculation.objects.select_for_update(of=("self",)).select_related("period", "company").get(pk=calculation.pk)
     if calculation.status != "CALCULATED" or not is_current(calculation) or calculation.period.status != "OPEN":
         raise ValidationError("Kết quả tính chưa hợp lệ, đã cũ hoặc kỳ thuế đã khóa.")
     if calculation.deducted_amount <= ZERO:

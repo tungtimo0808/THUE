@@ -19,6 +19,8 @@ Implements:
 - Optimistic concurrency control and Audit Logging (BR-SAL-07-14, EF-09).
 """
 import uuid
+
+from django.conf import settings
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
@@ -823,8 +825,17 @@ def _validate_invoice_issuance_preconditions(sale_invoice):
         raise ValidationError("Mã số thuế người mua không hợp lệ.")
 
 
+def require_einvoice_simulation():
+    if not settings.EINVOICE_SIMULATION:
+        raise ValidationError(
+            "Chưa kết nối nhà cung cấp hóa đơn điện tử nên hệ thống không thể phát hành. "
+            "Hãy phát hành ở phần mềm hóa đơn của bạn rồi ghi nhận số hóa đơn tại danh sách hóa đơn."
+        )
+
+
 def issue_sales_invoice(request, sale_invoice, force_fail=False, error_message=""):
     """Execute electronic invoice issuance (Luồng chính Bước 9-10, BR-SAL-07-09, BR-SAL-07-10, BR-SAL-07-11)."""
+    require_einvoice_simulation()
     with transaction.atomic():
         sale_invoice = models.SalesInvoice.objects.select_for_update().get(pk=sale_invoice.pk)
         if sale_invoice.status == models.SalesInvoice.Status.ISSUED:

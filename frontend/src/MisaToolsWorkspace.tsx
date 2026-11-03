@@ -82,6 +82,8 @@ import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export type MisaToolsWorkspaceProps = {
   company?: { id: string; name: string };
   period?: string;
@@ -787,12 +789,12 @@ export default function MisaToolsWorkspace({
   const [allocationViewMode, setAllocationViewMode] = useState<"landing" | "list">("landing");
   const [showSelectPeriodModal, setShowSelectPeriodModal] = useState(false);
   const [allocationMonth, setAllocationMonth] = useState<number>(10);
-  const [allocationYear, setAllocationYear] = useState<number>(2026);
+  const [allocationYear, setAllocationYear] = useState<number>(CURRENT_YEAR);
   const [showAllocationVoucherModal, setShowAllocationVoucherModal] = useState(false);
   const [allocationVouchers, setAllocationVouchers] = useState(SAMPLE_ALLOCATION_VOUCHERS);
   const [allocationVoucherNo, setAllocationVoucherNo] = useState("PBCC00001");
-  const [allocationPostingDate, setAllocationPostingDate] = useState("31/10/2026");
-  const [allocationVoucherDate, setAllocationVoucherDate] = useState("31/10/2026");
+  const [allocationPostingDate, setAllocationPostingDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [allocationVoucherDate, setAllocationVoucherDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [allocationReason, setAllocationReason] = useState("Phân bổ chi phí CCDC tháng 10 năm 2026");
   const [allocationVoucherTab, setAllocationVoucherTab] = useState<"identify" | "allocation" | "accounting">("identify");
   const [allocationFilterPeriod, setAllocationFilterPeriod] = useState("Năm 2026");
@@ -812,7 +814,7 @@ export default function MisaToolsWorkspace({
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [adjustmentVouchers, setAdjustmentVouchers] = useState(SAMPLE_ADJUSTMENT_VOUCHERS);
   const [adjustmentVoucherNo, setAdjustmentVoucherNo] = useState("ĐCH00001");
-  const [adjustmentVoucherDate, setAdjustmentVoucherDate] = useState("30/09/2026");
+  const [adjustmentVoucherDate, setAdjustmentVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [adjustmentActiveTab, setAdjustmentActiveTab] = useState<"detail" | "vouchers">("detail");
   const [adjustmentFilterPeriod, setAdjustmentFilterPeriod] = useState("Năm 2026");
@@ -850,7 +852,7 @@ export default function MisaToolsWorkspace({
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferVouchers, setTransferVouchers] = useState(SAMPLE_TRANSFER_VOUCHERS);
   const [transferVoucherNo, setTransferVoucherNo] = useState("ĐCCC00001");
-  const [transferVoucherDate, setTransferVoucherDate] = useState("30/09/2026");
+  const [transferVoucherDate, setTransferVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [transferDeliverer, setTransferDeliverer] = useState("");
   const [transferReceiver, setTransferReceiver] = useState("");
   const [transferReason, setTransferReason] = useState("");
@@ -892,7 +894,7 @@ export default function MisaToolsWorkspace({
   const [showDecreaseModal, setShowDecreaseModal] = useState(false);
   const [decreaseVouchers, setDecreaseVouchers] = useState(SAMPLE_DECREASE_VOUCHERS);
   const [decreaseVoucherNo, setDecreaseVoucherNo] = useState("GGCC00001");
-  const [decreaseVoucherDate, setDecreaseVoucherDate] = useState("30/09/2026");
+  const [decreaseVoucherDate, setDecreaseVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [decreaseReason, setDecreaseReason] = useState("Nhượng bán, Thanh lý");
   const [decreaseFilterPeriod, setDecreaseFilterPeriod] = useState("Năm 2026");
   const [decreaseSearch, setDecreaseSearch] = useState("");
@@ -1148,10 +1150,10 @@ export default function MisaToolsWorkspace({
   const [stocktakeViewMode, setStocktakeViewMode] = useState<"landing" | "list">("landing");
   const [showStocktakeDateModal, setShowStocktakeDateModal] = useState(false);
   const [showStocktakeVoucherModal, setShowStocktakeVoucherModal] = useState(false);
-  const [stocktakeToDate, setStocktakeToDate] = useState("30/09/2026");
+  const [stocktakeToDate, setStocktakeToDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [stocktakeVouchers, setStocktakeVouchers] = useState(SAMPLE_STOCKTAKE_VOUCHERS);
   const [stocktakeVoucherNo, setStocktakeVoucherNo] = useState("BBKK00001");
-  const [stocktakeVoucherDate, setStocktakeVoucherDate] = useState("30/09/2026");
+  const [stocktakeVoucherDate, setStocktakeVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [stocktakePurpose, setStocktakePurpose] = useState("Kiểm kê định kỳ CCDC Quý 3/2026");
   const [stocktakeFilterPeriod, setStocktakeFilterPeriod] = useState("Năm 2026");
   const [stocktakeSearch, setStocktakeSearch] = useState("");
@@ -1209,7 +1211,7 @@ export default function MisaToolsWorkspace({
     "Lấy CCDC từ chứng từ xuất kho/mua hàng..." | "Lấy CCDC từ ghi giảm tài sản cố định"
   >("Lấy CCDC từ chứng từ xuất kho/mua hàng...");
   const [singleVoucherNo, setSingleVoucherNo] = useState("GTCC00001");
-  const [singleVoucherDate, setSingleVoucherDate] = useState("30/09/2026");
+  const [singleVoucherDate, setSingleVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [singleGroup, setSingleGroup] = useState("");
   const [singleToolCode, setSingleToolCode] = useState("");
   const [singleReason, setSingleReason] = useState("");
@@ -1345,8 +1347,8 @@ export default function MisaToolsWorkspace({
   const [form1Code, setForm1Code] = useState("CPTT005");
   const [form1Name, setForm1Name] = useState("");
   const [form1AllocMonths, setForm1AllocMonths] = useState(2);
-  const [form1StartDate, setForm1StartDate] = useState("30/09/2026");
-  const [form1RecordDate, setForm1RecordDate] = useState("30/09/2026");
+  const [form1StartDate, setForm1StartDate] = useState(`30/09/${CURRENT_YEAR}`);
+  const [form1RecordDate, setForm1RecordDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [form1Amount, setForm1Amount] = useState(0);
   const [form1WaitingAcc, setForm1WaitingAcc] = useState("242");
   const [form1StopAlloc, setForm1StopAlloc] = useState(false);
@@ -1385,11 +1387,11 @@ export default function MisaToolsWorkspace({
   const [prepaidAllocViewMode, setPrepaidAllocViewMode] = useState<"landing" | "list">("landing");
   const [showPrepaidDateModal, setShowPrepaidDateModal] = useState(false);
   const [prepaidAllocMonth, setPrepaidAllocMonth] = useState(10);
-  const [prepaidAllocYear, setPrepaidAllocYear] = useState(2026);
+  const [prepaidAllocYear, setPrepaidAllocYear] = useState(CURRENT_YEAR);
   const [showPrepaidAllocVoucherModal, setShowPrepaidAllocVoucherModal] = useState(false);
   const [prepaidAllocVoucherNo, setPrepaidAllocVoucherNo] = useState("PBPTT00001");
-  const [prepaidAllocPostingDate, setPrepaidAllocPostingDate] = useState("31/10/2026");
-  const [prepaidAllocVoucherDate, setPrepaidAllocVoucherDate] = useState("31/10/2026");
+  const [prepaidAllocPostingDate, setPrepaidAllocPostingDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [prepaidAllocVoucherDate, setPrepaidAllocVoucherDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [prepaidAllocReason, setPrepaidAllocReason] = useState("Phân bổ chi phí trả trước tháng 10 năm 2026");
   const [prepaidAllocTab, setPrepaidAllocTab] = useState<"identify" | "allocation" | "accounting">("identify");
   const [prepaidAllocFilterPeriod, setPrepaidAllocFilterPeriod] = useState("Năm 2026");
@@ -1424,7 +1426,7 @@ export default function MisaToolsWorkspace({
   const [prepaidDecreaseViewMode, setPrepaidDecreaseViewMode] = useState<"landing" | "list">("landing");
   const [showPrepaidDecreaseModal, setShowPrepaidDecreaseModal] = useState(false);
   const [prepaidDecreaseVoucherNo, setPrepaidDecreaseVoucherNo] = useState("GGCP00001");
-  const [prepaidDecreaseVoucherDate, setPrepaidDecreaseVoucherDate] = useState("30/09/2026");
+  const [prepaidDecreaseVoucherDate, setPrepaidDecreaseVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [prepaidDecreaseReason, setPrepaidDecreaseReason] = useState("");
   const [prepaidDecreaseDetailRows, setPrepaidDecreaseDetailRows] = useState([
     { id: "dec-1", code: "CPTT001", name: "Chi phí thuê văn phòng làm việc Trụ sở Quý 3/2026", remainingAmount: 60000000 },

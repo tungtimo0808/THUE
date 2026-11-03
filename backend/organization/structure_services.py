@@ -96,7 +96,7 @@ def record_history(unit, action, actor, before, after, request, effective_from=N
 
 @transaction.atomic
 def apply_due(unit, request=None):
-    unit = OrganizationUnit.objects.select_for_update().select_related("company", "pending_parent").get(pk=unit.pk)
+    unit = OrganizationUnit.objects.select_for_update(of=("self",)).select_related("company", "pending_parent").get(pk=unit.pk)
     today = timezone.localdate()
     if unit.pending_parent_id and unit.pending_move_effective_from <= today:
         effective_from = unit.pending_move_effective_from

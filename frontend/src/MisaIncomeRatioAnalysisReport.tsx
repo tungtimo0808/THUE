@@ -13,6 +13,8 @@ import {
   BarChart3,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface IncomeRatioRow {
   target: string;
   code: string;
@@ -191,18 +193,18 @@ export default function MisaIncomeRatioAnalysisReport({
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [periodType, setPeriodType] = useState<"month" | "quarter" | "halfYear" | "year" | "samePeriod">("month");
   const [fromMonth, setFromMonth] = useState(1);
-  const [fromYear, setFromYear] = useState(2026);
+  const [fromYear, setFromYear] = useState(CURRENT_YEAR);
   const [toMonth, setToMonth] = useState(10);
-  const [toYear, setToYear] = useState(2026);
+  const [toYear, setToYear] = useState(CURRENT_YEAR);
   const [fromPreparedReport, setFromPreparedReport] = useState(false);
   const [hideZeroRows, setHideZeroRows] = useState(false);
 
   // Temporary drawer draft state
   const [draftPeriodType, setDraftPeriodType] = useState<"month" | "quarter" | "halfYear" | "year" | "samePeriod">("month");
   const [draftFromMonth, setDraftFromMonth] = useState(1);
-  const [draftFromYear, setDraftFromYear] = useState(2026);
+  const [draftFromYear, setDraftFromYear] = useState(CURRENT_YEAR);
   const [draftToMonth, setDraftToMonth] = useState(10);
-  const [draftToYear, setDraftToYear] = useState(2026);
+  const [draftToYear, setDraftToYear] = useState(CURRENT_YEAR);
   const [draftFromPreparedReport, setDraftFromPreparedReport] = useState(false);
   const [draftHideZeroRows, setDraftHideZeroRows] = useState(false);
 

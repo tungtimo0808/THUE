@@ -107,7 +107,7 @@ def set_waiting(request):
     company = request.query_params.get("company_id")
     branch = request.query_params.get("branch_id")
     if kind == "STATEMENT":
-        line = models.StatementLine.objects.select_for_update().select_related("statement__account__account").filter(
+        line = models.StatementLine.objects.select_for_update(of=("self",)).select_related("statement__account__account").filter(
             pk=item_id, statement__company_id=company, deleted_at__isnull=True).first()
         if not line:
             raise ValidationError("Giao dịch sao kê không tồn tại.")
@@ -123,7 +123,7 @@ def set_waiting(request):
         line.save(update_fields=("tracking_status", "review_reason", "processing_note", "updated_by", "updated_at"))
         target = line.statement
     elif kind == "VOUCHER":
-        voucher = models.BankTransaction.objects.select_for_update().select_related("account__account").filter(
+        voucher = models.BankTransaction.objects.select_for_update(of=("self",)).select_related("account__account").filter(
             pk=item_id, company_id=company, status="POSTED", gl_status="POSTED").first()
         if not voucher:
             raise ValidationError("Chứng từ không tồn tại hoặc chưa ghi sổ.")

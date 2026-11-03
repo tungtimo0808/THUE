@@ -18,6 +18,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface PurchaseJournalRow {
   postDate: string;
   voucherDate: string;
@@ -61,14 +63,14 @@ export default function MisaPurchaseJournalReport({
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [onlyUnpaidImmediately, setOnlyUnpaidImmediately] = useState(false);
 
   // Drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftOnlyUnpaid, setDraftOnlyUnpaid] = useState(false);
 
   // Search keyword inside report table

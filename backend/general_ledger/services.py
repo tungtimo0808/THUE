@@ -299,7 +299,7 @@ def _cascade_subsequent_balances(company, from_period, account, branch):
     prev_closing_credit = current_balance.closing_credit
 
     subsequent_balances = (
-        models.AccountBalance.objects.select_for_update()
+        models.AccountBalance.objects.select_for_update(of=("self",))
         .select_related("period")
         .filter(
             company=company,
@@ -369,7 +369,7 @@ def post(entry, request):
     """
     req_data = _extract_request_data(request)
     entry = (
-        models.JournalEntry.objects.select_for_update()
+        models.JournalEntry.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .prefetch_related("lines__account")
         .get(pk=entry.pk)
@@ -504,7 +504,7 @@ def post(entry, request):
     # kiểm tra lại nguồn chi phí phân bổ vẫn còn khả dụng và quy tắc/tài khoản chưa bị vô hiệu hóa
     if entry.entry_type == "ALLOCATION":
         alloc_run_for_post = (
-            models.AllocationRun.objects.select_for_update()
+            models.AllocationRun.objects.select_for_update(of=("self",))
             .select_related("company", "period")
             .filter(entry=entry)
             .first()
@@ -534,7 +534,7 @@ def post(entry, request):
     # kiểm tra lại số dư ngoại tệ nguồn chưa bị biến động sau thời điểm lập chứng từ và chưa bị trùng phạm vi POSTED
     if entry.entry_type == "REVALUATION":
         fx_run_for_post = (
-            models.ForeignCurrencyRevaluationRun.objects.select_for_update()
+            models.ForeignCurrencyRevaluationRun.objects.select_for_update(of=("self",))
             .select_related("company", "period", "currency")
             .filter(entry=entry)
             .first()
@@ -815,7 +815,7 @@ def unpost(entry, request):
     """
     req_data = _extract_request_data(request)
     entry = (
-        models.JournalEntry.objects.select_for_update()
+        models.JournalEntry.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .prefetch_related("lines__account")
         .get(pk=entry.pk)
@@ -1971,7 +1971,7 @@ def adjust(entry, request):
             })
 
     entry = (
-        models.JournalEntry.objects.select_for_update()
+        models.JournalEntry.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .prefetch_related("lines__account")
         .get(pk=entry.pk)
@@ -2108,7 +2108,7 @@ def reverse(entry, request):
             })
 
     entry = (
-        models.JournalEntry.objects.select_for_update()
+        models.JournalEntry.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .prefetch_related("lines__account", "lines__currency", "lines__party", "lines__department", "lines__project", "lines__cost_center", "lines__warehouse")
         .get(pk=entry.pk)
@@ -2401,7 +2401,7 @@ def create_replacement_entry(entry, request):
     và duy trì liên kết chuỗi truy vết: Bút toán gốc -> Bút toán đảo -> Bút toán mới (replacement_for_entry).
     """
     req_data = _extract_request_data(request)
-    entry = models.JournalEntry.objects.select_for_update().select_related("company", "period").get(pk=entry.pk)
+    entry = models.JournalEntry.objects.select_for_update(of=("self",)).select_related("company", "period").get(pk=entry.pk)
     root_entry = entry.original_entry if (entry.entry_type == "REVERSAL" and entry.original_entry_id) else entry
 
     if root_entry.company_id != entry.company_id:
@@ -5451,7 +5451,7 @@ def create_expense_allocation_voucher(company, data, request=None):
     replaced_run = None
     if replace_run_id:
         try:
-            replaced_run = models.AllocationRun.objects.select_for_update().select_related("company", "period").get(
+            replaced_run = models.AllocationRun.objects.select_for_update(of=("self",)).select_related("company", "period").get(
                 pk=replace_run_id, company=company
             )
         except (models.AllocationRun.DoesNotExist, ValueError):
@@ -5683,7 +5683,7 @@ def cancel_expense_allocation_run(run, request=None):
     Hủy đợt phân bổ đang ở trạng thái CALCULATED hoặc UNPOSTED để giải phóng nguồn chi phí và phân bổ lại.
     Chặn hủy trực tiếp nếu chứng từ đã POSTED.
     """
-    run = models.AllocationRun.objects.select_for_update().select_related("company", "period").get(pk=run.pk)
+    run = models.AllocationRun.objects.select_for_update(of=("self",)).select_related("company", "period").get(pk=run.pk)
     if run.status == "POSTED" or (run.entry_id and run.entry and run.entry.status == "POSTED"):
         raise ValidationError({
             "status": (
@@ -7212,7 +7212,7 @@ def create_fx_revaluation_voucher(company, data, request=None):
     if replace_run_id:
         try:
             replaced_run = (
-                models.ForeignCurrencyRevaluationRun.objects.select_for_update()
+                models.ForeignCurrencyRevaluationRun.objects.select_for_update(of=("self",))
                 .select_related("company", "period", "currency")
                 .get(pk=replace_run_id, company=company)
             )
@@ -7548,7 +7548,7 @@ def cancel_fx_revaluation_run(run, request=None):
     Hủy đợt đánh giá lại ngoại tệ đang ở trạng thái CALCULATED hoặc UNPOSTED để giải phóng phạm vi và đánh giá lại.
     Chặn xóa/hủy trực tiếp nếu chứng từ đã POSTED.
     """
-    run = models.ForeignCurrencyRevaluationRun.objects.select_for_update().select_related("company", "period", "currency").get(pk=run.pk)
+    run = models.ForeignCurrencyRevaluationRun.objects.select_for_update(of=("self",)).select_related("company", "period", "currency").get(pk=run.pk)
     if run.status == "POSTED" or (run.entry_id and run.entry and run.entry.status == "POSTED"):
         raise ValidationError({
             "status": (
@@ -8767,7 +8767,7 @@ def cancel_closing_run(run, request=None):
     UC-GL-09 (AF-15, AF-16, EF-29, BR-GL-PL-86):
     Hủy đợt kết chuyển chưa ghi sổ (UNPOSTED/DRAFT). Chặn xóa/hủy trực tiếp nếu đã POSTED.
     """
-    run = models.ClosingRun.objects.select_for_update().select_related("entry", "period").get(pk=run.pk)
+    run = models.ClosingRun.objects.select_for_update(of=("self",)).select_related("entry", "period").get(pk=run.pk)
     if run.status in ("POSTED", "COMPLETED") or (run.entry_id and run.entry.status == "POSTED"):
         raise ValidationError({
             "status": "Chứng từ kết chuyển lãi lỗ đã ghi sổ (POSTED/COMPLETED), không được phép xóa hoặc hủy trực tiếp (EF-29, BR-GL-PL-66, 86).",
@@ -16633,7 +16633,7 @@ def trace_subledger_source_link(company, query_params):
 @transaction.atomic
 def post_advance_settlement_voucher(voucher, request):
     voucher = (
-        models.AdvanceSettlementVoucher.objects.select_for_update()
+        models.AdvanceSettlementVoucher.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .get(pk=voucher.pk)
     )
@@ -16647,7 +16647,7 @@ def post_advance_settlement_voucher(voucher, request):
 @transaction.atomic
 def unpost_advance_settlement_voucher(voucher, request):
     voucher = (
-        models.AdvanceSettlementVoucher.objects.select_for_update()
+        models.AdvanceSettlementVoucher.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .get(pk=voucher.pk)
     )
@@ -16661,7 +16661,7 @@ def unpost_advance_settlement_voucher(voucher, request):
 @transaction.atomic
 def post_general_business_voucher(voucher, request):
     voucher = (
-        models.GeneralBusinessVoucher.objects.select_for_update()
+        models.GeneralBusinessVoucher.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .get(pk=voucher.pk)
     )
@@ -16675,7 +16675,7 @@ def post_general_business_voucher(voucher, request):
 @transaction.atomic
 def unpost_general_business_voucher(voucher, request):
     voucher = (
-        models.GeneralBusinessVoucher.objects.select_for_update()
+        models.GeneralBusinessVoucher.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .get(pk=voucher.pk)
     )
@@ -16725,7 +16725,7 @@ def unpost_subledger_ingestion_entry(ingestion, request):
 @transaction.atomic
 def adjust_general_business_voucher(voucher, request):
     voucher = (
-        models.GeneralBusinessVoucher.objects.select_for_update()
+        models.GeneralBusinessVoucher.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .get(pk=voucher.pk)
     )
@@ -16737,7 +16737,7 @@ def adjust_general_business_voucher(voucher, request):
 @transaction.atomic
 def reverse_general_business_voucher(voucher, request):
     voucher = (
-        models.GeneralBusinessVoucher.objects.select_for_update()
+        models.GeneralBusinessVoucher.objects.select_for_update(of=("self",))
         .select_related("company", "period")
         .get(pk=voucher.pk)
     )
@@ -18004,13 +18004,13 @@ def _compute_b02_values(gl_slice, prior_slice=None, overrides=None):
         closing_eids = sl["closing_entry_ids"]
         op_lines = [ln for ln in sl["period_lines"] if ln.entry_id not in closing_eids]
 
-        def _turn(prefixes, side="CREDIT"):
+        def _turn(prefixes, side="CREDIT", exclude=()):
             tot = Decimal("0")
             brk_map = {}
             eids = set()
             for ln in op_lines:
                 code = ln.account.code
-                if any(code.startswith(p) for p in prefixes):
+                if any(code.startswith(p) for p in prefixes) and not any(code.startswith(p) for p in exclude):
                     d = ln.debit or Decimal("0")
                     c = ln.credit or Decimal("0")
                     if side == "CREDIT":
@@ -18057,9 +18057,9 @@ def _compute_b02_values(gl_slice, prior_slice=None, overrides=None):
         v["22"], b["22"], t["22"] = _turn(("635",), "DEBIT")
         v["23"], b["23"], t["23"] = v["22"], b["22"], t["22"]
         company_regime = str(getattr(sl.get("company"), "accounting_regime", "") or "").upper()
-        if company_regime in ("TT133", "CIRCULAR_133", "133", "TT58", "CIRCULAR_58", "58") or any(ln.account.code in ("6421", "6422") for ln in op_lines) and not any(ln.account.code.startswith("641") for ln in op_lines):
+        if company_regime in ("TT133", "CIRCULAR_133", "133", "TT58", "CIRCULAR_58", "58"):
             v["25"], b["25"], t["25"] = _turn(("6421", "641"), "DEBIT")
-            v["26"], b["26"], t["26"] = _turn(("6422", "6423", "6424", "6425", "6426", "6427", "6428"), "DEBIT")
+            v["26"], b["26"], t["26"] = _turn(("642",), "DEBIT", exclude=("6421",))
         else:
             v["25"], b["25"], t["25"] = _turn(("641",), "DEBIT")
             v["26"], b["26"], t["26"] = _turn(("642",), "DEBIT")

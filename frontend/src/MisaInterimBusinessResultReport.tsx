@@ -15,6 +15,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface InterimIncomeItem {
   id: string;
   name: string;
@@ -345,18 +347,18 @@ export default function MisaInterimBusinessResultReport({
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [formCode, setFormCode] = useState<"B02a-DN" | "B02b-DN">("B02a-DN");
   const [period, setPeriod] = useState("Quý 4");
-  const [year, setYear] = useState(2026);
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/12/2026");
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [fetchFromSaved, setFetchFromSaved] = useState(false);
   const [hideZero, setHideZero] = useState(false);
 
   // Temporary drawer draft state
   const [draftFormCode, setDraftFormCode] = useState<"B02a-DN" | "B02b-DN">("B02a-DN");
   const [draftPeriod, setDraftPeriod] = useState("Quý 4");
-  const [draftYear, setDraftYear] = useState(2026);
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/12/2026");
+  const [draftYear, setDraftYear] = useState(CURRENT_YEAR);
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [draftFetchFromSaved, setDraftFetchFromSaved] = useState(false);
   const [draftHideZero, setDraftHideZero] = useState(false);
 

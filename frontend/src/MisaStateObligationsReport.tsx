@@ -23,6 +23,8 @@ import {
   openCellContextUcRpt14,
 } from "./misa-api-writes";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface StateObligationItem {
   id: string;
   name: string;
@@ -83,8 +85,8 @@ export default function MisaStateObligationsReport({
 
   // Parameter Form State matching Screenshot 1
   const [period, setPeriod] = useState<string>("Tháng này");
-  const [fromDate, setFromDate] = useState<string>("01/10/2026");
-  const [toDate, setToDate] = useState<string>("31/10/2026");
+  const [fromDate, setFromDate] = useState<string>(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState<string>(`31/10/${CURRENT_YEAR}`);
 
   // Dynamic table data & drilldown modal state
   const [reportRows, setReportRows] = useState<StateObligationItem[]>(DEFAULT_OBLIGATIONS_DATA);

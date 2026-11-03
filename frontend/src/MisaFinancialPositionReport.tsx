@@ -27,6 +27,8 @@ import {
   PlusCircle,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface BalanceSheetItem {
   line_id?: string;
   name: string;
@@ -257,14 +259,14 @@ export default function MisaFinancialPositionReport({
   const [displayUnit, setDisplayUnit] = useState<"VND" | "THOUSAND_VND" | "MILLION_VND">("VND");
 
   const [period, setPeriod] = useState<string>("Năm");
-  const [year, setYear] = useState<number>(2026);
-  const [fromDate, setFromDate] = useState<string>("01/01/2026");
-  const [toDate, setToDate] = useState<string>("31/12/2026");
+  const [year, setYear] = useState<number>(CURRENT_YEAR);
+  const [fromDate, setFromDate] = useState<string>(`01/01/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState<string>(`31/12/${CURRENT_YEAR}`);
   const [fetchFromSaved, setFetchFromSaved] = useState<boolean>(false);
   const [audited, setAudited] = useState<boolean>(false);
   const [hideZeroRows, setHideZeroRows] = useState<boolean>(false);
   const [signer, setSigner] = useState<string>("Trần Thị Hương");
-  const [reportDate, setReportDate] = useState<string>("31/12/2026");
+  const [reportDate, setReportDate] = useState<string>(`31/12/${CURRENT_YEAR}`);
 
   // Run & Validation State
   const [currentRun, setCurrentRun] = useState<any | null>(null);

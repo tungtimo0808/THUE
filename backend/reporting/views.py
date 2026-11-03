@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Sum
@@ -9,6 +10,9 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, ViewSet
 
 from audit_log.services import record_audit
 from general_ledger.models import JournalEntry
+from . import models as report_models
+from .analysis_services import analysis_report
+from .report_access import ReportAccessMixin
 from iam.permissions import (
     CompanyMemberMixin, assignment_permission_codes, effective_assignments, has_effective_permission,
 )
@@ -215,7 +219,7 @@ class ReportExportViewSet(ReadOnlyModelViewSet):
         return self.queryset.filter(run__company_id=company) if company else self.queryset.none()
 
 
-class FinancialStatementTT99ViewSet(CompanyMemberMixin, ViewSet):
+class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
     """
     API tổng hợp trực tiếp Bộ Báo cáo tài chính theo Thông tư 99/2025/TT-BTC từ Sổ Cái (JournalEntry / JournalLine):
     - B01-DN: Báo cáo tình hình tài chính
@@ -223,6 +227,7 @@ class FinancialStatementTT99ViewSet(CompanyMemberMixin, ViewSet):
     - B03-DN: Báo cáo lưu chuyển tiền tệ (Trực tiếp & Gián tiếp)
     - B09-DN: Bản thuyết minh báo cáo tài chính
     """
+    report_area = "financial"
 
     def list(self, request):
         from django.db.models import Sum
@@ -1402,10 +1407,12 @@ class FinancialNotesViewSet(ViewSet):
         return Response(financial_notes_services.export_b09_run_action(request.user, run_id, data))
 
 
-class TaxReportViewSet(ViewSet):
+class TaxReportViewSet(ReportAccessMixin, ViewSet):
     """
     UC-RPT-07 – Xem báo cáo thuế (15 báo cáo: RPT-0003, RPT-0175..0180, RPT-TAX-08..15).
     """
+    report_area = "tax"
+    report_run_model = report_models.TaxReportRun
 
     def catalogue(self, request):
         return Response(tax_report_services.get_tax_catalogue_payload(request=request, user=request.user))
@@ -1465,10 +1472,12 @@ class TaxReportViewSet(ViewSet):
         return Response(tax_report_services.get_tax_submission_responses_payload(submission_id, user=request.user, request=request))
 
 
-class PurchaseReportViewSet(ViewSet):
+class PurchaseReportViewSet(ReportAccessMixin, ViewSet):
     """
     UC-RPT-08 – Xem báo cáo mua hàng (11 báo cáo: RPT-0047..0051, RPT-0061, RPT-0064, RPT-0068, RPT-0070, RPT-0074, RPT-0075).
     """
+    report_area = "purchase"
+    report_run_model = report_models.PurchaseReportRun
 
     def catalogue(self, request):
         return Response(purchase_report_services.get_purchase_catalogue_payload(request=request, user=request.user))
@@ -1524,10 +1533,12 @@ class PurchaseReportViewSet(ViewSet):
         return Response(purchase_report_services.export_purchase_run_payload(int(run_id), params=data, user=request.user, request=request))
 
 
-class SalesReportViewSet(ViewSet):
+class SalesReportViewSet(ReportAccessMixin, ViewSet):
     """
     UC-RPT-09 – Xem báo cáo bán hàng (36 báo cáo: RPT-0076..0091, RPT-0108..0110, RPT-0113..0114, RPT-0117..0118, RPT-0121..0126, RPT-0128..0129, RPT-0132..0137).
     """
+    report_area = "sales"
+    report_run_model = report_models.SalesReportRun
 
     def catalogue(self, request):
         return Response(sales_report_services.get_sales_catalogue_payload(request=request, user=request.user))
@@ -1588,10 +1599,12 @@ class SalesReportViewSet(ViewSet):
         return Response(sales_report_services.export_sales_run_payload(int(run_id), params=data, user=request.user, request=request))
 
 
-class DebtReportViewSet(ViewSet):
+class DebtReportViewSet(ReportAccessMixin, ViewSet):
     """
     UC-RPT-10 – Xem báo cáo công nợ (49 báo cáo: 18 AP + 31 AR / Combined).
     """
+    report_area = "debt"
+    report_run_model = report_models.DebtReportRun
 
     def catalogue(self, request):
         return Response(debt_report_services.get_debt_catalogue_payload(request=request, user=request.user))
@@ -1681,11 +1694,13 @@ class DebtReportViewSet(ViewSet):
 # ============================================================================
 
 
-class MoneyReportViewSet(ViewSet):
+class MoneyReportViewSet(ReportAccessMixin, ViewSet):
     """
     ViewSet xử lý các báo cáo tiền (UC-RPT-11):
     Tiền mặt, Tiền gửi, Chuyển nội bộ, Khế ước vay & cho vay.
     """
+    report_area = "money"
+    report_run_model = report_models.MoneyReportRun
 
     def catalogue(self, request):
         company_id, _ = money_report_services.resolve_money_company_scope(request, {})
@@ -1761,7 +1776,7 @@ class MoneyReportViewSet(ViewSet):
         return Response(money_report_services.export_money_report_run_payload(run_id, fmt=fmt, user=request.user, request=request))
 
 
-class InventoryReportViewSet(ViewSet):
+class InventoryReportViewSet(ReportAccessMixin, ViewSet):
     """
     ViewSet xử lý 15 báo cáo kho (UC-RPT-12):
     Tổng hợp tồn kho, tồn nhiều kho (bảng chéo), nhiều ĐVT, nhập xuất tồn,
@@ -1770,6 +1785,8 @@ class InventoryReportViewSet(ViewSet):
     đối chiếu chi phí mua hàng, đối chiếu thủ kho, đối chiếu giá thành,
     và đối chiếu lắp ráp / tháo dỡ.
     """
+    report_area = "inventory"
+    report_run_model = report_models.InventoryReportRun
 
     def catalogue(self, request):
         company_id, _ = inventory_report_services.resolve_inventory_company_scope(request, {})
@@ -1826,7 +1843,7 @@ class InventoryReportViewSet(ViewSet):
         return Response(inventory_report_services.export_inventory_report_run_payload(run_id, fmt=fmt, user=request.user, request=request))
 
 
-class AssetReportViewSet(ViewSet):
+class AssetReportViewSet(ReportAccessMixin, ViewSet):
     """
     ViewSet xử lý 14 báo cáo tài sản cố định, CCDC và chi phí trả trước (UC-RPT-13):
     Bảng tính phân bổ CCDC (RPT-0158), Sổ theo dõi CCDC (RPT-0159), Phân bổ CCDC theo năm (RPT-0160),
@@ -1835,6 +1852,8 @@ class AssetReportViewSet(ViewSet):
     S21-DN Sổ TSCĐ (RPT-0167), Sổ TSCĐ (RPT-0168), Thẻ TSCĐ (RPT-0169), Khấu hao TSCĐ theo năm (RPT-0170),
     và Đối chiếu TSCĐ với sổ cái (RPT-0171).
     """
+    report_area = "asset"
+    report_run_model = report_models.AssetReportRun
 
     def catalogue(self, request):
         company_id, _ = asset_report_services.resolve_asset_company_scope(request, {})
@@ -1889,6 +1908,21 @@ class AssetReportViewSet(ViewSet):
         data = request.data if isinstance(request.data, dict) else {}
         fmt = data.get("format", "XLSX")
         return Response(asset_report_services.export_asset_report_run_payload(run_id, fmt=fmt, user=request.user, request=request))
+
+
+class AnalysisReportViewSet(ReportAccessMixin, ViewSet):
+    report_area = "financial"
+
+    def retrieve_report(self, request):
+        try:
+            from_date = date.fromisoformat(request.query_params.get("from_date", ""))
+            to_date = date.fromisoformat(request.query_params.get("to_date", ""))
+        except ValueError:
+            raise drf_serializers.ValidationError({"from_date": "Kỳ phân tích không hợp lệ."})
+        return Response(analysis_report(
+            request.report_company, request.query_params.get("kind", ""), request.query_params.get("dimension", "MONTH"),
+            from_date, to_date, request.query_params.get("mode", "VALUE"),
+        ))
 
 
 class UnifiedExportViewSet(CompanyMemberMixin, ViewSet):

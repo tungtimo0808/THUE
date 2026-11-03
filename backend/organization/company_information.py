@@ -56,7 +56,7 @@ def _apply_snapshot(company, data):
 @transaction.atomic
 def apply_due_versions(company, request=None):
     company = Company.objects.select_for_update().get(pk=company.pk)
-    due = list(company.information_versions.select_for_update().filter(
+    due = list(company.information_versions.select_for_update(of=("self",)).filter(
         status=CompanyInformationVersion.VersionStatus.PENDING,
         effective_from__lte=timezone.localdate(),
     ).order_by("effective_from", "created_at"))

@@ -38,6 +38,7 @@ from purchases.models import (
     PurchaseReturnLine,
 )
 
+from .report_access import granted_report_permissions, report_company
 from .models import (
     PurchaseReportRow,
     PurchaseReportRun,
@@ -383,54 +384,7 @@ PURCHASE_REPORT_SCHEMAS: dict[str, dict[str, Any]] = {
 # ============================================================================
 
 def get_user_purchase_permissions(user=None, request=None) -> set[str]:
-    """Resolve active purchase report permissions from User, IAM, or HTTP headers."""
-    perms: set[str] = set()
-
-    if request:
-        raw_header = request.headers.get("X-Purchase-Permissions") or request.META.get("HTTP_X_PURCHASE_PERMISSIONS")
-        if raw_header:
-            tokens = [t.strip().upper() for t in raw_header.split(",") if t.strip()]
-            for tok in tokens:
-                for canonical, aliases in PERM_ALIASES.items():
-                    if tok == canonical or tok in aliases:
-                        perms.add(canonical)
-            if "NONE" in tokens or "DENIED" in tokens:
-                perms.clear()
-            return perms
-
-    if not user or not user.is_authenticated:
-        return perms
-
-    if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-        return set(ALL_PURCHASE_PERMISSIONS)
-
-    try:
-        assignments = effective_assignments(user)
-        assigned_codes = set(assignment_permission_codes(assignments))
-        for canonical, aliases in PERM_ALIASES.items():
-            if canonical in assigned_codes or any(a in assigned_codes for a in aliases):
-                perms.add(canonical)
-    except Exception:
-        pass
-
-    try:
-        user_perms = user.get_all_permissions()
-        for canonical, aliases in PERM_ALIASES.items():
-            if canonical.lower() in user_perms:
-                perms.add(canonical)
-            for a in aliases:
-                if a.lower() in user_perms or f"reporting.{a.lower()}" in user_perms:
-                    perms.add(canonical)
-    except Exception:
-        pass
-
-    if not perms:
-        perms.add(PERM_PURCHASE_VIEW)
-        perms.add(PERM_PURCHASE_DETAIL_VIEW)
-        perms.add(PERM_PURCHASE_RECONCILIATION_VIEW)
-        perms.add(PERM_PURCHASE_EXPORT)
-
-    return perms
+    return granted_report_permissions(user, request, "purchase", ALL_PURCHASE_PERMISSIONS)
 
 
 def check_purchase_report_permission(user, request, required_permission: str) -> None:
@@ -443,32 +397,10 @@ def check_purchase_report_permission(user, request, required_permission: str) ->
 
 
 def resolve_purchase_company_scope(request, params: dict[str, Any]) -> tuple[str, str | None]:
-    """
-    Enforce Company & Branch Isolation (BR-RPT-PUR-04..05).
-    Rejects unauthorized company_id access with 403 PermissionDenied.
-    """
     params = params or {}
-    company_id = str(
-        params.get("company_id")
-        or (request.query_params.get("company_id") if request else "")
-        or ""
-    ).strip()
-    branch_id = params.get("branch_id") or (request.query_params.get("branch_id") if request else None)
-
-    if request:
-        raw_allowed = request.headers.get("X-Allowed-Companies") or request.META.get("HTTP_X_ALLOWED_COMPANIES")
-        if raw_allowed:
-            allowed_companies = {c.strip() for c in raw_allowed.split(",") if c.strip()}
-            if company_id and company_id not in allowed_companies:
-                raise PermissionDenied(
-                    f"Người dùng không được cấp quyền truy cập dữ liệu mua hàng của doanh nghiệp '{company_id}'."
-                )
-
-    if not company_id:
-        co = Company.objects.first()
-        company_id = str(co.id) if co else "DEFAULT-COMPANY"
-
-    return company_id, str(branch_id) if branch_id else None
+    company = report_company(request, params)
+    branch_id = params.get("branch_id") or request.query_params.get("branch_id")
+    return str(company.id), str(branch_id) if branch_id else None
 
 
 # ============================================================================

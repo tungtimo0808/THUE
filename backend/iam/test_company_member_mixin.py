@@ -9,7 +9,6 @@ from .models import CompanyMembership
 
 # One endpoint from each viewset that resolves its company through CompanyMemberMixin.
 ENDPOINTS = (
-    "/api/v1/reports/tt99-financial-statements/",
     "/api/v1/reports/export/history/",
     "/api/v1/bank/rules/",
     "/api/v1/cash/forecasts/",

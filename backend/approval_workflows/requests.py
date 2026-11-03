@@ -159,7 +159,7 @@ def forward_task(task_id, actor, target_user_id, comment="", *, reason=""):
     from iam.models import CompanyMembership, UserAccount
     from iam.permissions import has_effective_permission
 
-    task = ApprovalTask.objects.select_for_update().select_related("request__company", "request__document_type").get(pk=task_id)
+    task = ApprovalTask.objects.select_for_update(of=("self",)).select_related("request__company", "request__document_type").get(pk=task_id)
     item = task.request
     source = source_for_request(item)
     if source is None:
@@ -244,7 +244,7 @@ def sync_source_decision(decision):
     if not item or item.status not in ("PENDING_APPROVAL", "IN_PROGRESS"):
         return
     delegator_ids = active_delegator_ids_for(decision.actor, item.company, item.document_type)
-    task = item.tasks.select_for_update().filter(
+    task = item.tasks.select_for_update(of=("self",)).filter(
         step_order=decision.level, cycle=item.cycle, status="PENDING"
     ).filter(Q(assignee=decision.actor) | Q(assignee_id__in=delegator_ids)).first()
     if not task:

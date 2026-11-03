@@ -293,10 +293,10 @@ export function PurchaseOrderModal({
   const [debtDays, setDebtDays] = useState(30);
 
   // Right column fields
-  const [orderDate, setOrderDate] = useState("29/09/2026");
+  const [orderDate, setOrderDate] = useState(`29/09/${CURRENT_YEAR}`);
   const [orderCode, setOrderCode] = useState("ĐMH00001");
   const [status, setStatus] = useState("Chưa thực hiện");
-  const [deliveryDate, setDeliveryDate] = useState("05/10/2026");
+  const [deliveryDate, setDeliveryDate] = useState(`05/10/${CURRENT_YEAR}`);
 
   // Grid & items
   const [discountPolicy, setDiscountPolicy] = useState("Không chiết khấu");
@@ -1114,7 +1114,7 @@ export function PurchaseContractModal({
 }: PurchaseContractModalProps) {
   // Master fields
   const [contractCode, setContractCode] = useState("HĐM00002");
-  const [signDate, setSignDate] = useState("12/10/2026");
+  const [signDate, setSignDate] = useState(`12/10/${CURRENT_YEAR}`);
   const [supplierCode, setSupplierCode] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [address, setAddress] = useState("");
@@ -4878,8 +4878,8 @@ export function PurchaseReturnModal({
   const [attachedCount, setAttachedCount] = useState(1);
 
   // Right dates
-  const [postingDate, setPostingDate] = useState("29/09/2026 11:34:07");
-  const [docDate, setDocDate] = useState("29/09/2026");
+  const [postingDate, setPostingDate] = useState(`29/09/${CURRENT_YEAR} 11:34:07`);
+  const [docDate, setDocDate] = useState(`29/09/${CURRENT_YEAR}`);
 
   // Items
   const [items, setItems] = useState([
@@ -5395,15 +5395,15 @@ export function PurchaseDiscountModal({
   const [invoiceForm, setInvoiceForm] = useState("");
   const [invoiceSerial, setInvoiceSerial] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState("03/10/2026");
+  const [invoiceDate, setInvoiceDate] = useState(`03/10/${CURRENT_YEAR}`);
 
   // Electronic invoice lookup
   const [eInvoiceLookupCode, setEInvoiceLookupCode] = useState("");
   const [eInvoiceLookupUrl, setEInvoiceLookupUrl] = useState("");
 
   // Right dates
-  const [postingDate, setPostingDate] = useState("03/10/2026 20:43:37");
-  const [docDate, setDocDate] = useState("03/10/2026");
+  const [postingDate, setPostingDate] = useState(`03/10/${CURRENT_YEAR} 20:43:37`);
+  const [docDate, setDocDate] = useState(`03/10/${CURRENT_YEAR}`);
 
   // Supplier dropdown picker
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
@@ -8208,8 +8208,8 @@ export function ReceiveInvoiceSelectModal({
   // Master Filters
   const [selectedSupplier, setSelectedSupplier] = useState<string>("");
   const [reportPeriod, setReportPeriod] = useState<string>("Tháng này");
-  const [fromDate, setFromDate] = useState<string>("01/09/2026");
-  const [toDate, setToDate] = useState<string>("30/09/2026");
+  const [fromDate, setFromDate] = useState<string>(`01/09/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState<string>(`30/09/${CURRENT_YEAR}`);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -8998,8 +8998,8 @@ export function PurchaseServiceModal({
   const [debtDays, setDebtDays] = useState<string | number>("");
   const [dueDate, setDueDate] = useState<string>("");
 
-  const [postDate, setPostDate] = useState<string>("02/10/2026");
-  const [docDate, setDocDate] = useState<string>("02/10/2026");
+  const [postDate, setPostDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
+  const [docDate, setDocDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
   const [voucherCode, setVoucherCode] = useState<string>("MDV00001");
 
   // Master fields - Paid (Phiếu chi)
@@ -9007,8 +9007,8 @@ export function PurchaseServiceModal({
   const [paymentReason, setPaymentReason] = useState<string>("Chi tiền mua dịch vụ");
   const [attachedCount, setAttachedCount] = useState<string | number>("");
   const [paymentVoucherCode, setPaymentVoucherCode] = useState<string>("PC00001");
-  const [paymentPostDate, setPaymentPostDate] = useState<string>("02/10/2026");
-  const [paymentDocDate, setPaymentDocDate] = useState<string>("02/10/2026");
+  const [paymentPostDate, setPaymentPostDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
+  const [paymentDocDate, setPaymentDocDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
 
   // Detail tabs & options
   const [activeTab, setActiveTab] = useState<"accounting" | "tax">("accounting");
@@ -10343,16 +10343,16 @@ export function PurchaseMultiInvoiceModal({
   const [debtDays, setDebtDays] = useState<string | number>("");
   const [dueDate, setDueDate] = useState<string>("");
 
-  const [postDate, setPostDate] = useState<string>("02/10/2026 09:22:01");
-  const [docDate, setDocDate] = useState<string>("02/10/2026");
+  const [postDate, setPostDate] = useState<string>(`02/10/${CURRENT_YEAR} 09:22:01`);
+  const [docDate, setDocDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
   const [voucherCode, setVoucherCode] = useState<string>("NK00001");
 
   // Master fields - Phiếu chi
   const [recipient, setRecipient] = useState<string>("");
   const [paymentReason, setPaymentReason] = useState<string>("Chi tiền mua hàng");
   const [paymentVoucherCode, setPaymentVoucherCode] = useState<string>("PC00001");
-  const [paymentPostDate, setPaymentPostDate] = useState<string>("02/10/2026");
-  const [paymentDocDate, setPaymentDocDate] = useState<string>("02/10/2026");
+  const [paymentPostDate, setPaymentPostDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
+  const [paymentDocDate, setPaymentDocDate] = useState<string>(`02/10/${CURRENT_YEAR}`);
 
   // Detail tabs & options
   const [activeTab, setActiveTab] = useState<"goods" | "tax" | "cost" | "customs_fee" | "warehouse_fee">("goods");
@@ -11887,3 +11887,5 @@ export {
   MultiUnOffsetModal,
   DebtClearingModal,
 } from "./MisaPurchaseUtilityModals";
+
+const CURRENT_YEAR = new Date().getFullYear();

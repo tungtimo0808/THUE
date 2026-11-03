@@ -18,6 +18,7 @@ from .views import (
     ReportRunViewSet,
     TaxReportViewSet,
     PurchaseReportViewSet,
+    AnalysisReportViewSet,
     SalesReportViewSet,
     DebtReportViewSet,
     MoneyReportViewSet,
@@ -538,6 +539,11 @@ urlpatterns = [
         name="report-purchase-query",
     ),
     # UC-RPT-09: Báo cáo bán hàng (36 báo cáo)
+    re_path(
+        r"^analysis/?$",
+        AnalysisReportViewSet.as_view({"get": "retrieve_report"}),
+        name="report-analysis",
+    ),
     re_path(
         r"^sales/catalogue/?$",
         SalesReportViewSet.as_view({"get": "catalogue"}),

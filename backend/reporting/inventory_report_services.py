@@ -53,6 +53,7 @@ from purchases.models import (
     GoodsPurchaseLine,
 )
 
+from .report_access import has_report_permission, report_company
 from .models import (
     ReportDefinition,
     InventoryReportRun,
@@ -499,61 +500,11 @@ INVENTORY_REPORT_SCHEMAS: dict[str, dict[str, Any]] = {
 # -----------------------------------------------------------------------------
 
 def user_has_inventory_permission(user, request, perm_code: str) -> bool:
-    if not user or not user.is_authenticated:
-        return False
-    if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-        return True
-
-    header_perms = ""
-    if request:
-        header_perms = request.META.get("HTTP_X_USER_PERMISSIONS", "")
-    granted = {p.strip().upper() for p in header_perms.split(",") if p.strip()}
-
-    user_perms = getattr(user, "user_permissions", None)
-    if user_perms:
-        for p in user_perms.all():
-            granted.add(p.codename.upper())
-
-    group_perms = getattr(user, "get_group_permissions", None)
-    if callable(group_perms):
-        for p in group_perms():
-            granted.add(p.upper())
-
-    candidates = PERM_ALIASES.get(perm_code, (perm_code,))
-    for c in candidates:
-        if c.upper() in granted:
-            return True
-
-    return False
+    return has_report_permission(user, request, "inventory", perm_code)
 
 
 def resolve_inventory_company_scope(request, params: dict[str, Any]) -> tuple[str, Company]:
-    user = getattr(request, "user", None)
-    cid = (
-        params.get("company_id")
-        or (request.query_params.get("company_id") if hasattr(request, "query_params") else None)
-        or (request.META.get("HTTP_X_COMPANY_ID") if hasattr(request, "META") else None)
-    )
-
-    company = None
-    if cid:
-        company = Company.objects.filter(Q(id__iexact=str(cid)) | Q(code__iexact=str(cid))).first()
-
-    if not company and user and hasattr(user, "company"):
-        company = user.company
-
-    if not company:
-        company = Company.objects.first()
-
-    if not company:
-        raise ValidationError({"company_id": "Doanh nghiệp không hợp lệ hoặc không tìm thấy."})
-
-    # Check isolation if user belongs to a specific company
-    if user and not (getattr(user, "is_superuser", False) or getattr(user, "is_staff", False)):
-        user_company = getattr(user, "company", None)
-        if user_company and user_company.id != company.id:
-            raise PermissionDenied("Không có quyền truy cập dữ liệu của doanh nghiệp này.")
-
+    company = report_company(request, params)
     return str(company.id), company
 
 

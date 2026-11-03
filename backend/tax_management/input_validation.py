@@ -42,7 +42,7 @@ def run_is_current(run):
 
 @transaction.atomic
 def check_input_invoice(invoice, request, *, trigger_type="MANUAL"):
-    invoice = models.TaxInvoice.objects.select_for_update().select_related("company", "currency").get(pk=invoice.pk)
+    invoice = models.TaxInvoice.objects.select_for_update(of=("self",)).select_related("company", "currency").get(pk=invoice.pk)
     if invoice.direction != "INPUT" or invoice.status not in {"RECEIVED", "VALIDATED", "BLOCKED"}:
         raise ValidationError("Chỉ kiểm tra hóa đơn đầu vào đã tiếp nhận.")
     fp = fingerprint(invoice)

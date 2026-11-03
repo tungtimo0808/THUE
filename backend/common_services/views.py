@@ -6,6 +6,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers as drf_serializers, status
 from rest_framework.decorators import action
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.exceptions import APIException, AuthenticationFailed, NotFound, PermissionDenied, Throttled
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -40,6 +41,8 @@ from .serializers import (
 
 
 class RegisterView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=RegistrationSerializer, responses={201: dict, 200: dict})
@@ -68,6 +71,8 @@ class RegisterView(APIView):
 
 
 class VerifyRegistrationView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=VerificationSerializer, responses={200: dict})
@@ -89,6 +94,8 @@ class VerifyRegistrationView(APIView):
 
 
 class ResendVerificationView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=ResendVerificationSerializer, responses={202: dict})
@@ -122,6 +129,8 @@ class RegistrationEmailChangeView(APIView):
 
 
 class LoginView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=LoginSerializer, responses={200: dict})
@@ -175,6 +184,8 @@ class ChangePasswordView(APIView):
 
 
 class PasswordResetRequestView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=PasswordResetRequestSerializer, responses={202: dict})
@@ -193,6 +204,8 @@ class PasswordResetRequestView(APIView):
 
 
 class PasswordResetVerifyOTPView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=PasswordResetVerifyOTPSerializer, responses={200: dict})
@@ -208,6 +221,8 @@ class PasswordResetVerifyOTPView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
     permission_classes = (AllowAny,)
 
     @extend_schema(request=PasswordResetConfirmSerializer, responses={200: dict})
@@ -569,7 +584,14 @@ class CompanyJoinRequestAdminViewSet(ReadOnlyModelViewSet):
     serializer_class = AdminCompanyJoinRequestSerializer
     queryset = CompanyJoinRequest.objects.select_related("company", "requester__auth_user", "decided_by")
     iam_permissions = {"GET": "COM.JOIN_REQUEST.VIEW"}
-    action_permissions = {"decide": "COM.JOIN_REQUEST.APPROVE"}
+
+    def _decision_permission(self):
+        data = self.request.data if isinstance(self.request.data, dict) else {}
+        return "COM.JOIN_REQUEST.REJECT" if data.get("decision") == "REJECTED" else "COM.JOIN_REQUEST.APPROVE"
+
+    @property
+    def action_permissions(self):
+        return {"decide": self._decision_permission()}
 
     def get_queryset(self):
         company = self.request.query_params.get("company_id")

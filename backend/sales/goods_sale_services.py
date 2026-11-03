@@ -814,6 +814,8 @@ def post_goods_sale(request, sale):
                 base_quantity=line.quantity,
                 unit_cost=line.unit_cost,
                 line_value=line.cogs_amount,
+                debit_account=line.cogs_account,
+                credit_account=line.inventory_account,
                 movement_direction="OUT",
             )
         post_inventory(issue_trx, request)

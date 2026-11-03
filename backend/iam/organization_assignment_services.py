@@ -144,7 +144,7 @@ def _audit(item, actor, action, before, request):
 
 @transaction.atomic
 def create_assignment(*, membership_id, actor, data, request):
-    membership = CompanyMembership.objects.select_for_update().select_related("company", "user__auth_user").get(pk=membership_id)
+    membership = CompanyMembership.objects.select_for_update(of=("self",)).select_related("company", "user__auth_user").get(pk=membership_id)
     if membership.membership_status != "ACTIVE" or not membership.user.auth_user.is_active:
         raise ValidationError({"membership": "User chưa có Membership ACTIVE."})
     unit, position, overlapping = _validate(membership, data)
@@ -178,7 +178,7 @@ def create_assignment(*, membership_id, actor, data, request):
 
 @transaction.atomic
 def update_assignment(*, item_id, actor, data, request):
-    item = OrganizationAssignment.objects.select_for_update().select_related("membership__company", "membership__user__auth_user", "unit").get(pk=item_id)
+    item = OrganizationAssignment.objects.select_for_update(of=("self",)).select_related("membership__company", "membership__user__auth_user", "unit").get(pk=item_id)
     membership = CompanyMembership.objects.select_for_update().get(pk=item.membership_id)
     _authorize(actor, item.membership, item.unit)
     if item.updated_at != data["version"]:
@@ -208,7 +208,7 @@ def update_assignment(*, item_id, actor, data, request):
 
 @transaction.atomic
 def revoke_assignment(*, item_id, actor, version, reason, request):
-    item = OrganizationAssignment.objects.select_for_update().select_related("membership__company", "membership__user__auth_user", "unit").get(pk=item_id)
+    item = OrganizationAssignment.objects.select_for_update(of=("self",)).select_related("membership__company", "membership__user__auth_user", "unit").get(pk=item_id)
     membership = CompanyMembership.objects.select_for_update().get(pk=item.membership_id)
     _authorize(actor, item.membership, item.unit)
     if item.updated_at != version:

@@ -8009,6 +8009,13 @@ export default function MisaCashWorkspace({
           id: `${v.id}-${idx}`,
           description: (r.description || editCashDescription || "").trim(),
           partnerName: editCashPartner.trim() || r.partnerName || "",
+          bankAccount: r.bankAccount || "",
+          bankName: r.bankName || "",
+          partnerCode: r.partnerCode || "",
+          employeeCode: r.employeeCode || "",
+          employeeName: r.employeeName || "",
+          loanContract: r.loanContract || "",
+          loanDisbursementContract: r.loanDisbursementContract || "",
         }));
         mapped.debit = editCashRows[0]?.debit || mapped.debit;
         mapped.credit = editCashRows[0]?.credit || mapped.credit;

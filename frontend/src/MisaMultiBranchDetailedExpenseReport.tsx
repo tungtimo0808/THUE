@@ -14,6 +14,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface DetailedExpenseRow {
   target: string;
   code: string;
@@ -66,8 +68,8 @@ export default function MisaMultiBranchDetailedExpenseReport({
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [period, setPeriod] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
 
   // Chi phí phân tích matching Screenshot 1:
   // - Giá vốn: unchecked
@@ -82,8 +84,8 @@ export default function MisaMultiBranchDetailedExpenseReport({
 
   // Draft state inside drawer
   const [draftPeriod, setDraftPeriod] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftFilterCogs, setDraftFilterCogs] = useState(false);
   const [draftFilterKmcp, setDraftFilterKmcp] = useState(true);
   const [draftFilterFinance, setDraftFilterFinance] = useState(false);

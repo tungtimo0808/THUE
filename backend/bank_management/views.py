@@ -103,7 +103,7 @@ class TransferViewSet(Base):
     queryset=models.BankTransfer.objects.select_related("company","source_account","destination_account","created_by");serializer_class=serializers.TransferSerializer;iam_permissions=perms("BANK.TRANSFER");action_permissions={"confirm":"BANK.TRANSFER.TRANSFER","reverse":"BANK.TRANSFER.REVERSE","cancel":"BANK.TRANSFER.EDIT"};search_fields=("number","description")
     def get_queryset(self):
         qs=super().get_queryset()
-        return qs.select_for_update() if self.action in {"update","partial_update"} else qs
+        return qs.select_for_update(of=("self",)) if self.action in {"update","partial_update"} else qs
     @transaction.atomic
     def update(self,r,*args,**kwargs):return super().update(r,*args,**kwargs)
     @transaction.atomic

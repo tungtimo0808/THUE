@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { formatVND, SAMPLE_SUPPLIERS } from "./MisaPurchaseModals";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 // ============================================================================
 // 1. MODAL: ĐỐI TRỪ CHỨNG TỪ (DebtOffsetModal)
 // ============================================================================
@@ -28,7 +30,7 @@ export interface DebtOffsetModalProps {
 
 export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
   const [supplier, setSupplier] = useState(SAMPLE_SUPPLIERS[0]?.code || "NCC001");
-  const [offsetDate, setOffsetDate] = useState("09/10/2026");
+  const [offsetDate, setOffsetDate] = useState(`09/10/${CURRENT_YEAR}`);
   const [currency, setCurrency] = useState("VND");
   const [payableAccount, setPayableAccount] = useState("331");
 
@@ -418,7 +420,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
   const [step, setStep] = useState<1 | 2>(1);
   const [account, setAccount] = useState("331");
   const [group, setGroup] = useState("Tất cả");
-  const [offsetDate, setOffsetDate] = useState("09/10/2026");
+  const [offsetDate, setOffsetDate] = useState(`09/10/${CURRENT_YEAR}`);
 
   const [suppliersList, setSuppliersList] = useState([
     {
@@ -696,8 +698,8 @@ export interface UnOffsetModalProps {
 export function UnOffsetModal({ onClose, onSuccess }: UnOffsetModalProps) {
   const [account, setAccount] = useState("331");
   const [supplier, setSupplier] = useState(SAMPLE_SUPPLIERS[0]?.code || "NCC001");
-  const [fromDate, setFromDate] = useState("01/01/2026");
-  const [toDate, setToDate] = useState("09/10/2026");
+  const [fromDate, setFromDate] = useState(`01/01/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`09/10/${CURRENT_YEAR}`);
 
   const [records, setRecords] = useState([
     {
@@ -887,8 +889,8 @@ export function MultiUnOffsetModal({ onClose, onSuccess }: MultiUnOffsetModalPro
   const [account, setAccount] = useState("331");
   const [group, setGroup] = useState("Tất cả");
   const [period, setPeriod] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("09/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`09/10/${CURRENT_YEAR}`);
 
   const [suppliers, setSuppliers] = useState([
     {
@@ -1101,7 +1103,7 @@ export interface DebtClearingModalProps {
 
 export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps) {
   const [partner, setPartner] = useState("KH-NCC-001 - Công ty CP Tập đoàn Hoàng Hà");
-  const [clearDate, setClearDate] = useState("09/10/2026");
+  const [clearDate, setClearDate] = useState(`09/10/${CURRENT_YEAR}`);
   const [receivableAccount, setReceivableAccount] = useState("131");
   const [payableAccount, setPayableAccount] = useState("331");
 

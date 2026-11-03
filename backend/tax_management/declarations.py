@@ -116,7 +116,7 @@ def save_draft(declaration, data, request):
 
 @transaction.atomic
 def confirm(declaration, request):
-    declaration = models.TaxDeclaration.objects.select_for_update().select_related("source_calculation", "period").get(pk=declaration.pk)
+    declaration = models.TaxDeclaration.objects.select_for_update(of=("self",)).select_related("source_calculation", "period").get(pk=declaration.pk)
     if declaration.preparation_status == "READY_TO_SUBMIT":
         return declaration
     if declaration.period.status != "OPEN" or not source_current(declaration):

@@ -37,6 +37,8 @@ import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import "./misa-cash.css";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
@@ -357,9 +359,9 @@ export default function MisaPayrollWorkspace({
   const [showAttTypeDropdown, setShowAttTypeDropdown] = useState(false);
   const [attendanceType, setAttendanceType] = useState("Chấm công theo buổi");
   const [attMonth, setAttMonth] = useState("10");
-  const [attYear, setAttYear] = useState(2026);
-  const [attFromDate, setAttFromDate] = useState("01/10/2026");
-  const [attToDate, setAttToDate] = useState("31/10/2026");
+  const [attYear, setAttYear] = useState(CURRENT_YEAR);
+  const [attFromDate, setAttFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [attToDate, setAttToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [attSheetName, setAttSheetName] = useState("Bảng chấm công theo buổi tháng 10 năm 2026");
   const [isBasedOnOther, setIsBasedOnOther] = useState(false);
   const [selectAllUnits, setSelectAllUnits] = useState(false);
@@ -395,7 +397,7 @@ export default function MisaPayrollWorkspace({
   const [showSummaryTypeDropdown, setShowSummaryTypeDropdown] = useState(false);
   const [summaryType, setSummaryType] = useState("Chấm công theo buổi");
   const [summaryMonth, setSummaryMonth] = useState("10");
-  const [summaryYear, setSummaryYear] = useState(2026);
+  const [summaryYear, setSummaryYear] = useState(CURRENT_YEAR);
   const [summarySheetName, setSummarySheetName] = useState("Bảng tổng hợp chấm công theo buổi tháng 10 năm 2026");
   const [isAggregatedFromDetails, setIsAggregatedFromDetails] = useState(false);
   const [selectAllSummaryUnits, setSelectAllSummaryUnits] = useState(false);
@@ -431,9 +433,9 @@ export default function MisaPayrollWorkspace({
   const [showSalarySheetTypeDropdown, setShowSalarySheetTypeDropdown] = useState(false);
   const [salarySheetType, setSalarySheetType] = useState("Lương cố định (không dựa trên bảng chấm công)");
   const [calcMonth, setCalcMonth] = useState("10");
-  const [calcYear, setCalcYear] = useState(2026);
-  const [calcFromDate, setCalcFromDate] = useState("01/10/2026");
-  const [calcToDate, setCalcToDate] = useState("31/10/2026");
+  const [calcYear, setCalcYear] = useState(CURRENT_YEAR);
+  const [calcFromDate, setCalcFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [calcToDate, setCalcToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [calcSheetName, setCalcSheetName] = useState("Bảng lương cố định tháng 10 năm 2026");
   const [isSalaryBasedOnOther, setIsSalaryBasedOnOther] = useState(false);
   const [selectAllCalcUnits, setSelectAllCalcUnits] = useState(false);
