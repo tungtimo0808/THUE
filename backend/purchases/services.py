@@ -342,7 +342,7 @@ def cancel_request(instance, request):
 
 @transaction.atomic
 def confirm_receipt(receipt, request):
-    receipt = models.PurchaseReceipt.objects.select_for_update().select_related("order").get(pk=receipt.pk)
+    receipt = models.PurchaseReceipt.objects.select_for_update(of=("self",)).select_related("order").get(pk=receipt.pk)
     if receipt.status != models.ReceiptStatus.DRAFT:
         raise ValidationError("Chỉ lần nhận DRAFT được xác nhận.")
     order = models.PurchaseOrder.objects.select_for_update().get(pk=receipt.order_id)

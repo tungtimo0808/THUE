@@ -108,7 +108,7 @@ def match_many(line_id, allocations, request, expected_line_remaining=None):
     try:UUID(str(line_id))
     except (ValueError,TypeError):raise ValidationError("Giao dịch sao kê không tồn tại.")
     try:
-        line = models.StatementLine.objects.select_related("statement").select_for_update().get(pk=line_id)
+        line = models.StatementLine.objects.select_related("statement").select_for_update(of=("self",)).get(pk=line_id)
     except (models.StatementLine.DoesNotExist, ValueError, TypeError):
         raise ValidationError("Giao dịch sao kê không tồn tại.")
     if str(line.statement.company_id) != str(request.query_params.get("company_id")):

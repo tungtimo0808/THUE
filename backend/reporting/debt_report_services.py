@@ -43,6 +43,7 @@ from accounts_payable.models import (
 )
 from master_data.models import Party
 
+from .report_access import has_report_permission, report_company
 from .models import (
     ReportDefinition,
     DebtReportRun,
@@ -1113,59 +1114,15 @@ DEBT_REPORT_SCHEMAS: dict[str, dict[str, Any]] = {
 # -----------------------------------------------------------------------------
 
 def check_debt_report_permission(user, request, required_perm: str = PERM_DEBT_VIEW) -> None:
-    """Kiểm tra quyền truy cập báo cáo công nợ (RBAC)"""
-    if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-        return
-
-    user_perms: set[str] = set()
-    if user and hasattr(user, "get_all_permissions"):
-        try:
-            user_perms.update(user.get_all_permissions())
-        except Exception:
-            pass
-
-    # Check request headers / tokens / session fallback
-    if request and hasattr(request, "META"):
-        header_perm = request.META.get("HTTP_X_USER_PERMISSIONS") or ""
-        if header_perm:
-            for p in header_perm.split(","):
-                user_perms.add(p.strip())
-
-    valid_aliases = PERM_ALIASES.get(required_perm, (required_perm,))
-    if any(p in user_perms for p in valid_aliases):
-        return
-
-    # Fallback: if user is logged in and has standard role
-    role = getattr(user, "role", None) or getattr(user, "user_type", None)
-    if role in ("ACCOUNTANT", "CHIEF_ACCOUNTANT", "DIRECTOR", "ADMIN", "MANAGER"):
-        return
-
-    # Check specific group membership or django permissions
-    if user and hasattr(user, "has_perm"):
-        for alias in valid_aliases:
-            if user.has_perm(f"reporting.{alias}"):
-                return
-
-    # Raise PermissionDenied if unauthorized
-    raise PermissionDenied(f"Người dùng không có quyền '{required_perm}' để truy cập báo cáo công nợ.")
+    if not has_report_permission(user, request, "debt", required_perm):
+        raise PermissionDenied(f"Người dùng không có quyền '{required_perm}' để truy cập báo cáo công nợ.")
 
 
 def resolve_debt_company_scope(request, params: dict[str, Any]) -> tuple[str, str | None]:
-    """Xác định phạm vi Company và Branch cho báo cáo công nợ."""
-    company_id = params.get("company_id") or getattr(request, "company_id", None)
-    if not company_id and hasattr(request, "user"):
-        company_id = getattr(request.user, "company_id", None) or getattr(
-            getattr(request.user, "company", None), "id", None
-        )
-    if not company_id:
-        c = Company.objects.first()
-        company_id = str(c.id) if c else "DEFAULT-COMPANY"
-    else:
-        company_id = str(company_id)
-
-    branch_id = params.get("branch_id") or getattr(request, "branch_id", None)
-    branch_id = str(branch_id) if branch_id else None
-    return company_id, branch_id
+    params = params or {}
+    company = report_company(request, params)
+    branch_id = params.get("branch_id") or request.query_params.get("branch_id")
+    return str(company.id), str(branch_id) if branch_id else None
 
 
 # -----------------------------------------------------------------------------

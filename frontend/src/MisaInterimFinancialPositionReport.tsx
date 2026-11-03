@@ -19,6 +19,8 @@ import {
   Send,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface InterimBalanceSheetItem {
   name: string;
   code: string;
@@ -434,13 +436,13 @@ export default function MisaInterimFinancialPositionReport({
   // Drawer Parameters State matching Screenshot
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [period, setPeriod] = useState("Quý 4");
-  const [year, setYear] = useState(2026);
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/12/2026");
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [fetchFromSaved, setFetchFromSaved] = useState(false);
   const [hideZero, setHideZero] = useState(false);
   const [representative, setRepresentative] = useState("Trần Thị Hương");
-  const [reportDate, setReportDate] = useState("07/10/2026");
+  const [reportDate, setReportDate] = useState(`07/10/${CURRENT_YEAR}`);
 
   // Selected report in drawer checklist
   const [selectedSubReports, setSelectedSubReports] = useState<Record<string, boolean>>({
@@ -452,13 +454,13 @@ export default function MisaInterimFinancialPositionReport({
 
   // Temporary drawer draft state
   const [draftPeriod, setDraftPeriod] = useState("Quý 4");
-  const [draftYear, setDraftYear] = useState(2026);
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/12/2026");
+  const [draftYear, setDraftYear] = useState(CURRENT_YEAR);
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [draftFetchFromSaved, setDraftFetchFromSaved] = useState(false);
   const [draftHideZero, setDraftHideZero] = useState(false);
   const [draftRepresentative, setDraftRepresentative] = useState("Trần Thị Hương");
-  const [draftReportDate, setDraftReportDate] = useState("07/10/2026");
+  const [draftReportDate, setDraftReportDate] = useState(`07/10/${CURRENT_YEAR}`);
   const [draftSubReports, setDraftSubReports] = useState<Record<string, boolean>>({
     "B01a-DN": true,
     "B02a-DN": false,

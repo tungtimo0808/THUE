@@ -15,6 +15,8 @@ import {
   Filter,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MultiBranchTrialBalanceRow {
   accountCode: string;
   accountName: string;
@@ -110,16 +112,16 @@ export default function MisaMultiBranchTrialBalanceReport({
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [period, setPeriod] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [accountLevel, setAccountLevel] = useState("1");
   const [showTwoSideBalance, setShowTwoSideBalance] = useState(true);
   const [accumSource, setAccumSource] = useState<"dataStart" | "fiscalStart">("fiscalStart");
 
   // Temporary drawer draft state
   const [draftPeriod, setDraftPeriod] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftAccountLevel, setDraftAccountLevel] = useState("1");
   const [draftShowTwoSideBalance, setDraftShowTwoSideBalance] = useState(true);
   const [draftAccumSource, setDraftAccumSource] = useState<"dataStart" | "fiscalStart">("fiscalStart");

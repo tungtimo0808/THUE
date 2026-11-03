@@ -35,6 +35,7 @@ from bank_management.models import (
 )
 from master_data.models import CompanyBankAccount, Currency, Party
 
+from .report_access import has_report_permission, report_company
 from .models import (
     ReportDefinition,
     MoneyReportRun,
@@ -481,28 +482,7 @@ MONEY_REPORT_SCHEMAS: dict[str, dict[str, Any]] = {
 # -----------------------------------------------------------------------------
 
 def user_has_money_permission(user, request, perm_code: str) -> bool:
-    if not user or not user.is_authenticated:
-        return False
-    if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-        return True
-
-    header_perms = ""
-    if request:
-        header_perms = request.META.get("HTTP_X_USER_PERMISSIONS", "")
-    granted = {p.strip().upper() for p in header_perms.split(",") if p.strip()}
-
-    user_perms = getattr(user, "user_permissions", None)
-    if user_perms:
-        for p in user_perms.all():
-            granted.add(p.codename.upper())
-
-    group_perms = getattr(user, "get_group_permissions", None)
-    if callable(group_perms):
-        for p in group_perms():
-            granted.add(p.split(".")[-1].upper())
-
-    aliases = PERM_ALIASES.get(perm_code, (perm_code,))
-    return any(a.upper() in granted for a in aliases)
+    return has_report_permission(user, request, "money", perm_code)
 
 
 def check_money_report_permission(user, request, perm_code: str):
@@ -511,16 +491,10 @@ def check_money_report_permission(user, request, perm_code: str):
 
 
 def resolve_money_company_scope(request, params: dict[str, Any]) -> tuple[str, str]:
-    company_id = params.get("company_id")
-    if not company_id and request:
-        company_id = request.headers.get("X-Company-Id") or request.query_params.get("company_id")
-    if not company_id:
-        company_id = "DEFAULT-COMPANY"
-
-    branch_id = params.get("branch_id")
-    if not branch_id and request:
-        branch_id = request.headers.get("X-Branch-Id") or request.query_params.get("branch_id") or ""
-    return str(company_id), str(branch_id or "")
+    params = params or {}
+    company = report_company(request, params)
+    branch_id = params.get("branch_id") or request.headers.get("X-Branch-Id") or request.query_params.get("branch_id") or ""
+    return str(company.id), str(branch_id)
 
 
 # -----------------------------------------------------------------------------

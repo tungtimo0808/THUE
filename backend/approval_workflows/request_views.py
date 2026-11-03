@@ -239,7 +239,7 @@ def _process_task_decision(task_ref, actor, validated_data, request):
     if source is None:
         raise ValidationError("Chứng từ nguồn không còn khả dụng.")
     source = type(source).objects.select_for_update().get(pk=source.pk)
-    item = ApprovalRequest.objects.select_for_update().select_related("company", "document_type").get(pk=task_ref.request_id)
+    item = ApprovalRequest.objects.select_for_update(of=("self",)).select_related("company", "document_type").get(pk=task_ref.request_id)
     task = ApprovalTask.objects.select_for_update().get(pk=task_ref.pk)
 
     delegated_from = _authorized(task, actor, source)

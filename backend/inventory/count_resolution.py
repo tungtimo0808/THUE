@@ -112,7 +112,7 @@ def decide(resolution, request, decision, note=""):
 def create_voucher(resolution, request):
     from general_ledger.models import Account
 
-    line = models.StockCountLine.objects.select_for_update().select_related("stock_count", "item").get(pk=resolution.count_line_id)
+    line = models.StockCountLine.objects.select_for_update(of=("self",)).select_related("stock_count", "item").get(pk=resolution.count_line_id)
     resolution = models.CountResolution.objects.select_for_update().get(pk=resolution.pk)
     if resolution.status != "APPROVED" or resolution.adjustment_transaction_id or line.stock_count.status != "COUNTED":
         raise ValidationError("Chỉ phương án đã duyệt, chưa lập chứng từ mới được điều chỉnh.")
@@ -160,7 +160,7 @@ def create_voucher(resolution, request):
 
 
 def validate_post(obj):
-    resolution = models.CountResolution.objects.select_for_update().select_related("count_line__stock_count").filter(adjustment_transaction=obj).first()
+    resolution = models.CountResolution.objects.select_for_update(of=("self",)).select_related("count_line__stock_count").filter(adjustment_transaction=obj).first()
     if not resolution or resolution.status != "APPROVED" or resolution.count_line.stock_count.status != "COUNTED":
         raise ValidationError("Phương án kiểm kê không còn hiệu lực để ghi sổ.")
     if obj.lines.count() != 1 or obj.lines.first().base_quantity != resolution.quantity:

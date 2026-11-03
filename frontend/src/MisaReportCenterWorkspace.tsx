@@ -31,6 +31,8 @@ import {
 import "./misa-reports.css";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import { useApiSession } from "./ApiSession";
+import LiveReportScreen from "./LiveReportScreen";
+import { LIVE_REPORTS } from "./live-report-map";
 import { FinancialFormFrame } from "./FinancialForm";
 import { request } from "./live-api";
 import { createApiWriter, executeReportExportUcRpt15, errorText } from "./misa-api-writes";
@@ -1205,6 +1207,10 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
       </FinancialFormFrame>
     );
   }
+  if (selectedReport && LIVE_REPORTS[selectedReport]) {
+    return <LiveReportScreen key={selectedReport} title={selectedReport} target={LIVE_REPORTS[selectedReport]} onBack={() => setSelectedReport(null)} />;
+  }
+
   if (salesSummaryType) {
     return <MisaSalesSummaryReports key={salesSummaryType} reportType={salesSummaryType} onBack={() => setSelectedReport(null)} notify={notify} />;
   }

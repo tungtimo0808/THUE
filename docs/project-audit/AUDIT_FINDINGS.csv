@@ -1,0 +1,45 @@
+﻿ID,Nhóm,Mức độ,Vấn đề,File/Module,Mức bằng chứng,Ưu tiên,Giải pháp
+SEC-01,Bảo mật,Nghiêm trọng,"Người ngoài đọc báo cáo bán hàng, mua hàng công ty khác",reporting/sales_report_services.py:888; purchase_report_services.py,Đã chứng minh,P0,Kiểm tra membership từ DB
+SEC-02,Bảo mật,Nghiêm trọng,"Người ngoài đọc tồn kho, tài sản as-of","reports/inventory, assets balances as-of",Đã chứng minh,P0,Áp lớp kiểm tra chung
+SEC-03,Bảo mật,Nghiêm trọng,Tự cấp quyền bằng X-User-Permissions,debt_report_services.py:1129; inventory_report_services.py:509; money_report_services.py:491,Đã chứng minh,P0,Xóa đọc quyền từ request
+SEC-04,Bảo mật,Cao,COMPANY_ADMIN bị chặn 95 báo cáo,reporting/*_report_services.py,Đã chứng minh,P0,Dùng IAM has_effective_permission
+SEC-05,Bảo mật,Cao,X-Sales/Tax-Permissions và mock_permissions quyết định quyền,sales_report_services.py:874; tax_report_services.py:989,Đọc code,P0,Xóa khỏi code chạy thật
+SEC-06,Bảo mật,Cao,Fallback Company.objects.first và DEFAULT-COMPANY,resolve_*_company_scope; asset_report_services.py:2324,Đọc code,P0,Trả 400 khi thiếu công ty
+SEC-07,Bảo mật,Trung bình,TT99 không cần quyền báo cáo,reports/tt99-financial-statements,Đã chứng minh,P1,Thêm quyền
+SEC-08,Bảo mật,Cao,"JWT 7/30 ngày, lưu localStorage",config/settings.py,Đọc code,P0,Rút ngắn token
+SEC-09,Bảo mật,Trung bình,Từ chối join không kiểm quyền riêng,common_services,Test thất bại,P0,Tách quyền theo hành động
+SEC-10,Bảo mật,Trung bình,Module tắt vẫn cho tạo,common_services,Test thất bại,P0,Kiểm tra trạng thái module
+SEC-11,Bảo mật,Trung bình,Mật khẩu dạng thật trong .env.example,.env.example,Đọc code,P0,Dùng placeholder
+SEC-12,Bảo mật,Trung bình,Không có throttle,config/settings.py,Đọc code,P1,Thêm throttle
+SEC-13,Bảo mật,Trung bình,Cấu hình mặc định lỏng,config/settings.py,Công cụ,P0,Mặc định an toàn
+SEC-14,Bảo mật,Chưa rõ,organization/companies trả dòng cho người ngoài,organization,Chưa đủ bằng chứng,P0,Xác minh nội dung
+SEC-15,Bảo mật,Trung bình,debt/confirmation-document có dấu hiệu lộ,reporting,Chưa đủ bằng chứng,P0,Xác minh
+TEC-01,Kỹ thuật,Nghiêm trọng,FOR UPDATE lỗi trên PostgreSQL,receipt_voucher.py:296; adjustment_voucher_services.py:171; allocation_services.py:220; structure_services.py:99,Đã chứng minh,P0,select_for_update(of=self)
+TEC-02,Kỹ thuật,Cao,Thiếu import timezone,general-vouchers/opening-profit-loss,Đã chứng minh,P0,Thêm import
+TEC-03,Kỹ thuật,Cao,Field created_at không tồn tại,general-ledger/balance-aggregations,Đã chứng minh,P0,Sửa ordering
+TEC-04,Kỹ thuật,Cao,"UserAccount không có company_memberships, 8 route 500",fixed_assets,Đã chứng minh,P0,Sửa related name
+TEC-05,Kỹ thuật,Trung bình,File quá lớn,fixed_assets/services.py; general_ledger/services.py,Công cụ,P3,Tách dần
+TEC-06,Kỹ thuật,Cao,Hai bộ tính BCTC,general_ledger; reporting,Đọc code,P1,Hợp nhất
+TEC-07,Kỹ thuật,Cao,8 hàm quyền riêng,reporting,Đọc code,P0,Một lớp dùng chung
+TEC-08,Kỹ thuật,Thấp,File rác trong git,repo,Công cụ,P3,Gỡ khỏi tracking
+TEC-09,Kỹ thuật,Trung bình,159 chỗ float(),backend,Chưa đủ bằng chứng,P3,Rà phần tiền
+TEC-10,Kỹ thuật,Trung bình,177 CASCADE,backend,Chưa đủ bằng chứng,P3,Rà model kế toán
+ACC-01,Kế toán,Nghiêm trọng,B02 sai TK 642,general_ledger/services.py:18060,"Test thất bại, đọc code",P0,Sửa ánh xạ
+ACC-02,Kế toán,Cao,Sai số đề nghị xuất hóa đơn,sales,Test thất bại,P0,Không nuốt ngoại lệ
+ACC-03,Kế toán,Trung bình,Đổi được tên TK và đối tượng đã phát sinh,master_data,Đã chứng minh,P1,"Lưu vết, khóa trường"
+ACC-04,Kế toán,Cao,"Thuế, giá vốn, khóa sổ, tỷ giá, lương chưa kiểm chứng",nhiều module,Chưa đủ bằng chứng,P1,Bộ dữ liệu vàng
+RPT-01,Báo cáo,Cao,47/69 component báo cáo không gọi API,frontend/src,Đọc code,P1,Làm thật hoặc ẩn
+RPT-02,Báo cáo,Cao,30/36 báo cáo bán hàng cùng 328 dòng,reporting/sales_report_services.py,"Số dòng đã chứng minh, nội dung chưa xác minh",P1,Kiểm tra từng báo cáo
+RPT-03,Báo cáo,Trung bình,B09 và sai khác mẫu,reporting,Duyệt tay,P1,Hoàn thiện
+UX-01,Giao diện,Cao,Dữ liệu mẫu giống số thật,frontend/src,Đọc code,P1,Gắn nhãn hoặc ẩn
+UX-02,Giao diện,Cao,252 thông báo thành công cần rà,frontend/src,Chưa đủ bằng chứng,P1,Chỉ báo sau khi server xác nhận
+UX-04,Giao diện,Chưa rõ,168 nút có thể không hành động,frontend/src,Chưa đủ bằng chứng,P2,Rà AST
+UX-06,Giao diện,Trung bình,Hardcode 2026 trong 41 file,frontend/src,Đọc code,P2,Lấy theo kỳ
+OPS-01,Vận hành,Nghiêm trọng,Không có sao lưu trong repo,hạ tầng,Không tìm thấy trong repo,P0,"Sao lưu, diễn tập khôi phục"
+OPS-02,Vận hành,Cao,"Không có LOGGING, giám sát",config/settings.py,Đọc code,P1,"Log, cảnh báo"
+OPS-03,Vận hành,Chưa rõ,"Không có reverse proxy, TLS trong repo",hạ tầng,Chưa đủ bằng chứng,P3,Xác nhận
+OPS-05,Vận hành,Cao,SEED_DEMO_DATA mặc định True,compose.yaml:38,Đọc code,P0,Mặc định False
+TST-01,Kiểm thử,Nghiêm trọng,CI không chạy backend test,.gitlab-ci.yml,Đọc code,P0,"Thêm job, chặn merge"
+TST-03,Kiểm thử,Trung bình,Test phụ thuộc ngày,accounts_receivable,Suy luận,P0,Cố định thời gian
+TST-04,Kiểm thử,Cao,Playwright chưa chạy,frontend,Công cụ,P2,Smoke trên staging
+TST-05,Kiểm thử,Cao,Không có bộ đối chiếu tính tay,toàn hệ thống,Không tìm thấy,P1,Dữ liệu vàng

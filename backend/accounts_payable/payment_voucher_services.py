@@ -664,7 +664,7 @@ def save_payment_voucher(request, data, instance=None, action="POST"):
     if payment_source == models.PaymentSource.PAYMENT_REQUEST and data.get("payment_request"):
         pr_qs = models.PaymentRequest.objects
         if connection.features.has_select_for_update:
-            pr_qs = pr_qs.select_for_update()
+            pr_qs = pr_qs.select_for_update(of=("self",))
         pr_obj = pr_qs.get(pk=data["payment_request"])
 
         # EX-15: Check request still in approved state
@@ -674,7 +674,7 @@ def save_payment_voucher(request, data, instance=None, action="POST"):
     payable_ids = [l["payable"] for l in lines_data]
     p_qs = models.Payable.objects.filter(id__in=payable_ids).select_related("document", "document__payable_account")
     if connection.features.has_select_for_update:
-        p_qs = p_qs.select_for_update()
+        p_qs = p_qs.select_for_update(of=("self",))
     locked_payables = {str(p.pk): p for p in p_qs}
 
     # Step 19, 20: Recalculate remaining under lock
@@ -682,7 +682,7 @@ def save_payment_voucher(request, data, instance=None, action="POST"):
     if pr_obj:
         rl_qs = pr_obj.lines.all()
         if connection.features.has_select_for_update:
-            rl_qs = rl_qs.select_for_update()
+            rl_qs = rl_qs.select_for_update(of=("self",))
         req_lines_map = {str(rl.pk): rl for rl in rl_qs}
 
     for l in lines_data:
@@ -711,7 +711,7 @@ def save_payment_voucher(request, data, instance=None, action="POST"):
         from cash_management.models import CashFund
         fund_qs = CashFund.objects.filter(pk=data["cash_fund"])
         if connection.features.has_select_for_update:
-            fund_qs = fund_qs.select_for_update()
+            fund_qs = fund_qs.select_for_update(of=("self",))
         fund = fund_qs.first()
         if fund and getattr(fund, "balance_control", False) and fund.balance < total_amount:
             raise ValidationError({"balance": f"Số dư khả dụng của quỹ {fund.name} không đủ để thực hiện thanh toán."})
@@ -1029,7 +1029,7 @@ def cancel_payment_voucher(request, obj, reason=""):
 
     p_qs = models.Payment.objects
     if connection.features.has_select_for_update:
-        p_qs = p_qs.select_for_update()
+        p_qs = p_qs.select_for_update(of=("self",))
     obj = p_qs.get(pk=obj.pk)
 
     if obj.status == models.PaymentStatus.CANCELED:

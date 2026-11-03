@@ -36,6 +36,8 @@ import {
   validateFinancialBundleUcRpt02,
 } from "./misa-api-writes";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MisaFinancialBundleWorkspaceProps {
   companyId?: string | null;
   notify?: (msg: string) => void;
@@ -119,7 +121,7 @@ export default function MisaFinancialBundleWorkspace({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Filter & Creation parameters
-  const [fiscalYear, setFiscalYear] = useState<number>(2026);
+  const [fiscalYear, setFiscalYear] = useState<number>(CURRENT_YEAR);
   const [fiscalPeriodId, setFiscalPeriodId] = useState<string>("");
   const [bundleType, setBundleType] = useState<string>("ANNUAL_GOING_CONCERN");
   const [reportingScope, setReportingScope] = useState<string>("COMPANY");

@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -14,6 +15,45 @@ from master_data.models import Currency, Party
 from organization.models import Branch, Company, Department
 
 from .models import ReportExport, ReportRun, ReportExportJob, ReportExportArtifact
+
+
+def permission_client(company, permissions):
+    """A company member whose only role grants the report permissions named."""
+    from iam.models import CompanyMembership, Permission, Role, RolePermission, UserRoleAssignment
+    from reporting.report_access import AREA_PERMISSIONS, _level
+
+    tokens = [token.strip() for token in permissions.split(",") if token.strip()]
+    codes = {token for token in tokens if "." in token}
+    prefixes = {"TAX": "RPT.TAX", "PURCHASE": "RPT.COMMERCE", "SALES": "RPT.COMMERCE", "DEBT": "RPT.DEBT",
+                "MONEY": "RPT.MONEY", "INVENTORY": "RPT.INVENTORY", "ASSET": "RPT.ASSET"}
+    for token in tokens:
+        area = token.split("_")[1] if token.count("_") >= 2 else ""
+        if area in prefixes:
+            level = _level(token)
+            codes.add(f"{prefixes[area]}.{level}")
+            if level == "DETAIL.VIEW":
+                codes.add(f"{prefixes[area]}.VIEW")
+    if tokens == ["RPT_VIEW"]:
+        codes = {f"{code}.VIEW" for code in AREA_PERMISSIONS.values()}
+    user = get_user_model().objects.create_user(username=f"report-{uuid.uuid4().hex[:12]}", password="password-123")
+    account = user.iam_account
+    membership = CompanyMembership.objects.create(company=company, user=account, created_by=account)
+    suffix = uuid.uuid4().hex[:10]
+    role = Role.objects.create(company=company, code=f"R{suffix}", name=f"Report test {suffix}", created_by=account)
+    for permission in Permission.objects.filter(code__in=codes):
+        RolePermission.objects.create(role=role, permission=permission, effect="ALLOW")
+    UserRoleAssignment.objects.create(company_membership=membership, role=role, status="ACTIVE", assigned_by=account, assign_reason="test")
+    client = APIClient()
+    client.force_authenticate(user)
+    client.credentials(HTTP_X_COMPANY_ID=str(company.id))
+    return client
+
+
+def other_company(company):
+    return Company.objects.create(
+        code=f"O{uuid.uuid4().hex[:8]}", name="Other", legal_name="Other", tax_code=f"{uuid.uuid4().int % 10**10:010d}",
+        accounting_currency=company.accounting_currency, legal_reporting_currency=company.legal_reporting_currency,
+    )
 
 
 class ReportingApiTests(TestCase):
@@ -5773,6 +5813,7 @@ class TaxReportsUcRpt07Tests(TestCase):
         self.supplier = Party.objects.create(
             company=self.company, code="NCC-01", name="Nhà cung cấp Thép Việt", party_type="SUPPLIER"
         )
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_tc_rpt_07_01_to_10_catalogue_parameters_schemas_and_form_versions(self):
         """TC-RPT-07-01 .. TC-RPT-07-10: Danh mục 15 báo cáo, phân loại MANAGEMENT/RECONCILIATION/LEGAL_FORM_VIEW, tham số, schema cột, phiên bản mẫu biểu."""
@@ -5826,15 +5867,13 @@ class TaxReportsUcRpt07Tests(TestCase):
         self.assertEqual(bad_period.status_code, 400)
 
         # TC-RPT-07-04 & 05: Kiểm tra chặn quyền khi thiếu RPT_TAX_VIEW (403) và chặn truy cập khác Company (403)
-        no_perm = self.client.get(
+        no_perm = permission_client(self.company, "NONE").get(
             f"/api/v1/reports/tax/catalogue/?company_id={self.company.id}",
-            HTTP_X_TAX_PERMISSIONS="NONE",
         )
         self.assertEqual(no_perm.status_code, 403)
 
-        wrong_co = self.client.get(
-            "/api/v1/reports/tax/catalogue/?company_id=UNAUTHORIZED-CO",
-            HTTP_X_ALLOWED_COMPANIES=str(self.company.id),
+        wrong_co = permission_client(self.company, "RPT_VIEW").get(
+            f"/api/v1/reports/tax/catalogue/?company_id={other_company(self.company).id}",
         )
         self.assertEqual(wrong_co.status_code, 403)
 
@@ -6177,9 +6216,8 @@ class TaxReportsUcRpt07Tests(TestCase):
         self.assertEqual(rows_full[0]["columns"]["seller_identity_number"], "001085129012")
 
         # Khi người dùng chỉ có RPT_TAX_VIEW (thiếu RPT_TAX_DETAIL_VIEW) -> CCCD được mask PII (********9012)
-        rows_masked = self.client.get(
+        rows_masked = permission_client(self.company, "RPT_TAX_VIEW").get(
             f"/api/v1/reports/tax/runs/{run_id}/rows/",
-            HTTP_X_TAX_PERMISSIONS="RPT_TAX_VIEW",
         ).data["rows"]
         self.assertTrue(rows_masked[0]["columns"]["seller_identity_number"].endswith("9012"))
         self.assertIn("*", rows_masked[0]["columns"]["seller_identity_number"])
@@ -6187,11 +6225,10 @@ class TaxReportsUcRpt07Tests(TestCase):
     def test_tc_rpt_07_51_to_62_reconciliation_reports_rpt_0178_and_rpt_0180(self):
         """TC-RPT-07-51 .. TC-RPT-07-62: Báo cáo đối chiếu RPT-0178 (14 cột, 7 loại chênh lệch) và RPT-0180 (23 cột, đối chiếu hóa đơn mua vào & chứng từ)."""
         # Kiểm tra chặn quyền khi thiếu RPT_TAX_RECONCILIATION_VIEW (403)
-        denied_recon = self.client.post(
+        denied_recon = permission_client(self.company, "RPT_TAX_VIEW").post(
             "/api/v1/reports/tax/RPT-0178/query/",
             {"company_id": str(self.company.id), "tax_period_code": "2026-09"},
             format="json",
-            HTTP_X_TAX_PERMISSIONS="RPT_TAX_VIEW",
         )
         self.assertEqual(denied_recon.status_code, 403)
 
@@ -6442,9 +6479,8 @@ class TaxReportsUcRpt07Tests(TestCase):
         row_id = res_v2.data["rows"][0]["row_id"]
 
         # Drill-down yêu cầu RPT_TAX_DETAIL_VIEW
-        drill_denied = self.client.get(
+        drill_denied = permission_client(self.company, "RPT_TAX_VIEW").get(
             f"/api/v1/reports/tax/runs/{run_id}/rows/{row_id}/sources/",
-            HTTP_X_TAX_PERMISSIONS="RPT_TAX_VIEW",
         )
         self.assertEqual(drill_denied.status_code, 403)
 
@@ -6464,11 +6500,10 @@ class TaxReportsUcRpt07Tests(TestCase):
         self.assertEqual(val_res.status_code, 200)
 
         # Export yêu cầu RPT_TAX_EXPORT
-        exp_denied = self.client.post(
+        exp_denied = permission_client(self.company, "RPT_TAX_VIEW").post(
             f"/api/v1/reports/tax/runs/{run_id}/export/",
             {"export_format": "XLSX"},
             format="json",
-            HTTP_X_TAX_PERMISSIONS="RPT_TAX_VIEW",
         )
         self.assertEqual(exp_denied.status_code, 403)
 
@@ -6541,6 +6576,7 @@ class PurchaseReportsUcRpt08Tests(TestCase):
         self.supplier = Party.objects.create(
             company=self.company, code="NCC-01", name="Nhà cung cấp Thép Việt", party_type="SUPPLIER"
         )
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_tc_rpt_08_01_to_16_catalogue_schema_parameters_and_permissions(self):
         """TC-RPT-08-01 .. TC-RPT-08-16: Catalogue 11 báo cáo, phân loại MANAGEMENT/RECONCILIATION, tham số, schema cột chuẩn, header groups, date validation, RBAC, company isolation."""
@@ -6584,16 +6620,14 @@ class PurchaseReportsUcRpt08Tests(TestCase):
         self.assertEqual(bad_dates.status_code, 400)
 
         # TC-RPT-08-04: Kiểm tra chặn truy cập khác Company (403)
-        wrong_co = self.client.get(
-            "/api/v1/reports/purchase/catalogue/?company_id=UNAUTHORIZED-CO",
-            HTTP_X_ALLOWED_COMPANIES=str(self.company.id),
+        wrong_co = permission_client(self.company, "RPT_VIEW").get(
+            f"/api/v1/reports/purchase/catalogue/?company_id={other_company(self.company).id}",
         )
         self.assertEqual(wrong_co.status_code, 403)
 
         # TC-RPT-08-05: Kiểm tra chặn quyền khi thiếu RPT_PURCHASE_VIEW (403)
-        no_perm = self.client.get(
+        no_perm = permission_client(self.company, "NONE").get(
             f"/api/v1/reports/purchase/catalogue/?company_id={self.company.id}",
-            HTTP_X_PURCHASE_PERMISSIONS="NONE",
         )
         self.assertEqual(no_perm.status_code, 403)
 
@@ -7203,9 +7237,8 @@ class PurchaseReportsUcRpt08Tests(TestCase):
         row_id = res_70.data["rows"][0]["row_id"]
 
         # Kiểm tra Drill-down nguồn chứng từ: Chặn khi thiếu RPT_PURCHASE_DETAIL_VIEW (403)
-        drill_denied = self.client.get(
+        drill_denied = permission_client(self.company, "RPT_PURCHASE_VIEW").get(
             f"/api/v1/reports/purchase/runs/{run_id}/rows/{row_id}/sources/",
-            HTTP_X_PURCHASE_PERMISSIONS="RPT_PURCHASE_VIEW",
         )
         self.assertEqual(drill_denied.status_code, 403)
 
@@ -7237,15 +7270,13 @@ class PurchaseReportsUcRpt08Tests(TestCase):
             format="json",
         ).data["run"]["run_id"]
 
-        recon_denied = self.client.get(
+        recon_denied = permission_client(self.company, "RPT_PURCHASE_VIEW").get(
             f"/api/v1/reports/purchase/reconciliation/{recon_run}/differences/",
-            HTTP_X_PURCHASE_PERMISSIONS="RPT_PURCHASE_VIEW",
         )
         self.assertEqual(recon_denied.status_code, 403)
 
-        recon_ok = self.client.get(
+        recon_ok = permission_client(self.company, "RPT_PURCHASE_VIEW,RPT_PURCHASE_RECONCILIATION_VIEW").get(
             f"/api/v1/reports/purchase/reconciliation/{recon_run}/differences/",
-            HTTP_X_PURCHASE_PERMISSIONS="RPT_PURCHASE_VIEW,RPT_PURCHASE_RECONCILIATION_VIEW",
         )
         self.assertEqual(recon_ok.status_code, 200)
         self.assertEqual(recon_ok.data["difference_count"], 1)
@@ -7299,11 +7330,10 @@ class PurchaseReportsUcRpt08Tests(TestCase):
         self.assertGreaterEqual(list_saved.data["count"], 1)
 
         # 4. Export yêu cầu quyền RPT_PURCHASE_EXPORT
-        exp_denied = self.client.post(
+        exp_denied = permission_client(self.company, "RPT_PURCHASE_VIEW").post(
             f"/api/v1/reports/purchase/runs/{run_id}/export/",
             {"export_format": "XLSX"},
             format="json",
-            HTTP_X_PURCHASE_PERMISSIONS="RPT_PURCHASE_VIEW",
         )
         self.assertEqual(exp_denied.status_code, 403)
 
@@ -7393,6 +7423,7 @@ class SalesReportsUcRpt09Tests(TestCase):
         self.supplier = Party.objects.create(
             company=self.company, code="NCC-01", name="Nhà cung cấp Thép Việt", party_type="SUPPLIER"
         )
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_tc_rpt_09_01_to_15_catalogue_categories_validation_and_schemas(self):
         """TC-RPT-09-01 .. TC-RPT-09-15: Danh mục 36 báo cáo, phân loại 5 nhóm, tham số, schema cột chuẩn, header groups, date validation, RBAC, company isolation."""
@@ -7438,16 +7469,14 @@ class SalesReportsUcRpt09Tests(TestCase):
         self.assertEqual(bad_dates.status_code, 400)
 
         # TC-RPT-09-04: Kiểm tra chặn truy cập khác Company (403)
-        wrong_co = self.client.get(
-            "/api/v1/reports/sales/catalogue/?company_id=UNAUTHORIZED-CO",
-            HTTP_X_ALLOWED_COMPANIES=str(self.company.id),
+        wrong_co = permission_client(self.company, "RPT_VIEW").get(
+            f"/api/v1/reports/sales/catalogue/?company_id={other_company(self.company).id}",
         )
         self.assertEqual(wrong_co.status_code, 403)
 
         # TC-RPT-09-05: Kiểm tra chặn quyền khi thiếu RPT_SALES_VIEW (403)
-        no_perm = self.client.get(
+        no_perm = permission_client(self.company, "NONE").get(
             f"/api/v1/reports/sales/catalogue/?company_id={self.company.id}",
-            HTTP_X_SALES_PERMISSIONS="NONE",
         )
         self.assertEqual(no_perm.status_code, 403)
 
@@ -8009,29 +8038,25 @@ class SalesReportsUcRpt09Tests(TestCase):
         self.assertEqual(res_137.status_code, 200)
 
         # 9. Endpoint contract fulfillment: Quyền RPT_SALES_CONTRACT_VIEW
-        cf_denied = self.client.get(
+        cf_denied = permission_client(self.company, "RPT_SALES_VIEW").get(
             "/api/v1/reports/sales/contract-fulfillment/HD-2026-001/",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW",
         )
         self.assertEqual(cf_denied.status_code, 403)
 
-        cf_ok = self.client.get(
+        cf_ok = permission_client(self.company, "RPT_SALES_VIEW,RPT_SALES_CONTRACT_VIEW").get(
             "/api/v1/reports/sales/contract-fulfillment/HD-2026-001/",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW,RPT_SALES_CONTRACT_VIEW",
         )
         self.assertEqual(cf_ok.status_code, 200)
         self.assertEqual(cf_ok.data["contract_id"], "HD-2026-001")
 
         # 10. Endpoint profitability: Quyền RPT_SALES_PROFIT_VIEW
-        pf_denied = self.client.get(
+        pf_denied = permission_client(self.company, "RPT_SALES_VIEW").get(
             "/api/v1/reports/sales/profitability/ORDER/SO-2026-001/",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW",
         )
         self.assertEqual(pf_denied.status_code, 403)
 
-        pf_ok = self.client.get(
+        pf_ok = permission_client(self.company, "RPT_SALES_VIEW,RPT_SALES_PROFIT_VIEW").get(
             "/api/v1/reports/sales/profitability/ORDER/SO-2026-001/",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW,RPT_SALES_PROFIT_VIEW",
         )
         self.assertEqual(pf_ok.status_code, 200)
         self.assertEqual(pf_ok.data["target_type"], "ORDER")
@@ -8096,15 +8121,13 @@ class SalesReportsUcRpt09Tests(TestCase):
         self.assertEqual(val_res.status_code, 200)
 
         # 3. Drilldown row sources: Yêu cầu quyền RPT_SALES_DETAIL_VIEW
-        src_denied = self.client.get(
+        src_denied = permission_client(self.company, "RPT_SALES_VIEW").get(
             f"/api/v1/reports/sales/runs/{run_id}/rows/{row_id}/sources/",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW",
         )
         self.assertEqual(src_denied.status_code, 403)
 
-        src_ok = self.client.get(
+        src_ok = permission_client(self.company, "RPT_SALES_VIEW,RPT_SALES_DETAIL_VIEW").get(
             f"/api/v1/reports/sales/runs/{run_id}/rows/{row_id}/sources/",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW,RPT_SALES_DETAIL_VIEW",
         )
         self.assertEqual(src_ok.status_code, 200)
         self.assertEqual(src_ok.data["row_id"], row_id)
@@ -8143,11 +8166,10 @@ class SalesReportsUcRpt09Tests(TestCase):
         self.assertGreaterEqual(list_saved.data["count"], 1)
 
         # 6. Export yêu cầu quyền RPT_SALES_EXPORT
-        exp_denied = self.client.post(
+        exp_denied = permission_client(self.company, "RPT_SALES_VIEW").post(
             f"/api/v1/reports/sales/runs/{run_id}/export/",
             {"export_format": "XLSX"},
             format="json",
-            HTTP_X_SALES_PERMISSIONS="RPT_SALES_VIEW",
         )
         self.assertEqual(exp_denied.status_code, 403)
 
@@ -8376,6 +8398,7 @@ class DebtReportsUcRpt10Tests(TestCase):
             start_date=date(2026, 8, 5), end_date=date(2026, 12, 31),
             created_by=self.user.iam_account
         )
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_tc_rpt_10_01_to_20_catalogue_schemas_and_permissions(self):
         """TC-RPT-10-01 .. TC-RPT-10-20: Danh mục 49 báo cáo công nợ (18 AP + 31 AR), schema số cột chuẩn, RBAC, và parameters."""
@@ -8423,9 +8446,8 @@ class DebtReportsUcRpt10Tests(TestCase):
         self.assertGreaterEqual(len(p_res.data["parameters"]), 5)
 
         # 5. Chặn quyền truy cập khi thiếu permission
-        no_perm = self.client.get(
+        no_perm = permission_client(self.company, "NONE_UNAUTHORIZED").get(
             f"/api/v1/reports/debt/catalogue/?company_id={self.company.id}",
-            HTTP_X_USER_PERMISSIONS="NONE_UNAUTHORIZED",
         )
         # Superuser always bypasses, verify with non-superuser
         normal_user = get_user_model().objects.create_user(username="normal-clerk", password="x")
@@ -8885,6 +8907,7 @@ class MoneyReportsUcRpt11Tests(TestCase):
         )
         JournalLine.objects.create(entry=e_trf, line_no=1, account=self.acc_1121, debit=20000000, credit=0, currency=self.currency)
         JournalLine.objects.create(entry=e_trf, line_no=2, account=self.acc_1121, debit=0, credit=20000000, currency=self.currency)
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_tc_rpt_11_01_to_24_catalogue_schemas_and_parameters(self):
         """TC-RPT-11-01 .. TC-RPT-11-24: Danh mục 17 báo cáo tiền, schema cột chuẩn, RBAC, và tham số."""
@@ -9492,6 +9515,7 @@ class InventoryReportsUcRpt12Tests(TestCase):
             assembly=ao, line_no=2, role="OUTPUT", item=self.item_a,
             quantity=Decimal("1.00"), unit_cost=Decimal("100000.00") # Nhập 100.000 -> lệch 10.000
         )
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_01_catalogue_and_permissions(self):
         """TC-RPT-12-01..05: Kiểm tra danh mục 15 báo cáo, quyền và cô lập công ty."""
@@ -9517,18 +9541,13 @@ class InventoryReportsUcRpt12Tests(TestCase):
             code="CTY-OTHER-INV", name="Công ty Khác", legal_name="Công ty Khác",
             accounting_currency=self.currency, legal_reporting_currency=self.currency
         )
-        res_other = self.client.get(f"/api/v1/reports/inventory/catalogue/?company_id={other_company.id}")
-        self.assertEqual(res_other.status_code, 200)
-        self.assertEqual(res_other.data["company_id"], str(other_company.id))
+        res_other = permission_client(self.company, "RPT_INVENTORY_VIEW").get(f"/api/v1/reports/inventory/catalogue/?company_id={other_company.id}")
+        self.assertEqual(res_other.status_code, 403)
 
         # TC-RPT-12-05: Thiếu quyền giá vốn -> Cột giá trị bị che / ẩn
-        clerk_user = get_user_model().objects.create_user(username="inv-clerk-no-val", password="x")
-        c_clerk = APIClient()
-        c_clerk.force_authenticate(clerk_user)
-        # Giả lập header cấp quyền RPT_INVENTORY_VIEW nhưng không có RPT_INVENTORY_VALUE_VIEW
+        c_clerk = permission_client(self.company, "RPT_INVENTORY_VIEW")
         res_schema = c_clerk.get(
             "/api/v1/reports/inventory/RPT-0143/schema/",
-            HTTP_X_USER_PERMISSIONS="RPT_INVENTORY_VIEW",
         )
         self.assertEqual(res_schema.status_code, 200)
         for col in res_schema.data["columns"]:
@@ -9987,6 +10006,7 @@ class AssetReportsUcRpt13Tests(TestCase):
             run=self.run_depr, asset=self.fa_1, opening_value=Decimal("510000000.00"),
             amount=Decimal("10000000.00"), closing_value=Decimal("500000000.00")
         )
+        self.client.credentials(HTTP_X_COMPANY_ID=str(self.company.id))
 
     def test_01_catalogue_and_permissions(self):
         """TC-RPT-13-01..04: Kiểm tra danh mục 14 báo cáo, quyền và cô lập công ty."""
@@ -10007,7 +10027,7 @@ class AssetReportsUcRpt13Tests(TestCase):
         unauth_user = get_user_model().objects.create_user(username="fa-no-perm", password="x")
         c_no_perm = APIClient()
         c_no_perm.force_authenticate(unauth_user)
-        res_forbidden = c_no_perm.get(f"/api/v1/reports/assets/RPT-0158/schema/")
+        res_forbidden = c_no_perm.get(f"/api/v1/reports/assets/RPT-0158/schema/?company_id={self.company.id}")
         self.assertEqual(res_forbidden.status_code, 403)
 
         # TC-RPT-13-03: Company khác -> Không lộ dữ liệu
@@ -10015,9 +10035,8 @@ class AssetReportsUcRpt13Tests(TestCase):
             code="CTY-OTHER-FA", name="Công ty Khác", legal_name="Công ty Khác",
             accounting_currency=self.currency, legal_reporting_currency=self.currency
         )
-        res_other = self.client.get(f"/api/v1/reports/assets/catalogue/?company_id={other_company.id}")
-        self.assertEqual(res_other.status_code, 200)
-        self.assertEqual(res_other.data["company_id"], str(other_company.id))
+        res_other = permission_client(self.company, "RPT_ASSET_VIEW").get(f"/api/v1/reports/assets/catalogue/?company_id={other_company.id}")
+        self.assertEqual(res_other.status_code, 403)
 
     def test_02_all_14_schemas_and_columns(self):
         """TC-RPT-13-05..18: Kiểm tra đúng số cột cố định và cấu trúc của toàn bộ 14 báo cáo."""
@@ -10877,6 +10896,7 @@ class DrilldownUcRpt14Tests(TestCase):
         self.assertIn("TAX_INDICATOR", caps_tax["supported_drilldown_types"])
 
         # TC-02: Endpoint GET /{report_code}/drilldown-capabilities/
+        self.client.force_authenticate(self.admin_user)
         resp_cap = self.client.get("/api/v1/reports/B02-DN/drilldown-capabilities/")
         self.assertEqual(resp_cap.status_code, 200)
         self.assertIn("supported_drilldown_types", resp_cap.data)
@@ -10900,8 +10920,7 @@ class DrilldownUcRpt14Tests(TestCase):
         self.assertEqual(resp_noperm.status_code, 403)
 
         # TC-05: Kế toán có quyền RPT_DRILLDOWN_VIEW được phép truy cập
-        self.client.force_authenticate(user=self.accountant_user)
-        resp_auth = self.client.post("/api/v1/reports/drilldown/open/", {
+        resp_auth = permission_client(self.company, "RPT.FINANCIAL.DRILLDOWN").post("/api/v1/reports/drilldown/open/", {
             "company_id": str(self.company.id),
             "report_code": "B02-DN",
             "row_key": "10",
@@ -10920,13 +10939,13 @@ class DrilldownUcRpt14Tests(TestCase):
         }, format="json")
         self.assertEqual(resp_admin.status_code, 200)
 
-        # TC-07..08: Cô lập phạm vi Company (Company không tồn tại -> 403)
+        # TC-07..08: Cô lập phạm vi Company (Company không tồn tại -> 400)
         resp_bad_co = self.client.post("/api/v1/reports/drilldown/open/", {
             "company_id": "00000000-0000-0000-0000-000000000000",
             "report_code": "B02-DN",
             "row_key": "10",
         }, format="json")
-        self.assertEqual(resp_bad_co.status_code, 403)
+        self.assertEqual(resp_bad_co.status_code, 400)
 
         # TC-09: Thiếu row_key -> 400 Bad Request
         resp_missing = self.client.post("/api/v1/reports/drilldown/open/", {

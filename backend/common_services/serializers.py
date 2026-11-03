@@ -560,6 +560,20 @@ class CompanyBootstrapSerializer(serializers.Serializer):
             raise serializers.ValidationError("Vui lòng chọn Tỉnh/Thành phố hợp lệ.")
         return val_clean
 
+    def to_internal_value(self, data):
+        """Report the missing authority confirmation together with any field errors."""
+        message = "Vui lòng xác nhận quyền tạo và quản lý doanh nghiệp."
+        confirmed = data.get("confirmed_authority") in (True, "true", "True", 1, "1") or \
+            data.get("confirm_creation_right") in (True, "true", "True", 1, "1")
+        missing = {} if confirmed else {"confirmed_authority": [message], "confirm_creation_right": [message]}
+        try:
+            attrs = super().to_internal_value(data)
+        except serializers.ValidationError as exc:
+            raise serializers.ValidationError({**exc.detail, **missing})
+        if missing:
+            raise serializers.ValidationError(missing)
+        return attrs
+
     def validate(self, attrs):
         attrs["legal_name"] = " ".join(attrs.get("legal_name", "").split())
         attrs["name"] = " ".join(attrs.get("name", "").split()) or attrs["legal_name"]
@@ -575,12 +589,6 @@ class CompanyBootstrapSerializer(serializers.Serializer):
             raise serializers.ValidationError({"legal_representative": "Vui lòng nhập Người đại diện theo pháp luật."})
 
         # EF-14, BR12: Xác nhận quyền tạo doanh nghiệp
-        confirmed = attrs.get("confirmed_authority") or attrs.get("confirm_creation_right")
-        if not confirmed:
-            raise serializers.ValidationError({
-                "confirmed_authority": "Vui lòng xác nhận quyền tạo và quản lý doanh nghiệp.",
-                "confirm_creation_right": "Vui lòng xác nhận quyền tạo và quản lý doanh nghiệp.",
-            })
         attrs["confirmed_authority"] = True
 
         # BR13: Mã doanh nghiệp nội bộ phải khác MST

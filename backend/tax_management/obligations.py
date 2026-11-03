@@ -20,7 +20,7 @@ def due_status(obligation):
 
 @transaction.atomic
 def recognize(company, declaration_id, due_date, request):
-    declaration = models.TaxDeclaration.objects.select_for_update().filter(
+    declaration = models.TaxDeclaration.objects.select_for_update(of=("self",)).filter(
         pk=declaration_id, company=company).select_related("period").first()
     if not declaration or declaration.preparation_status != "READY_TO_SUBMIT":
         raise ValidationError({"declaration": "Chỉ hồ sơ đã xác nhận của doanh nghiệp mới được ghi nhận nghĩa vụ."})

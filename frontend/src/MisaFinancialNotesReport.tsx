@@ -28,6 +28,8 @@ import {
   Filter,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MisaFinancialNotesReportProps {
   onBack: () => void;
   notify?: (msg: string) => void;
@@ -172,11 +174,11 @@ export default function MisaFinancialNotesReport({
   const [goingConcernStatus, setGoingConcernStatus] = useState<string>("GOING_CONCERN");
   const [reportingScope, setReportingScope] = useState<string>("ENTERPRISE");
   const [branchId, setBranchId] = useState<string>("");
-  const [fiscalYear, setFiscalYear] = useState<number>(2026);
+  const [fiscalYear, setFiscalYear] = useState<number>(CURRENT_YEAR);
   const [fiscalPeriodId, setFiscalPeriodId] = useState<string>("");
   const [periodLabel, setPeriodLabel] = useState<string>("Năm nay");
-  const [fromDate, setFromDate] = useState<string>("2026-01-01");
-  const [toDate, setToDate] = useState<string>("2026-12-31");
+  const [fromDate, setFromDate] = useState<string>(`${CURRENT_YEAR}-01-01`);
+  const [toDate, setToDate] = useState<string>(`${CURRENT_YEAR}-12-31`);
   const [hideNotApplicable, setHideNotApplicable] = useState<boolean>(false);
 
   // Draft drawer state
@@ -185,10 +187,10 @@ export default function MisaFinancialNotesReport({
   const [draftGoingConcern, setDraftGoingConcern] = useState<string>("GOING_CONCERN");
   const [draftScope, setDraftScope] = useState<string>("ENTERPRISE");
   const [draftBranchId, setDraftBranchId] = useState<string>("");
-  const [draftFiscalYear, setDraftFiscalYear] = useState<number>(2026);
+  const [draftFiscalYear, setDraftFiscalYear] = useState<number>(CURRENT_YEAR);
   const [draftPeriodId, setDraftPeriodId] = useState<string>("");
-  const [draftFromDate, setDraftFromDate] = useState<string>("2026-01-01");
-  const [draftToDate, setDraftToDate] = useState<string>("2026-12-31");
+  const [draftFromDate, setDraftFromDate] = useState<string>(`${CURRENT_YEAR}-01-01`);
+  const [draftToDate, setDraftToDate] = useState<string>(`${CURRENT_YEAR}-12-31`);
 
   // Available parameters from Backend
   const [availablePeriods, setAvailablePeriods] = useState<any[]>([]);

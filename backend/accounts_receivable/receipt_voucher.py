@@ -23,7 +23,7 @@ ZERO = Decimal("0")
 def _lock(qs):
     if connection.vendor == "sqlite":
         return qs
-    return qs.select_for_update()
+    return qs.select_for_update(of=("self",))
 
 
 def _required(condition, field, message):
@@ -455,7 +455,7 @@ def post(voucher, request):
         if line.schedule_id:
             schedules = [models.ReceivableSchedule.objects.select_for_update().get(pk=line.schedule_id)]
         else:
-            schedules = list(rec.schedules.select_for_update().filter(balance__gt=0).order_by("installment_no"))
+            schedules = list(rec.schedules.select_for_update(of=("self",)).filter(balance__gt=0).order_by("installment_no"))
         remaining = line.amount
         for schedule in schedules:
             value = min(remaining, schedule.balance)

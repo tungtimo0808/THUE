@@ -14,6 +14,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface DetailedRevenueRow {
   target: string;
   account?: string;
@@ -87,8 +89,8 @@ export default function MisaMultiBranchDetailedRevenueReport({
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [period, setPeriod] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
 
   // Doanh thu phân tích checkboxes
   const [analysisSales, setAnalysisSales] = useState(true);
@@ -102,8 +104,8 @@ export default function MisaMultiBranchDetailedRevenueReport({
 
   // Draft state inside drawer
   const [draftPeriod, setDraftPeriod] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftAnalysisSales, setDraftAnalysisSales] = useState(true);
   const [draftAnalysisFinance, setDraftAnalysisFinance] = useState(false);
   const [draftAnalysisOther, setDraftAnalysisOther] = useState(false);

@@ -94,7 +94,7 @@ def update_matrix(*, company, role_id, actor, codes, bundle_ids, version, reques
         from .permissions import has_other_effective_system_admin
         if not has_other_effective_system_admin(company, excluded_role=role):
             raise ValidationError("Khong duoc giam quyen cua Admin cuoi cung.")
-    existing = {item.permission.code: item for item in RolePermission.objects.select_for_update().filter(
+    existing = {item.permission.code: item for item in RolePermission.objects.select_for_update(of=("self",)).filter(
         role=role).select_related("permission")}
     for code, item in existing.items():
         effect = "ALLOW" if code in final else "REVOKED"
@@ -174,7 +174,7 @@ def revoke_role(*, company, actor, assignment_id, reason, request=None, is_platf
                        is_platform_admin=is_platform_admin)
     if not reason.strip():
         raise ValidationError({"reason": "Can nhap ly do thu hoi."})
-    assignment = UserRoleAssignment.objects.select_for_update().select_related("role", "company_membership").get(
+    assignment = UserRoleAssignment.objects.select_for_update(of=("self",)).select_related("role", "company_membership").get(
         pk=assignment_id, company_membership__company=company)
     if assignment.status not in ("ACTIVE", "SCHEDULED"):
         raise ValidationError("Role Assignment da ket thuc.")

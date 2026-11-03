@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import calendar
 from datetime import date, timedelta
 from decimal import Decimal
@@ -26,6 +27,10 @@ from accounts_payable.models import (
 
 class SupplierDebtTrackingTests(TestCase):
     def setUp(self):
+        # Fixed mid-month day: these cases build documents around the month and period boundaries.
+        today_patch = patch("django.utils.timezone.localdate", return_value=date(2026, 6, 15))
+        today_patch.start()
+        self.addCleanup(today_patch.stop)
         self.today = timezone.localdate()
         self.currency = Currency.objects.get(code="VND")
         self.company = Company.objects.create(

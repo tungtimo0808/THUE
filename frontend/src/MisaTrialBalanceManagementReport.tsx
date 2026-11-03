@@ -18,6 +18,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface TrialBalanceAccountItem {
   code: string;
   name: string;
@@ -130,8 +132,8 @@ export default function MisaTrialBalanceManagementReport({
 
   // Parameter Form State (matching Screenshot 1)
   const [period, setPeriod] = useState<string>("Tháng này");
-  const [fromDate, setFromDate] = useState<string>("01/10/2026");
-  const [toDate, setToDate] = useState<string>("31/10/2026");
+  const [fromDate, setFromDate] = useState<string>(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState<string>(`31/10/${CURRENT_YEAR}`);
   const [accountLevel, setAccountLevel] = useState<string>("1");
   const [showBothSides, setShowBothSides] = useState<boolean>(true);
   const [accumulateFrom, setAccumulateFrom] = useState<"data_start" | "fiscal_start">("data_start");
@@ -141,14 +143,14 @@ export default function MisaTrialBalanceManagementReport({
     return "Tháng 10 năm 2026";
   }, []);
 
-  const { token, company } = useApiSession();
+  const { token, companyId } = useApiSession();
   const [liveRows, setLiveRows] = useState<TrialBalanceAccountItem[] | null>(null);
   const [liveLeafRows, setLiveLeafRows] = useState<TrialBalanceAccountItem[] | null>(null);
 
   useEffect(() => {
-    if (!company?.id) return;
+    if (!companyId) return;
     let cancelled = false;
-    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(company.id)}`, token)
+    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(companyId)}`, token)
       .then((res) => {
         if (cancelled) return;
         const tb = Array.isArray(res?.trial_balance) ? res.trial_balance : [];
@@ -185,7 +187,7 @@ export default function MisaTrialBalanceManagementReport({
     return () => {
       cancelled = true;
     };
-  }, [company?.id, token]);
+  }, [companyId, token]);
 
   const sourceRows = liveRows !== null ? liveRows : DEFAULT_TRIAL_BALANCE_DATA;
 

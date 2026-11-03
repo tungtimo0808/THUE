@@ -32,7 +32,7 @@ def _snapshot(declaration):
 
 @transaction.atomic
 def record_manual(declaration, data, request):
-    declaration = models.TaxDeclaration.objects.select_for_update().select_related("period", "source_calculation").get(pk=declaration.pk)
+    declaration = models.TaxDeclaration.objects.select_for_update(of=("self",)).select_related("period", "source_calculation").get(pk=declaration.pk)
     if declaration.preparation_status != "READY_TO_SUBMIT" or not declaration.confirmed_at or not declaration.confirmed_by_id:
         raise ValidationError("Hồ sơ chưa được xác nhận sẵn sàng nộp.")
     if not declarations.source_current(declaration):

@@ -830,6 +830,8 @@ def issue_discount_invoice(request, invoice, force_fail=False, error_message="")
     Allocates official sequential number, creates TaxInvoice in tax_management, and sets status to ISSUED.
     Does NOT create duplicate accounting journal entries or inventory deductions (BR-SAL-13-12, BR-SAL-13-13).
     """
+    from sales.sales_invoice_services import require_einvoice_simulation
+    require_einvoice_simulation()
     with transaction.atomic():
         invoice = models.SalesDiscountInvoice.objects.select_for_update().get(pk=invoice.pk)
         if invoice.status == models.DiscountInvoiceStatus.ISSUED:

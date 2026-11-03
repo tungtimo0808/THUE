@@ -70,6 +70,8 @@ import {
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export type MisaAssetsWorkspaceProps = {
   company?: { id: string; name: string; accounting_regime?: string; bookkeeping_method?: string };
   period?: string;
@@ -518,11 +520,11 @@ export default function MisaAssetsWorkspace({
   // Tính khấu hao Voucher Modal state (Chính xác theo Ảnh 1: KH00001)
   const [showDeprVoucherModal, setShowDeprVoucherModal] = useState(false);
   const [deprVoucherNo, setDeprVoucherNo] = useState("KH00001");
-  const [deprPostingDate, setDeprPostingDate] = useState("31/10/2026");
-  const [deprVoucherDate, setDeprVoucherDate] = useState("31/10/2026");
+  const [deprPostingDate, setDeprPostingDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [deprVoucherDate, setDeprVoucherDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [deprReason, setDeprReason] = useState("Khấu hao TSCĐ tháng 10 năm 2026");
   const [deprVoucherMonth, setDeprVoucherMonth] = useState(10);
-  const [deprVoucherYear, setDeprVoucherYear] = useState(2026);
+  const [deprVoucherYear, setDeprVoucherYear] = useState(CURRENT_YEAR);
   const [deprActiveTab, setDeprActiveTab] = useState<"depreciation" | "allocation" | "accounting">("depreciation");
 
   // Revaluation state (Ảnh 1 & 2: Đánh giá lại TSCĐ ĐGL00001)
@@ -885,7 +887,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   };
 
   const [transferVoucherNo, setTransferVoucherNo] = useState(() => suggestNextTransferVoucherNo());
-  const [transferDate, setTransferDate] = useState("15/10/2026");
+  const [transferDate, setTransferDate] = useState(`15/10/${CURRENT_YEAR}`);
   const [transferSender, setTransferSender] = useState("");
   const [transferReceiver, setTransferReceiver] = useState("");
   const [transferReason, setTransferReason] = useState("");
@@ -1874,8 +1876,8 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [stocktakeReferenceFrom, setStocktakeReferenceFrom] = useState("");
   const [stocktakeReferenceTo, setStocktakeReferenceTo] = useState("");
   const [stocktakeIdempotencyKey, setStocktakeIdempotencyKey] = useState("");
-  const [stocktakeDate, setStocktakeDate] = useState("12/10/2026 11:23:21");
-  const [stocktakeAuditDate, setStocktakeAuditDate] = useState("12/10/2026");
+  const [stocktakeDate, setStocktakeDate] = useState(`12/10/${CURRENT_YEAR} 11:23:21`);
+  const [stocktakeAuditDate, setStocktakeAuditDate] = useState(`12/10/${CURRENT_YEAR}`);
   const [stocktakePurpose, setStocktakePurpose] = useState("Kiểm kê tài sản cố định định kỳ");
   const [stocktakeReference, setStocktakeReference] = useState("");
   const [stocktakeScopeDept, setStocktakeScopeDept] = useState("ALL");
@@ -2632,7 +2634,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   // UC-FA-09: SỔ TÀI SẢN CỐ ĐỊNH & BÁO CÁO TÀI SẢN CỐ ĐỊNH (STATE)
   // =========================================================================
   // Main Flow A – Sổ tài sản cố định (Steps 4–25, AF02–AF08)
-  const [registerAsOfDate, setRegisterAsOfDate] = useState("31/12/2026");
+  const [registerAsOfDate, setRegisterAsOfDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [registerCategoryFilter, setRegisterCategoryFilter] = useState("all");
   const [registerIncludeDisposed, setRegisterIncludeDisposed] = useState(false);
   const [registerPageSize, setRegisterPageSize] = useState<number>(50);
@@ -2645,9 +2647,9 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [reconcileReportsOpen, setReconcileReportsOpen] = useState(true);
   const [previewReportCode, setPreviewReportCode] = useState<string | null>(null);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("YEAR_2026");
-  const [reportYear, setReportYear] = useState<number>(2026);
-  const [reportFromDate, setReportFromDate] = useState("01/01/2026");
-  const [reportToDate, setReportToDate] = useState("31/12/2026");
+  const [reportYear, setReportYear] = useState<number>(CURRENT_YEAR);
+  const [reportFromDate, setReportFromDate] = useState(`01/01/${CURRENT_YEAR}`);
+  const [reportToDate, setReportToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [reportDeptFilter, setReportDeptFilter] = useState("all");
   const [reportCategoryFilter, setReportCategoryFilter] = useState("all");
   const [reportAssetCodeFilter, setReportAssetCodeFilter] = useState("all");
@@ -3668,7 +3670,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   // FORM KHAI BÁO TÀI SẢN CỐ ĐỊNH ĐẦU KỲ (ẢNH TRƯỚC - OPN)
   // =========================================================================
   const [openingVoucherNo, setOpeningVoucherNo] = useState("OPN");
-  const [openingVoucherDate, setOpeningVoucherDate] = useState("01/01/2026");
+  const [openingVoucherDate, setOpeningVoucherDate] = useState(`01/01/${CURRENT_YEAR}`);
   const [openingCategory, setOpeningCategory] = useState("Phương tiện vận tải");
   const [openingCode, setOpeningCode] = useState("TSCD006");
   const [openingDept, setOpeningDept] = useState("Ban Giám đốc");
@@ -3687,7 +3689,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [openingDeprCostValue, setOpeningDeprCostValue] = useState<number>(0);
   const [openingDeprMonthValue, setOpeningDeprMonthValue] = useState<number>(0);
   const [openingDeprYearValue, setOpeningDeprYearValue] = useState<number>(0);
-  const [openingStartDate, setOpeningStartDate] = useState("01/01/2026");
+  const [openingStartDate, setOpeningStartDate] = useState(`01/01/${CURRENT_YEAR}`);
   const [openingAccumulatedDepr, setOpeningAccumulatedDepr] = useState<number>(0);
   const [openingRemainingValue, setOpeningRemainingValue] = useState<number>(0);
   const [openingUseDuration, setOpeningUseDuration] = useState<number>(5);

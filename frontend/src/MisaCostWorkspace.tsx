@@ -58,6 +58,8 @@ import {
 } from "lucide-react";
 import "./misa-cash.css";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export type MisaCostWorkspaceProps = {
   company?: { id: string; name: string };
   period?: string;
@@ -473,8 +475,8 @@ export default function MisaCostWorkspace({
 
   // Filter state for calculation tabs
   const [periodFilter, setPeriodFilter] = useState("Năm nay");
-  const [fromDate, setFromDate] = useState("01/01/2026");
-  const [toDate, setToDate] = useState("31/12/2026");
+  const [fromDate, setFromDate] = useState(`01/01/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [searchText, setSearchText] = useState("");
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
 
@@ -527,7 +529,7 @@ export default function MisaCostWorkspace({
 
   // Common allocation month/year
   const [allocMonth, setAllocMonth] = useState(10);
-  const [allocYear, setAllocYear] = useState(2026);
+  const [allocYear, setAllocYear] = useState(CURRENT_YEAR);
   const [selectedPayrollSheet, setSelectedPayrollSheet] = useState(
     "Bảng lương Tháng 10/2026 - Phân xưởng sản xuất"
   );
@@ -535,8 +537,8 @@ export default function MisaCostWorkspace({
   // Other expense voucher state (Chứng từ nghiệp vụ khác NVK00001)
   const [voucherNumber, setVoucherNumber] = useState("NVK00001");
   const [voucherDesc, setVoucherDesc] = useState("Chi phí dịch vụ mua ngoài phục vụ phân xưởng sản xuất");
-  const [voucherPostingDate, setVoucherPostingDate] = useState("01/10/2026");
-  const [voucherDocDate, setVoucherDocDate] = useState("01/10/2026");
+  const [voucherPostingDate, setVoucherPostingDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [voucherDocDate, setVoucherDocDate] = useState(`01/10/${CURRENT_YEAR}`);
   const [voucherDueDate, setVoucherDueDate] = useState("");
   const [voucherTab, setVoucherTab] = useState<"posting" | "tax">("posting");
   const [voucherLines, setVoucherLines] = useState([
@@ -609,8 +611,8 @@ export default function MisaCostWorkspace({
 
   // Form state for Modal "Thêm kỳ tính giá thành" (Screenshot 2)
   const [simplePeriodType, setSimplePeriodType] = useState("Tháng này");
-  const [simpleFromDate, setSimpleFromDate] = useState("01/10/2026");
-  const [simpleToDate, setSimpleToDate] = useState("31/10/2026");
+  const [simpleFromDate, setSimpleFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [simpleToDate, setSimpleToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [simplePeriodName, setSimplePeriodName] = useState(
     "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"
   );
@@ -937,8 +939,8 @@ if (apiConnected) {
   };
 
   const [projectPeriodType, setProjectPeriodType] = useState("Tháng này");
-  const [projectFromDate, setProjectFromDate] = useState("01/10/2026");
-  const [projectToDate, setProjectToDate] = useState("31/10/2026");
+  const [projectFromDate, setProjectFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [projectToDate, setProjectToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [projectPeriodName, setProjectPeriodName] = useState(
     "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"
   );
@@ -982,8 +984,8 @@ if (apiConnected) {
   });
 
   const [orderPeriodType, setOrderPeriodType] = useState("Tháng này");
-  const [orderFromDate, setOrderFromDate] = useState("01/10/2026");
-  const [orderToDate, setOrderToDate] = useState("31/10/2026");
+  const [orderFromDate, setOrderFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [orderToDate, setOrderToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [orderPeriodName, setOrderPeriodName] = useState(
     "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"
   );
@@ -1019,8 +1021,8 @@ if (apiConnected) {
   const [contractAcceptanceModalOpen, setContractAcceptanceModalOpen] = useState(false);
 
   const [contractPeriodType, setContractPeriodType] = useState("Tháng này");
-  const [contractFromDate, setContractFromDate] = useState("01/10/2026");
-  const [contractToDate, setContractToDate] = useState("31/10/2026");
+  const [contractFromDate, setContractFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [contractToDate, setContractToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [contractPeriodName, setContractPeriodName] = useState(
     "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"
   );
@@ -1079,8 +1081,8 @@ if (apiConnected) {
     { id: 3, code: "THEP-HOA-PHAT-D10", name: "Thép cuộn Hòa Phát D10", unit: "Kg", qty: 500, price: 16500, amount: 8250000 },
   ]);
   const [selectedProjectForNorm, setSelectedProjectForNorm] = useState("CT-SKYTOWER - Tòa nhà Sky Tower Discovery Complex");
-  const [projectNormFromDate, setProjectNormFromDate] = useState("01/10/2026");
-  const [projectNormToDate, setProjectNormToDate] = useState("31/12/2026");
+  const [projectNormFromDate, setProjectNormFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [projectNormToDate, setProjectNormToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [projectNormDesc, setProjectNormDesc] = useState("Định mức nguyên vật liệu xây tô mác 100 công trình Sky Tower");
 
   const [selectedAcceptanceProjects, setSelectedAcceptanceProjects] = useState<string[]>([
@@ -1101,8 +1103,8 @@ if (apiConnected) {
 
   // Form state for Modal "Thêm kỳ tính giá thành" (Screenshot 2)
   const [stepPeriodType, setStepPeriodType] = useState("Tháng này");
-  const [stepFromDate, setStepFromDate] = useState("01/10/2026");
-  const [stepToDate, setStepToDate] = useState("31/10/2026");
+  const [stepFromDate, setStepFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [stepToDate, setStepToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [stepPeriodName, setStepPeriodName] = useState(
     "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"
   );

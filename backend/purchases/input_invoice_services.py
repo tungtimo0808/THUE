@@ -243,7 +243,7 @@ def link_lines(invoice, rows, request):
             line_no=row["invoice_line_no"]).first()
         if not invoice_line:
             raise ValidationError("Dòng hóa đơn không tồn tại.")
-        purchase_line = GoodsPurchaseLine.objects.select_for_update().select_related("purchase", "item").get(pk=row["purchase_line"].pk)
+        purchase_line = GoodsPurchaseLine.objects.select_for_update(of=("self",)).select_related("purchase", "item").get(pk=row["purchase_line"].pk)
         purchase = GoodsPurchase.objects.select_for_update().get(pk=purchase_line.purchase_id)
         check_scope(request, invoice.company, purchase.branch_id, "PUR.INPUT_INVOICE.LINK")
         if (purchase.status != "POSTED" or purchase.company_id != invoice.company_id or

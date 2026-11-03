@@ -761,7 +761,7 @@ def profile_data(account):
 
 @transaction.atomic
 def update_profile(account, data, request):
-    account = account.__class__.objects.select_for_update().select_related("auth_user").get(pk=account.pk)
+    account = account.__class__.objects.select_for_update(of=("self",)).select_related("auth_user").get(pk=account.pk)
     expected_version = data.pop("version", None)
     if expected_version and account.updated_at != expected_version:
         raise ValidationError({"version": "Hồ sơ đã được cập nhật ở phiên khác. Vui lòng tải lại dữ liệu."})

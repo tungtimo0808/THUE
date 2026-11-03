@@ -1121,7 +1121,7 @@ def update_fixed_asset_info(request, asset_id, data):
         iam_acc = getattr(request.user, "iam_account", None)
         if not iam_acc:
             raise PermissionDenied("Bạn không có quyền thực hiện thao tác này.")
-        if not iam_acc.company_memberships.filter(company=asset_initial.company).exists():
+        if not iam_acc.memberships.filter(company=asset_initial.company).exists():
             raise PermissionDenied("Bạn không có quyền cập nhật tài sản thuộc doanh nghiệp khác.")
         if not has_effective_permission(iam_acc, asset_initial.company, "FA.ASSET.EDIT"):
             raise PermissionDenied("Bạn không có quyền thực hiện thao tác này.")
@@ -1562,8 +1562,8 @@ def _check_depreciation_permission(request, company, perm_code="FA.CALCULATION.C
     iam_acc = getattr(request.user, "iam_account", None)
     if not iam_acc:
         raise PermissionDenied(err_msg)
-    if not iam_acc.company_memberships.filter(company=company).exists():
-        if iam_acc.company_memberships.exists():
+    if not iam_acc.memberships.filter(company=company).exists():
+        if iam_acc.memberships.exists():
             raise PermissionDenied(cross_company_msg)
         raise PermissionDenied(err_msg)
     if uc04:
@@ -12853,8 +12853,8 @@ def _check_uc11_permission_and_scope(request, company, data=None):
         iam_acc = getattr(request.user, "iam_account", None)
         if not iam_acc:
             raise PermissionDenied(err_perm)
-        if not iam_acc.company_memberships.filter(company=company).exists():
-            if iam_acc.company_memberships.exists():
+        if not iam_acc.memberships.filter(company=company).exists():
+            if iam_acc.memberships.exists():
                 raise PermissionDenied(err_scope)
             raise PermissionDenied(err_perm)
         candidate_codes = (
@@ -19561,7 +19561,7 @@ def decrease_prepaid_expenses_uc14(request, data=None):
         pa_lines_to_create = []
 
         for pid_str, p_lines in lines_by_prepaid.items():
-            prepaid = PrepaidExpense.objects.select_for_update().select_related("prepaid_account").prefetch_related("targets__expense_account").get(pk=pid_str)
+            prepaid = PrepaidExpense.objects.select_for_update(of=("self",)).select_related("prepaid_account").prefetch_related("targets__expense_account").get(pk=pid_str)
             comp = models.AssetRecord.objects.select_for_update().filter(
                 company=company,
                 source_module="PREPAID_EXPENSE",

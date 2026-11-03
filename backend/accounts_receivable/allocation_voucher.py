@@ -206,7 +206,7 @@ def suggest(receipt, branch, account):
 
 @transaction.atomic
 def post(voucher, request):
-    voucher = models.ReceiptAllocationVoucher.objects.select_for_update().select_related(
+    voucher = models.ReceiptAllocationVoucher.objects.select_for_update(of=("self",)).select_related(
         "company", "branch", "receipt", "credit_account", "currency",
     ).get(pk=voucher.pk)
     if voucher.status == "POSTED":
@@ -341,7 +341,7 @@ def post(voucher, request):
 
 @transaction.atomic
 def unpost(voucher, request):
-    voucher = models.ReceiptAllocationVoucher.objects.select_for_update().select_related(
+    voucher = models.ReceiptAllocationVoucher.objects.select_for_update(of=("self",)).select_related(
         "company", "receipt", "journal_entry",
     ).get(pk=voucher.pk)
     reason = str(request.data.get("reason", "")).strip()

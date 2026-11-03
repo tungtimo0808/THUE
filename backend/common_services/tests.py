@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from unittest.mock import patch
 
 from audit_log.models import AuditLog
-from iam.models import CompanyMembership, DataScopeSet, Role, RolePermission, UserRoleAssignment
+from iam.models import CompanyMembership, DataScopeSet, Permission, Role, RolePermission, UserRoleAssignment
 from master_data.models import Currency, Party
 from organization.models import Branch, Company, OrganizationUnit
 
@@ -340,10 +340,17 @@ class CommonServicesApiTests(TestCase):
         self.client.force_authenticate(applicant)
         created = self.client.post("/api/v1/common/join-requests/", {"company": company["id"]}, format="json")
         self.assertEqual(created.status_code, 201, created.data)
-        RolePermission.objects.filter(
-            role__company_id=company["id"], permission__code="COM.JOIN_REQUEST.REJECT"
-        ).delete()
-        self.client.force_authenticate(owner)
+        company_object = Company.objects.get(pk=company["id"])
+        approver = self.register_and_verify("permission-approver", "permission-approver@example.com")
+        membership = CompanyMembership.objects.create(
+            company=company_object, user=approver.iam_account, created_by=owner.iam_account,
+        )
+        role = Role.objects.create(company=company_object, code="JOIN_APPROVER", name="Người duyệt gia nhập")
+        RolePermission.objects.create(role=role, permission=Permission.objects.get(code="COM.JOIN_REQUEST.APPROVE"), effect="ALLOW")
+        UserRoleAssignment.objects.create(
+            company_membership=membership, role=role, status="ACTIVE", assigned_by=owner.iam_account, assign_reason="test",
+        )
+        self.client.force_authenticate(approver)
         url = f"/api/v1/common/company-join-requests/{created.data['id']}/decide/?company_id={company['id']}"
         denied = self.client.post(url, {"decision": "REJECTED", "reason": "Không phù hợp"}, format="json")
         self.assertEqual(denied.status_code, 403, denied.data)

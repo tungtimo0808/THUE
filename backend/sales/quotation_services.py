@@ -222,7 +222,7 @@ def save_new(request, company, data, issue=False, original=None):
 
 @transaction.atomic
 def issue_draft(request, quote):
-    quote = models.SalesQuotation.objects.select_for_update().select_related("customer", "currency").get(pk=quote.pk)
+    quote = models.SalesQuotation.objects.select_for_update(of=("self",)).select_related("customer", "currency").get(pk=quote.pk)
     if quote.status != models.DocumentStatus.DRAFT:
         raise ValidationError("Chỉ báo giá Nháp được phát hành.")
     data = {"company": str(quote.company_id), "customer": str(quote.customer_id),

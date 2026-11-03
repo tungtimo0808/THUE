@@ -14,6 +14,8 @@ import {
   Filter,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MultiUnitRow {
   target: string;
   code: string;
@@ -193,8 +195,8 @@ export default function MisaMultiUnitRevenueExpenseReport({
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [periodPreset, setPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [expenseAnalysisMethod, setExpenseAnalysisMethod] = useState<"item" | "account">("item");
   const [expenseItemLevel, setExpenseItemLevel] = useState("1");
   const [taxRate, setTaxRate] = useState(20.0);
@@ -202,8 +204,8 @@ export default function MisaMultiUnitRevenueExpenseReport({
 
   // Temporary drawer draft state
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftExpenseAnalysisMethod, setDraftExpenseAnalysisMethod] = useState<"item" | "account">("item");
   const [draftExpenseItemLevel, setDraftExpenseItemLevel] = useState("1");
   const [draftTaxRate, setDraftTaxRate] = useState(20.0);

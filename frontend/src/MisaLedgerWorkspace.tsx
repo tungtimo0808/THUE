@@ -136,6 +136,8 @@ import amisStory2 from "./assets/amis_story_2.jpg";
 import amisStory3 from "./assets/amis_story_3.jpg";
 import AccountCatalogWorkspace from "./AccountCatalogWorkspace";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export type CompanyInfo = {
   id: string;
   name: string;
@@ -304,8 +306,8 @@ export default function MisaLedgerWorkspace({
 
   const [uc14BookType, setUc14BookType] = useState<string>("GENERAL_LEDGER");
   const [uc14Period, setUc14Period] = useState<string>("2026-10");
-  const [uc14FromDate, setUc14FromDate] = useState<string>("2026-10-01");
-  const [uc14ToDate, setUc14ToDate] = useState<string>("2026-10-31");
+  const [uc14FromDate, setUc14FromDate] = useState<string>(`${CURRENT_YEAR}-10-01`);
+  const [uc14ToDate, setUc14ToDate] = useState<string>(`${CURRENT_YEAR}-10-31`);
   const [uc14AccountCode, setUc14AccountCode] = useState<string>("");
   const [uc14IncludeChildAccounts, setUc14IncludeChildAccounts] = useState<boolean>(true);
   const [uc14ReciprocalAccount, setUc14ReciprocalAccount] = useState<string>("");
@@ -1079,7 +1081,7 @@ export default function MisaLedgerWorkspace({
     }
     return "1. Hạch toán thuế TNDN phải nộp";
   });
-  const [closingYear, setClosingYear] = useState(2026);
+  const [closingYear, setClosingYear] = useState(CURRENT_YEAR);
   const [showVoucherTypeDropdown, setShowVoucherTypeDropdown] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState<"hach_toan" | "ke_khai_thue">("hach_toan");
   const [isGroupInvoices, setIsGroupInvoices] = useState(false);
@@ -1523,7 +1525,7 @@ export default function MisaLedgerWorkspace({
   const [subledgerSourceModule, setSubledgerSourceModule] = useState("PUR");
   const [subledgerBusinessType, setSubledgerBusinessType] = useState("PURCHASE_GOODS");
   const [subledgerDocNo, setSubledgerDocNo] = useState("PMH00018");
-  const [subledgerPostingDate, setSubledgerPostingDate] = useState("22/10/2026");
+  const [subledgerPostingDate, setSubledgerPostingDate] = useState(`22/10/${CURRENT_YEAR}`);
   const [subledgerAmount, setSubledgerAmount] = useState(45000000);
   const [subledgerTaxAmount, setSubledgerTaxAmount] = useState(4500000);
   const [subledgerParty, setSubledgerParty] = useState("NCC001");
@@ -1588,7 +1590,7 @@ export default function MisaLedgerWorkspace({
           sourceBusinessType: row.source_business_type,
           sourceDocumentNumber: row.source_document_number,
           sourceEventId: row.source_event_id,
-          postingDate: apiDate(row.posting_date, "22/10/2026"),
+          postingDate: apiDate(row.posting_date),
           description: row.description || "",
           totalDebit: apiNumber(row.total_debit),
           postingMode: row.posting_mode || "AUTO_POST",
@@ -1996,8 +1998,8 @@ export default function MisaLedgerWorkspace({
   // ===========================================================================
   const [expenseAllocationModalOpen, setExpenseAllocationModalOpen] = useState(false);
   const [allocPeriodCode, setAllocPeriodCode] = useState("2026-10");
-  const [allocPostingDate, setAllocPostingDate] = useState("31/10/2026");
-  const [allocDocumentDate, setAllocDocumentDate] = useState("31/10/2026");
+  const [allocPostingDate, setAllocPostingDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [allocDocumentDate, setAllocDocumentDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [allocVoucherNumber, setAllocVoucherNumber] = useState("PBCP-2026-10-001");
   const [allocGroup, setAllocGroup] = useState<"SELLING" | "ADMIN" | "OTHER" | "SHARED">("ADMIN");
   const [allocSourceAccCode, setAllocSourceAccCode] = useState("6422");
@@ -2291,9 +2293,9 @@ export default function MisaLedgerWorkspace({
   const [fxRevaluationModalOpen, setFxRevaluationModalOpen] = useState(false);
   const [fxRevalActiveTab, setFxRevalActiveTab] = useState<"evaluate" | "history" | "rules">("evaluate");
   const [fxRevalPeriod, setFxRevalPeriod] = useState("2026-10");
-  const [fxRevalDate, setFxRevalDate] = useState("31/10/2026");
-  const [fxRevalPostingDate, setFxRevalPostingDate] = useState("31/10/2026");
-  const [fxRevalDocDate, setFxRevalDocDate] = useState("31/10/2026");
+  const [fxRevalDate, setFxRevalDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [fxRevalPostingDate, setFxRevalPostingDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [fxRevalDocDate, setFxRevalDocDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [fxRevalVoucherNo, setFxRevalVoucherNo] = useState("CLTG-1026-001");
   const [fxRevalDescription, setFxRevalDescription] = useState(
     "Đánh giá lại chênh lệch tỷ giá cuối kỳ tháng 10/2026",
@@ -3009,8 +3011,8 @@ export default function MisaLedgerWorkspace({
   const [advanceEmployee, setAdvanceEmployee] = useState("");
   const [advanceDepartment, setAdvanceDepartment] = useState("");
   const [advanceDescription, setAdvanceDescription] = useState("Quyết toán tạm ứng");
-  const [advancePostingDate, setAdvancePostingDate] = useState("22/10/2026");
-  const [advanceDocDate, setAdvanceDocDate] = useState("22/10/2026");
+  const [advancePostingDate, setAdvancePostingDate] = useState(`22/10/${CURRENT_YEAR}`);
+  const [advanceDocDate, setAdvanceDocDate] = useState(`22/10/${CURRENT_YEAR}`);
   const [advanceVoucherNo, setAdvanceVoucherNo] = useState("QTTU00001");
   const [advanceDetailTab, setAdvanceDetailTab] = useState<"hach_toan" | "ke_khai_thue">("hach_toan");
   const [advanceGroupInvoices, setAdvanceGroupInvoices] = useState(false);
@@ -3401,9 +3403,9 @@ export default function MisaLedgerWorkspace({
   // Tab 4: Kết chuyển lãi lỗ state (UC-GL-09 - Matching user screenshots 1 & 2)
   const [showClosingTable, setShowClosingTable] = useState(false);
   const [closingVoucherNo, setClosingVoucherNo] = useState("KCLL-2026-10-001");
-  const [closingToDate, setClosingToDate] = useState("31/10/2026");
-  const [closingPostingDate, setClosingPostingDate] = useState("31/10/2026");
-  const [closingDocDate, setClosingDocDate] = useState("31/10/2026");
+  const [closingToDate, setClosingToDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [closingPostingDate, setClosingPostingDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [closingDocDate, setClosingDocDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [closingDescription, setClosingDescription] = useState("Kết chuyển lãi lỗ đến ngày 31/10/2026");
   const [closingReference, setClosingReference] = useState("");
   const [closingRows, setClosingRows] = useState<any[]>([]);
@@ -3429,7 +3431,7 @@ export default function MisaLedgerWorkspace({
   const [balAggAccountScope, setBalAggAccountScope] = useState("ALL");
   const [balAggStatus, setBalAggStatus] = useState<"VALID" | "STALE" | "INVALID">("VALID");
   const [balAggWatermark, setBalAggWatermark] = useState("WM-202610-9F8A31C4");
-  const [balAggLastRunAt, setBalAggLastRunAt] = useState("31/10/2026 17:45:12");
+  const [balAggLastRunAt, setBalAggLastRunAt] = useState(`31/10/${CURRENT_YEAR} 17:45:12`);
   const [balAggDrilldownAccount, setBalAggDrilldownAccount] = useState<string | null>(null);
   const [balAggDrilldownRows, setBalAggDrilldownRows] = useState<any[]>([]);
   const [balAggRows, setBalAggRows] = useState<
@@ -4070,9 +4072,9 @@ export default function MisaLedgerWorkspace({
     "bctc" | "thuyet_minh_bctc" | "bctc_giua_nien_do" | "thuyet_minh_bctc_giua_nien_do"
   >("bctc");
   const [statementPeriod, setStatementPeriod] = useState("Năm");
-  const [statementYear, setStatementYear] = useState(2026);
-  const [statementFromDate, setStatementFromDate] = useState("01/01/2026");
-  const [statementToDate, setStatementToDate] = useState("31/12/2026");
+  const [statementYear, setStatementYear] = useState(CURRENT_YEAR);
+  const [statementFromDate, setStatementFromDate] = useState(`01/01/${CURRENT_YEAR}`);
+  const [statementToDate, setStatementToDate] = useState(`31/12/${CURRENT_YEAR}`);
   const [statementGoingConcern, setStatementGoingConcern] = useState<"continuous" | "discontinuous">("continuous");
   const [statementInterimFormat, setStatementInterimFormat] = useState<"FULL" | "CONDENSED">("FULL");
   const [statementUnitScale, setStatementUnitScale] = useState<1 | 1000 | 1000000>(1);
@@ -4735,8 +4737,8 @@ export default function MisaLedgerWorkspace({
   const [searchTerm, setSearchTerm] = useState("");
 
   // Period Lock Form State (UC-GL-12 – Khóa / Bỏ khóa sổ kỳ kế toán)
-  const [lockDate, setLockDate] = useState("31/10/2026");
-  const [unlockDate, setUnlockDate] = useState("30/09/2026");
+  const [lockDate, setLockDate] = useState(`31/10/${CURRENT_YEAR}`);
+  const [unlockDate, setUnlockDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [lockPassword, setLockPassword] = useState("");
   const [periodLockStatus, setPeriodLockStatus] = useState<
     "OPEN" | "PARTIALLY_LOCKED" | "CLOSED" | "REOPENING"

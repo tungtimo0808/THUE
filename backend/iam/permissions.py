@@ -32,11 +32,21 @@ def _setting(company):
     return setting.configuration if setting else {}
 
 
+def _module_disabled(company, module_code):
+    configuration = _setting(company)
+    if module_code in (configuration.get("disabled_modules") or []):
+        return True
+    enabled_modules = configuration.get("enabled_modules")
+    if enabled_modules is None or module_code in enabled_modules:
+        return False
+    from common_services.models import ModuleCatalog
+    return ModuleCatalog.objects.filter(code=module_code).exists()
+
+
 def _permission_enabled(company, permission):
     if permission.status != ActiveStatus.ACTIVE or permission.resource.status != ActiveStatus.ACTIVE:
         return False
-    disabled_modules = _setting(company).get("disabled_modules") or []
-    if permission.resource.module_code in disabled_modules:
+    if _module_disabled(company, permission.resource.module_code):
         action_code = getattr(getattr(permission, "action", None), "code", None)
         return action_code in {"VIEW", "EXPORT", "PRINT"}
     return True
@@ -188,9 +198,9 @@ def has_effective_permission(
         user=user_account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
     ).exists() or not user_account.auth_user.is_active:
         return False
-    if is_company_admin_member(user_account, company):
-        return True
     permission = Permission.objects.select_related("resource", "action").filter(code=permission_code).first()
+    if is_company_admin_member(user_account, company) and (not permission or _permission_enabled(company, permission)):
+        return True
     if not permission or not _permission_enabled(company, permission):
         if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK", "SYS.USER.TERMINATE", "SYS.MEMBERSHIP.TERMINATE"):
             return has_effective_permission(

@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from datetime import date, timedelta
 from decimal import Decimal
 from django.contrib.auth import get_user_model
@@ -21,6 +22,10 @@ from organization.models import Company, Branch
 
 class CustomerDebtReconciliationTests(APITestCase):
     def setUp(self):
+        # Fixed mid-month day: these cases build documents around the month and period boundaries.
+        today_patch = patch("django.utils.timezone.localdate", return_value=date(2026, 6, 15))
+        today_patch.start()
+        self.addCleanup(today_patch.stop)
         self.today = timezone.localdate()
         self.first_of_month = self.today.replace(day=1)
         self.prior_date = self.first_of_month - timedelta(days=10)

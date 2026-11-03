@@ -45,6 +45,8 @@ import {
   FileCheck,
   ArrowRight,
   ChevronRight,
+  Printer,
+  X,
 } from "lucide-react";
 import {
   TaxPaymentModal,

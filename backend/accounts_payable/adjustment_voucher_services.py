@@ -15,7 +15,7 @@ from .allocation_services import _payable_number, _posting_date
 
 
 def _lock(qs):
-    return qs.select_for_update() if connection.features.has_select_for_update else qs
+    return qs.select_for_update(of=("self",)) if connection.features.has_select_for_update else qs
 
 
 def _amount(value):

@@ -861,7 +861,7 @@ function ReferenceWorkspace() {
       return;
     }
     if (name === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán") {
-      setAiOpen(true);
+      setNotice("Trợ lý Sổ Việt AI đã sẵn sàng.");
       return;
     }
     const targetRoute = quickAccessRoutes[name];

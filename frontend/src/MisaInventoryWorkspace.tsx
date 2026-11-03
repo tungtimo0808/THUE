@@ -55,6 +55,8 @@ import { convertNumberToVietnameseWords } from "./MisaCashWorkspace";
 import { MisaInventoryItemModal, type InventoryItemData } from "./MisaInventoryItemModal";
 import { MisaItemNatureDrawer } from "./MisaItemNatureDrawer";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 /** A line of the "Phiếu xuất kho" form; sale fields are filled when it comes from a sale document (UC-INV-03). */
 type IssueRow = {
   id: string; itemCode: string; itemName: string; warehouse: string; debitAcc: string; creditAcc: string; unit: string;
@@ -196,8 +198,8 @@ export default function MisaInventoryWorkspace({
   const [receiptSalesPerson, setReceiptSalesPerson] = useState("");
   const [receiptReason, setReceiptReason] = useState("");
   const [receiptAttachedDocs, setReceiptAttachedDocs] = useState("");
-  const [receiptPostingDate, setReceiptPostingDate] = useState("30/09/2026 12:00:33");
-  const [receiptVoucherDate, setReceiptVoucherDate] = useState("30/09/2026");
+  const [receiptPostingDate, setReceiptPostingDate] = useState(`30/09/${CURRENT_YEAR} 12:00:33`);
+  const [receiptVoucherDate, setReceiptVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [receiptVoucherCode, setReceiptVoucherCode] = useState("NK00001");
   const [receiptRefSearch, setReceiptRefSearch] = useState("");
   const [receiptPriceMethod, setReceiptPriceMethod] = useState("Lấy từ đơn giá BQCK");
@@ -232,8 +234,8 @@ export default function MisaInventoryWorkspace({
   const [issueDept, setIssueDept] = useState("");
   const [issueReason, setIssueReason] = useState("");
   const [issueAttachedDocs, setIssueAttachedDocs] = useState("");
-  const [issuePostingDate, setIssuePostingDate] = useState("30/09/2026 12:01:33");
-  const [issueVoucherDate, setIssueVoucherDate] = useState("30/09/2026");
+  const [issuePostingDate, setIssuePostingDate] = useState(`30/09/${CURRENT_YEAR} 12:01:33`);
+  const [issueVoucherDate, setIssueVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [issueVoucherCode, setIssueVoucherCode] = useState("XK00001");
   const [issueRefSearch, setIssueRefSearch] = useState("");
   const [issueSaleId, setIssueSaleId] = useState("");
@@ -318,11 +320,11 @@ export default function MisaInventoryWorkspace({
   const [transferSenderName, setTransferSenderName] = useState("");
   const [transferReceiverName, setTransferReceiverName] = useState("");
   const [transferRefSearch, setTransferRefSearch] = useState("");
-  const [transferPostingDate, setTransferPostingDate] = useState("30/09/2026 13:51:27");
+  const [transferPostingDate, setTransferPostingDate] = useState(`30/09/${CURRENT_YEAR} 13:51:27`);
   const [transferInvoiceForm, setTransferInvoiceForm] = useState("");
   const [transferInvoiceSymbol, setTransferInvoiceSymbol] = useState("");
   const [transferVoucherCode, setTransferVoucherCode] = useState("CK00001");
-  const [transferVoucherDate, setTransferVoucherDate] = useState("30/09/2026");
+  const [transferVoucherDate, setTransferVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [transferIsReplacementInvoice, setTransferIsReplacementInvoice] = useState(false);
   // Form 2 states: Xuất kho gửi bán đại lý
   const [transferContractNo, setTransferContractNo] = useState("");
@@ -481,7 +483,7 @@ export default function MisaInventoryWorkspace({
   const [showWarehouseListModal, setShowWarehouseListModal] = useState(false);
   const [showProductionOrderModal, setShowProductionOrderModal] = useState(false);
   const [prodOrderCode, setProdOrderCode] = useState("LSX00001");
-  const [prodOrderDate, setProdOrderDate] = useState("30/09/2026");
+  const [prodOrderDate, setProdOrderDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [prodOrderStatus, setProdOrderStatus] = useState("Đang thực hiện");
   const [prodOrderDescription, setProdOrderDescription] = useState("");
   const [prodOrderRefSearch, setProdOrderRefSearch] = useState("");
@@ -507,7 +509,7 @@ export default function MisaInventoryWorkspace({
   ]);
   const [showAssemblyModal, setShowAssemblyModal] = useState(false);
   const [assemblyCode, setAssemblyCode] = useState("LRTD00001");
-  const [assemblyDate, setAssemblyDate] = useState("30/09/2026");
+  const [assemblyDate, setAssemblyDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [assemblyDescription, setAssemblyDescription] = useState("");
   const [assemblyProductRows, setAssemblyProductRows] = useState([
     { id: "tp-1", itemCode: "", itemName: "", unit: "", qty: 1, price: 0, amount: 0 },
@@ -519,7 +521,7 @@ export default function MisaInventoryWorkspace({
 
   const [showDisassemblyModal, setShowDisassemblyModal] = useState(false);
   const [disassemblyCode, setDisassemblyCode] = useState("LRTD00001");
-  const [disassemblyDate, setDisassemblyDate] = useState("30/09/2026");
+  const [disassemblyDate, setDisassemblyDate] = useState(`30/09/${CURRENT_YEAR}`);
   const [disassemblyDescription, setDisassemblyDescription] = useState("");
   const [disassemblyAutoCalcRate, setDisassemblyAutoCalcRate] = useState(false);
   const [disassemblyGoodRows, setDisassemblyGoodRows] = useState([

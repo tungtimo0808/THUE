@@ -38,6 +38,8 @@ from sales.models import (
     SalesReturnLine,
 )
 
+from master_data.models import PartyAddress
+from .report_access import granted_report_permissions, report_company
 from .models import (
     ReportDefinition,
     SalesReportRow,
@@ -867,26 +869,7 @@ SALES_REPORT_SCHEMAS: dict[str, dict[str, Any]] = {
 # ============================================================================
 
 def get_user_sales_permissions(user=None, request=None) -> set[str]:
-    """Resolve active sales report permissions from User, IAM, or HTTP headers."""
-    perms: set[str] = set()
-
-    if request:
-        raw_header = request.headers.get("X-Sales-Permissions") or request.META.get("HTTP_X_SALES_PERMISSIONS")
-        if raw_header:
-            tokens = [t.strip().upper() for t in raw_header.split(",") if t.strip()]
-            for tok in tokens:
-                for canonical, aliases in PERM_ALIASES.items():
-                    if tok == canonical or tok in aliases:
-                        perms.add(canonical)
-            if "NONE" in tokens or "DENIED" in tokens:
-                perms.clear()
-            return perms
-
-    if user and getattr(user, "is_superuser", False):
-        return set(ALL_SALES_PERMISSIONS)
-
-    perms.add(PERM_SALES_VIEW)
-    return perms
+    return granted_report_permissions(user, request, "sales", ALL_SALES_PERMISSIONS)
 
 
 def check_sales_report_permission(user, request, required_permission: str):
@@ -899,32 +882,10 @@ def check_sales_report_permission(user, request, required_permission: str):
 
 
 def resolve_sales_company_scope(request, params: dict[str, Any]) -> tuple[str, str | None]:
-    """
-    Enforce Company & Branch Isolation (BR-RPT-SAL-05..06).
-    Rejects unauthorized company_id access with 403 PermissionDenied.
-    """
     params = params or {}
-    company_id = str(
-        params.get("company_id")
-        or (request.query_params.get("company_id") if request else "")
-        or ""
-    ).strip()
-    branch_id = params.get("branch_id") or (request.query_params.get("branch_id") if request else None)
-
-    if request:
-        raw_allowed = request.headers.get("X-Allowed-Companies") or request.META.get("HTTP_X_ALLOWED_COMPANIES")
-        if raw_allowed:
-            allowed_companies = {c.strip() for c in raw_allowed.split(",") if c.strip()}
-            if company_id and company_id not in allowed_companies:
-                raise PermissionDenied(
-                    f"Người dùng không được cấp quyền truy cập dữ liệu bán hàng của doanh nghiệp '{company_id}'."
-                )
-
-    if not company_id:
-        co = Company.objects.first()
-        company_id = str(co.id) if co else "DEFAULT-COMPANY"
-
-    return company_id, str(branch_id) if branch_id else None
+    company = report_company(request, params)
+    branch_id = params.get("branch_id") or request.query_params.get("branch_id")
+    return str(company.id), str(branch_id) if branch_id else None
 
 
 # ============================================================================
@@ -1023,7 +984,7 @@ def _build_rpt_0078(
             sale__document_date__gte=d_from,
             sale__document_date__lte=d_to,
         ).exclude(sale__status__in=["DRAFT", "CANCELLED"]).select_related(
-            "sale", "item", "uom", "sale__customer"
+            "sale", "item", "item__category", "uom", "sale__customer", "sale__branch", "sale__sales_order__assigned_employee"
         ).order_by("sale__posting_date", "sale__number", "line_no")
 
         if branch_id:
@@ -1033,12 +994,19 @@ def _build_rpt_0078(
         if params.get("item_ids"):
             qs = qs.filter(item_id__in=params["item_ids"])
 
+        addresses: dict[Any, Any] = {}
         for line in qs:
             ret_qty = Decimal("0.00")
             ret_amt = Decimal("0.00")
             for r_line in line.return_lines.filter(sale_return__status="POSTED"):
                 ret_qty += r_line.return_quantity
                 ret_amt += r_line.line_total
+            order = line.sale.sales_order
+            employee = order.assigned_employee if order else None
+            category = line.item.category
+            if line.sale.customer_id not in addresses:
+                addresses[line.sale.customer_id] = PartyAddress.objects.filter(party_id=line.sale.customer_id).order_by("-is_default").first()
+            address = addresses[line.sale.customer_id]
 
             raw_lines.append(
                 {
@@ -1065,9 +1033,18 @@ def _build_rpt_0078(
                     "returned_quantity": ret_qty,
                     "sales_return_amount": ret_amt,
                     "sales_reduction_amount": getattr(line, "allowance_amount", Decimal("0.00")),
-                    "net_cogs_amount": getattr(line, "cost_amount", Decimal("0.00")),
-                    "employee_id": str(getattr(line.sale, "seller_id", "") or ""),
-                    "branch_id": str(getattr(line.sale, "branch_id", "") or ""),
+                    "net_cogs_amount": line.cogs_amount - ret_qty * line.unit_cost,
+                    "employee_id": str(employee.id) if employee else "",
+                    "employee_code": employee.employee_code if employee else "",
+                    "employee_name": employee.full_name if employee else "",
+                    "branch_id": str(line.sale.branch_id or ""),
+                    "branch_code": line.sale.branch.code if line.sale.branch else "",
+                    "branch_name": line.sale.branch.name if line.sale.branch else "",
+                    "item_group_code": category.code if category else "",
+                    "item_group_name": category.name if category else "",
+                    "province_name": address.province_code if address else "",
+                    "district_name": address.district_code if address else "",
+                    "ward_name": address.ward_code if address else "",
                     "sales_document_id": str(line.sale_id),
                     "sales_line_id": str(line.id),
                 }
@@ -1151,6 +1128,11 @@ def _build_rpt_0078(
                 "branch_id": str(item.get("branch_id", "")),
                 "branch_code": str(item.get("branch_code", "")),
                 "branch_name": str(item.get("branch_name", "")),
+                "item_group_code": str(item.get("item_group_code", "")),
+                "item_group_name": str(item.get("item_group_name", "")),
+                "province_name": str(item.get("province_name", "")),
+                "district_name": str(item.get("district_name", "")),
+                "ward_name": str(item.get("ward_name", "")),
                 "order_id": str(item.get("order_id", "")),
                 "contract_id": str(item.get("contract_id", "")),
                 "project_id": str(item.get("project_id", "")),
@@ -2185,6 +2167,55 @@ def _build_rpt_0128(
     return rows, summary, validations
 
 
+# Reports totalled from sales lines by their own text columns.
+SUMMARY_SALES_REPORTS = {
+    "RPT-0084", "RPT-0086", "RPT-0089", "RPT-0090", "RPT-0108", "RPT-0109", "RPT-0113", "RPT-0114",
+    "RPT-0117", "RPT-0118", "RPT-0129",
+}
+# Detail ledgers that are the sales lines themselves.
+LINE_SALES_REPORTS = {"RPT-0110"}
+NON_ADDITIVE_COLUMNS = {"unit_price", "row_no", "gross_margin_percent", "profit_margin_percent"}
+
+
+def _source_missing(report_code: str) -> list[dict[str, Any]]:
+    return [{
+        "check_code": f"{report_code.replace('-', '_')}_SOURCE_MISSING",
+        "check_name": "Thiếu dữ liệu nguồn của báo cáo",
+        "severity": "WARNING",
+        "status": "WARNING",
+        "message": "Hệ thống chưa ghi nhận dữ liệu nguồn cho báo cáo này (phân nhóm, đơn hàng, hợp đồng, chi phí hoặc bảo hành), nên không hiển thị số liệu.",
+    }]
+
+
+def _total_sales_rows(rows: list[dict[str, Any]], columns_def: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group the sales lines by the report's text columns and add up its amounts."""
+    keys = [c["code"] for c in columns_def if c["data_type"] not in ("NUMBER", "DATE")]
+    amounts = [c["code"] for c in columns_def if c["data_type"] == "NUMBER" and c["code"] not in NON_ADDITIVE_COLUMNS]
+    groups: dict[tuple, dict[str, Any]] = {}
+    for row in rows:
+        key = tuple(row["columns"].get(code) or "" for code in keys)
+        group = groups.get(key)
+        if group is None:
+            groups[key] = group = {**row, "columns": dict(row["columns"]), "source_refs": list(row.get("source_refs", []))}
+            group["columns"].update({code: Decimal(str(row["columns"].get(code) or 0)) for code in amounts})
+            continue
+        for code in amounts:
+            group["columns"][code] += Decimal(str(row["columns"].get(code) or 0))
+        group["source_refs"].extend(row.get("source_refs", []))
+    totals = sorted(groups.values(), key=lambda row: [str(row["columns"].get(code) or "") for code in keys])
+    for index, row in enumerate(totals, start=1):
+        row["row_order"] = index
+        columns = row["columns"]
+        columns.update({code: _f(columns[code]) for code in amounts})
+        if "row_no" in columns:
+            columns["row_no"] = index
+        for margin, profit in (("gross_margin_percent", "gross_profit_amount"), ("profit_margin_percent", "profit_amount")):
+            if margin in columns:
+                net = Decimal(str(columns.get("net_sales_amount") or 0))
+                columns[margin] = _f(Decimal(str(columns.get(profit) or 0)) / net * 100) if net else None
+    return totals
+
+
 def _build_generic_sales_report(
     report_code: str,
     company_id: str,
@@ -2277,7 +2308,16 @@ def _build_generic_sales_report(
                     row_cols[code] = det_78[code]
                 elif col["data_type"] == "NUMBER":
                     # Smart defaults for specialized fields
-                    if "profit" in code:
+                    if code == "net_sales_amount":
+                        row_cols[code] = _f(
+                            _d(c_78.get("gross_sales_amount")) - _d(c_78.get("sales_discount_amount"))
+                            - _d(c_78.get("sales_return_amount")) - _d(c_78.get("sales_reduction_amount"))
+                        )
+                    elif code == "sales_amount":
+                        row_cols[code] = c_78.get("gross_sales_amount", 0.0)
+                    elif code == "sold_quantity":
+                        row_cols[code] = c_78.get("gross_sold_quantity", 0.0)
+                    elif "profit" in code:
                         row_cols[code] = det_78.get("gross_profit_amount", 0.0)
                     elif "revenue" in code:
                         row_cols[code] = c_78.get("gross_sales_amount", 0.0)
@@ -2291,24 +2331,26 @@ def _build_generic_sales_report(
                     row_cols[code] = c_78.get("document_date", d_from.isoformat())
                 else:
                     # String fallbacks
-                    if "customer" in code:
-                        row_cols[code] = c_78.get("customer_name", "Khách hàng")
+                    if r.get(code):
+                        row_cols[code] = r[code]
+                    elif "customer" in code:
+                        row_cols[code] = c_78.get("customer_name", "")
                     elif "item" in code:
-                        row_cols[code] = c_78.get("item_name", "Hàng hóa")
+                        row_cols[code] = c_78.get("item_name", "")
                     elif "employee" in code:
-                        row_cols[code] = r.get("employee_name") or "Chưa xác định"
+                        row_cols[code] = r.get("employee_name") or ""
                     elif "branch" in code:
-                        row_cols[code] = r.get("branch_name") or "Chi nhánh chính"
+                        row_cols[code] = r.get("branch_name") or ""
                     elif "marketplace" in code:
-                        row_cols[code] = det_78.get("marketplace_name") or "Shopee"
+                        row_cols[code] = det_78.get("marketplace_name") or ""
                     elif "shop" in code:
-                        row_cols[code] = det_78.get("shop_name") or "Shop Official"
+                        row_cols[code] = det_78.get("shop_name") or ""
                     elif "province" in code:
-                        row_cols[code] = det_78.get("province_name") or "Hà Nội"
+                        row_cols[code] = det_78.get("province_name") or ""
                     elif "contract" in code:
-                        row_cols[code] = r.get("contract_id") or "HD-2026-001"
+                        row_cols[code] = r.get("contract_id") or ""
                     elif "order" in code:
-                        row_cols[code] = r.get("order_id") or "DH-2026-001"
+                        row_cols[code] = r.get("order_id") or ""
                     else:
                         row_cols[code] = ""
 
@@ -2322,6 +2364,14 @@ def _build_generic_sales_report(
                     "warning_codes": r.get("warning_codes", []),
                 }
             )
+
+    if not (isinstance(custom_rows, list) and custom_rows) and report_code not in LINE_SALES_REPORTS:
+        text_columns = [c["code"] for c in columns_def if c["data_type"] not in ("NUMBER", "DATE") and c["code"] != "uom_name"]
+        grouped = any(r["columns"].get(code) for r in rows for code in text_columns if not code.startswith("item_"))
+        if report_code in SUMMARY_SALES_REPORTS and grouped:
+            rows = _total_sales_rows(rows, columns_def)
+        else:
+            rows, validations = [], _source_missing(report_code)
 
     # Compute summary totals for number columns
     summary: dict[str, Any] = {"row_count": len(rows)}
@@ -2894,8 +2944,8 @@ def get_order_fulfillment_payload(order_id: str, user=None, request=None) -> dic
     return {
         "order_id": order_id,
         "order_number": str(order_id),
-        "status": "IN_PROGRESS",
-        "fulfillment_rate_percent": 75.0,
+        "status": "NOT_AVAILABLE",
+        "fulfillment_rate_percent": None,
         "details": [],
     }
 
@@ -2907,8 +2957,8 @@ def get_contract_fulfillment_payload(contract_id: str, user=None, request=None) 
     return {
         "contract_id": contract_id,
         "contract_number": str(contract_id),
-        "status": "ACTIVE",
-        "fulfilled_percent": 60.0,
+        "status": "NOT_AVAILABLE",
+        "fulfilled_percent": None,
         "details": [],
     }
 

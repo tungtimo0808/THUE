@@ -15,6 +15,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MultiPeriodRevenueExpenseRow {
   target: string;
   code: string;
@@ -171,9 +173,9 @@ export default function MisaMultiPeriodRevenueExpenseReport({
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [periodType, setPeriodType] = useState<"month" | "quarter" | "year" | "custom">("month");
   const [fromMonth, setFromMonth] = useState(10);
-  const [fromYear, setFromYear] = useState(2026);
+  const [fromYear, setFromYear] = useState(CURRENT_YEAR);
   const [toMonth, setToMonth] = useState(10);
-  const [toYear, setToYear] = useState(2026);
+  const [toYear, setToYear] = useState(CURRENT_YEAR);
   const [compareSamePeriodLastYear, setCompareSamePeriodLastYear] = useState(false);
   const [evaluateDiffBetweenPeriods, setEvaluateDiffBetweenPeriods] = useState(false);
   const [expenseItemLevel, setExpenseItemLevel] = useState("1");
@@ -183,9 +185,9 @@ export default function MisaMultiPeriodRevenueExpenseReport({
   const [comparisonDates,setComparisonDates] = useState(initialComparisonDates);
   const [draftComparisonDates,setDraftComparisonDates] = useState(initialComparisonDates);
   const [draftFromMonth, setDraftFromMonth] = useState(10);
-  const [draftFromYear, setDraftFromYear] = useState(2026);
+  const [draftFromYear, setDraftFromYear] = useState(CURRENT_YEAR);
   const [draftToMonth, setDraftToMonth] = useState(10);
-  const [draftToYear, setDraftToYear] = useState(2026);
+  const [draftToYear, setDraftToYear] = useState(CURRENT_YEAR);
   const [draftCompareSamePeriodLastYear, setDraftCompareSamePeriodLastYear] = useState(false);
   const [draftEvaluateDiffBetweenPeriods, setDraftEvaluateDiffBetweenPeriods] = useState(false);
   const [draftExpenseItemLevel, setDraftExpenseItemLevel] = useState("1");

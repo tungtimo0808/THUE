@@ -52,6 +52,7 @@ class InvoiceViewSet(CompanyViewSet):
     serializer_class = serializers.InvoiceSerializer
     iam_permissions = permissions("TAX.INVOICE")
     action_permissions = {
+        "record_external_issue": "TAX.INVOICE.ISSUE",
         "validate_invoice": "TAX.INVOICE.VALIDATE", "issue": "TAX.INVOICE.ISSUE",
         "cancel": "TAX.INVOICE.CANCEL", "history": "TAX.INVOICE.VIEW",
         "receive_input_xml": "TAX.INVOICE.CREATE", "source_xml": "TAX.INVOICE.VIEW",
@@ -121,6 +122,10 @@ class InvoiceViewSet(CompanyViewSet):
             invoice.refresh_from_db()
             return Response(self.get_serializer(invoice).data)
         return Response(self.get_serializer(services.validate_invoice(invoice, request)).data)
+
+    @action(detail=True, methods=("post",), url_path="record-external-issue")
+    def record_external_issue(self, request, pk=None):
+        return Response(self.get_serializer(services.record_external_issue(self.get_object(), request)).data)
 
     @action(detail=True, methods=("post",))
     def issue(self, request, pk=None):

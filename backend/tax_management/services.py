@@ -265,6 +265,31 @@ def cancel_invoice(invoice, request):
 
 
 @transaction.atomic
+@transaction.atomic
+def record_external_issue(invoice, request):
+    """Record an output invoice issued in the customer's own e-invoice software."""
+    invoice = models.TaxInvoice.objects.select_for_update().get(pk=invoice.pk)
+    number = str(request.data.get("invoice_number") or "").strip()
+    if not number:
+        raise ValidationError({"invoice_number": "Vui lòng nhập số hóa đơn đã phát hành."})
+    if invoice.direction != "OUTPUT" or invoice.status not in ("DRAFT", "VALIDATED", "BLOCKED", "ISSUE_FAILED"):
+        raise ValidationError("Chỉ hóa đơn đầu ra chưa phát hành mới được ghi nhận.")
+    if models.TaxInvoice.objects.filter(company=invoice.company, direction="OUTPUT", invoice_series=invoice.invoice_series,
+                                        invoice_number=number, status__in=("ISSUED", "ADJUSTED")).exclude(pk=invoice.pk).exists():
+        raise ValidationError({"invoice_number": "Số hóa đơn này đã được ghi nhận."})
+    old = invoice.status
+    invoice.status = "ISSUED"
+    invoice.issued_at = timezone.now()
+    invoice.invoice_number = number[:80]
+    invoice.external_status = "EXTERNAL"
+    invoice.external_reference = str(request.data.get("external_reference") or number)[:150]
+    invoice.raw_data = {**invoice.raw_data, "lookup_code": str(request.data.get("lookup_code") or "")[:150], "issued_outside_system": True}
+    invoice.save(update_fields=("status", "issued_at", "invoice_number", "external_status", "external_reference", "raw_data", "updated_at"))
+    _history(invoice, request, old, invoice.status, "EXTERNAL_ISSUE")
+    audit(request, invoice, "EXTERNAL_ISSUE", {"status": old}, {"status": invoice.status, "invoice_number": invoice.invoice_number})
+    return invoice
+
+
 def build_summary(period, request):
     if period.status == "CLOSED":
         raise ValidationError("Kỳ thuế đã đóng.")

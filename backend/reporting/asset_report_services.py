@@ -54,6 +54,7 @@ from fixed_assets.models import (
     CalculationLine,
 )
 
+from .report_access import has_report_permission, report_company
 from .models import (
     ReportDefinition,
     AssetReportRun,
@@ -578,32 +579,12 @@ ASSET_REPORT_SCHEMAS: dict[str, dict[str, Any]] = {
 # Permission & RBAC Verification
 # -----------------------------------------------------------------------------
 
-def check_asset_report_permission(user: Any, required_perm: str = PERM_ASSET_VIEW) -> bool:
-    """Kiểm tra quyền truy cập báo cáo tài sản / CCDC / CPTT."""
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
-        return True
-
-    user_perms: set[str] = set()
-    if hasattr(user, "get_all_permissions"):
-        user_perms.update(user.get_all_permissions())
-    if hasattr(user, "permissions_cache"):
-        user_perms.update(user.permissions_cache)
-    if hasattr(user, "roles"):
-        for role in user.roles.all():
-            if hasattr(role, "permissions"):
-                user_perms.update(role.permissions.values_list("code", flat=True))
-
-    aliases = PERM_ALIASES.get(required_perm, (required_perm,))
-    base_aliases = PERM_ALIASES.get(PERM_ASSET_VIEW, (PERM_ASSET_VIEW,))
-    all_needed = set(aliases) | set(base_aliases)
-
-    return any(p in user_perms for p in all_needed)
+def check_asset_report_permission(user: Any, required_perm: str = PERM_ASSET_VIEW, request=None) -> bool:
+    return has_report_permission(user, request, "asset", required_perm)
 
 
-def require_asset_permission(user: Any, required_perm: str = PERM_ASSET_VIEW) -> None:
-    if not check_asset_report_permission(user, required_perm):
+def require_asset_permission(user: Any, required_perm: str = PERM_ASSET_VIEW, request=None) -> None:
+    if not check_asset_report_permission(user, required_perm, request):
         raise PermissionDenied(f"Người dùng không có quyền truy cập báo cáo tài sản ({required_perm}).")
 
 
@@ -611,13 +592,13 @@ def require_asset_permission(user: Any, required_perm: str = PERM_ASSET_VIEW) ->
 # Catalogue & Metadata Providers
 # -----------------------------------------------------------------------------
 
-def get_asset_reports_catalogue(user: Any = None) -> list[dict[str, Any]]:
+def get_asset_reports_catalogue(user: Any = None, request=None) -> list[dict[str, Any]]:
     """Trả về danh mục 14 báo cáo tài sản / CCDC / CPTT đã cấu hình."""
     catalogue = []
     for code, schema in ASSET_REPORT_SCHEMAS.items():
         has_perm = True
         if user:
-            has_perm = check_asset_report_permission(user, schema.get("required_permission", PERM_ASSET_VIEW))
+            has_perm = check_asset_report_permission(user, schema.get("required_permission", PERM_ASSET_VIEW), request=request)
         catalogue.append({
             "report_code": schema["report_code"],
             "report_name": schema["report_name"],
@@ -631,12 +612,12 @@ def get_asset_reports_catalogue(user: Any = None) -> list[dict[str, Any]]:
     return catalogue
 
 
-def get_asset_report_schema(report_code: str, user: Any = None) -> dict[str, Any]:
+def get_asset_report_schema(report_code: str, user: Any = None, request=None) -> dict[str, Any]:
     schema = ASSET_REPORT_SCHEMAS.get(report_code)
     if not schema:
         raise ValidationError(f"Mã báo cáo không tồn tại: {report_code}")
     if user:
-        require_asset_permission(user, schema.get("required_permission", PERM_ASSET_VIEW))
+        require_asset_permission(user, schema.get("required_permission", PERM_ASSET_VIEW), request)
     return schema
 
 
@@ -2081,12 +2062,13 @@ def run_asset_report(
     company_id: str,
     params: dict[str, Any],
     user: Any = None,
+    request=None,
 ) -> AssetReportRun:
     """
     Thực thi và lưu snapshot báo cáo tài sản / CCDC / CPTT.
     Tuân thủ quy tắc read-only tuyệt đối (BR-RPT-FA-09, BR-RPT-FA-111..114).
     """
-    schema = get_asset_report_schema(report_code, user=user)
+    schema = get_asset_report_schema(report_code, user=user, request=request)
     builder = REPORT_BUILDERS.get(report_code)
     if not builder:
         raise ValidationError(f"Chưa hỗ trợ xử lý báo cáo: {report_code}")
@@ -2272,11 +2254,11 @@ def check_asset_report_stale(run: AssetReportRun) -> bool:
 # Export Handler (CSV / JSON / UC-RPT-15 integration)
 # -----------------------------------------------------------------------------
 
-def export_asset_report(run_id: str, fmt: str = "JSON", user: Any = None) -> dict[str, Any]:
+def export_asset_report(run_id: str, fmt: str = "JSON", user: Any = None, request=None) -> dict[str, Any]:
     """Xuất báo cáo sang định dạng JSON hoặc CSV."""
     run = AssetReportRun.objects.prefetch_related("rows").get(id=run_id)
     if user:
-        require_asset_permission(user, PERM_ASSET_EXPORT)
+        require_asset_permission(user, PERM_ASSET_EXPORT, request)
 
     schema = get_asset_report_schema(run.report_code)
     columns = schema["columns"]
@@ -2310,27 +2292,12 @@ def export_asset_report(run_id: str, fmt: str = "JSON", user: Any = None) -> dic
 # -----------------------------------------------------------------------------
 
 def resolve_asset_company_scope(request, params: dict[str, Any]) -> tuple[str, Company]:
-    comp_id = params.get("company_id") or (request.query_params.get("company_id") if hasattr(request, "query_params") else None)
-    if not comp_id and hasattr(request, "headers"):
-        comp_id = request.headers.get("X-Company-ID")
-    if not comp_id and hasattr(request, "user") and hasattr(request.user, "company_id"):
-        comp_id = request.user.company_id
-    if not comp_id:
-        c = Company.objects.first()
-        comp_id = str(c.id) if c else "DEFAULT-COMPANY"
-    else:
-        comp_id = str(comp_id)
-
-    company = Company.objects.filter(id=comp_id).first()
-    if not company:
-        company = Company.objects.first()
-        if company:
-            comp_id = str(company.id)
-    return comp_id, company
+    company = report_company(request, params)
+    return str(company.id), company
 
 
 def get_asset_report_catalogue_payload(company_id: str = None, user=None, request=None) -> dict[str, Any]:
-    cat = get_asset_reports_catalogue(user=user)
+    cat = get_asset_reports_catalogue(user=user, request=request)
     return {
         "company_id": str(company_id or ""),
         "count": len(cat),
@@ -2339,7 +2306,7 @@ def get_asset_report_catalogue_payload(company_id: str = None, user=None, reques
 
 
 def get_asset_report_schema_payload(report_code: str, user=None, request=None) -> dict[str, Any]:
-    schema = get_asset_report_schema(report_code, user=user)
+    schema = get_asset_report_schema(report_code, user=user, request=request)
     return {
         "report_code": schema["report_code"],
         "report_name": schema["report_name"],
@@ -2353,7 +2320,7 @@ def get_asset_report_schema_payload(report_code: str, user=None, request=None) -
 
 
 def get_asset_report_parameters_payload(report_code: str, user=None, request=None) -> dict[str, Any]:
-    schema = get_asset_report_schema(report_code, user=user)
+    schema = get_asset_report_schema(report_code, user=user, request=request)
     return {
         "report_code": schema["report_code"],
         "parameters": [
@@ -2373,7 +2340,7 @@ def get_asset_report_parameters_payload(report_code: str, user=None, request=Non
 
 def query_asset_report_payload(report_code: str, params: dict[str, Any], user=None, request=None) -> dict[str, Any]:
     company_id, _ = resolve_asset_company_scope(request, params)
-    run = run_asset_report(report_code, company_id=company_id, params=params, user=user)
+    run = run_asset_report(report_code, company_id=company_id, params=params, user=user, request=request)
     return {
         "run_id": str(run.id),
         "run_number": run.run_number,
@@ -2395,7 +2362,7 @@ def get_asset_report_run_details(run_id: str, user=None, request=None) -> dict[s
 
     schema = ASSET_REPORT_SCHEMAS.get(run.report_code, {})
     req_perm = schema.get("required_permission", PERM_ASSET_VIEW)
-    require_asset_permission(user, req_perm)
+    require_asset_permission(user, req_perm, request)
 
     is_stale = check_asset_report_stale(run)
 
@@ -2430,7 +2397,7 @@ def get_asset_report_run_rows(run_id: str, user=None, request=None, search: str 
 
     schema = ASSET_REPORT_SCHEMAS.get(run.report_code, {})
     req_perm = schema.get("required_permission", PERM_ASSET_VIEW)
-    require_asset_permission(user, req_perm)
+    require_asset_permission(user, req_perm, request)
 
     qs = run.rows.all().order_by("row_order")
     if search:
@@ -2624,7 +2591,7 @@ def save_asset_filter_payload(data: dict[str, Any], user=None, request=None) -> 
 
 
 def export_asset_report_run_payload(run_id: str, fmt: str = "XLSX", user=None, request=None) -> dict[str, Any]:
-    require_asset_permission(user, PERM_ASSET_EXPORT)
+    require_asset_permission(user, PERM_ASSET_EXPORT, request)
 
     run = AssetReportRun.objects.filter(id=run_id).first()
     if not run:

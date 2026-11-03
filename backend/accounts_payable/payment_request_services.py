@@ -541,7 +541,7 @@ def save_payment_request(request, data, instance=None, action="SAVE_DRAFT"):
             payable_ids = [l.get("payable") or l.get("payable_id") for l in lines_data]
             p_qs = models.Payable.objects.filter(id__in=payable_ids)
             if connection.features.has_select_for_update:
-                p_qs = p_qs.select_for_update()
+                p_qs = p_qs.select_for_update(of=("self",))
             locked_payables = {str(p.pk): p for p in p_qs}
 
             for l in lines_data:
@@ -575,7 +575,7 @@ def save_payment_request(request, data, instance=None, action="SAVE_DRAFT"):
             if po_ids:
                 po_qs = PurchaseOrder.objects.filter(id__in=po_ids)
                 if connection.features.has_select_for_update:
-                    po_qs = po_qs.select_for_update()
+                    po_qs = po_qs.select_for_update(of=("self",))
                 locked_orders = {str(o.pk): o for o in po_qs}
                 for l in lines_data:
                     po_id = str(l.get("purchase_order") or l.get("purchase_order_id"))
@@ -728,7 +728,7 @@ def recall_payment_request(request, obj):
     user = actor(request)
     pr_qs = models.PaymentRequest.objects
     if connection.features.has_select_for_update:
-        pr_qs = pr_qs.select_for_update()
+        pr_qs = pr_qs.select_for_update(of=("self",))
     obj = pr_qs.get(pk=obj.pk)
 
     if obj.status != models.PaymentRequestStatus.PENDING_APPROVAL:
@@ -756,7 +756,7 @@ def approve_payment_request(request, obj):
     user = actor(request)
     pr_qs = models.PaymentRequest.objects
     if connection.features.has_select_for_update:
-        pr_qs = pr_qs.select_for_update()
+        pr_qs = pr_qs.select_for_update(of=("self",))
     obj = pr_qs.get(pk=obj.pk)
 
     if obj.status != models.PaymentRequestStatus.PENDING_APPROVAL:
@@ -787,7 +787,7 @@ def reject_payment_request(request, obj, reason=""):
     user = actor(request)
     pr_qs = models.PaymentRequest.objects
     if connection.features.has_select_for_update:
-        pr_qs = pr_qs.select_for_update()
+        pr_qs = pr_qs.select_for_update(of=("self",))
     obj = pr_qs.get(pk=obj.pk)
 
     if obj.status != models.PaymentRequestStatus.PENDING_APPROVAL:
@@ -821,7 +821,7 @@ def cancel_payment_request(request, obj, reason=""):
     user = actor(request)
     pr_qs = models.PaymentRequest.objects
     if connection.features.has_select_for_update:
-        pr_qs = pr_qs.select_for_update()
+        pr_qs = pr_qs.select_for_update(of=("self",))
     obj = pr_qs.get(pk=obj.pk)
 
     if not (user.auth_user.is_superuser or has_effective_permission(user, obj.company, "AP.PAYMENT_REQUEST.CANCEL")):

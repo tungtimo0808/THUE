@@ -141,13 +141,13 @@ export default function MisaDetailedCashLedgerReport({
   // Subtitle period text matching Screenshot 5
   const periodSubtitle = useMemo(()=>cashPeriodSubtitle(fromDate,toDate),[fromDate,toDate]);
 
-  const { token, company } = useApiSession();
+  const { token, companyId } = useApiSession();
   const [liveRows, setLiveRows] = useState<DetailedCashLedgerRow[] | null>(null);
 
   useEffect(() => {
-    if (!company?.id) return;
+    if (!companyId) return;
     let cancelled = false;
-    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(company.id)}`, token)
+    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(companyId)}`, token)
       .then((res) => {
         if (cancelled) return;
         const cl = res?.cash_ledger;
@@ -180,7 +180,7 @@ export default function MisaDetailedCashLedgerReport({
     return () => {
       cancelled = true;
     };
-  }, [company?.id, token]);
+  }, [companyId, token]);
 
   const effectiveData = liveRows !== null ? liveRows : data;
 

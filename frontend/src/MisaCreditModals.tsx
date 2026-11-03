@@ -12,6 +12,8 @@ import {
   Upload,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
@@ -55,7 +57,7 @@ export function LoanContractModal({
   const [bankName, setBankName] = useState("BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN");
   const [loanTerm, setLoanTerm] = useState(12);
   const [termUnit, setTermUnit] = useState("Tháng");
-  const [disbursementDate, setDisbursementDate] = useState("09/10/2026");
+  const [disbursementDate, setDisbursementDate] = useState(`09/10/${CURRENT_YEAR}`);
   const [dueDate, setDueDate] = useState("09/10/2027");
 
   // Tab 2: Lãi suất (Grid + Radio options)
@@ -70,8 +72,8 @@ export function LoanContractModal({
   const [principalPeriod, setPrincipalPeriod] = useState("Hàng tháng");
   const [interestPeriod, setInterestPeriod] = useState("Hàng tháng");
   const [collectionMethod, setCollectionMethod] = useState("Nộp vào tài khoản");
-  const [firstPrincipalDate, setFirstPrincipalDate] = useState("09/11/2026");
-  const [firstInterestDate, setFirstInterestDate] = useState("09/11/2026");
+  const [firstPrincipalDate, setFirstPrincipalDate] = useState(`09/11/${CURRENT_YEAR}`);
+  const [firstInterestDate, setFirstInterestDate] = useState(`09/11/${CURRENT_YEAR}`);
   const [collectionAccount, setCollectionAccount] = useState("1028475929 - VCB");
   const [collectionBankName, setCollectionBankName] = useState("Vietcombank - CN Hà Nội");
 
@@ -1192,7 +1194,7 @@ export function BorrowingContractModal({
   const [loanAmount, setLoanAmount] = useState(1200000000);
   const [loanTerm, setLoanTerm] = useState(6);
   const [termUnit, setTermUnit] = useState("Tháng");
-  const [disbursementDate, setDisbursementDate] = useState("09/10/2026");
+  const [disbursementDate, setDisbursementDate] = useState(`09/10/${CURRENT_YEAR}`);
   const [dueDate, setDueDate] = useState("09/04/2027");
   const [disbursementMethod, setDisbursementMethod] = useState("Chuyển khoản vào tài khoản DN");
   const [beneficiaryAccount, setBeneficiaryAccount] = useState("1028475929 - VCB");
@@ -1210,8 +1212,8 @@ export function BorrowingContractModal({
   const [principalPeriod, setPrincipalPeriod] = useState("Hàng tháng");
   const [interestPeriod, setInterestPeriod] = useState("Hàng tháng");
   const [repaymentMethod, setRepaymentMethod] = useState("Tiền gửi");
-  const [firstPrincipalDate, setFirstPrincipalDate] = useState("09/11/2026");
-  const [firstInterestDate, setFirstInterestDate] = useState("09/11/2026");
+  const [firstPrincipalDate, setFirstPrincipalDate] = useState(`09/11/${CURRENT_YEAR}`);
+  const [firstInterestDate, setFirstInterestDate] = useState(`09/11/${CURRENT_YEAR}`);
   const [repaymentAccount, setRepaymentAccount] = useState("1028475929 - VCB");
   const [repaymentBankName, setRepaymentBankName] = useState("Vietcombank - CN Hà Nội");
 
@@ -2226,7 +2228,7 @@ export function CreditContractModal({
   // Form states
   const [contractType, setContractType] = useState<"limit" | "principle">("limit");
   const [contractNum, setContractNum] = useState(isLending ? "HĐTD00001" : "");
-  const [signDate, setSignDate] = useState("29/09/2026");
+  const [signDate, setSignDate] = useState(`29/09/${CURRENT_YEAR}`);
   const [status, setStatus] = useState("Chưa thực hiện");
   const [partner, setPartner] = useState("");
   const [creditLimit, setCreditLimit] = useState(0);

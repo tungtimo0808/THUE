@@ -17,6 +17,8 @@ import {
   UserCheck,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MisaSupplierPayablesLedgerReportProps {
   onBack: () => void;
   notify?: (msg: string) => void;
@@ -80,8 +82,8 @@ export default function MisaSupplierPayablesLedgerReport({
   // Drawer state
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [selectedAccount, setSelectedAccount] = useState("331");
   const [supplierGroup, setSupplierGroup] = useState("");
   const [selectedSupplierCode, setSelectedSupplierCode] = useState("NCC00001");
@@ -93,8 +95,8 @@ export default function MisaSupplierPayablesLedgerReport({
 
   // Draft state inside drawer
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftAccount, setDraftAccount] = useState("331");
   const [draftSupplierGroup, setDraftSupplierGroup] = useState("");
   const [draftSelectedSuppliers, setDraftSelectedSuppliers] = useState<string[]>(["NCC00001"]);

@@ -19,6 +19,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export interface MisaItemPayablesDynamicReportProps {
   onBack: () => void;
   notify?: (msg: string) => void;
@@ -58,8 +60,8 @@ export default function MisaItemPayablesDynamicReport({
   // Drawer state
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
   const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState("01/10/2026");
-  const [toDate, setToDate] = useState("31/10/2026");
+  const [fromDate, setFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [supplierGroup, setSupplierGroup] = useState("");
   const [combineTax, setCombineTax] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(
@@ -69,8 +71,8 @@ export default function MisaItemPayablesDynamicReport({
 
   // Draft state inside drawer
   const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState("01/10/2026");
-  const [draftToDate, setDraftToDate] = useState("31/10/2026");
+  const [draftFromDate, setDraftFromDate] = useState(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState(`31/10/${CURRENT_YEAR}`);
   const [draftSupplierGroup, setDraftSupplierGroup] = useState("");
   const [draftCombineTax, setDraftCombineTax] = useState(false);
   const [draftAccounts, setDraftAccounts] = useState<string[]>(DEFAULT_ACCOUNTS.map((a) => a.code));
