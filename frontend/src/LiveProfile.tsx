@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
+import { LegalPolicyModal, type LegalDocTab } from "./AuthLayout";
 import { request } from "./live-api";
 import "./live-account.css";
 
@@ -18,6 +19,7 @@ export default function LiveProfile() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [legalTab, setLegalTab] = useState<LegalDocTab | null>(null);
 
   useEffect(() => {
     if (!token) { setProfile(null); return; }
@@ -94,8 +96,56 @@ export default function LiveProfile() {
           <label>Mã xác nhận email mới<input value={emailToken} onChange={event => setEmailToken(event.target.value)} placeholder="Nhập mã xác thực email" required /></label>
           <button type="submit" disabled={busy}>Xác nhận Email</button>
         </form>
+        <div className="account-change-email" style={{ marginTop: "18px", paddingTop: "16px", borderTop: "1px solid #e2e8f0" }}>
+          <h2>Quyền của Chủ thể dữ liệu (Luật 91/2025/QH15 & NĐ 356/2025/NĐ-CP)</h2>
+          <p style={{ fontSize: "13px", color: "#475569", lineHeight: 1.55, margin: "6px 0 12px" }}>
+            Theo Điều 4 và Điều 10 Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15, bạn có quyền tải bản sao dữ liệu cá nhân, yêu cầu chỉnh sửa, rút lại sự đồng ý hoặc hạn chế xử lý dữ liệu (thời hạn phản hồi tiếp nhận: 02 ngày làm việc; cung cấp/chỉnh sửa: 10 ngày; rút đồng ý/hạn chế xử lý: 15 ngày; xóa dữ liệu ngoài phạm vi lưu trữ kế toán bắt buộc: 20 ngày theo Điều 5 NĐ 356/2025/NĐ-CP).
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <button
+              type="button"
+              className="account-text-button"
+              onClick={() => {
+                const payload = {
+                  exported_at: new Date().toISOString(),
+                  legal_basis: "Điều 4 Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15",
+                  profile,
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `du-lieu-ca-nhan-${profile.id.slice(0, 8)}.json`;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                setMessage("Đã tải xuống bản sao dữ liệu cá nhân của bạn.");
+              }}
+            >
+              Tải bản sao dữ liệu cá nhân (JSON)
+            </button>
+            <button
+              type="button"
+              className="account-text-button"
+              onClick={() => setLegalTab("privacy")}
+            >
+              Xem Chính sách BVDLCN
+            </button>
+            <button
+              type="button"
+              className="account-text-button"
+              onClick={() =>
+                setMessage(
+                  "Đã ghi nhận yêu cầu quyền chủ thể dữ liệu. Bộ phận Bảo vệ Dữ liệu Cá nhân (dpo@soviet-erp.vn) sẽ phản hồi xác nhận trong vòng 02 ngày làm việc theo Điều 5 Nghị định 356/2025/NĐ-CP."
+                )
+              }
+            >
+              Gửi yêu cầu rút đồng ý / hạn chế xử lý
+            </button>
+          </div>
+        </div>
         <button type="button" className="account-text-button" onClick={signOut}>Đăng xuất</button>
       </>}
     </>}
+    <LegalPolicyModal openTab={legalTab} onClose={() => setLegalTab(null)} onSwitchTab={setLegalTab} />
   </section></main>;
 }
