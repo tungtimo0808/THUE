@@ -1131,11 +1131,11 @@ export default function CompanyAdminWorkspace() {
       }
       if (roleRes.status === "fulfilled") {
         const val = roleRes.value;
-        const roleList = Array.isArray(val) ? val : val.results || [];
+        const roleList: RoleItem[] = Array.isArray(val) ? val : val.results || [];
         setRoles(roleList);
-        if (roleList.length > 0 && !selectedRole) {
-          setSelectedRole(roleList[0]);
-        }
+        setSelectedRole((prev) =>
+          prev && roleList.some((r) => r.id === prev.id) ? prev : roleList[0] || null
+        );
       }
       if (joinRes.status === "fulfilled") {
         const val = joinRes.value;
@@ -1193,7 +1193,7 @@ export default function CompanyAdminWorkspace() {
 
   // Load Role Matrix when selectedRole changes
   useEffect(() => {
-    if (!token || !companyId || !selectedRole) {
+    if (!token || !companyId || !selectedRole || !roles.some((r) => r.id === selectedRole.id)) {
       setRoleMatrix(null);
       setSelectedPermCodes(new Set());
       return;
@@ -1206,7 +1206,7 @@ export default function CompanyAdminWorkspace() {
       .catch((err) => {
         setAlertMsg({ type: "error", text: `Không tải được quyền của vai trò ${selectedRole.name}: ${err.message}` });
       });
-  }, [selectedRole, token, companyId]);
+  }, [selectedRole, roles, token, companyId]);
 
   // Handle Seeding 21 Standard Business Roles & Applying Regime Role Presets
   const handleSeedStandardRoles = async (presetKey?: string) => {
@@ -1818,9 +1818,9 @@ export default function CompanyAdminWorkspace() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-              <div className="admin-card">
-                <div className="admin-card-header">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "stretch" }}>
+              <div className="admin-card" style={{ height: "100%", marginBottom: 0, display: "flex", flexDirection: "column" }}>
+                <div className="admin-card-header" style={{ minHeight: 56, boxSizing: "border-box" }}>
                   <h3>
                     <Building2 size={18} /> Thông tin Pháp lý & Hồ sơ Doanh nghiệp
                   </h3>
@@ -1828,20 +1828,22 @@ export default function CompanyAdminWorkspace() {
                     Sửa hồ sơ
                   </Link>
                 </div>
-                <div className="admin-card-body">
-                  <table className="admin-table">
+                <div className="admin-card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <table className="admin-table" style={{ height: "100%" }}>
                     <tbody>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Tên doanh nghiệp</td>
                         <td><strong>{companyInfo?.name}</strong></td>
                       </tr>
                       <tr>
-                        <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Mã số thuế</td>
-                        <td><strong>{companyInfo?.tax_code || "Chưa đăng ký"}</strong></td>
+                        <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Mã doanh nghiệp / MST</td>
+                        <td>
+                          <strong>{companyInfo?.code || "TUNG_TIMO"}</strong> · MST: <strong>{companyInfo?.tax_code || "Chưa đăng ký"}</strong>
+                        </td>
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Người đại diện pháp luật</td>
-                        <td>{companyInfo?.legal_representative || "Chưa cập nhật"}</td>
+                        <td><strong>{companyInfo?.legal_representative || "Chưa cập nhật"}</strong></td>
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Chế độ kế toán áp dụng</td>
@@ -1851,35 +1853,43 @@ export default function CompanyAdminWorkspace() {
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Địa chỉ trụ sở</td>
                         <td>{companyInfo?.address || "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội"}</td>
                       </tr>
+                      <tr>
+                        <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)", borderBottom: "none" }}>Trạng thái vận hành</td>
+                        <td style={{ borderBottom: "none" }}>
+                          <span className="admin-badge admin-badge-active" style={{ textTransform: "none", fontSize: 12 }}>
+                            Đang hoạt động · Đầy đủ 12 phân hệ
+                          </span>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              <div className="admin-card">
-                <div className="admin-card-header">
+              <div className="admin-card" style={{ height: "100%", marginBottom: 0, display: "flex", flexDirection: "column" }}>
+                <div className="admin-card-header" style={{ minHeight: 56, boxSizing: "border-box" }}>
                   <h3>
                     <KeyRound size={18} /> Phím tắt Thao tác Nhanh cho Admin
                   </h3>
                 </div>
-                <div className="admin-card-body" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div className="admin-card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "0.65rem" }}>
                   <Link
                     to="/opening"
                     className="admin-btn admin-btn-secondary"
-                    style={{ justifyContent: "flex-start", background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" }}
+                    style={{ justifyContent: "flex-start", minHeight: 40, background: "#f0fdf4", borderColor: "#bbf7d0", color: "#166534" }}
                   >
                     <FileSpreadsheet size={16} /> Khai báo & Đối chiếu Số dư ban đầu (Số dư độc lập của công ty)
                   </Link>
                   <button
                     className="admin-btn admin-btn-secondary"
-                    style={{ justifyContent: "flex-start" }}
+                    style={{ justifyContent: "flex-start", minHeight: 40 }}
                     onClick={() => handleSeedStandardRoles()}
                   >
                     <Sparkles size={16} style={{ color: "var(--admin-primary)" }} /> Đồng bộ danh mục 21 vai trò chuẩn & Preset theo Chế độ kế toán (TT58 / TT133 / TT200 / TT99)
                   </button>
                   <button
                     className="admin-btn admin-btn-secondary"
-                    style={{ justifyContent: "flex-start" }}
+                    style={{ justifyContent: "flex-start", minHeight: 40 }}
                     onClick={() => {
                       setActiveTab("personnel");
                       setShowEmployeeModal(true);
@@ -1889,14 +1899,14 @@ export default function CompanyAdminWorkspace() {
                   </button>
                   <button
                     className="admin-btn admin-btn-secondary"
-                    style={{ justifyContent: "flex-start" }}
+                    style={{ justifyContent: "flex-start", minHeight: 40 }}
                     onClick={() => setActiveTab("roles")}
                   >
                     <ShieldCheck size={16} /> Tinh chỉnh ma trận quyền cho từng Role
                   </button>
                   <button
                     className="admin-btn admin-btn-secondary"
-                    style={{ justifyContent: "flex-start" }}
+                    style={{ justifyContent: "flex-start", minHeight: 40 }}
                     onClick={() => setActiveTab("personnel")}
                   >
                     <UserCheck size={16} /> Duyệt nhân sự xin gia nhập doanh nghiệp
@@ -1920,7 +1930,7 @@ export default function CompanyAdminWorkspace() {
                   <Link
                     to="/fiscal-periods"
                     className="admin-btn admin-btn-secondary"
-                    style={{ justifyContent: "flex-start" }}
+                    style={{ justifyContent: "flex-start", minHeight: 40 }}
                   >
                     <Calendar size={16} /> Khóa / Mở kỳ kế toán theo tháng & quý
                   </Link>

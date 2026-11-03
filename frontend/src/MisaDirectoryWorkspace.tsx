@@ -54,15 +54,16 @@ const writableDirectories = new Set([
   "Nhà cung cấp", "Khách hàng", "Đơn vị tính", "Vật tư hàng hóa", "Tài khoản ngân hàng", "Nhân viên",
 ]);
 const directoryValue = (row: Record<string, any>, header: string): string => {
+  if (/^Mã số thuế/.test(header)) return String(row.tax_code || "");
   if (/^Mã/.test(header)) return String(row.code || row.number || "");
   if (/^Tên viết tắt/.test(header)) return String(row.code || "");
   if (/^Số tài khoản/.test(header)) return String(row.account_number || "");
   if (/^Tên/.test(header)) return String(row.name || row.full_name || row.bank_name || "");
-  if (/^Địa chỉ/.test(header)) return String(row.address || "");
+  if (/^Địa chỉ/.test(header)) return String(row.address || row.addresses?.[0]?.address_line || "");
+  if (/^Điện thoại/.test(header)) return String(row.phone || row.contacts?.[0]?.phone || "");
   if (/^Mô tả|^Diễn giải/.test(header)) return String(row.description || row.notes || "");
   if (/^Đơn vị tính/.test(header)) return String(row.name || row.code || "");
   if (/^Trạng thái/.test(header)) return String(row.status || "");
-  if (/^Mã số thuế/.test(header)) return String(row.tax_code || "");
   return "";
 };
 const seedRows = (definition: DirectoryDefinition): DirectoryRow[] =>
@@ -298,10 +299,16 @@ export default function MisaDirectoryWorkspace({
       const values = normalized.values;
       const code = definition.name === "Ngân hàng"
         ? values["Tên viết tắt"]
-        : Object.entries(values).find(([label]) => /^Mã/.test(label))?.[1] || values["Mã"];
+        : Object.entries(values).find(([label]) => /^Mã(?! số)(?: |$)/.test(label))?.[1]
+          || values["Mã khách hàng"]
+          || values["Mã nhà cung cấp"]
+          || values["Mã"]
+          || (definition.name === "Khách hàng" ? "AUTO" : "");
       const name = definition.name === "Ngân hàng"
         ? values["Tên đầy đủ"]
-        : Object.entries(values).find(([label]) => /^Tên/.test(label))?.[1] || values["Tên"];
+        : Object.entries(values).find(([label]) => /^Tên(?: |$)|^Họ và tên$/.test(label))?.[1]
+          || Object.entries(values).find(([label]) => /^Tên/.test(label))?.[1]
+          || values["Tên"];
       try {
         const baseInput: Record<string, any> = {
           ...(definition.name === "Ngân hàng" || definition.name === "Loại tiền" || (employeeDirectory && existing) ? {} : { company: companyId }),
@@ -312,14 +319,15 @@ export default function MisaDirectoryWorkspace({
           address: values["Địa chỉ"] || "", warehouse_type: "PHYSICAL", warehouse_scope: "COMPANY_SHARED",
         });
         if (definition.name === "Nhà cung cấp" || definition.name === "Khách hàng") {
+          const rawTax = String(values["Mã số thuế"] || values["Mã số thuế/CCCD chủ hộ"] || "").trim().replace(/[\s-]/g, "");
           baseInput.party_type = values["Loại"] === "Cá nhân" ? "INDIVIDUAL" : "ORGANIZATION";
-          baseInput.tax_code = values["Mã số thuế"] || null;
+          baseInput.tax_code = /^\d{10}(\d{3})?$/.test(rawTax) ? rawTax : null;
           baseInput.legal_name = name;
         }
         if (definition.name === "Điều khoản thanh toán") {
           baseInput.due_days = Number(values["Số ngày được nợ"] || 0);
           baseInput.discount_days = values["Thời hạn hưởng chiết khấu"] ? Number(values["Thời hạn hưởng chiết khấu"]) : null;
-          baseInput.discount_rate = values["Tỷ lệ chiết khấu"] ? Number(values["Tỷ lệ chiết khấu"]) : null;
+          baseInput.discount_rate = values["Tỷ lệ chiết khấu"] ? Number(values["Thời hạn hưởng chiết khấu"] ? values["Tỷ lệ chiết khấu"] : 0) : null;
           baseInput.scope = "BOTH";
           baseInput.due_base = "DOCUMENT";
           baseInput.has_discount = Boolean(baseInput.discount_rate);
@@ -338,6 +346,12 @@ export default function MisaDirectoryWorkspace({
           },
         );
         normalized.id = String(saved.id);
+        if (saved.code) {
+          for (const key of Object.keys(normalized.values)) {
+            if (/^Mã(?! số)(?: |$)/.test(key)) normalized.values[key] = String(saved.code);
+          }
+          normalized.values["Mã"] = String(saved.code);
+        }
         reloadApi();
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "Không lưu được danh mục.");

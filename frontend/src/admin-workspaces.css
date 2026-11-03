@@ -518,6 +518,7 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin-bottom: 22px;
+  align-items: stretch;
 }
 
 .admin-kpi-card {
@@ -529,6 +530,9 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  height: 100%;
+  min-height: 88px;
+  box-sizing: border-box;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 

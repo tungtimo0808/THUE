@@ -45,6 +45,7 @@ router.register("membership-terminations", MembershipTerminationRecordViewSet, b
 router.register("membership-exit-requests", MembershipExitRequestViewSet, basename="membership-exit-request")
 router.register("organization-assignments", OrganizationAssignmentViewSet, basename="organization-assignment")
 router.register("memberships", CompanyMembershipViewSet, basename="company-membership")
+router.register("company-users", CompanyMembershipViewSet, basename="company-users")
 router.register("roles", RoleViewSet, basename="role")
 router.register("permission-resources", PermissionResourceViewSet, basename="permission-resource")
 router.register("permission-actions", PermissionActionViewSet, basename="permission-action")

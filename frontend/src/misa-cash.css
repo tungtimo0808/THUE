@@ -2107,7 +2107,9 @@
 }
 
 .misa-voucher-input {
-  height: 32px;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   padding: 0 10px;
@@ -2117,7 +2119,7 @@
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 .misa-voucher-input:focus {
@@ -2130,12 +2132,18 @@
   align-items: center;
   position: relative;
   width: 100%;
-  height: 32px;
-  box-sizing: border-box;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  box-sizing: border-box !important;
 }
 
-.misa-voucher-combo-input .misa-voucher-input {
+.misa-voucher-combo-input > .misa-voucher-input {
   padding-right: 48px;
+}
+
+.misa-lookup-uniform-row:hover td {
+  background: #f0fdf4 !important;
 }
 
 .misa-voucher-combo-actions {
@@ -2359,9 +2367,11 @@
 
 .misa-voucher-meta-control .misa-voucher-input {
   width: 100%;
-  height: 30px;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   font-size: 12.5px;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 /* Tabs and Table section */
