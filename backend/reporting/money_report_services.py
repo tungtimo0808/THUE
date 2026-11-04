@@ -821,7 +821,7 @@ def _build_detailed_cash_ledger_rpt0034(company_id: str, from_date: date | None,
         is_rcp = deb > 0
         rcp_no = doc_no if is_rcp else ""
         pmt_no = doc_no if not is_rcp else ""
-        p_name = getattr(l.party, "name", "") if l.party else ""
+        p_name = (getattr(l.party, "name", "") if l.party else "") or (getattr(offset_l.party, "name", "") if offset_l and offset_l.party else "")
 
         rows.append({
             "row_order": idx,

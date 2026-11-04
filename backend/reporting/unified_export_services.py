@@ -111,6 +111,101 @@ def normalize_columns(columns: Any) -> List[Dict[str, Any]]:
     return res
 
 
+def _resolve_col_grouping(col: Dict[str, Any]) -> Tuple[Optional[str], str]:
+    """Tách nhóm cột cha (group) và tiêu đề con (sublabel) theo chuẩn biểu mẫu MISA."""
+    grp = col.get("group")
+    sub = col.get("sublabel")
+    raw_label = str(col.get("label") or col.get("key") or "").strip()
+    if grp and sub:
+        return str(grp), str(sub)
+    if " - " in raw_label:
+        parts = raw_label.split(" - ", 1)
+        g = re.sub(r"^Số dư đầu kỳ$", "Đầu kỳ", parts[0].strip(), flags=re.I)
+        g = re.sub(r"^Số phát sinh trong kỳ$", "Phát sinh", g, flags=re.I)
+        g = re.sub(r"^Số dư cuối kỳ$", "Cuối kỳ", g, flags=re.I)
+        s = re.sub(r"^(Dư|Phát sinh)\s+(Nợ|Có)(\s*\(.*\))?$", r"\2", parts[1].strip(), flags=re.I)
+        return g, s or parts[1].strip()
+
+    k = str(col.get("key") or "").lower()
+    mapping = {
+        "opening_debit": ("Đầu kỳ", "Nợ"),
+        "open_debit": ("Đầu kỳ", "Nợ"),
+        "opening_credit": ("Đầu kỳ", "Có"),
+        "open_credit": ("Đầu kỳ", "Có"),
+        "opening_qty": ("Đầu kỳ", "Số lượng"),
+        "opening_amount": ("Đầu kỳ", "Giá trị"),
+        "period_debit": ("Phát sinh", "Nợ"),
+        "period_credit": ("Phát sinh", "Có"),
+        "accum_debit": ("Phát sinh", "Nợ lũy kế"),
+        "cumulative_debit": ("Phát sinh", "Nợ lũy kế"),
+        "accum_credit": ("Phát sinh", "Có lũy kế"),
+        "cumulative_credit": ("Phát sinh", "Có lũy kế"),
+        "closing_debit": ("Cuối kỳ", "Nợ"),
+        "close_debit": ("Cuối kỳ", "Nợ"),
+        "closing_credit": ("Cuối kỳ", "Có"),
+        "close_credit": ("Cuối kỳ", "Có"),
+        "closing_qty": ("Cuối kỳ", "Số lượng"),
+        "closing_amount": ("Cuối kỳ", "Giá trị"),
+        "in_qty": ("Nhập trong kỳ", "Số lượng"),
+        "import_qty": ("Nhập trong kỳ", "Số lượng"),
+        "in_amount": ("Nhập trong kỳ", "Giá trị"),
+        "import_amount": ("Nhập trong kỳ", "Giá trị"),
+        "out_qty": ("Xuất trong kỳ", "Số lượng"),
+        "export_qty": ("Xuất trong kỳ", "Số lượng"),
+        "out_amount": ("Xuất trong kỳ", "Giá trị"),
+        "export_amount": ("Xuất trong kỳ", "Giá trị"),
+    }
+    if k in mapping:
+        return mapping[k]
+    return None, raw_label
+
+
+def _build_grouped_headers(columns: List[Dict[str, Any]]) -> Tuple[bool, List[Dict[str, Any]], List[str]]:
+    resolved = [_resolve_col_grouping(c) for c in columns]
+    raw_labels = [str(c.get("label") or c.get("key") or "").strip() for c in columns]
+    n = len(resolved)
+    # Chỉ kích hoạt header 2 tầng khi có ít nhất 1 nhóm có >= 2 cột liên tiếp (hoặc cột truyền sẵn group tường minh)
+    effective: List[Tuple[Optional[str], str]] = []
+    idx = 0
+    while idx < n:
+        g, s = resolved[idx]
+        explicit_grp = bool(columns[idx].get("group"))
+        if not g:
+            effective.append((None, s))
+            idx += 1
+        else:
+            span = 1
+            while idx + span < n and resolved[idx + span][0] == g:
+                span += 1
+            if span >= 2 or explicit_grp:
+                for k in range(span):
+                    effective.append(resolved[idx + k])
+            else:
+                effective.append((None, raw_labels[idx]))
+            idx += span
+
+    has_groups = any(g is not None for g, _ in effective)
+    if not has_groups:
+        return False, [], []
+    top_row: List[Dict[str, Any]] = []
+    sub_row: List[str] = []
+    i = 0
+    while i < n:
+        g, s = effective[i]
+        if not g:
+            top_row.append({"label": s, "colspan": 1, "rowspan": 2, "start_col": i + 1})
+            i += 1
+        else:
+            span = 1
+            sub_row.append(s)
+            while i + span < n and effective[i + span][0] == g:
+                sub_row.append(effective[i + span][1])
+                span += 1
+            top_row.append({"label": g, "colspan": span, "rowspan": 1, "start_col": i + 1})
+            i += span
+    return True, top_row, sub_row
+
+
 def normalize_rows(rows: Any) -> List[Dict[str, Any]]:
     """Chuẩn hóa danh sách dòng thành dạng List[Dict]."""
     if not rows:
@@ -360,22 +455,66 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
 
     curr_row += 1  # Blank line
 
-    # 2. Table Headers
+    # 2. Table Headers (Hỗ trợ tiêu đề nhóm 2 tầng chuẩn MISA)
     header_row_idx = curr_row
     col_keys = [c.get("key", "") for c in columns]
+    has_groups, top_row, sub_row = _build_grouped_headers(columns)
 
-    for col_idx, col in enumerate(columns, 1):
-        cell = ws_main.cell(
-            row=header_row_idx,
-            column=col_idx,
-            value=sanitize_for_spreadsheet(col.get("label", col.get("key", ""))),
-        )
-        cell.font = font_header
-        cell.fill = fill_header
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border = cell_border
-
-    curr_row += 1
+    if has_groups:
+        sub_ptr = 0
+        for item in top_row:
+            start_c = item["start_col"]
+            span = item["colspan"]
+            rspan = item["rowspan"]
+            top_cell = ws_main.cell(
+                row=header_row_idx,
+                column=start_c,
+                value=sanitize_for_spreadsheet(item["label"]),
+            )
+            top_cell.font = font_header
+            top_cell.fill = fill_header
+            top_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            if rspan == 2:
+                ws_main.merge_cells(
+                    start_row=header_row_idx, start_column=start_c,
+                    end_row=header_row_idx + 1, end_column=start_c
+                )
+                ws_main.cell(row=header_row_idx, column=start_c).border = cell_border
+                ws_main.cell(row=header_row_idx + 1, column=start_c).border = cell_border
+            else:
+                if span > 1:
+                    ws_main.merge_cells(
+                        start_row=header_row_idx, start_column=start_c,
+                        end_row=header_row_idx, end_column=start_c + span - 1
+                    )
+                for offset in range(span):
+                    c_idx = start_c + offset
+                    ws_main.cell(row=header_row_idx, column=c_idx).border = cell_border
+                    ws_main.cell(row=header_row_idx, column=c_idx).fill = fill_header
+                    sub_lbl = sub_row[sub_ptr] if sub_ptr < len(sub_row) else ""
+                    sub_ptr += 1
+                    sub_cell = ws_main.cell(
+                        row=header_row_idx + 1,
+                        column=c_idx,
+                        value=sanitize_for_spreadsheet(sub_lbl),
+                    )
+                    sub_cell.font = font_header
+                    sub_cell.fill = fill_header
+                    sub_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                    sub_cell.border = cell_border
+        curr_row += 2
+    else:
+        for col_idx, col in enumerate(columns, 1):
+            cell = ws_main.cell(
+                row=header_row_idx,
+                column=col_idx,
+                value=sanitize_for_spreadsheet(col.get("label", col.get("key", ""))),
+            )
+            cell.font = font_header
+            cell.fill = fill_header
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = cell_border
+        curr_row += 1
 
     # 3. Data Rows
     code_field_keywords = {"code", "no", "id", "account", "tax_code", "bank_account", "stt"}
@@ -844,9 +983,9 @@ def generate_docx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
 def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> str:
     """
     TC-RPT-15-11..24, BR-RPT-EXP-37..48:
-    Tạo bản xem trước in (HTML Print Preview) chuẩn CSS paged media.
+    Tạo bản xem trước in (HTML Print Preview) chuẩn CSS paged media theo mẫu báo cáo MISA.
     Hỗ trợ lặp header (@media print table-header-group), khổ giấy A4/A3, xoay ngang/dọc,
-    khối chữ ký 3 cột và watermark trạng thái.
+    tiêu đề nhóm 2 tầng (rowspan/colspan), khối chữ ký 3 cột và watermark trạng thái.
     """
     options = options or {}
     # Both values are written into the page unescaped, so only known ones pass.
@@ -860,20 +999,31 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     rows = normalize_rows(dataset.get("rows", []))
     title = (dataset.get("title") or "BÁO CÁO KẾ TOÁN").upper()
     company_name = dataset.get("company_name", "")
+    company_address = dataset.get("company_address", "") or "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội - Việt Nam"
     tax_code = dataset.get("tax_code", "")
     period_str = dataset.get("period_str", "")
     is_approved = bool(dataset.get("is_approved", False))
     status_label = "ĐÃ PHÊ DUYỆT" if is_approved else "DỰ THẢO (DRAFT)"
     status_class = "badge-approved" if is_approved else "badge-draft"
 
-    prep_name = options.get("prepared_by_name") or "Người lập biểu"
-    chief_name = options.get("chief_accountant_name") or "Kế toán trưởng"
-    director_name = options.get("legal_representative_name") or "Giám đốc / Đại diện pháp luật"
+    prep_name = options.get("prepared_by_name") or ""
+    chief_name = options.get("chief_accountant_name") or ""
+    director_name = options.get("legal_representative_name") or ""
     sig_date = options.get("signature_date") or datetime.date.today().strftime("Ngày %d tháng %m năm %Y")
 
-    col_headers_html = "".join(
-        f"<th>{html.escape(c.get('label', c.get('key', '')))}</th>" for c in columns
-    )
+    has_groups, top_row, sub_row = _build_grouped_headers(columns)
+    if has_groups:
+        top_html = "".join(
+            f"<th colspan='{c['colspan']}' rowspan='{c['rowspan']}'>{html.escape(c['label'])}</th>"
+            for c in top_row
+        )
+        sub_html = "".join(f"<th>{html.escape(lbl)}</th>" for lbl in sub_row)
+        thead_rows_html = f"<tr>{top_html}</tr><tr>{sub_html}</tr>"
+    else:
+        col_headers_html = "".join(
+            f"<th>{html.escape(c.get('label', c.get('key', '')))}</th>" for c in columns
+        )
+        thead_rows_html = f"<tr>{col_headers_html}</tr>"
 
     tbody_rows = []
     amount_keywords = {"amount", "price", "cost", "balance", "debit", "credit", "total", "val", "qty"}
@@ -881,7 +1031,7 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     for r in rows:
         tds = []
         is_subtotal = bool(r.get("is_subtotal") or r.get("is_group_header"))
-        for c in columns:
+        for col_idx, c in enumerate(columns):
             k = c.get("key", "")
             raw_v = r.get(k)
             k_lower = k.lower()
@@ -891,15 +1041,20 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
             ) and any(m in k_lower for m in amount_keywords)
 
             if raw_v is None:
-                text_v = "-"
+                text_v = ""
             elif isinstance(raw_v, (int, float, Decimal)):
-                text_v = f"{raw_v:,.0f}" if float(raw_v) == int(raw_v) else f"{raw_v:,.2f}"
+                if float(raw_v) == 0:
+                    text_v = ""
+                else:
+                    formatted = f"{raw_v:,.0f}" if float(raw_v) == int(raw_v) else f"{raw_v:,.2f}"
+                    text_v = formatted.replace(",", ".")
             else:
                 text_v = str(raw_v)
 
             align_class = "text-right" if is_num else "text-left"
+            code_class = "code-link" if (col_idx == 0 and not is_num and not is_subtotal) else ""
             subtotal_class = "font-bold bg-subtotal" if is_subtotal else ""
-            tds.append(f"<td class='{align_class} {subtotal_class}'>{html.escape(text_v)}</td>")
+            tds.append(f"<td class='{align_class} {code_class} {subtotal_class}'>{html.escape(text_v)}</td>")
         tbody_rows.append(f"<tr>{''.join(tds)}</tr>")
 
     # Grand total
@@ -909,11 +1064,16 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
         for idx, c in enumerate(columns):
             k = c.get("key", "")
             if idx == 0:
-                gt_tds.append("<td class='text-left font-bold bg-grand-total'>TỔNG CỘNG</td>")
+                gt_tds.append("<td class='text-center font-bold bg-grand-total'>TỔNG CỘNG</td>")
             else:
                 gt_v = grand_total.get(k)
                 if gt_v is not None and isinstance(gt_v, (int, float, Decimal)):
-                    gt_tds.append(f"<td class='text-right font-bold bg-grand-total'>{gt_v:,.0f}</td>")
+                    if float(gt_v) == 0:
+                        gt_tds.append("<td class='text-right font-bold bg-grand-total' data-raw='0'></td>")
+                    else:
+                        gt_tds.append(
+                            f"<td class='text-right font-bold bg-grand-total' data-raw='{gt_v:,.0f}'>{f'{gt_v:,.0f}'.replace(',', '.')}</td>"
+                        )
                 else:
                     gt_tds.append(f"<td class='text-right font-bold bg-grand-total'>{html.escape(str(gt_v or ''))}</td>")
         tbody_rows.append(f"<tr class='grand-total-row'>{''.join(gt_tds)}</tr>")
@@ -929,13 +1089,14 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     margin: 15mm;
   }}
   body {{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    color: #1f2937;
+    font-family: "Times New Roman", Times, serif;
+    color: #000000;
     margin: 0;
-    padding: 20px;
+    padding: 24px 36px;
     background: #fff;
   }}
   .no-print {{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     margin-bottom: 20px;
     padding: 12px;
     background: #f3f4f6;
@@ -948,18 +1109,19 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     .no-print {{ display: none !important; }}
     body {{ padding: 0; }}
   }}
-  .company-info {{ font-size: 13px; line-height: 1.4; }}
-  .company-title {{ font-weight: bold; font-size: 14px; text-transform: uppercase; }}
-  .report-header {{ text-align: center; margin: 15px 0 20px 0; }}
-  .report-title {{ font-size: 20px; font-weight: bold; color: #1e3a8a; margin: 0 0 5px 0; text-transform: uppercase; }}
-  .report-period {{ font-size: 13px; font-style: italic; color: #4b5563; }}
+  .company-info {{ font-size: 13.5px; line-height: 1.45; }}
+  .company-title {{ font-weight: bold; font-size: 14px; }}
+  .report-header {{ text-align: center; margin: 12px 0 8px 0; }}
+  .report-title {{ font-size: 20px; font-weight: bold; color: #000000; margin: 0 0 5px 0; text-transform: uppercase; }}
+  .report-period {{ font-size: 14px; font-style: italic; font-weight: bold; color: #000000; }}
+  .unit-line {{ text-align: right; font-style: italic; font-size: 13px; margin-bottom: 6px; }}
   .badge-draft {{ color: #dc2626; font-weight: bold; }}
   .badge-approved {{ color: #059669; font-weight: bold; }}
   table.report-table {{
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
-    font-size: 11px;
+    margin-top: 4px;
+    font-size: 12.5px;
   }}
   table.report-table thead {{
     display: table-header-group;
@@ -968,46 +1130,49 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     page-break-inside: avoid;
   }}
   table.report-table th, table.report-table td {{
-    border: 1px solid #d1d5db;
-    padding: 6px 8px;
+    border: 1px solid #000000;
+    padding: 5px 7px;
   }}
   table.report-table th {{
-    background: #1e40af;
-    color: #ffffff;
-    font-weight: 600;
+    background: #ffffff;
+    color: #000000;
+    font-weight: bold;
     text-align: center;
+    vertical-align: middle;
   }}
+  .code-link {{ color: #1d4ed8; }}
   .text-left {{ text-align: left; }}
   .text-right {{ text-align: right; }}
   .text-center {{ text-align: center; }}
   .font-bold {{ font-weight: bold; }}
-  .bg-subtotal {{ background: #f8fafc; }}
-  .bg-grand-total {{ background: #e0e7ff; }}
-  .grand-total-row td {{ border-bottom: 3px double #1e3a8a; }}
+  .bg-subtotal {{ background: #ffffff; }}
+  .bg-grand-total {{ background: #ffffff; }}
+  .grand-total-row td {{ font-weight: bold; }}
   .signature-block {{
-    margin-top: 35px;
+    margin-top: 28px;
     page-break-inside: avoid;
     display: flex;
     justify-content: space-between;
     text-align: center;
   }}
   .sig-col {{ width: 30%; }}
-  .sig-title {{ font-weight: bold; font-size: 12px; margin-bottom: 4px; }}
-  .sig-sub {{ font-size: 11px; font-style: italic; color: #6b7280; }}
+  .sig-title {{ font-weight: bold; font-size: 13px; margin-bottom: 3px; }}
+  .sig-sub {{ font-size: 12px; font-style: italic; color: #111111; }}
   .sig-space {{ height: 60px; }}
-  .sig-name {{ font-weight: bold; font-size: 12px; }}
+  .sig-name {{ font-weight: bold; font-size: 13px; }}
+  .page-num {{ text-align: right; font-size: 12.5px; margin-top: 12px; }}
 </style>
 </head>
 <body>
   <div class="no-print">
-    <button onclick="window.print()" style="padding: 8px 16px; background: #1e40af; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">In báo cáo</button>
-    <span style="font-size: 12px; color: #4b5563;">Khổ giấy: <b>{paper_size}</b> | Hướng: <b>{orientation.upper()}</b></span>
+    <button onclick="window.print()" style="padding: 8px 16px; background: #00a862; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">In báo cáo</button>
+    <span style="font-size: 12px; color: #4b5563;">Khổ giấy: <b>{paper_size}</b> | Hướng: <b>{orientation.upper()}</b> | Trạng thái: <span class="{status_class}">{status_label}</span></span>
   </div>
 
   <div class="company-info">
-    <div class="company-title">{html.escape(company_name or "DOANH NGHIỆP")}</div>
-    <div>Mã số thuế: {html.escape(tax_code or "-")}</div>
-    <div>Trạng thái: <span class="{status_class}">{status_label}</span></div>
+    <div class="company-title">{html.escape(company_name or "Công ty TNHH Tùng Timo")}</div>
+    <div>{html.escape(company_address)}</div>
+    {f"<div>Mã số thuế: {html.escape(tax_code)}</div>" if tax_code else ""}
   </div>
 
   <div class="report-header">
@@ -1015,9 +1180,11 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     <div class="report-period">{html.escape(period_str)}</div>
   </div>
 
+  <div class="unit-line">Đơn vị tính: VND</div>
+
   <table class="report-table">
     <thead>
-      <tr>{col_headers_html}</tr>
+      {thead_rows_html}
     </thead>
     <tbody>
       {''.join(tbody_rows)}
@@ -1026,25 +1193,27 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
 
   <div class="signature-block">
     <div class="sig-col">
-      <div class="sig-title">NGƯỜI LẬP BIỂU</div>
+      <div class="sig-title">Người lập biểu</div>
       <div class="sig-sub">(Ký, họ tên)</div>
       <div class="sig-space"></div>
       <div class="sig-name">{html.escape(prep_name)}</div>
     </div>
     <div class="sig-col">
-      <div class="sig-title">KẾ TOÁN TRƯỞNG</div>
+      <div class="sig-title">Kế toán trưởng</div>
       <div class="sig-sub">(Ký, họ tên)</div>
       <div class="sig-space"></div>
       <div class="sig-name">{html.escape(chief_name)}</div>
     </div>
     <div class="sig-col">
       <div class="sig-sub" style="margin-bottom: 5px;"><i>{html.escape(sig_date)}</i></div>
-      <div class="sig-title">GIÁM ĐỐC / ĐẠI DIỆN PHÁP LUẬT</div>
-      <div class="sig-sub">(Ký, đóng dấu, họ tên)</div>
+      <div class="sig-title">Giám đốc</div>
+      <div class="sig-sub">(Ký, họ tên, đóng dấu)</div>
       <div class="sig-space"></div>
       <div class="sig-name">{html.escape(director_name)}</div>
     </div>
   </div>
+
+  <div class="page-num">1/1</div>
 </body>
 </html>
 """
@@ -1082,6 +1251,7 @@ def resolve_export_dataset(
     # Lấy thông tin công ty
     company = Company.objects.filter(pk=company_id).first()
     company_name = company.name if company else (payload.get("company_name") or "Doanh nghiệp")
+    company_address = getattr(company, "address", "") if company else (payload.get("company_address") or "")
     tax_code = company.tax_code if company else (payload.get("tax_code") or "")
 
     # Lọc cột theo selected_column_keys (nếu có)
@@ -1120,7 +1290,9 @@ def resolve_export_dataset(
             k = c.get("key", "")
             numeric_vals = [
                 float(r[k]) for r in final_rows
-                if k in r and isinstance(r[k], (int, float, Decimal)) and not r.get("is_subtotal")
+                if k in r
+                and isinstance(r[k], (int, float, Decimal))
+                and not (r.get("is_subtotal") or r.get("is_parent") or r.get("isParent"))
             ]
             if numeric_vals:
                 grand_total[k] = sum(numeric_vals)
@@ -1129,6 +1301,7 @@ def resolve_export_dataset(
         "report_code": report_code,
         "title": title,
         "company_name": company_name,
+        "company_address": company_address,
         "tax_code": tax_code,
         "period_str": period_str,
         "columns": raw_columns,

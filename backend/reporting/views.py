@@ -230,24 +230,60 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
     report_area = "financial"
 
     def list(self, request):
-        from django.db.models import Sum
+        from datetime import date, datetime
+        from django.db.models import Q, Sum
         from general_ledger.models import JournalLine
+        from organization.models import Branch
 
         company = self._resolve_company(request)
         if not company:
             return Response({"detail": "Chưa có doanh nghiệp."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 1. Dữ liệu đầu kỳ (OPENING) và cuối kỳ (POSTED)
-        open_qs = JournalLine.objects.filter(
-            entry__company=company,
-            entry__status="POSTED",
-            entry__entry_type="OPENING",
-        ).values("account__code").annotate(debit=Sum("debit"), credit=Sum("credit"))
+        def _parse_date(raw_str):
+            if not raw_str:
+                return None
+            s = str(raw_str).strip()
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(s, fmt).date()
+                except ValueError:
+                    continue
+            return None
 
-        all_qs = JournalLine.objects.filter(
+        from_date_obj = _parse_date(request.query_params.get("from_date"))
+        to_date_obj = _parse_date(request.query_params.get("to_date"))
+        branch_id = (request.query_params.get("branch_id") or "").strip()
+        accumulate_from = (request.query_params.get("accumulate_from") or "fiscal_start").strip().lower()
+
+        base_line_qs = JournalLine.objects.filter(
             entry__company=company,
             entry__status="POSTED",
-        ).values("account__code").annotate(debit=Sum("debit"), credit=Sum("credit"))
+        )
+        if branch_id:
+            base_line_qs = base_line_qs.filter(Q(entry__branch_id=branch_id) | Q(entry__branch__isnull=True))
+
+        # 1. Dữ liệu đầu kỳ (OPENING + phát sinh trước from_date) và cuối kỳ (đến to_date)
+        if from_date_obj:
+            open_filter = Q(entry__entry_type="OPENING") | Q(entry__posting_date__lt=from_date_obj)
+        else:
+            open_filter = Q(entry__entry_type="OPENING")
+
+        open_qs = (
+            base_line_qs.filter(open_filter)
+            .values("account__code")
+            .annotate(debit=Sum("debit"), credit=Sum("credit"))
+        )
+
+        if to_date_obj:
+            close_filter = Q(entry__entry_type="OPENING") | Q(entry__posting_date__lte=to_date_obj)
+        else:
+            close_filter = Q()
+
+        all_qs = (
+            base_line_qs.filter(close_filter)
+            .values("account__code")
+            .annotate(debit=Sum("debit"), credit=Sum("credit"))
+        )
 
         open_map = {r["account__code"]: (int(r["debit"] or 0), int(r["credit"] or 0)) for r in open_qs}
         close_map = {r["account__code"]: (int(r["debit"] or 0), int(r["credit"] or 0)) for r in all_qs}
@@ -468,10 +504,11 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
                 }
 
         # 2. B02-DN: Báo cáo kết quả hoạt động kinh doanh TT99
-        period_qs = JournalLine.objects.filter(
-            entry__company=company,
-            entry__status="POSTED",
-        ).exclude(entry__entry_type="OPENING")
+        period_qs = base_line_qs.exclude(entry__entry_type="OPENING")
+        if from_date_obj:
+            period_qs = period_qs.filter(entry__posting_date__gte=from_date_obj)
+        if to_date_obj:
+            period_qs = period_qs.filter(entry__posting_date__lte=to_date_obj)
 
         closing_entry_ids = list(
             period_qs.filter(account__code__startswith="911")
@@ -547,8 +584,14 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
         period_entries = (
             JournalEntry.objects.filter(company=company, status="POSTED")
             .exclude(entry_type="OPENING")
-            .prefetch_related("lines__account")
         )
+        if branch_id:
+            period_entries = period_entries.filter(Q(branch_id=branch_id) | Q(branch__isnull=True))
+        if from_date_obj:
+            period_entries = period_entries.filter(posting_date__gte=from_date_obj)
+        if to_date_obj:
+            period_entries = period_entries.filter(posting_date__lte=to_date_obj)
+        period_entries = period_entries.prefetch_related("lines__account")
         for entry in period_entries:
             lines = list(entry.lines.all())
             cash_lines = [l for l in lines if l.account.code.startswith(("111", "112", "113"))]
@@ -708,12 +751,24 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
         # 5. Bảng cân đối tài khoản (Trial Balance) & Sổ quỹ tiền mặt (Cash Ledger)
         from general_ledger.models import Account
         period_acc_qs = (
-            JournalLine.objects.filter(entry__company=company, entry__status="POSTED")
-            .exclude(entry__entry_type="OPENING")
+            period_qs
             .values("account__code")
             .annotate(debit=Sum("debit"), credit=Sum("credit"))
         )
         period_map = {r["account__code"]: (int(r["debit"] or 0), int(r["credit"] or 0)) for r in period_acc_qs}
+
+        accum_line_qs = base_line_qs.exclude(entry__entry_type="OPENING")
+        if to_date_obj:
+            accum_line_qs = accum_line_qs.filter(entry__posting_date__lte=to_date_obj)
+        if accumulate_from not in ("data_start", "ngay_bat_dau_du_lieu"):
+            ref_year = (to_date_obj or from_date_obj or date.today()).year
+            accum_line_qs = accum_line_qs.filter(entry__posting_date__gte=date(ref_year, 1, 1))
+        accum_acc_qs = (
+            accum_line_qs
+            .values("account__code")
+            .annotate(debit=Sum("debit"), credit=Sum("credit"))
+        )
+        accum_map = {r["account__code"]: (int(r["debit"] or 0), int(r["credit"] or 0)) for r in accum_acc_qs}
 
         all_accounts = list(
             Account.objects.filter(company=company, status="ACTIVE")
@@ -726,17 +781,23 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
             code = a["code"]
             has_child = any(other != code and other.startswith(code) for other in acc_codes_set)
             if not has_child:
-                od, oc = open_map.get(code, (0, 0))
+                od_raw, oc_raw = open_map.get(code, (0, 0))
+                open_net = od_raw - oc_raw
+                od = max(open_net, 0)
+                oc = max(-open_net, 0)
                 pd, pc = period_map.get(code, (0, 0))
+                ad, ac = accum_map.get(code, (pd, pc))
                 net = (od + pd) - (oc + pc)
                 cd = max(net, 0)
                 cc = max(-net, 0)
-                if od or oc or pd or pc or cd or cc:
+                if od or oc or pd or pc or ad or ac or cd or cc:
                     leaf_rows_by_code[code] = {
                         "openDebit": od,
                         "openCredit": oc,
                         "periodDebit": pd,
                         "periodCredit": pc,
+                        "accumDebit": ad,
+                        "accumCredit": ac,
                         "closeDebit": cd,
                         "closeCredit": cc,
                     }
@@ -752,6 +813,8 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
             oc = sum(leaf_rows_by_code[lc]["openCredit"] for lc in descendants)
             pd = sum(leaf_rows_by_code[lc]["periodDebit"] for lc in descendants)
             pc = sum(leaf_rows_by_code[lc]["periodCredit"] for lc in descendants)
+            ad = sum(leaf_rows_by_code[lc]["accumDebit"] for lc in descendants)
+            ac = sum(leaf_rows_by_code[lc]["accumCredit"] for lc in descendants)
             cd = sum(leaf_rows_by_code[lc]["closeDebit"] for lc in descendants)
             cc = sum(leaf_rows_by_code[lc]["closeCredit"] for lc in descendants)
             trial_balance.append({
@@ -764,6 +827,8 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
                 "openCredit": oc,
                 "periodDebit": pd,
                 "periodCredit": pc,
+                "accumDebit": ad,
+                "accumCredit": ac,
                 "closeDebit": cd,
                 "closeCredit": cc,
             })
@@ -799,9 +864,15 @@ class FinancialStatementTT99ViewSet(ReportAccessMixin, ViewSet):
                 "partnerName": "",
             })
 
+        branches_list = [
+            {"id": str(b["id"]), "code": b["code"], "name": b["name"]}
+            for b in Branch.objects.filter(company=company).order_by("code").values("id", "code", "name")
+        ]
+
         return Response({
             "company_id": str(company.id),
             "company_name": company.name,
+            "branches": branches_list,
             "accounting_regime": "TT99",
             "circular_label": "Ban hành theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính",
             "b01_dn": b01_dn,
@@ -962,8 +1033,8 @@ class FinancialBundleViewSet(ViewSet):
         company, allowed_branches = financial_bundle_services.resolve_company_and_check_perm(request, "VIEW")
         qs = (
             FinancialStatementBundle.objects.filter(company=company)
-            .select_related("company", "fiscal_period", "branch", "approved_by", "created_by")
-            .prefetch_related("components__statement_run", "validations")
+            .select_related("company", "fiscal_period", "branch", "reporting_currency", "approved_by", "created_by")
+            .prefetch_related("components__statement_run__company", "components__statement_run__branch", "validations")
         )
         if allowed_branches is not None:
             qs = qs.filter(models_Q_branch(allowed_branches))
@@ -983,13 +1054,21 @@ class FinancialBundleViewSet(ViewSet):
         if request.query_params.get("current_only", "").lower() in ("true", "1"):
             qs = qs.filter(is_current_version=True)
 
-        items = [financial_bundle_services.serialize_bundle_summary(b) for b in qs.order_by("-fiscal_year", "-bundle_version", "-created_at")]
-        return Response({
+        bundles = list(qs.order_by("-fiscal_year", "-bundle_version", "-created_at"))
+        snap_cache: dict = {}
+        items = [financial_bundle_services.serialize_bundle_summary(b, _gl_snap_cache=snap_cache) for b in bundles]
+        resp_payload = {
             "company_id": str(company.id),
             "company_name": company.name,
             "count": len(items),
             "items": items,
-        })
+        }
+        if request.query_params.get("include_first_detail", "").lower() in ("true", "1") and bundles:
+            first_bundle = next((b for b in bundles if b.is_current_version), bundles[0])
+            resp_payload["first_bundle_detail"] = financial_bundle_services.serialize_bundle_detail(
+                first_bundle, request.user, _gl_snap_cache=snap_cache
+            )
+        return Response(resp_payload)
 
     def create(self, request):
         bundle = financial_bundle_services.create_or_version_financial_bundle(request)
@@ -1333,6 +1412,9 @@ class FinancialNotesViewSet(ViewSet):
     """
     UC-RPT-06 – Xem thuyết minh báo cáo tài chính (B09-DN, B09-DNKLT, B09a-DN).
     """
+
+    def parameters(self, request):
+        return Response(financial_notes_services.get_b09_parameters_payload(request.user, request.query_params.dict()))
 
     def templates(self, request):
         return Response(financial_notes_services.get_b09_templates_payload(request.user, request.query_params.dict()))
@@ -1914,14 +1996,33 @@ class AnalysisReportViewSet(ReportAccessMixin, ViewSet):
     report_area = "financial"
 
     def retrieve_report(self, request):
+        from datetime import datetime
+
+        def _parse_d(raw):
+            if not raw:
+                raise ValueError("Empty date")
+            s = str(raw).strip()
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(s, fmt).date()
+                except ValueError:
+                    continue
+            return date.fromisoformat(s)
+
         try:
-            from_date = date.fromisoformat(request.query_params.get("from_date", ""))
-            to_date = date.fromisoformat(request.query_params.get("to_date", ""))
+            from_date = _parse_d(request.query_params.get("from_date", ""))
+            to_date = _parse_d(request.query_params.get("to_date", ""))
         except ValueError:
             raise drf_serializers.ValidationError({"from_date": "Kỳ phân tích không hợp lệ."})
         return Response(analysis_report(
-            request.report_company, request.query_params.get("kind", ""), request.query_params.get("dimension", "MONTH"),
-            from_date, to_date, request.query_params.get("mode", "VALUE"),
+            request.report_company,
+            request.query_params.get("kind", ""),
+            request.query_params.get("dimension", "MONTH"),
+            from_date,
+            to_date,
+            request.query_params.get("mode", "VALUE"),
+            branch_id=request.query_params.get("branch_id") or None,
+            account_level=request.query_params.get("account_level") or None,
         ))
 
 

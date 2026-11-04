@@ -116,24 +116,88 @@ export async function refreshAccessToken(): Promise<string> {
 
 const inFlightRequests = new Map<string, Promise<any>>();
 const getResponseCache = new Map<string, { data: any; timestamp: number }>();
-const GET_CACHE_TTL_MS = 12_000;
+const GET_CACHE_TTL_MS = 30_000;
+const REPORT_CACHE_TTL_MS = 300_000; // 5 minutes for reports & catalog
+const SESSION_CACHE_PREFIX = "erp_api_cache_v1:";
+
+function getCacheTtlForPath(path: string): number {
+  if (path.includes("/api/v1/reports/") || path.includes("/api/v1/organization/companies/")) {
+    return REPORT_CACHE_TTL_MS;
+  }
+  return GET_CACHE_TTL_MS;
+}
+
+function isSessionCacheablePath(path: string): boolean {
+  return path.includes("/api/v1/reports/") || path.includes("/api/v1/organization/companies/");
+}
+
+function readSessionCache(key: string, ttl: number): any | undefined {
+  try {
+    const raw = sessionStorage.getItem(SESSION_CACHE_PREFIX + key);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.timestamp === "number" && Date.now() - parsed.timestamp < ttl) {
+      getResponseCache.set(key, parsed);
+      return parsed.data;
+    }
+    sessionStorage.removeItem(SESSION_CACHE_PREFIX + key);
+  } catch {
+    // Ignore storage errors
+  }
+  return undefined;
+}
+
+function writeSessionCache(key: string, entry: { data: any; timestamp: number }) {
+  try {
+    sessionStorage.setItem(SESSION_CACHE_PREFIX + key, JSON.stringify(entry));
+  } catch {
+    // If quota exceeded, clear old cache entries
+    clearSessionCacheStorage();
+  }
+}
+
+function clearSessionCacheStorage() {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith(SESSION_CACHE_PREFIX)) keysToRemove.push(k);
+    }
+    for (const k of keysToRemove) sessionStorage.removeItem(k);
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 export function clearLiveApiGetCache() {
   getResponseCache.clear();
+  clearSessionCacheStorage();
 }
 
 export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {
   const method = (options?.method || "GET").toUpperCase();
   const isGet = method === "GET";
-  const effectiveToken = token || localStorage.getItem("erp_token") || "";
-  const dedupeKey = isGet ? `${path}::${effectiveToken}` : null;
+  const effectiveToken =
+    token ||
+    storedSession()?.token ||
+    storedSession()?.access ||
+    localStorage.getItem("erp_token") ||
+    "";
+  const dedupeKey = isGet ? `${path}::${effectiveToken.slice(-16)}` : null;
+  const ttl = getCacheTtlForPath(path);
 
   if (!isGet) {
-    getResponseCache.clear();
+    clearLiveApiGetCache();
   } else if (dedupeKey) {
     const cached = getResponseCache.get(dedupeKey);
-    if (cached && Date.now() - cached.timestamp < GET_CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.timestamp < ttl) {
       return cached.data as T;
+    }
+    if (isSessionCacheablePath(path)) {
+      const fromSession = readSessionCache(dedupeKey, ttl);
+      if (fromSession !== undefined) {
+        return fromSession as T;
+      }
     }
   }
 
@@ -143,7 +207,7 @@ export async function request<T>(path: string, token?: string, options?: Request
 
   const exec = (async (): Promise<T> => {
     let response: Response;
-    const initialToken = token || localStorage.getItem("erp_token") || undefined;
+    const initialToken = effectiveToken || undefined;
     try {
       const fetchWithToken = (access?: string) =>
         fetch(path, {
@@ -205,7 +269,13 @@ export async function request<T>(path: string, token?: string, options?: Request
         path.includes("/companies/switch/") ||
         path.includes("/duplicates/") ||
         path.includes("/preview") ||
-        path.includes("/validate");
+        path.includes("/validate") ||
+        path.includes("/api/v1/reports/") ||
+        path.includes("/query/") ||
+        path.includes("/search/") ||
+        path.includes("/lookup/") ||
+        path.includes("/reports/export/") ||
+        path.includes("/reports/drilldown/");
       if (!isSilentMutation) {
         const serverMsg =
           body && typeof body === "object" && typeof (body as any).message === "string"
@@ -229,10 +299,14 @@ export async function request<T>(path: string, token?: string, options?: Request
       }
     }
     if (dedupeKey) {
-      getResponseCache.set(dedupeKey, { data: body, timestamp: Date.now() });
-      if (getResponseCache.size > 150) {
+      const entry = { data: body, timestamp: Date.now() };
+      getResponseCache.set(dedupeKey, entry);
+      if (getResponseCache.size > 200) {
         const oldestKey = getResponseCache.keys().next().value;
         if (oldestKey) getResponseCache.delete(oldestKey);
+      }
+      if (isSessionCacheablePath(path)) {
+        writeSessionCache(dedupeKey, entry);
       }
     }
     return body as T;

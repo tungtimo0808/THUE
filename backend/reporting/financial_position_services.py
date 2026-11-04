@@ -2466,16 +2466,24 @@ def seed_balance_sheet_uc_rpt_03(apps=None, schema_editor=None):
         _seed_template_lines(ver, lines_spec, LineModel, MappingModel)
 
 
+_B01_TEMPLATES_SEEDED = False
+
+
 def ensure_b01_templates_seeded():
+    global _B01_TEMPLATES_SEEDED
+    if _B01_TEMPLATES_SEEDED and FinancialStatementTemplate.objects.filter(legal_form_code="B01-DN").exists():
+        return
     b01 = FinancialStatementTemplate.objects.filter(legal_form_code="B01-DN").first()
     if not b01:
         from reporting.financial_bundle_services import seed_financial_bundles_uc_rpt_02
         seed_financial_bundles_uc_rpt_02()
         seed_balance_sheet_uc_rpt_03()
+        _B01_TEMPLATES_SEEDED = True
         return
     ver = b01.versions.filter(is_active=True).first()
     if not ver or ver.lines.count() != 126 or not ver.lines.filter(indicator_code="325").exists():
         seed_balance_sheet_uc_rpt_03()
+    _B01_TEMPLATES_SEEDED = True
 
 
 # ============================================================================
@@ -3796,12 +3804,12 @@ def _format_vn_number(amount: Decimal | None) -> str | None:
     return abs_str
 
 
-def _is_run_stale(run: FinancialStatementRun) -> bool:
+def _is_run_stale(run: FinancialStatementRun, _gl_snap_cache: dict | None = None) -> bool:
     if run.validation_status == FinancialStatementRun.ValidationStatus.STALE:
         return True
     from reporting.financial_bundle_services import is_run_stale
-    if is_run_stale(run):
-        return True
+    if run.source_snapshot_hash:
+        return is_run_stale(run, _gl_snap_cache)
     qs = JournalEntry.objects.filter(
         company=run.company,
         status="POSTED",
@@ -3839,9 +3847,9 @@ def _get_column_labels(legal_form_code: str) -> dict[str, str]:
     }
 
 
-def serialize_financial_position_validation(run: FinancialStatementRun) -> dict:
+def serialize_financial_position_validation(run: FinancialStatementRun, is_stale_override: bool | None = None) -> dict:
     vals = list(run.validations.all().order_by("rule_code", "column_code"))
-    is_stale = _is_run_stale(run)
+    is_stale = is_stale_override if is_stale_override is not None else _is_run_stale(run)
     eff_status = "STALE" if is_stale else run.validation_status
 
     closing_280 = ZERO
@@ -4068,12 +4076,13 @@ def serialize_financial_position_run(
     display_unit: str | None = None,
     hide_zero_lines: bool = False,
     search_query: str = "",
+    _gl_snap_cache: dict | None = None,
 ) -> dict:
-    is_stale = _is_run_stale(run)
+    is_stale = _is_run_stale(run, _gl_snap_cache=_gl_snap_cache)
     eff_val_status = "STALE" if is_stale else run.validation_status
     draft_count = _get_draft_vouchers_count(run)
     col_labels = _get_column_labels(run.template.legal_form_code)
-    val_summary = serialize_financial_position_validation(run)
+    val_summary = serialize_financial_position_validation(run, is_stale_override=is_stale)
 
     any_val = run.values.first()
     opening_source = (any_val.calculation_detail_json or {}).get("opening_source", "UC_GL_15_OPENING") if any_val else "UC_GL_15_OPENING"
@@ -4378,14 +4387,29 @@ def list_financial_position_runs(company: Company, user, query_params: dict) -> 
         ).values_list("statement_run_id", flat=True)
         qs = qs.filter(id__in=comp_run_ids)
 
-    runs = list(qs.order_by("-run_version", "-created_at"))
-    return {
+    runs = list(
+        qs.select_related("created_by", "approved_by", "comparison_period")
+        .prefetch_related("validations")
+        .order_by("-run_version", "-created_at")
+    )
+    snap_cache: dict = {}
+    resp = {
         "count": len(runs),
         "runs": [
-            serialize_financial_position_run(r, include_lines=False)
+            serialize_financial_position_run(r, include_lines=False, _gl_snap_cache=snap_cache)
             for r in runs
         ],
     }
+    if str(query_params.get("include_latest_detail", "")).lower() in ("true", "1", "yes") and runs:
+        resp["latest_run_detail"] = serialize_financial_position_run(
+            runs[0],
+            include_lines=True,
+            display_unit=query_params.get("display_unit"),
+            hide_zero_lines=str(query_params.get("hide_zero_lines", "")).lower() in ("true", "1", "yes"),
+            search_query=query_params.get("search") or "",
+            _gl_snap_cache=snap_cache,
+        )
+    return resp
 
 
 @transaction.atomic

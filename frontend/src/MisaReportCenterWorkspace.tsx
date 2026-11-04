@@ -1,14 +1,15 @@
-import CatalogueReportParameters from "./CatalogueReportParameters";
-import S21AssetRegisterPreview from "./S21AssetRegisterPreview";
-import FixedAssetCardPreview from "./FixedAssetCardPreview";
-import ProductionCostLedgerPreview from "./ProductionCostLedgerPreview";
-import CostElementCardPreview from "./CostElementCardPreview";
-import SalesOrderExecutionPreview from "./SalesOrderExecutionPreview";
-import ReportScheduleDialog from "./ReportScheduleDialog";
-import ReportTemplateDialog from "./ReportTemplateDialog";
-import { CATALOGUE_PARAMETER_DEFINITIONS } from "./catalogue-report-parameters";
-import SalesOrderDetailParameters from "./SalesOrderDetailParameters";
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import { CATALOGUE_PARAMETER_DEFINITIONS } from "./catalogue-report-parameters";
+
+const CatalogueReportParameters = React.lazy(() => import("./CatalogueReportParameters"));
+const S21AssetRegisterPreview = React.lazy(() => import("./S21AssetRegisterPreview"));
+const FixedAssetCardPreview = React.lazy(() => import("./FixedAssetCardPreview"));
+const ProductionCostLedgerPreview = React.lazy(() => import("./ProductionCostLedgerPreview"));
+const CostElementCardPreview = React.lazy(() => import("./CostElementCardPreview"));
+const SalesOrderExecutionPreview = React.lazy(() => import("./SalesOrderExecutionPreview"));
+const ReportScheduleDialog = React.lazy(() => import("./ReportScheduleDialog"));
+const ReportTemplateDialog = React.lazy(() => import("./ReportTemplateDialog"));
+const SalesOrderDetailParameters = React.lazy(() => import("./SalesOrderDetailParameters"));
 import {
   Search,
   Star,
@@ -77,77 +78,78 @@ function previewTableData(table: HTMLTableElement) {
   return { columns, rows, options: { include_grand_total: false } };
 }
 
-import MisaTrialBalanceManagementReport from "./MisaTrialBalanceManagementReport";
-import MisaStateObligationsReport from "./MisaStateObligationsReport";
-import MisaFinancialPositionReport from "./MisaFinancialPositionReport";
-import MisaFinancialBundleWorkspace from "./MisaFinancialBundleWorkspace";
-import MisaBusinessResultReport from "./MisaBusinessResultReport";
-import MisaCashFlowDirectReport from "./MisaCashFlowDirectReport";
-import MisaCashFlowIndirectReport from "./MisaCashFlowIndirectReport";
-import MisaFinancialNotesReport from "./MisaFinancialNotesReport";
 import MisaTT133FinancialReport, { TT133_REPORTS } from "./MisaTT133FinancialReport";
-import MisaInterimFinancialPositionReport from "./MisaInterimFinancialPositionReport";
-import MisaInterimBusinessResultReport from "./MisaInterimBusinessResultReport";
-import MisaInterimCashFlowDirectReport from "./MisaInterimCashFlowDirectReport";
-import MisaInterimCashFlowIndirectReport from "./MisaInterimCashFlowIndirectReport";
-import MisaMultiBranchTrialBalanceReport from "./MisaMultiBranchTrialBalanceReport";
-import MisaMultiBranchRevenueExpenseReport from "./MisaMultiBranchRevenueExpenseReport";
-import MisaMultiBranchDetailedRevenueReport from "./MisaMultiBranchDetailedRevenueReport";
-import MisaMultiBranchBalanceSheetReport from "./MisaMultiBranchBalanceSheetReport";
-import MisaMultiBranchBusinessResultReport from "./MisaMultiBranchBusinessResultReport";
-import MisaMultiBranchDetailedExpenseReport from "./MisaMultiBranchDetailedExpenseReport";
-import MisaTimePeriodicTrialBalanceReport from "./MisaTimePeriodicTrialBalanceReport";
-import MisaIncomeRatioAnalysisReport from "./MisaIncomeRatioAnalysisReport";
-import MisaMultiPeriodDetailedRevenueReport from "./MisaMultiPeriodDetailedRevenueReport";
-import MisaBalanceSheetGrowthAnalysisReport from "./MisaBalanceSheetGrowthAnalysisReport";
-import MisaMultiPeriodDetailedExpenseReport from "./MisaMultiPeriodDetailedExpenseReport";
-import MisaAssetCapitalStructureAnalysisReport from "./MisaAssetCapitalStructureAnalysisReport";
-import MisaMultiPeriodRevenueExpenseReport from "./MisaMultiPeriodRevenueExpenseReport";
-import MisaCondensedBalanceSheetGrowthReport from "./MisaCondensedBalanceSheetGrowthReport";
-import MisaMultiUnitRevenueExpenseReport from "./MisaMultiUnitRevenueExpenseReport";
-import MisaCashGenerationAnalysisReport from "./MisaCashGenerationAnalysisReport";
-import MisaBusinessResultGrowthAnalysisReport from "./MisaBusinessResultGrowthAnalysisReport";
-import MisaDirectCashFlowTimePeriodicReport from "./MisaDirectCashFlowTimePeriodicReport";
-import MisaCashReceiptJournalReport from "./MisaCashReceiptJournalReport";
-import MisaCashMovementReport from "./MisaCashMovementReport";
-import MisaDailyCashBalanceReport from "./MisaDailyCashBalanceReport";
-import MisaCashDisbursementJournalReport from "./MisaCashDisbursementJournalReport";
-import MisaDetailedCashLedgerReport from "./MisaDetailedCashLedgerReport";
-import MisaBankDepositLedgerReport from "./MisaBankDepositLedgerReport";
-import MisaBankBalanceStatementReport from "./MisaBankBalanceStatementReport";
-import MisaInternalFundTransferDetailReport from "./MisaInternalFundTransferDetailReport";
-import MisaBorrowContractSummaryReport from "./MisaBorrowContractSummaryReport";
-import MisaDetailedBorrowLedgerReport from "./MisaDetailedBorrowLedgerReport";
-import MisaBorrowVoucherStatementReport from "./MisaBorrowVoucherStatementReport";
-import MisaBorrowRepaymentScheduleSummaryReport from "./MisaBorrowRepaymentScheduleSummaryReport";
-import MisaLendContractSummaryReport from "./MisaLendContractSummaryReport";
-import MisaLendVoucherStatementReport from "./MisaLendVoucherStatementReport";
-import MisaDetailedPurchaseLedgerReport from "./MisaDetailedPurchaseLedgerReport";
-import MisaPurchaseSummaryByItemReport from "./MisaPurchaseSummaryByItemReport";
-import MisaPurchaseSummaryByItemAndSupplierReport from "./MisaPurchaseSummaryByItemAndSupplierReport";
-import MisaPurchaseSummaryBySupplierReport from "./MisaPurchaseSummaryBySupplierReport";
-import MisaPurchaseJournalReport from "./MisaPurchaseJournalReport";
-import MisaSupplierPayablesSummaryReport from "./MisaSupplierPayablesSummaryReport";
-import MisaItemPayablesDetailReport from "./MisaItemPayablesDetailReport";
-import MisaInvoicePayablesDetailReport from "./MisaInvoicePayablesDetailReport";
-import MisaItemPayablesDynamicReport from "./MisaItemPayablesDynamicReport";
-import MisaSupplierPayablesLedgerReport from "./MisaSupplierPayablesLedgerReport";
-import MisaPayablesAgingAnalysisReport from "./MisaPayablesAgingAnalysisReport";
-import MisaDebtReconciliationReport from "./MisaDebtReconciliationReport";
-import MisaStaffPurchasesReports from "./MisaStaffPurchasesReports";
-import MisaPurchaseOrderReports from "./MisaPurchaseOrderReports";
-import MisaProjectPurchasesReports from "./MisaProjectPurchasesReports";
-import MisaPurchaseReconciliationReports from "./MisaPurchaseReconciliationReports";
-import MisaPurchaseContractReports from "./MisaPurchaseContractReports";
 import { CONTRACT_REPORT_TITLES } from "./purchase-contract-data";
-import MisaSalesSummaryReports from "./MisaSalesSummaryReports";
 import { SALES_SUMMARY_TITLES } from "./sales-summary-data";
-import AuditedReportWorkspace from "./AuditedReportWorkspace";
-import MisaInventorySummaryReport from "./MisaInventorySummaryReport";
-import MisaInventoryMultiWarehouseReport from "./MisaInventoryMultiWarehouseReport";
-import MisaInventoryDetailLedgerReport from "./MisaInventoryDetailLedgerReport";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
 import { canonicalReportName } from "./audited-report-schema";
+
+const MisaTrialBalanceManagementReport = React.lazy(() => import("./MisaTrialBalanceManagementReport"));
+const MisaStateObligationsReport = React.lazy(() => import("./MisaStateObligationsReport"));
+const MisaFinancialPositionReport = React.lazy(() => import("./MisaFinancialPositionReport"));
+const MisaFinancialBundleWorkspace = React.lazy(() => import("./MisaFinancialBundleWorkspace"));
+const MisaBusinessResultReport = React.lazy(() => import("./MisaBusinessResultReport"));
+const MisaCashFlowDirectReport = React.lazy(() => import("./MisaCashFlowDirectReport"));
+const MisaCashFlowIndirectReport = React.lazy(() => import("./MisaCashFlowIndirectReport"));
+const MisaFinancialNotesReport = React.lazy(() => import("./MisaFinancialNotesReport"));
+const MisaInterimFinancialPositionReport = React.lazy(() => import("./MisaInterimFinancialPositionReport"));
+const MisaInterimBusinessResultReport = React.lazy(() => import("./MisaInterimBusinessResultReport"));
+const MisaInterimCashFlowDirectReport = React.lazy(() => import("./MisaInterimCashFlowDirectReport"));
+const MisaInterimCashFlowIndirectReport = React.lazy(() => import("./MisaInterimCashFlowIndirectReport"));
+const MisaMultiBranchTrialBalanceReport = React.lazy(() => import("./MisaMultiBranchTrialBalanceReport"));
+const MisaMultiBranchRevenueExpenseReport = React.lazy(() => import("./MisaMultiBranchRevenueExpenseReport"));
+const MisaMultiBranchDetailedRevenueReport = React.lazy(() => import("./MisaMultiBranchDetailedRevenueReport"));
+const MisaMultiBranchBalanceSheetReport = React.lazy(() => import("./MisaMultiBranchBalanceSheetReport"));
+const MisaMultiBranchBusinessResultReport = React.lazy(() => import("./MisaMultiBranchBusinessResultReport"));
+const MisaMultiBranchDetailedExpenseReport = React.lazy(() => import("./MisaMultiBranchDetailedExpenseReport"));
+const MisaTimePeriodicTrialBalanceReport = React.lazy(() => import("./MisaTimePeriodicTrialBalanceReport"));
+const MisaIncomeRatioAnalysisReport = React.lazy(() => import("./MisaIncomeRatioAnalysisReport"));
+const MisaMultiPeriodDetailedRevenueReport = React.lazy(() => import("./MisaMultiPeriodDetailedRevenueReport"));
+const MisaBalanceSheetGrowthAnalysisReport = React.lazy(() => import("./MisaBalanceSheetGrowthAnalysisReport"));
+const MisaMultiPeriodDetailedExpenseReport = React.lazy(() => import("./MisaMultiPeriodDetailedExpenseReport"));
+const MisaAssetCapitalStructureAnalysisReport = React.lazy(() => import("./MisaAssetCapitalStructureAnalysisReport"));
+const MisaMultiPeriodRevenueExpenseReport = React.lazy(() => import("./MisaMultiPeriodRevenueExpenseReport"));
+const MisaCondensedBalanceSheetGrowthReport = React.lazy(() => import("./MisaCondensedBalanceSheetGrowthReport"));
+const MisaMultiUnitRevenueExpenseReport = React.lazy(() => import("./MisaMultiUnitRevenueExpenseReport"));
+const MisaCashGenerationAnalysisReport = React.lazy(() => import("./MisaCashGenerationAnalysisReport"));
+const MisaBusinessResultGrowthAnalysisReport = React.lazy(() => import("./MisaBusinessResultGrowthAnalysisReport"));
+const MisaDirectCashFlowTimePeriodicReport = React.lazy(() => import("./MisaDirectCashFlowTimePeriodicReport"));
+const MisaCashReceiptJournalReport = React.lazy(() => import("./MisaCashReceiptJournalReport"));
+const MisaCashMovementReport = React.lazy(() => import("./MisaCashMovementReport"));
+const MisaDailyCashBalanceReport = React.lazy(() => import("./MisaDailyCashBalanceReport"));
+const MisaCashDisbursementJournalReport = React.lazy(() => import("./MisaCashDisbursementJournalReport"));
+const MisaDetailedCashLedgerReport = React.lazy(() => import("./MisaDetailedCashLedgerReport"));
+const MisaBankDepositLedgerReport = React.lazy(() => import("./MisaBankDepositLedgerReport"));
+const MisaBankBalanceStatementReport = React.lazy(() => import("./MisaBankBalanceStatementReport"));
+const MisaInternalFundTransferDetailReport = React.lazy(() => import("./MisaInternalFundTransferDetailReport"));
+const MisaBorrowContractSummaryReport = React.lazy(() => import("./MisaBorrowContractSummaryReport"));
+const MisaDetailedBorrowLedgerReport = React.lazy(() => import("./MisaDetailedBorrowLedgerReport"));
+const MisaBorrowVoucherStatementReport = React.lazy(() => import("./MisaBorrowVoucherStatementReport"));
+const MisaBorrowRepaymentScheduleSummaryReport = React.lazy(() => import("./MisaBorrowRepaymentScheduleSummaryReport"));
+const MisaLendContractSummaryReport = React.lazy(() => import("./MisaLendContractSummaryReport"));
+const MisaLendVoucherStatementReport = React.lazy(() => import("./MisaLendVoucherStatementReport"));
+const MisaDetailedPurchaseLedgerReport = React.lazy(() => import("./MisaDetailedPurchaseLedgerReport"));
+const MisaPurchaseSummaryByItemReport = React.lazy(() => import("./MisaPurchaseSummaryByItemReport"));
+const MisaPurchaseSummaryByItemAndSupplierReport = React.lazy(() => import("./MisaPurchaseSummaryByItemAndSupplierReport"));
+const MisaPurchaseSummaryBySupplierReport = React.lazy(() => import("./MisaPurchaseSummaryBySupplierReport"));
+const MisaPurchaseJournalReport = React.lazy(() => import("./MisaPurchaseJournalReport"));
+const MisaSupplierPayablesSummaryReport = React.lazy(() => import("./MisaSupplierPayablesSummaryReport"));
+const MisaItemPayablesDetailReport = React.lazy(() => import("./MisaItemPayablesDetailReport"));
+const MisaInvoicePayablesDetailReport = React.lazy(() => import("./MisaInvoicePayablesDetailReport"));
+const MisaItemPayablesDynamicReport = React.lazy(() => import("./MisaItemPayablesDynamicReport"));
+const MisaSupplierPayablesLedgerReport = React.lazy(() => import("./MisaSupplierPayablesLedgerReport"));
+const MisaPayablesAgingAnalysisReport = React.lazy(() => import("./MisaPayablesAgingAnalysisReport"));
+const MisaDebtReconciliationReport = React.lazy(() => import("./MisaDebtReconciliationReport"));
+const MisaStaffPurchasesReports = React.lazy(() => import("./MisaStaffPurchasesReports"));
+const MisaPurchaseOrderReports = React.lazy(() => import("./MisaPurchaseOrderReports"));
+const MisaProjectPurchasesReports = React.lazy(() => import("./MisaProjectPurchasesReports"));
+const MisaPurchaseReconciliationReports = React.lazy(() => import("./MisaPurchaseReconciliationReports"));
+const MisaPurchaseContractReports = React.lazy(() => import("./MisaPurchaseContractReports"));
+const MisaSalesSummaryReports = React.lazy(() => import("./MisaSalesSummaryReports"));
+const AuditedReportWorkspace = React.lazy(() => import("./AuditedReportWorkspace"));
+const MisaInventorySummaryReport = React.lazy(() => import("./MisaInventorySummaryReport"));
+const MisaInventoryMultiWarehouseReport = React.lazy(() => import("./MisaInventoryMultiWarehouseReport"));
+const MisaInventoryDetailLedgerReport = React.lazy(() => import("./MisaInventoryDetailLedgerReport"));
 
 export type MisaReportCenterWorkspaceProps = {
   notify?: (msg: string) => void;
@@ -237,7 +239,7 @@ export const CATEGORY_STRUCTURES: Record<string, CategoryStructure> = {
           ["B01 - DN: Báo cáo tình hình tài chính", "B02a - DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ (Dạng đầy đủ)"],
           ["B02 - DN: Báo cáo kết quả hoạt động kinh doanh", "B03a - DN: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP trực tiếp)"],
           ["B03 - DN: Báo cáo lưu chuyển tiền tệ (PP trực tiếp)", "B03a - DN - GT: Báo cáo lưu chuyển tiền tệ giữa niên độ (Dạng đầy đủ - PP gián tiếp)"],
-          ["B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)", null],
+          ["B03 - DN - GT: Báo cáo lưu chuyển tiền tệ (PP gián tiếp)", "Bộ báo cáo tài chính (Tổng hợp & Nộp BCTC)"],
         ],
       },
       {
@@ -914,7 +916,21 @@ const REPORTS_BY_CATEGORY: Record<string, string[]> = {
   ],
 };
 
-export default function MisaReportCenterWorkspace({ notify,initialCategory="favorites",initialReport=null,embedded=false }: MisaReportCenterWorkspaceProps) {
+export default function MisaReportCenterWorkspace(props: MisaReportCenterWorkspaceProps) {
+  return (
+    <React.Suspense
+      fallback={
+        <div style={{ padding: 24, color: "#64748b", fontSize: 13 }}>
+          Đang tải báo cáo...
+        </div>
+      }
+    >
+      <MisaReportCenterWorkspaceInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",initialReport=null,embedded=false }: MisaReportCenterWorkspaceProps) {
   // Subtabs: "all" (Tất cả) | "saved" (Báo cáo đã lưu) | "schedule" (Lịch gửi báo cáo định kỳ)
   const [activeSubtab, setActiveSubtab] = useState<"all" | "saved" | "schedule">("all");
 
@@ -1220,6 +1236,18 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
   }
   if (contractReportType) {
     return <MisaPurchaseContractReports key={contractReportType} reportType={contractReportType} onBack={() => setSelectedReport(null)} notify={notify} />;
+  }
+
+  if (selectedReport === "Bộ báo cáo tài chính (Tổng hợp & Nộp BCTC)") {
+    return (
+      <div style={{ padding: 16, background: "#f8fafc", minHeight: "100%" }}>
+        <MisaFinancialBundleWorkspace
+          notify={notify}
+          onBack={() => setSelectedReport(null)}
+          onOpenReportByName={(rName) => setSelectedReport(rName)}
+        />
+      </div>
+    );
   }
 
   if (selectedReport === "Bảng cân đối tài khoản (Mẫu quản trị)") {
@@ -2037,30 +2065,17 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
               onChange={(e) => setSearchKeyword(e.target.value)}
             />
           </div>
-
-          <button
-            type="button"
-            className="misa-reports-ai-link"
-            onClick={() => notify?.("Trợ lý Sổ Việt AI đã sẵn sàng tìm kiếm thông minh báo cáo cho bạn.")}
-          >
-            <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
-            <span style={{ fontSize: 14 }}>🤖</span>
-          </button>
         </div>
 
         <div className="misa-reports-toolbar-right">
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#334155" }}>
-            <span>Ngôn ngữ báo cáo</span>
+            <span style={{ whiteSpace: "nowrap" }}>Ngôn ngữ báo cáo</span>
             <select
+              className="misa-select"
               style={{
                 height: 32,
-                padding: "0 10px",
-                border: "1px solid #cbd5e1",
-                borderRadius: 4,
-                background: "#ffffff",
+                minWidth: 125,
                 fontSize: 13,
-                outline: "none",
-                cursor: "pointer",
               }}
               value={reportLang}
               onChange={(e) => setReportLang(e.target.value)}
@@ -2147,54 +2162,8 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
             </h3>
 
             {/* If user is viewing structured category (Báo cáo tài chính, Báo cáo phân tích, Tiền mặt, Tiền gửi) */}
-            {activeCategory === "financial" && !searchKeyword && <MisaFinancialBundleWorkspace notify={notify} onOpenReportByName={(rName) => setSelectedReport(rName)} />}
             {currentStructure ? (
               <div className="misa-reports-structured-container">
-                {/* 1. AVA Banner if present */}
-                {currentStructure.banner && (
-                  <div className="misa-reports-ava-banner">
-                    <div className="misa-reports-ava-banner-left">
-                      <div className="misa-reports-ava-banner-title">
-                        {currentStructure.banner.title}{" "}
-                        <span className="misa-reports-ava-highlight">
-                          {currentStructure.banner.botHighlight}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        className="misa-reports-ava-banner-link"
-                        onClick={() => notify?.("Trợ lý Sổ Việt AI phân tích thông minh các chỉ số tài chính...")}
-                      >
-                        <span>{currentStructure.banner.linkText}</span>
-                      </button>
-                    </div>
-
-                    {/* Cute Futuristic AVA Robot Mascot */}
-                    <div className="misa-reports-ava-banner-mascot" title="Sổ Việt AI">
-                      <svg width="115" height="90" viewBox="0 0 120 95" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <ellipse cx="60" cy="50" rx="38" ry="32" fill="#eff6ff" />
-                        <circle cx="36" cy="22" r="11" fill="#1e293b" />
-                        <circle cx="36" cy="22" r="6" fill="#38bdf8" />
-                        <circle cx="84" cy="22" r="11" fill="#1e293b" />
-                        <circle cx="84" cy="22" r="6" fill="#38bdf8" />
-                        <rect x="30" y="20" width="60" height="46" rx="23" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
-                        <ellipse cx="46" cy="40" rx="10" ry="9" fill="#0f172a" />
-                        <ellipse cx="74" cy="40" rx="10" ry="9" fill="#0f172a" />
-                        <ellipse cx="47" cy="40" rx="5" ry="4.5" fill="#38bdf8" />
-                        <circle cx="49" cy="38" r="1.5" fill="#ffffff" />
-                        <ellipse cx="73" cy="40" rx="5" ry="4.5" fill="#38bdf8" />
-                        <circle cx="75" cy="38" r="1.5" fill="#ffffff" />
-                        <path d="M55 52 Q60 56 65 52" stroke="#334155" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-                        <rect x="40" y="66" width="40" height="26" rx="8" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
-                        <circle cx="60" cy="76" r="5" fill="#6366f1" />
-                        <circle cx="60" cy="76" r="2.5" fill="#38bdf8" />
-                        <rect x="24" y="66" width="13" height="7" rx="3.5" transform="rotate(-25 24 66)" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                        <rect x="83" y="60" width="13" height="7" rx="3.5" transform="rotate(35 83 60)" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
                 {/* 2. Groups */}
                 {currentStructure.groups.map((group) => {
                   const isCollapsed = group.collapsible && collapsedGroups[group.id];
@@ -2239,6 +2208,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                       <a
                         href={`#${report}`}
                         className="misa-reports-item-link"
+                        title={report}
                         onClick={(e) => {
                           e.preventDefault();
                           setSelectedReport(report);
@@ -2279,6 +2249,7 @@ export default function MisaReportCenterWorkspace({ notify,initialCategory="favo
                       <a
                         href={`#${report}`}
                         className="misa-reports-item-link"
+                        title={report}
                         onClick={(e) => {
                           e.preventDefault();
                           setSelectedReport(report);

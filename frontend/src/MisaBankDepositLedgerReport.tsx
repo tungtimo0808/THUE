@@ -6,6 +6,7 @@ import { request } from "./live-api";
 import { CASH_PERIODS, cashPeriodDates, cashPeriodSubtitle } from "./cash-report-periods";
 import { parseReportDate, formatReportDate } from "./report-date";
 import "./bank-balance-report.css";
+import { MisaButton, MisaCheckbox, MisaDateInput, MisaSelect, misaLabelStyle } from "./MisaFormControls";
 
 type Params = { period: string; from: string; to: string; account: string; bank: string; mergeSame: boolean; mergeVoucher: boolean; orderCreated: boolean; receiptFirst: boolean };
 type Row = { journal_entry_id: string; journal_line_ids: string[]; source_entity_type: string; source_entity_id: string; posting_date: string; document_date: string; voucher_number: string; description: string; counter_account: string; receipt: string; payment: string; balance: string };
@@ -14,9 +15,9 @@ type Report = { groups: Group[]; warnings: string[] };
 type Options = { accounts: { code: string; name: string }[]; bank_accounts: { id: string; number: string; bank_name: string; gl_account_code: string; currency: string }[] };
 type Preset = { id: string; name: string; parameters: Record<string, string | boolean> };
 type Voucher = { number: string; posting_date: string; document_date: string; description: string; lines: { line_no: number; account_code: string; description: string; debit: string; credit: string }[] };
-const defaults = (): Params => ({ period: "Tháng này", from: cashPeriodDates("Tháng này")![0], to: cashPeriodDates("Tháng này")![1], account: "1121", bank: "", mergeSame: true, mergeVoucher: false, orderCreated: true, receiptFirst: false });
+const defaults = (): Params => ({ period: "Năm nay", from: cashPeriodDates("Năm nay")![0], to: cashPeriodDates("Năm nay")![1], account: "1121", bank: "", mergeSame: true, mergeVoucher: false, orderCreated: true, receiptFirst: false });
 const money = (value: string | number | undefined) => value === undefined || value === "" ? "" : Number(value) < 0 ? `(${Math.abs(Number(value)).toLocaleString("vi-VN")})` : Number(value).toLocaleString("vi-VN");
-const button: React.CSSProperties = { background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, padding: "6px 10px", color: "#334155", cursor: "pointer", fontSize: 12.5 };
+const button: React.CSSProperties = { background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, height: 32, minWidth: 32, padding: "0 12px", color: "#1e293b", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, boxSizing: "border-box", whiteSpace: "nowrap", fontFamily: "inherit" };
 const field: React.CSSProperties = { width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 9px", background: "#fff", fontSize: 13 };
 const cell: React.CSSProperties = { border: "1px solid #e2e8f0", padding: "7px 10px" };
 const columns = ["Ngày hạch toán", "Ngày chứng từ", "Số chứng từ", "Diễn giải", "TK đối ứng", "Thu", "Chi", "Tồn"];
@@ -124,13 +125,43 @@ export default function MisaBankDepositLedgerReport({ onBack, notify }: { onBack
       {search && <p style={{ fontSize: 12, color: "#475569" }}>Tổng theo từ khóa chỉ gồm các dòng khớp. Cột Tồn và Tổng cộng toàn kỳ vẫn theo toàn bộ phát sinh.</p>}
       <div className="bank-balance-report-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 4px", fontSize: 12 }}><span>Tổng số: {rowCount} dòng</span><div style={{ display: "flex", alignItems: "center", gap: 10 }}>Số dòng/trang <select aria-label="Số dòng/trang" style={button} value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(1); }}>{[10,20,50,100].map(value => <option key={value}>{value}</option>)}</select><button style={button} disabled={page === 1} onClick={() => setPage(1)}>|&lt;</button><button style={button} disabled={page === 1} onClick={() => setPage(page - 1)}>&lt;</button><span>{page}/{pageCount}</span><button style={button} disabled={page >= pageCount} onClick={() => setPage(page + 1)}>&gt;</button><button style={button} disabled={page >= pageCount} onClick={() => setPage(pageCount)}>&gt;|</button></div></div>
     </div>
-    {drawer && <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#0007", display: "flex", justifyContent: "flex-end" }} onClick={() => setDrawer(false)}><div style={{ width: 520, height: "100%", background: "#fff", display: "flex", flexDirection: "column", boxShadow: "-4px 0 16px #0002" }} onClick={event => event.stopPropagation()}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}><strong>Chọn tham số</strong><button style={{ ...button, border: 0 }} onClick={() => setDrawer(false)} aria-label="Đóng"><X size={18}/></button></div><div style={{ padding: 20, overflow: "auto", flex: 1, display: "grid", alignContent: "start", gap: 16 }}>
-      {paramError && <p role="alert" style={{ color: "#b91c1c" }}>{paramError}</p>}
-      <label>Kỳ báo cáo<select style={field} value={draft.period} onChange={event => { const period = event.target.value; const dates = cashPeriodDates(period); setDraft(old => ({ ...old, period, ...(dates ? { from: dates[0], to: dates[1] } : {}) })); }}>{CASH_PERIODS.map(period => <option key={period}>{period}</option>)}</select></label>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}><label>Từ ngày<input aria-label="Từ ngày" style={field} value={draft.from} onChange={event => setDraft(old => ({ ...old, from: event.target.value, period: "Tùy chọn" }))}/></label><label>Đến ngày<input aria-label="Đến ngày" style={field} value={draft.to} onChange={event => setDraft(old => ({ ...old, to: event.target.value, period: "Tùy chọn" }))}/></label></div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 12 }}><label>Tài khoản *<select aria-label="Tài khoản kế toán" style={field} value={draft.account} onChange={event => setDraft(old => ({ ...old, account: event.target.value, bank: "" }))}><option value="">Chọn tài khoản</option>{options.accounts.map(account => <option key={account.code} value={account.code}>{account.code} - {account.name}</option>)}</select></label><label>Tài khoản ngân hàng<select aria-label="Tài khoản ngân hàng" style={field} value={draft.bank} onChange={event => setDraft(old => ({ ...old, bank: event.target.value }))}><option value="">(Tất cả)</option>{options.bank_accounts.filter(bank => bank.gl_account_code.startsWith(draft.account)).map(bank => <option key={bank.id} value={bank.id}>{bank.number} - {bank.bank_name} ({bank.currency})</option>)}</select></label></div>
-      {([ ["mergeSame", "Cộng gộp các bút toán giống nhau"], ["mergeVoucher", "Cộng gộp theo chứng từ"], ["orderCreated", "Sắp xếp chứng từ theo thứ tự lập"], ["receiptFirst", "Sắp xếp chứng từ thu trước chứng từ chi trong cùng một ngày"] ] as const).map(([key, title]) => <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}><input type="checkbox" checked={draft[key]} onChange={event => setDraft(old => ({ ...old, [key]: event.target.checked }))}/>{title}</label>)}
-      </div><div style={{ display: "flex", justifyContent: "space-between", padding: 20, borderTop: "1px solid #e2e8f0" }}><button style={button} onClick={() => { setDraft(defaults()); setParamError(""); }}>Xóa điều kiện</button><div style={{ display: "flex", gap: 8 }}><button style={button} onClick={() => setDrawer(false)}>Hủy</button><button style={{ ...button, background: "#00a862", color: "#fff", borderColor: "#00a862" }} onClick={apply}>Xem báo cáo</button></div></div></div></div>}
+    {drawer && <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15, 23, 42, 0.35)", display: "flex", justifyContent: "flex-end" }} onClick={() => setDrawer(false)}>
+      <div style={{ width: 500, maxWidth: "100%", height: "100%", background: "#fff", display: "flex", flexDirection: "column", boxShadow: "-8px 0 30px rgba(15, 23, 42, 0.16)" }} onClick={event => event.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}>
+          <strong style={{ fontSize: 17, color: "#0f172a" }}>Chọn tham số</strong>
+          <MisaButton variant="ghost" onClick={() => setDrawer(false)} aria-label="Đóng" title="Đóng"><X size={18}/></MisaButton>
+        </div>
+        <div style={{ padding: "18px 20px", overflow: "auto", flex: 1, display: "grid", alignContent: "start", gap: 16 }}>
+          {paramError && <div role="alert" style={{ color: "#b42318", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "8px 12px", fontSize: 13 }}>{paramError}</div>}
+          <div>
+            <span style={misaLabelStyle}>Kỳ báo cáo</span>
+            <MisaSelect ariaLabel="Kỳ báo cáo" value={draft.period} options={CASH_PERIODS.map(period => ({ value: period, label: period }))} onChange={period => { const dates = cashPeriodDates(period); setDraft(old => ({ ...old, period, ...(dates ? { from: dates[0], to: dates[1] } : {}) })); }}/>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div><span style={misaLabelStyle}>Từ ngày</span><MisaDateInput ariaLabel="Từ ngày" value={draft.from} onChange={from => setDraft(old => ({ ...old, from, period: "Tùy chọn" }))}/></div>
+            <div><span style={misaLabelStyle}>Đến ngày</span><MisaDateInput ariaLabel="Đến ngày" value={draft.to} onChange={to => setDraft(old => ({ ...old, to, period: "Tùy chọn" }))}/></div>
+          </div>
+          <div>
+            <span style={misaLabelStyle}>Tài khoản <span style={{ color: "#dc2626" }}>*</span></span>
+            <MisaSelect ariaLabel="Tài khoản kế toán" placeholder="Chọn tài khoản" value={draft.account} options={options.accounts.map(account => ({ value: account.code, label: `${account.code} - ${account.name}` }))} onChange={account => setDraft(old => ({ ...old, account, bank: "" }))}/>
+          </div>
+          <div>
+            <span style={misaLabelStyle}>Tài khoản ngân hàng</span>
+            <MisaSelect ariaLabel="Tài khoản ngân hàng" value={draft.bank} options={[{ value: "", label: "(Tất cả)" }, ...options.bank_accounts.filter(bank => bank.gl_account_code.startsWith(draft.account)).map(bank => ({ value: bank.id, label: `${bank.number} - ${bank.bank_name} (${bank.currency})` }))]} onChange={bank => setDraft(old => ({ ...old, bank }))}/>
+          </div>
+          <div style={{ display: "grid", gap: 12, paddingTop: 2 }}>
+            {([ ["mergeSame", "Cộng gộp các bút toán giống nhau"], ["mergeVoucher", "Cộng gộp theo chứng từ"], ["orderCreated", "Sắp xếp chứng từ theo thứ tự lập"], ["receiptFirst", "Sắp xếp chứng từ thu trước chứng từ chi trong cùng một ngày"] ] as const).map(([key, title]) => <MisaCheckbox key={key} label={title} checked={draft[key]} onChange={checked => setDraft(old => ({ ...old, [key]: checked }))}/>)}
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #e2e8f0" }}>
+          <MisaButton onClick={() => { setDraft(defaults()); setParamError(""); }}>Xóa điều kiện</MisaButton>
+          <div style={{ display: "flex", gap: 8 }}>
+            <MisaButton onClick={() => setDrawer(false)}>Hủy</MisaButton>
+            <MisaButton variant="primary" onClick={apply}>Xem báo cáo</MisaButton>
+          </div>
+        </div>
+      </div>
+    </div>}
     {showColumns && <Modal title="Tùy chỉnh cột hiển thị" close={() => setShowColumns(false)}>{columns.map(name => <label key={name} style={{ display: "block", margin: 8 }}><input type="checkbox" checked={visible(name)} onChange={() => toggleColumn(name)}/> {name}</label>)}</Modal>}
     {showPresets && <Modal title="Danh sách báo cáo đã lưu" close={() => setShowPresets(false)}>{presets.length ? presets.map(preset => <button key={preset.id} style={{ ...button, display: "block", width: "100%", textAlign: "left", marginTop: 10 }} onClick={() => void selectPreset(preset)}>{preset.name}</button>) : <p>Chưa có báo cáo đã lưu.</p>}</Modal>}
     {detail && <Modal title={`Chi tiết chứng từ ${detail.voucher_number}`} close={() => setDetail(null)}>{error && <p role="alert" style={{ color: "#b91c1c" }}>{error}</p>}<p>Ngày hạch toán: {formatReportDate(detail.posting_date)}</p><p>Ngày chứng từ: {formatReportDate(detail.document_date)}</p><p>Diễn giải: {detail.description}</p><p>Thu: {money(detail.receipt)} · Chi: {money(detail.payment)} · Tồn: {money(detail.balance)}</p>{voucher ? <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}><thead><tr>{["TK", "Diễn giải", "Nợ", "Có"].map(name => <th key={name} style={cell}>{name}</th>)}</tr></thead><tbody>{voucher.lines.map(line => <tr key={line.line_no}><td style={cell}>{line.account_code}</td><td style={cell}>{line.description}</td><td style={cell}>{money(line.debit)}</td><td style={cell}>{money(line.credit)}</td></tr>)}</tbody></table> : !error && <p>Đang tải bút toán...</p>}</Modal>}

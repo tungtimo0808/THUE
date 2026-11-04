@@ -10,7 +10,7 @@ import uuid
 from typing import Any
 
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
@@ -1304,7 +1304,13 @@ def seed_cash_flow_uc_rpt_05(apps=None, schema_editor=None):
             )
 
 
+_B03_TEMPLATES_SEEDED = False
+
+
 def ensure_b03_templates_seeded():
+    global _B03_TEMPLATES_SEEDED
+    if _B03_TEMPLATES_SEEDED and FinancialStatementTemplate.objects.filter(legal_form_code="B03-DN").exists():
+        return
     b03_dn = FinancialStatementTemplate.objects.filter(legal_form_code="B03-DN").first()
     b03b_dn = FinancialStatementTemplate.objects.filter(legal_form_code="B03b-DN").first()
     needs_seed = False
@@ -1325,6 +1331,7 @@ def ensure_b03_templates_seeded():
             needs_seed = True
     if needs_seed:
         seed_cash_flow_uc_rpt_05()
+    _B03_TEMPLATES_SEEDED = True
 
 
 # ============================================================================
@@ -1598,9 +1605,10 @@ def compute_b03_gl_snapshot_meta(
     agg = qs.aggregate(
         max_posted=Max("posted_at"),
         max_created=Max("created_at"),
+        cnt=Count("id"),
     )
     last_ts = agg["max_posted"] or agg["max_created"]
-    count = qs.count()
+    count = agg["cnt"] or 0
     cf_cls_count = CashFlowClassification.objects.filter(company=company).count()
     cf_evt_count = CashFlowEvent.objects.filter(company=company, posting_date__lte=end_date).count()
     if cf_evt_count or cf_cls_count:
@@ -1614,16 +1622,22 @@ def compute_b03_gl_snapshot_meta(
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32], last_ts
 
 
-def is_b03_run_stale(run: FinancialStatementRun) -> bool:
+def is_b03_run_stale(run: FinancialStatementRun, _gl_snap_cache: dict | None = None) -> bool:
     if not run.source_snapshot_hash:
         return False
     eff_branch = run.branch if run.reporting_scope == "BRANCH" else None
-    curr_hash, curr_ts = compute_b03_gl_snapshot_meta(
-        run.company,
-        run.period_start_date,
-        run.period_end_date,
-        eff_branch,
-    )
+    cache_key = (run.company_id, run.period_start_date, run.period_end_date, eff_branch.id if eff_branch else None)
+    if _gl_snap_cache is not None and cache_key in _gl_snap_cache:
+        curr_hash, curr_ts = _gl_snap_cache[cache_key]
+    else:
+        curr_hash, curr_ts = compute_b03_gl_snapshot_meta(
+            run.company,
+            run.period_start_date,
+            run.period_end_date,
+            eff_branch,
+        )
+        if _gl_snap_cache is not None:
+            _gl_snap_cache[cache_key] = (curr_hash, curr_ts)
     if curr_hash != run.source_snapshot_hash:
         return True
     if curr_ts and run.source_last_posted_at and curr_ts > run.source_last_posted_at:
@@ -3813,8 +3827,12 @@ def get_b03_run_or_error(run_id: Any, company: Company) -> FinancialStatementRun
     return run
 
 
-def serialize_b03_run_header(run: FinancialStatementRun, display_unit: str | None = None) -> dict[str, Any]:
-    stale = is_b03_run_stale(run)
+def serialize_b03_run_header(
+    run: FinancialStatementRun,
+    display_unit: str | None = None,
+    _gl_snap_cache: dict | None = None,
+) -> dict[str, Any]:
+    stale = is_b03_run_stale(run, _gl_snap_cache=_gl_snap_cache)
     d_unit = display_unit or run.display_unit or "VND"
     meta = run.eps_metadata_json or {}
     return {
@@ -4158,15 +4176,15 @@ def get_cash_flow_parameters(request) -> dict[str, Any]:
             {"code": "THOUSAND_VND", "label": "Nghìn đồng", "divisor": 1000},
             {"code": "MILLION_VND", "label": "Triệu đồng", "divisor": 1000000},
         ],
-        "permissions": {
-            "can_view": has_b03_permission(request.user, company, "RPT_CASH_FLOW_VIEW"),
-            "can_detail_view": has_b03_permission(request.user, company, "RPT_CASH_FLOW_DETAIL_VIEW"),
-            "can_generate": has_b03_permission(request.user, company, "RPT_CASH_FLOW_GENERATE"),
-            "can_validate": has_b03_permission(request.user, company, "RPT_CASH_FLOW_VALIDATE"),
-            "can_approve": has_b03_permission(request.user, company, "RPT_CASH_FLOW_APPROVE"),
-            "can_export": has_b03_permission(request.user, company, "RPT_CASH_FLOW_EXPORT"),
-            "codes": sorted(get_b03_user_permissions(request.user, company)),
-        },
+        "permissions": (lambda perm_codes: {
+            "can_view": bool(perm_codes & {"RPT_CASH_FLOW_VIEW", "RPT_CASH_FLOW_GENERATE", "RPT_CASH_FLOW_APPROVE"}),
+            "can_detail_view": bool(perm_codes & {"RPT_CASH_FLOW_DETAIL_VIEW", "RPT_CASH_FLOW_VIEW"}),
+            "can_generate": "RPT_CASH_FLOW_GENERATE" in perm_codes,
+            "can_validate": bool(perm_codes & {"RPT_CASH_FLOW_VALIDATE", "RPT_CASH_FLOW_GENERATE"}),
+            "can_approve": "RPT_CASH_FLOW_APPROVE" in perm_codes,
+            "can_export": "RPT_CASH_FLOW_EXPORT" in perm_codes,
+            "codes": sorted(perm_codes),
+        })(get_b03_user_permissions(request.user, company)),
     }
 
 
@@ -4224,10 +4242,37 @@ def list_cash_flow_runs(request) -> dict[str, Any]:
             "detail": "Chưa có Statement Run B03 đã lưu cho kỳ và mẫu báo cáo được chọn. Không hiển thị dữ liệu mẫu.",
         })
 
+    snap_cache: dict = {}
+    headers = [serialize_b03_run_header(r, _gl_snap_cache=snap_cache) for r in runs_list]
+    latest_detail = None
+    if runs_list and str(qp.get("include_latest_detail", "false")).lower() in ("true", "1", "yes"):
+        first_run = runs_list[0]
+        d_unit = qp.get("display_unit") or first_run.display_unit or "VND"
+        neg_fmt = str(qp.get("negative_format") or "PARENTHESES").upper()
+        hide_zero = str(qp.get("hide_zero_lines") or qp.get("hide_zero_rows") or "false").lower() in ("true", "1", "yes")
+        search_kw = qp.get("search") or qp.get("search_keyword") or ""
+        lines_payload = serialize_b03_lines_and_values(
+            first_run,
+            display_unit=d_unit,
+            negative_format=neg_fmt,
+            hide_zero_rows=hide_zero,
+            search_keyword=search_kw,
+        )
+        latest_detail = {
+            "statement_run_id": str(first_run.id),
+            "total_template_lines": lines_payload["total_template_lines"],
+            "run": headers[0] if d_unit == (first_run.display_unit or "VND") else serialize_b03_run_header(first_run, display_unit=d_unit, _gl_snap_cache=snap_cache),
+            "lines": lines_payload["lines"],
+            "values": lines_payload["values"],
+            "summary": lines_payload["summary"],
+            "validation": get_cash_flow_run_validation_data(first_run),
+        }
+
     return {
         "company_id": str(company.id),
         "count": len(runs_list),
-        "runs": [serialize_b03_run_header(r) for r in runs_list],
+        "runs": headers,
+        "latest_run_detail": latest_detail,
     }
 
 

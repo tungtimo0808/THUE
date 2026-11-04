@@ -1,6 +1,20 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { request } from "./live-api";
 import { useApiSession } from "./ApiSession";
+import {
+  MisaAccumulateFromRadioGroup,
+  MisaBranchTagSelector,
+  MISA_REPORT_PERIOD_OPTIONS,
+  computeMisaPeriodDates,
+  dmyToIsoDate,
+  isoToDmyDate,
+} from "./FinancialForm";
+import {
+  buildClientFallbackMisaHtml,
+  createApiWriter,
+  executeReportExportUcRpt15,
+  openMisaReportPreviewModal,
+} from "./misa-api-writes";
 import {
   ChevronLeft,
   Search,
@@ -23,6 +37,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 export interface TrialBalanceAccountItem {
   code: string;
   name: string;
+  isParent?: boolean;
   openingDebit?: number;
   openingCredit?: number;
   periodDebit?: number;
@@ -130,75 +145,150 @@ export default function MisaTrialBalanceManagementReport({
   // Search keyword in table
   const [searchKeyword, setSearchKeyword] = useState<string>("");
 
-  // Parameter Form State (matching Screenshot 1)
-  const [period, setPeriod] = useState<string>("Tháng này");
+  // Active applied parameters
+  const [period, setPeriod] = useState<string>("Tháng 10");
   const [fromDate, setFromDate] = useState<string>(`01/10/${CURRENT_YEAR}`);
   const [toDate, setToDate] = useState<string>(`31/10/${CURRENT_YEAR}`);
-  const [accountLevel, setAccountLevel] = useState<string>("1");
+  const [accountLevel, setAccountLevel] = useState<string>("3");
   const [showBothSides, setShowBothSides] = useState<boolean>(true);
-  const [accumulateFrom, setAccumulateFrom] = useState<"data_start" | "fiscal_start">("data_start");
+  const [accumulateFrom, setAccumulateFrom] = useState<"data_start" | "fiscal_start">("fiscal_start");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
-  // Subtitle period string derived from date range
+  // Draft parameters inside "Chọn tham số" drawer
+  const [draftPeriod, setDraftPeriod] = useState<string>("Tháng 10");
+  const [draftFromDate, setDraftFromDate] = useState<string>(`01/10/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState<string>(`31/10/${CURRENT_YEAR}`);
+  const [draftAccountLevel, setDraftAccountLevel] = useState<string>("3");
+  const [draftShowBothSides, setDraftShowBothSides] = useState<boolean>(true);
+  const [draftAccumulateFrom, setDraftAccumulateFrom] = useState<"data_start" | "fiscal_start">("fiscal_start");
+  const [draftBranchId, setDraftBranchId] = useState<string>("");
+
+  const [availableBranches, setAvailableBranches] = useState<Array<{ id: string; code?: string; name: string }>>([]);
+  const [resolvedCompanyName, setResolvedCompanyName] = useState<string>("");
+
+  const openParamDrawer = useCallback(() => {
+    setDraftPeriod(period);
+    setDraftFromDate(fromDate);
+    setDraftToDate(toDate);
+    setDraftAccountLevel(accountLevel);
+    setDraftShowBothSides(showBothSides);
+    setDraftAccumulateFrom(accumulateFrom);
+    setDraftBranchId(selectedBranchId);
+    setIsParamDrawerOpen(true);
+  }, [period, fromDate, toDate, accountLevel, showBothSides, accumulateFrom, selectedBranchId]);
+
+  // Subtitle period string derived dynamically from active period & date range
   const subtitlePeriod = useMemo(() => {
-    return "Tháng 10 năm 2026";
-  }, []);
+    const mMatch = /^01\/(\d{2})\/(\d{4})$/.exec(fromDate.trim());
+    const endMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(toDate.trim());
+    if (mMatch && endMatch && mMatch[1] === endMatch[2] && mMatch[2] === endMatch[3]) {
+      const monthNum = Number(mMatch[1]);
+      return `Tháng ${monthNum} năm ${mMatch[2]}`;
+    }
+    if (fromDate === `01/01/${CURRENT_YEAR}` && toDate === `31/12/${CURRENT_YEAR}`) {
+      return `Năm ${CURRENT_YEAR} (Từ ngày ${fromDate} đến ngày ${toDate})`;
+    }
+    return `Từ ngày ${fromDate} đến ngày ${toDate}`;
+  }, [fromDate, toDate]);
 
-  const { token, companyId } = useApiSession();
+  const { token, companyId, company } = useApiSession();
   const [liveRows, setLiveRows] = useState<TrialBalanceAccountItem[] | null>(null);
   const [liveLeafRows, setLiveLeafRows] = useState<TrialBalanceAccountItem[] | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!companyId) return;
-    let cancelled = false;
-    request<any>(`/api/v1/reports/tt99-financial-statements/?company_id=${encodeURIComponent(companyId)}`, token)
-      .then((res) => {
-        if (cancelled) return;
-        const tb = Array.isArray(res?.trial_balance) ? res.trial_balance : [];
-        const mapped: TrialBalanceAccountItem[] = tb.map((r: any) => ({
-          code: String(r.accountNumber || ""),
-          name: String(r.accountName || ""),
-          openingDebit: Number(r.openDebit || 0),
-          openingCredit: Number(r.openCredit || 0),
-          periodDebit: Number(r.periodDebit || 0),
-          periodCredit: Number(r.periodCredit || 0),
-          accumDebit: Number(r.periodDebit || 0),
-          accumCredit: Number(r.periodCredit || 0),
-          closingDebit: Number(r.closeDebit || 0),
-          closingCredit: Number(r.closeCredit || 0),
-        }));
-        const leaves: TrialBalanceAccountItem[] = tb
-          .filter((r: any) => !r.isParent)
-          .map((r: any) => ({
+  const loadTrialBalanceData = useCallback(
+    (targetFrom: string, targetTo: string, targetBranch: string, targetAccum: string) => {
+      if (!companyId) return;
+      const params = new URLSearchParams();
+      params.set("company_id", companyId);
+      const isoFrom = dmyToIsoDate(targetFrom);
+      const isoTo = dmyToIsoDate(targetTo);
+      if (isoFrom) params.set("from_date", isoFrom);
+      if (isoTo) params.set("to_date", isoTo);
+      if (targetBranch) params.set("branch_id", targetBranch);
+      if (targetAccum) params.set("accumulate_from", targetAccum);
+
+      request<any>(`/api/v1/reports/tt99-financial-statements/?${params.toString()}`, token)
+        .then((res) => {
+          if (res?.company_name) setResolvedCompanyName(String(res.company_name));
+          if (Array.isArray(res?.branches)) setAvailableBranches(res.branches);
+          const tb = Array.isArray(res?.trial_balance) ? res.trial_balance : [];
+          const mapped: TrialBalanceAccountItem[] = tb.map((r: any) => ({
             code: String(r.accountNumber || ""),
             name: String(r.accountName || ""),
+            isParent: Boolean(r.isParent),
             openingDebit: Number(r.openDebit || 0),
             openingCredit: Number(r.openCredit || 0),
             periodDebit: Number(r.periodDebit || 0),
             periodCredit: Number(r.periodCredit || 0),
-            accumDebit: Number(r.periodDebit || 0),
-            accumCredit: Number(r.periodCredit || 0),
+            accumDebit: Number(r.accumDebit !== undefined ? r.accumDebit : r.periodDebit || 0),
+            accumCredit: Number(r.accumCredit !== undefined ? r.accumCredit : r.periodCredit || 0),
             closingDebit: Number(r.closeDebit || 0),
             closingCredit: Number(r.closeCredit || 0),
           }));
-        setLiveRows(mapped);
-        setLiveLeafRows(leaves);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [companyId, token]);
+          const leaves: TrialBalanceAccountItem[] = tb
+            .filter((r: any) => !r.isParent)
+            .map((r: any) => ({
+              code: String(r.accountNumber || ""),
+              name: String(r.accountName || ""),
+              openingDebit: Number(r.openDebit || 0),
+              openingCredit: Number(r.openCredit || 0),
+              periodDebit: Number(r.periodDebit || 0),
+              periodCredit: Number(r.periodCredit || 0),
+              accumDebit: Number(r.accumDebit !== undefined ? r.accumDebit : r.periodDebit || 0),
+              accumCredit: Number(r.accumCredit !== undefined ? r.accumCredit : r.periodCredit || 0),
+              closingDebit: Number(r.closeDebit || 0),
+              closingCredit: Number(r.closeCredit || 0),
+            }));
+          setLiveRows(mapped);
+          setLiveLeafRows(leaves);
+        })
+        .catch(() => {});
+    },
+    [companyId, token],
+  );
+
+  useEffect(() => {
+    loadTrialBalanceData(fromDate, toDate, selectedBranchId, accumulateFrom);
+  }, [loadTrialBalanceData, fromDate, toDate, selectedBranchId, accumulateFrom]);
 
   const sourceRows = liveRows !== null ? liveRows : DEFAULT_TRIAL_BALANCE_DATA;
 
-  // Filtered rows
+  // Filtered rows by accountLevel, showBothSides, and searchKeyword
   const filteredRows = useMemo(() => {
-    if (!searchKeyword.trim()) return sourceRows;
+    const maxLen =
+      accountLevel === "1"
+        ? 3
+        : accountLevel === "2"
+          ? 4
+          : accountLevel === "3"
+            ? 5
+            : accountLevel === "4"
+              ? 6
+              : 99;
+
+    let rowsByLevel = sourceRows.filter((r) => r.code.length <= maxLen);
+
+    if (!showBothSides) {
+      rowsByLevel = rowsByLevel.map((r) => {
+        const netOpen = (r.openingDebit || 0) - (r.openingCredit || 0);
+        const netClose = (r.closingDebit || 0) - (r.closingCredit || 0);
+        return {
+          ...r,
+          openingDebit: Math.max(netOpen, 0),
+          openingCredit: Math.max(-netOpen, 0),
+          closingDebit: Math.max(netClose, 0),
+          closingCredit: Math.max(-netClose, 0),
+        };
+      });
+    }
+
+    if (!searchKeyword.trim()) return rowsByLevel;
     const kw = searchKeyword.toLowerCase();
-    return sourceRows.filter(
-      (r) => r.code.toLowerCase().includes(kw) || r.name.toLowerCase().includes(kw)
+    return rowsByLevel.filter(
+      (r) => r.code.toLowerCase().includes(kw) || r.name.toLowerCase().includes(kw),
     );
-  }, [searchKeyword, sourceRows]);
+  }, [searchKeyword, sourceRows, accountLevel, showBothSides]);
 
   // Totals matching screenshot or live leaf rows
   const totals = useMemo(() => {
@@ -223,7 +313,7 @@ export default function MisaTrialBalanceManagementReport({
           accumCredit: 0,
           closingDebit: 0,
           closingCredit: 0,
-        }
+        },
       );
     }
     return {
@@ -239,18 +329,109 @@ export default function MisaTrialBalanceManagementReport({
   }, [liveLeafRows]);
 
   const handleApplyParams = () => {
+    setPeriod(draftPeriod);
+    setFromDate(draftFromDate);
+    setToDate(draftToDate);
+    setAccountLevel(draftAccountLevel);
+    setShowBothSides(draftShowBothSides);
+    setAccumulateFrom(draftAccumulateFrom);
+    setSelectedBranchId(draftBranchId);
     setIsParamDrawerOpen(false);
-    notify?.("Đã nạp số liệu Báo cáo cân đối tài khoản theo tham số đã chọn.");
+    loadTrialBalanceData(draftFromDate, draftToDate, draftBranchId, draftAccumulateFrom);
   };
 
   const handleResetParams = () => {
-    setPeriod("Tháng này");
-    setFromDate("01/10/2026");
-    setToDate("31/10/2026");
-    setAccountLevel("1");
-    setShowBothSides(true);
-    setAccumulateFrom("data_start");
-    notify?.("Đã xóa điều kiện lọc về mặc định.");
+    setDraftPeriod("Tháng 10");
+    setDraftFromDate(`01/10/${CURRENT_YEAR}`);
+    setDraftToDate(`31/10/${CURRENT_YEAR}`);
+    setDraftAccountLevel("3");
+    setDraftShowBothSides(true);
+    setDraftAccumulateFrom("fiscal_start");
+    setDraftBranchId("");
+  };
+
+  const handleExportReport = async (outputFormat: "PRINT" | "XLSX" | "PDF") => {
+    setExportingFormat(outputFormat);
+    const exportPayload = {
+      company_id: companyId || company?.id || "",
+      report_code: "S06-DN",
+      title: "BẢNG CÂN ĐỐI TÀI KHOẢN",
+      period_str: subtitlePeriod,
+      output_format: outputFormat,
+      export_scope: "ALL_MATCHING_FILTERS",
+      columns: [
+        { key: "account_code", label: "Số tài khoản", type: "code", data_type: "code" },
+        { key: "account_name", label: "Tên tài khoản", type: "text", data_type: "text" },
+        { key: "opening_debit", label: "Đầu kỳ - Nợ", group: "Đầu kỳ", sublabel: "Nợ", type: "number", data_type: "number", grand_total: totals.openingDebit || 0 },
+        { key: "opening_credit", label: "Đầu kỳ - Có", group: "Đầu kỳ", sublabel: "Có", type: "number", data_type: "number", grand_total: totals.openingCredit || 0 },
+        { key: "period_debit", label: "Phát sinh - Nợ", group: "Phát sinh", sublabel: "Nợ", type: "number", data_type: "number", grand_total: totals.periodDebit || 0 },
+        { key: "period_credit", label: "Phát sinh - Có", group: "Phát sinh", sublabel: "Có", type: "number", data_type: "number", grand_total: totals.periodCredit || 0 },
+        { key: "accum_debit", label: "Phát sinh - Nợ lũy kế", group: "Phát sinh", sublabel: "Nợ lũy kế", type: "number", data_type: "number", grand_total: totals.accumDebit || 0 },
+        { key: "accum_credit", label: "Phát sinh - Có lũy kế", group: "Phát sinh", sublabel: "Có lũy kế", type: "number", data_type: "number", grand_total: totals.accumCredit || 0 },
+        { key: "closing_debit", label: "Cuối kỳ - Nợ", group: "Cuối kỳ", sublabel: "Nợ", type: "number", data_type: "number", grand_total: totals.closingDebit || 0 },
+        { key: "closing_credit", label: "Cuối kỳ - Có", group: "Cuối kỳ", sublabel: "Có", type: "number", data_type: "number", grand_total: totals.closingCredit || 0 },
+      ],
+      rows: filteredRows.map((r) => ({
+        account_code: r.code,
+        account_name: r.name,
+        is_subtotal: Boolean(r.isParent),
+        is_bold: Boolean(r.isParent),
+        opening_debit: r.openingDebit || 0,
+        opening_credit: r.openingCredit || 0,
+        period_debit: r.periodDebit || 0,
+        period_credit: r.periodCredit || 0,
+        accum_debit: r.accumDebit || 0,
+        accum_credit: r.accumCredit || 0,
+        closing_debit: r.closingDebit || 0,
+        closing_credit: r.closingCredit || 0,
+      })),
+      grand_total: {
+        opening_debit: totals.openingDebit || 0,
+        opening_credit: totals.openingCredit || 0,
+        period_debit: totals.periodDebit || 0,
+        period_credit: totals.periodCredit || 0,
+        accum_debit: totals.accumDebit || 0,
+        accum_credit: totals.accumCredit || 0,
+        closing_debit: totals.closingDebit || 0,
+        closing_credit: totals.closingCredit || 0,
+      },
+      parameters: {
+        from_date: fromDate,
+        to_date: toDate,
+        period_label: subtitlePeriod,
+      },
+      options: {
+        orientation: "LANDSCAPE",
+        paper_size: "A4",
+        company_name: company?.name || "Công ty TNHH XYZ",
+      },
+    };
+    try {
+      const effectiveToken = token || localStorage.getItem("erp_token") || "";
+      const effectiveCompanyId = exportPayload.company_id;
+      if (effectiveToken && effectiveCompanyId) {
+        const writer = createApiWriter(effectiveCompanyId, (path, init) =>
+          request(path, effectiveToken || undefined, init),
+        );
+        await executeReportExportUcRpt15(writer, exportPayload, effectiveToken);
+        return;
+      }
+      openMisaReportPreviewModal({
+        htmlText: buildClientFallbackMisaHtml(exportPayload),
+        title: "BẢNG CÂN ĐỐI TÀI KHOẢN",
+        reportCode: "S06-DN",
+        requestedFormat: outputFormat,
+      });
+    } catch {
+      openMisaReportPreviewModal({
+        htmlText: buildClientFallbackMisaHtml(exportPayload),
+        title: "BẢNG CÂN ĐỐI TÀI KHOẢN",
+        reportCode: "S06-DN",
+        requestedFormat: outputFormat,
+      });
+    } finally {
+      setExportingFormat(null);
+    }
   };
 
   return (
@@ -343,7 +524,7 @@ export default function MisaTrialBalanceManagementReport({
               alignItems: "center",
               gap: 6,
             }}
-            onClick={() => setIsParamDrawerOpen(true)}
+            onClick={openParamDrawer}
           >
             Chọn tham số
           </button>
@@ -377,7 +558,7 @@ export default function MisaTrialBalanceManagementReport({
               cursor: "pointer",
             }}
             title="Lọc nhanh"
-            onClick={() => setIsParamDrawerOpen(true)}
+            onClick={openParamDrawer}
           >
             <Filter size={14} />
           </button>
@@ -453,20 +634,36 @@ export default function MisaTrialBalanceManagementReport({
 
           <button
             type="button"
+            disabled={exportingFormat !== null}
             style={{ height: 30, padding: "0 10px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#334155", fontSize: 12.5, cursor: "pointer" }}
-            onClick={() => notify?.("Đang chuẩn bị lệnh in...")}
+            title="In báo cáo chuẩn mẫu MISA"
+            onClick={() => void handleExportReport("PRINT")}
           >
             <Printer size={14} />
+            <span>{exportingFormat === "PRINT" ? "Đang in..." : "In"}</span>
             <ChevronDown size={12} />
           </button>
 
           <button
             type="button"
-            style={{ height: 30, padding: "0 10px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#334155", fontSize: 12.5, cursor: "pointer" }}
-            onClick={() => notify?.("Đã kết xuất báo cáo ra Excel thành công.")}
+            disabled={exportingFormat !== null}
+            style={{ height: 30, padding: "0 10px", border: "1px solid #86efac", background: "#f0fdf4", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#166534", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+            title="Kết xuất tệp Excel (.xlsx) chuẩn MISA"
+            onClick={() => void handleExportReport("XLSX")}
           >
             <Download size={14} />
-            <ChevronDown size={12} />
+            <span>{exportingFormat === "XLSX" ? "Đang xuất..." : "Xuất Excel"}</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={exportingFormat !== null}
+            style={{ height: 30, padding: "0 10px", border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#1d4ed8", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+            title="Kết xuất tệp PDF (.pdf) chuẩn MISA"
+            onClick={() => void handleExportReport("PDF")}
+          >
+            <Download size={14} />
+            <span>{exportingFormat === "PDF" ? "Đang xuất..." : "PDF"}</span>
           </button>
 
           <button
@@ -543,7 +740,8 @@ export default function MisaTrialBalanceManagementReport({
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     {/* Số TK */}
-                    <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
+                    <td
+                      style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
                       onClick={() => notify?.(`Mở sổ chi tiết tài khoản ${row.code} - ${row.name}`)}
                       title="Bấm để xem sổ chi tiết tài khoản"
                     >
@@ -610,8 +808,12 @@ export default function MisaTrialBalanceManagementReport({
                 <td colSpan={2} style={{ padding: "5px 8px", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   Tổng cộng
                 </td>
-                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}></td>
-                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}></td>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                  {totals.openingDebit ? totals.openingDebit.toLocaleString("vi-VN") : ""}
+                </td>
+                <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
+                  {totals.openingCredit ? totals.openingCredit.toLocaleString("vi-VN") : ""}
+                </td>
                 <td style={{ padding: "5px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#1e293b" }}>
                   {totals.periodDebit.toLocaleString("vi-VN")}
                 </td>
@@ -737,7 +939,7 @@ export default function MisaTrialBalanceManagementReport({
           <div
             style={{
               width: "100%",
-              maxWidth: 440,
+              maxWidth: 500,
               background: "#ffffff",
               height: "100%",
               boxShadow: "-8px 0 30px rgba(0,0,0,0.2)",
@@ -753,11 +955,11 @@ export default function MisaTrialBalanceManagementReport({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "16px 20px",
+                padding: "16px 24px",
                 borderBottom: "1px solid #e2e8f0",
               }}
             >
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>
                 Chọn tham số
               </h3>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -781,18 +983,34 @@ export default function MisaTrialBalanceManagementReport({
             </div>
 
             {/* Drawer Body Form */}
-            <div style={{ padding: "20px 24px", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 18, fontSize: 13 }}>
+            <div style={{ padding: "20px 24px", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16, fontSize: 13 }}>
+              {/* 0. Chi nhánh */}
+              <MisaBranchTagSelector
+                companyLabel={resolvedCompanyName || company?.name}
+                branches={availableBranches}
+                selectedBranchId={draftBranchId}
+                onChange={(bid: string) => setDraftBranchId(bid)}
+              />
+
               {/* 1. Kỳ báo cáo */}
               <div>
-                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#1e293b" }}>
                   Kỳ báo cáo <span style={{ color: "#dc2626" }}>*</span>
                 </label>
                 <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
+                  value={draftPeriod}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDraftPeriod(val);
+                    if (val !== "Tùy chọn") {
+                      const computed = computeMisaPeriodDates(val, CURRENT_YEAR);
+                      setDraftFromDate(computed.fromDate);
+                      setDraftToDate(computed.toDate);
+                    }
+                  }}
                   style={{
                     width: "100%",
-                    height: 34,
+                    height: 36,
                     padding: "0 10px",
                     border: "1px solid #cbd5e1",
                     borderRadius: 4,
@@ -801,74 +1019,124 @@ export default function MisaTrialBalanceManagementReport({
                     outline: "none",
                   }}
                 >
-                  <option value="Năm nay">Năm nay</option>
-                  <option value="Quý này">Quý này</option>
-                  <option value="Tháng này">Tháng này</option>
-                  <option value="Tháng trước">Tháng trước</option>
-                  <option value="Tùy chọn">Tùy chọn</option>
+                  {MISA_REPORT_PERIOD_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* 2. Từ ngày - Đến ngày */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>
+                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#1e293b" }}>
                     Từ ngày
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
                       type="text"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
+                      value={draftFromDate}
+                      placeholder="DD/MM/YYYY"
+                      onChange={(e) => {
+                        setDraftFromDate(e.target.value);
+                        setDraftPeriod("Tùy chọn");
+                      }}
                       style={{
                         width: "100%",
-                        height: 34,
+                        height: 36,
                         padding: "0 28px 0 10px",
                         border: "1px solid #cbd5e1",
                         borderRadius: 4,
                         fontSize: 13,
                         outline: "none",
+                        boxSizing: "border-box",
                       }}
                     />
-                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <input
+                      type="date"
+                      value={dmyToIsoDate(draftFromDate)}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setDraftFromDate(isoToDmyDate(e.target.value));
+                          setDraftPeriod("Tùy chọn");
+                        }
+                      }}
+                      style={{
+                        position: "absolute",
+                        right: 4,
+                        top: 4,
+                        width: 24,
+                        height: 28,
+                        opacity: 0,
+                        cursor: "pointer",
+                      }}
+                      title="Chọn từ ngày"
+                    />
+                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>
+                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#1e293b" }}>
                     Đến ngày
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
                       type="text"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
+                      value={draftToDate}
+                      placeholder="DD/MM/YYYY"
+                      onChange={(e) => {
+                        setDraftToDate(e.target.value);
+                        setDraftPeriod("Tùy chọn");
+                      }}
                       style={{
                         width: "100%",
-                        height: 34,
+                        height: 36,
                         padding: "0 28px 0 10px",
                         border: "1px solid #cbd5e1",
                         borderRadius: 4,
                         fontSize: 13,
                         outline: "none",
+                        boxSizing: "border-box",
                       }}
                     />
-                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+                    <input
+                      type="date"
+                      value={dmyToIsoDate(draftToDate)}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setDraftToDate(isoToDmyDate(e.target.value));
+                          setDraftPeriod("Tùy chọn");
+                        }
+                      }}
+                      style={{
+                        position: "absolute",
+                        right: 4,
+                        top: 4,
+                        width: 24,
+                        height: 28,
+                        opacity: 0,
+                        cursor: "pointer",
+                      }}
+                      title="Chọn đến ngày"
+                    />
+                    <Calendar size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
                   </div>
                 </div>
               </div>
 
               {/* 3. Bậc tài khoản */}
               <div>
-                <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#1e293b" }}>
                   Bậc tài khoản
                 </label>
                 <select
-                  value={accountLevel}
-                  onChange={(e) => setAccountLevel(e.target.value)}
+                  value={draftAccountLevel}
+                  onChange={(e) => setDraftAccountLevel(e.target.value)}
                   style={{
                     width: 140,
-                    height: 32,
+                    height: 34,
                     padding: "0 10px",
                     border: "1px solid #cbd5e1",
                     borderRadius: 4,
@@ -880,55 +1148,31 @@ export default function MisaTrialBalanceManagementReport({
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3</option>
+                  <option value="4">4</option>
                   <option value="all">Bậc tổng hợp</option>
                 </select>
               </div>
 
               {/* 4. Hiển thị số dư hai bên */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <input
                   type="checkbox"
                   id="showBothSides"
-                  checked={showBothSides}
-                  onChange={(e) => setShowBothSides(e.target.checked)}
-                  style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                  checked={draftShowBothSides}
+                  onChange={(e) => setDraftShowBothSides(e.target.checked)}
+                  style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer", margin: 0 }}
                 />
                 <label htmlFor="showBothSides" style={{ cursor: "pointer", color: "#1e293b", fontWeight: 500 }}>
                   Hiển thị số dư hai bên
                 </label>
               </div>
 
-              {/* 5. Lấy lũy kế phát sinh từ */}
-              <div style={{ marginTop: 8 }}>
-                <div style={{ color: "#334155", fontWeight: 600, marginBottom: 8 }}>
-                  Lấy lũy kế phát sinh từ
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#334155" }}>
-                    <input
-                      type="radio"
-                      name="accumulateFrom"
-                      value="data_start"
-                      checked={accumulateFrom === "data_start"}
-                      onChange={() => setAccumulateFrom("data_start")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
-                    />
-                    <span>Ngày bắt đầu dữ liệu</span>
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#334155" }}>
-                    <input
-                      type="radio"
-                      name="accumulateFrom"
-                      value="fiscal_start"
-                      checked={accumulateFrom === "fiscal_start"}
-                      onChange={() => setAccumulateFrom("fiscal_start")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
-                    />
-                    <span>Ngày bắt đầu năm tài chính của kỳ báo cáo</span>
-                  </label>
-                </div>
-              </div>
+              {/* 5. Lấy lũy kế phát sinh từ (Horizontal side-by-side) */}
+              <MisaAccumulateFromRadioGroup
+                value={draftAccumulateFrom}
+                onChange={setDraftAccumulateFrom}
+                name="tbAccumulateFrom"
+              />
             </div>
 
             {/* Drawer Footer Actions */}

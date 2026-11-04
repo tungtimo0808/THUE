@@ -8161,7 +8161,28 @@ export default function MisaCashWorkspace({
   const totalPayment = cashCurrentLedger.payment;
 
   // Handler for Tax payment submission
-  const handleTaxPayment = (taxData: any) => {
+  const handleTaxPayment = async (taxData: any) => {
+    if (token) {
+      const saved = await apiSave((writer) => saveMoneyVoucher(writer, "cash", {
+        kind: "payment",
+        date: taxData.taxDate,
+        postDate: taxData.taxDate,
+        partner: "Kho bạc Nhà nước / Chi cục Thuế",
+        person: "Thủ quỹ Vũ Thị Mai",
+        description: `Nộp ${taxData.taxType} vào NSNN`,
+        amount: taxData.totalAmount,
+        debit: "33311",
+        credit: "1111",
+        lines: (taxData.items || []).filter((r: any) => Number(r.payThisTime || r.amount || 0) > 0).map((r: any) => ({
+          description: r.description || `Nộp ${taxData.taxType} vào NSNN`,
+          debitAccount: r.account || "33311",
+          creditAccount: "1111",
+          amount: Number(r.payThisTime || r.amount || 0),
+        })),
+      }));
+      if (saved) setShowTaxModal(false);
+      return saved;
+    }
     const newDoc = {
       id: crypto.randomUUID(),
       code: `PC${String(transactions.length + 1).padStart(5, "0")}`,

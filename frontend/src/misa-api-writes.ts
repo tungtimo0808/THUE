@@ -244,6 +244,14 @@ export async function createAndPost(writer: ApiWriter, path: string, body: Row, 
   const done: string[] = [];
   try {
     for (const step of steps) {
+      if (step === "post" && record.status === "PENDING_APPROVAL") {
+        try {
+          record = await writer.action(path, record.id, "approve", { version: record.version });
+          done.push("approve");
+        } catch {
+          break;
+        }
+      }
       if (step === "post" && !["APPROVED", "CONFIRMED"].includes(record.status)) break;
       record = await writer.action(path, record.id, step, { version: record.version });
       done.push(step);
@@ -374,10 +382,28 @@ export async function saveGoodsPurchase(w: ApiWriter, d: Row) {
     notes: String(d.description || ""), lines,
     ...(String(d.voucherCode || "").trim() && d.voucherCode !== "Tự động" ? { number: String(d.voucherCode).trim() } : {}),
   };
-  const record = d.recordId
+  let record = d.recordId
     ? await w.patch(`${PURCHASES}goods-purchases/${d.recordId}/`, { ...body, version: d.version })
     : await w.post(`${PURCHASES}goods-purchases/`, body);
-  return { record, message: `Lưu chứng từ mua hàng nhập kho ${record.number} thành công. Trạng thái: Chưa ghi sổ.` };
+  if (d.postNow) {
+    try {
+      record = await w.action(`${PURCHASES}goods-purchases/`, record.id, "submit", { version: record.version });
+      if (record.status === "PENDING_APPROVAL") {
+        record = await w.action(`${PURCHASES}goods-purchases/`, record.id, "approve", { version: record.version });
+      }
+      if (["APPROVED", "CONFIRMED"].includes(record.status)) {
+        record = await w.action(`${PURCHASES}goods-purchases/`, record.id, "post", { version: record.version });
+      }
+    } catch {
+      // Leave in saved state if workflow blocks immediate posting
+    }
+  }
+  return {
+    record,
+    message: record.status === "POSTED"
+      ? `Đã lưu và ghi sổ chứng từ mua hàng nhập kho ${record.number} thành công.`
+      : `Lưu chứng từ mua hàng nhập kho ${record.number} thành công. Trạng thái: Chưa ghi sổ.`,
+  };
 }
 
 export async function saveServicePurchase(w: ApiWriter, d: Row) {
@@ -7106,136 +7132,576 @@ export async function exportReportDetailUcRpt15(w: ApiWriter, d: Row = {}) {
   });
 }
 
+export function buildClientFallbackMisaHtml(d: Row = {}): string {
+  const title = String(d.title || d.report_code || "BÁO CÁO KẾ TOÁN").toUpperCase();
+  const params = (d.parameters || {}) as Row;
+  const options = (d.options || {}) as Row;
+  const companyName = String(
+    options.company_name || params.company_name || "Công ty TNHH XYZ",
+  );
+  const companyAddress = String(
+    options.company_address ||
+      params.company_address ||
+      "Tầng 9 Technosoft, Duy Tân, Cầu Giấy, Hà Nội - Việt Nam",
+  );
+  const periodLabel = String(
+    params.period_label ||
+      (params.from_date && params.to_date
+        ? `Từ ngày ${params.from_date} đến ngày ${params.to_date}`
+        : params.as_of_date
+          ? `Tại ngày ${params.as_of_date}`
+          : "Kỳ báo cáo hiện tại"),
+  );
+  const currency = String(options.currency || params.currency || "VND");
+  const columns: any[] = Array.isArray(d.columns) ? d.columns : [];
+  const rows: any[] = Array.isArray(d.rows) ? d.rows : [];
+
+  const escapeHtml = (val: unknown) =>
+    String(val ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const formatNum = (val: unknown): string => {
+    if (val === null || val === undefined || val === "") return "";
+    const num = Number(val);
+    if (!Number.isFinite(num) || Math.abs(num) < 0.000001) return "";
+    return Math.round(num).toLocaleString("vi-VN");
+  };
+
+  // Detect 2-level grouped headers
+  const resolvedCols = columns.map((col, idx) => {
+    const key = String(col.key || col.field || `col_${idx}`);
+    const label = String(col.label || col.title || key);
+    let group = col.group ? String(col.group).trim() : "";
+    let sublabel = col.sublabel ? String(col.sublabel).trim() : label;
+    if (!group && label.includes(" - ")) {
+      const parts = label.split(" - ", 2);
+      group = parts[0].trim();
+      sublabel = parts[1].trim();
+    }
+    const dtype = String(col.data_type || col.type || col.align || "").toLowerCase();
+    const isNum =
+      dtype === "number" ||
+      dtype === "currency" ||
+      dtype === "right" ||
+      key.includes("debit") ||
+      key.includes("credit") ||
+      key.includes("amount") ||
+      key.includes("balance") ||
+      key.includes("closing") ||
+      key.includes("opening");
+    const isCode =
+      idx === 0 ||
+      key.includes("code") ||
+      key.includes("account_number") ||
+      key === "tk" ||
+      key === "ma_so";
+    return { ...col, key, label, group, sublabel, isNum, isCode };
+  });
+
+  const hasGrouped = resolvedCols.some((c) => Boolean(c.group));
+  let theadHtml = "";
+  if (hasGrouped) {
+    let row1 = "<tr>";
+    let row2 = "<tr>";
+    let i = 0;
+    while (i < resolvedCols.length) {
+      const c = resolvedCols[i];
+      if (!c.group) {
+        row1 += `<th rowspan="2">${escapeHtml(c.label)}</th>`;
+        i++;
+      } else {
+        const gName = c.group;
+        const spanCols: typeof resolvedCols = [];
+        while (i < resolvedCols.length && resolvedCols[i].group === gName) {
+          spanCols.push(resolvedCols[i]);
+          i++;
+        }
+        row1 += `<th colspan="${spanCols.length}">${escapeHtml(gName)}</th>`;
+        for (const sc of spanCols) {
+          row2 += `<th>${escapeHtml(sc.sublabel)}</th>`;
+        }
+      }
+    }
+    row1 += "</tr>";
+    row2 += "</tr>";
+    theadHtml = `${row1}${row2}`;
+  } else {
+    theadHtml = `<tr>${resolvedCols.map((c) => `<th>${escapeHtml(c.label)}</th>`).join("")}</tr>`;
+  }
+
+  const tbodyRows = rows
+    .map((r) => {
+      const isBold = Boolean(r.is_bold || r.is_total || r.is_summary || r.isGroup);
+      const trClass = isBold ? ' class="summary-row"' : "";
+      const tds = resolvedCols
+        .map((c, idx) => {
+          const raw = r[c.key];
+          if (c.isNum) {
+            return `<td class="num">${escapeHtml(formatNum(raw))}</td>`;
+          }
+          const cls = c.isCode && !isBold ? ' class="code-link"' : "";
+          const indent =
+            idx === 1 && Number(r.level || 0) > 0
+              ? ` style="padding-left:${6 + Number(r.level) * 14}px"`
+              : "";
+          return `<td${cls}${indent}>${escapeHtml(raw ?? "")}</td>`;
+        })
+        .join("");
+      return `<tr${trClass}>${tds}</tr>`;
+    })
+    .join("");
+
+  let grandTotalHtml = "";
+  const hasExplicitGrandTotal = resolvedCols.some(
+    (c) => c.grand_total !== undefined && c.grand_total !== null,
+  );
+  if (hasExplicitGrandTotal) {
+    const gtCells = resolvedCols
+      .map((c, idx) => {
+        if (idx === 0) return `<td></td>`;
+        if (idx === 1) return `<td>Tổng cộng</td>`;
+        if (c.isNum) return `<td class="num">${escapeHtml(formatNum(c.grand_total))}</td>`;
+        return `<td></td>`;
+      })
+      .join("");
+    grandTotalHtml = `<tr class="grand-total-row">${gtCells}</tr>`;
+  }
+
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>${escapeHtml(title)}</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  body { font-family: "Times New Roman", Times, serif; color: #000; background: #fff; margin: 0; padding: 24px 30px; font-size: 11pt; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .company-block .company-name { font-size: 11pt; font-weight: normal; margin-bottom: 2px; }
+  .company-block .company-addr { font-size: 10.5pt; }
+  .title-block { text-align: center; margin: 8px 0 6px; }
+  .title-block h1 { font-size: 16pt; font-weight: bold; text-transform: uppercase; margin: 0 0 4px; }
+  .title-block .period { font-size: 11pt; font-style: italic; font-weight: bold; }
+  .unit-row { text-align: right; font-size: 10.5pt; font-style: italic; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 10.5pt; }
+  th, td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
+  thead th { font-weight: bold; text-align: center; background: #fff; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.code-link { color: #1d4ed8; }
+  tr.summary-row td, tr.grand-total-row td { font-weight: bold; }
+  .signatures { display: flex; justify-content: space-between; margin-top: 22px; text-align: center; page-break-inside: avoid; }
+  .sig-col { width: 30%; }
+  .sig-title { font-weight: bold; font-size: 10.5pt; }
+  .sig-sub { font-style: italic; font-size: 9.5pt; margin-bottom: 58px; }
+  .page-footer { text-align: right; font-size: 10pt; margin-top: 12px; }
+</style>
+</head>
+<body>
+  <div class="header-top">
+    <div class="company-block">
+      <div class="company-name">${escapeHtml(companyName)}</div>
+      <div class="company-addr">${escapeHtml(companyAddress)}</div>
+    </div>
+  </div>
+  <div class="title-block">
+    <h1>${escapeHtml(title)}</h1>
+    <div class="period">${escapeHtml(periodLabel)}</div>
+  </div>
+  <div class="unit-row">Đơn vị tính: ${escapeHtml(currency)}</div>
+  <table>
+    <thead>${theadHtml}</thead>
+    <tbody>${tbodyRows}${grandTotalHtml}</tbody>
+  </table>
+  <div class="signatures">
+    <div class="sig-col"><div class="sig-title">Người lập biểu</div><div class="sig-sub">(Ký, họ tên)</div></div>
+    <div class="sig-col"><div class="sig-title">Kế toán trưởng</div><div class="sig-sub">(Ký, họ tên)</div></div>
+    <div class="sig-col"><div class="sig-title">Giám đốc</div><div class="sig-sub">(Ký, họ tên, đóng dấu)</div></div>
+  </div>
+  <div class="page-footer">1/1</div>
+</body>
+</html>`;
+}
+
+export function openMisaReportPreviewModal(opts: {
+  htmlText: string;
+  title?: string;
+  reportCode?: string;
+  fileName?: string;
+  requestedFormat?: string;
+  onDownloadExcel?: () => Promise<unknown> | void;
+  onDownloadPdf?: () => Promise<unknown> | void;
+}) {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  const existing = document.getElementById("misa-print-preview-modal-root");
+  if (existing) existing.remove();
+
+  const reqFmt = String(opts.requestedFormat || "PRINT").toUpperCase();
+
+  // Hide internal .no-print inside iframe so we use the clean modal top bar
+  const enhancedHtml = opts.htmlText.includes("</head>")
+    ? opts.htmlText.replace(
+        "</head>",
+        `<style>
+          .no-print { display: none !important; }
+          body { background: #ffffff !important; margin: 0 !important; padding: 28px 34px !important; }
+          .sheet { box-shadow: none !important; margin: 0 !important; max-width: 100% !important; padding: 0 !important; }
+        </style></head>`,
+      )
+    : opts.htmlText;
+
+  const svgIcon = (paths: string) =>
+    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">${paths}</svg>`;
+
+  const iconBack = svgIcon(`<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>`);
+  const iconExcel = svgIcon(
+    `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>`,
+  );
+  const iconPdf = svgIcon(
+    `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`,
+  );
+  const iconPrint = svgIcon(
+    `<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>`,
+  );
+  const iconClose = svgIcon(`<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`);
+
+  const overlay = document.createElement("div");
+  overlay.id = "misa-print-preview-modal-root";
+  overlay.style.cssText =
+    "position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.45);display:flex;flex-direction:column;font-family:'Be Vietnam Pro','Segoe UI',system-ui,-apple-system,sans-serif;";
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "background:#ffffff;color:#0f172a;padding:10px 20px;min-height:54px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(15,23,42,0.06);flex-shrink:0;box-sizing:border-box;";
+
+  const leftInfo = document.createElement("div");
+  leftInfo.style.cssText = "display:flex;align-items:center;gap:12px;";
+
+  const closeModal = () => {
+    window.removeEventListener("keydown", onKeyDown);
+    overlay.remove();
+  };
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.innerHTML = `${iconBack}<span>Quay lại</span>`;
+  backBtn.style.cssText =
+    "height:34px;padding:0 12px;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;color:#1e293b;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;";
+  backBtn.onclick = closeModal;
+
+  const divider = document.createElement("div");
+  divider.style.cssText = "width:1px;height:22px;background:#e2e8f0;";
+
+  const modeLabel =
+    reqFmt === "XLSX"
+      ? "Xem trước khi xuất Excel (.xlsx)"
+      : reqFmt === "PDF"
+        ? "Xem trước khi xuất PDF (.pdf)"
+        : "Xem trước bản in";
+
+  const titleEl = document.createElement("div");
+  titleEl.style.cssText = "display:flex;align-items:center;gap:10px;flex-wrap:wrap;";
+  titleEl.innerHTML = `<span style="font-size:15px;font-weight:700;color:#0f172a;">${
+    opts.title || opts.reportCode || "Báo cáo kế toán"
+  }</span><span style="font-size:12px;font-weight:600;color:#475569;background:#f1f5f9;border:1px solid #cbd5e1;padding:2px 8px;border-radius:4px;">${modeLabel}</span>`;
+
+  leftInfo.appendChild(backBtn);
+  leftInfo.appendChild(divider);
+  leftInfo.appendChild(titleEl);
+
+  const actions = document.createElement("div");
+  actions.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;";
+
+  const makeBtn = (
+    iconHtml: string,
+    label: string,
+    bg: string,
+    border: string,
+    color: string,
+  ) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = `${iconHtml}<span>${label}</span>`;
+    b.style.cssText = `height:34px;min-height:34px;padding:0 12px;border-radius:6px;background:${bg};color:${color};border:1px solid ${border};font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;box-sizing:border-box;font-family:inherit;`;
+    return b;
+  };
+
+  const bodyWrap = document.createElement("div");
+  bodyWrap.style.cssText =
+    "flex:1;background:#e2e8f0;padding:20px 24px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;";
+
+  const iframe = document.createElement("iframe");
+  iframe.title = "Xem trước bản in báo cáo";
+  iframe.style.cssText =
+    "width:100%;max-width:1120px;min-height:calc(100vh - 96px);background:#ffffff;border:1px solid #cbd5e1;border-radius:4px;box-shadow:0 4px 16px rgba(15,23,42,0.08);";
+  iframe.srcdoc = enhancedHtml;
+
+  if (opts.onDownloadExcel) {
+    const isPrimary = reqFmt === "XLSX";
+    const btnExcel = makeBtn(
+      iconExcel,
+      isPrimary ? "Tải xuống Excel (.xlsx)" : "Xuất Excel (.xlsx)",
+      isPrimary ? "#00a862" : "#f0fdf4",
+      isPrimary ? "#00a862" : "#86efac",
+      isPrimary ? "#ffffff" : "#166534",
+    );
+    btnExcel.onclick = async () => {
+      const span = btnExcel.querySelector("span");
+      const orig = span?.textContent || "Xuất Excel (.xlsx)";
+      if (span) span.textContent = "Đang tải Excel...";
+      btnExcel.disabled = true;
+      try {
+        await opts.onDownloadExcel!();
+      } finally {
+        if (span) span.textContent = orig;
+        btnExcel.disabled = false;
+      }
+    };
+    actions.appendChild(btnExcel);
+  }
+
+  if (opts.onDownloadPdf) {
+    const isPrimary = reqFmt === "PDF";
+    const btnPdf = makeBtn(
+      iconPdf,
+      isPrimary ? "Tải xuống PDF (.pdf)" : "Xuất PDF (.pdf)",
+      isPrimary ? "#1d4ed8" : "#eff6ff",
+      isPrimary ? "#1d4ed8" : "#bfdbfe",
+      isPrimary ? "#ffffff" : "#1d4ed8",
+    );
+    btnPdf.onclick = async () => {
+      const span = btnPdf.querySelector("span");
+      const orig = span?.textContent || "Xuất PDF (.pdf)";
+      if (span) span.textContent = "Đang tải PDF...";
+      btnPdf.disabled = true;
+      try {
+        await opts.onDownloadPdf!();
+      } finally {
+        if (span) span.textContent = orig;
+        btnPdf.disabled = false;
+      }
+    };
+    actions.appendChild(btnPdf);
+  }
+
+  const isPrintPrimary = reqFmt === "PRINT";
+  const btnPrint = makeBtn(
+    iconPrint,
+    "In báo cáo",
+    isPrintPrimary ? "#0284c7" : "#ffffff",
+    isPrintPrimary ? "#0284c7" : "#cbd5e1",
+    isPrintPrimary ? "#ffffff" : "#1e293b",
+  );
+  btnPrint.onclick = () => {
+    try {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        return;
+      }
+    } catch {
+      // fallback to popup print
+    }
+    const w = window.open("", "_blank", "width=1024,height=768");
+    if (w) {
+      w.document.open();
+      w.document.write(opts.htmlText);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 250);
+    }
+  };
+  actions.appendChild(btnPrint);
+
+  const btnClose = makeBtn(iconClose, "Đóng", "#ffffff", "#cbd5e1", "#475569");
+  btnClose.onclick = closeModal;
+  actions.appendChild(btnClose);
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") closeModal();
+  };
+  window.addEventListener("keydown", onKeyDown);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === bodyWrap) closeModal();
+  });
+
+  header.appendChild(leftInfo);
+  header.appendChild(actions);
+  bodyWrap.appendChild(iframe);
+  overlay.appendChild(header);
+  overlay.appendChild(bodyWrap);
+  document.body.appendChild(overlay);
+}
+
 /**
  * 4-step UC-RPT-15 flow:
  * 1. GET /api/v1/reports/{reportCode}/export-capabilities/ & /export-templates/
  * 2. POST /api/v1/reports/export/jobs/
  * 3. GET /api/v1/reports/export/jobs/{jobId}/artifacts/ -> POST .../artifacts/{id}/download-access/
- * 4. GET /api/v1/reports/export/artifacts/{id}/download/?token=... (triggers real browser download or print)
+ * 4. GET /api/v1/reports/export/artifacts/{id}/download/?token=... (triggers preview modal first, then real download on confirm)
  */
 export async function executeReportExportUcRpt15(w: ApiWriter, d: Row = {}, authToken?: string) {
   const reportCode = String(d.report_code || "RPT-CENTER").trim();
-  const outputFormat = String(d.output_format || "XLSX").toUpperCase();
+  const requestedFormat = String(d.output_format || "XLSX").toUpperCase();
+  const isDirectDownload = Boolean(d._directDownload);
 
-  // Step 1: Capabilities & Templates
-  const [capRes, tplRes] = await Promise.allSettled([
-    fetchReportExportCapabilitiesUcRpt15(w, reportCode),
-    fetchReportExportTemplatesUcRpt15(w, reportCode),
-  ]);
-  const capabilities = capRes.status === "fulfilled" ? capRes.value : null;
-  const templates = tplRes.status === "fulfilled" ? tplRes.value : null;
-  const defaultTemplateCode =
-    d.template_code ||
-    templates?.templates?.find((t: any) => t.is_default)?.template_code ||
-    templates?.templates?.[0]?.template_code ||
-    undefined;
+  // Always show the MISA Preview Modal first unless the user clicked Download inside the modal!
+  const jobFormat = isDirectDownload ? requestedFormat : "PRINT";
 
-  // Step 2: Create Export Job
-  const job = await createReportExportJobUcRpt15(w, {
-    company_id: d.company_id || w.companyId,
-    report_code: reportCode,
-    title: d.title || reportCode,
-    output_format: outputFormat,
-    export_scope: d.export_scope || "CURRENT_VIEW",
-    ...(defaultTemplateCode ? { template_code: defaultTemplateCode } : {}),
-    columns: d.columns || [],
-    rows: d.rows || [],
-    options: d.options || {},
-    parameters: d.parameters || {},
-  });
+  try {
+    // Step 1: Capabilities & Templates
+    const [capRes, tplRes] = await Promise.allSettled([
+      fetchReportExportCapabilitiesUcRpt15(w, reportCode),
+      fetchReportExportTemplatesUcRpt15(w, reportCode),
+    ]);
+    const capabilities = capRes.status === "fulfilled" ? capRes.value : null;
+    const templates = tplRes.status === "fulfilled" ? tplRes.value : null;
+    const defaultTemplateCode =
+      d.template_code ||
+      templates?.templates?.find((t: any) => t.is_default)?.template_code ||
+      templates?.templates?.[0]?.template_code ||
+      undefined;
 
-  const jobId = String(job?.export_job_id || job?.id || "");
-  if (!jobId) {
-    throw new FormDataError("Không tạo được lệnh xuất báo cáo (thiếu export_job_id).");
-  }
+    // Step 2: Create Export Job
+    const job = await createReportExportJobUcRpt15(w, {
+      company_id: d.company_id || w.companyId,
+      report_code: reportCode,
+      title: d.title || reportCode,
+      ...(d.period_str ? { period_str: d.period_str } : {}),
+      output_format: jobFormat,
+      export_scope: d.export_scope || "CURRENT_VIEW",
+      ...(defaultTemplateCode ? { template_code: defaultTemplateCode } : {}),
+      columns: d.columns || [],
+      rows: d.rows || [],
+      ...(d.grand_total ? { grand_total: d.grand_total } : {}),
+      options: d.options || {},
+      parameters: d.parameters || {},
+    });
 
-  // Step 3: Get Job Artifacts & Download Access Token
-  const artifactsRes = await fetchReportExportJobArtifactsUcRpt15(w, jobId);
-  const artifact = artifactsRes?.artifacts?.[0] || job?.artifact;
-  const artifactId = String(artifact?.artifact_id || "");
-  if (!artifactId) {
-    throw new FormDataError("Không tìm thấy file kết quả xuất báo cáo (artifact_id).");
-  }
-
-  const access = await requestReportExportDownloadAccessUcRpt15(w, artifactId, {
-    company_id: d.company_id || w.companyId,
-  });
-
-  const downloadUrl =
-    access?.download_url ||
-    `${RPT_EXPORT}artifacts/${encodeURIComponent(artifactId)}/download/?token=${encodeURIComponent(
-      String(access?.download_token || artifact?.download_token || ""),
-    )}`;
-  const fileName = String(
-    access?.file_name ||
-      artifact?.file_name ||
-      `${reportCode.toLowerCase()}.${outputFormat === "PRINT" ? "html" : outputFormat.toLowerCase()}`,
-  );
-
-  // Step 4: Download binary/HTML artifact
-  const readStoredToken = () => {
-    if (typeof localStorage === "undefined") return "";
-    try {
-      const raw = localStorage.getItem("erp_api_session");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.token) return String(parsed.token);
-      }
-      return localStorage.getItem("erp_token") || "";
-    } catch {
-      return "";
+    const jobId = String(job?.export_job_id || job?.id || "");
+    if (!jobId) {
+      throw new FormDataError("Không tạo được lệnh xuất báo cáo (thiếu export_job_id).");
     }
-  };
-  const token = authToken || readStoredToken();
-  const response = await fetch(downloadUrl, {
-    method: "GET",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!response.ok) {
-    throw new FormDataError(`Tải file báo cáo thất bại (HTTP ${response.status}).`);
-  }
 
-  const blob = await response.blob();
-  if (typeof window !== "undefined" && typeof document !== "undefined") {
-    if (outputFormat === "PRINT") {
-      const htmlText = await blob.text();
-      const printWin = window.open("", "_blank", "width=960,height=720");
-      if (printWin) {
-        printWin.document.open();
-        printWin.document.write(htmlText);
-        printWin.document.close();
-        printWin.focus();
-        setTimeout(() => {
-          try {
-            printWin.print();
-          } catch {
-            // ignore print close error
-          }
-        }, 250);
+    // Step 3: Get Job Artifacts & Download Access Token
+    const artifactsRes = await fetchReportExportJobArtifactsUcRpt15(w, jobId);
+    const artifact = artifactsRes?.artifacts?.[0] || job?.artifact;
+    const artifactId = String(artifact?.artifact_id || "");
+    if (!artifactId) {
+      throw new FormDataError("Không tìm thấy file kết quả xuất báo cáo (artifact_id).");
+    }
+
+    const access = await requestReportExportDownloadAccessUcRpt15(w, artifactId, {
+      company_id: d.company_id || w.companyId,
+    });
+
+    const downloadUrl =
+      access?.download_url ||
+      `${RPT_EXPORT}artifacts/${encodeURIComponent(artifactId)}/download/?token=${encodeURIComponent(
+        String(access?.download_token || artifact?.download_token || ""),
+      )}`;
+    const fileName = String(
+      access?.file_name ||
+        artifact?.file_name ||
+        `${reportCode.toLowerCase()}.${jobFormat === "PRINT" ? "html" : jobFormat.toLowerCase()}`,
+    );
+
+    // Step 4: Download binary/HTML artifact
+    const readStoredToken = () => {
+      if (typeof localStorage === "undefined") return "";
+      try {
+        const raw = localStorage.getItem("erp_api_session");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.token) return String(parsed.token);
+        }
+        return localStorage.getItem("erp_token") || "";
+      } catch {
+        return "";
+      }
+    };
+    const token = authToken || readStoredToken();
+    const response = await fetch(downloadUrl, {
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) {
+      throw new FormDataError(`Tải file báo cáo thất bại (HTTP ${response.status}).`);
+    }
+
+    const blob = await response.blob();
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+      if (!isDirectDownload) {
+        const htmlText = await blob.text();
+        openMisaReportPreviewModal({
+          htmlText,
+          title: String(d.title || reportCode),
+          reportCode,
+          fileName,
+          requestedFormat,
+          onDownloadExcel: () =>
+            executeReportExportUcRpt15(
+              w,
+              { ...d, output_format: "XLSX", _directDownload: true },
+              authToken,
+            ),
+          onDownloadPdf: () =>
+            executeReportExportUcRpt15(
+              w,
+              { ...d, output_format: "PDF", _directDownload: true },
+              authToken,
+            ),
+        });
       } else {
-        window.print();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
       }
-    } else {
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
     }
-  }
 
-  return {
-    job,
-    capabilities,
-    templates,
-    artifactId,
-    access,
-    fileName,
-    blob,
-  };
+    return {
+      job,
+      capabilities,
+      templates,
+      artifactId,
+      access,
+      fileName,
+      blob,
+    };
+  } catch (err) {
+    if (
+      !isDirectDownload &&
+      typeof window !== "undefined" &&
+      typeof document !== "undefined"
+    ) {
+      const fallbackHtml = buildClientFallbackMisaHtml(d);
+      openMisaReportPreviewModal({
+        htmlText: fallbackHtml,
+        title: String(d.title || reportCode),
+        reportCode,
+        fileName: `${reportCode.toLowerCase()}_print.html`,
+        requestedFormat,
+      });
+      return {
+        job: null,
+        capabilities: null,
+        templates: null,
+        artifactId: "fallback-local-preview",
+        access: null,
+        fileName: `${reportCode.toLowerCase()}_print.html`,
+        blob: new Blob([fallbackHtml], { type: "text/html;charset=utf-8" }),
+      };
+    }
+    throw err;
+  }
 }
 
 // ============================================================================

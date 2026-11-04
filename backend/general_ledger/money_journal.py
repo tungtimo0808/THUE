@@ -71,7 +71,7 @@ def journalize(tx, request, *, module, money_account, incoming, branch, counterp
         counter_side = {"credit": amount * rate} if incoming else {"debit": amount * rate}
         common = {"currency": tx.currency, "foreign_amount": amount, "exchange_rate": rate, "description": description}
         JournalLine.objects.create(entry=entry, line_no=line_no, account=money_account, **money_side, **common,
-                                   party=tx.party if money_account.requires_party else None, dimensions=money_dimensions or {})
+                                   party=tx.party, dimensions=money_dimensions or {})
         JournalLine.objects.create(entry=entry, line_no=line_no + 1, account=account, **counter_side, **common, party=tx.party, dimensions=dimensions)
         line_no += 2
     from .services import post

@@ -13,6 +13,8 @@
   line-height: 1.45;
   background: var(--ref-canvas);
   min-height: 100dvh;
+  /* Giữ khoảng cách trên của .ref-main bên trong khung, tránh đẩy cả trang xuống và sinh thanh cuộn thừa */
+  display: flow-root;
 }
 .reference-app button,
 .reference-app input,
@@ -946,6 +948,7 @@ select:has(~ svg),
   padding: 0 16px 22px;
   max-width: none;
   min-height: calc(100dvh - var(--ref-header));
+  box-sizing: border-box;
   background: var(--ref-canvas);
   transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: margin-left;
