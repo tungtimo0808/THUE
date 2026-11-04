@@ -36,7 +36,12 @@ import MisaUninvoicedPurchasesPrinted from "./MisaUninvoicedPurchasesPrinted";
 import MisaGeneralLedgerPrinted from "./MisaGeneralLedgerPrinted";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
-import { createApiWriter, executeReportExportUcRpt15 } from "./misa-api-writes";
+import {
+  buildClientFallbackMisaHtml,
+  createApiWriter,
+  executeReportExportUcRpt15,
+  openMisaReportPreviewModal,
+} from "./misa-api-writes";
 import "./misa-purchase-contract-reports.css";
 import "./audited-reports.css";
 
@@ -123,45 +128,72 @@ export default function AuditedReportWorkspace({
       notify?.("Đã lưu báo cáo cho lần xem này.");
     }
   };
-  const exportReport = async () => {
+  const exportReport = async (outputFormat: "XLSX" | "PRINT" = "XLSX") => {
     const visible = columns.filter((column) => !hidden.includes(column.id));
+    const exportColumns = visible.map((col, idx) => {
+      const rawPath = col.path || col.label;
+      const parts = rawPath.includes(" / ")
+        ? rawPath.split(" / ")
+        : rawPath.includes(" - ")
+          ? rawPath.split(" - ")
+          : [rawPath];
+      return {
+        key: idx === 0 ? "item_code" : idx === visible.length - 1 ? "amount" : `col_${col.id}`,
+        label: parts.length > 1 ? `${parts[0]} - ${parts.slice(1).join(" - ")}` : rawPath,
+        group: parts.length > 1 ? parts[0] : undefined,
+        sublabel: parts.length > 1 ? parts.slice(1).join(" - ") : rawPath,
+        type: idx === visible.length - 1 ? "amount" : "text",
+      };
+    });
+    const exportRows = rows.map((row) => {
+      const obj: Record<string, any> = {};
+      visible.forEach((col, idx) => {
+        const key = idx === 0 ? "item_code" : idx === visible.length - 1 ? "amount" : `col_${col.id}`;
+        obj[key] = row.cells[Number(col.id)] ?? "";
+      });
+      return obj;
+    });
+    const exportPayload = {
+      report_code: "RPT-AUDITED",
+      title: definition.name,
+      period_str: subtitle,
+      output_format: outputFormat,
+      export_scope: "CURRENT_VIEW",
+      columns: exportColumns,
+      rows: exportRows,
+      parameters: {
+        ...applied.fields,
+        period_label: subtitle || "Kỳ báo cáo hiện tại",
+      },
+      options: {
+        orientation: visible.length > 6 ? "LANDSCAPE" : "PORTRAIT",
+        paper_size: "A4",
+      },
+    };
     if (sessionToken) {
       try {
         const writer = createApiWriter(sessionCompanyId || "", (path, init) =>
           request(path, sessionToken || undefined, init),
         );
-        const exportColumns = visible.map((col, idx) => ({
-          key: idx === 0 ? "item_code" : idx === visible.length - 1 ? "amount" : `col_${col.id}`,
-          label: col.path || col.label,
-          type: idx === visible.length - 1 ? "amount" : "text",
-        }));
-        const exportRows = rows.map((row) => {
-          const obj: Record<string, any> = {};
-          visible.forEach((col, idx) => {
-            const key = idx === 0 ? "item_code" : idx === visible.length - 1 ? "amount" : `col_${col.id}`;
-            obj[key] = row.cells[Number(col.id)] ?? "";
-          });
-          return obj;
-        });
-        const res = await executeReportExportUcRpt15(
-          writer,
-          {
-            report_code: "RPT-AUDITED",
-            title: definition.name,
-            output_format: "XLSX",
-            export_scope: "CURRENT_VIEW",
-            columns: exportColumns,
-            rows: exportRows,
-            parameters: applied.fields,
-          },
-          sessionToken,
-        );
-        notify?.(`Đã xuất khẩu báo cáo ra Excel (${res.fileName}) thành công.`);
+        await executeReportExportUcRpt15(writer, exportPayload, sessionToken);
         return;
       } catch {
-        // Fallback to local CSV below
+        openMisaReportPreviewModal({
+          htmlText: buildClientFallbackMisaHtml(exportPayload),
+          title: definition.name,
+          reportCode: "RPT-AUDITED",
+          requestedFormat: outputFormat,
+        });
+        return;
       }
     }
+    openMisaReportPreviewModal({
+      htmlText: buildClientFallbackMisaHtml(exportPayload),
+      title: definition.name,
+      reportCode: "RPT-AUDITED",
+      requestedFormat: outputFormat,
+    });
+    return;
     const quote = (value: string) => `"${value.replaceAll('"', '""')}"`;
     const content = [
       visible.map((column) => quote(column.path)).join(";"),
@@ -254,10 +286,10 @@ export default function AuditedReportWorkspace({
           <button aria-label="Nạp lại" onClick={() => setQuery("")}>
             <RefreshCw size={16} />
           </button>
-          <button aria-label="In báo cáo" onClick={() => window.print()}>
+          <button aria-label="In báo cáo" onClick={() => void exportReport("PRINT")}>
             <Printer size={16} />
           </button>
-          <button aria-label="Xuất báo cáo" onClick={exportReport}>
+          <button aria-label="Xuất báo cáo" onClick={() => void exportReport("XLSX")}>
             <Download size={16} />
           </button>
           {definition.viewer === "dynamic" && <ReportCustomizationMenu

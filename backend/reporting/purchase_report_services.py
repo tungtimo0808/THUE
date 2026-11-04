@@ -483,6 +483,7 @@ def compute_purchase_source_snapshot_meta(
     ).count()
 
     gl_count = JournalLine.objects.filter(
+        entry__company_id=company_id,
         entry__posting_date__gte=d_from,
         entry__posting_date__lte=d_to,
         entry__status="POSTED",
@@ -1055,6 +1056,7 @@ def _build_rpt_0051(
         raw_entries = custom_journals
     else:
         qs = JournalEntry.objects.filter(
+            company_id=company_id,
             posting_date__gte=d_from,
             posting_date__lte=d_to,
             status="POSTED",

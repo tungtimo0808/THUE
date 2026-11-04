@@ -10,7 +10,7 @@ import uuid
 from typing import Any
 
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
@@ -939,7 +939,13 @@ def seed_business_result_uc_rpt_04(apps=None, schema_editor=None):
         _seed_b02_template_lines(tv, lines_spec, LineModel, MappingModel, is_condensed_b02b=is_cond)
 
 
+_B02_TEMPLATES_SEEDED = False
+
+
 def ensure_b02_templates_seeded():
+    global _B02_TEMPLATES_SEEDED
+    if _B02_TEMPLATES_SEEDED and FinancialStatementTemplate.objects.filter(legal_form_code="B02-DN").exists():
+        return
     b02_dn = FinancialStatementTemplate.objects.filter(legal_form_code="B02-DN").first()
     b02b_dn = FinancialStatementTemplate.objects.filter(legal_form_code="B02b-DN").first()
     needs_seed = False
@@ -952,6 +958,7 @@ def ensure_b02_templates_seeded():
             needs_seed = True
     if needs_seed:
         seed_business_result_uc_rpt_04()
+    _B02_TEMPLATES_SEEDED = True
 
 
 # ============================================================================
@@ -1132,21 +1139,28 @@ def compute_b02_gl_snapshot(company: Company, to_date: date, branch: Branch | No
     )
     if branch is not None:
         qs = qs.filter(branch=branch)
-    agg = qs.aggregate(max_posted=Max("posted_at"), max_created=Max("created_at"))
+    agg = qs.aggregate(max_posted=Max("posted_at"), max_created=Max("created_at"), cnt=Count("id"))
     last_ts = agg["max_posted"] or agg["max_created"]
-    count = qs.count()
+    count = agg["cnt"] or 0
     raw = f"{company.id}:{branch.id if branch else 'ALL'}:{to_date.isoformat()}:{count}:{last_ts.isoformat() if last_ts else 'NONE'}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32], last_ts
 
 
-def is_b02_run_stale(run: FinancialStatementRun) -> bool:
-    current_hash, current_ts = compute_b02_gl_snapshot(
-        run.company,
-        run.period_end_date,
-        run.branch if run.reporting_scope == "BRANCH" else None,
-    )
+def is_b02_run_stale(run: FinancialStatementRun, _gl_snap_cache: dict | None = None) -> bool:
     if not run.source_snapshot_hash:
         return False
+    branch_obj = run.branch if run.reporting_scope == "BRANCH" else None
+    cache_key = (run.company_id, branch_obj.id if branch_obj else None, run.period_end_date)
+    if _gl_snap_cache is not None and cache_key in _gl_snap_cache:
+        current_hash, current_ts = _gl_snap_cache[cache_key]
+    else:
+        current_hash, current_ts = compute_b02_gl_snapshot(
+            run.company,
+            run.period_end_date,
+            branch_obj,
+        )
+        if _gl_snap_cache is not None:
+            _gl_snap_cache[cache_key] = (current_hash, current_ts)
     if run.source_snapshot_hash != current_hash:
         return True
     if current_ts and run.source_last_posted_at and current_ts > run.source_last_posted_at:
@@ -2760,14 +2774,23 @@ def get_b02_run_or_error(run_id: str, company: Company) -> FinancialStatementRun
     return run
 
 
-def serialize_b02_run_header(run: FinancialStatementRun, display_unit: str | None = None) -> dict[str, Any]:
-    stale = is_b02_run_stale(run)
+def serialize_b02_run_header(
+    run: FinancialStatementRun,
+    display_unit: str | None = None,
+    _gl_snap_cache: dict | None = None,
+    _bundle_id_map: dict | None = None,
+) -> dict[str, Any]:
+    stale = is_b02_run_stale(run, _gl_snap_cache=_gl_snap_cache)
     eff_source_status = "STALE" if stale else run.source_status
     eff_val_status = "STALE" if (stale and run.validation_status == "PASSED") else run.validation_status
     d_unit = display_unit or run.display_unit or "VND"
     tmpl = run.template
     tv = run.template_version
-    bundle_comp = FinancialStatementBundleComponent.objects.filter(statement_run=run).first()
+    if _bundle_id_map is not None:
+        bundle_id_str = _bundle_id_map.get(run.id)
+    else:
+        bundle_comp = FinancialStatementBundleComponent.objects.filter(statement_run=run).first()
+        bundle_id_str = str(bundle_comp.bundle_id) if bundle_comp else None
     going_concern = "NON_GOING_CONCERN" if tmpl.legal_form_code == "B02-DNKLT" else "GOING_CONCERN"
     fp_label = (
         getattr(run.fiscal_period, "name", None)
@@ -2781,7 +2804,7 @@ def serialize_b02_run_header(run: FinancialStatementRun, display_unit: str | Non
     return {
         "id": str(run.id),
         "statement_run_id": str(run.id),
-        "bundle_run_id": str(bundle_comp.bundle_id) if bundle_comp else None,
+        "bundle_run_id": bundle_id_str,
         "company_id": str(run.company_id),
         "company_code": run.company.code,
         "company_name": run.company.name,
@@ -3164,12 +3187,12 @@ def get_business_result_parameters(request) -> dict[str, Any]:
             {"code": "NON_GOING_CONCERN", "label": "Không đáp ứng giả định hoạt động liên tục (B02-DNKLT)"},
         ],
         "permissions": {
-            "can_view": has_b02_permission(request.user, company, "RPT_BUSINESS_RESULT_VIEW"),
-            "can_detail_view": has_b02_permission(request.user, company, "RPT_BUSINESS_RESULT_DETAIL_VIEW"),
-            "can_generate": has_b02_permission(request.user, company, "RPT_BUSINESS_RESULT_GENERATE"),
-            "can_validate": has_b02_permission(request.user, company, "RPT_BUSINESS_RESULT_VALIDATE"),
-            "can_approve": has_b02_permission(request.user, company, "RPT_BUSINESS_RESULT_APPROVE"),
-            "can_export": has_b02_permission(request.user, company, "RPT_BUSINESS_RESULT_EXPORT"),
+            "can_view": bool(perms & B02_PERMISSION_ALIASES["RPT_BUSINESS_RESULT_VIEW"]),
+            "can_detail_view": bool(perms & B02_PERMISSION_ALIASES["RPT_BUSINESS_RESULT_DETAIL_VIEW"]),
+            "can_generate": bool(perms & B02_PERMISSION_ALIASES["RPT_BUSINESS_RESULT_GENERATE"]),
+            "can_validate": bool(perms & B02_PERMISSION_ALIASES["RPT_BUSINESS_RESULT_VALIDATE"]),
+            "can_approve": bool(perms & B02_PERMISSION_ALIASES["RPT_BUSINESS_RESULT_APPROVE"]),
+            "can_export": bool(perms & B02_PERMISSION_ALIASES["RPT_BUSINESS_RESULT_EXPORT"]),
             "granted_codes": sorted(perms),
         },
     }
@@ -3185,7 +3208,7 @@ def list_business_result_runs(request) -> dict[str, Any]:
 
     params = request.query_params
     qs = FinancialStatementRun.objects.select_related(
-        "company", "branch", "fiscal_period", "template", "template_version", "created_by", "approved_by"
+        "company__accounting_currency", "branch", "fiscal_period", "template", "template_version", "reporting_currency", "created_by", "approved_by"
     ).filter(
         company=company,
         template__component_type="BUSINESS_RESULT",
@@ -3221,13 +3244,35 @@ def list_business_result_runs(request) -> dict[str, Any]:
             "detail": "Chưa có Statement Run B02 đã lưu cho kỳ và bộ tham số này. Không hiển thị dữ liệu mẫu giả lập.",
         })
 
-    return {
+    snap_cache: dict = {}
+    run_ids = [r.id for r in runs_list]
+    bundle_id_map: dict = {}
+    if run_ids:
+        for sr_id, b_id in FinancialStatementBundleComponent.objects.filter(statement_run_id__in=run_ids).values_list("statement_run_id", "bundle_id"):
+            bundle_id_map[sr_id] = str(b_id)
+
+    serialized_runs = [
+        serialize_b02_run_header(r, _gl_snap_cache=snap_cache, _bundle_id_map=bundle_id_map)
+        for r in runs_list
+    ]
+    resp = {
         "company_id": str(company.id),
         "has_saved_run": len(runs_list) > 0,
         "saved_run_status": "AVAILABLE" if runs_list else "NO_SAVED_RUN",
         "count": len(runs_list),
-        "runs": [serialize_b02_run_header(r) for r in runs_list],
+        "runs": serialized_runs,
     }
+    if str(params.get("include_latest_detail", "")).lower() in ("1", "true", "yes") and runs_list:
+        latest_run = runs_list[0]
+        d_unit = params.get("display_unit") or latest_run.display_unit or "VND"
+        lines_payload = serialize_b02_lines_and_values(latest_run, display_unit=d_unit)
+        val_payload = get_business_result_run_validation_data(latest_run)
+        resp["latest_run_detail"] = {
+            "run": serialize_b02_run_header(latest_run, display_unit=d_unit, _gl_snap_cache=snap_cache, _bundle_id_map=bundle_id_map),
+            **lines_payload,
+            "validation": val_payload,
+        }
+    return resp
 
 
 # ----------------------------------------------------------------------------

@@ -59,17 +59,17 @@ export default function MisaCashReceiptJournalReport({
 }: MisaCashReceiptJournalReportProps) {
   // Drawer Parameters State matching Screenshot 3
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
-  const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
-  const [toDate, setToDate] = useState(()=>cashDateRange('Tháng này')![1]);
+  const [reportPeriodPreset, setReportPeriodPreset] = useState("Năm nay");
+  const [fromDate, setFromDate] = useState(()=>cashDateRange('Năm nay')![0]);
+  const [toDate, setToDate] = useState(()=>cashDateRange('Năm nay')![1]);
   const [selectedAccount, setSelectedAccount] = useState(initialAccount);
   const [selectedBankAccount, setSelectedBankAccount] = useState("");
   const [mergeSameEntries, setMergeSameEntries] = useState(true);
 
   // Drawer draft state
-  const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
-  const [draftToDate, setDraftToDate] = useState(()=>cashDateRange('Tháng này')![1]);
+  const [draftPeriodPreset, setDraftPeriodPreset] = useState("Năm nay");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashDateRange('Năm nay')![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashDateRange('Năm nay')![1]);
   const [draftAccount, setDraftAccount] = useState(initialAccount);
   const [draftBankAccount, setDraftBankAccount] = useState("");
   const [draftMergeSameEntries, setDraftMergeSameEntries] = useState(true);

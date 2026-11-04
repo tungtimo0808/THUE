@@ -7,6 +7,8 @@ import {cashDateRange,cashDateValue,isCashDateInRange} from './cash-date';
 import React, { useState, useMemo, useEffect } from "react";
 import { request } from "./live-api";
 import { useApiSession } from "./ApiSession";
+import { createApiWriter, executeReportExportUcRpt15 } from "./misa-api-writes";
+import { parseReportDate } from "./report-date";
 import {
   ChevronLeft,
   Printer,
@@ -71,9 +73,9 @@ export default function MisaDetailedCashLedgerReport({
 }: MisaDetailedCashLedgerReportProps) {
   // Drawer parameters matching Screenshot 4
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
-  const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
-  const [toDate, setToDate] = useState(()=>cashDateRange('Tháng này')![1]);
+  const [reportPeriodPreset, setReportPeriodPreset] = useState("Năm nay");
+  const [fromDate, setFromDate] = useState(()=>cashDateRange('Năm nay')![0]);
+  const [toDate, setToDate] = useState(()=>cashDateRange('Năm nay')![1]);
   const [selectedAccCode, setSelectedAccCode] = useState("111");
 
   // Checkbox settings
@@ -83,9 +85,9 @@ export default function MisaDetailedCashLedgerReport({
   const [sortReceiptBeforePayment, setSortReceiptBeforePayment] = useState(false);
 
   // Draft drawer state
-  const [draftPeriodPreset, setDraftPeriodPreset] = useState("Tháng này");
-  const [draftFromDate, setDraftFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
-  const [draftToDate, setDraftToDate] = useState(()=>cashDateRange('Tháng này')![1]);
+  const [draftPeriodPreset, setDraftPeriodPreset] = useState("Năm nay");
+  const [draftFromDate, setDraftFromDate] = useState(()=>cashDateRange('Năm nay')![0]);
+  const [draftToDate, setDraftToDate] = useState(()=>cashDateRange('Năm nay')![1]);
   const [draftAccCode, setDraftAccCode] = useState("111");
   const [draftMergeSame, setDraftMergeSame] = useState(true);
   const [draftMergeVoucher, setDraftMergeVoucher] = useState(false);
@@ -175,6 +177,21 @@ export default function MisaDetailedCashLedgerReport({
           })),
         ];
         setLiveRows(rows);
+        const nonOpening = rows.filter((r) => !r.isOpening);
+        if (nonOpening.length > 0) {
+          const hasMatchInCurrent = nonOpening.some((r) => isCashDateInRange(r.postDate || r.voucherDate || "", fromDate, toDate));
+          if (!hasMatchInCurrent) {
+            const yr = cashDateRange("Năm nay");
+            if (yr) {
+              setReportPeriodPreset("Năm nay");
+              setFromDate(yr[0]);
+              setToDate(yr[1]);
+              setDraftPeriodPreset("Năm nay");
+              setDraftFromDate(yr[0]);
+              setDraftToDate(yr[1]);
+            }
+          }
+        }
       })
       .catch(() => {});
     return () => {
@@ -182,7 +199,7 @@ export default function MisaDetailedCashLedgerReport({
     };
   }, [companyId, token]);
 
-  const effectiveData = liveRows !== null ? liveRows : data;
+  const effectiveData = liveRows !== null ? liveRows : (companyId ? [] : data);
 
   // Filter rows
   const filteredRows = useMemo(() => {
@@ -468,7 +485,19 @@ export default function MisaDetailedCashLedgerReport({
               padding: 4,
             }}
             title="In"
-            onClick={() => window.print()}
+            onClick={() => {
+              if (companyId && token) {
+                const w = createApiWriter(companyId, (path, init) => request(path, token, init));
+                executeReportExportUcRpt15(w, {
+                  reportCode: "RPT-0034",
+                  format: "PDF",
+                  fromDate: parseReportDate(fromDate) || "2026-01-01",
+                  toDate: parseReportDate(toDate) || "2026-12-31",
+                }).catch(() => window.print());
+                return;
+              }
+              window.print();
+            }}
           >
             <Printer size={15} />
           </button>
@@ -487,7 +516,19 @@ export default function MisaDetailedCashLedgerReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={() => {
+              if (companyId && token) {
+                const w = createApiWriter(companyId, (path, init) => request(path, token, init));
+                executeReportExportUcRpt15(w, {
+                  reportCode: "RPT-0034",
+                  format: "XLSX",
+                  fromDate: parseReportDate(fromDate) || "2026-01-01",
+                  toDate: parseReportDate(toDate) || "2026-12-31",
+                }).catch((e) => notify?.(e?.message || "Lỗi khi xuất Excel."));
+                return;
+              }
+              notify?.("Đang xuất khẩu báo cáo ra Excel...");
+            }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />

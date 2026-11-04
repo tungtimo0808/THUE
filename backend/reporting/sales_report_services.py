@@ -919,6 +919,7 @@ def compute_sales_source_snapshot_meta(company_id: str, d_from: date, d_to: date
     ).count()
 
     gl_count = JournalLine.objects.filter(
+        entry__company_id=company_id,
         entry__posting_date__gte=d_from,
         entry__posting_date__lte=d_to,
         entry__status="POSTED",

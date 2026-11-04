@@ -70,9 +70,9 @@ export default function MisaCashDisbursementJournalReport({
 }: MisaCashDisbursementJournalReportProps) {
   // Drawer Parameters State matching Screenshot 1
   const [isParamDrawerOpen, setIsParamDrawerOpen] = useState(false);
-  const [reportPeriodPreset, setReportPeriodPreset] = useState("Tháng này");
-  const [fromDate, setFromDate] = useState(()=>cashDateRange('Tháng này')![0]);
-  const [toDate, setToDate] = useState(()=>cashDateRange('Tháng này')![1]);
+  const [reportPeriodPreset, setReportPeriodPreset] = useState("Năm nay");
+  const [fromDate, setFromDate] = useState(()=>cashDateRange('Năm nay')![0]);
+  const [toDate, setToDate] = useState(()=>cashDateRange('Năm nay')![1]);
   const [selectedAccount, setSelectedAccount] = useState(initialAccount);
   const [selectedBankAccount, setSelectedBankAccount] = useState("");
   const [mergeSameEntries, setMergeSameEntries] = useState(true);

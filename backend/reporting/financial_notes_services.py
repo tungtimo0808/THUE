@@ -20,7 +20,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from django.db import transaction
-from django.db.models import Max, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
@@ -1177,7 +1177,13 @@ def seed_financial_notes_uc_rpt_06(apps=None, schema_editor=None):
             _seed_sections_and_items_for_version(tv16, B09A_DN_SECTIONS_SPEC, b09a_items_map, SectionModel, ItemModel, TableModel)
 
 
+_B09_TEMPLATES_SEEDED = False
+
+
 def ensure_b09_templates_seeded():
+    global _B09_TEMPLATES_SEEDED
+    if _B09_TEMPLATES_SEEDED and FinancialStatementTemplate.objects.filter(internal_code="FSR-04").exists():
+        return
     b09_dn = FinancialStatementTemplate.objects.filter(internal_code="FSR-04").first()
     b09_dnklt = FinancialStatementTemplate.objects.filter(internal_code="FSR-08").first()
     b09a_dn = FinancialStatementTemplate.objects.filter(internal_code="FSR-12").first()
@@ -1191,6 +1197,7 @@ def ensure_b09_templates_seeded():
             needs_seed = True
     if needs_seed:
         seed_financial_notes_uc_rpt_06()
+    _B09_TEMPLATES_SEEDED = True
 
 
 # ============================================================================
@@ -1400,22 +1407,29 @@ def compute_b09_gl_snapshot_meta(
     agg = qs.aggregate(
         max_posted=Max("posted_at"),
         max_created=Max("created_at"),
+        cnt=Count("id"),
     )
     last_ts = agg["max_posted"] or agg["max_created"]
-    count = qs.count()
+    count = agg["cnt"] or 0
     raw = f"{company.id}:{branch.id if branch else 'ALL'}:{end_date.isoformat()}:{count}:{last_ts.isoformat() if last_ts else 'NONE'}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32], last_ts
 
 
-def is_b09_run_stale(run: FinancialStatementRun) -> bool:
+def is_b09_run_stale(run: FinancialStatementRun, _gl_snap_cache: dict | None = None) -> bool:
     if not run.source_snapshot_hash:
         return False
     eff_branch = run.branch if run.reporting_scope == "BRANCH" else None
-    curr_hash, curr_ts = compute_b09_gl_snapshot_meta(
-        run.company,
-        run.period_end_date,
-        eff_branch,
-    )
+    cache_key = (run.company_id, run.period_end_date, eff_branch.id if eff_branch else None)
+    if _gl_snap_cache is not None and cache_key in _gl_snap_cache:
+        curr_hash, curr_ts = _gl_snap_cache[cache_key]
+    else:
+        curr_hash, curr_ts = compute_b09_gl_snapshot_meta(
+            run.company,
+            run.period_end_date,
+            eff_branch,
+        )
+        if _gl_snap_cache is not None:
+            _gl_snap_cache[cache_key] = (curr_hash, curr_ts)
     if curr_hash != run.source_snapshot_hash:
         return True
     if curr_ts and run.source_last_posted_at and curr_ts > run.source_last_posted_at:
@@ -2106,7 +2120,8 @@ def _populate_note_item_tables(
             _add_gl_ref("111", c_111, o_111)
             _add_gl_ref("112", c_112, o_112)
             if c_tot != ZERO or o_tot != ZERO:
-                content_obj.text_content = content_obj.text_content or f"Tiền và các khoản tương đương tiền cuối kỳ: {_fmt_dec(c_tot)}."
+                fmt_tot = f"{int(c_tot):,}".replace(",", ".") if c_tot == int(c_tot) else _fmt_dec(c_tot)
+                content_obj.text_content = content_obj.text_content or f"Tiền và các khoản tương đương tiền cuối kỳ: {fmt_tot} VND."
                 content_obj.save(update_fields=["text_content"])
 
         elif tcode == "V.1.BANK_DETAILS":
@@ -3731,27 +3746,32 @@ def validate_financial_notes_run(
     errors_cnt = sum(1 for r in results if r.validation_status == "FAILED")
     warnings_cnt = sum(1 for r in results if r.validation_status == "WARNING")
     passed_cnt = sum(1 for r in results if r.validation_status == "PASSED")
+    blocking = errors_cnt > 0 or len(missing_required_notes) > 0 or stale
 
     return {
-        "run_id": run.id,
+        "run_id": str(run.id),
         "overall_status": "FAILED" if errors_cnt > 0 else ("WARNING" if warnings_cnt > 0 else "PASSED"),
         "passed_count": passed_cnt,
         "warning_count": warnings_cnt,
         "error_count": errors_cnt,
-        "blocking_approval": errors_cnt > 0 or len(missing_required_notes) > 0 or stale,
+        "blocking_approval": blocking,
+        "is_approvable": not blocking,
         "missing_required_notes": missing_required_notes,
         "is_stale": stale,
         "results": [
             {
-                "id": r.id,
+                "id": str(r.id),
+                "validation_id": str(r.id),
                 "check_code": r.check_code,
                 "check_name": r.check_name,
                 "validation_type": r.validation_type,
                 "validation_status": r.validation_status,
+                "status": r.validation_status,
                 "severity": r.severity,
                 "expected_value": _fmt_dec(r.expected_value),
                 "actual_value": _fmt_dec(r.actual_value),
                 "difference_value": _fmt_dec(r.difference_value),
+                "difference_amount": _fmt_dec(r.difference_value),
                 "message": r.message,
                 "section_code": r.note_section.section_code if r.note_section else None,
                 "note_code": r.note_item.note_code if r.note_item else None,
@@ -3783,7 +3803,8 @@ def resolve_b09_company_and_scope(user: Any, params: dict[str, Any]) -> tuple[Co
             self.data = p
     company = resolve_b09_company(_DummyReq(user, params), params.get("company_id") or params.get("company"))
     branch_id = params.get("branch_id") or params.get("branch")
-    scope = str(params.get("reporting_scope") or ("BRANCH" if branch_id else "COMPANY")).upper()
+    raw_scope = str(params.get("reporting_scope") or ("BRANCH" if branch_id else "COMPANY")).upper()
+    scope = "COMPANY" if raw_scope in ("ENTERPRISE", "COMPANY", "") and not branch_id else raw_scope
     branch = None
     if branch_id:
         branch = Branch.objects.filter(id=branch_id, company=company).first()
@@ -3793,6 +3814,43 @@ def resolve_b09_company_and_scope(user: Any, params: dict[str, Any]) -> tuple[Co
         raise ValidationError({"error_code": "EF-03", "detail": "Phạm vi báo cáo theo chi nhánh (BRANCH) yêu cầu chọn branch_id hợp lệ."})
     check_b09_scope_access(user, company, scope, branch)
     return company, branch, scope
+
+
+def get_b09_parameters_payload(user: Any, query_params: dict[str, Any]) -> dict[str, Any]:
+    company, _, _ = resolve_b09_company_and_scope(user, query_params)
+    require_b09_permission(user, company, PERM_B09_VIEW)
+    periods = list(
+        AccountingPeriod.objects.filter(company=company)
+        .order_by("-fiscal_year", "-period_number", "-end_date")
+    )
+    branches = list(Branch.objects.filter(company=company).order_by("code", "name"))
+    return {
+        "company_id": str(company.id),
+        "company_name": company.name,
+        "company_tax_code": company.tax_code or "",
+        "currency_code": company.accounting_currency.code if company.accounting_currency else "VND",
+        "periods": [
+            {
+                "id": str(p.id),
+                "code": getattr(p, "code", ""),
+                "name": str(getattr(p, "name", None) or getattr(p, "period_name", None) or f"Kỳ {p.period_number:02d}/{p.fiscal_year} ({getattr(p, 'code', '')})"),
+                "fiscal_year": p.fiscal_year,
+                "period_number": p.period_number,
+                "start_date": p.start_date.isoformat(),
+                "end_date": p.end_date.isoformat(),
+                "status": p.status,
+            }
+            for p in periods
+        ],
+        "branches": [
+            {
+                "id": str(b.id),
+                "code": b.code,
+                "name": b.name,
+            }
+            for b in branches
+        ],
+    }
 
 
 def _get_run_going_concern(run: FinancialStatementRun) -> str:
@@ -3815,12 +3873,16 @@ def _get_parent_run_id(run: FinancialStatementRun) -> str | None:
 
 
 def _ensure_run_populated(run: FinancialStatementRun) -> None:
-    """If a B09 run was created earlier without `note_contents`, populate it automatically."""
+    """If a B09 run was created earlier without `note_contents` (or has duplicate concurrent rows), populate it atomically."""
     ensure_b09_templates_seeded()
-    if run.note_contents.count() == 0 and run.run_status != FinancialStatementRun.Status.APPROVED:
-        calculate_financial_notes_run(run, preserve_existing_manual=True)
-    if run.note_validation_results.count() == 0:
-        validate_financial_notes_run(run)
+    with transaction.atomic():
+        locked_run = FinancialStatementRun.objects.select_for_update().get(id=run.id)
+        expected_items = FinancialNoteItem.objects.filter(section__template_version=locked_run.template_version).count()
+        curr_contents = locked_run.note_contents.count()
+        if (curr_contents == 0 or (expected_items > 0 and curr_contents > expected_items)) and locked_run.run_status != FinancialStatementRun.Status.APPROVED:
+            calculate_financial_notes_run(locked_run, preserve_existing_manual=(curr_contents <= expected_items))
+        if locked_run.note_validation_results.count() == 0:
+            validate_financial_notes_run(locked_run)
 
 
 def get_b09_templates_payload(user: Any, query_params: dict[str, Any]) -> dict[str, Any]:
@@ -3934,16 +3996,19 @@ def list_or_create_b09_runs_payload(
         if lcode:
             qs = qs.filter(Q(template__legal_form_code=lcode) | Q(template__internal_code=lcode))
 
+        runs_list = list(qs[:50])
+        snap_cache: dict = {}
         runs_out = []
-        for r in qs[:50]:
+        for r in runs_list:
             runs_out.append({
                 "id": str(r.id),
+                "run_id": str(r.id),
                 "run_no": _get_run_no(r),
                 "version_no": r.run_version,
                 "run_version": r.run_version,
                 "run_status": r.run_status,
                 "validation_status": r.validation_status,
-                "is_stale": is_b09_run_stale(r),
+                "is_stale": is_b09_run_stale(r, _gl_snap_cache=snap_cache),
                 "legal_form_code": r.template.legal_form_code,
                 "template_name": r.template.name,
                 "template_version_no": f"v{r.template_version.version_number}",
@@ -3958,7 +4023,12 @@ def list_or_create_b09_runs_payload(
                 "source_snapshot_hash": r.source_snapshot_hash,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             })
-        return {"runs": runs_out}, 200
+        payload: dict[str, Any] = {"runs": runs_out}
+        if runs_list and str(query_params.get("include_latest_detail", "false")).lower() in ("true", "1", "yes"):
+            first_id = str(runs_list[0].id)
+            payload["latest_run_header"] = get_b09_run_header_payload(user, first_id)
+            payload["latest_run_sections"] = get_b09_run_sections_payload(user, first_id)
+        return payload, 200
 
     # POST: Create / Generate a new B09 Statement Run
     company, branch, scope = resolve_b09_company_and_scope(user, body_data)
@@ -4143,8 +4213,16 @@ def get_b09_run_header_payload(user: Any, run_id: Any) -> dict[str, Any]:
     warn_cnt = val_qs.filter(status="WARNING").count()
     pass_cnt = val_qs.filter(status="PASSED").count()
 
+    b01_id = str(linked["FINANCIAL_POSITION"].id) if linked["FINANCIAL_POSITION"] else None
+    b02_id = str(linked["BUSINESS_RESULT"].id) if linked["BUSINESS_RESULT"] else None
+    b03_id = str(linked["CASH_FLOW"].id) if linked["CASH_FLOW"] else None
+    curr_code = run.reporting_currency.code if run.reporting_currency else "VND"
+    applicable_cnt = max(0, completeness["total_items"] - completeness["not_applicable_count"])
+    done_cnt = completeness["completed_count"] + completeness["auto_populated_count"]
+
     return {
         "id": str(run.id),
+        "run_id": str(run.id),
         "run_no": _get_run_no(run),
         "version_no": run.run_version,
         "run_version": run.run_version,
@@ -4174,23 +4252,33 @@ def get_b09_run_header_payload(user: Any, run_id: Any) -> dict[str, Any]:
         "period_start_date": run.period_start_date.isoformat(),
         "period_end_date": run.period_end_date.isoformat(),
         "comparison_period_id": str(run.comparison_period_id) if run.comparison_period_id else None,
-        "reporting_currency": run.reporting_currency.code if run.reporting_currency else "VND",
+        "reporting_currency": curr_code,
+        "currency_code": curr_code,
         "going_concern_status": _get_run_going_concern(run),
         "source_snapshot_hash": run.source_snapshot_hash,
         "source_last_posted_at": run.source_last_posted_at.isoformat() if run.source_last_posted_at else None,
         "linked_runs": {
-            "B01_run_id": str(linked["FINANCIAL_POSITION"].id) if linked["FINANCIAL_POSITION"] else None,
-            "B02_run_id": str(linked["BUSINESS_RESULT"].id) if linked["BUSINESS_RESULT"] else None,
-            "B03_run_id": str(linked["CASH_FLOW"].id) if linked["CASH_FLOW"] else None,
+            "B01_run_id": b01_id,
+            "B02_run_id": b02_id,
+            "B03_run_id": b03_id,
+            "b01_run_id": b01_id,
+            "b02_run_id": b02_id,
+            "b03_run_id": b03_id,
         },
         "completeness_summary": {
             "total_items": completeness["total_items"],
+            "applicable_items": applicable_cnt,
             "completed_count": completeness["completed_count"],
+            "completed_items": done_cnt,
             "auto_populated_count": completeness["auto_populated_count"],
             "manual_required_count": completeness["manual_required_count"],
+            "manual_required_items": completeness["manual_required_count"],
             "review_required_count": completeness["review_required_count"],
+            "review_required_items": completeness["review_required_count"],
             "not_applicable_count": completeness["not_applicable_count"],
+            "not_applicable_items": completeness["not_applicable_count"],
             "completion_percentage": completeness["completion_percentage"],
+            "completeness_pct": completeness["completion_percentage"],
         },
         "validation_counts": {
             "passed": pass_cnt,
@@ -4210,39 +4298,71 @@ def get_b09_run_sections_payload(user: Any, run_id: Any) -> dict[str, Any]:
         c.note_item_id: c
         for c in run.note_contents.all()
     }
+    all_item_ids = [itm.id for sec in sections for itm in sec.items.all()]
+    tables_by_item: dict[Any, list[FinancialNoteTable]] = {}
+    all_tables = list(FinancialNoteTable.objects.filter(note_item_id__in=all_item_ids).order_by("display_order"))
+    table_ids = [t.id for t in all_tables]
+    for t in all_tables:
+        tables_by_item.setdefault(t.note_item_id, []).append(t)
+
+    rows_by_table: dict[Any, list[FinancialNoteTableRow]] = {}
+    for r in run.note_table_rows.filter(table_id__in=table_ids).order_by("display_order", "id"):
+        rows_by_table.setdefault(r.table_id, []).append(r)
+
+    refs_by_item: dict[Any, list[FinancialNoteReference]] = {}
+    for ref in run.note_references.filter(note_item_id__in=all_item_ids):
+        refs_by_item.setdefault(ref.note_item_id, []).append(ref)
+
+    vals_by_item: dict[Any, list[FinancialNoteValidationResult]] = {}
+    for val in run.note_validation_results.filter(note_item_id__in=all_item_ids):
+        if val.note_item_id:
+            vals_by_item.setdefault(val.note_item_id, []).append(val)
 
     sections_out = []
     for sec in sections:
         sec_items = list(sec.items.all().order_by("display_order", "note_code"))
         status_counts: dict[str, int] = {}
-        items_brief = []
+        items_full = []
+        completed_cnt = 0
+        manual_req_cnt = 0
+        na_cnt = 0
         for itm in sec_items:
             c_obj = contents_map.get(itm.id)
             st = c_obj.content_status if c_obj else "NOT_STARTED"
             status_counts[st] = status_counts.get(st, 0) + 1
-            items_brief.append({
-                "note_code": itm.note_code,
-                "note_title": itm.note_title,
-                "note_type": itm.note_type,
-                "data_origin": itm.data_origin,
-                "is_required_by_default": itm.is_required_by_default,
-                "content_status": st,
-                "is_applicable": c_obj.is_applicable if c_obj else True,
-                "related_report_code": itm.related_report_code,
-                "related_indicator_codes": itm.related_indicator_codes,
-            })
+            if st in ("COMPLETED", "VALIDATED", "APPROVED", "AUTO_POPULATED"):
+                completed_cnt += 1
+            elif st == "NOT_APPLICABLE":
+                na_cnt += 1
+            elif st in ("MANUAL_REQUIRED", "NOT_STARTED"):
+                manual_req_cnt += 1
+            serialized_itm = _serialize_note_item_full(
+                run=run,
+                item=itm,
+                c_obj=c_obj,
+                tables_by_item=tables_by_item,
+                rows_by_table=rows_by_table,
+                refs_by_item=refs_by_item,
+                vals_by_item=vals_by_item,
+            )
+            items_full.append(serialized_itm)
         sections_out.append({
             "id": str(sec.id),
+            "section_id": str(sec.id),
             "section_code": sec.section_code,
             "section_name": sec.section_name,
+            "section_title": sec.section_name,
             "section_level": sec.section_level,
             "display_order": sec.display_order,
             "is_required": sec.is_required,
             "applicable_to_interim": sec.applicable_to_interim,
             "applicable_to_non_going_concern": sec.applicable_to_non_going_concern,
             "item_count": len(sec_items),
+            "completed_count": completed_cnt,
+            "manual_required_count": manual_req_cnt,
+            "not_applicable_count": na_cnt,
             "status_counts": status_counts,
-            "items": items_brief,
+            "items": items_full,
         })
 
     return {
@@ -4266,17 +4386,21 @@ def _serialize_note_item_full(
     tables_out = []
     for tbl in item_tables:
         t_rows = rows_by_table.get(tbl.id, [])
+        col_schema = (tbl.table_schema_json or {}).get("columns", [])
         tables_out.append({
             "id": str(tbl.id),
+            "table_id": str(tbl.id),
             "table_code": tbl.table_code,
             "table_title": tbl.table_title,
             "table_schema_json": tbl.table_schema_json,
+            "column_schema": col_schema,
             "row_schema_json": tbl.row_schema_json,
             "calculation_policy_json": tbl.calculation_policy_json,
             "display_order": tbl.display_order,
             "rows": [
                 {
                     "id": str(r.id),
+                    "row_id": str(r.id),
                     "row_code": r.row_code,
                     "row_label": r.row_label,
                     "row_level": r.row_level,
@@ -4292,34 +4416,46 @@ def _serialize_note_item_full(
 
     item_refs = refs_by_item.get(item.id, [])
     item_vals = vals_by_item.get(item.id, [])
+    c_status = c_obj.content_status if c_obj else "NOT_STARTED"
+    is_app = c_obj.is_applicable if c_obj else True
 
     return {
         "id": str(item.id),
+        "note_item_id": str(item.id),
         "section_code": item.note_section.section_code,
         "note_code": item.note_code,
         "note_title": item.note_title,
         "note_type": item.note_type,
+        "content_type": item.content_type,
+        "display_order": item.display_order,
         "data_origin": item.data_origin,
+        "source_module": item.source_module,
+        "is_required": item.is_required_by_default,
         "is_required_by_default": item.is_required_by_default,
         "allow_not_applicable": item.allow_not_applicable,
+        "content_status": c_status,
+        "is_applicable": is_app,
         "related_report_code": item.related_report_code,
         "related_indicator_codes": item.related_indicator_codes,
         "content_schema": item.content_schema_json,
         "content": {
             "id": str(c_obj.id) if c_obj else None,
+            "content_id": str(c_obj.id) if c_obj else None,
             "content_version": c_obj.content_version if c_obj else 1,
             "text_content": c_obj.text_content if c_obj else "",
             "structured_content": c_obj.structured_content_json if c_obj else {},
-            "content_status": c_obj.content_status if c_obj else "NOT_STARTED",
-            "is_applicable": c_obj.is_applicable if c_obj else True,
+            "content_status": c_status,
+            "is_applicable": is_app,
             "not_applicable_reason": c_obj.not_applicable_reason if c_obj else None,
             "applicability_evidence": c_obj.applicability_evidence if c_obj else "",
+            "data_origin": c_obj.data_origin if c_obj else item.data_origin,
             "source_snapshot_reference": c_obj.source_snapshot_reference if c_obj else run.source_snapshot_hash,
         },
         "tables": tables_out,
         "references": [
             {
                 "id": str(ref.id),
+                "reference_id": str(ref.id),
                 "reference_type": ref.reference_type,
                 "mapping_rule_code": ref.mapping_rule_code,
                 "source_statement_run_id": str(ref.source_statement_run_id) if ref.source_statement_run_id else None,
@@ -4628,8 +4764,10 @@ def get_b09_item_sources_payload(user: Any, run_id: Any, note_code: str) -> dict
                     if jl.entry.original_entry_id is not None and jl.entry.reversal_method:
                         continue
                     voucher_traces.append({
+                        "line_id": str(jl.id),
                         "journal_entry_id": str(jl.entry_id),
                         "entry_number": getattr(jl.entry, "number", ""),
+                        "voucher_no": getattr(jl.entry, "number", ""),
                         "posting_date": jl.entry.posting_date.isoformat(),
                         "account_code": jl.account.code,
                         "account_name": jl.account.name,
@@ -4639,15 +4777,28 @@ def get_b09_item_sources_payload(user: Any, run_id: Any, note_code: str) -> dict
                         "party_name": jl.party.name if jl.party else None,
                     })
 
+    all_refs = [
+        {
+            "id": str(ref.id),
+            "reference_id": str(ref.id),
+            "reference_type": ref.reference_type,
+            "mapping_rule_code": ref.mapping_rule_code,
+            "source_reference": ref.source_reference_json,
+        }
+        for ref in refs
+    ]
+
     return {
         "run_id": str(run.id),
         "note_code": item.note_code,
         "note_title": item.note_title,
         "related_report_code": item.related_report_code,
         "related_indicator_codes": item.related_indicator_codes,
+        "references": all_refs,
         "financial_statement_references": statement_refs,
         "gl_account_references": gl_account_refs,
         "vouchers": voucher_traces,
+        "gl_journal_lines": voucher_traces,
     }
 
 
@@ -4744,6 +4895,7 @@ def get_b09_history_payload(user: Any, run_id: Any) -> dict[str, Any]:
     for hr in history_qs:
         versions.append({
             "id": str(hr.id),
+            "run_id": str(hr.id),
             "run_no": _get_run_no(hr),
             "version_no": hr.run_version,
             "run_version": hr.run_version,

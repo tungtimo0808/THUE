@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.permissions import BasePermission
 
 from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission, is_company_admin_member
@@ -23,8 +24,10 @@ class ReportingPermission(BasePermission):
             return False
         try:
             company = Company.objects.get(pk=company_id)
-        except (Company.DoesNotExist, ValueError):
-            return False
+        except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+            company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+            if not company:
+                return False
         action = getattr(view, "action", None)
         code = getattr(view, "action_permissions", {}).get(action)
         code = code or getattr(view, "iam_permissions", {}).get(request.method)

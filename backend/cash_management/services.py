@@ -45,21 +45,63 @@ def confirm(tx,request):
     assert_not_locked(tx.company,"PT" if incoming(tx) else "PC",tx.transaction_date)
     if tx.workflow_snapshot.get("separate_cashier",False) and tx.created_by_id==actor(request).id:raise ValidationError("Người lập không được đồng thời xác nhận tiền theo cấu hình.")
     if not incoming(tx) and not fund.allow_negative and fund.balance<tx.amount:raise ValidationError("Số dư quỹ không đủ.")
-    fund.balance=fund.balance+tx.amount if incoming(tx) else fund.balance-tx.amount;fund.save(update_fields=("balance","updated_at"));tx.balance_applied=True;tx.status=models.TransactionStatus.POSTED;tx.cashier=actor(request);tx.posted_at=timezone.now();tx.save(update_fields=("balance_applied","status","cashier","posted_at","updated_at"))
-    allocations=request.data.get("allocations",[])
-    if tx.party_id and (allocations or incoming(tx) and tx.source_module=="AR"):
-        if incoming(tx) and tx.source_module=="AR":
+    details = tx.receipt_details if isinstance(tx.receipt_details, dict) else {}
+    raw_lines = request.data.get("lines") or details.get("lines") or []
+    if raw_lines and tx.gl_status != "POSTED" and fund.gl_account_id:
+        from datetime import date as _date
+        from general_ledger.money_journal import journalize
+        raw_pdate = details.get("posting_date")
+        pdate = _date.fromisoformat(str(raw_pdate)[:10]) if raw_pdate else tx.transaction_date
+        j_lines = [
+            {
+                "account": (line.get("credit_account") if incoming(tx) else line.get("debit_account")) or line.get("account"),
+                "amount": line.get("amount"),
+                "description": line.get("description") or tx.description,
+                "party": line.get("party") or (str(tx.party_id) if tx.party_id else None),
+                "dimensions": {
+                    **(line.get("dimensions") or {}),
+                    **({"employee_id": str(details["employee"])} if details.get("employee") else {}),
+                    **({"bank_account_id": str(details["bank_account"]), "bank_account": str(details["bank_account"])} if details.get("bank_account") else {}),
+                },
+            }
+            for line in raw_lines
+            if isinstance(line, dict) and ((line.get("credit_account") if incoming(tx) else line.get("debit_account")) or line.get("account"))
+        ]
+        if j_lines:
+            entry = journalize(
+                tx,
+                request,
+                module="CASH",
+                money_account=fund.gl_account,
+                incoming=incoming(tx),
+                branch=fund.branch,
+                counterpart_name=tx.payer_payee,
+                lines=j_lines,
+                posting_date=pdate,
+            )
+            tx.gl_status = "POSTED"
+            tx.gl_reference = entry.number
+    fund.balance=fund.balance+tx.amount if incoming(tx) else fund.balance-tx.amount;fund.save(update_fields=("balance","updated_at"));tx.balance_applied=True;tx.status=models.TransactionStatus.POSTED;tx.cashier=actor(request);tx.posted_at=timezone.now();tx.save(update_fields=("balance_applied","status","cashier","posted_at","gl_status","gl_reference","updated_at"))
+    allocations=request.data.get("allocations") or details.get("allocations") or []
+    is_ar_receipt = incoming(tx) and (tx.source_module=="AR" or tx.business_type in {"CUSTOMER_INVOICE","CUSTOMER_ADVANCE"})
+    is_ap_payment = (not incoming(tx)) and (tx.source_module=="AP" or tx.business_type in {"SUPPLIER_PAYMENT","SUPPLIER_INVOICE","SUPPLIER_ADVANCE"})
+    if tx.party_id and (allocations or is_ar_receipt or is_ap_payment):
+        proxy=type("RequestProxy",(),{"user":request.user,"data":{"allocations":allocations},"META":request.META,"headers":getattr(request,"headers",{}),"method":request.method,"path":request.path})()
+        if incoming(tx) and (tx.source_module=="AR" or is_ar_receipt):
             from accounts_receivable.models import Receipt
             from accounts_receivable.services import allocate
-            receipt=Receipt.objects.create(company=tx.company,branch=tx.fund.branch,customer=tx.party,currency=tx.currency,receipt_date=tx.transaction_date,amount=tx.amount,exchange_rate=tx.exchange_rate,base_amount=tx.base_amount,external_type="CASH",external_reference=str(tx.id),created_by=actor(request));proxy=type("RequestProxy",(),{"user":request.user,"data":{"allocations":allocations},"META":request.META,"method":request.method,"path":request.path})()
+            receipt=Receipt.objects.create(company=tx.company,branch=tx.fund.branch,customer=tx.party,currency=tx.currency,receipt_date=tx.transaction_date,amount=tx.amount,exchange_rate=tx.exchange_rate,base_amount=tx.base_amount,external_type="CASH",external_reference=str(tx.id),status="CONFIRMED",created_by=actor(request))
             if allocations: allocate(receipt,proxy)
+            tx.source_module="AR"
             tx.source_reference=str(receipt.id)
-        elif not incoming(tx) and tx.source_module=="AP":
+        elif not incoming(tx) and (tx.source_module=="AP" or is_ap_payment):
             from accounts_payable.models import Payment
             from accounts_payable.services import allocate
-            payment=Payment.objects.create(company=tx.company,supplier=tx.party,currency=tx.currency,payment_date=tx.transaction_date,amount=tx.amount,external_type="CASH",external_reference=str(tx.id),created_by=actor(request));proxy=type("RequestProxy",(),{"user":request.user,"data":{"allocations":allocations},"META":request.META,"method":request.method,"path":request.path})()
-            allocate(payment,proxy);tx.source_reference=str(payment.id)
-        tx.save(update_fields=("source_reference",))
+            payment=Payment.objects.create(company=tx.company,branch=tx.fund.branch,supplier=tx.party,currency=tx.currency,exchange_rate=tx.exchange_rate,payment_date=tx.transaction_date,amount=tx.amount,payment_method="CASH",payment_source="DIRECT",cash_fund=tx.fund,external_type="CASH",external_reference=str(tx.id),status="CONFIRMED",posted_at=timezone.now(),posted_by=actor(request),created_by=actor(request))
+            if allocations: allocate(payment,proxy)
+            tx.source_module="AP"
+            tx.source_reference=str(payment.id)
+        tx.save(update_fields=("source_module","source_reference",))
     audit(request,tx,"CONFIRM",after={"status":tx.status,"fund_balance":str(fund.balance)});return tx
 
 @transaction.atomic
@@ -69,11 +111,23 @@ def reverse(tx,request):
     if tx.source_reference:raise ValidationError("Phải đảo phân bổ AP/AR liên quan trước.")
     fund=models.CashFund.objects.select_for_update().get(pk=tx.fund_id);new=fund.balance-tx.amount if incoming(tx) else fund.balance+tx.amount
     if new<0 and not fund.allow_negative:raise ValidationError("Không thể đảo vì sẽ làm quỹ âm.")
-    fund.balance=new;fund.save(update_fields=("balance","updated_at"));tx.status=models.TransactionStatus.DRAFT;tx.balance_applied=False;tx.save(update_fields=("status","balance_applied","updated_at"));audit(request,tx,"REVERSE",after={"status":tx.status,"fund_balance":str(new)},reason=reason);return tx
+    if tx.gl_status == "POSTED" and tx.gl_reference:
+        from general_ledger.models import JournalEntry
+        from general_ledger.services import reverse as reverse_journal, source_module_request
+        entry = JournalEntry.objects.filter(company=tx.company, number=tx.gl_reference, status="POSTED").first()
+        if entry:
+            proxy = source_module_request(request)
+            proxy.data = {"reason": reason}
+            reverse_journal(entry, proxy)
+        tx.gl_status = "PENDING"
+        tx.gl_reference = ""
+    fund.balance=new;fund.save(update_fields=("balance","updated_at"));tx.status=models.TransactionStatus.DRAFT;tx.balance_applied=False;tx.save(update_fields=("status","balance_applied","gl_status","gl_reference","updated_at"));audit(request,tx,"REVERSE",after={"status":tx.status,"fund_balance":str(new)},reason=reason);return tx
 
 @transaction.atomic
 def post_gl(tx,request):
     tx=models.CashTransaction.objects.select_for_update().get(pk=tx.pk)
+    if tx.status==models.TransactionStatus.POSTED and tx.gl_status=="POSTED" and (tx.receipt_details or {}).get("lines") and not request.data.get("gl_reference"):
+        return tx
     if tx.status!=models.TransactionStatus.POSTED or tx.gl_status=="POSTED":raise ValidationError("Giao dịch chưa có hiệu lực hoặc đã chuyển GL.")
     if request.data.get("lines"):
         # The voucher's own accounting rows: the journal is generated and posted here.

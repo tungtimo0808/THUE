@@ -32,7 +32,7 @@ from approval_workflows.submission import configured_snapshot
 from audit_log.services import record_audit
 from common_services.models import DocumentNumberingRule
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import post as post_journal
+from general_ledger.services import post as post_journal, source_module_request
 from accounts_receivable.models import Receivable, ReceivableStatus
 from master_data.models import Currency, DocumentType, Item, Party, TaxRate, UnitOfMeasure
 from . import models
@@ -898,7 +898,7 @@ def post_sales_allowance(request, sale_allowance):
         party=sale_allowance.customer,
     )
 
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
     sale_allowance.journal_entry = journal
 
     # 2. Receivable Offset & Refundable Calculation (BR-SAL-06-12)
@@ -1069,7 +1069,7 @@ def refund_sales_allowance(request, sale_allowance, data):
         party=sale_allowance.customer,
     )
 
-    post_journal(refund_journal, request)
+    post_journal(refund_journal, source_module_request(request))
 
     sale_allowance.refunded_amount += amount
     sale_allowance.version += 1

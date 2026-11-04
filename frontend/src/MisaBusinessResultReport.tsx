@@ -1,6 +1,17 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
-import { exportErrorText, readFormSignature, saveStatementFile } from "./FinancialForm";
+import {
+  exportErrorText,
+  readFormSignature,
+  saveStatementFile,
+  formatRunStatusText,
+  formatValidationStatusText,
+  formatRuleResultText,
+  openStatementPreviewAndExport,
+  StatementPrintExportMenu,
+  MisaBranchTagSelector,
+  MisaAccumulateFromRadioGroup,
+} from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -415,12 +426,19 @@ export default function MisaBusinessResultReport({
         const cid = getSelectedCompanyId();
         if (cid) {
           const runsRes: any = await apiClient.get(
-            `/api/v1/reports/business-result/runs/?company_id=${encodeURIComponent(cid)}&legal_form_code=${encodeURIComponent(fCode)}`
+            `/api/v1/reports/business-result/runs/?company_id=${encodeURIComponent(cid)}&legal_form_code=${encodeURIComponent(fCode)}&include_latest_detail=true&display_unit=${encodeURIComponent(dUnit)}`
           );
           const list = Array.isArray(runsRes?.runs) ? runsRes.runs : [];
           setSavedRuns(list);
 
-          if (!opts?.forceGenerate && list.length > 0 && savedOnly) {
+          if (!opts?.forceGenerate && list.length > 0 && (savedOnly || !list[0].is_stale)) {
+            const detail = runsRes?.latest_run_detail;
+            if (detail && Array.isArray(detail.lines)) {
+              setCurrentRun(detail.run || detail);
+              if (detail.validation) setValidationData(detail.validation);
+              setRows(mapBackendLinesToRows(detail.lines));
+              return;
+            }
             await loadRunById(list[0].statement_run_id || list[0].id, dUnit);
             return;
           }
@@ -434,16 +452,14 @@ export default function MisaBusinessResultReport({
             display_unit: dUnit,
           });
           if (created) {
-            setCurrentRun(created.run || created);
+            const runHeader = created.run || created;
+            setCurrentRun(runHeader);
             if (created.validation) setValidationData(created.validation);
             if (Array.isArray(created.lines)) {
               setRows(mapBackendLinesToRows(created.lines));
             }
-            const refreshedList: any = await apiClient.get(
-              `/api/v1/reports/business-result/runs/?company_id=${encodeURIComponent(cid)}&legal_form_code=${encodeURIComponent(fCode)}`
-            );
-            if (Array.isArray(refreshedList?.runs)) {
-              setSavedRuns(refreshedList.runs);
+            if (runHeader?.id || runHeader?.statement_run_id) {
+              setSavedRuns([runHeader, ...list.filter((r: any) => (r.id || r.statement_run_id) !== (runHeader.id || runHeader.statement_run_id))]);
             }
             return;
           }
@@ -553,6 +569,42 @@ export default function MisaBusinessResultReport({
     notify?.("Chưa có báo cáo để xuất. Hãy lập báo cáo trước.");
   };
 
+  const handlePreviewAndExport = (mode: "print" | "pdf" | "excel", orientation: "portrait" | "landscape" = "portrait") => {
+    const unitLabel =
+      displayUnit === "THOUSAND_VND"
+        ? "Nghìn đồng"
+        : displayUnit === "MILLION_VND"
+        ? "Triệu đồng"
+        : "VND";
+    openStatementPreviewAndExport({
+      mode,
+      orientation,
+      title:
+        formCode === "B02-DNKLT"
+          ? "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (KHÔNG ĐÁP ỨNG GIẢ ĐỊNH HOẠT ĐỘNG LIÊN TỤC)"
+          : "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH",
+      formCode,
+      circularNote: `(Ban hành kèm theo Thông tư số 99/2025/TT-BTC ngày 27 tháng 10 năm 2025 của Bộ trưởng Bộ Tài chính)`,
+      periodText: `Từ ngày ${fromDate} đến ngày ${toDate}`,
+      unitLabel,
+      headers: ["CHỈ TIÊU", "Mã số", "Thuyết minh", "Kỳ này", "Kỳ trước"],
+      rows: filteredRows.map((r) => ({
+        cells: [
+          r.name,
+          r.code || "",
+          r.note || "",
+          formatNumber(r.currentPeriod, r.contentStatus).text,
+          formatNumber(r.previousPeriod, r.contentStatus).text,
+        ],
+        isBold: r.isBold,
+      })),
+      colAligns: ["left", "center", "center", "right", "right"],
+      fileNameBase: `${formCode}_${toDate.replace(/\//g, "-")}`,
+      onDownloadPdf: () => handleExportReport("PDF"),
+      onDownloadExcel: () => handleExportReport("EXCEL"),
+    });
+  };
+
   // Open drawer helper
   const handleOpenDrawer = () => {
     setDraftFormCode(formCode);
@@ -581,8 +633,8 @@ export default function MisaBusinessResultReport({
       targetFrom: draftFromDate,
       targetTo: draftToDate,
       useSavedOnly: draftFetchFromSaved,
+      forceGenerate: !draftFetchFromSaved,
     });
-    notify?.(`Đã tải lại Báo cáo kết quả hoạt động kinh doanh (${draftFormCode}) từ Sổ Cái Backend.`);
   };
 
   // Reset parameters in drawer
@@ -683,32 +735,56 @@ export default function MisaBusinessResultReport({
           >
             <ChevronLeft size={20} />
           </button>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 15,
-              fontWeight: 700,
-              color: "#0f172a",
-              letterSpacing: "-0.2px",
-            }}
-          >
-            {formCode}: Báo cáo kết quả hoạt động kinh doanh
-            {formCode === "B02-DNKLT" ? " (Không đáp ứng giả định hoạt động liên tục)" : ""}
-          </h2>
-          {currentRun && (
-            <span
+          <div>
+            <h2
               style={{
-                background: currentRun.run_status === "APPROVED" ? "#dcfce7" : "#e0f2fe",
-                color: currentRun.run_status === "APPROVED" ? "#166534" : "#0369a1",
-                padding: "2px 8px",
-                borderRadius: 4,
-                fontSize: 11.5,
-                fontWeight: 600,
+                margin: 0,
+                fontSize: 15,
+                fontWeight: 700,
+                color: "#0f172a",
+                letterSpacing: "-0.2px",
+                whiteSpace: "nowrap",
               }}
             >
-              v{currentRun.version_number || currentRun.run_version || 1} • {currentRun.run_status || "GENERATED"}
-            </span>
-          )}
+              {formCode}: Báo cáo kết quả hoạt động kinh doanh
+              {formCode === "B02-DNKLT" ? " (Không đáp ứng giả định hoạt động liên tục)" : ""}
+            </h2>
+            {currentRun && (
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                Phiên bản v{currentRun.version_number || currentRun.run_version || 1} •{" "}
+                <span style={{ color: "#334155", fontWeight: 500 }}>
+                  {formatRunStatusText(currentRun.run_status)}
+                </span>
+                {validationData?.validation_status && (
+                  <>
+                    {" "}
+                    • Kiểm tra đối chiếu:{" "}
+                    <button
+                      type="button"
+                      onClick={() => void handleValidateRun()}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color:
+                          validationData.validation_status === "FAILED"
+                            ? "#dc2626"
+                            : validationData.validation_status === "PASSED_WITH_WARNING"
+                            ? "#b45309"
+                            : "#15803d",
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {formatValidationStatusText(validationData.validation_status)}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -795,38 +871,17 @@ export default function MisaBusinessResultReport({
               color: "#334155",
               cursor: "pointer",
               fontWeight: 500,
+              whiteSpace: "nowrap",
             }}
             onClick={() => void handleValidateRun()}
           >
             <FileCheck size={15} color="#00a862" />
             <span>
-              Kiểm tra
+              Kiểm tra số liệu
               {validationData?.validation_status
-                ? ` (${validationData.validation_status})`
+                ? ` (${formatValidationStatusText(validationData.validation_status)})`
                 : ""}
             </span>
-          </button>
-
-          {/* AI Analysis Sparkles Badge matching screenshot */}
-          <button
-            type="button"
-            style={{
-              background: "linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%)",
-              border: "1px solid #c7d2fe",
-              borderRadius: 14,
-              padding: "3px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12.5,
-              color: "#6366f1",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-            onClick={() => setShowAiAnalysis(!showAiAnalysis)}
-          >
-            <Sparkles size={14} color="#7c3aed" />
-            <span>{showAiAnalysis ? "Đóng phân tích Sổ Việt AI" : "✨ Đang phân tích..."}</span>
           </button>
         </div>
 
@@ -923,47 +978,13 @@ export default function MisaBusinessResultReport({
             <MessageCircle size={14} />
           </button>
 
-          <button
-            type="button"
-            style={{
-              height: 30,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: "#334155",
-              fontSize: 12.5,
-              cursor: "pointer",
-            }}
-            onClick={() => void handleExportReport("PDF")}
-          >
-            <Printer size={14} />
-            <ChevronDown size={12} />
-          </button>
-
-          <button
-            type="button"
-            style={{
-              height: 30,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: "#334155",
-              fontSize: 12.5,
-              cursor: "pointer",
-            }}
-            onClick={() => void handleExportReport("EXCEL")}
-          >
-            <Download size={14} />
-            <ChevronDown size={12} />
-          </button>
+          <StatementPrintExportMenu
+            compact
+            onPrintPortrait={() => handlePreviewAndExport("print", "portrait")}
+            onPrintLandscape={() => handlePreviewAndExport("print", "landscape")}
+            onExportPdf={() => handlePreviewAndExport("pdf", "portrait")}
+            onExportExcel={() => handlePreviewAndExport("excel", "portrait")}
+          />
 
           <button
             type="button"
@@ -1464,50 +1485,36 @@ export default function MisaBusinessResultReport({
                 fontSize: 13,
               }}
             >
+              <MisaBranchTagSelector companyLabel={currentRun?.company_name} />
+
               {/* 0. Mẫu báo cáo & Đơn vị tiền tệ (UC-RPT-04 RPT04-F01) */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
-                    Mẫu biểu TT99
+                    Mẫu biểu Thông tư 99/2025/TT-BTC
                   </label>
                   <select
+                    className="misa-select"
                     value={draftFormCode}
                     onChange={(e) => setDraftFormCode(e.target.value as "B02-DN" | "B02-DNKLT")}
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                      background: "#ffffff",
-                      fontSize: 13,
-                      outline: "none",
-                    }}
+                    style={{ width: "100%" }}
                   >
-                    <option value="B02-DN">B02-DN (Hoạt động liên tục)</option>
-                    <option value="B02-DNKLT">B02-DNKLT (Không HĐ liên tục)</option>
+                    <option value="B02-DN">B02-DN – Đáp ứng giả định hoạt động liên tục</option>
+                    <option value="B02-DNKLT">B02-DNKLT – Không đáp ứng giả định hoạt động liên tục</option>
                   </select>
                 </div>
 
                 <div>
                   <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
-                    Đơn vị tiền tệ
+                    Đơn vị tiền tệ hiển thị
                   </label>
                   <select
+                    className="misa-select"
                     value={draftDisplayUnit}
                     onChange={(e) =>
                       setDraftDisplayUnit(e.target.value as "VND" | "THOUSAND_VND" | "MILLION_VND")
                     }
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                      background: "#ffffff",
-                      fontSize: 13,
-                      outline: "none",
-                    }}
+                    style={{ width: "100%" }}
                   >
                     <option value="VND">Đồng (VND)</option>
                     <option value="THOUSAND_VND">Nghìn đồng</option>
@@ -1529,6 +1536,7 @@ export default function MisaBusinessResultReport({
                   Kỳ báo cáo <span style={{ color: "#dc2626" }}>*</span>
                 </label>
                 <select
+                  className="misa-select"
                   value={draftPeriod}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -1550,16 +1558,7 @@ export default function MisaBusinessResultReport({
                       setDraftToDate("31/12/2025");
                     }
                   }}
-                  style={{
-                    width: "100%",
-                    height: 34,
-                    padding: "0 10px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    background: "#ffffff",
-                    fontSize: 13,
-                    outline: "none",
-                  }}
+                  style={{ width: "100%" }}
                 >
                   <option value="Tháng này">Tháng này</option>
                   <option value="Tháng trước">Tháng trước</option>
@@ -1684,6 +1683,8 @@ export default function MisaBusinessResultReport({
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
               </div>
+
+              <MisaAccumulateFromRadioGroup name="b02AccumulateFrom" />
             </div>
 
             {/* Drawer Footer Buttons matching Image 1: Xóa điều kiện, Hủy, Xem báo cáo */}
@@ -2030,7 +2031,7 @@ export default function MisaBusinessResultReport({
                           {r.period_start_date} → {r.period_end_date}
                         </td>
                         <td style={{ padding: "8px 12px", color: "#64748b" }}>
-                          {r.run_status} ({r.validation_status})
+                          {formatRunStatusText(r.run_status)} ({formatValidationStatusText(r.validation_status)})
                         </td>
                         <td style={{ padding: "8px 12px", textAlign: "center" }}>
                           <button
@@ -2132,7 +2133,7 @@ export default function MisaBusinessResultReport({
               }}
             >
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-                Kết quả kiểm tra Báo cáo kết quả hoạt động kinh doanh ({validationData.validation_status})
+                Kết quả kiểm tra Báo cáo kết quả hoạt động kinh doanh ({formatValidationStatusText(validationData.validation_status)})
               </h3>
               <button
                 type="button"
@@ -2145,13 +2146,13 @@ export default function MisaBusinessResultReport({
             <div style={{ padding: "14px 20px", overflowY: "auto", flex: 1 }}>
               <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12.5 }}>
                 <span style={{ color: "#166534", fontWeight: 600 }}>
-                  Đạt: {validationData.passed_count || 0}
+                  Đạt yêu cầu: {validationData.passed_count || 0}
                 </span>
                 <span style={{ color: "#b45309", fontWeight: 600 }}>
-                  Cảnh báo: {validationData.warning_count || 0}
+                  Cảnh báo cần lưu ý: {validationData.warning_count || 0}
                 </span>
                 <span style={{ color: "#dc2626", fontWeight: 600 }}>
-                  Lỗi chặn (Blocker): {validationData.blocker_count || 0}
+                  Lỗi nghiêm trọng: {validationData.blocker_count || 0}
                 </span>
               </div>
               <table
@@ -2164,15 +2165,15 @@ export default function MisaBusinessResultReport({
               >
                 <thead>
                   <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
-                    <th style={{ padding: "7px 10px" }}>Mã quy tắc</th>
-                    <th style={{ padding: "7px 10px" }}>Trạng thái</th>
-                    <th style={{ padding: "7px 10px" }}>Nội dung kiểm tra</th>
+                    <th style={{ padding: "7px 10px" }}>Quy tắc kiểm tra</th>
+                    <th style={{ padding: "7px 10px" }}>Kết quả</th>
+                    <th style={{ padding: "7px 10px" }}>Nội dung chi tiết</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(validationData.results || []).map((r: any) => (
                     <tr key={r.rule_code} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "7px 10px", fontWeight: 600 }}>{r.rule_code}</td>
+                      <td style={{ padding: "7px 10px", fontWeight: 600 }}>{r.rule_name || "Kiểm tra chỉ tiêu kết quả kinh doanh"}</td>
                       <td
                         style={{
                           padding: "7px 10px",
@@ -2185,7 +2186,7 @@ export default function MisaBusinessResultReport({
                               : "#166534",
                         }}
                       >
-                        {r.status}
+                        {formatRuleResultText(r.status)}
                       </td>
                       <td style={{ padding: "7px 10px" }}>{r.message || r.rule_name}</td>
                     </tr>

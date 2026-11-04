@@ -2,7 +2,12 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  max-width: 100%;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .financial-form-tabs {
@@ -12,6 +17,9 @@
   padding: 8px 16px 0;
   background: #f1f5f9;
   border-bottom: 1px solid #cbd5e1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .financial-form-tabs button {
@@ -35,8 +43,24 @@
 
 .financial-form-body {
   flex: 1;
+  width: 100%;
+  max-width: 100%;
   min-height: 0;
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.financial-form-frame input[type="checkbox"],
+.misa-reports-workspace input[type="checkbox"] {
+  width: 15px !important;
+  height: 15px !important;
+  min-width: 15px !important;
+  max-width: 15px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: none !important;
 }
 
 .financial-form-signature {
@@ -76,3 +100,69 @@
     display: none;
   }
 }
+
+.misa-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  height: 34px;
+  padding: 0 32px 0 11px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.misa-select:hover {
+  border-color: #94a3b8;
+}
+
+.misa-select:focus {
+  border-color: #00a862;
+  box-shadow: 0 0 0 2px rgba(0, 168, 98, 0.14);
+}
+
+.misa-select option {
+  color: #0f172a;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 6px 10px;
+}
+
+.misa-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: background-color 0.12s ease;
+}
+
+.misa-dropdown-item:hover {
+  background-color: #f1f5f9;
+  color: #00a862;
+}
+

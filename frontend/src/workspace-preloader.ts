@@ -57,8 +57,8 @@ export function setupIdlePreloading(): void {
     ((cb: () => void) => window.setTimeout(cb, 1200));
 
   runIdle(() => {
-    // Top 5 most frequently used accounting modules
-    const priorityModules = ["cash", "bank", "purchases", "sales", "invoices", "ledger"];
+    // Top frequently used accounting & reporting modules
+    const priorityModules = ["reports", "cash", "bank", "purchases", "sales", "invoices", "ledger"];
     let idx = 0;
 
     function prefetchNext() {

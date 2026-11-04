@@ -34,7 +34,7 @@ from approval_workflows.submission import configured_snapshot
 from audit_log.services import record_audit
 from common_services.models import DocumentNumberingRule
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import post as post_journal
+from general_ledger.services import post as post_journal, source_module_request
 from inventory.models import InventoryTransaction, InventoryTransactionLine
 from inventory.services import post as post_inventory, reverse as reverse_inventory
 from accounts_receivable.models import Receivable, ReceivableStatus
@@ -977,7 +977,7 @@ def post_sales_return(request, sale_return):
                     warehouse=line.warehouse,
                 )
 
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
     sale_return.journal_entry = journal
 
     # 3. Receivable Offset & Refundable Calculation (BR-SAL-05-11)
@@ -1160,7 +1160,7 @@ def refund_sales_return(request, sale_return, data):
         party=sale_return.customer,
     )
 
-    post_journal(refund_journal, request)
+    post_journal(refund_journal, source_module_request(request))
 
     sale_return.refunded_amount += amount
     sale_return.version += 1

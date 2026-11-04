@@ -247,7 +247,7 @@
 
 .misa-reports-grid-table {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   overflow: hidden;
@@ -267,9 +267,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 16px;
+  padding: 0 16px;
+  height: 56px;
+  min-width: 0;
+  box-sizing: border-box;
   border-bottom: 1px solid #f1f5f9;
   transition: background 0.15s;
+}
+
+.misa-reports-item-row .misa-reports-item-link {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.4;
 }
 
 .misa-reports-item-row:hover {
@@ -471,7 +484,7 @@
 
 .misa-reports-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -483,9 +496,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
-  min-height: 40px;
+  padding: 0 16px;
+  height: 56px;
+  min-width: 0;
+  box-sizing: border-box;
   transition: background 0.15s;
+}
+
+/* Tên báo cáo luôn trên 1 dòng để mọi ô có cùng chiều cao; tên đầy đủ hiển thị khi rê chuột */
+.misa-reports-cell .misa-reports-item-link {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.4;
 }
 
 .misa-reports-cell:first-child {

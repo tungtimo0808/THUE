@@ -92,7 +92,9 @@ class ReportAccessMixin(CompanyMemberMixin):
         try:
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
-            raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
+            company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+            if not company:
+                raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
         request.report_company = company
         if not has_report_permission(request.user, request, self.report_area, "VIEW"):
             raise PermissionDenied("Bạn không có quyền xem báo cáo này của doanh nghiệp.")

@@ -293,6 +293,11 @@ urlpatterns = [
         name="report-cash-flow-run-export",
     ),
     re_path(
+        r"^financial-notes/parameters/?$",
+        FinancialNotesViewSet.as_view({"get": "parameters"}),
+        name="report-financial-notes-parameters",
+    ),
+    re_path(
         r"^financial-notes/templates/?$",
         FinancialNotesViewSet.as_view({"get": "templates"}),
         name="report-financial-notes-templates",

@@ -1,6 +1,16 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
-import { exportCashFlow, exportErrorText } from "./FinancialForm";
+import {
+  exportCashFlow,
+  exportErrorText,
+  openStatementPreviewAndExport,
+  StatementPrintExportMenu,
+  MisaBranchTagSelector,
+  MisaAccumulateFromRadioGroup,
+  MISA_REPORT_PERIOD_OPTIONS,
+  computeMisaPeriodDates,
+  dmyToIsoDate,
+} from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -460,36 +470,82 @@ export default function MisaCashFlowIndirectReport({
     }
   };
 
-  const loadReportFromBackend = useCallback(async () => {
+  const handlePreviewAndExport = (mode: "print" | "pdf" | "excel", orientation: "portrait" | "landscape" = "portrait") => {
+    openStatementPreviewAndExport({
+      mode,
+      orientation,
+      title: "BÁO CÁO LƯU CHUYỂN TIỀN TỆ",
+      formCode: "B03 - DN",
+      circularNote: `(Theo phương pháp gián tiếp – Ban hành kèm theo Thông tư số 99/2025/TT-BTC của Bộ Tài chính)`,
+      periodText: `Từ ngày ${fromDate} đến ngày ${toDate}`,
+      unitLabel: "VND",
+      headers: ["CHỈ TIÊU", "Mã số", "Thuyết minh", "Kỳ này", "Kỳ trước"],
+      rows: filteredRows.map((r) => ({
+        cells: r.isHeader
+          ? [r.name, "", "", "", ""]
+          : [
+              r.name,
+              r.code || "",
+              r.note || "",
+              formatNumber(r.currentPeriod).text,
+              formatNumber(r.previousPeriod).text,
+            ],
+        isBold: r.isBold || r.isHeader,
+      })),
+      colAligns: ["left", "center", "center", "right", "right"],
+      fileNameBase: `B03-DN_GianTiep_${toDate.replace(/\//g, "-")}`,
+      onDownloadPdf: () => handleExportReport("PDF"),
+      onDownloadExcel: () => handleExportReport("EXCEL"),
+    });
+  };
+
+  const loadReportFromBackend = useCallback(async (targetFrom?: string, targetTo?: string, useSavedOnly?: boolean) => {
     try {
       const cid = getSelectedCompanyId();
-      const query = cid ? `?company_id=${cid}&template_code=B03-DN&cash_flow_method=INDIRECT` : "?template_code=B03-DN&cash_flow_method=INDIRECT";
-      const runsRes: any = await apiClient.get(`/api/v1/reports/cash-flow/runs/${query}`);
-      const latestRun = runsRes?.runs?.[0];
-      if (latestRun?.id) {
-        const detailRes: any = await apiClient.get(
-          `/api/v1/reports/cash-flow/runs/${latestRun.id}/${cid ? `?company_id=${cid}` : ""}`
-        );
-        if (Array.isArray(detailRes?.lines)) {
-          const lineMap: Record<string, any> = {};
-          for (const ln of detailRes.lines) {
-            lineMap[ln.indicator_code] = ln;
+      const fDate = targetFrom ?? fromDate;
+      const tDate = targetTo ?? toDate;
+      const savedOnly = useSavedOnly ?? fetchFromSaved;
+      const isoFrom = dmyToIsoDate(fDate);
+      const isoTo = dmyToIsoDate(tDate);
+
+      if (savedOnly) {
+        const query = cid
+          ? `?company_id=${cid}&template_code=B03-DN&cash_flow_method=INDIRECT&include_latest_detail=true`
+          : "?template_code=B03-DN&cash_flow_method=INDIRECT&include_latest_detail=true";
+        const runsRes: any = await apiClient.get(`/api/v1/reports/cash-flow/runs/${query}`);
+        const latestRun = runsRes?.runs?.[0];
+        if (latestRun?.id) {
+          const detailRes: any =
+            runsRes?.latest_run_detail && Array.isArray(runsRes.latest_run_detail.lines)
+              ? runsRes.latest_run_detail
+              : await apiClient.get(`/api/v1/reports/cash-flow/runs/${latestRun.id}/${cid ? `?company_id=${cid}` : ""}`);
+          if (Array.isArray(detailRes?.lines)) {
+            const lineMap: Record<string, any> = {};
+            for (const ln of detailRes.lines) {
+              lineMap[ln.indicator_code] = ln;
+            }
+            setRows(
+              BASE_INDIRECT_DATA.map((item) => {
+                if (!item.code || !lineMap[item.code]) return item;
+                const entry = lineMap[item.code];
+                return {
+                  ...item,
+                  currentPeriod: Number(entry.current_period_amount ?? 0),
+                  previousPeriod: Number(entry.comparative_period_amount ?? 0),
+                };
+              })
+            );
+            return;
           }
-          setRows(
-            BASE_INDIRECT_DATA.map((item) => {
-              if (!item.code || !lineMap[item.code]) return item;
-              const entry = lineMap[item.code];
-              return {
-                ...item,
-                currentPeriod: Number(entry.current_period_amount ?? 0),
-                previousPeriod: Number(entry.comparative_period_amount ?? 0),
-              };
-            })
-          );
-          return;
         }
       }
-      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/${cid ? `?company_id=${cid}` : ""}`);
+
+      const tt99Params = new URLSearchParams();
+      if (cid) tt99Params.set("company_id", cid);
+      if (isoFrom) tt99Params.set("from_date", isoFrom);
+      if (isoTo) tt99Params.set("to_date", isoTo);
+
+      const res: any = await apiClient.get(`/api/v1/reports/tt99-financial-statements/?${tt99Params.toString()}`);
       if (res && res.b03_indirect) {
         const b03 = res.b03_indirect;
         setRows(
@@ -508,7 +564,7 @@ export default function MisaCashFlowIndirectReport({
     } catch {
       // Fallback to BASE_INDIRECT_DATA (all zeros)
     }
-  }, []);
+  }, [fromDate, toDate, fetchFromSaved]);
 
   useEffect(() => {
     void loadReportFromBackend();
@@ -530,8 +586,7 @@ export default function MisaCashFlowIndirectReport({
     setFetchFromSaved(draftFetchFromSaved);
     setHideZero(draftHideZero);
     setIsParamDrawerOpen(false);
-    void loadReportFromBackend();
-    notify?.("Đã cập nhật Báo cáo lưu chuyển tiền tệ (PP gián tiếp - TT99) từ Sổ Cái Backend.");
+    void loadReportFromBackend(draftFromDate, draftToDate, draftFetchFromSaved);
   };
 
   const handleResetParams = () => {
@@ -727,35 +782,14 @@ export default function MisaCashFlowIndirectReport({
               color: "#334155",
               cursor: "pointer",
               fontWeight: 500,
+              whiteSpace: "nowrap",
             }}
             onClick={() =>
               notify?.("Kiểm tra sự khớp nối giữa lợi nhuận và lưu chuyển tiền thuần...")
             }
           >
             <FileCheck size={15} color="#00a862" />
-            <span>Kiểm tra</span>
-          </button>
-
-          {/* AI Analysis Sparkles Badge */}
-          <button
-            type="button"
-            style={{
-              background: "linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%)",
-              border: "1px solid #c7d2fe",
-              borderRadius: 14,
-              padding: "3px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12.5,
-              color: "#6366f1",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-            onClick={() => setShowAiAnalysis(!showAiAnalysis)}
-          >
-            <Sparkles size={14} color="#7c3aed" />
-            <span>{showAiAnalysis ? "Đóng phân tích Sổ Việt AI" : "✨ Phân tích biến động vốn lưu động"}</span>
+            <span>Kiểm tra số liệu</span>
           </button>
         </div>
 
@@ -852,47 +886,13 @@ export default function MisaCashFlowIndirectReport({
             <MessageCircle size={14} />
           </button>
 
-          <button
-            type="button"
-            style={{
-              height: 30,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: "#334155",
-              fontSize: 12.5,
-              cursor: "pointer",
-            }}
-            onClick={() => notify?.("Đang chuẩn bị lệnh in...")}
-          >
-            <Printer size={14} />
-            <ChevronDown size={12} />
-          </button>
-
-          <button
-            type="button"
-            style={{
-              height: 30,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: "#334155",
-              fontSize: 12.5,
-              cursor: "pointer",
-            }}
-            onClick={() => void handleExportReport("EXCEL")}
-          >
-            <Download size={14} />
-            <ChevronDown size={12} />
-          </button>
+          <StatementPrintExportMenu
+            compact
+            onPrintPortrait={() => handlePreviewAndExport("print", "portrait")}
+            onPrintLandscape={() => handlePreviewAndExport("print", "landscape")}
+            onExportPdf={() => handlePreviewAndExport("pdf", "portrait")}
+            onExportExcel={() => handlePreviewAndExport("excel", "portrait")}
+          />
 
           <button
             type="button"
@@ -1416,6 +1416,9 @@ export default function MisaCashFlowIndirectReport({
                 fontSize: 13,
               }}
             >
+              {/* 0. Chi nhánh (MISA tag selector) */}
+              <MisaBranchTagSelector />
+
               {/* 1. Kỳ báo cáo * */}
               <div>
                 <label
@@ -1429,43 +1432,24 @@ export default function MisaCashFlowIndirectReport({
                   Kỳ báo cáo <span style={{ color: "#dc2626" }}>*</span>
                 </label>
                 <select
+                  className="misa-select"
                   value={draftPeriod}
                   onChange={(e) => {
                     const val = e.target.value;
                     setDraftPeriod(val);
-                    if (val === "Tháng này") {
-                      setDraftFromDate("01/10/2026");
-                      setDraftToDate("31/10/2026");
-                    } else if (val === "Tháng trước") {
-                      setDraftFromDate("01/09/2026");
-                      setDraftToDate("30/09/2026");
-                    } else if (val === "Quý này") {
-                      setDraftFromDate("01/10/2026");
-                      setDraftToDate("31/12/2026");
-                    } else if (val === "Năm nay") {
-                      setDraftFromDate("01/01/2026");
-                      setDraftToDate("31/12/2026");
+                    if (val !== "Tùy chọn") {
+                      const computed = computeMisaPeriodDates(val, CURRENT_YEAR);
+                      setDraftFromDate(computed.fromDate);
+                      setDraftToDate(computed.toDate);
                     }
                   }}
-                  style={{
-                    width: "100%",
-                    height: 34,
-                    padding: "0 10px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                    background: "#ffffff",
-                    fontSize: 13,
-                    outline: "none",
-                  }}
+                  style={{ width: "100%" }}
                 >
-                  <option value="Tháng này">Tháng này</option>
-                  <option value="Tháng trước">Tháng trước</option>
-                  <option value="Quý này">Quý này</option>
-                  <option value="Quý trước">Quý trước</option>
-                  <option value="6 tháng đầu năm">6 tháng đầu năm</option>
-                  <option value="Năm nay">Năm nay</option>
-                  <option value="Năm trước">Năm trước</option>
-                  <option value="Tùy chọn">Tùy chọn</option>
+                  {MISA_REPORT_PERIOD_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1581,6 +1565,9 @@ export default function MisaCashFlowIndirectReport({
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
               </div>
+
+              {/* 4. Lấy lũy kế phát sinh từ */}
+              <MisaAccumulateFromRadioGroup name="b03IndAccumulateFrom" />
             </div>
 
             {/* Drawer Footer Buttons */}

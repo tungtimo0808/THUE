@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { clearLiveApiGetCache, request } from "./live-api";
 import {
   AlertTriangle,
+  Calendar,
   CheckCircle2,
   Clock,
   Download,
   Eye,
   FileSpreadsheet,
   FileText,
+  HelpCircle,
   History,
   Layers,
   Lock,
@@ -16,6 +19,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  X,
   XCircle,
 } from "lucide-react";
 import {
@@ -35,6 +39,20 @@ import {
   submitFinancialBundleReviewUcRpt02,
   validateFinancialBundleUcRpt02,
 } from "./misa-api-writes";
+import {
+  StatementPrintExportMenu,
+  MisaBranchTagSelector,
+  MisaAccumulateFromRadioGroup,
+  cleanBundleDisplayName,
+  formatPeriodOptionLabel,
+  formatRunStatusText,
+  formatSavedBundleOptionLabel,
+  formatScopeText,
+  formatSeverityText,
+  formatValidationStatusText,
+  openStatementPreviewAndExport,
+  type StatementPreviewSection,
+} from "./FinancialForm";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -42,6 +60,7 @@ export interface MisaFinancialBundleWorkspaceProps {
   companyId?: string | null;
   notify?: (msg: string) => void;
   onOpenReportByName?: (reportName: string) => void;
+  onBack?: () => void;
 }
 
 const LEGAL_FORM_TO_REPORT_NAME: Record<string, string> = {
@@ -87,11 +106,18 @@ function statusBadgeStyle(status: string): React.CSSProperties {
   }
 }
 
-const COMPONENT_TYPE_LABELS: Record<string, { title: string; subtitle: string; icon: string }> = {
-  FINANCIAL_POSITION: { title: "Tình hình tài chính", subtitle: "Bảng cân đối kế toán", icon: "🏛️" },
-  BUSINESS_RESULT: { title: "Kết quả kinh doanh", subtitle: "Doanh thu & Chi phí", icon: "📈" },
-  CASH_FLOW: { title: "Lưu chuyển tiền tệ", subtitle: "Dòng tiền thuần", icon: "💵" },
-  FINANCIAL_NOTES: { title: "Thuyết minh BCTC", subtitle: "Thuyết minh chi tiết", icon: "📝" },
+const COMPONENT_TYPE_LABELS: Record<string, { title: string; subtitle: string }> = {
+  FINANCIAL_POSITION: { title: "Báo cáo tình hình tài chính", subtitle: "Tài sản, nợ phải trả và vốn chủ sở hữu" },
+  BUSINESS_RESULT: { title: "Báo cáo kết quả hoạt động kinh doanh", subtitle: "Doanh thu, chi phí và lợi nhuận trong kỳ" },
+  CASH_FLOW: { title: "Báo cáo lưu chuyển tiền tệ", subtitle: "Dòng tiền thuần từ các hoạt động trong kỳ" },
+  FINANCIAL_NOTES: { title: "Bản thuyết minh báo cáo tài chính", subtitle: "Thuyết minh chi tiết các chỉ tiêu BCTC" },
+};
+
+const BUNDLE_TYPE_DISPLAY_NAMES: Record<string, string> = {
+  ANNUAL_GOING_CONCERN: "Bộ BCTC năm – Hoạt động liên tục",
+  ANNUAL_NON_GOING_CONCERN: "Bộ BCTC năm – Không đáp ứng giả định hoạt động liên tục",
+  INTERIM_FULL: "Bộ BCTC giữa niên độ – Dạng đầy đủ",
+  INTERIM_CONDENSED: "Bộ BCTC giữa niên độ – Dạng tóm lược",
 };
 
 function formatStatusLabel(status: string): string {
@@ -112,6 +138,7 @@ export default function MisaFinancialBundleWorkspace({
   companyId,
   notify,
   onOpenReportByName,
+  onBack,
 }: MisaFinancialBundleWorkspaceProps) {
   const [catalog, setCatalog] = useState<any>(null);
   const [bundles, setBundles] = useState<any[]>([]);
@@ -129,6 +156,10 @@ export default function MisaFinancialBundleWorkspace({
   const [cashFlowMethod, setCashFlowMethod] = useState<string>("DIRECT");
   const [showZeroLines, setShowZeroLines] = useState<boolean>(true);
   const [confirmNonGoingConcern, setConfirmNonGoingConcern] = useState<boolean>(false);
+  const [isParamDrawerOpen, setIsParamDrawerOpen] = useState<boolean>(false);
+  const [fromDate, setFromDate] = useState<string>(`01/01/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState<string>(`31/12/${CURRENT_YEAR}`);
+  const [accumulateFrom, setAccumulateFrom] = useState<"DATA_START" | "FISCAL_YEAR_START">("FISCAL_YEAR_START");
 
   // Active sub-panels
   const [activeStatementLines, setActiveStatementLines] = useState<any>(null);
@@ -172,33 +203,26 @@ export default function MisaFinancialBundleWorkspace({
     return {
       companyId: cid,
       get: async (url: string) => {
-        const res = await fetch(url, { headers });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-        return data;
+        return request(url, token, { headers });
       },
       post: async (url: string, body: any) => {
-        const res = await fetch(url, {
+        return request(url, token, {
           method: "POST",
           headers,
           body: JSON.stringify(body || {}),
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-        return data;
       },
       patch: async (url: string, body: any) => {
-        const res = await fetch(url, {
+        return request(url, token, {
           method: "PATCH",
           headers,
           body: JSON.stringify(body || {}),
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-        return data;
       },
     } as unknown as ApiWriter;
   }, [companyId]);
+
+  const prefetchedBundleIdRef = React.useRef<string>("");
 
   const loadCatalogAndList = useCallback(async () => {
     setLoading(true);
@@ -207,7 +231,7 @@ export default function MisaFinancialBundleWorkspace({
       const w = getWriter();
       const [catRes, listRes] = await Promise.all([
         fetchFinancialBundleTypesUcRpt02(w),
-        fetchFinancialBundlesListUcRpt02(w, { current_only: "false" }),
+        fetchFinancialBundlesListUcRpt02(w, { current_only: "false", include_first_detail: "true" }),
       ]);
       setCatalog(catRes);
       if (catRes?.fiscal_periods?.length && !fiscalPeriodId) {
@@ -216,19 +240,34 @@ export default function MisaFinancialBundleWorkspace({
       }
       const items = listRes?.items || [];
       setBundles(items);
-      if (items.length > 0 && !selectedBundleId) {
-        setSelectedBundleId(items[0].bundle_id);
+      if ((listRes as any)?.first_bundle_detail) {
+        const firstDet = (listRes as any).first_bundle_detail;
+        const firstDetId = firstDet.bundle_id || firstDet.id || "";
+        prefetchedBundleIdRef.current = firstDetId;
+        setBundleDetail(firstDet);
+        if (firstDetId) {
+          setSelectedBundleId((prev) => prev || firstDetId);
+        }
+      } else if (items.length > 0) {
+        const firstId = items[0].bundle_id || items[0].id || "";
+        if (firstId) {
+          setSelectedBundleId((prev) => prev || firstId);
+        }
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "Không thể tải danh mục Bộ báo cáo tài chính.");
     } finally {
       setLoading(false);
     }
-  }, [getWriter, fiscalPeriodId, selectedBundleId]);
+  }, [getWriter]);
 
   const loadBundleDetail = useCallback(
     async (bId: string, ver?: number) => {
       if (!bId) return;
+      if (!ver && prefetchedBundleIdRef.current === bId) {
+        prefetchedBundleIdRef.current = "";
+        return;
+      }
       setLoading(true);
       setErrorMsg(null);
       try {
@@ -296,7 +335,7 @@ export default function MisaFinancialBundleWorkspace({
       const w = getWriter();
       const res = await validateFinancialBundleUcRpt02(w, bundleDetail.bundle_id);
       setBundleDetail(res.bundle);
-      notify?.(`Đã kiểm tra chéo bộ BCTC: ${res.validation.validation_status}.`);
+      notify?.(`Đã kiểm tra chéo bộ báo cáo tài chính: ${formatValidationStatusText(res.validation.validation_status)}.`);
     } catch (err: any) {
       setErrorMsg(err?.message || "Lỗi kiểm tra chéo bộ BCTC.");
     } finally {
@@ -313,7 +352,7 @@ export default function MisaFinancialBundleWorkspace({
         lock_version: bundleDetail.lock_version,
       });
       setBundleDetail(res);
-      notify?.("Đã trình duyệt Bộ BCTC (READY_FOR_APPROVAL).");
+      notify?.("Đã trình duyệt Bộ báo cáo tài chính.");
     } catch (err: any) {
       setErrorMsg(err?.message || "Không thể trình duyệt Bộ BCTC.");
     } finally {
@@ -330,7 +369,7 @@ export default function MisaFinancialBundleWorkspace({
         lock_version: bundleDetail.lock_version,
       });
       setBundleDetail(res);
-      notify?.("Đã phê duyệt chính thức Bộ BCTC (APPROVED).");
+      notify?.("Đã phê duyệt chính thức Bộ báo cáo tài chính.");
       await loadCatalogAndList();
     } catch (err: any) {
       setErrorMsg(err?.message || "Không thể phê duyệt Bộ BCTC.");
@@ -435,55 +474,187 @@ export default function MisaFinancialBundleWorkspace({
     }
   };
 
-  const handleExportBundle = async (format: string, mode: string) => {
+  const handleExportBundle = async (
+    format: "PRINT" | "PDF" | "XLSX",
+    orientation: "portrait" | "landscape" = "portrait",
+  ) => {
     if (!bundleDetail?.bundle_id) return;
     setLoading(true);
     try {
       const w = getWriter();
-      const res = await exportFinancialBundleUcRpt02(w, bundleDetail.bundle_id, {
-        format,
-        export_mode: mode,
+      const exportFormat = format === "XLSX" ? "XLSX" : "PDF";
+      const mode = bundleDetail.bundle_status === "APPROVED" ? "OFFICIAL" : "DRAFT";
+
+      // Fetch lines for all available component runs so the preview modal displays the full statements
+      const sections: StatementPreviewSection[] = [];
+      for (const comp of bundleDetail.components || []) {
+        if (!comp.statement_run_id) continue;
+        try {
+          const linesRes = await fetchFinancialStatementRunLinesUcRpt02(w, comp.statement_run_id, {
+            show_zero_lines: showZeroLines ? "true" : "false",
+          });
+          const rows = (linesRes?.lines || []).map((ln: any) => ({
+            name: ln.indicator_name || "",
+            code: ln.indicator_code || "",
+            note: ln.note_reference || "",
+            current:
+              ln.current_period_amount !== null && ln.current_period_amount !== undefined
+                ? formatMoney(ln.current_period_amount)
+                : ln.text_value || "",
+            comparative:
+              ln.comparative_period_amount !== null && ln.comparative_period_amount !== undefined
+                ? formatMoney(ln.comparative_period_amount)
+                : "",
+            isBold: ln.line_type === "TOTAL" || ln.line_type === "SUBTOTAL",
+          }));
+          sections.push({
+            formCode: comp.legal_form_code || "BCTC",
+            title: String(comp.report_name || COMPONENT_TYPE_LABELS[comp.component_type]?.title || "").toUpperCase(),
+            periodLabel: linesRes?.period_name
+              ? `${cleanBundleDisplayName(linesRes.period_name)} (${linesRes.period_start_date} – ${linesRes.period_end_date})`
+              : cleanBundleDisplayName(bundleDetail.bundle_name),
+            unitLabel: "VND",
+            columns: [
+              { key: "name", label: "Chỉ tiêu", align: "left" },
+              { key: "code", label: "Mã số", align: "center", width: "70px" },
+              { key: "note", label: "Thuyết minh", align: "center", width: "95px" },
+              { key: "current", label: "Số cuối kỳ / Kỳ này", align: "right", width: "155px" },
+              { key: "comparative", label: "Số đầu năm / Kỳ trước", align: "right", width: "155px" },
+            ],
+            rows,
+          });
+        } catch {
+          // continue if individual component lines cannot be loaded
+        }
+      }
+
+      const triggerBackendBundleDownload = async (targetFmt: "PDF" | "XLSX") => {
+        const res = await exportFinancialBundleUcRpt02(w, bundleDetail.bundle_id, {
+          format: targetFmt,
+          export_mode: mode,
+        });
+        setExportPayload(res);
+        // Download first available component file or bundle artifact if present
+        const firstCompWithRun = (bundleDetail.components || []).find(
+          (c: any) => c.statement_run_id && c.component_type === "FINANCIAL_POSITION",
+        );
+        if (firstCompWithRun?.statement_run_id) {
+          const exportRes: any = await w.post(
+            `/api/v1/reports/financial-position/runs/${encodeURIComponent(firstCompWithRun.statement_run_id)}/export/?company_id=${encodeURIComponent(w.companyId)}`,
+            {
+              company_id: w.companyId,
+              export_format: targetFmt === "XLSX" ? "EXCEL" : "PDF",
+            },
+          );
+          if (exportRes?.file_base64) {
+            const bytes = Uint8Array.from(atob(exportRes.file_base64), (c) => c.charCodeAt(0));
+            const url = URL.createObjectURL(new Blob([bytes], { type: exportRes.content_type }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = exportRes.file_name || `bo-bctc.${targetFmt.toLowerCase()}`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+          }
+        }
+        notify?.(
+          `Đã xuất Bộ báo cáo tài chính định dạng ${targetFmt === "XLSX" ? "Excel (.xlsx)" : "PDF (.pdf)"} thành công.`,
+        );
+      };
+
+      await openStatementPreviewAndExport({
+        requestedFormat: format,
+        orientation,
+        reportCode: "Bộ BCTC",
+        title: cleanBundleDisplayName(bundleDetail.bundle_name),
+        sections:
+          sections.length > 0
+            ? sections
+            : [
+                {
+                  formCode: "B01-DN .. B09-DN",
+                  title: cleanBundleDisplayName(bundleDetail.bundle_name).toUpperCase(),
+                  periodLabel: `Năm tài chính ${bundleDetail.fiscal_year || fiscalYear}`,
+                  columns: [
+                    { key: "code", label: "Biểu mẫu", align: "center", width: "110px" },
+                    { key: "name", label: "Tên báo cáo thành phần", align: "left" },
+                    { key: "status", label: "Trạng thái", align: "center", width: "160px" },
+                  ],
+                  rows: (bundleDetail.components || []).map((c: any) => ({
+                    code: c.legal_form_code,
+                    name: c.report_name,
+                    status: formatRunStatusText(c.run_status),
+                  })),
+                },
+              ],
+        onDirectDownloadPdf: () => triggerBackendBundleDownload("PDF"),
+        onDirectDownloadExcel: () => triggerBackendBundleDownload("XLSX"),
       });
-      setExportPayload(res);
-      notify?.(
-        `Đã khởi tạo lệnh kết xuất Bộ BCTC (${res.format} - ${res.export_mode}) chuyển tiếp sang ${res.target_uc_code}.`,
-      );
+      void exportFormat;
     } catch (err: any) {
-      setErrorMsg(err?.message || "Không thể xuất bộ BCTC.");
+      setErrorMsg(err?.message || "Không thể mở bản xem trước Bộ báo cáo tài chính.");
     } finally {
       setLoading(false);
     }
   };
 
   const periods = catalog?.fiscal_periods || [];
-  const bundleTypes = catalog?.bundle_types || [
-    { code: "ANNUAL_GOING_CONCERN", name: "Bộ BCTC năm – Đáp ứng giả định hoạt động liên tục (B01-DN .. B09-DN)" },
-    { code: "ANNUAL_NON_GOING_CONCERN", name: "Bộ BCTC năm – Không đáp ứng giả định hoạt động liên tục (B01-DNKLT .. B09-DNKLT)" },
-    { code: "INTERIM_FULL", name: "Bộ BCTC giữa niên độ – Dạng đầy đủ (B01a-DN .. B09a-DN)" },
-    { code: "INTERIM_CONDENSED", name: "Bộ BCTC giữa niên độ – Dạng tóm lược (B01b-DN .. B09a-DN)" },
+  const bundleTypes = [
+    { code: "ANNUAL_GOING_CONCERN", name: "BCTC năm – Hoạt động liên tục (B01-DN đến B09-DN)" },
+    { code: "ANNUAL_NON_GOING_CONCERN", name: "BCTC năm – Không đáp ứng giả định hoạt động liên tục" },
+    { code: "INTERIM_FULL", name: "BCTC giữa niên độ – Dạng đầy đủ (B01a-DN đến B09a-DN)" },
+    { code: "INTERIM_CONDENSED", name: "BCTC giữa niên độ – Dạng tóm lược (B01b-DN đến B09a-DN)" },
   ];
 
   return (
     <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "16px 18px", marginBottom: 20, maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }}>
       {/* Header Banner */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", borderBottom: "1px solid #e2e8f0", paddingBottom: 14, marginBottom: 14 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Layers size={18} color="#00a862" />
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-              Quản lý & Xem Bộ Báo Cáo Tài Chính (Thông tư 99/2025/TT-BTC)
-            </h3>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              title="Quay lại danh sách báo cáo"
+              style={{
+                height: 32,
+                padding: "0 12px",
+                background: "#f8fafc",
+                border: "1px solid #cbd5e1",
+                borderRadius: 4,
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: "#334155",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <span>← Quay lại</span>
+            </button>
+          )}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Layers size={18} color="#00a862" />
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
+                Quản lý & Xem Bộ Báo Cáo Tài Chính (Thông tư 99/2025/TT-BTC)
+              </h3>
+            </div>
+            <p style={{ margin: "4px 0 0", fontSize: 12.5, color: "#64748b" }}>
+              Tra cứu, tổng hợp, đối chiếu số liệu giữa các biểu mẫu (B01, B02, B03, B09), quản lý phiên bản, phê duyệt và truy vết nguồn Sổ cái.
+            </p>
           </div>
-          <p style={{ margin: "4px 0 0", fontSize: 12.5, color: "#64748b" }}>
-            Tra cứu, tổng hợp, kiểm tra chéo (B01 ↔ B02 ↔ B03 ↔ B09), quản lý phiên bản (V1/V2), phê duyệt và truy vết nguồn Sổ cái (GL).
-          </p>
         </div>
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <button
             type="button"
-            onClick={loadCatalogAndList}
-            style={{ height: 32, padding: "0 12px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#334155", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            onClick={() => {
+              clearLiveApiGetCache();
+              void loadCatalogAndList();
+            }}
+            style={{ height: 32, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#334155", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
           >
             <RefreshCw size={14} />
             <span>Làm mới</span>
@@ -492,124 +663,66 @@ export default function MisaFinancialBundleWorkspace({
             type="button"
             onClick={handleCreateOrGenerateBundle}
             disabled={loading}
-            style={{ height: 32, padding: "0 14px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ height: 32, padding: "0 14px", background: "#ffffff", border: "1px solid #00a862", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#00a862", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
           >
             <Play size={14} />
             <span>Lập / Tạo phiên bản Bộ BCTC mới</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setIsParamDrawerOpen(true)}
+            style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+          >
+            <span>Chọn tham số</span>
+          </button>
         </div>
       </div>
 
-      {/* Filter & Parameter Bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, background: "#f8fafc", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 16, boxSizing: "border-box" }}>
-        <div>
-          <label title="Loại bộ BCTC pháp lý" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            Loại bộ BCTC
-          </label>
-          <select
-            value={bundleType}
-            onChange={(e) => setBundleType(e.target.value)}
-            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
-          >
-            {bundleTypes.map((bt: any) => (
-              <option key={bt.code} value={bt.code}>
-                {bt.name}
-              </option>
-            ))}
-          </select>
+      {/* Compact Active Parameter Summary Strip + Saved Bundle Version Selector */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, background: "#f8fafc", padding: "10px 14px", borderRadius: 6, border: "1px solid #e2e8f0", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12.5, color: "#475569" }}>
+          <span>
+            Loại bộ BCTC: <strong style={{ color: "#0f172a" }}>{BUNDLE_TYPE_DISPLAY_NAMES[bundleType] || "Bộ BCTC năm – Hoạt động liên tục"}</strong>
+          </span>
+          <span>•</span>
+          <span>
+            Kỳ báo cáo: <strong style={{ color: "#0f172a" }}>{(() => {
+              const found = periods.find((p: any) => String(p.id) === String(fiscalPeriodId));
+              return found ? formatPeriodOptionLabel(found) : `Năm ${fiscalYear} (${fromDate} - ${toDate})`;
+            })()}</strong>
+          </span>
+          <span>•</span>
+          <span>
+            LCTT (B03): <strong style={{ color: "#0f172a" }}>{cashFlowMethod === "INDIRECT" ? "PP gián tiếp (B03-DN-GT)" : "PP trực tiếp (B03-DN)"}</strong>
+          </span>
+          <span>•</span>
+          <span>
+            Phạm vi: <strong style={{ color: "#0f172a" }}>{formatScopeText(reportingScope)}</strong>
+          </span>
         </div>
 
-        <div>
-          <label title="Kỳ kế toán báo cáo" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            Kỳ kế toán
-          </label>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 320, flex: "0 1 420px" }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#475569", whiteSpace: "nowrap" }}>Phiên bản đã lưu ({bundles.length}):</span>
           <select
-            value={fiscalPeriodId}
-            onChange={(e) => {
-              const pid = e.target.value;
-              setFiscalPeriodId(pid);
-              const found = periods.find((p: any) => p.id === pid);
-              if (found) setFiscalYear(found.fiscal_year);
-            }}
-            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
-          >
-            {periods.length === 0 && <option value="">-- Chọn kỳ kế toán --</option>}
-            {periods.map((p: any) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.start_date} → {p.end_date}) [{p.status}]
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label title="Phương pháp Lưu chuyển tiền tệ (B03)" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            Phương pháp LCTT (B03)
-          </label>
-          <select
-            value={cashFlowMethod}
-            onChange={(e) => setCashFlowMethod(e.target.value)}
-            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
-          >
-            <option value="DIRECT">Phương pháp trực tiếp (B03-DN)</option>
-            <option value="INDIRECT">Phương pháp gián tiếp (B03-DN-GT)</option>
-          </select>
-        </div>
-
-        <div>
-          <label title="Phạm vi báo cáo" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            Phạm vi báo cáo
-          </label>
-          <select
-            value={reportingScope}
-            onChange={(e) => setReportingScope(e.target.value)}
-            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
-          >
-            <option value="COMPANY">Toàn doanh nghiệp (COMPANY)</option>
-            <option value="BRANCH">Theo chi nhánh (BRANCH)</option>
-          </select>
-        </div>
-
-        {reportingScope === "BRANCH" && (
-          <div>
-            <label title="Chi nhánh" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              Chi nhánh
-            </label>
-            <select
-              value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
-              style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
-            >
-              <option value="">-- Chọn chi nhánh --</option>
-              {(catalog?.branches || []).map((b: any) => (
-                <option key={b.id} value={b.id}>
-                  {b.code} - {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div>
-          <label title="Bộ BCTC đã lưu" style={{ display: "block", height: 20, lineHeight: "20px", fontWeight: 600, color: "#475569", marginBottom: 6, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            Bộ BCTC đã lưu
-          </label>
-          <select
+            className="misa-select"
             value={selectedBundleId}
             onChange={(e) => setSelectedBundleId(e.target.value)}
-            style={{ width: "100%", height: 34, border: "1px solid #cbd5e1", borderRadius: 6, padding: "0 10px", background: "#ffffff", fontSize: 12.5, color: "#1e293b", boxSizing: "border-box" }}
+            style={{ width: "100%", height: 30, fontSize: 12.5 }}
           >
-            <option value="">-- Chọn bộ BCTC đã lưu ({bundles.length}) --</option>
-            {bundles.map((b: any) => (
-              <option key={b.bundle_id} value={b.bundle_id}>
-                {b.bundle_code} (v{b.bundle_version}) - {formatStatusLabel(b.bundle_status)} [{b.available_component_count}/4]
-              </option>
-            ))}
+            <option value="">-- Chọn phiên bản Bộ BCTC đã lưu ({bundles.length}) --</option>
+            {bundles.map((b: any, idx: number) => {
+              const bid = b.bundle_id || b.id || String(idx);
+              return (
+                <option key={bid} value={bid}>
+                  {formatSavedBundleOptionLabel(b, idx)}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
 
-      {/* Confirmation checkbox for Non-going concern (AF-02) */}
+      {/* Confirmation checkbox for Non-going concern */}
       {bundleType === "ANNUAL_NON_GOING_CONCERN" && (
         <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#92400e" }}>
           <AlertTriangle size={16} />
@@ -619,7 +732,7 @@ export default function MisaFinancialBundleWorkspace({
               checked={confirmNonGoingConcern}
               onChange={(e) => setConfirmNonGoingConcern(e.target.checked)}
             />
-            Xác nhận doanh nghiệp thuộc diện KHÔNG đáp ứng giả định hoạt động liên tục (áp dụng bộ mẫu B01-DNKLT, B02-DNKLT, B03-DNKLT, B09-DNKLT).
+            Xác nhận doanh nghiệp thuộc trường hợp không đáp ứng giả định hoạt động liên tục (áp dụng bộ mẫu B01-DNKLT đến B09-DNKLT).
           </label>
         </div>
       )}
@@ -635,49 +748,64 @@ export default function MisaFinancialBundleWorkspace({
       {bundleDetail ? (
         <div>
           {/* Bundle Metadata & Workflow Bar */}
-          {/* Bundle Metadata & Workflow Bar */}
           <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "14px 16px", marginBottom: 16 }}>
             {/* Top row: Bundle Title & Status on left, Actions on right */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, borderBottom: "1px solid #e2e8f0", paddingBottom: 10, marginBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <h4 style={{ margin: 0, fontWeight: 700, fontSize: 14.5, color: "#0f172a" }}>
-                  {bundleDetail.bundle_name}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <h4 style={{ margin: 0, fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
+                  {cleanBundleDisplayName(bundleDetail.bundle_name)}
                 </h4>
-                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500, whiteSpace: "nowrap" }}>
-                  Mã: <strong>{bundleDetail.bundle_code}</strong> (v{bundleDetail.bundle_version})
-                </span>
-                <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", ...statusBadgeStyle(bundleDetail.bundle_status) }}>
-                  Trạng thái: {formatStatusLabel(bundleDetail.bundle_status)}
-                </span>
-                <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", ...statusBadgeStyle(bundleDetail.validation_status) }}>
-                  Kiểm tra chéo: {formatStatusLabel(bundleDetail.validation_status)}
-                </span>
-                {bundleDetail.is_stale && (
-                  <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#ffedd5", color: "#9a3412", border: "1px solid #fdba74", whiteSpace: "nowrap" }}>
-                    ⚠️ GL mới
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12.5, color: "#475569" }}>
+                  <span>
+                    Phiên bản: <strong style={{ color: "#0f172a" }}>Lần {bundleDetail.bundle_version || 1}</strong>
                   </span>
-                )}
-                {bundleDetail.is_period_closed && (
-                  <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, background: "#e2e8f0", color: "#334155", whiteSpace: "nowrap" }}>
-                    🔒 Đã khóa sổ
+                  <span style={{ color: "#cbd5e1" }}>•</span>
+                  <span>
+                    Trạng thái:{" "}
+                    <strong style={{ color: bundleDetail.bundle_status === "APPROVED" ? "#15803d" : "#0369a1" }}>
+                      {formatRunStatusText(bundleDetail.bundle_status)}
+                    </strong>
                   </span>
-                )}
+                  <span style={{ color: "#cbd5e1" }}>•</span>
+                  <span>
+                    Kết quả đối chiếu chéo:{" "}
+                    <strong style={{ color: bundleDetail.validation_status === "FAILED" ? "#b91c1c" : "#15803d" }}>
+                      {formatValidationStatusText(bundleDetail.validation_status)}
+                    </strong>
+                  </span>
+                  {bundleDetail.is_stale && (
+                    <>
+                      <span style={{ color: "#cbd5e1" }}>•</span>
+                      <span style={{ color: "#b45309", fontWeight: 600 }}>
+                        Phát sinh bút toán Sổ cái mới (cần tổng hợp lại)
+                      </span>
+                    </>
+                  )}
+                  {bundleDetail.is_period_closed && (
+                    <>
+                      <span style={{ color: "#cbd5e1" }}>•</span>
+                      <span style={{ color: "#334155", fontWeight: 600 }}>
+                        Kỳ kế toán đã khóa sổ
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                 <button
                   type="button"
                   onClick={handleValidateBundle}
-                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
+                  style={{ height: 32, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                 >
-                  <RefreshCw size={12} />
+                  <RefreshCw size={13} />
                   <span>Kiểm tra chéo lại</span>
                 </button>
                 {bundleDetail.permissions?.can_generate && bundleDetail.bundle_status !== "APPROVED" && (
                   <button
                     type="button"
                     onClick={handleSubmitReview}
-                    style={{ height: 30, padding: "0 12px", background: "#0284c7", border: "none", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
+                    style={{ height: 32, padding: "0 12px", background: "#0284c7", border: "none", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                   >
                     <CheckCircle2 size={13} />
                     <span>Trình duyệt</span>
@@ -687,7 +815,7 @@ export default function MisaFinancialBundleWorkspace({
                   <button
                     type="button"
                     onClick={handleApproveBundle}
-                    style={{ height: 30, padding: "0 12px", background: "#16a34a", border: "none", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
+                    style={{ height: 32, padding: "0 12px", background: "#16a34a", border: "none", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                   >
                     <ShieldCheck size={13} />
                     <span>Phê duyệt Bộ BCTC</span>
@@ -696,153 +824,162 @@ export default function MisaFinancialBundleWorkspace({
                 <button
                   type="button"
                   onClick={handleOpenHistory}
-                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#334155", display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", whiteSpace: "nowrap" }}
+                  style={{ height: 32, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#334155", display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", whiteSpace: "nowrap" }}
                 >
-                  <History size={12} />
-                  <span>Lịch sử V1/V2</span>
+                  <History size={13} />
+                  <span>Lịch sử phiên bản</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleOpenSupportingReports}
-                  style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
+                  style={{ height: 32, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                 >
-                  <FileSpreadsheet size={12} />
-                  <span>Báo cáo hỗ trợ</span>
+                  <FileSpreadsheet size={13} />
+                  <span>Báo cáo đối chiếu hỗ trợ</span>
                 </button>
                 {bundleDetail.permissions?.can_export && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleExportBundle(
-                        "PDF",
-                        bundleDetail.bundle_status === "APPROVED" ? "OFFICIAL" : "DRAFT",
-                      )
-                    }
-                    style={{ height: 30, padding: "0 10px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#0f172a", display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", whiteSpace: "nowrap" }}
-                  >
-                    <Printer size={12} />
-                    <span>In / Xuất BCTC</span>
-                  </button>
+                  <StatementPrintExportMenu
+                    compact={false}
+                    buttonLabel="In / Xuất BCTC"
+                    onPreviewAction={(fmt, orient) => void handleExportBundle(fmt, orient)}
+                  />
                 )}
               </div>
             </div>
 
-            {/* Bottom metadata tags */}
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, fontSize: 12, color: "#475569" }}>
+            {/* Bottom metadata summary in natural Vietnamese without emojis */}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12.5, color: "#475569" }}>
               <span>
-                🏢 <strong>{bundleDetail.company_name}</strong> (MST: {bundleDetail.tax_code || "N/A"})
+                Đơn vị: <strong>{bundleDetail.company_name}</strong> (MST: {bundleDetail.tax_code || "Chưa khai báo"})
               </span>
               <span style={{ color: "#cbd5e1" }}>•</span>
               <span>
-                📜 Căn cứ: <strong>Thông tư 99/2025/TT-BTC</strong>
+                Chế độ kế toán: <strong>Thông tư 99/2025/TT-BTC</strong>
               </span>
               <span style={{ color: "#cbd5e1" }}>•</span>
               <span>
-                📑 Thành phần: <strong>{bundleDetail.available_component_count}/4 đã có</strong>, <strong>{bundleDetail.approved_component_count}/4 đã duyệt</strong>
+                Biểu mẫu thành phần: <strong>Đã lập {bundleDetail.available_component_count}/4 biểu mẫu</strong> ({bundleDetail.approved_component_count}/4 đã phê duyệt)
               </span>
               <span style={{ color: "#cbd5e1" }}>•</span>
-              <span style={{ color: bundleDetail.blocker_count > 0 ? "#dc2626" : "#16a34a", fontWeight: 600 }}>
-                ⚠️ Cảnh báo: {bundleDetail.warning_count} Warning / {bundleDetail.blocker_count} Blocker
+              <span style={{ color: bundleDetail.blocker_count > 0 ? "#dc2626" : "#15803d", fontWeight: 600 }}>
+                {bundleDetail.blocker_count === 0 && bundleDetail.warning_count === 0
+                  ? "Đối chiếu số liệu: Khớp đầy đủ, không có cảnh báo"
+                  : `Đối chiếu số liệu: Có ${bundleDetail.blocker_count || 0} chỉ tiêu lệch cần xử lý, ${bundleDetail.warning_count || 0} mục lưu ý`}
               </span>
             </div>
           </div>
 
           {/* 4 Required Legal Components Table */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
               <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
-                Danh sách 4 Báo cáo thành phần bắt buộc ({bundleDetail.bundle_type})
+                Danh mục 4 Báo cáo tài chính thành phần bắt buộc ({BUNDLE_TYPE_DISPLAY_NAMES[bundleDetail.bundle_type] || cleanBundleDisplayName(bundleDetail.bundle_name)})
               </h4>
               <span style={{ fontSize: 12, color: "#64748b" }}>
-                Căn cứ chuẩn Thông tư 99/2025/TT-BTC
+                Áp dụng theo biểu mẫu chuẩn Thông tư 99/2025/TT-BTC
               </span>
             </div>
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflowX: "auto", background: "#ffffff" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, textAlign: "left", minWidth: 850 }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", background: "#ffffff", width: "100%", boxSizing: "border-box" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, textAlign: "left", tableLayout: "fixed" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#475569", fontWeight: 700 }}>
-                    <th style={{ padding: "10px 12px", width: 85, textAlign: "center", whiteSpace: "nowrap" }}>Mã mẫu</th>
-                    <th style={{ padding: "10px 12px", minWidth: 240, whiteSpace: "nowrap" }}>Báo cáo thành phần</th>
-                    <th style={{ padding: "10px 12px", width: 120, textAlign: "center", whiteSpace: "nowrap" }}>Phiên bản</th>
-                    <th style={{ padding: "10px 12px", width: 110, textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
-                    <th style={{ padding: "10px 12px", width: 105, textAlign: "center", whiteSpace: "nowrap" }}>Kiểm tra chéo</th>
-                    <th style={{ padding: "10px 12px", width: 384, textAlign: "right", whiteSpace: "nowrap" }}>Thao tác</th>
+                    <th style={{ padding: "10px 8px", width: 68, textAlign: "center", whiteSpace: "nowrap" }}>Mẫu số</th>
+                    <th style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>Tên báo cáo thành phần</th>
+                    <th style={{ padding: "10px 8px", width: 124, textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái lập</th>
+                    <th style={{ padding: "10px 8px", width: 126, textAlign: "center", whiteSpace: "nowrap" }}>Kết quả đối chiếu</th>
+                    <th style={{ padding: "10px 10px", width: 334, textAlign: "right", whiteSpace: "nowrap" }}>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(bundleDetail.components || []).map((comp: any) => {
                     const friendly = COMPONENT_TYPE_LABELS[comp.component_type] || {
-                      title: comp.component_type,
+                      title: comp.report_name || "Báo cáo tài chính",
                       subtitle: "",
-                      icon: "📄",
                     };
                     return (
                       <tr key={comp.component_type} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
-                          <span style={{ padding: "3px 9px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, fontWeight: 700, fontSize: 12, color: "#1d4ed8", display: "inline-block" }}>
+                        <td style={{ padding: "10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          <span style={{ padding: "3px 8px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 4, fontWeight: 700, fontSize: 12, color: "#0f172a", display: "inline-block" }}>
                             {comp.legal_form_code}
                           </span>
                         </td>
-                        <td style={{ padding: "10px 12px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontSize: 18 }}>{friendly.icon}</span>
-                            <div>
-                              <div style={{ fontWeight: 600, color: "#0f172a", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-                                <span>{friendly.title}</span>
-                                {comp.is_stale && (
-                                  <span style={{ fontSize: 10.5, color: "#b45309", background: "#fef3c7", padding: "1px 6px", borderRadius: 4, fontWeight: 700 }}>
-                                    GL mới
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                                {comp.report_name}
-                                {friendly.subtitle ? ` (${friendly.subtitle})` : ""}
-                              </div>
-                              {comp.error_message && (
-                                <div style={{ color: "#dc2626", fontSize: 11.5, marginTop: 2 }}>{comp.error_message}</div>
+                        <td style={{ padding: "10px 10px", minWidth: 0 }}>
+                          <div>
+                            <div style={{ fontWeight: 600, color: "#0f172a", fontSize: 13, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+                              <span>{friendly.title}</span>
+                              {comp.is_stale && (
+                                <span style={{ fontSize: 11, color: "#b45309", fontWeight: 600 }}>
+                                  (Cần lập lại)
+                                </span>
                               )}
                             </div>
+                            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2, whiteSpace: "nowrap" }}>
+                              {friendly.subtitle || comp.report_name}
+                            </div>
+                            {comp.error_message && (
+                              <div style={{ color: "#dc2626", fontSize: 11.5, marginTop: 2 }}>{comp.error_message}</div>
+                            )}
                           </div>
                         </td>
-                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap", color: "#64748b", fontSize: 12 }}>
-                          Mẫu v{comp.template_version} · {comp.run_version ? `Run v${comp.run_version}` : "Chưa lập"}
+                        <td style={{ padding: "10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: comp.run_status === "APPROVED" ? "#15803d" : "#0369a1" }}>
+                            {comp.run_status === "APPROVED"
+                              ? "Đã phê duyệt"
+                              : comp.run_status === "READY_FOR_APPROVAL"
+                              ? "Chờ phê duyệt"
+                              : comp.statement_run_id
+                              ? "Đã tổng hợp"
+                              : "Chưa tổng hợp"}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
+                            {comp.run_version ? `Phiên bản lần ${comp.run_version}` : "Chưa có dữ liệu"}
+                          </div>
                         </td>
-                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
-                          <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11.5, fontWeight: 700, display: "inline-block", ...statusBadgeStyle(comp.run_status) }}>
-                            {formatStatusLabel(comp.run_status)}
-                          </span>
+                        <td style={{ padding: "10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: comp.validation_status === "FAILED" ? "#b91c1c" : "#15803d" }}>
+                            {comp.validation_status === "FAILED"
+                              ? "Có chỉ tiêu lệch"
+                              : comp.validation_status === "PASSED_WITH_WARNING"
+                              ? "Cân đối hợp lệ"
+                              : comp.statement_run_id
+                              ? "Cân đối hợp lệ"
+                              : "Chưa kiểm tra"}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
+                            {comp.validation_status === "PASSED_WITH_WARNING"
+                              ? "Có mục cần lưu ý"
+                              : comp.validation_status === "FAILED"
+                              ? "Cần rà soát lại"
+                              : comp.statement_run_id
+                              ? "Khớp số liệu Sổ cái"
+                              : "—"}
+                          </div>
                         </td>
-                        <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
-                          <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 11.5, fontWeight: 700, display: "inline-block", ...statusBadgeStyle(comp.validation_status) }}>
-                            {formatStatusLabel(comp.validation_status)}
-                          </span>
-                        </td>
-                        <td style={{ padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>
-                          <div style={{ display: "grid", gridTemplateColumns: "142px 74px 72px 78px", gap: 6, alignItems: "center", justifyContent: "end" }}>
+                        <td style={{ padding: "8px 10px", textAlign: "right", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "122px 62px 62px 64px", gap: 5, alignItems: "center", justifyContent: "end" }}>
                             {comp.statement_run_id ? (
                               <button
                                 type="button"
                                 onClick={() => handleOpenStatementLines(comp.statement_run_id)}
-                                style={{ width: 142, height: 28, padding: "0 6px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#166534", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                style={{ width: 122, height: 28, padding: "0 5px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "#166534", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
                               >
                                 <Eye size={12} />
                                 <span>Xem chỉ tiêu ({comp.line_count})</span>
                               </button>
                             ) : (
-                              <div style={{ width: 142 }} />
+                              <div style={{ width: 122 }} />
                             )}
                             {bundleDetail.permissions?.can_generate && !bundleDetail.read_only ? (
                               <button
                                 type="button"
                                 onClick={() => handleRegenerateComponent(comp)}
-                                style={{ width: 74, height: 28, padding: "0 6px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                style={{ width: 62, height: 28, padding: "0 4px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 11.5, color: "#334155", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, whiteSpace: "nowrap", boxSizing: "border-box" }}
                               >
                                 <RefreshCw size={11} />
                                 <span>Lập lại</span>
                               </button>
                             ) : (
-                              <div style={{ width: 74 }} />
+                              <div style={{ width: 62 }} />
                             )}
                             {comp.statement_run_id &&
                               comp.run_status !== "APPROVED" &&
@@ -850,15 +987,15 @@ export default function MisaFinancialBundleWorkspace({
                                 <button
                                   type="button"
                                   onClick={() => handleApproveComponentRun(comp.statement_run_id)}
-                                  style={{ width: 72, height: 28, padding: "0 6px", background: "#eff6ff", border: "1px solid #93c5fd", borderRadius: 5, fontSize: 12, fontWeight: 600, color: "#1d4ed8", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                  style={{ width: 62, height: 28, padding: "0 4px", background: "#eff6ff", border: "1px solid #93c5fd", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "#1d4ed8", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, whiteSpace: "nowrap", boxSizing: "border-box" }}
                                 >
-                                  <ShieldCheck size={12} />
+                                  <ShieldCheck size={11} />
                                   <span>Duyệt</span>
                                 </button>
                               ) : comp.run_status === "APPROVED" ? (
                                 <div
                                   style={{
-                                    width: 72,
+                                    width: 62,
                                     height: 28,
                                     fontSize: 11.5,
                                     fontWeight: 600,
@@ -877,19 +1014,19 @@ export default function MisaFinancialBundleWorkspace({
                                   <span>Đã duyệt</span>
                                 </div>
                               ) : (
-                                <div style={{ width: 72 }} />
+                                <div style={{ width: 62 }} />
                               )}
                             {onOpenReportByName && LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code] ? (
                               <button
                                 type="button"
                                 onClick={() => onOpenReportByName(LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code])}
-                                style={{ width: 78, height: 28, padding: "0 6px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 12, color: "#0284c7", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                style={{ width: 64, height: 28, padding: "0 4px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "#0284c7", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, whiteSpace: "nowrap", boxSizing: "border-box" }}
                               >
-                                <Printer size={12} />
-                                <span>Mẫu in</span>
+                                <FileText size={11} />
+                                <span>Mở biểu</span>
                               </button>
                             ) : (
-                              <div style={{ width: 78 }} />
+                              <div style={{ width: 64 }} />
                             )}
                           </div>
                         </td>
@@ -907,17 +1044,16 @@ export default function MisaFinancialBundleWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <AlertTriangle size={16} color="#b45309" />
                 <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#92400e" }}>
-                  Kết quả kiểm tra chéo & Cảnh báo tính nhất quán trong Bộ BCTC ({bundleDetail.validations.length})
+                  Kết quả kiểm tra đối chiếu giữa các báo cáo trong Bộ BCTC ({bundleDetail.validations.length} nội dung)
                 </h4>
               </div>
               <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12.5, lineHeight: 1.7 }}>
                 {bundleDetail.validations.map((v: any) => (
                   <li key={v.id} style={{ color: v.severity === "BLOCKER" ? "#b91c1c" : "#92400e", marginBottom: 4 }}>
-                    <span style={{ padding: "1px 6px", borderRadius: 4, fontWeight: 700, fontSize: 11, background: v.severity === "BLOCKER" ? "#fee2e2" : "#fef3c7", color: v.severity === "BLOCKER" ? "#991b1b" : "#854d0e", marginRight: 6, display: "inline-block" }}>
-                      {v.rule_code} · {v.severity}
-                    </span>
-                    <strong>{COMPONENT_TYPE_LABELS[v.component_type]?.title || v.component_type}</strong>
-                    {v.indicator_code ? ` (Chỉ tiêu [${v.indicator_code}])` : ""}: {v.message}
+                    <strong style={{ marginRight: 6 }}>
+                      [{formatSeverityText(v.severity)}] {COMPONENT_TYPE_LABELS[v.component_type]?.title || "Báo cáo tài chính"}
+                    </strong>
+                    {v.indicator_code ? ` (Mã số ${v.indicator_code})` : ""}: {v.message}
                   </li>
                 ))}
               </ul>
@@ -930,10 +1066,10 @@ export default function MisaFinancialBundleWorkspace({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
-                    {activeStatementLines.legal_form_code} – {activeStatementLines.statement_title} (Run v{activeStatementLines.run_version})
+                    {activeStatementLines.legal_form_code} – {activeStatementLines.statement_title} (Phiên bản lần {activeStatementLines.run_version || 1})
                   </h4>
                   <div style={{ fontSize: 12, color: "#64748b" }}>
-                    Kỳ: {activeStatementLines.period_name} ({activeStatementLines.period_start_date} → {activeStatementLines.period_end_date}) | Nhấn vào dòng chỉ tiêu để truy vết nguồn Sổ cái.
+                    Kỳ báo cáo: {cleanBundleDisplayName(activeStatementLines.period_name)} ({activeStatementLines.period_start_date} – {activeStatementLines.period_end_date}) | Nhấn vào dòng chỉ tiêu để truy vết bút toán Sổ cái.
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1056,12 +1192,12 @@ export default function MisaFinancialBundleWorkspace({
             </div>
           )}
 
-          {/* Drill-down Source Modal / Panel (UC-RPT-14) */}
+          {/* Drill-down Source Modal / Panel */}
           {drilldownPayload && (
             <div style={{ marginTop: 14, border: "1px solid #93c5fd", borderRadius: 6, padding: 14, background: "#eff6ff" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#1e3a8a" }}>
-                  Truy vết nguồn số liệu ({drilldownPayload.target_uc_code}) — Chỉ tiêu [{drilldownPayload.indicator_code}] {drilldownPayload.indicator_name}
+                  Truy vết nguồn số liệu Sổ cái — Chỉ tiêu [{drilldownPayload.indicator_code}] {drilldownPayload.indicator_name}
                 </h4>
                 <button
                   type="button"
@@ -1073,8 +1209,8 @@ export default function MisaFinancialBundleWorkspace({
               </div>
               <div style={{ fontSize: 12, color: "#1e40af", marginBottom: 8 }}>
                 Số kỳ này: <strong>{formatMoney(drilldownPayload.current_period_amount)}</strong> | Công thức:{" "}
-                <strong>{drilldownPayload.formula_expression || "Tổng hợp theo ánh xạ Tài khoản Sổ cái (GL)"}</strong> | Ánh xạ TK:{" "}
-                {(drilldownPayload.account_mappings || []).map((m: any) => `${m.account_prefix} (${m.balance_side})`).join(", ") || "Chỉ tiêu tổng hợp"}
+                <strong>{drilldownPayload.formula_expression || "Tổng hợp theo tài khoản Sổ cái"}</strong> | Tài khoản lấy số liệu:{" "}
+                {(drilldownPayload.account_mappings || []).map((m: any) => `TK ${m.account_prefix}`).join(", ") || "Chỉ tiêu tổng hợp"}
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, background: "#ffffff", border: "1px solid #bfdbfe", minWidth: 600 }}>
@@ -1118,7 +1254,7 @@ export default function MisaFinancialBundleWorkspace({
             <div style={{ marginTop: 14, border: "1px solid #cbd5e1", borderRadius: 6, padding: 14, background: "#f8fafc" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>
-                  Lịch sử phiên bản Bộ BCTC ({historyPayload.bundle_code})
+                  Lịch sử các phiên bản đã lập của Bộ báo cáo tài chính
                 </h4>
                 <button
                   type="button"
@@ -1134,7 +1270,7 @@ export default function MisaFinancialBundleWorkspace({
                     <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
                       <th style={{ padding: "6px 8px" }}>Phiên bản</th>
                       <th style={{ padding: "6px 8px" }}>Trạng thái</th>
-                      <th style={{ padding: "6px 8px" }}>Kiểm tra chéo</th>
+                      <th style={{ padding: "6px 8px" }}>Kiểm tra đối chiếu</th>
                       <th style={{ padding: "6px 8px" }}>Thời điểm lập</th>
                       <th style={{ padding: "6px 8px", textAlign: "right" }}>Thao tác</th>
                     </tr>
@@ -1143,18 +1279,18 @@ export default function MisaFinancialBundleWorkspace({
                     {(historyPayload.versions || []).map((v: any) => (
                       <tr key={v.bundle_id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                         <td style={{ padding: "6px 8px", fontWeight: 700 }}>
-                          v{v.bundle_version} {v.is_current_version ? "(Hiện hành)" : "(Lịch sử)"}
+                          Phiên bản lần {v.bundle_version} {v.is_current_version ? "(Đang áp dụng)" : "(Bản lưu trước)"}
                         </td>
-                        <td style={{ padding: "6px 8px" }}>{v.bundle_status}</td>
-                        <td style={{ padding: "6px 8px" }}>{v.validation_status}</td>
-                        <td style={{ padding: "6px 8px" }}>{v.last_generated_at || "N/A"}</td>
+                        <td style={{ padding: "6px 8px" }}>{formatRunStatusText(v.bundle_status)}</td>
+                        <td style={{ padding: "6px 8px" }}>{formatValidationStatusText(v.validation_status)}</td>
+                        <td style={{ padding: "6px 8px" }}>{v.last_generated_at || "—"}</td>
                         <td style={{ padding: "6px 8px", textAlign: "right" }}>
                           <button
                             type="button"
                             onClick={() => loadBundleDetail(bundleDetail.bundle_id, v.bundle_version)}
                             style={{ padding: "2px 8px", fontSize: 11.5, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0284c7", cursor: "pointer" }}
                           >
-                            Xem phiên bản v{v.bundle_version}
+                            Xem phiên bản lần {v.bundle_version}
                           </button>
                         </td>
                       </tr>
@@ -1165,16 +1301,16 @@ export default function MisaFinancialBundleWorkspace({
             </div>
           )}
 
-          {/* Supporting Reports Panel (Section 1.4) */}
+          {/* Supporting Reports Panel */}
           {supportingPayload && (
             <div style={{ marginTop: 14, border: "1px solid #cbd5e1", borderRadius: 6, padding: 14, background: "#f8fafc" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>
-                    Báo cáo hỗ trợ kiểm tra trước lập BCTC (Không thuộc 4 thành phần pháp lý bắt buộc)
+                    Báo cáo hỗ trợ kiểm tra đối chiếu trước khi lập Báo cáo tài chính
                   </h4>
                   <div style={{ fontSize: 11.5, color: "#64748b" }}>
-                    is_legal_bundle_component = false | Số thành phần pháp lý bắt buộc giữ nguyên: {supportingPayload.required_component_count_unchanged}
+                    Dùng để kiểm tra số dư tài khoản và nghĩa vụ thuế trước khi phê duyệt chính thức Bộ báo cáo tài chính
                   </div>
                 </div>
                 <button
@@ -1243,12 +1379,11 @@ export default function MisaFinancialBundleWorkspace({
             </div>
           )}
 
-          {/* Export Handoff Confirmation (UC-RPT-15) */}
+          {/* Export Handoff Confirmation */}
           {exportPayload && (
             <div style={{ marginTop: 12, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, fontSize: 12.5, color: "#166534", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <strong>Đã bàn giao lệnh in/xuất sang {exportPayload.target_uc_code}:</strong> Bộ {exportPayload.bundle_code} (v{exportPayload.bundle_version}) — Định dạng: {exportPayload.format} — Chế độ: {exportPayload.export_mode}
-                {exportPayload.watermark ? ` — Watermark: "${exportPayload.watermark}"` : " (Bản chính thức)"}
+                <strong>Đã xuất Bộ báo cáo tài chính (Phiên bản lần {exportPayload.bundle_version || 1}):</strong> Định dạng {exportPayload.format === "XLSX" ? "Excel (.xlsx)" : "PDF (.pdf)"} — {exportPayload.export_mode === "OFFICIAL" ? "Bản chính thức đã phê duyệt" : "Bản xem trước / nháp"}
               </div>
               <button
                 type="button"
@@ -1263,6 +1398,356 @@ export default function MisaFinancialBundleWorkspace({
       ) : (
         <div style={{ textAlign: "center", padding: "24px 16px", color: "#64748b", fontSize: 13 }}>
           Chưa có Bộ BCTC nào được chọn. Hãy nhấn <strong>&ldquo;Lập / Tạo phiên bản Bộ BCTC mới&rdquo;</strong> để hệ thống tổng hợp tự động 4 báo cáo thành phần từ Sổ cái (GL).
+        </div>
+      )}
+
+      {/* Right-Side Slide-Over Parameter Drawer ("Chọn tham số" MISA AMIS style) */}
+      {isParamDrawerOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+          onClick={() => setIsParamDrawerOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 500,
+              background: "#ffffff",
+              height: "100%",
+              boxShadow: "-8px 0 30px rgba(0, 0, 0, 0.2)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 20px",
+                borderBottom: "1px solid #e2e8f0",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>
+                Chọn tham số
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 2 }}
+                  title="Trợ giúp"
+                  onClick={() => notify?.("Hướng dẫn chọn tham số lập và xem Bộ Báo cáo tài chính theo Thông tư 99/2025/TT-BTC.")}
+                >
+                  <HelpCircle size={18} />
+                </button>
+                <button
+                  type="button"
+                  style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 2 }}
+                  title="Đóng"
+                  onClick={() => setIsParamDrawerOpen(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Drawer Body */}
+            <div
+              style={{
+                padding: "20px 24px",
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                fontSize: 13,
+              }}
+            >
+              {/* 1. Chi nhánh (MISA tag selector) */}
+              <MisaBranchTagSelector
+                branches={catalog?.branches || []}
+                selectedScope={reportingScope}
+                selectedBranchId={branchId}
+                onChange={(scope, bid) => {
+                  setReportingScope(scope);
+                  setBranchId(bid);
+                }}
+              />
+
+              {/* 2. Kỳ báo cáo * */}
+              <div>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Kỳ báo cáo <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <select
+                  className="misa-select"
+                  value={fiscalPeriodId}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    setFiscalPeriodId(pid);
+                    const found = periods.find((p: any) => String(p.id) === String(pid));
+                    if (found) {
+                      setFiscalYear(found.fiscal_year || CURRENT_YEAR);
+                      if (found.start_date) {
+                        const [y, m, d] = String(found.start_date).split("-");
+                        if (y && m && d) setFromDate(`${d}/${m}/${y}`);
+                      }
+                      if (found.end_date) {
+                        const [y, m, d] = String(found.end_date).split("-");
+                        if (y && m && d) setToDate(`${d}/${m}/${y}`);
+                      }
+                    }
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  {periods.length === 0 && <option value="">Năm nay ({fiscalYear})</option>}
+                  {periods.map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {formatPeriodOptionLabel(p)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Từ ngày & Đến ngày */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>
+                    Từ ngày
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 34,
+                        padding: "0 28px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                    />
+                    <Calendar
+                      size={14}
+                      style={{
+                        position: "absolute",
+                        right: 8,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#64748b",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>
+                    Đến ngày
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 34,
+                        padding: "0 28px 0 10px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: 4,
+                        fontSize: 13,
+                        outline: "none",
+                      }}
+                    />
+                    <Calendar
+                      size={14}
+                      style={{
+                        position: "absolute",
+                        right: 8,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#64748b",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Loại bộ báo cáo tài chính */}
+              <div>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Loại bộ báo cáo tài chính
+                </label>
+                <select
+                  className="misa-select"
+                  value={bundleType}
+                  onChange={(e) => setBundleType(e.target.value)}
+                  style={{ width: "100%" }}
+                >
+                  {bundleTypes.map((bt: any) => (
+                    <option key={bt.code} value={bt.code}>
+                      {bt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 5. Phương pháp Lưu chuyển tiền tệ (B03) */}
+              <div>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Phương pháp Lưu chuyển tiền tệ (B03)
+                </label>
+                <select
+                  className="misa-select"
+                  value={cashFlowMethod}
+                  onChange={(e) => setCashFlowMethod(e.target.value)}
+                  style={{ width: "100%" }}
+                >
+                  <option value="DIRECT">Phương pháp trực tiếp (Mẫu B03-DN)</option>
+                  <option value="INDIRECT">Phương pháp gián tiếp (Mẫu B03-DN-GT)</option>
+                </select>
+              </div>
+
+              {/* 6. Phiên bản Bộ BCTC đã lưu */}
+              <div>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Phiên bản Bộ BCTC đã lưu ({bundles.length})
+                </label>
+                <select
+                  className="misa-select"
+                  value={selectedBundleId}
+                  onChange={(e) => setSelectedBundleId(e.target.value)}
+                  style={{ width: "100%" }}
+                >
+                  <option value="">-- Chọn phiên bản Bộ BCTC đã lưu ({bundles.length}) --</option>
+                  {bundles.map((b: any, idx: number) => {
+                    const bid = b.bundle_id || b.id || String(idx);
+                    return (
+                      <option key={bid} value={bid}>
+                        {formatSavedBundleOptionLabel(b, idx)}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* 7. Checkbox */}
+              <div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    cursor: "pointer",
+                    color: "#334155",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!showZeroLines}
+                    onChange={(e) => setShowZeroLines(!e.target.checked)}
+                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                  />
+                  <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
+                </label>
+              </div>
+
+              {/* 8. Lấy lũy kế phát sinh từ */}
+              <MisaAccumulateFromRadioGroup
+                value={accumulateFrom}
+                onChange={setAccumulateFrom}
+                name="bundleAccumulateFrom"
+              />
+            </div>
+
+            {/* Drawer Footer */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "14px 20px",
+                borderTop: "1px solid #e2e8f0",
+                background: "#f8fafc",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setBundleType("ANNUAL_GOING_CONCERN");
+                  setCashFlowMethod("DIRECT");
+                  setReportingScope("COMPANY");
+                  setBranchId("");
+                  setFromDate(`01/01/${CURRENT_YEAR}`);
+                  setToDate(`31/12/${CURRENT_YEAR}`);
+                  setAccumulateFrom("FISCAL_YEAR_START");
+                }}
+                style={{
+                  height: 34,
+                  padding: "0 14px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  color: "#475569",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Xóa điều kiện
+              </button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsParamDrawerOpen(false)}
+                  style={{
+                    height: 34,
+                    padding: "0 16px",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    color: "#334155",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsParamDrawerOpen(false);
+                  }}
+                  style={{
+                    height: 34,
+                    padding: "0 18px",
+                    background: "#00a862",
+                    border: "none",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    color: "#ffffff",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Xem báo cáo
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

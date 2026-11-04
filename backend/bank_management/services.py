@@ -52,7 +52,7 @@ def post(tx,r):
     if not incoming(tx) and not account.allow_overdraft and account.balance<tx.amount or not incoming(tx) and account.allow_overdraft and available<tx.amount:raise ValidationError("Số dư khả dụng không đủ.")
     account.balance=account.balance+tx.amount if incoming(tx) else account.balance-tx.amount;account.save(update_fields=("balance","updated_at"));tx.balance_applied=True;tx.status="POSTED";tx.posted_at=timezone.now();tx.bank_reference=r.data.get("bank_reference",tx.bank_reference);tx.save(update_fields=("balance_applied","status","posted_at","bank_reference","updated_at"));allocs=r.data.get("allocations",[])
     if tx.party_id and (allocs or incoming(tx) and tx.source_module=="AR"):
-        proxy=type("Proxy",(),{"user":r.user,"data":{"allocations":allocs},"META":r.META,"method":r.method,"path":r.path})()
+        proxy=type("Proxy",(),{"user":r.user,"data":{"allocations":allocs},"META":r.META,"headers":getattr(r,"headers",{}),"method":r.method,"path":r.path})()
         if incoming(tx) and tx.source_module=="AR":
             from accounts_receivable.models import Receipt
             from accounts_receivable.services import allocate
@@ -62,7 +62,9 @@ def post(tx,r):
         elif not incoming(tx) and tx.source_module=="AP":
             from accounts_payable.models import Payment
             from accounts_payable.services import allocate
-            obj=Payment.objects.create(company=tx.company,supplier=tx.party,currency=tx.currency,payment_date=tx.transaction_date,amount=tx.amount,external_type="BANK",external_reference=str(tx.id),created_by=actor(r));allocate(obj,proxy);tx.source_reference=str(obj.id)
+            obj=Payment.objects.create(company=tx.company,branch=tx.account.account.branch,supplier=tx.party,currency=tx.currency,exchange_rate=tx.exchange_rate,payment_date=tx.transaction_date,amount=tx.amount,payment_method="BANK_TRANSFER",payment_source="DIRECT",company_bank_account=tx.account.account,external_type="BANK",external_reference=str(tx.id),status="CONFIRMED",posted_at=timezone.now(),posted_by=actor(r),created_by=actor(r))
+            if allocs: allocate(obj,proxy)
+            tx.source_reference=str(obj.id)
         tx.save(update_fields=("source_reference",))
     audit(r,tx,"POST",after={"balance":str(account.balance)});return tx
 

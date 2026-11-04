@@ -29,7 +29,7 @@ from audit_log.services import record_audit
 from common_services.models import CoreCompanySetting, DocumentNumberingRule
 from general_ledger.models import Account, AccountBalance, AccountingPeriod, JournalEntry, JournalLine
 from general_ledger.services import _balance as get_or_create_balance, _recalculate_closing
-from general_ledger.services import post as post_journal
+from general_ledger.services import post as post_journal, source_module_request
 from inventory.models import InventoryPolicy, InventoryTransaction, InventoryTransactionLine, StockBalance
 from inventory.services import post as post_inventory, reverse as reverse_inventory
 from accounts_receivable.models import Receivable, ReceivableStatus
@@ -928,7 +928,7 @@ def post_goods_sale(request, sale):
                     warehouse=line.warehouse,
                 )
 
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
     sale.journal_entry = journal
 
     # 3. Create Accounts Receivable record if UNPAID

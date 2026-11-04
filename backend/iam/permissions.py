@@ -108,6 +108,11 @@ def sync_assignment_statuses(user_account, company, at=None):
     queryset = UserRoleAssignment.objects.filter(
         company_membership__user=user_account, company_membership__company=company,
     )
+    needs_sync = queryset.filter(
+        Q(status="SCHEDULED", valid_from__lte=at) | Q(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at)
+    ).exists()
+    if not needs_sync:
+        return
     queryset.filter(status="SCHEDULED", valid_from__lte=at).filter(
         Q(valid_to__isnull=True) | Q(valid_to__gte=at)
     ).update(status="ACTIVE")
@@ -142,14 +147,19 @@ def effective_assignments(user_account, company, at=None, skip_sync=False):
 
 
 def assignment_permission_codes(assignment):
+    cached = getattr(assignment, "_cached_perm_codes", None)
+    if cached is not None:
+        return cached
     if getattr(assignment.role, "is_system_admin", False) or getattr(assignment.role, "code", "") in ("COMPANY_ADMIN", "ROLE_ADMIN"):
         from .models import Permission
-        return set(
+        res = set(
             Permission.objects.filter(
                 status=ActiveStatus.ACTIVE,
                 resource__status=ActiveStatus.ACTIVE,
             ).values_list("code", flat=True)
         )
+        assignment._cached_perm_codes = res
+        return res
     direct = {
         item.permission.code
         for item in assignment.role.role_permissions.all()
@@ -164,7 +174,9 @@ def assignment_permission_codes(assignment):
         if item.permission.status == ActiveStatus.ACTIVE
         and item.permission.resource.status == ActiveStatus.ACTIVE
     }
-    return direct | bundled
+    res = direct | bundled
+    assignment._cached_perm_codes = res
+    return res
 
 
 def memberships_in_scope(user_account, company, permission_code):
@@ -290,7 +302,9 @@ class CompanyMemberMixin:
         try:
             company = Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
-            raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
+            company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+            if not company:
+                raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
         if not request.user.is_superuser and not CompanyMembership.objects.filter(
             user=getattr(request.user, "iam_account", None), company=company,
             membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
@@ -330,8 +344,11 @@ class HasIamPermission(BasePermission):
 
         try:
             company = Company.objects.get(pk=company_id)
-        except (Company.DoesNotExist, ValueError):
-            return False
+        except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+            company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+            if not company:
+                return False
+        request._validated_company_id = str(company.id)
         if is_company_admin_member(request.user.iam_account, company):
             return True
         explicit_scope = any(request.query_params.get(field) for field in (

@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
-import { exportErrorText, readFormSignature, saveStatementFile } from "./FinancialForm";
+import {
+  exportErrorText,
+  readFormSignature,
+  saveStatementFile,
+  formatRunStatusText,
+  formatValidationStatusText,
+  formatRuleResultText,
+  formatPeriodOptionLabel,
+  openStatementPreviewAndExport,
+  StatementPrintExportMenu,
+  MisaBranchTagSelector,
+  MisaAccumulateFromRadioGroup,
+} from "./FinancialForm";
 import {
   ChevronLeft,
   Search,
@@ -108,25 +120,25 @@ const STATUS_BADGE_MAP: Record<
   { label: string; bg: string; color: string; border: string }
 > = {
   APPROVED: {
-    label: "Đã duyệt (APPROVED)",
+    label: "Đã phê duyệt",
     bg: "#dcfce7",
     color: "#166534",
     border: "#86efac",
   },
   VALIDATED: {
-    label: "Đã kiểm tra (VALIDATED)",
+    label: "Đã kiểm tra",
     bg: "#e0f2fe",
     color: "#0369a1",
     border: "#7dd3fc",
   },
   COMPLETED: {
-    label: "Hoàn tất (COMPLETED)",
+    label: "Đã hoàn tất",
     bg: "#f0fdf4",
     color: "#15803d",
     border: "#bbf7d0",
   },
   AUTO_POPULATED: {
-    label: "Tự động từ GL/BCTC",
+    label: "Tự động tổng hợp từ Sổ cái",
     bg: "#f8fafc",
     color: "#334155",
     border: "#cbd5e1",
@@ -138,19 +150,19 @@ const STATUS_BADGE_MAP: Record<
     border: "#fde047",
   },
   MANUAL_REQUIRED: {
-    label: "Cần bổ sung thủ công",
+    label: "Cần bổ sung thuyết minh",
     bg: "#ffedd5",
     color: "#c2410c",
     border: "#fdba74",
   },
   NOT_APPLICABLE: {
-    label: "Không áp dụng (N/A)",
+    label: "Không phát sinh trong kỳ",
     bg: "#f1f5f9",
     color: "#64748b",
     border: "#cbd5e1",
   },
   STALE: {
-    label: "Dữ liệu nguồn thay đổi (STALE)",
+    label: "Cần cập nhật lại từ Sổ cái",
     bg: "#fee2e2",
     color: "#b91c1c",
     border: "#fca5a5",
@@ -290,10 +302,23 @@ export default function MisaFinancialNotesReport({
         const qParams = new URLSearchParams();
         if (cid) qParams.set("company_id", cid);
 
-        // Load parameters metadata
-        const paramRes: any = await apiClient
-          .get(`/api/v1/reports/financial-notes/parameters/?${qParams.toString()}`)
-          .catch(() => null);
+        const listQs = new URLSearchParams();
+        if (cid) listQs.set("company_id", cid);
+        listQs.set("template_code", tCode);
+        listQs.set("fiscal_year", String(fYear));
+        if (!opts?.forceGenerate) {
+          listQs.set("include_latest_detail", "true");
+        }
+
+        // Load parameters metadata and existing runs in parallel
+        const [paramRes, runsRes]: [any, any] = await Promise.all([
+          apiClient
+            .get(`/api/v1/reports/financial-notes/parameters/?${qParams.toString()}`)
+            .catch(() => null),
+          apiClient
+            .get(`/api/v1/reports/financial-notes/runs/?${listQs.toString()}`)
+            .catch(() => ({ runs: [] })),
+        ]);
         if (paramRes) {
           setAvailablePeriods(paramRes.periods || []);
           setAvailableBranches(paramRes.branches || []);
@@ -303,19 +328,21 @@ export default function MisaFinancialNotesReport({
           });
         }
 
-        // List existing runs
-        const listQs = new URLSearchParams();
-        if (cid) listQs.set("company_id", cid);
-        listQs.set("template_code", tCode);
-        listQs.set("fiscal_year", String(fYear));
-        const runsRes: any = await apiClient
-          .get(`/api/v1/reports/financial-notes/runs/?${listQs.toString()}`)
-          .catch(() => ({ runs: [] }));
         const existingRuns = Array.isArray(runsRes?.runs) ? runsRes.runs : [];
         setSavedRuns(existingRuns);
 
-        if (!opts?.forceGenerate && existingRuns.length > 0) {
-          await loadRunFullDetail(existingRuns[0].run_id, cid);
+        const firstRunId = existingRuns[0]?.run_id || existingRuns[0]?.id;
+        if (!opts?.forceGenerate && firstRunId) {
+          if (runsRes?.latest_run_header && Array.isArray(runsRes?.latest_run_sections?.sections)) {
+            const hdrRes = runsRes.latest_run_header;
+            setActiveRun(hdrRes);
+            setTemplateCode(hdrRes.legal_form_code || "B09-DN");
+            setFromDate(hdrRes.period_start_date || fromDate);
+            setToDate(hdrRes.period_end_date || toDate);
+            setSections(runsRes.latest_run_sections.sections);
+          } else {
+            await loadRunFullDetail(firstRunId, cid);
+          }
         } else {
           // Generate a new B09 run from GL/BCTC snapshot
           const createBody: Record<string, any> = {
@@ -336,8 +363,9 @@ export default function MisaFinancialNotesReport({
             "/api/v1/reports/financial-notes/runs/",
             createBody
           );
-          if (created?.run_id) {
-            await loadRunFullDetail(created.run_id, cid);
+          const createdRunId = created?.run_id || created?.id;
+          if (createdRunId) {
+            await loadRunFullDetail(createdRunId, cid);
             // Refresh saved runs list
             const updatedRuns: any = await apiClient
               .get(`/api/v1/reports/financial-notes/runs/?${listQs.toString()}`)
@@ -412,7 +440,6 @@ export default function MisaFinancialNotesReport({
       overrideStartDate: draftFromDate,
       overrideEndDate: draftToDate,
     });
-    notify?.(`Đã lập và tải mẫu ${draftTemplateCode} theo Thông tư 99/2025/TT-BTC.`);
   };
 
   const handleValidateRun = async () => {
@@ -490,11 +517,57 @@ export default function MisaFinancialNotesReport({
       );
       if (format !== "DOCX") saveStatementFile(res);
       notify?.(
-        `Đã kết xuất ${res?.legal_form_code || templateCode} định dạng ${format} (Mã: ${res?.export_id || "OK"}).`
+        `Đã kết xuất ${res?.legal_form_code || templateCode} định dạng ${format} thành công.`
       );
     } catch (err: any) {
-      notify?.(err?.response?.data?.detail || "Không thể kết xuất Thuyết minh BCTC.");
+      notify?.(err?.response?.data?.detail || `Không thể kết xuất Thuyết minh BCTC. ${exportErrorText(err)}`);
     }
+  };
+
+  const handlePreviewAndExport = (mode: "print" | "pdf" | "excel", orientation: "portrait" | "landscape" = "portrait") => {
+    const previewRows: Array<{ cells: Array<string | number>; isBold?: boolean }> = [];
+    for (const sec of visibleSections) {
+      const secHeading = sec.section_title?.startsWith(`${sec.section_code}.`)
+        ? sec.section_title
+        : `${sec.section_code}. ${sec.section_title}`;
+      previewRows.push({
+        cells: [secHeading, "", "", ""],
+        isBold: true,
+      });
+      for (const itm of sec.items || []) {
+        const statusInfo = STATUS_BADGE_MAP[itm.content?.content_status || "NOT_STARTED"];
+        previewRows.push({
+          cells: [
+            itm.note_code,
+            `${itm.note_title}${itm.content?.text_content ? ` — ${itm.content.text_content}` : ""}`,
+            itm.related_report_code || "Thuyết minh chung",
+            statusInfo?.label || "Đã tổng hợp",
+          ],
+          isBold: false,
+        });
+      }
+    }
+    openStatementPreviewAndExport({
+      mode,
+      orientation,
+      title:
+        templateCode === "B09a-DN"
+          ? "BẢN THUYẾT MINH BÁO CÁO TÀI CHÍNH CHỌN LỌC"
+          : "BẢN THUYẾT MINH BÁO CÁO TÀI CHÍNH",
+      formCode: templateCode,
+      circularNote: `(Ban hành kèm theo Thông tư số 99/2025/TT-BTC ngày 27/10/2025 của Bộ trưởng Bộ Tài chính)`,
+      periodText: `Năm tài chính ${activeRun?.fiscal_year || fiscalYear} (Từ ngày ${fromDate} đến ngày ${toDate})`,
+      unitLabel: activeRun?.currency_code || "VND",
+      headers: ["Mã mục", "Nội dung thuyết minh báo cáo tài chính", "Báo cáo liên kết", "Trạng thái"],
+      rows:
+        previewRows.length > 0
+          ? previewRows
+          : [{ cells: ["—", "Không có mục thuyết minh nào trong bộ lọc hiện tại", "—", "—"] }],
+      colAligns: ["center", "left", "center", "left"],
+      fileNameBase: `${templateCode}_${toDate.replace(/\//g, "-")}`,
+      onDownloadPdf: () => handleExportRun("PDF"),
+      onDownloadExcel: () => handleExportRun("XLSX"),
+    });
   };
 
   const handleOpenSources = async (noteCode: string) => {
@@ -630,43 +703,26 @@ export default function MisaFinancialNotesReport({
                   fontWeight: 700,
                   color: "#0f172a",
                   letterSpacing: "-0.2px",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {activeRun?.template_name ||
-                  `${templateCode}: Thuyết minh báo cáo tài chính (TT99/2025/TT-BTC)`}
+                  `${templateCode}: Thuyết minh báo cáo tài chính`}
               </h2>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+              Phiên bản v{activeRun?.run_version || 1} •{" "}
               <span
                 style={{
-                  padding: "2px 8px",
-                  borderRadius: 12,
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  background:
-                    activeRun?.run_status === "APPROVED"
-                      ? "#dcfce7"
-                      : activeRun?.is_stale
-                      ? "#fee2e2"
-                      : "#e0f2fe",
-                  color:
-                    activeRun?.run_status === "APPROVED"
-                      ? "#166534"
-                      : activeRun?.is_stale
-                      ? "#b91c1c"
-                      : "#0369a1",
+                  fontWeight: 500,
+                  color: activeRun?.is_stale ? "#b91c1c" : "#334155",
                 }}
               >
                 {activeRun?.is_stale
-                  ? "STALE (Dữ liệu nguồn thay đổi)"
-                  : activeRun?.run_status || "GENERATED"}{" "}
-                • V{activeRun?.run_version || 1}
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-              Mẫu pháp lý: <strong>{templateCode}</strong> | Kỳ:{" "}
-              <strong>
-                {fromDate} → {toDate}
-              </strong>{" "}
-              | Tiến độ hoàn thiện:{" "}
+                  ? "Cần cập nhật lại do Sổ cái có thay đổi"
+                  : formatRunStatusText(activeRun?.run_status)}
+              </span>{" "}
+              • Kỳ: <strong>{fromDate} → {toDate}</strong> • Tiến độ hoàn thiện:{" "}
               <strong style={{ color: "#00a862" }}>
                 {completenessSummary.completed_items}/{completenessSummary.applicable_items} mục (
                 {completenessSummary.completeness_pct}%)
@@ -675,43 +731,7 @@ export default function MisaFinancialNotesReport({
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Quick Template Switcher */}
-          <select
-            value={templateCode}
-            onChange={(e) => {
-              const nextTmpl = e.target.value;
-              const nextPt = nextTmpl === "B09a-DN" ? "QUARTER" : "ANNUAL";
-              const nextGc =
-                nextTmpl === "B09-DNKLT" ? "NON_GOING_CONCERN" : "GOING_CONCERN";
-              setTemplateCode(nextTmpl);
-              setPeriodType(nextPt);
-              setGoingConcernStatus(nextGc);
-              setActiveSectionCode("all");
-              void loadOrGenerateNotes({
-                forceGenerate: false,
-                overrideTemplate: nextTmpl,
-                overridePeriodType: nextPt,
-                overrideGoingConcern: nextGc,
-              });
-            }}
-            style={{
-              height: 32,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              borderRadius: 4,
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: "#0f172a",
-              background: "#f8fafc",
-              cursor: "pointer",
-            }}
-          >
-            <option value="B09-DN">B09-DN (Năm – Hoạt động liên tục)</option>
-            <option value="B09-DNKLT">B09-DNKLT (Năm – Không đáp ứng HĐLT)</option>
-            <option value="B09a-DN">B09a-DN (Giữa niên độ – Chọn lọc)</option>
-          </select>
-
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
           <button
             type="button"
             style={{
@@ -819,18 +839,53 @@ export default function MisaFinancialNotesReport({
         </div>
       </div>
 
-      {/* 2. Sub-Toolbar: Kiểm tra đối chiếu, Ẩn N/A, Tìm kiếm, Công cụ Xuất */}
+      {/* 2. Sub-Toolbar: Chọn mẫu biểu, Kiểm tra đối chiếu, Ẩn N/A, Tìm kiếm, Công cụ Xuất */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
           padding: "8px 20px",
           background: "#ffffff",
           borderBottom: "1px solid #e2e8f0",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>
+          <select
+            className="misa-select"
+            value={templateCode}
+            onChange={(e) => {
+              const nextTmpl = e.target.value;
+              const nextPt = nextTmpl === "B09a-DN" ? "QUARTER" : "ANNUAL";
+              const nextGc =
+                nextTmpl === "B09-DNKLT" ? "NON_GOING_CONCERN" : "GOING_CONCERN";
+              setTemplateCode(nextTmpl);
+              setPeriodType(nextPt);
+              setGoingConcernStatus(nextGc);
+              setActiveSectionCode("all");
+              void loadOrGenerateNotes({
+                forceGenerate: false,
+                overrideTemplate: nextTmpl,
+                overridePeriodType: nextPt,
+                overrideGoingConcern: nextGc,
+              });
+            }}
+            style={{
+              height: 30,
+              width: 270,
+              fontSize: 12.5,
+              fontWeight: 600,
+            }}
+          >
+            <option value="B09-DN">Mẫu B09-DN – Năm (Hoạt động liên tục)</option>
+            <option value="B09-DNKLT">Mẫu B09-DNKLT – Năm (Không đáp ứng hoạt động liên tục)</option>
+            <option value="B09a-DN">Mẫu B09a-DN – Giữa niên độ (Chọn lọc)</option>
+          </select>
+
           <button
             type="button"
             style={{
@@ -841,14 +896,16 @@ export default function MisaFinancialNotesReport({
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 12.5,
+              fontSize: 12,
               color: "#166534",
               cursor: "pointer",
               fontWeight: 600,
+              whiteSpace: "nowrap",
+              height: 30,
             }}
             onClick={handleValidateRun}
           >
-            <FileCheck size={15} color="#00a862" />
+            <FileCheck size={14} color="#00a862" />
             <span>Kiểm tra đối chiếu B01 / B02 / B03</span>
           </button>
 
@@ -857,9 +914,10 @@ export default function MisaFinancialNotesReport({
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 12.5,
+              fontSize: 12,
               color: "#475569",
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             <input
@@ -868,35 +926,12 @@ export default function MisaFinancialNotesReport({
               onChange={(e) => setHideNotApplicable(e.target.checked)}
               style={{ accentColor: "#00a862" }}
             />
-            <span>Ẩn mục không áp dụng (NOT_APPLICABLE)</span>
+            <span>Ẩn mục không phát sinh</span>
           </label>
-
-          <button
-            type="button"
-            style={{
-              background: "linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%)",
-              border: "1px solid #c7d2fe",
-              borderRadius: 14,
-              padding: "3px 12px",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              color: "#6366f1",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-            onClick={() => setShowAiAnalysis(!showAiAnalysis)}
-          >
-            <Sparkles size={14} color="#7c3aed" />
-            <span>
-              {showAiAnalysis ? "Đóng tóm tắt trạng thái" : "Tóm tắt tính đầy đủ & đối chiếu"}
-            </span>
-          </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ position: "relative", width: 240 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <div style={{ position: "relative", width: 200 }}>
             <Search
               size={14}
               style={{
@@ -909,18 +944,19 @@ export default function MisaFinancialNotesReport({
             />
             <input
               type="text"
-              placeholder="Tìm mã (V.1, VII.11), tiêu đề, nội dung..."
+              placeholder="Tìm mã (V.1, VII.11), tiêu đề..."
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               style={{
                 width: "100%",
                 height: 30,
-                padding: "0 10px 0 32px",
+                padding: "0 10px 0 30px",
                 border: "1px solid #cbd5e1",
                 borderRadius: 4,
-                fontSize: 12.5,
+                fontSize: 12,
                 outline: "none",
                 background: "#ffffff",
+                boxSizing: "border-box",
               }}
             />
           </div>
@@ -939,55 +975,19 @@ export default function MisaFinancialNotesReport({
               color: "#64748b",
               cursor: "pointer",
             }}
-            title="Tải lại từ Backend"
+            title="Tải lại số liệu từ Sổ cái"
             onClick={() => void loadOrGenerateNotes({ forceGenerate: false })}
           >
             <RotateCw size={14} />
           </button>
 
-          <button
-            type="button"
-            style={{
-              height: 30,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: "#334155",
-              fontSize: 12.5,
-              cursor: "pointer",
-            }}
-            onClick={() => void handleExportRun("PDF")}
-            title="In / Xuất PDF"
-          >
-            <Printer size={14} />
-            <span>PDF</span>
-          </button>
-
-          <button
-            type="button"
-            style={{
-              height: 30,
-              padding: "0 10px",
-              border: "1px solid #cbd5e1",
-              background: "#ffffff",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: "#334155",
-              fontSize: 12.5,
-              cursor: "pointer",
-            }}
-            onClick={() => void handleExportRun("XLSX")}
-            title="Xuất Excel (.xlsx)"
-          >
-            <Download size={14} />
-            <span>XLSX</span>
-          </button>
+          <StatementPrintExportMenu
+            compact
+            onPrintPortrait={() => handlePreviewAndExport("print", "portrait")}
+            onPrintLandscape={() => handlePreviewAndExport("print", "landscape")}
+            onExportPdf={() => handlePreviewAndExport("pdf", "portrait")}
+            onExportExcel={() => handlePreviewAndExport("excel", "portrait")}
+          />
         </div>
       </div>
 
@@ -1129,12 +1129,12 @@ export default function MisaFinancialNotesReport({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
+          flexWrap: "wrap",
+          gap: 6,
           padding: "8px 20px",
           background: "#f8fafc",
           borderBottom: "1px solid #e2e8f0",
-          overflowX: "auto",
-          fontSize: 12.5,
+          fontSize: 12,
         }}
       >
         <span
@@ -1225,12 +1225,12 @@ export default function MisaFinancialNotesReport({
               <div style={{ fontWeight: 700, textTransform: "uppercase" }}>
                 Đơn vị: {activeRun?.company_name || companyInfo.name || "Doanh nghiệp"}
               </div>
-              <div>Mã số thuế: {companyInfo.tax_code || "—"}</div>
+              <div>Mã số thuế: {activeRun?.company_tax_code || companyInfo.tax_code || "—"}</div>
               <div>
                 Phạm vi:{" "}
                 {activeRun?.reporting_scope === "BRANCH"
                   ? `Chi nhánh (${activeRun?.branch_name || ""})`
-                  : "Toàn doanh nghiệp (ENTERPRISE)"}
+                  : "Toàn doanh nghiệp"}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -1291,7 +1291,9 @@ export default function MisaFinancialNotesReport({
                   }}
                 >
                   <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#00a862" }}>
-                    {sec.section_code}. {sec.section_title}
+                    {sec.section_title?.startsWith(`${sec.section_code}.`)
+                      ? sec.section_title
+                      : `${sec.section_code}. ${sec.section_title}`}
                   </h3>
                   <span style={{ fontSize: 12, color: "#64748b" }}>
                     Hoàn thành: {sec.completed_count}/{sec.item_count} mục
@@ -1303,16 +1305,47 @@ export default function MisaFinancialNotesReport({
                     const cStatus = item.content?.content_status || "NOT_STARTED";
                     const badge = STATUS_BADGE_MAP[cStatus] || STATUS_BADGE_MAP.NOT_STARTED;
                     const struct = item.content?.structured_content || {};
+                    const STRUCT_KEY_LABELS: Record<string, string> = {
+                      ownership_form: "Hình thức sở hữu vốn",
+                      business_sector: "Lĩnh vực kinh doanh",
+                      operating_cycle_months: "Chu kỳ sản xuất, kinh doanh (tháng)",
+                      employee_count_end_period: "Số lượng lao động cuối kỳ",
+                      average_employee_count: "Số lượng lao động bình quân",
+                      is_comparable: "Khả năng so sánh thông tin",
+                      fiscal_year_start_date: "Ngày bắt đầu năm tài chính",
+                      fiscal_year_end_date: "Ngày kết thúc năm tài chính",
+                      period_start_date: "Từ ngày",
+                      period_end_date: "Đến ngày",
+                      accounting_currency_code: "Đơn vị tiền tệ kế toán",
+                      previous_currency_code: "Đơn vị tiền tệ kỳ trước",
+                      has_currency_changed: "Thay đổi đơn vị tiền tệ",
+                      accounting_regime_code: "Chế độ kế toán áp dụng",
+                      legal_basis: "Căn cứ pháp lý",
+                      effective_from: "Ngày bắt đầu áp dụng",
+                      accounting_standard_reference: "Chuẩn mực tham chiếu",
+                      tax_rate_basis: "Căn cứ thuế suất TNDN",
+                      compliance_status: "Trạng thái tuyên bố tuân thủ",
+                      going_concern_assessment: "Đánh giá hoạt động liên tục",
+                    };
+                    const STRUCT_VALUE_LABELS: Record<string, string> = {
+                      DOANH_NGHIEP: "Doanh nghiệp (Công ty TNHH / Cổ phần)",
+                      TT99: "Chế độ kế toán theo Thông tư 99/2025/TT-BTC",
+                      UNCONFIRMED_PROPOSAL: "Dự thảo chờ xác nhận",
+                      PENDING_CONFIRMATION: "Chờ xác nhận",
+                      PENDING_MANAGEMENT_CONFIRMATION: "Chờ Ban Giám đốc xác nhận",
+                      PROPOSED_UNCONFIRMED: "Dự thảo chuẩn áp dụng",
+                      CONFIRMED: "Đã xác nhận",
+                      COMPLIANT: "Tuân thủ đầy đủ chuẩn mực",
+                      MANUAL_REQUIRED: "Cần nhập bổ sung",
+                      true: "Có",
+                      false: "Không",
+                    };
                     const structKeys = Object.keys(struct).filter(
                       (k) =>
-                        ![
-                          "policy_code",
-                          "policy_name",
-                          "is_manual_override",
-                          "confirmation_status",
-                        ].includes(k) &&
+                        k in STRUCT_KEY_LABELS &&
                         struct[k] !== null &&
-                        struct[k] !== ""
+                        struct[k] !== "" &&
+                        typeof struct[k] !== "object"
                     );
 
                     return (
@@ -1503,16 +1536,16 @@ export default function MisaFinancialNotesReport({
                                   marginTop: 6,
                                 }}
                               >
-                                {structKeys.slice(0, 8).map((k) => (
-                                  <div key={k}>
-                                    <span style={{ color: "#64748b" }}>{k}: </span>
-                                    <strong style={{ color: "#1e293b" }}>
-                                      {typeof struct[k] === "object"
-                                        ? JSON.stringify(struct[k])
-                                        : String(struct[k])}
-                                    </strong>
-                                  </div>
-                                ))}
+                                {structKeys.slice(0, 8).map((k) => {
+                                  const rawV = String(struct[k]);
+                                  const displayV = STRUCT_VALUE_LABELS[rawV] || rawV;
+                                  return (
+                                    <div key={k}>
+                                      <span style={{ color: "#64748b" }}>{STRUCT_KEY_LABELS[k] || k}: </span>
+                                      <strong style={{ color: "#1e293b" }}>{displayV}</strong>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
 
@@ -1678,7 +1711,7 @@ export default function MisaFinancialNotesReport({
           <div
             style={{
               width: "100%",
-              maxWidth: 440,
+              maxWidth: 500,
               background: "#ffffff",
               height: "100%",
               boxShadow: "-8px 0 30px rgba(0,0,0,0.2)",
@@ -1696,16 +1729,27 @@ export default function MisaFinancialNotesReport({
                 borderBottom: "1px solid #e2e8f0",
               }}
             >
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                Chọn tham số Thuyết minh BCTC
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>
+                Chọn tham số
               </h3>
-              <button
-                type="button"
-                style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => setIsParamDrawerOpen(false)}
-              >
-                <X size={18} />
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 2 }}
+                  title="Trợ giúp"
+                  onClick={() => notify?.("Xem hướng dẫn chọn tham số Bản thuyết minh BCTC (B09-DN).")}
+                >
+                  <HelpCircle size={18} />
+                </button>
+                <button
+                  type="button"
+                  style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 2 }}
+                  title="Đóng"
+                  onClick={() => setIsParamDrawerOpen(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             <div
@@ -1715,13 +1759,89 @@ export default function MisaFinancialNotesReport({
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
-                gap: 14,
+                gap: 16,
                 fontSize: 13,
               }}
             >
+              {/* Chi nhánh (MISA tag selector) */}
+              <MisaBranchTagSelector
+                branches={availableBranches}
+                selectedScope={draftScope}
+                selectedBranchId={draftBranchId}
+                onChange={(scope, bid) => {
+                  setDraftScope(scope);
+                  setDraftBranchId(bid);
+                }}
+              />
+
+              {/* Kỳ báo cáo * */}
               <div>
-                <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-                  Mẫu Thuyết minh BCTC (TT99/2025/TT-BTC)
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Kỳ báo cáo <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <select
+                  className="misa-select"
+                  value={draftPeriodId}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    setDraftPeriodId(pid);
+                    const found = availablePeriods.find((p) => String(p.id) === pid);
+                    if (found) {
+                      setDraftFromDate(found.start_date);
+                      setDraftToDate(found.end_date);
+                    }
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  <option value="">Năm nay ({draftFiscalYear})</option>
+                  {availablePeriods.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {formatPeriodOptionLabel(p)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Từ ngày & Đến ngày */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>Từ ngày</label>
+                  <input
+                    type="date"
+                    value={draftFromDate}
+                    onChange={(e) => setDraftFromDate(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 34,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 13,
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, color: "#475569" }}>Đến ngày</label>
+                  <input
+                    type="date"
+                    value={draftToDate}
+                    onChange={(e) => setDraftToDate(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 34,
+                      padding: "0 10px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 4,
+                      fontSize: 13,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Mẫu Thuyết minh BCTC */}
+              <div>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: 600, color: "#334155" }}>
+                  Mẫu biểu báo cáo
                 </label>
                 <select
                   value={draftTemplateCode}
@@ -1739,17 +1859,12 @@ export default function MisaFinancialNotesReport({
                       setDraftGoingConcern("GOING_CONCERN");
                     }
                   }}
-                  style={{
-                    width: "100%",
-                    height: 34,
-                    padding: "0 10px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                  }}
+                  className="misa-select"
+                  style={{ width: "100%" }}
                 >
                   <option value="B09-DN">B09-DN – Thuyết minh BCTC năm (Hoạt động liên tục)</option>
                   <option value="B09-DNKLT">
-                    B09-DNKLT – Thuyết minh BCTC năm (Không đáp ứng HĐLT)
+                    B09-DNKLT – Thuyết minh BCTC năm (Không đáp ứng hoạt động liên tục)
                   </option>
                   <option value="B09a-DN">
                     B09a-DN – Thuyết minh BCTC chọn lọc (Giữa niên độ)
@@ -1757,142 +1872,15 @@ export default function MisaFinancialNotesReport({
                 </select>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-                    Năm tài chính
-                  </label>
-                  <input
-                    type="number"
-                    value={draftFiscalYear}
-                    onChange={(e) => setDraftFiscalYear(Number(e.target.value) || 2026)}
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-                    Phạm vi báo cáo
-                  </label>
-                  <select
-                    value={draftScope}
-                    onChange={(e) => setDraftScope(e.target.value)}
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                    }}
-                  >
-                    <option value="ENTERPRISE">Toàn doanh nghiệp</option>
-                    <option value="BRANCH">Theo Chi nhánh</option>
-                  </select>
-                </div>
-              </div>
-
-              {draftScope === "BRANCH" && (
-                <div>
-                  <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-                    Chi nhánh
-                  </label>
-                  <select
-                    value={draftBranchId}
-                    onChange={(e) => setDraftBranchId(e.target.value)}
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                    }}
-                  >
-                    <option value="">-- Chọn chi nhánh --</option>
-                    {availableBranches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.code} - {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label style={{ display: "block", marginBottom: 6, fontWeight: 600 }}>
-                  Kỳ kế toán
-                </label>
-                <select
-                  value={draftPeriodId}
-                  onChange={(e) => {
-                    const pid = e.target.value;
-                    setDraftPeriodId(pid);
-                    const found = availablePeriods.find((p) => String(p.id) === pid);
-                    if (found) {
-                      setDraftFromDate(found.start_date);
-                      setDraftToDate(found.end_date);
-                    }
-                  }}
-                  style={{
-                    width: "100%",
-                    height: 34,
-                    padding: "0 10px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 4,
-                  }}
-                >
-                  <option value="">-- Tự động theo Năm tài chính --</option>
-                  {availablePeriods.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.code} ({p.start_date} → {p.end_date})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ display: "block", marginBottom: 6 }}>Từ ngày</label>
-                  <input
-                    type="date"
-                    value={draftFromDate}
-                    onChange={(e) => setDraftFromDate(e.target.value)}
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", marginBottom: 6 }}>Đến ngày</label>
-                  <input
-                    type="date"
-                    value={draftToDate}
-                    onChange={(e) => setDraftToDate(e.target.value)}
-                    style={{
-                      width: "100%",
-                      height: 34,
-                      padding: "0 10px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-              </div>
+              {/* Lấy lũy kế phát sinh từ */}
+              <MisaAccumulateFromRadioGroup name="b09AccumulateFrom" />
             </div>
 
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
+                alignItems: "center",
+                justifyContent: "space-between",
                 padding: "14px 20px",
                 borderTop: "1px solid #e2e8f0",
                 background: "#f8fafc",
@@ -1900,34 +1888,64 @@ export default function MisaFinancialNotesReport({
             >
               <button
                 type="button"
-                onClick={() => setIsParamDrawerOpen(false)}
+                onClick={() => {
+                  setDraftTemplateCode("B09-DN");
+                  setDraftScope("ENTERPRISE");
+                  setDraftBranchId("");
+                  setDraftPeriodId("");
+                  setDraftFromDate(`${CURRENT_YEAR}-01-01`);
+                  setDraftToDate(`${CURRENT_YEAR}-12-31`);
+                }}
                 style={{
                   height: 34,
-                  padding: "0 16px",
+                  padding: "0 14px",
                   border: "1px solid #cbd5e1",
                   background: "#ffffff",
                   borderRadius: 4,
-                  cursor: "pointer",
-                }}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleApplyParams()}
-                style={{
-                  height: 34,
-                  padding: "0 18px",
-                  border: "none",
-                  background: "#00a862",
-                  color: "#ffffff",
+                  fontSize: 13,
+                  color: "#475569",
                   fontWeight: 600,
-                  borderRadius: 4,
                   cursor: "pointer",
                 }}
               >
-                Xem & Lập báo cáo
+                Xóa điều kiện
               </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsParamDrawerOpen(false)}
+                  style={{
+                    height: 34,
+                    padding: "0 16px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    color: "#334155",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleApplyParams()}
+                  style={{
+                    height: 34,
+                    padding: "0 18px",
+                    border: "none",
+                    background: "#00a862",
+                    color: "#ffffff",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  Xem báo cáo
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2035,7 +2053,7 @@ export default function MisaFinancialNotesReport({
                   {/* 2. GL Journal Drilldown */}
                   <div>
                     <h4 style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 700 }}>
-                      2. Bút toán Sổ cái (POSTED) cấu thành số liệu (
+                      2. Bút toán Sổ cái đã ghi sổ cấu thành số liệu (
                       {sourceDrawerData.gl_journal_lines?.length || 0} dòng)
                     </h4>
                     {(sourceDrawerData.gl_journal_lines || []).length === 0 ? (
@@ -2124,11 +2142,11 @@ export default function MisaFinancialNotesReport({
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-                  Kết quả kiểm tra & đối chiếu Thuyết minh BCTC ({validationPayload.overall_status})
+                  Kết quả kiểm tra & đối chiếu Thuyết minh BCTC ({formatValidationStatusText(validationPayload.overall_status)})
                 </h3>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                   Đủ điều kiện phê duyệt:{" "}
-                  <strong>{validationPayload.is_approvable ? "CÓ" : "CHƯA ĐỦ ĐIỀU KIỆN"}</strong>
+                  <strong>{validationPayload.is_approvable ? "Đủ điều kiện phê duyệt" : "Chưa đủ điều kiện phê duyệt"}</strong>
                 </div>
               </div>
               <button
@@ -2171,9 +2189,9 @@ export default function MisaFinancialNotesReport({
                       }}
                     >
                       <span>
-                        [{r.rule_code}] {r.check_name} {r.note_code ? `(Mục ${r.note_code})` : ""}
+                        {r.check_name} {r.note_code ? `(Mục ${r.note_code})` : ""}
                       </span>
-                      <span>{r.status}</span>
+                      <span>{formatRuleResultText(r.status)}</span>
                     </div>
                     <div style={{ color: "#334155" }}>{r.message}</div>
                     {r.difference_amount !== null && r.difference_amount !== undefined && (
@@ -2400,10 +2418,10 @@ export default function MisaFinancialNotesReport({
               <tbody>
                 {historyList.map((ver: any) => (
                   <tr key={ver.run_id} style={{ borderTop: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "8px 10px", fontWeight: 700 }}>V{ver.run_version}</td>
-                    <td style={{ padding: "8px 10px" }}>{ver.run_no}</td>
-                    <td style={{ padding: "8px 10px" }}>{ver.run_status}</td>
-                    <td style={{ padding: "8px 10px" }}>{ver.created_by || "System"}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 700 }}>Phiên bản v{ver.run_version}</td>
+                    <td style={{ padding: "8px 10px" }}>Lần lập #{ver.run_version}</td>
+                    <td style={{ padding: "8px 10px" }}>{formatRunStatusText(ver.run_status)}</td>
+                    <td style={{ padding: "8px 10px" }}>{ver.created_by || "Kế toán viên"}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <button
                         type="button"

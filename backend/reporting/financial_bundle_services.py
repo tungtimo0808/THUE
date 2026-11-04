@@ -5,7 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from django.db import transaction
-from django.db.models import Max, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -436,7 +436,13 @@ def seed_financial_bundles_uc_rpt_02(apps=None, schema_editor=None):
             _populate_lines(tv, B09_NOTES_LINES, is_notes=True)
 
 
+_FINANCIAL_CATALOG_SEEDED = False
+
+
 def ensure_financial_catalog_seeded():
+    global _FINANCIAL_CATALOG_SEEDED
+    if _FINANCIAL_CATALOG_SEEDED and FinancialStatementTemplate.objects.filter(legal_form_code="B01-DN").exists():
+        return
     if FinancialStatementTemplate.objects.count() < 15:
         seed_financial_bundles_uc_rpt_02()
     b01_tpl = FinancialStatementTemplate.objects.filter(legal_form_code="B01-DN").first()
@@ -451,6 +457,7 @@ def ensure_financial_catalog_seeded():
     ensure_b03_templates_seeded()
     from .financial_notes_services import ensure_b09_templates_seeded
     ensure_b09_templates_seeded()
+    _FINANCIAL_CATALOG_SEEDED = True
 
 
 # ============================================================================
@@ -595,6 +602,22 @@ def resolve_company_and_check_perm(request, required_action: str = "VIEW", expli
     return company, allowed_branches
 
 
+def get_financial_permissions_map(user, company: Company) -> dict[str, bool]:
+    actions = ("VIEW", "DETAIL_VIEW", "GENERATE", "APPROVE", "EXPORT")
+    if not user or not user.is_authenticated:
+        return {a: False for a in actions}
+    if user.is_superuser:
+        return {a: True for a in actions}
+    iam_account = getattr(user, "iam_account", None)
+    if not iam_account:
+        return {a: False for a in actions}
+    codes = get_effective_user_permission_codes(user, company)
+    return {
+        a: bool(codes & PERMISSION_ALIASES.get(a, {a}))
+        for a in actions
+    }
+
+
 def _compute_gl_snapshot_meta(company: Company, to_date: date, branch: Branch | None = None) -> tuple[str, datetime | None]:
     qs = JournalEntry.objects.filter(
         company=company,
@@ -606,21 +629,29 @@ def _compute_gl_snapshot_meta(company: Company, to_date: date, branch: Branch | 
     agg = qs.aggregate(
         max_posted=Max("posted_at"),
         max_created=Max("created_at"),
+        cnt=Count("id"),
     )
     last_ts = agg["max_posted"] or agg["max_created"]
-    count = qs.count()
+    count = agg["cnt"] or 0
     raw = f"{company.id}:{branch.id if branch else 'ALL'}:{to_date.isoformat()}:{count}:{last_ts.isoformat() if last_ts else 'NONE'}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32], last_ts
 
 
-def is_run_stale(run: FinancialStatementRun) -> bool:
-    current_hash, current_ts = _compute_gl_snapshot_meta(
-        run.company,
-        run.period_end_date,
-        run.branch if run.reporting_scope == "BRANCH" else None,
-    )
+def is_run_stale(run: FinancialStatementRun, _gl_snap_cache: dict | None = None) -> bool:
     if not run.source_snapshot_hash:
         return False
+    branch_obj = run.branch if run.reporting_scope == "BRANCH" else None
+    cache_key = (run.company_id, branch_obj.id if branch_obj else None, run.period_end_date)
+    if _gl_snap_cache is not None and cache_key in _gl_snap_cache:
+        current_hash, current_ts = _gl_snap_cache[cache_key]
+    else:
+        current_hash, current_ts = _compute_gl_snapshot_meta(
+            run.company,
+            run.period_end_date,
+            branch_obj,
+        )
+        if _gl_snap_cache is not None:
+            _gl_snap_cache[cache_key] = (current_hash, current_ts)
     if run.source_snapshot_hash != current_hash:
         return True
     if current_ts and run.source_last_posted_at and current_ts > run.source_last_posted_at:
@@ -655,7 +686,8 @@ def get_financial_bundle_types_payload(request) -> dict[str, Any]:
                 "column_schema": v.column_schema,
                 "is_locked": v.is_locked,
             }
-            for v in t.versions.filter(is_active=True)
+            for v in t.versions.all()
+            if v.is_active
         ]
         templates_payload.append({
             "id": str(t.id),
@@ -676,12 +708,13 @@ def get_financial_bundle_types_payload(request) -> dict[str, Any]:
     if allowed_branches is not None:
         branches_qs = branches_qs.filter(id__in=allowed_branches)
 
+    perms_map = get_financial_permissions_map(request.user, company)
     user_permissions = {
-        "can_view": has_financial_permission(request.user, company, "VIEW"),
-        "can_detail_view": has_financial_permission(request.user, company, "DETAIL_VIEW"),
-        "can_generate": has_financial_permission(request.user, company, "GENERATE"),
-        "can_approve": has_financial_permission(request.user, company, "APPROVE"),
-        "can_export": has_financial_permission(request.user, company, "EXPORT"),
+        "can_view": perms_map["VIEW"],
+        "can_detail_view": perms_map["DETAIL_VIEW"],
+        "can_generate": perms_map["GENERATE"],
+        "can_approve": perms_map["APPROVE"],
+        "can_export": perms_map["EXPORT"],
     }
 
     return {
@@ -1622,16 +1655,21 @@ def create_or_version_financial_bundle(request) -> FinancialStatementBundle:
     return bundle
 
 
-def serialize_bundle_summary(bundle: FinancialStatementBundle) -> dict[str, Any]:
-    comps = list(bundle.components.select_related("statement_run"))
+def serialize_bundle_summary(bundle: FinancialStatementBundle, _gl_snap_cache: dict | None = None) -> dict[str, Any]:
+    snap_cache = _gl_snap_cache if _gl_snap_cache is not None else {}
+    if hasattr(bundle, "_prefetched_objects_cache") and "components" in bundle._prefetched_objects_cache:
+        comps = list(bundle.components.all())
+    else:
+        comps = list(bundle.components.select_related("statement_run"))
     avail_count = sum(1 for c in comps if c.statement_run_id is not None and not c.statement_run.simulate_load_error)
     val_count = sum(1 for c in comps if c.validation_status in ("PASSED", "PASSED_WITH_WARNING"))
     appr_count = sum(1 for c in comps if c.statement_run and c.statement_run.run_status == "APPROVED")
     gen_times = [c.statement_run.created_at for c in comps if c.statement_run]
     last_gen = max(gen_times).isoformat() if gen_times else None
-    stale_any = any(is_run_stale(c.statement_run) for c in comps if c.statement_run)
-    warn_count = bundle.validations.filter(severity="WARNING").count()
-    blk_count = bundle.validations.filter(severity="BLOCKER").count()
+    stale_any = any(is_run_stale(c.statement_run, snap_cache) for c in comps if c.statement_run)
+    vals_list = list(bundle.validations.all())
+    warn_count = sum(1 for v in vals_list if v.severity == "WARNING")
+    blk_count = sum(1 for v in vals_list if v.severity == "BLOCKER")
 
     return {
         "bundle_id": str(bundle.id),
@@ -1665,15 +1703,17 @@ def serialize_bundle_summary(bundle: FinancialStatementBundle) -> dict[str, Any]
     }
 
 
-def serialize_bundle_detail(bundle: FinancialStatementBundle, user=None) -> dict[str, Any]:
-    summary = serialize_bundle_summary(bundle)
-    components_payload = serialize_bundle_components(bundle)
+def serialize_bundle_detail(bundle: FinancialStatementBundle, user=None, _gl_snap_cache: dict | None = None) -> dict[str, Any]:
+    snap_cache = _gl_snap_cache if _gl_snap_cache is not None else {}
+    summary = serialize_bundle_summary(bundle, _gl_snap_cache=snap_cache)
+    components_payload = serialize_bundle_components(bundle, _gl_snap_cache=snap_cache)
     validations = list(bundle.validations.all())
     is_period_closed = bundle.fiscal_period.status == "CLOSED"
-    can_generate = has_financial_permission(user, bundle.company, "GENERATE") if user else False
-    can_approve = has_financial_permission(user, bundle.company, "APPROVE") if user else False
-    can_export = has_financial_permission(user, bundle.company, "EXPORT") if user else False
-    can_detail = has_financial_permission(user, bundle.company, "DETAIL_VIEW") if user else False
+    perms_map = get_financial_permissions_map(user, bundle.company) if user else {"GENERATE": False, "APPROVE": False, "EXPORT": False, "DETAIL_VIEW": False}
+    can_generate = perms_map["GENERATE"]
+    can_approve = perms_map["APPROVE"]
+    can_export = perms_map["EXPORT"]
+    can_detail = perms_map["DETAIL_VIEW"]
 
     return {
         **summary,
@@ -1716,17 +1756,29 @@ def serialize_bundle_detail(bundle: FinancialStatementBundle, user=None) -> dict
     }
 
 
-def serialize_bundle_components(bundle: FinancialStatementBundle) -> list[dict[str, Any]]:
+def serialize_bundle_components(bundle: FinancialStatementBundle, _gl_snap_cache: dict | None = None) -> list[dict[str, Any]]:
+    snap_cache = _gl_snap_cache if _gl_snap_cache is not None else {}
     bdef = BUNDLE_TYPE_DEFINITIONS.get(bundle.bundle_type, BUNDLE_TYPE_DEFINITIONS["ANNUAL_GOING_CONCERN"])
     uc_map = {c["component_type"]: c["target_uc_code"] for c in bdef["required_components"]}
     comps = list(
         bundle.components.select_related(
+            "statement_run__company",
+            "statement_run__branch",
             "statement_run__template",
             "statement_run__template_version",
             "template_version__template",
         ).order_by("display_order")
     )
     all_validations = list(bundle.validations.all())
+    run_ids = [c.statement_run_id for c in comps if c.statement_run_id]
+    line_counts_by_run: dict[Any, int] = {}
+    if run_ids:
+        line_counts_by_run = dict(
+            FinancialStatementValue.objects.filter(statement_run_id__in=run_ids)
+            .values("statement_run_id")
+            .annotate(cnt=Count("id"))
+            .values_list("statement_run_id", "cnt")
+        )
     result = []
     for c in comps:
         run = c.statement_run
@@ -1781,10 +1833,10 @@ def serialize_bundle_components(bundle: FinancialStatementBundle) -> list[dict[s
             "approved_status": bool(run and run.run_status == "APPROVED"),
             "generated_at": run.created_at.isoformat() if run else None,
             "approved_at": run.approved_at.isoformat() if (run and run.approved_at) else None,
-            "line_count": run.values.count() if run else 0,
+            "line_count": line_counts_by_run.get(run.id, 0) if run else 0,
             "warning_count": w_cnt,
             "blocker_count": b_cnt,
-            "is_stale": is_run_stale(run) if run else False,
+            "is_stale": is_run_stale(run, snap_cache) if run else False,
             "target_uc_code": uc_map.get(c.component_type, "UC-RPT-03"),
             "bundle_context": {
                 "bundle_id": str(bundle.id),

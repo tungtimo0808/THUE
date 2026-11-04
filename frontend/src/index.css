@@ -169,10 +169,10 @@ table select,
 .misa-modal-card div[style*="border"] > select,
 .reference-app div[style*="border"] > select,
 .ref-nested-workspace div[style*="border"] > select,
-div:has(svg) > select,
-label:has(svg) > select,
-select:has(+ svg),
-select:has(~ svg),
+div:has(> svg) > select:not(.misa-select),
+label:has(> svg) > select:not(.misa-select),
+select:has(+ svg):not(.misa-select),
+select:has(~ svg):not(.misa-select),
 .misa-select-wrapper select,
 .misa-combo-input select {
   appearance: none !important;
@@ -209,10 +209,10 @@ div[style*="display: flex"]:has(> button) > input:not([type="checkbox"]):not([ty
 div[style*="display: flex"]:has(> svg) > input:not([type="checkbox"]):not([type="radio"]),
 div[style*="display:flex"]:has(> button) > input:not([type="checkbox"]):not([type="radio"]),
 div[style*="display:flex"]:has(> svg) > input:not([type="checkbox"]):not([type="radio"]),
-div[style*="display: flex"]:has(> button) > select,
-div[style*="display: flex"]:has(> svg) > select,
-div[style*="display:flex"]:has(> button) > select,
-div[style*="display:flex"]:has(> svg) > select {
+div[style*="display: flex"]:has(> button) > select:not(.misa-select),
+div[style*="display: flex"]:has(> svg) > select:not(.misa-select),
+div[style*="display:flex"]:has(> button) > select:not(.misa-select),
+div[style*="display:flex"]:has(> svg) > select:not(.misa-select) {
   flex: 1 1 0% !important;
   min-width: 0 !important;
   width: auto !important;

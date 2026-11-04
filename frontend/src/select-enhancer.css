@@ -1,0 +1,127 @@
+/* Giao diện thống nhất cho mọi ô chọn <select> trên toàn web. */
+select:not([multiple]):not([size]):not([data-native-select]),
+select[size="1"]:not([multiple]):not([data-native-select]) {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 9px center !important;
+  background-size: 15px 15px !important;
+  padding-right: 30px !important;
+  border-radius: 4px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+select:not([multiple]):not([data-native-select]):hover:not(:disabled) {
+  border-color: #94a3b8 !important;
+}
+
+select:not([multiple]):not([data-native-select]):focus,
+select:not([multiple]):not([data-native-select]).sv-select-open {
+  outline: none !important;
+  border-color: #00a862 !important;
+  box-shadow: 0 0 0 3px rgba(0, 168, 98, 0.12) !important;
+}
+
+select:not([multiple]):not([data-native-select]).sv-select-open {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300a862' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E") !important;
+}
+
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Danh sách thả xuống */
+.sv-select-popover {
+  position: fixed;
+  z-index: 2147483000;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  padding: 4px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  color: #1e293b;
+  animation: sv-select-in 0.12s ease-out;
+}
+
+.sv-select-popover::-webkit-scrollbar {
+  width: 8px;
+}
+.sv-select-popover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #fff;
+}
+.sv-select-popover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sv-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sv-select-option > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sv-select-option.sv-active {
+  background: #f0fdf4;
+}
+
+.sv-select-option.sv-selected {
+  color: #047857;
+  font-weight: 600;
+}
+
+.sv-select-option.sv-disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.sv-select-option svg {
+  flex-shrink: 0;
+}
+
+.sv-select-group {
+  padding: 8px 10px 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #64748b;
+}
+
+.sv-select-empty {
+  padding: 8px 10px;
+  color: #94a3b8;
+}
+
+@keyframes sv-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
