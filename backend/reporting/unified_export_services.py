@@ -934,7 +934,29 @@ def _format_vn_number(raw_v: Any, show_zero: bool = False) -> str:
     if raw_v is None or raw_v == "":
         return ""
     try:
-        num = float(raw_v)
+        if isinstance(raw_v, (int, float, Decimal)):
+            num = float(raw_v)
+        else:
+            s = str(raw_v).strip().replace(" ", "")
+            if not s:
+                return ""
+            if "." in s and "," in s:
+                if s.rfind(",") > s.rfind("."):
+                    s = s.replace(".", "").replace(",", ".")
+                else:
+                    s = s.replace(",", "")
+            elif "," in s:
+                parts = s.split(",")
+                if len(parts) > 2 or (len(parts) == 2 and len(parts[1]) == 3):
+                    s = s.replace(",", "")
+                else:
+                    s = s.replace(",", ".")
+            elif "." in s:
+                parts = s.split(".")
+                if len(parts) > 2 or (len(parts) == 2 and len(parts[1]) == 3):
+                    s = s.replace(".", "")
+            num = float(s)
+
         if abs(num) < 1e-9:
             return "0" if show_zero else ""
         if num == int(num):
@@ -1146,8 +1168,13 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     col_headers = [Paragraph(f"<b>{html.escape(c.get('label', c.get('key', '')))}</b>", th_style) for c in columns]
     table_data.append(col_headers)
 
-    amount_keywords = {"amount", "price", "cost", "balance", "debit", "credit", "total", "val", "qty"}
-    center_keywords = {"unit", "dvt", "date", "ngay", "ngay_ct"}
+    amount_keywords = {
+        "amount", "price", "cost", "balance", "debit", "credit", "total", "val", "qty",
+        "quantity", "so_luong", "gia_tri", "thanh_tien", "chiet_khau", "giam_gia", "tra_lai",
+        "tien", "du_no", "du_co", "phat_sinh", "luy_ke", "purchased", "returned", "net"
+    }
+    code_keywords = {"code", "ma_", "mahang", "so_ct", "so_hd", "account", "tk", "voucher"}
+    center_keywords = {"unit", "dvt", "don_vi", "date", "ngay", "ngay_ct", "stt", "thu_tu"}
 
     for r in rows:
         row_cells = []
@@ -1156,11 +1183,22 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
             k = col.get("key", "")
             raw_v = r.get(k)
             k_lower = k.lower()
+            lbl_lower = (col.get("label") or "").lower()
+            combined_k = f"{k_lower} {lbl_lower}"
+            col_type = str(col.get("data_type") or col.get("type") or "").lower()
+            col_align = str(col.get("align") or "").lower()
+
+            is_code_col = any(c in combined_k for c in code_keywords)
+            is_center = col_align in ("center", "1") or any(m in combined_k for m in center_keywords)
             is_num = (
-                isinstance(raw_v, (int, float, Decimal))
-                or (isinstance(raw_v, str) and raw_v.replace(",", "").replace(".", "").isdigit())
-            ) and any(m in k_lower for m in amount_keywords)
-            is_center = any(m in k_lower for m in center_keywords)
+                not is_code_col
+                and (
+                    col_type in ("number", "currency", "decimal", "numeric")
+                    or col_align in ("right", "2")
+                    or any(m in combined_k for m in amount_keywords)
+                    or isinstance(raw_v, (int, float, Decimal))
+                )
+            )
 
             if raw_v is None:
                 text_v = ""
@@ -1195,31 +1233,40 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
                 gt_cells.append(Paragraph("<b>TỔNG CỘNG</b>", td_style_left))
             else:
                 gt_v = grand_total.get(k)
-                if gt_v is not None and isinstance(gt_v, (int, float, Decimal)):
+                if gt_v is not None and gt_v != "":
                     gt_formatted = _format_vn_number(gt_v, show_zero=False)
                     if gt_formatted:
                         gt_cells.append(Paragraph(f"<b>{gt_formatted}</b>", td_style_right))
                     else:
                         gt_cells.append(Paragraph("", td_style_right))
                 else:
-                    gt_cells.append(Paragraph(f"<b>{html.escape(str(gt_v or ''))}</b>", td_style_right))
+                    gt_cells.append(Paragraph("", td_style_right))
         table_data.append(gt_cells)
 
     # Tính độ rộng cột tự động và hài hòa
     total_avail_width = page_size[0] - 50  # margins 25 + 25
+    num_cols = len(columns)
     weights = []
     for c in columns:
         k = c.get("key", "").lower()
-        if any(w in k for w in ["name", "description", "title", "diengiai", "ten_hang", "tenhang"]):
-            weights.append(3.2)
-        elif any(w in k for w in ["code", "ma_hang", "mahang", "so_ct", "so_chung_tu"]):
-            weights.append(1.3)
-        elif any(w in k for w in ["unit", "dvt", "don_vi"]):
-            weights.append(0.8)
-        elif any(w in k for w in ["qty", "quantity", "so_luong"]):
-            weights.append(1.0)
-        elif any(w in k for w in ["amount", "price", "cost", "total", "gia_tri", "thanh_tien"]):
-            weights.append(1.4)
+        lbl = (c.get("label") or "").lower()
+        combined = f"{k} {lbl}"
+        if any(w in combined for w in ["unit", "dvt", "don_vi", "uom"]):
+            weights.append(0.55)
+        elif any(w in combined for w in ["stt", "thu_tu"]):
+            weights.append(0.5)
+        elif any(w in combined for w in ["code", "ma_hang", "mahang", "so_ct", "so_chung_tu", "so_hd"]):
+            weights.append(1.05)
+        elif any(w in combined for w in ["date", "ngay"]):
+            weights.append(1.1)
+        elif any(w in combined for w in ["giam_gia", "tra_lai", "net_purchase", "net_amount", "tong_gia_tri"]):
+            weights.append(1.25)
+        elif any(w in combined for w in ["amount", "price", "cost", "total", "gia_tri", "thanh_tien"]):
+            weights.append(1.2)
+        elif any(w in combined for w in ["qty", "quantity", "so_luong"]):
+            weights.append(1.1)
+        elif any(w in combined for w in ["item_name", "product_name", "description", "title", "diengiai", "ten_hang", "tenhang", "ten_ncc", "ten_kh", "ten_doi_tuong"]) or "name" in combined:
+            weights.append(5.0 if num_cols >= 8 else 3.5)
         else:
             weights.append(1.1)
 
@@ -1232,10 +1279,10 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         ("ALIGN", (0, 0), (-1, 0), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
-        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
-        ("LEFTPADDING", (0, 0), (-1, -1), 5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
     ]
     if grand_total and options.get("include_grand_total", True):
         table_style_commands.append(("LINEABOVE", (0, -1), (-1, -1), 0.75, colors.HexColor("#000000")))
