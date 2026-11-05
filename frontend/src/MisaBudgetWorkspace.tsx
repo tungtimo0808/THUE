@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
-import { request } from "./live-api";
+import { clearLiveApiGetCache, request } from "./live-api";
 import {
   HelpCircle,
   X,
@@ -147,13 +147,76 @@ function SemicircleGauge({
   );
 }
 
+type PerformanceMonth = {
+  month: number;
+  revenue_plan: string; revenue_actual: string;
+  expense_plan: string; expense_actual: string;
+  profit_plan: string; profit_actual: string;
+};
+type BudgetPerformance = {
+  months: PerformanceMonth[];
+  totals: Omit<PerformanceMonth, "month">;
+  by_branch: { branch_id: string | null; branch_name: string; revenue_plan: string; revenue_actual: string }[];
+  calculated_at: string;
+};
+type Metric = "revenue" | "expense" | "profit";
+
+// Đơn vị hiển thị: triệu đồng, làm tròn 1 chữ số thập phân.
+const toMillion = (value: string | number | undefined) => Math.round((Number(value) || 0) / 100000) / 10;
+const formatMillion = (value: number) => value.toLocaleString("vi-VN", { maximumFractionDigits: 1 });
+
+function KpiGaugeCard({ title, color, plan, actual, lastUpdated, onRefresh }: {
+  title: string; color: string; plan: number; actual: number; lastUpdated: string; onRefresh: () => void;
+}) {
+  const percent = plan > 0 ? Math.round((actual / plan) * 100) : 0;
+  const metrics: [string, string, number][] = [
+    ["Thực hiện", color, actual],
+    ["Kế hoạch", "#334155", plan],
+    ["Chênh lệch", "#94a3b8", Math.round((actual - plan) * 10) / 10],
+  ];
+  return (
+    <div className="misa-budget-card">
+      <div className="misa-budget-card-header">
+        <h4 className="misa-budget-card-title">{title}</h4>
+        <div className="misa-budget-chart-header-right">
+          <span className="misa-budget-card-unit">Đvt: Triệu đồng</span>
+        </div>
+      </div>
+      <div className="misa-budget-card-body">
+        <div className="misa-budget-gauge-layout">
+          <div className="misa-budget-gauge-left">
+            <SemicircleGauge percent={percent} color={color} size={175} />
+          </div>
+          <div className="misa-budget-gauge-right">
+            {metrics.map(([label, badge, value]) => (
+              <div key={label} className="misa-budget-metric-item">
+                <span className="misa-budget-metric-label">
+                  <span className="misa-budget-metric-badge" style={{ backgroundColor: badge }} />
+                  <span>{label}</span>
+                </span>
+                <span className="misa-budget-metric-val">{formatMillion(value)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="misa-budget-card-footer">
+        <RefreshCw size={12} color="#64748b" />
+        <span>Số liệu tính đến: {lastUpdated || "—"}</span>
+        <button type="button" onClick={onRefresh} className="misa-budget-refresh-link" style={{ background: "none", border: "none", padding: 0 }}>
+          Tải lại
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 12-Month Comparison Bar Chart Component matching Screenshot 2
 function MonthlyComparisonChart({
   title,
   unit = "Triệu đồng",
   actualColor = "#00a862",
   planColor = "#94a3b8",
-  periodLabel = "Theo tháng",
   actualLabel = "Thực hiện",
   planLabel = "Kế hoạch",
   values,
@@ -164,7 +227,6 @@ function MonthlyComparisonChart({
   unit?: string;
   actualColor?: string;
   planColor?: string;
-  periodLabel?: string;
   actualLabel?: string;
   planLabel?: string;
   values?: { month: number; plan: number; actual: number }[];
@@ -187,11 +249,6 @@ function MonthlyComparisonChart({
       <div className="misa-budget-card-header">
         <h4 className="misa-budget-card-title">{title}</h4>
         <div className="misa-budget-chart-header-right">
-          <select className="misa-budget-select" style={{ height: 26, fontSize: 12 }}>
-            <option value="month">{periodLabel}</option>
-            <option value="quarter">Theo quý</option>
-            <option value="year">Theo năm</option>
-          </select>
           <span className="misa-budget-card-unit">Đvt: {unit}</span>
         </div>
       </div>
@@ -202,7 +259,7 @@ function MonthlyComparisonChart({
           {months.map((item) => {
             const planHeight = item.plan > 0 ? Math.max(4, (item.plan / maxVal) * 60) : 0;
             const actualHeight = item.actual > 0 ? Math.max(4, (item.actual / maxVal) * 60) : 0;
-            const displayVal = item.actual > 0 ? item.actual : item.plan > 0 ? item.plan : 0;
+            const displayVal = formatMillion(item.actual !== 0 ? item.actual : item.plan);
 
             return (
               <div key={item.month} className="misa-budget-month-col">
@@ -276,77 +333,51 @@ function MonthlyComparisonChart({
   );
 }
 
-// Unit Comparison Chart
-function UnitComparisonChart({
-  title,
-  unit = "Triệu đồng",
-  actualColor = "#00a862",
-  planColor = "#94a3b8",
-  lastUpdated,
-  onRefresh,
-}: {
-  title: string;
-  unit?: string;
-  actualColor?: string;
-  planColor?: string;
-  lastUpdated: string;
-  onRefresh: () => void;
+// Doanh thu kế hoạch / thực hiện theo đơn vị (chi nhánh)
+function UnitComparisonChart({ title, actualColor = "#00a862", planColor = "#94a3b8", rows, lastUpdated, onRefresh }: {
+  title: string; actualColor?: string; planColor?: string;
+  rows: { name: string; plan: number; actual: number }[];
+  lastUpdated: string; onRefresh: () => void;
 }) {
+  const maxVal = Math.max(...rows.map((row) => Math.max(row.plan, row.actual)), 1);
   return (
     <div className="misa-budget-card">
       <div className="misa-budget-card-header">
         <h4 className="misa-budget-card-title">{title}</h4>
         <div className="misa-budget-chart-header-right">
-          <select className="misa-budget-select" style={{ height: 26, fontSize: 12 }}>
-            <option value="year">Năm nay</option>
-            <option value="last_year">Năm trước</option>
-            <option value="quarter">Quý này</option>
-          </select>
-          <span className="misa-budget-card-unit">Đvt: {unit}</span>
+          <span className="misa-budget-card-unit">Đvt: Triệu đồng</span>
         </div>
       </div>
-
-      <div className="misa-budget-card-body" style={{ flexDirection: "column", minHeight: 140, justifyContent: "center", alignItems: "center" }}>
-        <div style={{ height: 80, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 13 }}>
-          Chưa có số liệu thực hiện theo đơn vị
-        </div>
+      <div className="misa-budget-card-body" style={{ flexDirection: "column", minHeight: 140, justifyContent: "center", gap: 8 }}>
+        {rows.length === 0 ? (
+          <div style={{ height: 80, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 13 }}>
+            Chưa có số liệu theo đơn vị trong năm này
+          </div>
+        ) : rows.map((row) => (
+          <div key={row.name} style={{ display: "grid", gridTemplateColumns: "140px 1fr 70px", alignItems: "center", gap: 8, fontSize: 12 }}>
+            <span title={row.name} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155" }}>{row.name}</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div title={`Kế hoạch: ${formatMillion(row.plan)}`} style={{ height: 7, width: `${Math.max(0, row.plan / maxVal) * 100}%`, background: planColor, borderRadius: 2 }} />
+              <div title={`Thực hiện: ${formatMillion(row.actual)}`} style={{ height: 7, width: `${Math.max(0, row.actual / maxVal) * 100}%`, background: actualColor, borderRadius: 2 }} />
+            </div>
+            <span style={{ textAlign: "right", color: "#1e293b" }}>{formatMillion(row.actual)}</span>
+          </div>
+        ))}
         <div className="misa-budget-legend">
           <div className="misa-budget-legend-item">
-            <span
-              style={{
-                width: 10,
-                height: 10,
-                backgroundColor: planColor,
-                display: "inline-block",
-                borderRadius: 2,
-              }}
-            />
+            <span style={{ width: 10, height: 10, backgroundColor: planColor, display: "inline-block", borderRadius: 2 }} />
             <span>Kế hoạch</span>
           </div>
           <div className="misa-budget-legend-item">
-            <span
-              style={{
-                width: 10,
-                height: 10,
-                backgroundColor: actualColor,
-                display: "inline-block",
-                borderRadius: 2,
-              }}
-            />
+            <span style={{ width: 10, height: 10, backgroundColor: actualColor, display: "inline-block", borderRadius: 2 }} />
             <span>Thực hiện</span>
           </div>
         </div>
       </div>
-
       <div className="misa-budget-card-footer">
         <RefreshCw size={12} color="#64748b" />
-        <span>Số liệu tính đến: {lastUpdated}</span>
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="misa-budget-refresh-link"
-          style={{ background: "none", border: "none", padding: 0 }}
-        >
+        <span>Số liệu tính đến: {lastUpdated || "—"}</span>
+        <button type="button" onClick={onRefresh} className="misa-budget-refresh-link" style={{ background: "none", border: "none", padding: 0 }}>
           Tải lại
         </button>
       </div>
@@ -372,14 +403,44 @@ export default function MisaBudgetWorkspace({
   }, [tab]);
 
   // Tab 1 Filters
-  const [selectedUnit, setSelectedUnit] = useState<string>("Tung");
+  const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
-  const [lastUpdated, setLastUpdated] = useState<string>("11:05");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [performance, setPerformance] = useState<BudgetPerformance | null>(null);
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { token } = useApiSession();
   useEffect(() => {
     if (!token || !company?.id) return;
-    void request<any>(`/api/v1/general-ledger/budgets/?company_id=${encodeURIComponent(company.id)}`, token).catch(() => {});
+    request<{ id: string; name: string }[] | { results: { id: string; name: string }[] }>(
+      `/api/v1/organization/branches/?company_id=${encodeURIComponent(company.id)}`, token,
+    ).then((data) => setBranches(Array.isArray(data) ? data : data.results || [])).catch(() => setBranches([]));
   }, [token, company?.id]);
+  useEffect(() => {
+    if (!token || !company?.id) return;
+    let cancelled = false;
+    const params = new URLSearchParams({ company_id: company.id, year: String(selectedYear) });
+    if (selectedBranch) params.set("branch_id", selectedBranch);
+    request<BudgetPerformance>(`/api/v1/general-ledger/budgets/performance/?${params}`, token)
+      .then((data) => {
+        if (cancelled) return;
+        setPerformance(data);
+        setLastUpdated(new Date(data.calculated_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }));
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setPerformance(null);
+        notify?.(`Không tải được số liệu ngân sách: ${error instanceof Error ? error.message : String(error)}`);
+      });
+    return () => { cancelled = true; };
+  }, [token, company?.id, selectedYear, selectedBranch, refreshKey]);
+  const monthValues = (metric: Metric) =>
+    (performance?.months || []).map((row) => ({
+      month: row.month,
+      plan: toMillion(row[`${metric}_plan`]),
+      actual: toMillion(row[`${metric}_actual`]),
+    }));
+  const total = (metric: Metric, kind: "plan" | "actual") => toMillion(performance?.totals[`${metric}_${kind}`]);
 
   // Tab 2 Planning View State
   const [planningViewMode, setPlanningViewMode] = useState<"landing" | "list" | "editor">("landing");
@@ -461,10 +522,8 @@ export default function MisaBudgetWorkspace({
   });
 
   const handleRefreshData = () => {
-    const now = new Date();
-    const formatted = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setLastUpdated(formatted);
-    notify?.("Đã làm mới số liệu ngân sách thành công.");
+    clearLiveApiGetCache();
+    setRefreshKey((key) => key + 1);
   };
 
   const toggleFavorite = (reportName: string) => {
@@ -528,14 +587,13 @@ export default function MisaBudgetWorkspace({
                 <span>Đơn vị</span>
                 <select
                   className="misa-budget-select"
-                  value={selectedUnit}
-                  onChange={(e) => setSelectedUnit(e.target.value)}
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
                 >
-                  <option value="Tung">Tung</option>
-                  <option value="Công ty Cổ phần Giải pháp Số Việt">Công ty Cổ phần Giải pháp Số Việt</option>
-                  <option value="Văn phòng Tổng công ty">Văn phòng Tổng công ty</option>
-                  <option value="Chi nhánh Hà Nội">Chi nhánh Hà Nội</option>
-                  <option value="Chi nhánh TP.HCM">Chi nhánh TP.HCM</option>
+                  <option value="">{company.name}</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>{branch.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -586,182 +644,9 @@ export default function MisaBudgetWorkspace({
           <div className="misa-budget-charts-grid">
             {/* ROW 1: 3 Semicircle Gauges */}
             <div className="misa-budget-row-gauges">
-              {/* Card 1: Tình hình thực hiện doanh thu */}
-              <div className="misa-budget-card">
-                <div className="misa-budget-card-header">
-                  <h4 className="misa-budget-card-title">Tình hình thực hiện doanh thu</h4>
-                  <div className="misa-budget-chart-header-right">
-                    <select className="misa-budget-select" style={{ height: 26, fontSize: 12 }}>
-                      <option value="year">Năm nay</option>
-                      <option value="last_year">Năm trước</option>
-                      <option value="quarter">Quý này</option>
-                    </select>
-                    <span className="misa-budget-card-unit">Đvt: Triệu đồng</span>
-                  </div>
-                </div>
-
-                <div className="misa-budget-card-body">
-                  <div className="misa-budget-gauge-layout">
-                    <div className="misa-budget-gauge-left">
-                      <SemicircleGauge percent={0} color="#00a862" size={175} />
-                    </div>
-                    <div className="misa-budget-gauge-right">
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#00a862" }} />
-                          <span>Thực hiện</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#334155" }} />
-                          <span>Kế hoạch</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#94a3b8" }} />
-                          <span>Chênh lệch</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="misa-budget-card-footer">
-                  <RefreshCw size={12} color="#64748b" />
-                  <span>Số liệu tính đến: {lastUpdated}</span>
-                  <button
-                    type="button"
-                    onClick={handleRefreshData}
-                    className="misa-budget-refresh-link"
-                    style={{ background: "none", border: "none", padding: 0 }}
-                  >
-                    Tải lại
-                  </button>
-                </div>
-              </div>
-
-              {/* Card 2: Tình hình thực hiện chi phí */}
-              <div className="misa-budget-card">
-                <div className="misa-budget-card-header">
-                  <h4 className="misa-budget-card-title">Tình hình thực hiện chi phí</h4>
-                  <div className="misa-budget-chart-header-right">
-                    <select className="misa-budget-select" style={{ height: 26, fontSize: 12 }}>
-                      <option value="year">Năm nay</option>
-                      <option value="last_year">Năm trước</option>
-                      <option value="quarter">Quý này</option>
-                    </select>
-                    <span className="misa-budget-card-unit">Đvt: Triệu đồng</span>
-                  </div>
-                </div>
-
-                <div className="misa-budget-card-body">
-                  <div className="misa-budget-gauge-layout">
-                    <div className="misa-budget-gauge-left">
-                      <SemicircleGauge percent={0} color="#0284c7" size={175} />
-                    </div>
-                    <div className="misa-budget-gauge-right">
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#0284c7" }} />
-                          <span>Thực hiện</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#334155" }} />
-                          <span>Kế hoạch</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#94a3b8" }} />
-                          <span>Chênh lệch</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="misa-budget-card-footer">
-                  <RefreshCw size={12} color="#64748b" />
-                  <span>Số liệu tính đến: {lastUpdated}</span>
-                  <button
-                    type="button"
-                    onClick={handleRefreshData}
-                    className="misa-budget-refresh-link"
-                    style={{ background: "none", border: "none", padding: 0 }}
-                  >
-                    Tải lại
-                  </button>
-                </div>
-              </div>
-
-              {/* Card 3: Tình hình thực hiện lợi nhuận */}
-              <div className="misa-budget-card">
-                <div className="misa-budget-card-header">
-                  <h4 className="misa-budget-card-title">Tình hình thực hiện lợi nhuận</h4>
-                  <div className="misa-budget-chart-header-right">
-                    <select className="misa-budget-select" style={{ height: 26, fontSize: 12 }}>
-                      <option value="year">Năm nay</option>
-                      <option value="last_year">Năm trước</option>
-                      <option value="quarter">Quý này</option>
-                    </select>
-                    <span className="misa-budget-card-unit">Đvt: Triệu đồng</span>
-                  </div>
-                </div>
-
-                <div className="misa-budget-card-body">
-                  <div className="misa-budget-gauge-layout">
-                    <div className="misa-budget-gauge-left">
-                      <SemicircleGauge percent={0} color="#0d9488" size={175} />
-                    </div>
-                    <div className="misa-budget-gauge-right">
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#0d9488" }} />
-                          <span>Thực hiện</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#334155" }} />
-                          <span>Kế hoạch</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                      <div className="misa-budget-metric-item">
-                        <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#94a3b8" }} />
-                          <span>Chênh lệch</span>
-                        </span>
-                        <span className="misa-budget-metric-val">0</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="misa-budget-card-footer">
-                  <RefreshCw size={12} color="#64748b" />
-                  <span>Số liệu tính đến: {lastUpdated}</span>
-                  <button
-                    type="button"
-                    onClick={handleRefreshData}
-                    className="misa-budget-refresh-link"
-                    style={{ background: "none", border: "none", padding: 0 }}
-                  >
-                    Tải lại
-                  </button>
-                </div>
-              </div>
+              <KpiGaugeCard title="Tình hình thực hiện doanh thu" color="#00a862" plan={total("revenue", "plan")} actual={total("revenue", "actual")} lastUpdated={lastUpdated} onRefresh={handleRefreshData} />
+              <KpiGaugeCard title="Tình hình thực hiện chi phí" color="#0284c7" plan={total("expense", "plan")} actual={total("expense", "actual")} lastUpdated={lastUpdated} onRefresh={handleRefreshData} />
+              <KpiGaugeCard title="Tình hình thực hiện lợi nhuận" color="#0d9488" plan={total("profit", "plan")} actual={total("profit", "actual")} lastUpdated={lastUpdated} onRefresh={handleRefreshData} />
             </div>
 
             {/* ROW 2: 2 Monthly Comparison Charts */}
@@ -769,6 +654,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 4: Doanh thu thực hiện so với kế hoạch */}
               <MonthlyComparisonChart
                 title="Doanh thu thực hiện so với kế hoạch"
+                values={monthValues("revenue")}
                 actualColor="#00a862"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
@@ -778,6 +664,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 5: Chi phí thực hiện so với kế hoạch */}
               <MonthlyComparisonChart
                 title="Chi phí thực hiện so với kế hoạch"
+                values={monthValues("expense")}
                 actualColor="#0284c7"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
@@ -790,6 +677,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 6: Lợi nhuận thực hiện so với kế hoạch */}
               <MonthlyComparisonChart
                 title="Lợi nhuận thực hiện so với kế hoạch"
+                values={monthValues("profit")}
                 actualColor="#0d9488"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
@@ -799,6 +687,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 7: Tình hình thực hiện doanh thu theo đơn vị */}
               <UnitComparisonChart
                 title="Tình hình thực hiện doanh thu theo đơn vị"
+                rows={(performance?.by_branch || []).map((row) => ({ name: row.branch_name, plan: toMillion(row.revenue_plan), actual: toMillion(row.revenue_actual) }))}
                 actualColor="#00a862"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
@@ -1632,7 +1521,7 @@ export default function MisaBudgetWorkspace({
             <div className="misa-budget-modal-body" style={{ maxHeight: 480, overflowY: "auto" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, fontSize: 13 }}>
                 <span style={{ color: "#64748b" }}>
-                  Kỳ báo cáo: <strong style={{ color: "#0f172a" }}>Năm 2026</strong> | Đơn vị: <strong style={{ color: "#0f172a" }}>{selectedUnit}</strong>
+                  Kỳ báo cáo: <strong style={{ color: "#0f172a" }}>Năm 2026</strong> | Đơn vị: <strong style={{ color: "#0f172a" }}>{branches.find((b) => b.id === selectedBranch)?.name || company.name}</strong>
                 </span>
                 <span style={{ color: "#64748b" }}>Đơn vị tính: <strong>Triệu đồng</strong></span>
               </div>

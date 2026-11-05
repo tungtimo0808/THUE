@@ -2709,13 +2709,6 @@ export default function MisaPurchaseWorkspace({
                           setShowSupplierPaymentModal(true);
                         },
                       },
-                      {
-                        label: "Lập từ hóa đơn đầu vào meInvoice",
-                        onClick: () => {
-                          setShowAddPurchaseMenu(false);
-                          notify("Đang kết nối dịch vụ Hóa đơn điện tử meInvoice để tải hóa đơn đầu vào...");
-                        },
-                      },
                     ].map((item, idx) => (
                       <div
                         key={idx}
@@ -4029,27 +4022,6 @@ export default function MisaPurchaseWorkspace({
                 <Filter size={15} />
               </button>
 
-              <button
-                type="button"
-                onClick={() => notify("Đang đồng bộ và cập nhật địa chỉ nhà cung cấp")}
-                style={{
-                  height: 32,
-                  padding: "0 12px",
-                  background: "#ffffff",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 4,
-                  fontSize: 12.5,
-                  fontWeight: 500,
-                  color: "#334155",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  cursor: "pointer",
-                }}
-              >
-                <MapPin size={14} style={{ color: "#0284c7" }} />
-                <span>Cập nhật địa chỉ</span>
-              </button>
 
               {/* Primary Green button: Thêm ▾ (opens SupplierModal matching Screenshot 3) */}
               <div style={{ display: "inline-flex", position: "relative" }}>

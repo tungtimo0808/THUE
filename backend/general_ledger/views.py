@@ -556,6 +556,20 @@ class BudgetViewSet(CompanyViewSet):
     search_fields = ("account__code", "account__name", "period__code", "notes")
     ordering_fields = ("amount", "period__start_date", "created_at")
 
+    @action(detail=False, methods=["get"], url_path="performance")
+    def performance(self, request):
+        """Kế hoạch ngân sách so với thực hiện theo tháng và theo đơn vị (doanh thu, chi phí, lợi nhuận)."""
+        from .budget_services import budget_performance
+
+        company = get_object_or_404(Company, pk=request.query_params.get("company_id"))
+        try:
+            year = int(request.query_params.get("year") or timezone.localdate().year)
+        except ValueError:
+            raise drf_serializers.ValidationError({"year": "Năm không hợp lệ."})
+        if not 1900 <= year <= 9999:
+            raise drf_serializers.ValidationError({"year": "Năm không hợp lệ."})
+        return Response(budget_performance(company, year, request.query_params.get("branch_id") or None))
+
 
 class JournalViewSet(CompanyViewSet):
     queryset = models.JournalEntry.objects.select_related(

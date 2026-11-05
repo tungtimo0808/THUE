@@ -142,7 +142,9 @@ class SupplierRiskOverrideLogSerializer(serializers.ModelSerializer):
 class RiskCheckInputSerializer(serializers.Serializer):
     supplier_id = serializers.UUIDField(required=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
-    external_tax_status = serializers.CharField(required=False, allow_blank=True, default="ACTIVE")
+    # Chưa có kết nối tra cứu MST với cơ quan thuế: không gửi thì ghi nhận là "chưa xác minh",
+    # không mặc định là đang hoạt động. Người dùng có thể nhập kết quả đã tự tra cứu.
+    external_tax_status = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     simulate_external_failure = serializers.BooleanField(required=False, default=False)
 
 

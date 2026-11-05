@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useApiSession } from "./ApiSession";
-import TaxConnectorPanel from "./TaxConnectorPanel";
 import { FileText, Monitor } from "lucide-react";
-import { apiClient } from "./apiClient";
 import "./misa-invoice-workspace.css";
 const flowNodes = [
-  ["Đăng ký/ Thay đổi thông tin sử dụng HĐĐT", "meinvoice", 10, 28],
+  ["Đăng ký/ Thay đổi thông tin sử dụng HĐĐT", "", 10, 28],
   ["Khởi tạo mẫu", "outgoing", 10, 68],
   ["Xuất và gửi hóa đơn", "outgoing", 29, 49],
   ["Thông báo hóa đơn lập sai", "adjustments", 57, 20],
@@ -36,28 +33,10 @@ export default function MisaInvoiceWorkspace({
   notify: (text: string) => void;
   company?: { id: string; name: string; tax_code?: string };
 }) {
-  const { token } = useApiSession();
   const [kind, setKind] = useState(""),
     [sent, setSent] = useState(""),
     [fault, setFault] = useState(""),
     [action, setAction] = useState("");
-  const [taxCode, setTaxCode] = useState(""),
-    [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [error, setError] = useState("");
-  useEffect(() => {
-    apiClient
-      .get<any>("/api/v1/tax/connectors/")
-      .then((res) => {
-        const list = Array.isArray(res) ? res : res?.results || [];
-        const first = list[0];
-        if (first) {
-          if (first.tax_code) setTaxCode(String(first.tax_code));
-          if (first.username) setEmail(String(first.username));
-        }
-      })
-      .catch(() => {});
-  }, []);
   const steps =
     fault === faults[0]
       ? [
@@ -84,93 +63,6 @@ export default function MisaInvoiceWorkspace({
             ],
           ]
         : [];
-  if (tab === "meinvoice")
-    return company ? <TaxConnectorPanel company={company} token={token} /> : (
-      <div className="iw-connect">
-        <section>
-          <div className="iw-brand">meInvoice</div>
-          <h1>
-            Kết nối phần mềm
-            <br />
-            Hóa đơn điện tử MeInvoice.VN
-          </h1>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!taxCode.trim() || !email.trim() || !password) {
-                setError("Vui lòng nhập đầy đủ thông tin kết nối.");
-                return;
-              }
-              setError("");
-              apiClient
-                .post("/api/v1/tax/connectors/", {
-                  provider_code: "MEINVOICE",
-                  provider_name: "MISA meInvoice.VN",
-                  endpoint_url: "https://www.meinvoice.vn",
-                  tax_code: taxCode.trim(),
-                  username: email.trim(),
-                  is_active: true,
-                })
-                .catch(() => {});
-              setPassword("");
-              notify("Thông tin kết nối đã được kiểm tra và lưu lên hệ thống.");
-            }}
-          >
-            <input
-              aria-label="Mã số thuế"
-              placeholder="Mã số thuế"
-              value={taxCode}
-              onInput={(e) => setTaxCode(e.currentTarget.value)}
-              onChange={(e) => setTaxCode(e.target.value)}
-            />
-            <input
-              aria-label="Email hoặc số điện thoại"
-              placeholder="Email hoặc số điện thoại"
-              value={email}
-              onInput={(e) => setEmail(e.currentTarget.value)}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              aria-label="Mật khẩu"
-              placeholder="Mật khẩu"
-              type="password"
-              autoComplete="off"
-              value={password}
-              onInput={(e) => setPassword(e.currentTarget.value)}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {error && (
-              <p role="alert" className="iw-error">
-                {error}
-              </p>
-            )}
-            <p>
-              Bạn chưa có tài khoản MeInvoice?{" "}
-              <a
-                href="https://www.meinvoice.vn/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Mua ngay tại đây
-              </a>
-            </p>
-            <button>Kết nối</button>
-          </form>
-        </section>
-        <aside>
-          <h2>Phần mềm hóa đơn điện tử MeInvoice</h2>
-          <div className="iw-connect-art">
-            <Monitor size={110} />
-            <FileText size={52} />
-          </div>
-          <p>Quản lý, lập và phát hành hóa đơn điện tử.</p>
-          <p>Tiết kiệm chi phí in ấn, lưu trữ và bảo quản hóa đơn.</p>
-          <a href="https://www.meinvoice.vn/" target="_blank" rel="noreferrer">
-            Xem thêm
-          </a>
-        </aside>
-      </div>
-    );
   if (tab === "error-guide" || tab === "adjustments")
     return (
       <div className="iw-guide">
@@ -341,19 +233,27 @@ export default function MisaInvoiceWorkspace({
                 markerEnd="url(#iw-arrow)"
               />
             </svg>
-            {flowNodes.map(([label, path, left, top]) => (
-              <Link
-                key={label}
-                to={href("/invoices/" + path)}
-                style={{ left: `${left}%`, top: `${top}%` }}
-              >
-                <span className="iw-flow-icon">
-                  <Monitor size={35} />
-                  <FileText size={21} />
-                </span>
-                <span>{label}</span>
-              </Link>
-            ))}
+            {flowNodes.map(([label, path, left, top]) => {
+              const content = (
+                <>
+                  <span className="iw-flow-icon">
+                    <Monitor size={35} />
+                    <FileText size={21} />
+                  </span>
+                  <span>{label}</span>
+                </>
+              );
+              // Bước không có màn hình trong ERP (thực hiện trên phần mềm HĐĐT / cổng thuế): không gắn liên kết.
+              return path ? (
+                <Link key={label} to={href("/invoices/" + path)} style={{ left: `${left}%`, top: `${top}%` }}>
+                  {content}
+                </Link>
+              ) : (
+                <a key={label} title="Thực hiện trên phần mềm hóa đơn điện tử hoặc cổng của cơ quan thuế" style={{ left: `${left}%`, top: `${top}%`, cursor: "default" }}>
+                  {content}
+                </a>
+              );
+            })}
           </div>
         </section>
         <aside className="iw-reports">
@@ -375,9 +275,6 @@ export default function MisaInvoiceWorkspace({
       </div>
       <footer>
         {[
-          ["Thiết lập Email gửi HĐ", "/invoices/meinvoice"],
-          ["Thiết lập chữ ký số", "/invoices/meinvoice"],
-          ["Lịch sử truyền nhận với TCT", "/invoices/sync"],
           ["Tùy chọn", "/invoices/lookup"],
         ].map(([label, targetPath]) => (
           <Link key={label} to={href(targetPath)}>
