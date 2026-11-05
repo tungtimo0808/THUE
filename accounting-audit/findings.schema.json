@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Thue ERP audit findings",
+  "type": "object",
+  "required": ["run", "findings", "coverage"],
+  "properties": {
+    "run": {
+      "type": "object",
+      "required": ["date", "branch", "commit", "scope"],
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "branch": { "type": "string" },
+        "commit": { "type": "string" },
+        "scope": { "type": "string" }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "module", "severity", "confidence", "status", "title", "locations", "actual", "expected", "evidence", "remediation", "verification"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^(ACC|BIZ|DB|SEC|CODE|QA)-[0-9]{3}$" },
+          "module": { "type": "string" },
+          "severity": { "enum": ["Critical", "High", "Medium", "Low"] },
+          "confidence": { "enum": ["CONFIRMED", "SUSPECTED", "NEEDS_HUMAN_REVIEW"] },
+          "status": { "enum": ["OPEN", "FIXED", "VERIFIED", "WONT_FIX"] },
+          "title": { "type": "string" },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["file", "line"],
+              "properties": {
+                "file": { "type": "string" },
+                "line": { "type": "integer" },
+                "symbol": { "type": "string" }
+              }
+            }
+          },
+          "actual": { "type": "string" },
+          "expected": { "type": "string" },
+          "regulation_ref": { "type": "string" },
+          "evidence": { "type": "string" },
+          "reproduction": { "type": "string" },
+          "repro_test": { "type": "string" },
+          "impact": { "type": "string" },
+          "remediation": { "type": "string" },
+          "verification": { "type": "string" },
+          "duplicates": { "type": "array", "items": { "type": "string" } },
+          "previous_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["module", "process", "verdict"],
+        "properties": {
+          "module": { "type": "string" },
+          "process": { "type": "string" },
+          "verdict": { "enum": ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE"] },
+          "tests": { "type": "array", "items": { "type": "string" } },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}
