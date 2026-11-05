@@ -139,9 +139,17 @@ def get_unrecognized_sources(company, branch=None, customer=None, search=None):
         .values_list("source_document_id", "source_line_id")
     )
 
+    # Entries whose source document already opened its own receivable (e.g. a posted sale).
+    entries_with_receivable = set(
+        models.Receivable.objects.filter(company=company, journal_entry__isnull=False)
+        .exclude(status=models.ReceivableStatus.REVERSED)
+        .exclude(source_document_type="JOURNAL_ENTRY")
+        .values_list("journal_entry_id", flat=True)
+    )
+
     for line in line_qs:
         key = (str(line.entry_id), str(line.id))
-        if key in recognized_je_line_keys:
+        if key in recognized_je_line_keys or line.entry_id in entries_with_receivable:
             continue
         amt = line.foreign_amount if line.foreign_amount > 0 and line.currency_id != company.accounting_currency_id else line.debit
         doc_date = line.entry.document_date or line.entry.posting_date
@@ -223,6 +231,18 @@ def recognize_receivable(company, data, user, request=None):
             "existing_receivable_id": str(existing.id),
             "code": existing.code,
         })
+
+    if source_type == "JOURNAL_ENTRY":
+        entry_dup = models.Receivable.objects.filter(
+            company=company, journal_entry_id=source_id,
+        ).exclude(status=models.ReceivableStatus.REVERSED).exclude(source_document_type="JOURNAL_ENTRY")
+        if entry_dup.exists():
+            existing = entry_dup.first()
+            raise ValidationError({
+                "source_document_id": "Bút toán này đã được ghi nhận công nợ từ chứng từ nguồn của nó.",
+                "existing_receivable_id": str(existing.id),
+                "code": existing.code,
+            })
 
     if source_type == "AR_DOCUMENT":
         doc_dup = models.Receivable.objects.filter(
@@ -602,6 +622,11 @@ def reverse_receivable(receivable, reason, user, request=None):
         raise ValidationError(
             "Không thể hủy hoặc bỏ ghi nhận khoản phải thu khi đã có khoản thanh toán hoặc đối trừ. Vui lòng hủy các phân bổ phụ thuộc trước."
         )
+    if receivable.source_document_type in ("GOODS_SALE", "SERVICE_SALE"):
+        # The 131 entry belongs to the sale; dropping only the receivable would split it from the ledger.
+        raise ValidationError(
+            f"Khoản phải thu sinh từ chứng từ bán {receivable.source_document_number}; hãy bỏ ghi sổ chứng từ bán thay vì bỏ ghi nhận công nợ."
+        )
 
     before = {"status": receivable.status, "balance": str(receivable.balance)}
     receivable.balance = Decimal("0")
@@ -880,6 +905,8 @@ def allocate(receipt, request):
         raise ValidationError({"allocations": "Danh sách phân bổ không hợp lệ."})
     if total <= 0 or receipt.allocated_amount + total > receipt.amount:
         raise ValidationError("Tổng phân bổ vượt số tiền chưa phân bổ.")
+    if any(Decimal(str(row["amount"])) <= 0 for row in rows):
+        raise ValidationError({"allocations": "Mỗi dòng phân bổ phải có số tiền lớn hơn 0."})
     for row in rows:
         debt = models.Receivable.objects.select_for_update().get(pk=row["receivable"])
         amount = Decimal(str(row["amount"]))

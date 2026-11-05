@@ -10,7 +10,8 @@ START = date(2026, 1, 1)
 
 
 def line(code, month, debit=0, credit=0, entry_type="MANUAL", bucket="A"):
-    return Movement(code, code, bucket, date.fromisoformat(month), entry_type, Decimal(debit), Decimal(credit))
+    posted = date.fromisoformat(month)
+    return Movement(code, code, bucket, posted, posted, entry_type, Decimal(debit), Decimal(credit))
 
 
 class AnalysisRowsTests(SimpleTestCase):

@@ -15,6 +15,7 @@ Implements:
 - Unposting (Bỏ ghi sổ) and invoice linking (AF-08, BR-SAL-04-11, EF-08).
 - Optimistic concurrency control and Audit Logging (BR-SAL-04-13, EF-09, EF-10).
 """
+import logging
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -28,11 +29,19 @@ from approval_workflows.execution import approval_progress
 from approval_workflows.submission import configured_snapshot
 from audit_log.services import record_audit
 from common_services.models import DocumentNumberingRule
-from general_ledger.models import Account, AccountBalance, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import _balance as get_or_create_balance, _recalculate_closing
+from general_ledger.models import Account, AccountingPeriod, JournalLine
 from general_ledger.services import post as post_journal, source_module_request
 from master_data.models import Currency, DocumentType, Item, Party, PartyAddress, TaxRate, UnitOfMeasure
 from . import models
+
+logger = logging.getLogger(__name__)
+from .posting_helpers import (
+    check_payment_account,
+    convert_to_accounting_currency,
+    ensure_sale_has_no_dependents,
+    source_journal,
+    unpost_source_journal,
+)
 
 MONEY = Decimal("0.0001")
 
@@ -66,13 +75,14 @@ def generate_service_sale_number(company, branch=None, document_date=None):
     ref_date = document_date or timezone.localdate()
     try:
         from common_services.numbering_services import generate_document_number
-        doc_type = DocumentType.objects.filter(code__in=["SAL.SERVICE_SALE", "DV", "SALES_SERVICE"]).first()
-        if doc_type:
-            num = generate_document_number(company, doc_type, branch=branch, document_date=ref_date)
-            if num:
-                return num
+        with transaction.atomic():
+            doc_type = DocumentType.objects.filter(code__in=["SAL.SERVICE_SALE", "DV", "SALES_SERVICE"]).first()
+            if doc_type:
+                num = generate_document_number(company, doc_type, branch=branch, document_date=ref_date)
+                if num:
+                    return num
     except Exception:
-        pass
+        logger.exception("Không cấp được số theo quy tắc đánh số; dùng bộ đếm mặc định.")
 
     year = ref_date.year
     with transaction.atomic():
@@ -163,6 +173,7 @@ def calculate_and_validate_service_lines(company, lines_data, payment_type, curr
         raise ValidationError("Chứng từ bán dịch vụ phải có ít nhất một dòng dịch vụ.")
 
     defaults = resolve_default_accounts(company, payment_type)
+    first_payment_account = None
     subtotal = Decimal("0")
     discount_amount = Decimal("0")
     tax_amount = Decimal("0")
@@ -237,6 +248,8 @@ def calculate_and_validate_service_lines(company, lines_data, payment_type, curr
         rec_acc = Account.objects.filter(pk=rec_acc_id, company=company).first() if rec_acc_id else defaults["payment_account"]
         if not rec_acc or not rec_acc.is_postable or rec_acc.status != "ACTIVE":
             raise ValidationError(f"Dòng {idx}: Tài khoản thanh toán/phải thu không hợp lệ hoặc không cho phép hạch toán.")
+        check_payment_account(idx, rec_acc, payment_type, first_payment_account)
+        first_payment_account = first_payment_account or rec_acc
 
         rev_acc_id = raw.get("revenue_account") or raw.get("revenue_account_id") or getattr(item, "revenue_account_id", None)
         rev_acc = Account.objects.filter(pk=rev_acc_id, company=company).first() if rev_acc_id else defaults["revenue_account"]
@@ -366,6 +379,8 @@ def create_service_sale(request, validated_data, lines_data):
     posting_date = validated_data.get("posting_date") or doc_date
 
     number = validated_data.get("number")
+    if number and models.ServiceSale.objects.filter(company=company, number=number).exists():
+        raise ValidationError({"number": f"Số chứng từ {number} đã tồn tại."})
     if not number:
         number = generate_service_sale_number(company, branch=validated_data.get("branch"), document_date=doc_date)
 
@@ -666,7 +681,7 @@ def post_service_sale(request, sale):
     total_debit = sale.total_amount
     total_credit = sale.total_amount
 
-    journal = JournalEntry.objects.create(
+    journal = source_journal(
         company=sale.company,
         branch=sale.branch,
         period=period,
@@ -711,7 +726,7 @@ def post_service_sale(request, sale):
 
     # Credits: Revenue and Tax
     for line in lines:
-        line_net = (line.quantity * line.unit_price) - line.discount_amount
+        line_net = (line.quantity * line.unit_price).quantize(MONEY, ROUND_HALF_UP) - line.discount_amount
         if line_net > 0:
             gl_line_no += 1
             JournalLine.objects.create(
@@ -738,6 +753,7 @@ def post_service_sale(request, sale):
                 party=sale.customer,
             )
 
+    convert_to_accounting_currency(journal, sale.exchange_rate)
     post_journal(journal, source_module_request(request))
     sale.journal_entry = journal
 
@@ -794,28 +810,18 @@ def unpost_service_sale(request, sale, reason=""):
     if not period:
         raise ValidationError("Kỳ kế toán đã bị khóa, không thể bỏ ghi sổ.")
 
-    # Check receivable payments
+    ensure_sale_has_no_dependents(sale)
+
     if sale.receivable:
-        if sale.receivable.collected_amount > 0 or sale.receivable.netted_amount > 0:
-            raise ValidationError("Khoản phải thu đã phát sinh thu tiền hoặc cấn trừ, không thể bỏ ghi sổ.")
         rec = sale.receivable
         sale.receivable = None
         sale.save(update_fields=["receivable"])
         rec.delete()
 
-    # Revert GL balances and delete journal entry
     if sale.journal_entry:
-        entry = sale.journal_entry
-        for line in entry.lines.all():
-            bal = AccountBalance.objects.filter(period=entry.period, account=line.account, branch=entry.branch).first()
-            if bal:
-                bal.period_debit = max(bal.period_debit - line.debit, Decimal("0"))
-                bal.period_credit = max(bal.period_credit - line.credit, Decimal("0"))
-                _recalculate_closing(bal)
-                bal.save(update_fields=["period_debit", "period_credit", "closing_debit", "closing_credit", "updated_at"])
+        unpost_source_journal(request, sale.journal_entry, reason or "Bỏ ghi sổ chứng từ bán dịch vụ")
         sale.journal_entry = None
         sale.save(update_fields=["journal_entry"])
-        entry.delete()
 
     before = sale.status
     sale.status = models.DocumentStatus.APPROVED
@@ -847,6 +853,10 @@ def link_tax_invoice(request, sale, invoice_id, notes=""):
     diff = abs(invoice.total_amount - sale.total_amount)
     if diff > Decimal("1.0"):
         raise ValidationError(f"Tổng tiền hóa đơn ({invoice.total_amount}) không khớp với tổng thanh toán chứng từ ({sale.total_amount}). Chênh lệch: {diff} (EF-08).")
+    # Output VAT on the ledger (3331) must match the invoice, not only the total.
+    tax_diff = abs(invoice.tax_amount - sale.tax_amount)
+    if tax_diff > Decimal("1.0"):
+        raise ValidationError(f"Tiền thuế trên hóa đơn ({invoice.tax_amount}) không khớp tiền thuế đã ghi sổ ({sale.tax_amount}). Chênh lệch: {tax_diff}.")
 
     sale.tax_invoice = invoice
     sale.invoice_link_notes = notes

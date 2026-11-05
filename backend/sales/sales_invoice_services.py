@@ -76,6 +76,23 @@ def round_money(val, currency=None):
     return d.quantize(fmt, rounding=ROUND_HALF_UP)
 
 
+def next_official_invoice_number(company, invoice_series):
+    """Next official e-invoice number within one series: consecutive per series, shared by VAT and
+    discount invoices of that series, and independent of internal document numbers."""
+    from organization.models import Company
+
+    Company.objects.select_for_update().get(pk=company.pk)  # serialises number allocation per company
+    used = list(
+        models.SalesInvoice.objects.filter(company=company, invoice_series=invoice_series)
+        .exclude(invoice_number="").values_list("invoice_number", flat=True)
+    ) + list(
+        models.SalesDiscountInvoice.objects.filter(company=company, invoice_series=invoice_series)
+        .exclude(invoice_number="").values_list("invoice_number", flat=True)
+    )
+    last = max((int(number) for number in used if number.isdigit()), default=0)
+    return f"{last + 1:07d}"
+
+
 def generate_sales_invoice_number(company, branch=None, document_date=None):
     """Generate unique internal sales invoice number (HD-YYYY-NNNNNN) using DocumentNumberingRule or SalesInvoiceCounter."""
     ref_date = document_date or timezone.localdate()
@@ -235,13 +252,12 @@ def sale_invoice_issued_filter(line, source_type):
 
 
 def sale_invoice_pending_filter(line, source_type, exclude_invoice_id=None):
-    """Filter for reserved unissued invoice lines (DRAFT, PENDING_APPROVAL, APPROVED, ISSUING)."""
-    q = Q(invoice__status__in=[
-        models.SalesInvoice.Status.DRAFT,
-        models.SalesInvoice.Status.PENDING_APPROVAL,
-        models.SalesInvoice.Status.APPROVED,
-        models.SalesInvoice.Status.ISSUING,
-    ])
+    """Filter for reserved unissued invoice lines: every invoice not yet issued and not cancelled.
+
+    Invoices sent back for revision, rejected or failed to issue can still be resubmitted and issued,
+    so they keep holding their quantity.
+    """
+    q = ~Q(invoice__status__in=[models.SalesInvoice.Status.ISSUED, models.SalesInvoice.Status.CANCELLED])
     if source_type == "GOODS_SALE":
         q &= Q(goods_sale_line=line)
     elif source_type == "SERVICE_SALE":
@@ -252,6 +268,51 @@ def sale_invoice_pending_filter(line, source_type, exclude_invoice_id=None):
     if exclude_invoice_id:
         q &= ~Q(invoice_id=exclude_invoice_id)
     return q
+
+
+def vat_invoiced_on_order_line(order_line, exclude_invoice_id=None):
+    """Quantity of an order line on VAT invoices not cancelled, made from the order or from its sale vouchers."""
+    lines = models.SalesInvoiceLine.objects.filter(
+        Q(order_line=order_line) | Q(goods_sale_line__order_line=order_line) | Q(service_sale_line__order_line=order_line)
+    ).exclude(invoice__status=models.SalesInvoice.Status.CANCELLED)
+    if exclude_invoice_id:
+        lines = lines.exclude(invoice_id=exclude_invoice_id)
+    return lines.aggregate(t=Sum("quantity"))["t"] or Decimal("0")
+
+
+def order_line_invoiced_quantity(order_line, exclude_invoice_id=None, exclude_commercial_invoice_id=None):
+    """Quantity of a sales order line already invoiced or held by an invoice, by every route.
+
+    The same goods can reach an invoice from the order, from a sale voucher made from that order, or
+    from a commercial invoice; counting all of them keeps one order line from being invoiced twice.
+    """
+    commercial_lines = models.SalesCommercialInvoiceLine.objects.filter(
+        source_order_line=order_line, invoice__is_current_version=True,
+    ).exclude(invoice__status__in=[models.CommercialInvoiceStatus.CANCELLED, models.CommercialInvoiceStatus.REJECTED])
+    if exclude_commercial_invoice_id:
+        commercial_lines = commercial_lines.exclude(invoice_id=exclude_commercial_invoice_id)
+    return vat_invoiced_on_order_line(order_line, exclude_invoice_id) + (
+        commercial_lines.aggregate(t=Sum("quantity"))["t"] or Decimal("0")
+    )
+
+
+def invoice_line_available(source_line, source_type, exclude_invoice_id=None):
+    """Quantity of a source line that can still be invoiced."""
+    if source_type in ("GOODS_SALE", "SERVICE_SALE"):
+        used = models.SalesInvoiceLine.objects.filter(
+            Q(goods_sale_line=source_line) if source_type == "GOODS_SALE" else Q(service_sale_line=source_line)
+        ).exclude(invoice__status=models.SalesInvoice.Status.CANCELLED)
+        if exclude_invoice_id:
+            used = used.exclude(invoice_id=exclude_invoice_id)
+        available = source_line.quantity - (used.aggregate(t=Sum("quantity"))["t"] or Decimal("0"))
+        order_line = source_line.order_line
+    else:
+        available = None
+        order_line = source_line
+    if order_line is not None:
+        order_available = order_line.quantity - order_line_invoiced_quantity(order_line, exclude_invoice_id=exclude_invoice_id)
+        available = order_available if available is None else min(available, order_available)
+    return max(Decimal("0"), available)
 
 
 def prepare_from_sale(company, goods_sale_id=None, service_sale_id=None, sales_order_id=None):
@@ -300,7 +361,7 @@ def prepare_from_sale(company, goods_sale_id=None, service_sale_id=None, sales_o
         pending_q = models.SalesInvoiceLine.objects.filter(sale_invoice_pending_filter(line, source_type))
         already_pending_qty = pending_q.aggregate(t=Sum("quantity"))["t"] or Decimal("0")
 
-        remaining_qty = max(Decimal("0"), total_qty - already_issued_qty - already_pending_qty)
+        remaining_qty = min(max(Decimal("0"), total_qty - already_issued_qty - already_pending_qty), invoice_line_available(line, source_type))
 
         if remaining_qty > Decimal("0"):
             tax_rate_percent = getattr(line.tax_rate, "rate_percent", Decimal("0")) if line.tax_rate else Decimal("0")
@@ -422,7 +483,10 @@ def calculate_and_validate_invoice_lines(
             pending_q = models.SalesInvoiceLine.objects.filter(sale_invoice_pending_filter(source_line, source_type, exclude_invoice_id=current_invoice_id))
             already_pending_qty = pending_q.aggregate(t=Sum("quantity"))["t"] or Decimal("0")
 
-            max_available = max(Decimal("0"), total_qty - already_issued_qty - already_pending_qty)
+            max_available = min(
+                max(Decimal("0"), total_qty - already_issued_qty - already_pending_qty),
+                invoice_line_available(source_line, source_type, exclude_invoice_id=current_invoice_id),
+            )
             if quantity > max_available:
                 raise ValidationError(
                     f"Dòng {idx}: Số lượng lập hóa đơn ({quantity}) vượt quá phần còn lại ({max_available})."
@@ -456,6 +520,13 @@ def calculate_and_validate_invoice_lines(
         # Tax calculation
         tax_rate_id = raw.get("tax_rate") or raw.get("tax_rate_id")
         tax_rate = TaxRate.objects.filter(company=company, id=tax_rate_id).first() if tax_rate_id else (source_line.tax_rate if source_line else None)
+
+        # Revenue and output VAT of a posted sale are already on the ledger; its invoice must carry the same terms.
+        if source_line is not None and source_type in ("GOODS_SALE", "SERVICE_SALE"):
+            if unit_price != source_line.unit_price:
+                raise ValidationError(f"Dòng {idx}: Đơn giá hóa đơn ({unit_price}) phải bằng đơn giá trên chứng từ bán đã ghi sổ ({source_line.unit_price}).")
+            if (tax_rate.pk if tax_rate else None) != source_line.tax_rate_id:
+                raise ValidationError(f"Dòng {idx}: Thuế suất hóa đơn phải bằng thuế suất trên chứng từ bán đã ghi sổ.")
 
         if tax_rate and tax_rate.rate_percent > Decimal("0"):
             line_tax = round_money(taxable_amount * (tax_rate.rate_percent / Decimal("100")), currency)
@@ -740,11 +811,15 @@ def decide_sales_invoice(request, sale_invoice, decision, comment=""):
     if decision in {models.SalesInvoice.Status.REJECTED, models.SalesInvoice.Status.REVISION_REQUIRED} and not comment.strip():
         raise ValidationError({"comment": "Bắt buộc nhập ý kiến khi từ chối hoặc yêu cầu sửa."})
 
-    decisions = list(models.ApprovalDecision.objects.filter(
+    actor = actor_for(request)
+    if decision == models.SalesInvoice.Status.APPROVED and actor and sale_invoice.created_by_id == actor.id             and not (sale_invoice.workflow_snapshot or {}).get("allow_self_approval"):
+        raise ValidationError("Không được tự phê duyệt chứng từ do chính mình lập.")
+
+    decisions = models.ApprovalDecision.objects.filter(
         company=sale_invoice.company,
         document_type="SALES_INVOICE",
         document_id=sale_invoice.pk
-    ).order_by("decided_at"))
+    ).order_by("decided_at")
 
     current_level = 1
     for d in decisions:
@@ -811,6 +886,25 @@ def delete_sales_invoice(request, sale_invoice):
     sale_invoice.delete()
 
 
+def _validate_not_already_invoiced(sale_invoice):
+    """Re-check at issue time that the goods are not already invoiced by another invoice or a linked VAT invoice."""
+    source_doc = sale_invoice.goods_sale or sale_invoice.service_sale
+    if source_doc and source_doc.tax_invoice_id:
+        raise ValidationError(f"Chứng từ bán {source_doc.number} đã được gắn hóa đơn GTGT; không phát hành thêm hóa đơn.")
+    for line in sale_invoice.lines.select_related("goods_sale_line__order_line", "service_sale_line__order_line", "order_line"):
+        if line.goods_sale_line_id:
+            source_line, source_type = line.goods_sale_line, "GOODS_SALE"
+        elif line.service_sale_line_id:
+            source_line, source_type = line.service_sale_line, "SERVICE_SALE"
+        elif line.order_line_id:
+            source_line, source_type = line.order_line, "SALES_ORDER"
+        else:
+            continue
+        available = invoice_line_available(source_line, source_type, exclude_invoice_id=sale_invoice.pk)
+        if line.quantity > available:
+            raise ValidationError(f"Dòng {line.line_no}: Số lượng hóa đơn ({line.quantity}) vượt phần còn được xuất hóa đơn ({available}).")
+
+
 def _validate_invoice_issuance_preconditions(sale_invoice):
     """Validate seller details, template, buyer details, and date before issuing (BR-SAL-07-09, EF-04, EF-05)."""
     if not sale_invoice.seller_name.strip() or not sale_invoice.seller_tax_code.strip():
@@ -853,6 +947,7 @@ def issue_sales_invoice(request, sale_invoice, force_fail=False, error_message="
                 raise ValidationError(f"Chỉ hóa đơn Đã duyệt mới có thể phát hành (trạng thái hiện tại: {sale_invoice.get_status_display()}).")
 
         _validate_invoice_issuance_preconditions(sale_invoice)
+        _validate_not_already_invoiced(sale_invoice)
 
         # Idempotency control code (BR-SAL-07-11)
         if not sale_invoice.issue_control_code:
@@ -874,16 +969,12 @@ def issue_sales_invoice(request, sale_invoice, force_fail=False, error_message="
         return sale_invoice
 
     with transaction.atomic():
-        counter_year = sale_invoice.invoice_date.year
-        c, _ = models.SalesInvoiceCounter.objects.select_for_update().get_or_create(company=sale_invoice.company, year=counter_year)
-        c.value += 1
-        c.save(update_fields=["value"])
-        official_number = f"{c.value:07d}"
+        official_number = next_official_invoice_number(sale_invoice.company, sale_invoice.invoice_series)
 
         transaction_code = f"TX-{sale_invoice.issue_control_code}"
         lookup_code = uuid.uuid4().hex[:10].upper()
-        xml_url = f"/media/invoices/{sale_invoice.company.code}/{counter_year}/{sale_invoice.invoice_series}_{official_number}.xml"
-        pdf_url = f"/media/invoices/{sale_invoice.company.code}/{counter_year}/{sale_invoice.invoice_series}_{official_number}.pdf"
+        xml_url = f"/media/invoices/{sale_invoice.company.code}/{sale_invoice.invoice_date.year}/{sale_invoice.invoice_series}_{official_number}.xml"
+        pdf_url = f"/media/invoices/{sale_invoice.company.code}/{sale_invoice.invoice_date.year}/{sale_invoice.invoice_series}_{official_number}.pdf"
         lookup_url = f"https://hoadondientu.gdt.gov.vn/tra-cuu?code={lookup_code}"
 
         # 1. Create or link TaxInvoice record in tax_management (BR-SAL-07-12)
@@ -937,12 +1028,22 @@ def issue_sales_invoice(request, sale_invoice, force_fail=False, error_message="
             sale_invoice.service_sale.tax_invoice = tax_inv
             sale_invoice.service_sale.save(update_fields=["tax_invoice", "updated_at"])
 
-        # 3. Update SalesOrder invoiced metrics if applicable
+        # 3. Update SalesOrder invoiced metrics. An invoice request already counted its quantity when it was
+        # submitted, so the order line keeps the larger of requested and actually issued, not their sum.
+        order_line_ids = set()
+        for l in sale_invoice.lines.select_related("goods_sale_line", "service_sale_line"):
+            line_order_id = l.order_line_id or getattr(l.goods_sale_line, "order_line_id", None) or getattr(l.service_sale_line, "order_line_id", None)
+            if line_order_id:
+                order_line_ids.add(line_order_id)
+        for order_line in models.SalesOrderLine.objects.select_for_update().filter(pk__in=order_line_ids):
+            issued = models.SalesInvoiceLine.objects.filter(
+                Q(order_line=order_line) | Q(goods_sale_line__order_line=order_line) | Q(service_sale_line__order_line=order_line),
+                invoice__status__in=[models.SalesInvoice.Status.ISSUED, models.SalesInvoice.Status.ISSUING],
+            ).aggregate(t=Sum("quantity"))["t"] or Decimal("0")
+            if issued > order_line.invoiced_quantity:
+                order_line.invoiced_quantity = issued
+                order_line.save(update_fields=["invoiced_quantity"])
         if sale_invoice.sales_order:
-            for l in sale_invoice.lines.all():
-                if l.order_line:
-                    l.order_line.invoiced_quantity += l.quantity
-                    l.order_line.save(update_fields=["invoiced_quantity"])
             sale_invoice.sales_order.invoiced_amount += sale_invoice.total_amount
             sale_invoice.sales_order.save(update_fields=["invoiced_amount", "updated_at"])
 

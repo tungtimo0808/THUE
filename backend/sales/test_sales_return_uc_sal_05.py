@@ -7,7 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from accounts_receivable.models import Receivable, ReceivableStatus
-from general_ledger.models import Account, AccountingPeriod, ChartOfAccounts, JournalEntry
+from general_ledger.models import Account, AccountingPeriod, ChartOfAccounts, JournalEntry, JournalLine
 from iam.models import CompanyMembership
 from inventory.models import InventoryPolicy, InventoryTransaction, InventoryTransactionLine, StockBalance
 from inventory.services import post as post_inventory
@@ -691,6 +691,15 @@ class SalesReturnUcSal05Tests(TestCase):
 
         ret.refresh_from_db()
         self.assertEqual(ret.refunded_amount, Decimal("20000000"))
+
+        # The return owes the customer through 131; cash leaves only with the refund (once, not twice).
+        return_lines = ret.journal_entry.lines.all()
+        self.assertFalse(return_lines.filter(account=self.acc_111).exists())
+        self.assertEqual(sum(l.credit for l in return_lines.filter(account=self.acc_131)), ret.total_amount)
+        cash_credited = sum(
+            l.credit for l in JournalLine.objects.filter(entry__status="POSTED", account=self.acc_111, entry__number__startswith=ret.number)
+        )
+        self.assertEqual(cash_credited, Decimal("20000000"))
 
         # Try to refund more than remaining -> EF-07 block
         excess_amount = (ret.refundable_amount - ret.refunded_amount) + Decimal("1000000")

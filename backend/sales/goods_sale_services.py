@@ -15,6 +15,7 @@ Implements:
 - Unposting (Bỏ ghi sổ) and invoice linking (AF-09, BR-SAL-03-11, EF-07).
 - Optimistic concurrency control and Audit Logging (BR-SAL-03-13, EF-08).
 """
+import logging
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -27,14 +28,25 @@ from approval_workflows.execution import approval_progress
 from approval_workflows.submission import configured_snapshot
 from audit_log.services import record_audit
 from common_services.models import CoreCompanySetting, DocumentNumberingRule
-from general_ledger.models import Account, AccountBalance, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import _balance as get_or_create_balance, _recalculate_closing
-from general_ledger.services import post as post_journal, source_module_request
+from general_ledger.models import Account, AccountingPeriod, JournalLine
+from general_ledger.services import gl_request, post as post_journal, source_module_request
 from inventory.models import InventoryPolicy, InventoryTransaction, InventoryTransactionLine, StockBalance
 from inventory.services import post as post_inventory, reverse as reverse_inventory
 from accounts_receivable.models import Receivable, ReceivableStatus
 from master_data.models import Currency, DocumentType, Item, Party, PartyAddress, TaxRate, UnitOfMeasure, Warehouse
 from . import models
+
+logger = logging.getLogger(__name__)
+from .posting_helpers import (
+    apply_order_delivery,
+    base_quantity,
+    check_payment_account,
+    convert_to_accounting_currency,
+    ensure_sale_has_no_dependents,
+    free_inventory_number,
+    source_journal,
+    unpost_source_journal,
+)
 
 MONEY = Decimal("0.0001")
 
@@ -77,13 +89,14 @@ def generate_goods_sale_number(company, branch=None, document_date=None):
     ref_date = document_date or timezone.localdate()
     try:
         from common_services.numbering_services import generate_document_number
-        doc_type = DocumentType.objects.filter(code__in=["SAL.GOODS_SALE", "BH", "SALES_GOODS"]).first()
-        if doc_type:
-            num = generate_document_number(company, doc_type, branch=branch, document_date=ref_date)
-            if num:
-                return num
+        with transaction.atomic():
+            doc_type = DocumentType.objects.filter(code__in=["SAL.GOODS_SALE", "BH", "SALES_GOODS"]).first()
+            if doc_type:
+                num = generate_document_number(company, doc_type, branch=branch, document_date=ref_date)
+                if num:
+                    return num
     except Exception:
-        pass
+        logger.exception("Không cấp được số theo quy tắc đánh số; dùng bộ đếm mặc định.")
 
     year = ref_date.year
     with transaction.atomic():
@@ -175,6 +188,7 @@ def calculate_and_validate_sale_lines(company, lines_data, payment_type, invento
         raise ValidationError("Chứng từ bán hàng phải có ít nhất một dòng hàng.")
 
     defaults = resolve_default_accounts(company, payment_type)
+    first_payment_account = None
     subtotal = Decimal("0")
     discount_amount = Decimal("0")
     tax_amount = Decimal("0")
@@ -257,7 +271,7 @@ def calculate_and_validate_sale_lines(company, lines_data, payment_type, invento
         if inventory_handling == models.GoodsSale.InventoryHandling.ATTACH_ISSUE and warehouse:
             bal = StockBalance.objects.filter(company=company, warehouse=warehouse, item=item).first()
             if bal and bal.average_cost > 0:
-                unit_cost = bal.average_cost
+                unit_cost = bal.average_cost * base_quantity(item, uom, quantity) / quantity
             cogs_amount = (quantity * unit_cost).quantize(MONEY, ROUND_HALF_UP)
 
         # GL Accounts Resolution
@@ -265,6 +279,8 @@ def calculate_and_validate_sale_lines(company, lines_data, payment_type, invento
         rec_acc = Account.objects.filter(pk=rec_acc_id, company=company).first() if rec_acc_id else defaults["payment_account"]
         if not rec_acc or not rec_acc.is_postable or rec_acc.status != "ACTIVE":
             raise ValidationError(f"Dòng {idx}: Tài khoản thanh toán/phải thu không hợp lệ hoặc không cho phép hạch toán.")
+        check_payment_account(idx, rec_acc, payment_type, first_payment_account)
+        first_payment_account = first_payment_account or rec_acc
 
         rev_acc_id = raw.get("revenue_account") or raw.get("revenue_account_id") or getattr(item, "revenue_account_id", None)
         rev_acc = Account.objects.filter(pk=rev_acc_id, company=company).first() if rev_acc_id else defaults["revenue_account"]
@@ -466,6 +482,8 @@ def create_goods_sale(request, validated_data, lines_data):
 
     # Auto-generate document number if not provided
     number = validated_data.get("number")
+    if number and models.GoodsSale.objects.filter(company=company, number=number).exists():
+        raise ValidationError({"number": f"Số chứng từ {number} đã tồn tại."})
     if not number:
         number = generate_goods_sale_number(company, branch=validated_data.get("branch"), document_date=doc_date)
 
@@ -743,6 +761,8 @@ def _validate_posting_preconditions(sale):
             remaining = line.order_line.quantity - used
             if line.quantity > remaining:
                 raise ValidationError(f"Số lượng bán ({line.quantity}) vượt phần còn lại của đơn hàng ({remaining}).")
+            if sale.inventory_handling == models.GoodsSale.InventoryHandling.ATTACH_ISSUE and line.quantity > line.order_line.remaining_quantity:
+                raise ValidationError(f"Số lượng xuất bán ({line.quantity}) vượt số còn phải giao của đơn hàng ({line.order_line.remaining_quantity}).")
 
         if line.inventory_transaction_line:
             used = models.GoodsSaleLine.objects.filter(inventory_transaction_line=line.inventory_transaction_line).exclude(sale__status=models.DocumentStatus.CANCELLED).exclude(sale=sale).aggregate(t=Sum("quantity"))["t"] or Decimal("0")
@@ -760,14 +780,17 @@ def _validate_posting_preconditions(sale):
         for line in lines:
             if not line.warehouse:
                 raise ValidationError(f"Dòng {line.line_no}: Chưa chọn kho xuất hàng.")
+            if not line.cogs_account or not line.inventory_account:
+                raise ValidationError(f"Dòng {line.line_no}: Chưa xác định tài khoản giá vốn hoặc tài khoản hàng tồn kho.")
             wh = line.warehouse
             policy = InventoryPolicy.objects.filter(company=sale.company, warehouse=wh, item=line.item, is_active=True).first()
             wh_allow_neg = bool((policy and policy.allow_negative) or wh.allow_negative) and allow_neg
 
             bal = StockBalance.objects.filter(company=sale.company, warehouse=wh, item=line.item).first()
             avail = bal.available_quantity if bal else Decimal("0")
-            if avail < line.quantity and not wh_allow_neg:
-                raise ValidationError(f"Tồn khả dụng của hàng {line.item.code} tại kho {wh.code} không đủ (hiện có: {avail}, cần xuất: {line.quantity}).")
+            needed = base_quantity(line.item, line.uom, line.quantity)
+            if avail < needed and not wh_allow_neg:
+                raise ValidationError(f"Tồn khả dụng của hàng {line.item.code} tại kho {wh.code} không đủ (hiện có: {avail}, cần xuất: {needed}).")
 
     return period, lines
 
@@ -795,7 +818,7 @@ def post_goods_sale(request, sale):
             company=sale.company,
             branch=sale.branch,
             supplier=sale.customer,
-            number=f"{sale.number}-XK",
+            number=free_inventory_number(sale.company, f"{sale.number}-XK"),
             transaction_type="ISSUE",
             transaction_date=sale.posting_date,
             source_warehouse=primary_wh,
@@ -804,16 +827,19 @@ def post_goods_sale(request, sale):
             status="APPROVED",
             created_by=actor_for(request),
         )
+        issue_lines = {}
         for line in lines:
-            InventoryTransactionLine.objects.create(
+            qty_base = base_quantity(line.item, line.uom, line.quantity)
+            issue_lines[line.pk] = InventoryTransactionLine.objects.create(
                 transaction=issue_trx,
                 line_no=line.line_no,
                 item=line.item,
                 uom=line.uom,
                 quantity=line.quantity,
-                base_quantity=line.quantity,
-                unit_cost=line.unit_cost,
-                line_value=line.cogs_amount,
+                base_quantity=qty_base,
+                source_warehouse=line.warehouse,
+                unit_cost=line.cogs_amount / qty_base if qty_base else Decimal("0"),
+                line_value=Decimal("0"),
                 debit_account=line.cogs_account,
                 credit_account=line.inventory_account,
                 movement_direction="OUT",
@@ -821,13 +847,23 @@ def post_goods_sale(request, sale):
         post_inventory(issue_trx, request)
         sale.inventory_transaction = issue_trx
         sale.inventory_created = True
+        apply_order_delivery([(line.order_line_id, line.quantity) for line in lines], 1)
+        # COGS is what the stock issue actually cost under the valuation method at posting time,
+        # and linking the issue line marks it as already costed for the COGS voucher (UC-SAL-10).
+        for line in lines:
+            issue_line = issue_lines[line.pk]
+            issue_line.refresh_from_db(fields=["line_value"])
+            line.cogs_amount = issue_line.line_value.quantize(MONEY, ROUND_HALF_UP)
+            line.unit_cost = line.cogs_amount / line.quantity if line.quantity else Decimal("0")
+            line.inventory_transaction_line = issue_line
+            line.save(update_fields=["cogs_amount", "unit_cost", "inventory_transaction_line"])
 
     # 2. Create and Post JournalEntry (BR-SAL-03-07, BR-SAL-03-08)
     total_cogs = sum(line.cogs_amount for line in lines) if sale.inventory_handling == models.GoodsSale.InventoryHandling.ATTACH_ISSUE else Decimal("0")
     total_debit = sale.total_amount + total_cogs
     total_credit = sale.total_amount + total_cogs
 
-    journal = JournalEntry.objects.create(
+    journal = source_journal(
         company=sale.company,
         branch=sale.branch,
         period=period,
@@ -872,7 +908,7 @@ def post_goods_sale(request, sale):
 
     # Credits: Revenue and Tax
     for line in lines:
-        line_net = (line.quantity * line.unit_price) - line.discount_amount
+        line_net = (line.quantity * line.unit_price).quantize(MONEY, ROUND_HALF_UP) - line.discount_amount
         if line_net > 0:
             gl_line_no += 1
             JournalLine.objects.create(
@@ -912,7 +948,7 @@ def post_goods_sale(request, sale):
                     description=f"Giá vốn hàng bán {line.item.code} - {sale.number}",
                     debit=line.cogs_amount,
                     credit=Decimal("0"),
-                    currency=sale.currency,
+                    currency=sale.company.accounting_currency or sale.currency,
                     party=sale.customer,
                     warehouse=line.warehouse,
                 )
@@ -924,10 +960,11 @@ def post_goods_sale(request, sale):
                     description=f"Xuất kho hàng hóa {line.item.code} - {sale.number}",
                     debit=Decimal("0"),
                     credit=line.cogs_amount,
-                    currency=sale.currency,
+                    currency=sale.company.accounting_currency or sale.currency,
                     warehouse=line.warehouse,
                 )
 
+    convert_to_accounting_currency(journal, sale.exchange_rate)
     post_journal(journal, source_module_request(request))
     sale.journal_entry = journal
 
@@ -988,32 +1025,28 @@ def unpost_goods_sale(request, sale, reason=""):
     if not period:
         raise ValidationError("Kỳ kế toán đã bị khóa, không thể bỏ ghi sổ.")
 
-    # Check receivable payments
+    ensure_sale_has_no_dependents(sale)
+    reason = reason or "Bỏ ghi sổ chứng từ bán hàng"
+
     if sale.receivable:
-        if sale.receivable.collected_amount > 0 or sale.receivable.netted_amount > 0:
-            raise ValidationError("Khoản phải thu đã phát sinh thu tiền hoặc cấn trừ, không thể bỏ ghi sổ.")
         rec = sale.receivable
         sale.receivable = None
         sale.save(update_fields=["receivable"])
         rec.delete()
 
-    # Reverse inventory transaction if created with sale
+    # Reverse inventory transaction if created with sale; a repost issues a new one
     if sale.inventory_created and sale.inventory_transaction:
-        reverse_inventory(sale.inventory_transaction, request)
+        reverse_inventory(sale.inventory_transaction, gl_request(request, {"reason": reason}))
+        sale.inventory_transaction = None
+        sale.inventory_created = False
+        sale.save(update_fields=["inventory_transaction", "inventory_created"])
+        sale.lines.update(inventory_transaction_line=None)
+        apply_order_delivery([(line.order_line_id, line.quantity) for line in sale.lines.all()], -1)
 
-    # Revert GL balances and delete journal entry
     if sale.journal_entry:
-        entry = sale.journal_entry
-        for line in entry.lines.all():
-            bal = AccountBalance.objects.filter(period=entry.period, account=line.account, branch=entry.branch).first()
-            if bal:
-                bal.period_debit = max(bal.period_debit - line.debit, Decimal("0"))
-                bal.period_credit = max(bal.period_credit - line.credit, Decimal("0"))
-                _recalculate_closing(bal)
-                bal.save(update_fields=["period_debit", "period_credit", "closing_debit", "closing_credit", "updated_at"])
+        unpost_source_journal(request, sale.journal_entry, reason)
         sale.journal_entry = None
         sale.save(update_fields=["journal_entry"])
-        entry.delete()
 
     before = sale.status
     sale.status = models.DocumentStatus.APPROVED
@@ -1046,6 +1079,10 @@ def link_tax_invoice(request, sale, invoice_id, notes=""):
     diff = abs(invoice.total_amount - sale.total_amount)
     if diff > Decimal("1.0"):
         raise ValidationError(f"Tổng tiền hóa đơn ({invoice.total_amount}) không khớp với tổng thanh toán chứng từ ({sale.total_amount}). Chênh lệch: {diff}.")
+    # Output VAT on the ledger (3331) must match the invoice, not only the total.
+    tax_diff = abs(invoice.tax_amount - sale.tax_amount)
+    if tax_diff > Decimal("1.0"):
+        raise ValidationError(f"Tiền thuế trên hóa đơn ({invoice.tax_amount}) không khớp tiền thuế đã ghi sổ ({sale.tax_amount}). Chênh lệch: {tax_diff}.")
 
     sale.tax_invoice = invoice
     sale.invoice_link_notes = notes
