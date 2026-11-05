@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+﻿import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -64,7 +64,7 @@ export default function LiveCompanyBootstrap() {
   }
 
   return <main className="account-page"><section className="account-card account-wide">
-    <Link to="/login">← Phiên làm việc</Link>
+    <Link to="/session">← Phiên làm việc</Link>
     <p className="account-eyebrow">THIẾT LẬP DOANH NGHIỆP</p>
     <h1>Khởi tạo doanh nghiệp</h1>
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link> bằng tài khoản đã xác thực email.</p> : <>

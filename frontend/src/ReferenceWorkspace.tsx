@@ -24,6 +24,7 @@ import {
   Clock,
   Database,
   Download,
+  KeyRound,
   Landmark,
   Lightbulb,
   LogIn,
@@ -178,6 +179,7 @@ import LiveCompanySelect from "./LiveCompanySelect";
 import LivePasswordReset from "./LivePasswordReset";
 import LiveProfile from "./LiveProfile";
 import LiveScope from "./LiveScope";
+import LiveSession from "./LiveSession";
 import LiveCommonHub from "./LiveCommonHub";
 import LiveCompanyBootstrap from "./LiveCompanyBootstrap";
 import LiveCompanyProfile from "./LiveCompanyProfile";
@@ -1343,6 +1345,12 @@ function ReferenceWorkspace() {
                         onClick={() => {
                           if (apiCompanies.some((ac) => ac.id === c.id)) {
                             apiSelectCompany(c.id);
+                            if (apiToken) {
+                              void request("/api/v1/common/companies/switch/", apiToken, {
+                                method: "POST",
+                                body: JSON.stringify({ company: c.id, company_id: c.id, all_branches: true }),
+                              }).catch(() => {});
+                            }
                           }
                           context("company", c.id);
                           setActiveClusterMenu(null);
@@ -1657,6 +1665,18 @@ function ReferenceWorkspace() {
                   >
                     <Building2 size={15} />
                     <span>Đổi / Quản lý doanh nghiệp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ref-user-dropdown-item"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      navigate("/session");
+                    }}
+                  >
+                    <KeyRound size={15} />
+                    <span>Phiên làm việc hiện tại</span>
                   </button>
 
                   {(Boolean(apiSession?.user?.is_superuser) || Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") && (
@@ -2619,6 +2639,7 @@ function AppRoute() {
   if (location.pathname === "/reset-password") return <LivePasswordReset />;
   if (location.pathname === "/profile") return <LiveProfile />;
   if (location.pathname === "/scope") return <LiveScope />;
+  if (location.pathname === "/session" || location.pathname === "/session/") return <LiveSession />;
   if (location.pathname === "/common") return <LiveCommonHub />;
   if (location.pathname === "/company-setup") return <LiveCompanyBootstrap />;
   if (location.pathname === "/company-profile") return <LiveCompanyProfile />;

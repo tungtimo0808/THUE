@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -111,7 +111,7 @@ export default function LiveWorkflows() {
   }
   const latest = selected?.latest_version;
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">QUY TRÌNH PHÊ DUYỆT</p><h1>Quản lý Workflow phê duyệt</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">QUY TRÌNH PHÊ DUYỆT</p><h1>Quản lý Workflow phê duyệt</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); open(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

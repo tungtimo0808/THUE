@@ -267,6 +267,7 @@ export async function request<T>(path: string, token?: string, options?: Request
         path.includes("/auth/logout/") ||
         path.includes("/iam/platform/login/") ||
         path.includes("/companies/switch/") ||
+        path.includes("/scopes/switch/") ||
         path.includes("/duplicates/") ||
         path.includes("/preview") ||
         path.includes("/validate") ||

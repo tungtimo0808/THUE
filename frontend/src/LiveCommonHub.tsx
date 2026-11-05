@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { ArrowLeft, KeyRound, Bell, Search, CheckSquare, Bot } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import "./live-account.css";
@@ -164,16 +165,77 @@ export default function LiveCommonHub() {
     finally { setBusy(false); }
   }
 
-  return <main className="account-page"><section className="account-card account-wide">
-    <Link to="/login">← Phiên làm việc</Link>
-    <p className="account-eyebrow">TIỆN ÍCH CHUNG</p>
-    <h1>Dùng chung</h1>
-    {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link>.</p> : <>
-      <nav className="account-tabs" aria-label="Chức năng dùng chung">
-        {([ ["notifications", "Thông báo"], ["search", "Tìm kiếm"], ["work", "Việc cần xử lý"], ["ai", "AI Assistant"] ] as const).map(([id, label]) =>
-          <button type="button" key={id} aria-current={tab === id ? "page" : undefined} onClick={() => { setTab(id); setError(""); setMessage(""); }}>{label}</button>,
-        )}
-      </nav>
+  return (
+    <main className="account-page">
+      <section className="account-card account-wide" style={{ maxWidth: 880, width: "100%", borderRadius: 12, padding: "24px 28px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, borderBottom: "1px solid #e2e8f0", paddingBottom: 12 }}>
+          <Link
+            to="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "#0284c7",
+              fontWeight: 600,
+              fontSize: 13,
+              textDecoration: "none",
+            }}
+          >
+            <ArrowLeft size={16} /> Bàn làm việc Kế toán
+          </Link>
+          <Link
+            to="/session"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "#475569",
+              fontSize: 13,
+              fontWeight: 500,
+              textDecoration: "none",
+            }}
+          >
+            <KeyRound size={14} /> Phiên làm việc
+          </Link>
+        </div>
+        <p className="account-eyebrow" style={{ color: "#0284c7", fontWeight: 700, fontSize: 11, letterSpacing: "0.05em", textTransform: "uppercase", margin: "0 0 4px" }}>
+          TIỆN ÍCH CHUNG HỆ THỐNG
+        </p>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", margin: "0 0 16px" }}>
+          Thông báo &amp; Tiện ích dùng chung
+        </h1>
+        {!token ? (
+          <p>Bạn cần <Link to="/login">đăng nhập</Link>.</p>
+        ) : (
+          <>
+            <nav className="account-tabs" aria-label="Chức năng dùng chung" style={{ marginBottom: 18 }}>
+              {([
+                ["notifications", "Thông báo"],
+                ["search", "Tìm kiếm"],
+                ["work", "Việc cần xử lý"],
+                ["ai", "AI Assistant"],
+              ] as const).map(([id, label]) => (
+                <button
+                  type="button"
+                  key={id}
+                  aria-current={tab === id ? "page" : undefined}
+                  onClick={() => { setTab(id); setError(""); setMessage(""); }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "8px 16px",
+                    fontWeight: tab === id ? 700 : 500,
+                  }}
+                >
+                  {id === "notifications" && <Bell size={14} />}
+                  {id === "search" && <Search size={14} />}
+                  {id === "work" && <CheckSquare size={14} />}
+                  {id === "ai" && <Bot size={14} />}
+                  <span>{label}</span>
+                </button>
+              ))}
+            </nav>
       {error && <p className="account-error" role="alert">{error}</p>}
       {message && <p className="account-message" role="status">{message}</p>}
       {tab === "notifications" && <>
@@ -222,8 +284,11 @@ export default function LiveCommonHub() {
           </div>}
         </div></li>)}</ul>
       </>}
-    </>}
-  </section></main>;
+          </>
+        )}
+      </section>
+    </main>
+  );
 }
 
 function Pagination({ page, count, onChange }: { page: number; count: number; onChange: (page: number) => void }) {

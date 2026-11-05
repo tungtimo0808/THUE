@@ -75,7 +75,7 @@ export default function LiveCompanySelect() {
       try {
         await request("/api/v1/common/companies/switch/", token, {
           method: "POST",
-          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId }),
+          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId, all_branches: true }),
         });
       } catch {
         // Fallback or ignore if offline/switched locally
@@ -94,7 +94,7 @@ export default function LiveCompanySelect() {
       try {
         await request("/api/v1/common/companies/switch/", token, {
           method: "POST",
-          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId }),
+          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId, all_branches: true }),
         });
       } catch {
         // Fallback or ignore if offline/switched locally

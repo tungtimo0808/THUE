@@ -1021,7 +1021,7 @@ def switch_scope(account, company, branch=None, all_branches=False, request=None
             company=company, actor_user=account, module_code="COM", action_code="SCOPE_SWITCH",
             entity=preference, before=before,
             after={"company": str(company.id), "branch": str(branch.id) if branch else "", "all_branches": preference.all_branches},
-            summary=f"Super Admin chuyển phạm vi làm việc sang doanh nghiệp {company.code}",
+            description=f"Super Admin chuyển phạm vi làm việc sang doanh nghiệp {company.code}",
         )
         return preference
     options = next((item for item in available_scopes(account) if item["company"]["id"] == str(company.id)), None)
@@ -1035,10 +1035,16 @@ def switch_scope(account, company, branch=None, all_branches=False, request=None
             raise PermissionDenied("Bạn không có quyền truy cập chi nhánh đã chọn.")
         all_branches = False
     elif not all_branches:
-        if len(allowed_ids) == 1:
+        if options.get("all_branches_allowed"):
+            all_branches = True
+        elif len(allowed_ids) == 1:
             branch = Branch.objects.get(pk=next(iter(allowed_ids)))
         elif len(options["branches"]) > 1:
-            raise ValidationError({"branch": "Vui lòng chọn chi nhánh hoặc phạm vi tất cả chi nhánh."})
+            branch = (
+                Branch.objects.filter(pk__in=allowed_ids, is_head_office=True, status="ACTIVE").first()
+                or Branch.objects.filter(pk__in=allowed_ids, status="ACTIVE").order_by("created_at").first()
+                or Branch.objects.get(pk=next(iter(allowed_ids)))
+            )
         elif not options["branches"]:
             all_branches = True
     preference, _ = UserPreference.objects.select_for_update().get_or_create(user=account)

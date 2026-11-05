@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -63,7 +63,7 @@ export default function LiveFiscalPeriods() {
     if (mode === "edit" && selected) return run(() => request(`${base}/fiscal-years/${selected.id}/?company_id=${companyId}`, token, { method: "PATCH", body: JSON.stringify(body) }), "Đã sửa năm tài chính bản nháp.");
   }
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">THIẾT LẬP KẾ TOÁN</p><h1>Kỳ kế toán</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">THIẾT LẬP KẾ TOÁN</p><h1>Kỳ kế toán</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setSelected(null); setMode(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

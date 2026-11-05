@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -34,7 +34,7 @@ export default function LiveUserAccess() {
     if (mode === "cancel") return run(() => request(`${url}/cancel-termination/?company_id=${companyId}`, token, { method: "POST", body: JSON.stringify({ reason }) }), "Đã hủy lịch ngừng quyền tham gia.");
   }
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">KIỂM SOÁT TRUY CẬP</p><h1>Quyền truy cập của người dùng</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">KIỂM SOÁT TRUY CẬP</p><h1>Quyền truy cập của người dùng</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setMember(null); setMode(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       <div className="account-actions"><button type="button" onClick={() => { setTab("lock"); setMode(null); }}>Khóa và mở khóa</button><button type="button" onClick={() => { setTab("terminate"); setMode(null); }}>Ngừng tham gia</button></div>{error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

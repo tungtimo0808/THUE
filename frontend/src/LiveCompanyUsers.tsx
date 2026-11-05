@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -67,7 +67,7 @@ export default function LiveCompanyUsers() {
   }
 
   return <main className="account-page"><section className="account-card account-wide">
-    <Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">QUẢN TRỊ NHÂN SỰ & TÀI KHOẢN</p><h1>Người dùng trong doanh nghiệp</h1>
+    <Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">QUẢN TRỊ NHÂN SỰ & TÀI KHOẢN</p><h1>Người dùng trong doanh nghiệp</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setMode(null); }}>
         {companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}
