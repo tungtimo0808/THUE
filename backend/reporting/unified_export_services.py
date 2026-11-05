@@ -43,6 +43,9 @@ from openpyxl.utils import get_column_letter
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A3, A4, landscape, portrait
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from reportlab.platypus import (
     HRFlowable,
     KeepTogether,
@@ -666,17 +669,150 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
     return out.getvalue()
 
 
+_FONTS_REGISTERED = False
+_DEFAULT_FONT_NAME = "LiberationSerif"
+
+
+def _ensure_pdf_fonts_registered() -> str:
+    """
+    Đăng ký TrueType Unicode fonts cho ReportLab để hỗ trợ 100% tiếng Việt UTF-8.
+    Tìm kiếm font trên Linux container (/usr/share/fonts/...) và Windows (C:/Windows/Fonts/...).
+    Trả về tên font gia đình mặc định đã đăng ký ("LiberationSerif" hoặc "LiberationSans" hoặc "TimesNewRoman" hoặc "Arial").
+    """
+    global _FONTS_REGISTERED, _DEFAULT_FONT_NAME
+    if _FONTS_REGISTERED:
+        return _DEFAULT_FONT_NAME
+
+    font_configs = [
+        {
+            "name": "LiberationSerif",
+            "regular": "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+            "bold": "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
+            "italic": "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf",
+            "boldItalic": "/usr/share/fonts/truetype/liberation/LiberationSerif-BoldItalic.ttf",
+        },
+        {
+            "name": "LiberationSans",
+            "regular": "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "bold": "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "italic": "/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf",
+            "boldItalic": "/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf",
+        },
+        {
+            "name": "TimesNewRoman",
+            "regular": "C:/Windows/Fonts/times.ttf",
+            "bold": "C:/Windows/Fonts/timesbd.ttf",
+            "italic": "C:/Windows/Fonts/timesi.ttf",
+            "boldItalic": "C:/Windows/Fonts/timesbi.ttf",
+        },
+        {
+            "name": "Arial",
+            "regular": "C:/Windows/Fonts/arial.ttf",
+            "bold": "C:/Windows/Fonts/arialbd.ttf",
+            "italic": "C:/Windows/Fonts/ariali.ttf",
+            "boldItalic": "C:/Windows/Fonts/arialbi.ttf",
+        },
+    ]
+
+    registered = None
+    for cfg in font_configs:
+        reg_path = cfg["regular"]
+        bold_path = cfg["bold"]
+        italic_path = cfg["italic"]
+        bi_path = cfg["boldItalic"]
+
+        if os.path.exists(reg_path):
+            try:
+                base_name = cfg["name"]
+                bold_name = f"{base_name}-Bold"
+                italic_name = f"{base_name}-Italic"
+                bi_name = f"{base_name}-BoldItalic"
+
+                pdfmetrics.registerFont(TTFont(base_name, reg_path))
+                pdfmetrics.registerFont(TTFont(bold_name, bold_path if os.path.exists(bold_path) else reg_path))
+                pdfmetrics.registerFont(TTFont(italic_name, italic_path if os.path.exists(italic_path) else reg_path))
+                pdfmetrics.registerFont(TTFont(bi_name, bi_path if os.path.exists(bi_path) else reg_path))
+
+                pdfmetrics.registerFontFamily(
+                    base_name,
+                    normal=base_name,
+                    bold=bold_name,
+                    italic=italic_name,
+                    boldItalic=bi_name,
+                )
+                if not registered:
+                    registered = base_name
+            except Exception:
+                pass
+
+    _DEFAULT_FONT_NAME = registered or "Helvetica"
+    _FONTS_REGISTERED = True
+    return _DEFAULT_FONT_NAME
+
+
+class NumberedCanvas(canvas.Canvas):
+    """Vẽ số trang '1/1' hoặc 'X/Y' ở góc dưới bên phải trang chuẩn báo cáo kế toán."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_number(num_pages)
+            super().showPage()
+        super().save()
+
+    def draw_page_number(self, page_count):
+        self.saveState()
+        font_name = _DEFAULT_FONT_NAME if _FONTS_REGISTERED else "Helvetica"
+        self.setFont(font_name, 8)
+        self.setFillColor(colors.HexColor("#374151"))
+        page_text = f"{self._pageNumber}/{page_count}"
+        self.drawRightString(self._pagesize[0] - 25, 14, page_text)
+        self.restoreState()
+
+
+def _format_vn_number(raw_v: Any, show_zero: bool = False) -> str:
+    """Format số tiền và số lượng theo chuẩn Việt Nam (phân cách hàng nghìn bằng dấu chấm .)."""
+    if raw_v is None or raw_v == "":
+        return ""
+    try:
+        num = float(raw_v)
+        if abs(num) < 1e-9:
+            return "0" if show_zero else ""
+        if num == int(num):
+            return f"{int(num):,}".replace(",", ".")
+        else:
+            formatted = f"{num:,.2f}".split(".")
+            integer_part = formatted[0].replace(",", ".")
+            dec_part = formatted[1]
+            return f"{integer_part},{dec_part}"
+    except (ValueError, TypeError):
+        return str(raw_v)
+
+
 def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> bytes:
     """
     TC-RPT-15-25..32, BR-RPT-EXP-49:
     Tạo tài liệu PDF chính thức với ReportLab:
     - Bố cục trang theo khổ giấy (A4/A3) và hướng giấy (Portrait/Landscape).
-    - Header bảng lặp lại trên từng trang (repeatRows=1).
-    - Watermark trạng thái: DỰ THẢO hoặc ĐÃ PHÊ DUYỆT.
-    - Đánh số trang "Trang X / Y".
+    - Hỗ trợ đầy đủ tiếng Việt UTF-8 không lỗi font (TrueType Unicode).
+    - Header bảng lặp lại trên từng trang (repeatRows=1), giao diện trắng đen chuẩn MISA.
+    - Đánh số trang "1/1" hoặc "X/Y".
     - Khối chữ ký pháp lý chuẩn 3 cột: Người lập biểu, Kế toán trưởng, Giám đốc.
     """
     options = options or {}
+    font_family = _ensure_pdf_fonts_registered()
+    font_bold = f"{font_family}-Bold" if f"{font_family}-Bold" in pdfmetrics.getRegisteredFontNames() else font_family
+    font_italic = f"{font_family}-Italic" if f"{font_family}-Italic" in pdfmetrics.getRegisteredFontNames() else font_family
+
     paper_size_choice = (options.get("paper_size") or "A4").upper()
     orientation_choice = (options.get("orientation") or "PORTRAIT").upper()
 
@@ -686,7 +822,8 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     columns = normalize_columns(dataset.get("columns", []))
     rows = normalize_rows(dataset.get("rows", []))
     title = (dataset.get("title") or "BÁO CÁO KẾ TOÁN").upper()
-    company_name = dataset.get("company_name", "")
+    company_name = dataset.get("company_name", "") or "Công ty TNHH Tunghihihi"
+    company_address = dataset.get("company_address", "") or "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội - Việt Nam"
     tax_code = dataset.get("tax_code", "")
     period_str = dataset.get("period_str", "")
     is_approved = bool(dataset.get("is_approved", False))
@@ -697,58 +834,75 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         pagesize=page_size,
         leftMargin=25,
         rightMargin=25,
-        topMargin=30,
-        bottomMargin=30,
+        topMargin=25,
+        bottomMargin=25,
     )
 
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         "ReportTitle",
         parent=styles["Heading1"],
-        fontName="Helvetica-Bold",
-        fontSize=14,
-        leading=18,
+        fontName=font_bold,
+        fontSize=13.5,
+        leading=17,
         alignment=1,  # Center
-        textColor=colors.HexColor("#1E3A8A"),
+        textColor=colors.black,
     )
     subtitle_style = ParagraphStyle(
         "ReportSubtitle",
         parent=styles["Normal"],
-        fontName="Helvetica-Oblique",
-        fontSize=9,
+        fontName=font_italic,
+        fontSize=9.5,
         leading=13,
         alignment=1,  # Center
-        textColor=colors.HexColor("#4B5563"),
+        textColor=colors.black,
+    )
+    unit_style = ParagraphStyle(
+        "ReportUnit",
+        parent=styles["Normal"],
+        fontName=font_italic,
+        fontSize=8.5,
+        leading=11,
+        alignment=2,  # Right
+        textColor=colors.black,
     )
     header_style = ParagraphStyle(
         "CompanyHeader",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=font_family,
         fontSize=9,
-        leading=12,
+        leading=13,
         textColor=colors.HexColor("#111827"),
     )
     th_style = ParagraphStyle(
         "TableHeader",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
+        fontName=font_bold,
         fontSize=8,
-        leading=10,
+        leading=10.5,
         alignment=1,  # Center
-        textColor=colors.white,
+        textColor=colors.black,
     )
     td_style_left = ParagraphStyle(
         "TableCellLeft",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=font_family,
         fontSize=7.5,
         leading=9.5,
         alignment=0,
     )
+    td_style_center = ParagraphStyle(
+        "TableCellCenter",
+        parent=styles["Normal"],
+        fontName=font_family,
+        fontSize=7.5,
+        leading=9.5,
+        alignment=1,
+    )
     td_style_right = ParagraphStyle(
         "TableCellRight",
         parent=styles["Normal"],
-        fontName="Helvetica",
+        fontName=font_family,
         fontSize=7.5,
         leading=9.5,
         alignment=2,
@@ -756,54 +910,74 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     sig_title_style = ParagraphStyle(
         "SignatureTitle",
         parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=8.5,
-        leading=11,
+        fontName=font_bold,
+        fontSize=9,
+        leading=12,
         alignment=1,
+        textColor=colors.black,
     )
     sig_sub_style = ParagraphStyle(
         "SignatureSubtitle",
         parent=styles["Normal"],
-        fontName="Helvetica-Oblique",
-        fontSize=7,
-        leading=9,
+        fontName=font_italic,
+        fontSize=8,
+        leading=10.5,
         alignment=1,
-        textColor=colors.HexColor("#6B7280"),
+        textColor=colors.HexColor("#111827"),
+    )
+    sig_name_style = ParagraphStyle(
+        "SignatureName",
+        parent=styles["Normal"],
+        fontName=font_bold,
+        fontSize=9,
+        leading=12,
+        alignment=1,
+        textColor=colors.black,
     )
 
     elements = []
 
     # 1. Company & Metadata Header
-    meta_text = f"<b>{html.escape(company_name or 'DOANH NGHIỆP')}</b><br/>"
+    meta_text = f"<b>{html.escape(company_name)}</b><br/>"
+    if company_address:
+        meta_text += f"{html.escape(company_address)}<br/>"
     if tax_code:
-        meta_text += f"Mã số thuế: {html.escape(tax_code)}<br/>"
-    status_label = "ĐÃ PHÊ DUYỆT" if is_approved else "DỰ THẢO (DRAFT)"
-    status_color = "#059669" if is_approved else "#DC2626"
-    meta_text += f"Trạng thái: <font color='{status_color}'><b>{status_label}</b></font>"
+        meta_text += f"Mã số thuế: {html.escape(tax_code)}"
+
+    if options.get("show_status", False):
+        status_label = "ĐÃ PHÊ DUYỆT" if is_approved else "DỰ THẢO (DRAFT)"
+        status_color = "#059669" if is_approved else "#DC2626"
+        meta_text += f"<br/>Trạng thái: <font color='{status_color}'><b>{status_label}</b></font>"
 
     elements.append(Paragraph(meta_text, header_style))
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 8))
 
     # 2. Tiêu đề báo cáo & Kỳ
     elements.append(Paragraph(html.escape(title.upper()), title_style))
     if period_str:
-        elements.append(Paragraph(html.escape(period_str), subtitle_style))
-    elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, 3))
+        elements.append(Paragraph(f"<i>{html.escape(period_str)}</i>", subtitle_style))
+    elements.append(Spacer(1, 4))
+
+    # Đơn vị tính (nằm trên góc phải bảng)
+    unit_label = options.get("currency_unit") or dataset.get("currency_unit") or "Đơn vị tính: VND"
+    elements.append(Paragraph(f"<i>{html.escape(unit_label)}</i>", unit_style))
+    elements.append(Spacer(1, 3))
 
     # 3. Chuẩn bị bảng dữ liệu
     table_data = []
 
     # Dòng Header bảng
-    col_headers = [Paragraph(html.escape(c.get("label", c.get("key", ""))), th_style) for c in columns]
+    col_headers = [Paragraph(f"<b>{html.escape(c.get('label', c.get('key', '')))}</b>", th_style) for c in columns]
     table_data.append(col_headers)
 
-    col_keys = [c.get("key", "") for c in columns]
     amount_keywords = {"amount", "price", "cost", "balance", "debit", "credit", "total", "val", "qty"}
+    center_keywords = {"unit", "dvt", "date", "ngay", "ngay_ct"}
 
     for r in rows:
         row_cells = []
         is_subtotal = bool(r.get("is_subtotal") or r.get("is_group_header"))
-        for col in columns:
+        for col_idx, col in enumerate(columns):
             k = col.get("key", "")
             raw_v = r.get(k)
             k_lower = k.lower()
@@ -811,15 +985,22 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
                 isinstance(raw_v, (int, float, Decimal))
                 or (isinstance(raw_v, str) and raw_v.replace(",", "").replace(".", "").isdigit())
             ) and any(m in k_lower for m in amount_keywords)
+            is_center = any(m in k_lower for m in center_keywords)
 
             if raw_v is None:
-                text_v = "-"
-            elif isinstance(raw_v, (int, float, Decimal)):
-                text_v = f"{raw_v:,.0f}" if float(raw_v) == int(raw_v) else f"{raw_v:,.2f}"
+                text_v = ""
+            elif is_num:
+                text_v = _format_vn_number(raw_v, show_zero=False)
             else:
                 text_v = str(raw_v)
 
-            s = td_style_right if is_num else td_style_left
+            if is_num:
+                s = td_style_right
+            elif is_center:
+                s = td_style_center
+            else:
+                s = td_style_left
+
             if is_subtotal:
                 text_v = f"<b>{html.escape(text_v)}</b>"
             else:
@@ -838,55 +1019,78 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
             else:
                 gt_v = grand_total.get(k)
                 if gt_v is not None and isinstance(gt_v, (int, float, Decimal)):
-                    gt_cells.append(Paragraph(f"<b>{gt_v:,.0f}</b>", td_style_right))
+                    gt_cells.append(Paragraph(f"<b>{_format_vn_number(gt_v, show_zero=False)}</b>", td_style_right))
                 else:
                     gt_cells.append(Paragraph(f"<b>{html.escape(str(gt_v or ''))}</b>", td_style_right))
         table_data.append(gt_cells)
 
-    # Tính độ rộng cột tự động
-    total_avail_width = page_size[0] - 50  # margins
-    col_count = max(len(columns), 1)
-    col_width = total_avail_width / col_count
+    # Tính độ rộng cột tự động và hài hòa
+    total_avail_width = page_size[0] - 50  # margins 25 + 25
+    weights = []
+    for c in columns:
+        k = c.get("key", "").lower()
+        if any(w in k for w in ["name", "description", "title", "diengiai", "ten_hang", "tenhang"]):
+            weights.append(3.0)
+        elif any(w in k for w in ["code", "ma_hang", "mahang", "so_ct", "so_chung_tu"]):
+            weights.append(1.3)
+        elif any(w in k for w in ["unit", "dvt", "don_vi"]):
+            weights.append(0.8)
+        elif any(w in k for w in ["qty", "quantity", "so_luong"]):
+            weights.append(1.0)
+        elif any(w in k for w in ["amount", "price", "cost", "total", "gia_tri", "thanh_tien"]):
+            weights.append(1.4)
+        else:
+            weights.append(1.1)
 
-    t = Table(table_data, colWidths=[col_width] * col_count, repeatRows=1)
-    t.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E40AF")),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ]
-        )
-    )
+    total_weight = sum(weights) or 1
+    col_widths = [(w / total_weight) * total_avail_width for w in weights]
+
+    t = Table(table_data, colWidths=col_widths, repeatRows=1)
+    table_style_commands = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.white),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
+        ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+    ]
+    if grand_total and options.get("include_grand_total", True):
+        table_style_commands.append(("LINEABOVE", (0, -1), (-1, -1), 0.75, colors.HexColor("#000000")))
+        table_style_commands.append(("LINEBELOW", (0, -1), (-1, -1), 0.75, colors.HexColor("#000000")))
+
+    t.setStyle(TableStyle(table_style_commands))
     elements.append(t)
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 18))
 
     # 4. Khối chữ ký (Signatures Block)
     if options.get("show_signatures", True):
-        prep_name = options.get("prepared_by_name") or "Người lập biểu"
-        chief_name = options.get("chief_accountant_name") or "Kế toán trưởng"
-        director_name = options.get("legal_representative_name") or "Giám đốc / Đại diện pháp luật"
+        raw_prep = options.get("prepared_by_name") or ""
+        raw_chief = options.get("chief_accountant_name") or ""
+        raw_director = options.get("legal_representative_name") or ""
+
+        prep_name = raw_prep if raw_prep not in ("Người lập biểu", "người lập biểu") else ""
+        chief_name = raw_chief if raw_chief not in ("Kế toán trưởng", "kế toán trưởng") else ""
+        director_name = raw_director if raw_director not in ("Giám đốc / Đại diện pháp luật", "Giám đốc", "giám đốc") else ""
+
         sig_date = options.get("signature_date") or datetime.date.today().strftime("Ngày %d tháng %m năm %Y")
 
         sig_data = [
             [
                 Paragraph("", sig_title_style),
                 Paragraph("", sig_title_style),
-                Paragraph(f"<i>{sig_date}</i>", sig_title_style),
+                Paragraph(f"<i>{html.escape(sig_date)}</i>", sig_sub_style),
             ],
             [
-                Paragraph("<b>NGƯỜI LẬP BIỂU</b>", sig_title_style),
-                Paragraph("<b>KẾ TOÁN TRƯỞNG</b>", sig_title_style),
-                Paragraph("<b>GIÁM ĐỐC / ĐẠI DIỆN PHÁP LUẬT</b>", sig_title_style),
+                Paragraph("<b>Người lập biểu</b>", sig_title_style),
+                Paragraph("<b>Kế toán trưởng</b>", sig_title_style),
+                Paragraph("<b>Giám đốc</b>", sig_title_style),
             ],
             [
-                Paragraph("(Ký, ghi rõ họ tên)", sig_sub_style),
-                Paragraph("(Ký, ghi rõ họ tên)", sig_sub_style),
-                Paragraph("(Ký, đóng dấu, ghi rõ họ tên)", sig_sub_style),
+                Paragraph("<i>(Ký, họ tên)</i>", sig_sub_style),
+                Paragraph("<i>(Ký, họ tên)</i>", sig_sub_style),
+                Paragraph("<i>(Ký, họ tên, đóng dấu)</i>", sig_sub_style),
             ],
             [
                 Spacer(1, 40),
@@ -894,9 +1098,9 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
                 Spacer(1, 40),
             ],
             [
-                Paragraph(f"<b>{html.escape(prep_name)}</b>", sig_title_style),
-                Paragraph(f"<b>{html.escape(chief_name)}</b>", sig_title_style),
-                Paragraph(f"<b>{html.escape(director_name)}</b>", sig_title_style),
+                Paragraph(f"<b>{html.escape(prep_name)}</b>" if prep_name else "", sig_name_style),
+                Paragraph(f"<b>{html.escape(chief_name)}</b>" if chief_name else "", sig_name_style),
+                Paragraph(f"<b>{html.escape(director_name)}</b>" if director_name else "", sig_name_style),
             ],
         ]
         sig_col_w = total_avail_width / 3
@@ -906,13 +1110,17 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
                 [
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 1),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
                 ]
             )
         )
         elements.append(KeepTogether(sig_table))
 
-    # Xây dựng PDF
-    doc.build(elements)
+    # Xây dựng PDF với NumberedCanvas (đánh số trang 1/1, X/Y)
+    doc.build(elements, canvasmaker=NumberedCanvas)
     return buffer.getvalue()
 
 
