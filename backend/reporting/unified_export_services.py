@@ -1483,7 +1483,13 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
         thead_rows_html = f"<tr>{col_headers_html}</tr>"
 
     tbody_rows = []
-    amount_keywords = {"amount", "price", "cost", "balance", "debit", "credit", "total", "val", "qty"}
+    amount_keywords = {
+        "amount", "price", "cost", "balance", "debit", "credit", "total", "val", "qty",
+        "quantity", "so_luong", "gia_tri", "thanh_tien", "chiet_khau", "giam_gia", "tra_lai",
+        "tien", "du_no", "du_co", "phat_sinh", "luy_ke", "purchased", "returned", "net"
+    }
+    code_keywords = {"code", "ma_", "mahang", "so_ct", "so_hd", "account", "tk", "voucher"}
+    center_keywords = {"unit", "dvt", "don_vi", "uom", "date", "ngay", "ngay_ct", "stt", "thu_tu"}
 
     for r in rows:
         tds = []
@@ -1492,23 +1498,37 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
             k = c.get("key", "")
             raw_v = r.get(k)
             k_lower = k.lower()
+            lbl_lower = (c.get("label") or "").lower()
+            combined_k = f"{k_lower} {lbl_lower}"
+            col_type = str(c.get("data_type") or c.get("type") or "").lower()
+            col_align = str(c.get("align") or "").lower()
+
+            is_code_col = any(code_k in combined_k for code_k in code_keywords)
+            is_center = col_align in ("center", "1") or any(m in combined_k for m in center_keywords)
             is_num = (
-                isinstance(raw_v, (int, float, Decimal))
-                or (isinstance(raw_v, str) and raw_v.replace(",", "").replace(".", "").isdigit())
-            ) and any(m in k_lower for m in amount_keywords)
+                not is_code_col
+                and (
+                    col_type in ("number", "currency", "decimal", "numeric")
+                    or col_align in ("right", "2")
+                    or any(m in combined_k for m in amount_keywords)
+                    or isinstance(raw_v, (int, float, Decimal))
+                )
+            )
 
             if raw_v is None:
                 text_v = ""
-            elif isinstance(raw_v, (int, float, Decimal)):
-                if float(raw_v) == 0:
-                    text_v = ""
-                else:
-                    formatted = f"{raw_v:,.0f}" if float(raw_v) == int(raw_v) else f"{raw_v:,.2f}"
-                    text_v = formatted.replace(",", ".")
+            elif is_num:
+                text_v = _format_vn_number(raw_v, show_zero=False)
             else:
                 text_v = str(raw_v)
 
-            align_class = "text-right" if is_num else "text-left"
+            if is_num:
+                align_class = "text-right"
+            elif is_center:
+                align_class = "text-center"
+            else:
+                align_class = "text-left"
+
             code_class = "code-link" if (col_idx == 0 and not is_num and not is_subtotal) else ""
             subtotal_class = "font-bold bg-subtotal" if is_subtotal else ""
             tds.append(f"<td class='{align_class} {code_class} {subtotal_class}'>{html.escape(text_v)}</td>")
@@ -1521,18 +1541,23 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
         for idx, c in enumerate(columns):
             k = c.get("key", "")
             if idx == 0:
-                gt_tds.append("<td class='text-center font-bold bg-grand-total'>TỔNG CỘNG</td>")
+                gt_tds.append("<td class='text-left font-bold bg-grand-total' style='white-space:nowrap;'>TỔNG CỘNG</td>")
             else:
                 gt_v = grand_total.get(k)
-                if gt_v is not None and isinstance(gt_v, (int, float, Decimal)):
-                    if float(gt_v) == 0:
-                        gt_tds.append("<td class='text-right font-bold bg-grand-total' data-raw='0'></td>")
-                    else:
+                if gt_v is not None and gt_v != "":
+                    gt_formatted = _format_vn_number(gt_v, show_zero=False)
+                    if gt_formatted:
+                        try:
+                            raw_attr = f"{float(gt_v):,.0f}"
+                        except Exception:
+                            raw_attr = str(gt_v)
                         gt_tds.append(
-                            f"<td class='text-right font-bold bg-grand-total' data-raw='{gt_v:,.0f}'>{f'{gt_v:,.0f}'.replace(',', '.')}</td>"
+                            f"<td class='text-right font-bold bg-grand-total' data-raw='{html.escape(raw_attr)}'>{gt_formatted}</td>"
                         )
+                    else:
+                        gt_tds.append("<td class='text-right font-bold bg-grand-total'></td>")
                 else:
-                    gt_tds.append(f"<td class='text-right font-bold bg-grand-total'>{html.escape(str(gt_v or ''))}</td>")
+                    gt_tds.append("<td class='text-right font-bold bg-grand-total'></td>")
         tbody_rows.append(f"<tr class='grand-total-row'>{''.join(gt_tds)}</tr>")
 
     html_content = f"""<!DOCTYPE html>
@@ -1596,6 +1621,7 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
     font-weight: bold;
     text-align: center;
     vertical-align: middle;
+    white-space: nowrap;
   }}
   .code-link {{ color: #1d4ed8; }}
   .text-left {{ text-align: left; }}

@@ -7191,14 +7191,30 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
       key.includes("amount") ||
       key.includes("balance") ||
       key.includes("closing") ||
-      key.includes("opening");
+      key.includes("opening") ||
+      key.includes("qty") ||
+      key.includes("quantity") ||
+      key.includes("so_luong") ||
+      key.includes("gia_tri") ||
+      key.includes("thanh_tien") ||
+      key.includes("total") ||
+      key.includes("purchased") ||
+      key.includes("returned");
+    const isCenter =
+      dtype === "center" ||
+      key.includes("unit") ||
+      key.includes("dvt") ||
+      key.includes("don_vi") ||
+      key.includes("uom") ||
+      key.includes("date") ||
+      key.includes("ngay");
     const isCode =
       idx === 0 ||
       key.includes("code") ||
       key.includes("account_number") ||
       key === "tk" ||
       key === "ma_so";
-    return { ...col, key, label, group, sublabel, isNum, isCode };
+    return { ...col, key, label, group, sublabel, isNum, isCenter, isCode };
   });
 
   const hasGrouped = resolvedCols.some((c) => Boolean(c.group));
@@ -7210,7 +7226,7 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
     while (i < resolvedCols.length) {
       const c = resolvedCols[i];
       if (!c.group) {
-        row1 += `<th rowspan="2">${escapeHtml(c.label)}</th>`;
+        row1 += `<th rowspan="2" style="white-space:nowrap;">${escapeHtml(c.label)}</th>`;
         i++;
       } else {
         const gName = c.group;
@@ -7219,9 +7235,9 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
           spanCols.push(resolvedCols[i]);
           i++;
         }
-        row1 += `<th colspan="${spanCols.length}">${escapeHtml(gName)}</th>`;
+        row1 += `<th colspan="${spanCols.length}" style="white-space:nowrap;">${escapeHtml(gName)}</th>`;
         for (const sc of spanCols) {
-          row2 += `<th>${escapeHtml(sc.sublabel)}</th>`;
+          row2 += `<th style="white-space:nowrap;">${escapeHtml(sc.sublabel)}</th>`;
         }
       }
     }
@@ -7229,7 +7245,7 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
     row2 += "</tr>";
     theadHtml = `${row1}${row2}`;
   } else {
-    theadHtml = `<tr>${resolvedCols.map((c) => `<th>${escapeHtml(c.label)}</th>`).join("")}</tr>`;
+    theadHtml = `<tr>${resolvedCols.map((c) => `<th style="white-space:nowrap;">${escapeHtml(c.label)}</th>`).join("")}</tr>`;
   }
 
   const tbodyRows = rows
@@ -7240,7 +7256,10 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
         .map((c, idx) => {
           const raw = r[c.key];
           if (c.isNum) {
-            return `<td class="num">${escapeHtml(formatNum(raw))}</td>`;
+            return `<td class="num" style="text-align:right;">${escapeHtml(formatNum(raw))}</td>`;
+          }
+          if (c.isCenter) {
+            return `<td class="center" style="text-align:center;">${escapeHtml(raw ?? "")}</td>`;
           }
           const cls = c.isCode && !isBold ? ' class="code-link"' : "";
           const indent =
@@ -7261,9 +7280,8 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
   if (hasExplicitGrandTotal) {
     const gtCells = resolvedCols
       .map((c, idx) => {
-        if (idx === 0) return `<td></td>`;
-        if (idx === 1) return `<td>Tổng cộng</td>`;
-        if (c.isNum) return `<td class="num">${escapeHtml(formatNum(c.grand_total))}</td>`;
+        if (idx === 0) return `<td style="white-space:nowrap;font-weight:bold;">TỔNG CỘNG</td>`;
+        if (c.isNum) return `<td class="num" style="text-align:right;font-weight:bold;">${escapeHtml(formatNum(c.grand_total))}</td>`;
         return `<td></td>`;
       })
       .join("");
@@ -7287,7 +7305,7 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
   .unit-row { text-align: right; font-size: 10.5pt; font-style: italic; margin-bottom: 6px; }
   table { width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 10.5pt; }
   th, td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
-  thead th { font-weight: bold; text-align: center; background: #fff; }
+  thead th { font-weight: bold; text-align: center; background: #fff; white-space: nowrap; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.code-link { color: #1d4ed8; }
   tr.summary-row td, tr.grand-total-row td { font-weight: bold; }
