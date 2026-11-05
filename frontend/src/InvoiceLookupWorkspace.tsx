@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search, Plus, BookOpen, AlertCircle, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import "./invoice-lookup.css";
@@ -106,30 +106,108 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
     </header>
 
     {mode === "unposted" && (
-      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "12px 16px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <strong>Bảng kê hóa đơn chưa hạch toán:</strong> Danh sách hóa đơn đầu vào đã tiếp nhận hợp lệ nhưng chưa được liên kết với chứng từ mua hàng / hạch toán sổ sách kế toán.
+      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "14px 18px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 280 }}>
+          <CheckCircle2 size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+          <div>
+            <strong style={{ color: "#14532d" }}>Bảng kê hóa đơn chưa hạch toán:</strong>{" "}
+            <span>Danh sách hóa đơn đầu vào đã tiếp nhận hợp lệ nhưng chưa được liên kết với chứng từ mua hàng / hạch toán sổ sách kế toán.</span>
+          </div>
         </div>
-        <Link to={href("/invoices/incoming/unprocessed")} style={{ color: "#166534", fontWeight: 700, textDecoration: "underline", fontSize: 13 }}>
-          Hạch toán ngay →
+        <Link
+          to={href("/invoices/incoming/unprocessed")}
+          style={{
+            background: "#16a34a",
+            color: "#ffffff",
+            padding: "7px 16px",
+            borderRadius: 6,
+            textDecoration: "none",
+            fontSize: 13,
+            fontWeight: 600,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            whiteSpace: "nowrap",
+            boxShadow: "0 1px 2px rgba(22,163,74,0.25)",
+            flexShrink: 0,
+            transition: "all 0.15s ease",
+          }}
+        >
+          Hạch toán ngay <ArrowRight size={14} />
         </Link>
       </div>
     )}
 
     {mode === "errors" && (
-      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "12px 16px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <strong>Xử lý sai sót theo NĐ 123/2020/NĐ-CP & TT 78/2021/TT-BTC:</strong> Quản lý danh sách các hóa đơn có sai sót, điều chỉnh tăng/giảm, thay thế hoặc hủy bỏ.
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "14px 18px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 280 }}>
+          <AlertCircle size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+          <div>
+            <strong style={{ color: "#1e3a8a" }}>Xử lý sai sót theo NĐ 123/2020/NĐ-CP & TT 78/2021/TT-BTC:</strong>{" "}
+            <span>Quản lý danh sách các hóa đơn có sai sót, điều chỉnh tăng/giảm, thay thế hoặc hủy bỏ.</span>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Link to={href("/sales/invoices", { create: "adjustment" })} style={{ background: "#2563eb", color: "#fff", padding: "4px 10px", borderRadius: 4, textDecoration: "none", fontSize: 12.5, fontWeight: 600 }}>
-            + Lập HĐ điều chỉnh
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, whiteSpace: "nowrap" }}>
+          <Link
+            to={href("/sales/invoices", { create: "adjustment" })}
+            style={{
+              background: "#2563eb",
+              color: "#ffffff",
+              padding: "7px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 2px rgba(37,99,235,0.2)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Plus size={14} /> Lập HĐ điều chỉnh
           </Link>
-          <Link to={href("/sales/invoices", { create: "replacement" })} style={{ background: "#0284c7", color: "#fff", padding: "4px 10px", borderRadius: 4, textDecoration: "none", fontSize: 12.5, fontWeight: 600 }}>
-            + Lập HĐ thay thế
+          <Link
+            to={href("/sales/invoices", { create: "replacement" })}
+            style={{
+              background: "#0284c7",
+              color: "#ffffff",
+              padding: "7px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 2px rgba(2,132,199,0.2)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Plus size={14} /> Lập HĐ thay thế
           </Link>
-          <Link to={href("/invoices/error-guide")} style={{ color: "#1d4ed8", fontWeight: 600, padding: "4px 8px", textDecoration: "underline", fontSize: 12.5 }}>
-            Hướng dẫn xử lý
+          <Link
+            to={href("/invoices/error-guide")}
+            style={{
+              background: "#ffffff",
+              color: "#1d4ed8",
+              border: "1px solid #bfdbfe",
+              padding: "7px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <BookOpen size={14} /> Hướng dẫn xử lý
           </Link>
         </div>
       </div>
@@ -163,8 +241,15 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
       {!loading && !result?.results.length && <p className="il-empty">{mode === "unposted"
         ? "Hiện tại tất cả hóa đơn đầu vào hợp lệ đã được liên kết với chứng từ mua hàng và hạch toán sổ cái."
         : "Không có hóa đơn phù hợp."}</p>}
-      <footer className="il-pagination"><span>Trang {result?.page || 1}/{pageCount}</span><button disabled={(result?.page || 1) <= 1} onClick={() => update("page", String((result?.page || 1) - 1))}>Trước</button>
-        <button disabled={(result?.page || 1) >= pageCount} onClick={() => update("page", String((result?.page || 1) + 1))}>Sau</button></footer>
+      <footer className="il-pagination">
+        <span>Trang {result?.page || 1}/{pageCount}</span>
+        <button type="button" disabled={(result?.page || 1) <= 1} onClick={() => update("page", String((result?.page || 1) - 1))}>
+          <ChevronLeft size={14} /> Trước
+        </button>
+        <button type="button" disabled={(result?.page || 1) >= pageCount} onClick={() => update("page", String((result?.page || 1) + 1))}>
+          Sau <ChevronRight size={14} />
+        </button>
+      </footer>
     </section>
     {selectedId && <div className="il-backdrop" onClick={() => setSelectedId("")}><aside className="il-detail" role="dialog" aria-modal="true" aria-label="Chi tiết hóa đơn" onClick={(e) => e.stopPropagation()}>
       <header><div><h2>Chi tiết hóa đơn</h2><small>{selectedId}</small></div><button onClick={() => setSelectedId("")}>Đóng</button></header>

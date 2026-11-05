@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
-import { Filter, RefreshCw, Search, Upload } from "lucide-react";
+import { Filter, RefreshCw, Search, Upload, Download, Link2, FilePlus, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -247,9 +247,50 @@ export default function IncomingInvoiceIntake({
               : "Tiếp nhận hóa đơn XML, lưu file nguồn và chuyển sang bước kiểm tra tính hợp lệ."}
         </p>
       </div>
-      <div className="erp3-header-actions">
-        <button type="button" onClick={() => void reload()}><RefreshCw size={15} /> Làm mới</button>
-        <button type="button" className="erp3-primary" onClick={() => { setError(""); setUploadOpen(true); }}><Upload size={15} /> Tải hóa đơn lên</button>
+      <div className="erp3-header-actions" style={{ display: "flex", gap: 10 }}>
+        <button
+          type="button"
+          onClick={() => void reload()}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 14px",
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
+            borderRadius: 6,
+            color: "#334155",
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: "pointer",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+            transition: "all 0.15s ease",
+          }}
+        >
+          <RefreshCw size={14} /> Làm mới
+        </button>
+        <button
+          type="button"
+          className="erp3-primary"
+          onClick={() => { setError(""); setUploadOpen(true); }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 16px",
+            background: "#0284c7",
+            border: "none",
+            borderRadius: 6,
+            color: "#ffffff",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
+            transition: "all 0.15s ease",
+          }}
+        >
+          <Upload size={14} /> Tải hóa đơn lên
+        </button>
       </div>
     </header>
     {error && <p role="alert" style={{ color: "#b91c1c", padding: "0 18px" }}>{error}</p>}
@@ -259,8 +300,32 @@ export default function IncomingInvoiceIntake({
     </p>}
     <div className="erp3-invoice-layout">
       <section className="erp3-invoice-inbox" aria-label="Danh sách hóa đơn đầu vào">
-        <div className="erp3-inbox-heading"><div><h3>Hộp thư hóa đơn</h3><span>{filtered.length} hóa đơn</span></div>
-          <button type="button" onClick={() => setFilterOpen(!filterOpen)}><Filter size={14} /> Lọc</button></div>
+        <div className="erp3-inbox-heading">
+          <div>
+            <h3>Hộp thư hóa đơn</h3>
+            <span>{filtered.length} hóa đơn</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilterOpen(!filterOpen)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "5px 11px",
+              background: filterOpen ? "#eff6ff" : "#ffffff",
+              border: `1px solid ${filterOpen ? "#93c5fd" : "#cbd5e1"}`,
+              borderRadius: 6,
+              color: filterOpen ? "#1d4ed8" : "#475569",
+              fontSize: 12.5,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Filter size={13} /> Lọc
+          </button>
+        </div>
         {filterOpen && <label style={{ display: "block", padding: "8px 12px" }}>Trạng thái
           <select aria-label="Lọc trạng thái hóa đơn" value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="ALL">Tất cả</option><option value="PENDING_CHECK">Chờ kiểm tra</option>
@@ -274,14 +339,43 @@ export default function IncomingInvoiceIntake({
         {filtered.map((item) => <button type="button" key={item.id}
           className={`erp3-invoice-item ${selectedId === item.id ? "active" : ""}`}
           onClick={() => setSelectedId(item.id)}>
-          <span><strong>{item.seller_name}</strong><small>{item.invoice_series} · {item.invoice_number} · {date(item.invoice_date)}</small></span>
-          <span><b>{money(item.total_amount)}</b><small>{checkLabel[item.validation_summary?.processing_status || "PENDING_CHECK"] || "Chờ kiểm tra"}</small>
-            <small>{linkLabel[item.link_status] || "Chưa liên kết"}</small></span>
+          <span style={{ display: "grid", gap: 3, flex: 1, minWidth: 0, paddingRight: 10 }}>
+            <strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.seller_name}</strong>
+            <small style={{ whiteSpace: "nowrap" }}>{item.invoice_series} · {item.invoice_number} · {date(item.invoice_date)}</small>
+          </span>
+          <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0, whiteSpace: "nowrap", textAlign: "right" }}>
+            <b style={{ whiteSpace: "nowrap", fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>{money(item.total_amount)}</b>
+            <small style={{ whiteSpace: "nowrap" }}>{checkLabel[item.validation_summary?.processing_status || "PENDING_CHECK"] || "Chờ kiểm tra"}</small>
+            <small style={{ whiteSpace: "nowrap" }}>{linkLabel[item.link_status] || "Chưa liên kết"}</small>
+          </span>
         </button>)}
       </section>
       <section className="erp3-invoice-preview" aria-label="Xem trước hóa đơn">
-        <div className="erp3-preview-toolbar"><span>Thông tin trích xuất từ XML</span>
-          {selected?.source_filename && <button type="button" onClick={() => void downloadSource()}>Tải XML gốc</button>}</div>
+        <div className="erp3-preview-toolbar">
+          <span style={{ fontWeight: 600, color: "#334155" }}>Thông tin trích xuất từ XML</span>
+          {selected?.source_filename && (
+            <button
+              type="button"
+              onClick={() => void downloadSource()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "5px 12px",
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: 5,
+                color: "#334155",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              }}
+            >
+              <Download size={13} /> Tải XML gốc
+            </button>
+          )}
+        </div>
         {selected ? <>
           <div className="erp3-paper">
             <p className="erp3-paper-kicker">HÓA ĐƠN ĐẦU VÀO · {checkLabel[selected.validation_summary?.processing_status || "PENDING_CHECK"]?.toLocaleUpperCase()}</p>
@@ -303,53 +397,129 @@ export default function IncomingInvoiceIntake({
             <p>Ngày tiếp nhận: {date(selected.received_at)}</p>
             <p>File nguồn: {selected.source_filename || "Không có"}</p>
             {(selected.validation_summary?.intake_warnings || []).map((warning, index) => <p key={index}>{warning}</p>)}
-            <button type="button" className="erp3-primary" disabled={checking} onClick={() => void checkInvoice()}>
-              {checking ? "Đang kiểm tra…" : currentRun ? "Kiểm tra lại" : "Kiểm tra hóa đơn"}</button>
+            <button
+              type="button"
+              className="erp3-primary"
+              disabled={checking}
+              onClick={() => void checkInvoice()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                padding: "8px 18px",
+                background: "#0284c7",
+                border: "none",
+                borderRadius: 6,
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: checking ? "not-allowed" : "pointer",
+                boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
+                marginTop: 10,
+                opacity: checking ? 0.7 : 1,
+                transition: "all 0.15s ease",
+              }}
+            >
+              <ShieldCheck size={16} />
+              {checking ? "Đang kiểm tra…" : currentRun ? "Kiểm tra lại" : "Kiểm tra hóa đơn"}
+            </button>
             {currentRun ? <>
-              <p>Phiên kiểm tra: {date(currentRun.completed_at)} · {currentRun.rule_set_version}</p>
+              <p style={{ marginTop: 12 }}>Phiên kiểm tra: {date(currentRun.completed_at)} · {currentRun.rule_set_version}</p>
               <div aria-label="Chi tiết kết quả kiểm tra">
                 {currentRun.results.map((rule) => <p key={rule.id}>
                   <strong>{rule.code} · {resultLabel[rule.result] || rule.result}</strong> — {rule.message}
                 </p>)}
               </div>
               {history && history.runs.length > 1 && <>
-                <button type="button" onClick={() => setShowPreviousRuns(!showPreviousRuns)}>
+                <button
+                  type="button"
+                  onClick={() => setShowPreviousRuns(!showPreviousRuns)}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 5,
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    color: "#475569",
+                    cursor: "pointer",
+                    marginTop: 8,
+                  }}
+                >
                   {showPreviousRuns ? "Ẩn" : "Xem"} {history.runs.length - 1} lần kiểm tra trước
                 </button>
-                {showPreviousRuns && history.runs.slice(1).map((run) => <details key={run.id}>
-                  <summary>{date(run.completed_at)} · {checkLabel[run.overall_status] || run.overall_status}</summary>
-                  {run.results.map((rule) => <p key={rule.id}>{rule.code}: {resultLabel[rule.result] || rule.result} — {rule.message}</p>)}
+                {showPreviousRuns && history.runs.slice(1).map((run) => <details key={run.id} style={{ marginTop: 6 }}>
+                  <summary style={{ cursor: "pointer", color: "#334155", fontSize: 12.5 }}>{date(run.completed_at)} · {checkLabel[run.overall_status] || run.overall_status}</summary>
+                  {run.results.map((rule) => <p key={rule.id} style={{ fontSize: 12 }}>{rule.code}: {resultLabel[rule.result] || rule.result} — {rule.message}</p>)}
                 </details>)}
               </>}
             </> : <p>Chưa kiểm tra tính hợp lệ về thuế hoặc chữ ký số.</p>}
-            <p>Điều kiện khấu trừ thuế và liên kết chứng từ được xử lý ở bước riêng.</p>
+            <p style={{ fontSize: 12, color: "#64748b", marginTop: 10 }}>Điều kiện khấu trừ thuế và liên kết chứng từ được xử lý ở bước riêng.</p>
           </aside>
           <aside className="erp3-validation" aria-label="Liên kết chứng từ mua hàng">
             <h3>Liên kết chứng từ</h3>
             <p>Trạng thái: {linkLabel[linkSummary?.status || selected.link_status] || "Chưa liên kết"}</p>
             <p>Đã liên kết: {money(linkSummary?.linked_amount || 0)} · Còn lại: {money(linkSummary?.remaining_amount || selected.total_amount)}</p>
-            {linkSummary?.links.map((link) => <div key={link.id} className="erp3-linked-document">
+            {linkSummary?.links.map((link) => <div key={link.id} className="erp3-linked-document" style={{ padding: "8px 12px", background: "#fff", borderRadius: 6, border: "1px solid #e2e8f0", margin: "6px 0" }}>
               <strong>{link.number}</strong> · {link.supplier} · {money(link.amount)}
-              {link.conflict && <p>Chứng từ đã thay đổi hoặc không còn ở trạng thái ghi sổ; cần xem lại.</p>}
-              {unlinkId === link.id ? <div>
+              {link.conflict && <p style={{ color: "#dc2626", margin: "4px 0" }}>Chứng từ đã thay đổi hoặc không còn ở trạng thái ghi sổ; cần xem lại.</p>}
+              {unlinkId === link.id ? <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                 <input aria-label={`Lý do gỡ ${link.number}`} placeholder="Lý do gỡ liên kết" value={unlinkReason}
-                  onChange={(event) => setUnlinkReason(event.target.value)} />
-                <button type="button" disabled={linkBusy} onClick={() => void removeLink()}>Xác nhận gỡ</button>
-                <button type="button" onClick={() => { setUnlinkId(""); setUnlinkReason(""); }}>Hủy</button>
-              </div> : <button type="button" onClick={() => setUnlinkId(link.id)}>Gỡ liên kết</button>}
+                  onChange={(event) => setUnlinkReason(event.target.value)} style={{ flex: 1, padding: "4px 8px", border: "1px solid #cbd5e1", borderRadius: 4 }} />
+                <button type="button" disabled={linkBusy} onClick={() => void removeLink()} style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 4, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>Xác nhận gỡ</button>
+                <button type="button" onClick={() => { setUnlinkId(""); setUnlinkReason(""); }} style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, padding: "4px 10px", fontSize: 12, cursor: "pointer" }}>Hủy</button>
+              </div> : <button type="button" onClick={() => setUnlinkId(link.id)} style={{ background: "#fff", border: "1px solid #fecaca", color: "#dc2626", borderRadius: 4, padding: "3px 8px", fontSize: 12, cursor: "pointer", marginTop: 4 }}>Gỡ liên kết</button>}
             </div>)}
-            {!linkSummary?.links.length && <p>Chưa có chứng từ mua hàng được liên kết.</p>}
-            <div className="erp3-preview-actions">
-              <button type="button" disabled={!currentRun?.is_current || !["PASSED", "WARNING", "MANUAL_REVIEW"].includes(currentRun.overall_status)}
-                onClick={() => void openLinkModal()}>Liên kết chứng từ</button>
-              <button type="button" onClick={() => {
-                sessionStorage.setItem("tax_link_invoice_context", selected.id);
-                navigate("/purchases/transactions");
-              }}>Lập chứng từ mua hàng</button>
+            {!linkSummary?.links.length && <p style={{ color: "#64748b", fontSize: 12.5 }}>Chưa có chứng từ mua hàng được liên kết.</p>}
+            <div className="erp3-preview-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 12 }}>
+              <button
+                type="button"
+                disabled={!currentRun?.is_current || !["PASSED", "WARNING", "MANUAL_REVIEW"].includes(currentRun.overall_status)}
+                onClick={() => void openLinkModal()}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "7px 14px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  color: "#1e293b",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: (!currentRun?.is_current || !["PASSED", "WARNING", "MANUAL_REVIEW"].includes(currentRun.overall_status)) ? "not-allowed" : "pointer",
+                  opacity: (!currentRun?.is_current || !["PASSED", "WARNING", "MANUAL_REVIEW"].includes(currentRun.overall_status)) ? 0.5 : 1,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                }}
+              >
+                <Link2 size={14} /> Liên kết chứng từ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.setItem("tax_link_invoice_context", selected.id);
+                  navigate("/purchases/transactions");
+                }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "7px 14px",
+                  background: "#059669",
+                  border: "none",
+                  borderRadius: 6,
+                  color: "#ffffff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: "0 1px 2px rgba(5,150,105,0.25)",
+                }}
+              >
+                <FilePlus size={14} /> Lập chứng từ mua hàng
+              </button>
             </div>
-            {currentRun?.overall_status === "MANUAL_REVIEW" && <p>Cần ghi lý do đối chiếu thủ công khi liên kết.</p>}
+            {currentRun?.overall_status === "MANUAL_REVIEW" && <p style={{ color: "#ca8a04", fontSize: 12, marginTop: 6 }}>Cần ghi lý do đối chiếu thủ công khi liên kết.</p>}
           </aside>
-        </> : <p style={{ padding: 24 }}>Chọn hóa đơn trong hộp thư để xem chi tiết.</p>}
+        </> : <p style={{ padding: 24, color: "#64748b" }}>Chọn hóa đơn trong hộp thư để xem chi tiết.</p>}
       </section>
     </div>
     {uploadOpen && <div className="erp3-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setUploadOpen(false); }}>

@@ -83,7 +83,22 @@ export default function TaxInvoiceSyncPanel({
             className="erp3-primary"
             onClick={handleTriggerSync}
             disabled={syncing}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontWeight: 600, background: "#0284c7", color: "#fff", border: "none" }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 18px",
+              borderRadius: 6,
+              cursor: syncing ? "not-allowed" : "pointer",
+              fontWeight: 600,
+              fontSize: 13,
+              background: "#0284c7",
+              color: "#fff",
+              border: "none",
+              boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
+              opacity: syncing ? 0.75 : 1,
+              transition: "all 0.15s ease",
+            }}
           >
             <CloudDownload size={16} className={syncing ? "animate-spin" : ""} />
             {syncing ? "Đang đồng bộ từ CQT..." : "Đồng bộ hóa đơn từ TCT ngay"}
@@ -92,14 +107,28 @@ export default function TaxInvoiceSyncPanel({
       </header>
 
       {syncSuccess && (
-        <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "12px 16px", borderRadius: 8, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "12px 18px", borderRadius: 8, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <CheckCircle2 size={20} color="#16a34a" />
             <span style={{ fontSize: 13.5, fontWeight: 500 }}>{syncSuccess}</span>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <Link to={href("/invoices/incoming/inbox")} style={{ fontSize: 13, color: "#166534", fontWeight: 600, textDecoration: "underline" }}>
-              Xem Hộp thư tiếp nhận →
+            <Link
+              to={href("/invoices/incoming/inbox")}
+              style={{
+                fontSize: 12.5,
+                color: "#15803d",
+                fontWeight: 600,
+                textDecoration: "none",
+                background: "#dcfce7",
+                padding: "6px 12px",
+                borderRadius: 6,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              Xem Hộp thư tiếp nhận <ArrowRight size={13} />
             </Link>
           </div>
         </div>
@@ -187,9 +216,25 @@ export default function TaxInvoiceSyncPanel({
               type="button"
               onClick={handleTriggerSync}
               disabled={syncing}
-              style={{ background: "#0284c7", color: "#fff", border: "none", padding: "6px 16px", borderRadius: 6, fontWeight: 600, cursor: "pointer", fontSize: 13 }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "#0284c7",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 18px",
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: syncing ? "not-allowed" : "pointer",
+                fontSize: 13,
+                boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
+                opacity: syncing ? 0.75 : 1,
+                transition: "all 0.15s ease",
+              }}
             >
-              Quét hóa đơn mới
+              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "Đang quét..." : "Quét hóa đơn mới"}
             </button>
           </div>
         </div>

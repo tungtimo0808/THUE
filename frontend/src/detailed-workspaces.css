@@ -412,59 +412,105 @@
 }
 .erp3-invoice-layout {
   display: grid;
-  grid-template-columns: 360px minmax(520px, 1fr);
-  gap: 12px;
+  grid-template-columns: 390px minmax(520px, 1fr);
+  gap: 14px;
 }
 .erp3-invoice-inbox,
 .erp3-invoice-preview {
   background: #ffffff;
-  border: 1px solid #ddcec1;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .erp3-inbox-heading,
 .erp3-preview-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  border-bottom: 1px solid #e6dad0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 .erp3-inbox-heading h3 {
   margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
 }
 .erp3-inbox-heading span {
-  font-size: 10px;
-  color: #7d826f;
+  font-size: 11.5px;
+  color: #64748b;
 }
 .erp3-invoice-inbox > .erp3-search {
-  margin: 10px;
-  width: calc(100% - 20px);
+  margin: 12px 14px;
+  width: calc(100% - 28px);
 }
 .erp3-invoice-item {
   width: 100%;
   border: 0 !important;
-  border-top: 1px solid #eee4db !important;
+  border-top: 1px solid #f1f5f9 !important;
   border-radius: 0 !important;
   display: flex !important;
   justify-content: space-between !important;
+  align-items: flex-start !important;
   text-align: left;
-  padding: 12px !important;
+  padding: 12px 16px !important;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
-.erp3-invoice-item span {
+.erp3-invoice-item:hover {
+  background: #f8fafc !important;
+}
+.erp3-invoice-item span:first-child {
   display: grid;
-  gap: 3px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
+}
+.erp3-invoice-item span:first-child strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.erp3-invoice-item span:first-child small {
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
 }
 .erp3-invoice-item span:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+  min-width: max-content;
   text-align: right;
+  white-space: nowrap !important;
 }
-.erp3-invoice-item small {
-  color: #858878;
-  font-size: 9px;
+.erp3-invoice-item span:last-child b {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap !important;
+  letter-spacing: -0.01em;
+}
+.erp3-invoice-item span:last-child small {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap !important;
 }
 .erp3-invoice-item.active {
-  background: #eef1df !important;
-  box-shadow: inset 3px 0 #606c38;
+  background: #f0f7ff !important;
+  box-shadow: inset 3px 0 #2563eb;
+}
+.erp3-invoice-item.active span:first-child strong {
+  color: #1d4ed8;
 }
 .erp3-paper {
   margin: 18px auto 12px;
@@ -508,26 +554,32 @@
   margin-top: 12px;
 }
 .erp3-validation {
-  margin: 10px 18px;
-  padding: 12px 14px;
-  background: #f6f5ee;
-  border-radius: 6px;
+  margin: 12px 18px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
 }
 .erp3-validation h3 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
 }
 .erp3-validation p {
   margin: 6px 0;
+  color: #334155;
+  font-size: 13px;
 }
 .erp3-validation [aria-label="Chi tiết kết quả kiểm tra"] {
   margin-top: 12px;
   max-height: 280px;
   overflow-y: auto;
-  border-top: 1px solid #ddd8c8;
+  border-top: 1px solid #e2e8f0;
 }
 .erp3-validation [aria-label="Chi tiết kết quả kiểm tra"] p {
-  padding: 7px 0;
-  border-bottom: 1px solid #e9e5d8;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
 }
 .erp3-check,
 .erp3-warn {
@@ -536,18 +588,21 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e6efd2;
-  color: #526029;
+  background: #ecfdf5;
+  color: #059669;
   margin-right: 5px;
 }
 .erp3-warn {
-  background: #ffebcd;
-  color: #8b5a12;
+  background: #fefce8;
+  color: #ca8a04;
 }
 .erp3-preview-actions {
+  display: flex;
+  gap: 10px;
   justify-content: flex-end;
   border-top: 1px solid #e2e8f0;
-  padding: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
 }
 .erp3-report-hero {
   background: #0284c7;

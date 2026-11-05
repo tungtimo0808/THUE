@@ -86,7 +86,21 @@ export default function CashPaymentLimitWarningWorkspace({
           <button
             type="button"
             onClick={reload}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 16px",
+              borderRadius: 6,
+              border: "1px solid #cbd5e1",
+              background: "#ffffff",
+              color: "#334155",
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: 13,
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              transition: "all 0.15s ease",
+            }}
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Làm mới
           </button>
@@ -161,58 +175,74 @@ export default function CashPaymentLimitWarningWorkspace({
             <p style={{ color: "#64748b", fontSize: 13, margin: "4px 0 0" }}>Không có hóa đơn đầu vào nào vượt ngưỡng cảnh báo thanh toán tiền mặt.</p>
           </div>
         ) : (
-          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0", textAlign: "left", color: "#475569" }}>
-                <th style={{ padding: "10px 12px" }}>Ký hiệu - Số HĐ</th>
-                <th style={{ padding: "10px 12px" }}>Ngày hóa đơn</th>
-                <th style={{ padding: "10px 12px" }}>Nhà cung cấp / MST</th>
-                <th style={{ padding: "10px 12px", textAlign: "right" }}>Tổng tiền thanh toán</th>
-                <th style={{ padding: "10px 12px", textAlign: "right" }}>Tiền thuế GTGT</th>
-                <th style={{ padding: "10px 12px" }}>Mức độ rủi ro</th>
-                <th style={{ padding: "10px 12px" }}>Khuyến nghị xử lý</th>
-                <th style={{ padding: "10px 12px", textAlign: "center" }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {riskyInvoices.map((inv) => (
-                <tr key={inv.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "10px 12px", fontWeight: 600, color: "#1e293b" }}>
-                    {inv.invoice_series} - {inv.invoice_number}
-                  </td>
-                  <td style={{ padding: "10px 12px", color: "#64748b" }}>
-                    {inv.invoice_date?.slice(0, 10).split("-").reverse().join("/")}
-                  </td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <div style={{ fontWeight: 600, color: "#0f172a" }}>{inv.seller_name}</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>MST: {inv.seller_tax_code}</div>
-                  </td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#b91c1c" }}>
-                    {money(inv.total_amount)}
-                  </td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b" }}>
-                    {money(inv.tax_amount)}
-                  </td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <span style={{ background: "#fef2f2", color: "#b91c1c", padding: "2px 8px", borderRadius: 12, fontWeight: 600, fontSize: 12 }}>
-                      ≥ 20 triệu (Rủi ro thuế)
-                    </span>
-                  </td>
-                  <td style={{ padding: "10px 12px", fontSize: 12.5, color: "#475569" }}>
-                    Bắt buộc có Ủy nhiệm chi / Chuyển khoản ngân hàng
-                  </td>
-                  <td style={{ padding: "10px 12px", textAlign: "center" }}>
-                    <Link
-                      to={href("/bank/payment-orders")}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#0284c7", color: "#fff", padding: "4px 10px", borderRadius: 4, fontSize: 12, fontWeight: 600, textDecoration: "none" }}
-                    >
-                      Lập UNC <ArrowRight size={12} />
-                    </Link>
-                  </td>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 1050, fontSize: 13, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0", textAlign: "left", color: "#475569" }}>
+                  <th style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>Ký hiệu - Số HĐ</th>
+                  <th style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>Ngày hóa đơn</th>
+                  <th style={{ padding: "10px 12px" }}>Nhà cung cấp / MST</th>
+                  <th style={{ padding: "10px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Tổng tiền thanh toán</th>
+                  <th style={{ padding: "10px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Tiền thuế GTGT</th>
+                  <th style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>Mức độ rủi ro</th>
+                  <th style={{ padding: "10px 12px" }}>Khuyến nghị xử lý</th>
+                  <th style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {riskyInvoices.map((inv) => (
+                  <tr key={inv.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <td style={{ padding: "10px 12px", fontWeight: 600, color: "#1e293b", whiteSpace: "nowrap" }}>
+                      {inv.invoice_series} - {inv.invoice_number}
+                    </td>
+                    <td style={{ padding: "10px 12px", color: "#64748b", whiteSpace: "nowrap" }}>
+                      {inv.invoice_date?.slice(0, 10).split("-").reverse().join("/")}
+                    </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <div style={{ fontWeight: 600, color: "#0f172a" }}>{inv.seller_name}</div>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>MST: {inv.seller_tax_code}</div>
+                    </td>
+                    <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#b91c1c", whiteSpace: "nowrap" }}>
+                      {money(inv.total_amount)}
+                    </td>
+                    <td style={{ padding: "10px 12px", textAlign: "right", color: "#64748b", whiteSpace: "nowrap" }}>
+                      {money(inv.tax_amount)}
+                    </td>
+                    <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+                      <span style={{ background: "#fef2f2", color: "#b91c1c", padding: "2px 8px", borderRadius: 12, fontWeight: 600, fontSize: 12, whiteSpace: "nowrap" }}>
+                        ≥ 20 triệu (Rủi ro thuế)
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 12px", fontSize: 12.5, color: "#475569" }}>
+                      Bắt buộc có Ủy nhiệm chi / Chuyển khoản ngân hàng
+                    </td>
+                    <td style={{ padding: "10px 12px", textAlign: "center", whiteSpace: "nowrap" }}>
+                      <Link
+                        to={href("/bank/payment-orders")}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          background: "#0284c7",
+                          color: "#ffffff",
+                          padding: "6px 14px",
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          boxShadow: "0 1px 2px rgba(2,132,199,0.2)",
+                          whiteSpace: "nowrap",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        Lập UNC <ArrowRight size={13} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

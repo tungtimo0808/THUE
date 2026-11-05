@@ -104,7 +104,21 @@ export default function MisaInvoiceWorkspace({
             <p style={{ margin: "0 0 10px" }}>Khi cơ quan thuế gửi Mẫu 01/TB-RSĐT, doanh nghiệp cần rà soát và nộp Mẫu 04/SS-HĐĐT theo đúng thời hạn ghi trên thông báo để giải trình hoặc hủy/điều chỉnh kịp thời.</p>
           </div>
           <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end" }}>
-            <button type="button" onClick={() => setLegalModalOpen(false)} style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontWeight: 600 }}>
+            <button
+              type="button"
+              onClick={() => setLegalModalOpen(false)}
+              style={{
+                padding: "8px 20px",
+                borderRadius: 6,
+                border: "none",
+                background: "#0284c7",
+                color: "#ffffff",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
+              }}
+            >
               Đã hiểu & Đóng
             </button>
           </div>
@@ -123,9 +137,44 @@ export default function MisaInvoiceWorkspace({
             Cung cấp thông tin về hóa đơn đã lập sai của bạn, hệ thống sẽ hướng
             dẫn cách xử lý phù hợp.
           </p>
-          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-            <Link to={href("/sales/invoices")}>Xem hóa đơn đã phát hành và xử lý hủy</Link>
-            <Link to={href("/invoices/adjustments")}>Đến màn hình Hóa đơn điều chỉnh / thay thế</Link>
+          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+            <Link
+              to={href("/sales/invoices")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: 6,
+                color: "#334155",
+                fontSize: 12.5,
+                fontWeight: 500,
+                textDecoration: "none",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              }}
+            >
+              Xem hóa đơn đã phát hành & xử lý hủy
+            </Link>
+            <Link
+              to={href("/invoices/adjustments")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: 6,
+                color: "#1d4ed8",
+                fontSize: 12.5,
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Đến màn hình HĐ điều chỉnh / thay thế →
+            </Link>
           </div>
         </header>
         <div className="iw-guide-columns">
@@ -239,10 +288,24 @@ export default function MisaInvoiceWorkspace({
                 )}
                 <button
                   type="button"
-                  style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", textDecoration: "underline", padding: 0, font: "inherit" }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 6,
+                    color: "#1d4ed8",
+                    cursor: "pointer",
+                    padding: "7px 14px",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    marginTop: 12,
+                    boxShadow: "0 1px 2px rgba(37,99,235,0.05)",
+                  }}
                   onClick={() => setLegalModalOpen(true)}
                 >
-                  Xem hướng dẫn quy chuẩn Nghị định 123 & Thông tư 78
+                  <BookOpen size={14} /> Xem hướng dẫn quy chuẩn Nghị định 123 & Thông tư 78
                 </button>
               </>
             )}
@@ -258,10 +321,23 @@ export default function MisaInvoiceWorkspace({
         <button
           type="button"
           onClick={() => setLegalModalOpen(true)}
-          style={{ cursor: "pointer", background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", borderRadius: 4, padding: "2px 8px", fontWeight: 600 }}
+          style={{
+            cursor: "pointer",
+            background: "#eff6ff",
+            color: "#1d4ed8",
+            border: "1px solid #bfdbfe",
+            borderRadius: 6,
+            padding: "4px 10px",
+            fontWeight: 600,
+            fontSize: 12.5,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          }}
           title="Bấm để xem chi tiết căn cứ pháp lý NĐ 123 và TT 78"
         >
-          Nghị định 123/2020/NĐ-CP & TT 78/2021/TT-BTC
+          <BookOpen size={13} /> Nghị định 123/2020/NĐ-CP & TT 78/2021/TT-BTC
         </button>
       </div>
       <div className="iw-process-grid">
