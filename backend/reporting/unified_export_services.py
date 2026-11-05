@@ -396,19 +396,26 @@ def generate_csv(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
 def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> bytes:
     """
     TC-RPT-15-33..48, BR-RPT-EXP-50, 53, 54, 57:
-    Tạo Workbook Excel (.xlsx) đa sheet thực tế bằng openpyxl:
-    - Sheet 1: Báo cáo (Formatted Table, Numeric Cells cho số tiền/số lượng, Text format giữ leading zeros cho mã).
-    - Sheet 2: Tham số lọc (Parameters snapshot).
-    - Sheet 3: Chi tiết nếu có (Detail rows).
-    - Sheet 4: Giải thích & căn cứ pháp lý.
+    Tạo tệp bảng tính Excel (.xlsx) chuẩn biểu mẫu báo cáo MISA / Doanh nghiệp:
+    - Bố cục trang trọng: Thông tin công ty, tiêu đề căn giữa theo độ rộng bảng, đơn vị tính.
+    - Màu sắc hài hòa: Header xám nhạt thanh lịch (#F1F5F9), viền đen/xám mảnh, không chói mắt.
+    - Định dạng số kế toán: #,##0;(#,##0);"" (ẩn số 0 trống trải, dễ nhìn).
+    - Dòng TỔNG CỘNG: Viền dưới nét kép (double line) chuẩn kế toán quốc tế.
+    - Khối chữ ký pháp lý 3 cột ở cuối bảng: Người lập biểu, Kế toán trưởng, Giám đốc.
+    - Auto-fit độ rộng cột thông minh dựa trên độ dài dữ liệu thực tế + header.
+    - Bật đường lưới (showGridLines) và cố định hàng tiêu đề (freeze_panes).
+    - Đa Sheet: Báo cáo, Tham số, Chi tiết (nếu có), Giải thích.
+    - Bảo vệ chống Spreadsheet Formula Injection.
     """
     options = options or {}
     columns = normalize_columns(dataset.get("columns", []))
     rows = normalize_rows(dataset.get("rows", []))
     title = (dataset.get("title") or "BÁO CÁO KẾ TOÁN").upper()
-    company_name = dataset.get("company_name", "")
+    company_name = dataset.get("company_name", "") or "Công ty TNHH Tunghihihi"
+    company_address = dataset.get("company_address", "") or "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội - Việt Nam"
     tax_code = dataset.get("tax_code", "")
     period_str = dataset.get("period_str", "")
+    unit_label = options.get("currency_unit") or dataset.get("currency_unit") or "Đơn vị tính: VND"
 
     wb = openpyxl.Workbook()
 
@@ -416,54 +423,88 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
     ws_main = wb.active
     clean_sheet_title = re.sub(r'[\\/*?:\[\]]', "_", title)[:30]
     ws_main.title = clean_sheet_title or "Báo cáo"
+    ws_main.views.sheetView[0].showGridLines = True
 
-    # Định dạng Styles
-    font_company = Font(name="Arial", size=10, bold=True, color="333333")
-    font_title = Font(name="Arial", size=14, bold=True, color="1E3A8A")
-    font_period = Font(name="Arial", size=10, italic=True, color="4B5563")
-    font_header = Font(name="Arial", size=10, bold=True, color="FFFFFF")
-    font_data = Font(name="Arial", size=10)
-    font_bold = Font(name="Arial", size=10, bold=True)
-    font_grand_total = Font(name="Arial", size=10, bold=True, color="1E3A8A")
+    num_cols = max(len(columns), 1)
 
-    fill_header = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
-    fill_subtotal = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
-    fill_grand_total = PatternFill(start_color="E0E7FF", end_color="E0E7FF", fill_type="solid")
+    # Định dạng Styles chuẩn giao diện kế toán hiện đại
+    font_company = Font(name="Arial", size=10, bold=True, color="0F172A")
+    font_company_sub = Font(name="Arial", size=9, color="475569")
+    font_title = Font(name="Arial", size=14, bold=True, color="0F172A")
+    font_period = Font(name="Arial", size=10, italic=True, bold=True, color="334155")
+    font_unit = Font(name="Arial", size=9.5, italic=True, color="334155")
+    font_header = Font(name="Arial", size=10, bold=True, color="0F172A")
+    font_data = Font(name="Arial", size=9.5, color="1E293B")
+    font_code = Font(name="Arial", size=9.5, color="1D4ED8")
+    font_bold = Font(name="Arial", size=9.5, bold=True, color="0F172A")
+    font_grand_total = Font(name="Arial", size=10, bold=True, color="000000")
+    font_sig_title = Font(name="Arial", size=10, bold=True, color="0F172A")
+    font_sig_sub = Font(name="Arial", size=9, italic=True, color="475569")
 
-    thin_border_side = Side(border_style="thin", color="D1D5DB")
-    double_bottom_side = Side(border_style="double", color="1E3A8A")
+    # Bảng màu MISA thanh lịch
+    fill_header = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+    fill_subtotal = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+    fill_grand_total = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+
+    thin_border_side = Side(border_style="thin", color="000000")
+    header_border = Border(
+        left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side
+    )
     cell_border = Border(
         left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side
     )
+    double_bottom_side = Side(border_style="double", color="000000")
     grand_total_border = Border(
         left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=double_bottom_side
     )
 
-    # 1. Company & Header Block
+    # 1. Khối thông tin công ty (Góc trên bên trái)
     curr_row = 1
     if company_name:
         ws_main.cell(row=curr_row, column=1, value=sanitize_for_spreadsheet(company_name)).font = font_company
         curr_row += 1
+    if company_address:
+        ws_main.cell(row=curr_row, column=1, value=sanitize_for_spreadsheet(company_address)).font = font_company_sub
+        curr_row += 1
     if tax_code:
-        ws_main.cell(row=curr_row, column=1, value=f"Mã số thuế: {tax_code}").font = font_company
+        ws_main.cell(row=curr_row, column=1, value=f"Mã số thuế: {tax_code}").font = font_company_sub
         curr_row += 1
 
     curr_row += 1
-    ws_main.cell(row=curr_row, column=1, value=sanitize_for_spreadsheet(title)).font = font_title
+
+    # 2. Tiêu đề báo cáo (Căn giữa theo độ rộng bảng)
+    title_row = curr_row
+    ws_main.cell(row=title_row, column=1, value=sanitize_for_spreadsheet(title)).font = font_title
+    ws_main.cell(row=title_row, column=1).alignment = Alignment(horizontal="center", vertical="center")
+    if num_cols > 1:
+        ws_main.merge_cells(start_row=title_row, start_column=1, end_row=title_row, end_column=num_cols)
+    ws_main.row_dimensions[title_row].height = 24
     curr_row += 1
 
+    # Dòng kỳ báo cáo
     if period_str:
-        ws_main.cell(row=curr_row, column=1, value=period_str).font = font_period
+        period_row = curr_row
+        ws_main.cell(row=period_row, column=1, value=period_str).font = font_period
+        ws_main.cell(row=period_row, column=1).alignment = Alignment(horizontal="center", vertical="center")
+        if num_cols > 1:
+            ws_main.merge_cells(start_row=period_row, start_column=1, end_row=period_row, end_column=num_cols)
+        ws_main.row_dimensions[period_row].height = 18
         curr_row += 1
 
-    curr_row += 1  # Blank line
+    # Dòng Đơn vị tính (nằm trên góc phải bảng)
+    unit_row = curr_row
+    ws_main.cell(row=unit_row, column=num_cols, value=unit_label).font = font_unit
+    ws_main.cell(row=unit_row, column=num_cols).alignment = Alignment(horizontal="right", vertical="center")
+    ws_main.row_dimensions[unit_row].height = 16
+    curr_row += 1
 
-    # 2. Table Headers (Hỗ trợ tiêu đề nhóm 2 tầng chuẩn MISA)
+    # 3. Table Headers (Hỗ trợ tiêu đề nhóm 2 tầng chuẩn MISA)
     header_row_idx = curr_row
-    col_keys = [c.get("key", "") for c in columns]
     has_groups, top_row, sub_row = _build_grouped_headers(columns)
 
     if has_groups:
+        ws_main.row_dimensions[header_row_idx].height = 26
+        ws_main.row_dimensions[header_row_idx + 1].height = 24
         sub_ptr = 0
         for item in top_row:
             start_c = item["start_col"]
@@ -482,8 +523,9 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
                     start_row=header_row_idx, start_column=start_c,
                     end_row=header_row_idx + 1, end_column=start_c
                 )
-                ws_main.cell(row=header_row_idx, column=start_c).border = cell_border
-                ws_main.cell(row=header_row_idx + 1, column=start_c).border = cell_border
+                ws_main.cell(row=header_row_idx, column=start_c).border = header_border
+                ws_main.cell(row=header_row_idx + 1, column=start_c).border = header_border
+                ws_main.cell(row=header_row_idx + 1, column=start_c).fill = fill_header
             else:
                 if span > 1:
                     ws_main.merge_cells(
@@ -492,7 +534,7 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
                     )
                 for offset in range(span):
                     c_idx = start_c + offset
-                    ws_main.cell(row=header_row_idx, column=c_idx).border = cell_border
+                    ws_main.cell(row=header_row_idx, column=c_idx).border = header_border
                     ws_main.cell(row=header_row_idx, column=c_idx).fill = fill_header
                     sub_lbl = sub_row[sub_ptr] if sub_ptr < len(sub_row) else ""
                     sub_ptr += 1
@@ -504,9 +546,10 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
                     sub_cell.font = font_header
                     sub_cell.fill = fill_header
                     sub_cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-                    sub_cell.border = cell_border
+                    sub_cell.border = header_border
         curr_row += 2
     else:
+        ws_main.row_dimensions[header_row_idx].height = 28
         for col_idx, col in enumerate(columns, 1):
             cell = ws_main.cell(
                 row=header_row_idx,
@@ -516,17 +559,26 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
             cell.font = font_header
             cell.fill = fill_header
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-            cell.border = cell_border
+            cell.border = header_border
         curr_row += 1
 
-    # 3. Data Rows
+    # Cố định dòng Header khi cuộn
+    ws_main.freeze_panes = f"A{curr_row}"
+
+    # 4. Data Rows
     code_field_keywords = {"code", "no", "id", "account", "tax_code", "bank_account", "stt"}
     amount_field_keywords = {"amount", "price", "cost", "balance", "debit", "credit", "total", "val"}
     qty_field_keywords = {"qty", "quantity", "so_luong"}
     pct_field_keywords = {"percent", "ratio", "rate", "ty_le"}
+    center_keywords = {"unit", "dvt", "date", "ngay", "ngay_ct"}
+
+    # Theo dõi độ dài lớn nhất của từng cột để auto-fit chính xác
+    col_max_lens = {idx: len(str(col.get("label", ""))) for idx, col in enumerate(columns, 1)}
 
     for r in rows:
         is_subtotal = bool(r.get("is_subtotal") or r.get("is_group_header"))
+        ws_main.row_dimensions[curr_row].height = 20
+
         for col_idx, col in enumerate(columns, 1):
             key = col.get("key", "")
             val = r.get(key)
@@ -542,13 +594,18 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
                 or any(k in key_lower for k in code_field_keywords)
             ) and not any(k in key_lower for k in amount_field_keywords | qty_field_keywords)
 
+            val_str = ""
             if is_code_field and val is not None:
                 # Bảo toàn số 0 đầu, ví dụ '00123'
                 cell.number_format = "@"
                 cell.value = str(sanitize_for_spreadsheet(val))
                 cell.alignment = Alignment(horizontal="left", vertical="center")
+                cell.font = font_code if (col_idx == 1 and not is_subtotal) else (font_bold if is_subtotal else font_data)
+                val_str = str(val)
             elif val is None or val == "":
                 cell.value = ""
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                cell.font = font_bold if is_subtotal else font_data
             elif isinstance(val, (int, float, Decimal)) or (
                 isinstance(val, str)
                 and re.match(r"^-?\d+(\.\d+)?$", val.replace(",", "").strip())
@@ -557,27 +614,32 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
                 num_val = float(val) if not isinstance(val, (int, float, Decimal)) else float(val)
                 cell.value = num_val
                 cell.alignment = Alignment(horizontal="right", vertical="center")
+                cell.font = font_bold if is_subtotal else font_data
                 if any(p in key_lower for p in pct_field_keywords) or col_type == "percent":
                     cell.number_format = "0.00%"
                 elif any(q in key_lower for q in qty_field_keywords) or col_type == "quantity":
-                    cell.number_format = "#,##0.00" if (num_val % 1 != 0) else "#,##0"
+                    cell.number_format = '#,##0.00;(#,##0.00);""' if (num_val % 1 != 0) else '#,##0;(#,##0);""'
                 else:
-                    cell.number_format = "#,##0"
+                    cell.number_format = '#,##0;(#,##0);""'
+                val_str = f"{num_val:,.0f}" if num_val != 0 else ""
             else:
                 cell.value = sanitize_for_spreadsheet(val)
-                cell.alignment = Alignment(horizontal="left", vertical="center")
+                is_center = any(m in key_lower for m in center_keywords)
+                cell.alignment = Alignment(horizontal="center" if is_center else "left", vertical="center")
+                cell.font = font_bold if is_subtotal else font_data
+                val_str = str(val)
 
             if is_subtotal:
-                cell.font = font_bold
                 cell.fill = fill_subtotal
-            else:
-                cell.font = font_data
+
+            col_max_lens[col_idx] = max(col_max_lens.get(col_idx, 0), len(val_str))
 
         curr_row += 1
 
-    # 4. Grand Total Row
+    # 5. Grand Total Row
     grand_total = dataset.get("grand_total")
     if grand_total and options.get("include_grand_total", True):
+        ws_main.row_dimensions[curr_row].height = 22
         for col_idx, col in enumerate(columns, 1):
             key = col.get("key", "")
             cell = ws_main.cell(row=curr_row, column=col_idx)
@@ -591,21 +653,102 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
             else:
                 gt_val = grand_total.get(key)
                 if gt_val is not None and isinstance(gt_val, (int, float, Decimal)):
-                    cell.value = float(gt_val)
-                    cell.number_format = "#,##0"
+                    num_gt = float(gt_val)
+                    cell.value = num_gt
+                    cell.number_format = '#,##0;(#,##0);""'
                     cell.alignment = Alignment(horizontal="right", vertical="center")
+                    col_max_lens[col_idx] = max(col_max_lens.get(col_idx, 0), len(f"{num_gt:,.0f}"))
                 else:
                     cell.value = sanitize_for_spreadsheet(gt_val or "")
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
         curr_row += 1
 
-    # Auto-fit độ rộng cột
+    # 6. Khối chữ ký pháp lý chuẩn 3 cột trong Sheet Báo cáo
+    if options.get("show_signatures", True):
+        curr_row += 1  # 1 dòng trống
+        sig_date = options.get("signature_date") or datetime.date.today().strftime("Ngày %d tháng %m năm %Y")
+        raw_prep = options.get("prepared_by_name") or ""
+        raw_chief = options.get("chief_accountant_name") or ""
+        raw_director = options.get("legal_representative_name") or ""
+
+        prep_name = raw_prep if raw_prep not in ("Người lập biểu", "người lập biểu") else ""
+        chief_name = raw_chief if raw_chief not in ("Kế toán trưởng", "kế toán trưởng") else ""
+        director_name = raw_director if raw_director not in ("Giám đốc / Đại diện pháp luật", "Giám đốc", "giám đốc") else ""
+
+        # Xác định 3 vị trí cột chữ ký phân bố đều
+        c_left = 2 if num_cols >= 4 else 1
+        c_mid = max(num_cols // 2, c_left + 1)
+        c_right = max(num_cols - 1, c_mid + 1)
+        if c_right > num_cols:
+            c_right = num_cols
+
+        # Dòng ngày tháng năm (phía trên Giám đốc)
+        date_row = curr_row
+        ws_main.cell(row=date_row, column=c_right, value=sig_date).font = font_sig_sub
+        ws_main.cell(row=date_row, column=c_right).alignment = Alignment(horizontal="center", vertical="center")
+        curr_row += 1
+
+        # Hàng chức danh
+        title_r = curr_row
+        ws_main.cell(row=title_r, column=c_left, value="Người lập biểu").font = font_sig_title
+        ws_main.cell(row=title_r, column=c_left).alignment = Alignment(horizontal="center", vertical="center")
+
+        ws_main.cell(row=title_r, column=c_mid, value="Kế toán trưởng").font = font_sig_title
+        ws_main.cell(row=title_r, column=c_mid).alignment = Alignment(horizontal="center", vertical="center")
+
+        ws_main.cell(row=title_r, column=c_right, value="Giám đốc").font = font_sig_title
+        ws_main.cell(row=title_r, column=c_right).alignment = Alignment(horizontal="center", vertical="center")
+        curr_row += 1
+
+        # Hàng chú thích
+        sub_r = curr_row
+        ws_main.cell(row=sub_r, column=c_left, value="(Ký, họ tên)").font = font_sig_sub
+        ws_main.cell(row=sub_r, column=c_left).alignment = Alignment(horizontal="center", vertical="center")
+
+        ws_main.cell(row=sub_r, column=c_mid, value="(Ký, họ tên)").font = font_sig_sub
+        ws_main.cell(row=sub_r, column=c_mid).alignment = Alignment(horizontal="center", vertical="center")
+
+        ws_main.cell(row=sub_r, column=c_right, value="(Ký, họ tên, đóng dấu)").font = font_sig_sub
+        ws_main.cell(row=sub_r, column=c_right).alignment = Alignment(horizontal="center", vertical="center")
+        curr_row += 1
+
+        # 3 dòng trống ký tên
+        for _ in range(3):
+            ws_main.row_dimensions[curr_row].height = 18
+            curr_row += 1
+
+        # Hàng họ tên nếu có
+        if prep_name or chief_name or director_name:
+            name_r = curr_row
+            if prep_name:
+                ws_main.cell(row=name_r, column=c_left, value=prep_name).font = font_sig_title
+                ws_main.cell(row=name_r, column=c_left).alignment = Alignment(horizontal="center", vertical="center")
+            if chief_name:
+                ws_main.cell(row=name_r, column=c_mid, value=chief_name).font = font_sig_title
+                ws_main.cell(row=name_r, column=c_mid).alignment = Alignment(horizontal="center", vertical="center")
+            if director_name:
+                ws_main.cell(row=name_r, column=c_right, value=director_name).font = font_sig_title
+                ws_main.cell(row=name_r, column=c_right).alignment = Alignment(horizontal="center", vertical="center")
+            curr_row += 1
+
+    # Auto-fit độ rộng cột thông minh
     for col_idx, col in enumerate(columns, 1):
         col_letter = get_column_letter(col_idx)
-        max_len = max(len(str(col.get("label", ""))), 12)
-        ws_main.column_dimensions[col_letter].width = min(max_len + 4, 45)
+        content_len = col_max_lens.get(col_idx, 12)
+        key_lower = col.get("key", "").lower()
+        if any(w in key_lower for w in ["name", "ten", "description", "diengiai"]):
+            final_w = max(content_len + 4, 25)
+        elif any(w in key_lower for w in ["code", "ma", "so"]):
+            final_w = max(content_len + 4, 14)
+        elif any(w in key_lower for w in ["unit", "dvt"]):
+            final_w = max(content_len + 4, 10)
+        else:
+            final_w = max(content_len + 4, 15)
+        ws_main.column_dimensions[col_letter].width = min(final_w, 55)
 
     # Sheet 2: Tham số lọc (Parameters)
     ws_params = wb.create_sheet(title="Tham số")
+    ws_params.views.sheetView[0].showGridLines = True
     ws_params.cell(row=1, column=1, value="THAM SỐ KẾT XUẤT BÁO CÁO").font = font_title
     ws_params.cell(row=3, column=1, value="Mã báo cáo").font = font_bold
     ws_params.cell(row=3, column=2, value=dataset.get("report_code", ""))
@@ -628,12 +771,13 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
         p_row += 1
 
     ws_params.column_dimensions["A"].width = 25
-    ws_params.column_dimensions["B"].width = 40
+    ws_params.column_dimensions["B"].width = 45
 
     # Sheet 3: Chi tiết (nếu có dataset["detail_rows"])
     detail_rows = dataset.get("detail_rows")
     if detail_rows:
         ws_detail = wb.create_sheet(title="Chi tiết")
+        ws_detail.views.sheetView[0].showGridLines = True
         ws_detail.cell(row=1, column=1, value=f"DỮ LIỆU CHI TIẾT - {title}").font = font_title
         if detail_rows and isinstance(detail_rows[0], dict):
             detail_keys = list(detail_rows[0].keys())
@@ -641,19 +785,25 @@ def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
                 d_cell = ws_detail.cell(row=3, column=d_col_idx, value=d_key)
                 d_cell.font = font_header
                 d_cell.fill = fill_header
-                d_cell.alignment = Alignment(horizontal="center")
+                d_cell.alignment = Alignment(horizontal="center", vertical="center")
+                d_cell.border = header_border
             for d_row_idx, d_row in enumerate(detail_rows, 4):
+                ws_detail.row_dimensions[d_row_idx].height = 20
                 for d_col_idx, d_key in enumerate(detail_keys, 1):
                     val = d_row.get(d_key)
                     c = ws_detail.cell(row=d_row_idx, column=d_col_idx)
+                    c.border = cell_border
                     if isinstance(val, (int, float, Decimal)):
                         c.value = float(val)
-                        c.number_format = "#,##0"
+                        c.number_format = '#,##0;(#,##0);""'
+                        c.alignment = Alignment(horizontal="right", vertical="center")
                     else:
                         c.value = sanitize_for_spreadsheet(val)
+                        c.alignment = Alignment(horizontal="left", vertical="center")
 
     # Sheet 4: Giải thích & Pháp lý
     ws_notes = wb.create_sheet(title="Giải thích")
+    ws_notes.views.sheetView[0].showGridLines = True
     ws_notes.cell(row=1, column=1, value="CĂN CỨ PHÁP LÝ VÀ GHI CHÚ").font = font_title
     ws_notes.cell(row=3, column=1, value="Căn cứ chế độ kế toán").font = font_bold
     ws_notes.cell(row=3, column=2, value="Thông tư 200/2014/TT-BTC & Thông tư 99/2025/TT-BTC")
@@ -802,9 +952,10 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     """
     TC-RPT-15-25..32, BR-RPT-EXP-49:
     Tạo tài liệu PDF chính thức với ReportLab:
-    - Bố cục trang theo khổ giấy (A4/A3) và hướng giấy (Portrait/Landscape).
+    - Bố cục trang theo khổ giấy (A4/A3) và hướng giấy thông minh (tự động Landscape khi > 6 cột).
     - Hỗ trợ đầy đủ tiếng Việt UTF-8 không lỗi font (TrueType Unicode).
     - Header bảng lặp lại trên từng trang (repeatRows=1), giao diện trắng đen chuẩn MISA.
+    - Màu sắc mã hàng xanh dương link (#1D4ED8) đồng bộ với bản xem trước.
     - Đánh số trang "1/1" hoặc "X/Y".
     - Khối chữ ký pháp lý chuẩn 3 cột: Người lập biểu, Kế toán trưởng, Giám đốc.
     """
@@ -812,15 +963,23 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     font_family = _ensure_pdf_fonts_registered()
     font_bold = f"{font_family}-Bold" if f"{font_family}-Bold" in pdfmetrics.getRegisteredFontNames() else font_family
     font_italic = f"{font_family}-Italic" if f"{font_family}-Italic" in pdfmetrics.getRegisteredFontNames() else font_family
+    font_bi_name = f"{font_family}-BoldItalic"
+    font_bold_italic = font_bi_name if font_bi_name in pdfmetrics.getRegisteredFontNames() else font_bold
 
     paper_size_choice = (options.get("paper_size") or "A4").upper()
-    orientation_choice = (options.get("orientation") or "PORTRAIT").upper()
+    columns = normalize_columns(dataset.get("columns", []))
+    rows = normalize_rows(dataset.get("rows", []))
+
+    # Tự động chọn hướng giấy nếu người dùng không chọn explicitly: > 6 cột mặc định LANDSCAPE
+    orientation_opt = options.get("orientation")
+    if not orientation_opt:
+        orientation_choice = "LANDSCAPE" if len(columns) > 6 else "PORTRAIT"
+    else:
+        orientation_choice = orientation_opt.upper()
 
     base_page = A3 if paper_size_choice == "A3" else A4
     page_size = landscape(base_page) if orientation_choice == "LANDSCAPE" else portrait(base_page)
 
-    columns = normalize_columns(dataset.get("columns", []))
-    rows = normalize_rows(dataset.get("rows", []))
     title = (dataset.get("title") or "BÁO CÁO KẾ TOÁN").upper()
     company_name = dataset.get("company_name", "") or "Công ty TNHH Tunghihihi"
     company_address = dataset.get("company_address", "") or "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội - Việt Nam"
@@ -843,17 +1002,17 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "ReportTitle",
         parent=styles["Heading1"],
         fontName=font_bold,
-        fontSize=13.5,
-        leading=17,
+        fontSize=14,
+        leading=18,
         alignment=1,  # Center
         textColor=colors.black,
     )
     subtitle_style = ParagraphStyle(
         "ReportSubtitle",
         parent=styles["Normal"],
-        fontName=font_italic,
-        fontSize=9.5,
-        leading=13,
+        fontName=font_bold_italic,
+        fontSize=10,
+        leading=14,
         alignment=1,  # Center
         textColor=colors.black,
     )
@@ -861,25 +1020,33 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "ReportUnit",
         parent=styles["Normal"],
         fontName=font_italic,
-        fontSize=8.5,
-        leading=11,
+        fontSize=9,
+        leading=12,
         alignment=2,  # Right
         textColor=colors.black,
     )
-    header_style = ParagraphStyle(
-        "CompanyHeader",
+    header_company_name_style = ParagraphStyle(
+        "CompanyHeaderName",
+        parent=styles["Normal"],
+        fontName=font_bold,
+        fontSize=10,
+        leading=13,
+        textColor=colors.HexColor("#0F172A"),
+    )
+    header_company_sub_style = ParagraphStyle(
+        "CompanyHeaderSub",
         parent=styles["Normal"],
         fontName=font_family,
         fontSize=9,
-        leading=13,
-        textColor=colors.HexColor("#111827"),
+        leading=12,
+        textColor=colors.HexColor("#334155"),
     )
     th_style = ParagraphStyle(
         "TableHeader",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=8,
-        leading=10.5,
+        fontSize=8.5,
+        leading=11,
         alignment=1,  # Center
         textColor=colors.black,
     )
@@ -887,32 +1054,41 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "TableCellLeft",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=8,
+        leading=10.5,
         alignment=0,
+    )
+    td_style_code = ParagraphStyle(
+        "TableCellCode",
+        parent=styles["Normal"],
+        fontName=font_family,
+        fontSize=8,
+        leading=10.5,
+        alignment=0,
+        textColor=colors.HexColor("#1D4ED8"),
     )
     td_style_center = ParagraphStyle(
         "TableCellCenter",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=8,
+        leading=10.5,
         alignment=1,
     )
     td_style_right = ParagraphStyle(
         "TableCellRight",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=8,
+        leading=10.5,
         alignment=2,
     )
     sig_title_style = ParagraphStyle(
         "SignatureTitle",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=9,
-        leading=12,
+        fontSize=9.5,
+        leading=13,
         alignment=1,
         textColor=colors.black,
     )
@@ -920,36 +1096,35 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "SignatureSubtitle",
         parent=styles["Normal"],
         fontName=font_italic,
-        fontSize=8,
-        leading=10.5,
+        fontSize=8.5,
+        leading=11,
         alignment=1,
-        textColor=colors.HexColor("#111827"),
+        textColor=colors.HexColor("#1E293B"),
     )
     sig_name_style = ParagraphStyle(
         "SignatureName",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=9,
-        leading=12,
+        fontSize=9.5,
+        leading=13,
         alignment=1,
         textColor=colors.black,
     )
 
     elements = []
 
-    # 1. Company & Metadata Header
-    meta_text = f"<b>{html.escape(company_name)}</b><br/>"
+    # 1. Company & Metadata Header (Góc trên bên trái)
+    elements.append(Paragraph(html.escape(company_name), header_company_name_style))
     if company_address:
-        meta_text += f"{html.escape(company_address)}<br/>"
+        elements.append(Paragraph(html.escape(company_address), header_company_sub_style))
     if tax_code:
-        meta_text += f"Mã số thuế: {html.escape(tax_code)}"
+        elements.append(Paragraph(f"Mã số thuế: {html.escape(tax_code)}", header_company_sub_style))
 
     if options.get("show_status", False):
         status_label = "ĐÃ PHÊ DUYỆT" if is_approved else "DỰ THẢO (DRAFT)"
         status_color = "#059669" if is_approved else "#DC2626"
-        meta_text += f"<br/>Trạng thái: <font color='{status_color}'><b>{status_label}</b></font>"
+        elements.append(Paragraph(f"Trạng thái: <font color='{status_color}'><b>{status_label}</b></font>", header_company_sub_style))
 
-    elements.append(Paragraph(meta_text, header_style))
     elements.append(Spacer(1, 8))
 
     # 2. Tiêu đề báo cáo & Kỳ
@@ -957,12 +1132,12 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     if period_str:
         elements.append(Spacer(1, 3))
         elements.append(Paragraph(f"<i>{html.escape(period_str)}</i>", subtitle_style))
-    elements.append(Spacer(1, 4))
+    elements.append(Spacer(1, 6))
 
     # Đơn vị tính (nằm trên góc phải bảng)
     unit_label = options.get("currency_unit") or dataset.get("currency_unit") or "Đơn vị tính: VND"
     elements.append(Paragraph(f"<i>{html.escape(unit_label)}</i>", unit_style))
-    elements.append(Spacer(1, 3))
+    elements.append(Spacer(1, 4))
 
     # 3. Chuẩn bị bảng dữ liệu
     table_data = []
@@ -998,6 +1173,8 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
                 s = td_style_right
             elif is_center:
                 s = td_style_center
+            elif col_idx == 0 and not is_subtotal:
+                s = td_style_code
             else:
                 s = td_style_left
 
@@ -1019,7 +1196,11 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
             else:
                 gt_v = grand_total.get(k)
                 if gt_v is not None and isinstance(gt_v, (int, float, Decimal)):
-                    gt_cells.append(Paragraph(f"<b>{_format_vn_number(gt_v, show_zero=False)}</b>", td_style_right))
+                    gt_formatted = _format_vn_number(gt_v, show_zero=False)
+                    if gt_formatted:
+                        gt_cells.append(Paragraph(f"<b>{gt_formatted}</b>", td_style_right))
+                    else:
+                        gt_cells.append(Paragraph("", td_style_right))
                 else:
                     gt_cells.append(Paragraph(f"<b>{html.escape(str(gt_v or ''))}</b>", td_style_right))
         table_data.append(gt_cells)
@@ -1030,7 +1211,7 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     for c in columns:
         k = c.get("key", "").lower()
         if any(w in k for w in ["name", "description", "title", "diengiai", "ten_hang", "tenhang"]):
-            weights.append(3.0)
+            weights.append(3.2)
         elif any(w in k for w in ["code", "ma_hang", "mahang", "so_ct", "so_chung_tu"]):
             weights.append(1.3)
         elif any(w in k for w in ["unit", "dvt", "don_vi"]):
@@ -1051,10 +1232,10 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         ("ALIGN", (0, 0), (-1, 0), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
-        ("TOPPADDING", (0, 0), (-1, -1), 3.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
     ]
     if grand_total and options.get("include_grand_total", True):
         table_style_commands.append(("LINEABOVE", (0, -1), (-1, -1), 0.75, colors.HexColor("#000000")))
@@ -1062,7 +1243,7 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
 
     t.setStyle(TableStyle(table_style_commands))
     elements.append(t)
-    elements.append(Spacer(1, 18))
+    elements.append(Spacer(1, 20))
 
     # 4. Khối chữ ký (Signatures Block)
     if options.get("show_signatures", True):
@@ -1093,9 +1274,9 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
                 Paragraph("<i>(Ký, họ tên, đóng dấu)</i>", sig_sub_style),
             ],
             [
-                Spacer(1, 40),
-                Spacer(1, 40),
-                Spacer(1, 40),
+                Spacer(1, 45),
+                Spacer(1, 45),
+                Spacer(1, 45),
             ],
             [
                 Paragraph(f"<b>{html.escape(prep_name)}</b>" if prep_name else "", sig_name_style),
@@ -1401,18 +1582,21 @@ def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any
 
   <div class="signature-block">
     <div class="sig-col">
+      <!-- NGƯỜI LẬP BIỂU -->
       <div class="sig-title">Người lập biểu</div>
       <div class="sig-sub">(Ký, họ tên)</div>
       <div class="sig-space"></div>
       <div class="sig-name">{html.escape(prep_name)}</div>
     </div>
     <div class="sig-col">
+      <!-- KẾ TOÁN TRƯỞNG -->
       <div class="sig-title">Kế toán trưởng</div>
       <div class="sig-sub">(Ký, họ tên)</div>
       <div class="sig-space"></div>
       <div class="sig-name">{html.escape(chief_name)}</div>
     </div>
     <div class="sig-col">
+      <!-- GIÁM ĐỐC / ĐẠI DIỆN PHÁP LUẬT -->
       <div class="sig-sub" style="margin-bottom: 5px;"><i>{html.escape(sig_date)}</i></div>
       <div class="sig-title">Giám đốc</div>
       <div class="sig-sub">(Ký, họ tên, đóng dấu)</div>
