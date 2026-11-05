@@ -1015,11 +1015,23 @@ function ReferenceWorkspace() {
       if (activeTab === "sync") {
         return <TaxInvoiceSyncPanel companyId={company.id} token={apiToken} href={href} />;
       }
-      if (activeTab === "incoming" && (!childTab || childTab === "inbox")) {
-        return <IncomingInvoiceWorkspace notify={setNotice} />;
+      if (activeTab === "incoming") {
+        return <IncomingInvoiceWorkspace notify={setNotice} childTab={childTab} />;
       }
       if (["outgoing", "pending", "lookup", "issuance", "unposted"].includes(activeTab)) {
         return <InvoiceLookupWorkspace mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
+      }
+      if (activeTab === "risk-warning") {
+        if (childTab === "xml-errors") {
+          return <InvoiceLookupWorkspace mode="errors" href={href} />;
+        }
+        if (childTab === "cash-limit") {
+          return <InvoiceLookupWorkspace mode="pending" href={href} />;
+        }
+        return <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />;
+      }
+      if (activeTab === "reports") {
+        return <MisaReportCenterWorkspace initialCategory="tax" notify={setNotice} />;
       }
     }
 

@@ -45,7 +45,13 @@ const linkLabel: Record<string, string> = {
   REVIEW_REQUIRED: "Cần xem lại liên kết", CONFLICT: "Liên kết có xung đột",
 };
 
-export default function IncomingInvoiceIntake({ notify }: { notify: (message: string) => void }) {
+export default function IncomingInvoiceIntake({
+  notify,
+  childTab,
+}: {
+  notify: (message: string) => void;
+  childTab?: string;
+}) {
   const navigate = useNavigate();
   const { token, companyId } = useApiSession();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -114,9 +120,17 @@ export default function IncomingInvoiceIntake({ notify }: { notify: (message: st
 
   const filtered = useMemo(() => invoices.filter((item) => {
     const text = `${item.invoice_number} ${item.invoice_series} ${item.seller_name} ${item.seller_tax_code}`.toLocaleLowerCase();
-    return text.includes(query.toLocaleLowerCase()) &&
+    const matchesQuery = text.includes(query.toLocaleLowerCase()) &&
       (status === "ALL" || (item.validation_summary?.processing_status || "PENDING_CHECK") === status);
-  }), [invoices, query, status]);
+    if (!matchesQuery) return false;
+    if (childTab === "unprocessed") {
+      return item.link_status === "UNLINKED" || !item.link_status;
+    }
+    if (childTab === "processed") {
+      return item.link_status === "LINKED" || item.link_status === "PARTIALLY_LINKED";
+    }
+    return true;
+  }), [invoices, query, status, childTab]);
   const selected = invoices.find((item) => item.id === selectedId);
   const currentRun = history?.runs?.[0];
   const chosenCandidate = candidates.find((item) => item.id === candidateId);
@@ -216,8 +230,23 @@ export default function IncomingInvoiceIntake({ notify }: { notify: (message: st
 
   return <div className="erp3-workspace">
     <header className="erp3-page-header">
-      <div><p className="erp3-eyebrow">KHÔNG GIAN LÀM VIỆC</p><h2>Xử lý hóa đơn đầu vào</h2>
-        <p>Tiếp nhận hóa đơn XML, lưu file nguồn và chuyển sang bước kiểm tra.</p></div>
+      <div>
+        <p className="erp3-eyebrow">KHÔNG GIAN LÀM VIỆC</p>
+        <h2>
+          {childTab === "unprocessed"
+            ? "Hóa đơn đầu vào - Chưa hạch toán"
+            : childTab === "processed"
+              ? "Hóa đơn đầu vào - Đã hạch toán"
+              : "Hộp thư hóa đơn & Tiếp nhận AI OCR"}
+        </h2>
+        <p>
+          {childTab === "unprocessed"
+            ? "Danh sách hóa đơn đầu vào hợp lệ chưa liên kết với chứng từ mua hàng / hạch toán."
+            : childTab === "processed"
+              ? "Danh sách hóa đơn đầu vào đã được liên kết với chứng từ mua hàng và hạch toán sổ cái."
+              : "Tiếp nhận hóa đơn XML, lưu file nguồn và chuyển sang bước kiểm tra tính hợp lệ."}
+        </p>
+      </div>
       <div className="erp3-header-actions">
         <button type="button" onClick={() => void reload()}><RefreshCw size={15} /> Làm mới</button>
         <button type="button" className="erp3-primary" onClick={() => { setError(""); setUploadOpen(true); }}><Upload size={15} /> Tải hóa đơn lên</button>
