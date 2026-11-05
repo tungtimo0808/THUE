@@ -59,7 +59,10 @@ class SupplierRiskViewSet(viewsets.ViewSet):
         company = self.get_company()
         search_query = request.query_params.get("q") or request.query_params.get("search")
 
-        qs = Party.objects.filter(company=company)
+        qs = Party.objects.filter(company=company).prefetch_related("addresses")
+        role = (request.query_params.get("role") or "").strip().upper()
+        if role:
+            qs = qs.filter(roles__role_type=role).distinct()
         if search_query:
             clean_q = search_query.strip()
             qs = qs.filter(
@@ -69,16 +72,19 @@ class SupplierRiskViewSet(viewsets.ViewSet):
             )
 
         now = timezone.now()
+        suppliers = list(qs)
+        latest_by_supplier = {}
+        for assessment in (
+            models.SupplierRiskAssessment.objects.filter(company=company, supplier__in=suppliers)
+            .select_related("assessed_by")
+            .order_by("supplier_id", "-version", "-created_at")
+        ):
+            latest_by_supplier.setdefault(assessment.supplier_id, assessment)
         results = []
-        for supplier in qs:
-            latest = (
-                models.SupplierRiskAssessment.objects.filter(
-                    company=company,
-                    supplier=supplier,
-                )
-                .order_by("-version", "-created_at")
-                .first()
-            )
+        for supplier in suppliers:
+            latest = latest_by_supplier.get(supplier.id)
+            addresses = [row for row in supplier.addresses.all() if row.status == "ACTIVE"]
+            address = next((row for row in addresses if row.is_default), addresses[0] if addresses else None)
             assessor_name = ""
             if latest and latest.assessed_by and hasattr(latest.assessed_by, "user"):
                 assessor_name = latest.assessed_by.user.get_full_name() or latest.assessed_by.user.username
@@ -88,6 +94,7 @@ class SupplierRiskViewSet(viewsets.ViewSet):
                 "supplier_code": supplier.code,
                 "supplier_name": supplier.name,
                 "tax_code": supplier.tax_code or "",
+                "address": address.address_line if address else "",
                 "operating_status": supplier.get_status_display(),
                 "status_code": supplier.status,
                 "latest_risk_level": latest.risk_level if latest else None,
@@ -156,7 +163,7 @@ class SupplierRiskViewSet(viewsets.ViewSet):
             raise ValidationError("Vui lòng chọn nhà cung cấp.")  # EX01
 
         notes = serializer.validated_data.get("notes", "")
-        external_tax_status = serializer.validated_data.get("external_tax_status")
+        external_tax_status = (serializer.validated_data.get("external_tax_status") or "").strip() or None
         simulate_failure = serializer.validated_data.get("simulate_external_failure", False)
 
         assessment = risk_services.assess_supplier_risk(
@@ -189,7 +196,7 @@ class SupplierRiskViewSet(viewsets.ViewSet):
             raise ValidationError("Vui lòng chọn nhà cung cấp.")
 
         notes = request.data.get("notes", "")
-        external_tax_status = request.data.get("external_tax_status")
+        external_tax_status = (str(request.data.get("external_tax_status") or "")).strip() or None
         simulate_failure = request.data.get("simulate_external_failure", False)
 
         assessment = risk_services.assess_supplier_risk(

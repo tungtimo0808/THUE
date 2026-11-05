@@ -562,6 +562,34 @@ class SupplierRiskTests(TestCase):
         self.assertEqual(res_search.data["count"], 1)
         self.assertEqual(res_search.data["results"][0]["supplier_code"], "SUPP-02")
 
+    def test_09b_check_without_external_status_is_not_marked_verified(self):
+        """Chưa tra cứu MST từ cơ quan thuế thì không được ghi là đã xác minh / đang hoạt động."""
+        res = self.client.post(self.risk_check_url, {"supplier_id": str(self.supplier.pk)}, format="json")
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertEqual(res.data["data"]["tax_status"], "UNVERIFIED")
+        self.assertFalse(res.data["data"]["tax_code_status_verified"])
+
+    def test_17b_vendor_filter_address_and_latest_assessment(self):
+        """Màn hình Danh sách NCC có rủi ro: chỉ lấy NCC, kèm địa chỉ mặc định và lần đánh giá mới nhất."""
+        from master_data.models import PartyAddress, PartyRole
+
+        PartyRole.objects.get_or_create(party=self.supplier, role_type="VENDOR", defaults={"active_from": self.day})
+        customer = Party.objects.create(company=self.company, code="KH-ONLY", name="Chỉ là khách hàng", status="ACTIVE")
+        PartyRole.objects.create(party=customer, role_type="CUSTOMER", active_from=self.day)
+        PartyAddress.objects.create(party=self.supplier, address_type="BILLING", address_line="12 Lê Lợi, Hà Nội", is_default=True)
+        assess_supplier_risk(self.company, self.supplier, self.user)
+        newest = assess_supplier_risk(self.company, self.supplier, self.user)
+
+        res = self.client.get(f"{self.risk_list_url}&role=VENDOR")
+        self.assertEqual(res.status_code, 200, res.data)
+        codes = {row["supplier_code"] for row in res.data["results"]}
+        self.assertIn(self.supplier.code, codes)
+        self.assertNotIn("KH-ONLY", codes)
+        row = next(row for row in res.data["results"] if row["supplier_code"] == self.supplier.code)
+        self.assertEqual(row["address"], "12 Lê Lợi, Hà Nội")
+        self.assertEqual(row["latest_risk_level"], newest.risk_level)
+        self.assertEqual(row["latest_score"], newest.score)
+
     def test_18_permission_denied_message_ex10(self):
         """EX10: User không có quyền kiểm tra rủi ro -> 'Bạn không có quyền thực hiện chức năng này.'"""
         unauth_user = get_user_model().objects.create_user(

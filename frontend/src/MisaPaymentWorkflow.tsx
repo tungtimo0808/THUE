@@ -1,29 +1,26 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import "./misa-payment-workflow.css";
+
+// Toàn bộ luồng chạy trong Sổ Việt ERP. Chưa có ứng dụng duyệt bên ngoài nên không mô tả bước "đồng bộ".
 export default function MisaPaymentWorkflow({
   children,
-  notify,
   variant = "payment",
 }: {
   children: ReactNode;
   variant?: "payment" | "settlement";
-  notify: (text: string) => void;
+  notify?: (text: string) => void;
 }) {
   const [view, setView] = useState("workflow");
+  const settlement = variant === "settlement";
+  const subject = settlement ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền";
   return (
     <div className="pw-workspace">
-      <nav aria-label={variant === "settlement" ? "Đề nghị quyết toán tạm ứng" : "Đề nghị chi tiền"}>
-        <button
-          className={view === "workflow" ? "active" : ""}
-          onClick={() => setView("workflow")}
-        >
-          Quy trình tự động
+      <nav aria-label={settlement ? "Đề nghị quyết toán tạm ứng" : "Đề nghị chi tiền"}>
+        <button className={view === "workflow" ? "active" : ""} onClick={() => setView("workflow")}>
+          Quy trình
         </button>
-        <button
-          className={view === "list" ? "active" : ""}
-          onClick={() => setView("list")}
-        >
+        <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
           Danh sách đề nghị
         </button>
       </nav>
@@ -33,57 +30,54 @@ export default function MisaPaymentWorkflow({
         <>
           <header>
             <div>
-              <h1>LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA {variant === "settlement" ? "ĐỀ NGHỊ QUYẾT TOÁN TẠM ỨNG" : "ĐỀ NGHỊ CHI TIỀN"}</h1>
-              <p>
-                Hệ thống liên thông thông suốt giữa Quy trình Sổ Việt và Sổ Việt ERP
-              </p>
+              <h1>QUY TRÌNH {subject.toUpperCase()}</h1>
+              <p>Lập, kiểm tra và hạch toán {subject} ngay trong Sổ Việt ERP</p>
             </div>
-            <button
-              onClick={() =>
-                notify("Đang xem mô phỏng quy trình phê duyệt trên frontend.")
-              }
-            >
-              Thiết lập tự động
-            </button>
+            <button onClick={() => setView("list")}>Mở danh sách đề nghị</button>
           </header>
           <div className="pw-steps">
             <article>
               <span>BƯỚC 1</span>
-              <small>Quy trình Sổ Việt</small>
-              <h2>Nhân viên lập {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền"} trên Quy trình Sổ Việt</h2>
-              <p>{variant === "settlement" ? "Sau khi tổng hợp toàn bộ hóa đơn, chứng từ để quyết toán tạm ứng, nhân viên chủ động tạo đề nghị quyết toán tạm ứng." : "Nhân viên chủ động tạo các đề nghị phát sinh như:"}</p>
-              <ul hidden={variant === "settlement"}>
+              <small>Sổ Việt ERP</small>
+              <h2>Lập {subject}</h2>
+              <p>
+                {settlement
+                  ? "Sau khi tổng hợp hóa đơn, chứng từ đã chi, nhân viên lập đề nghị quyết toán tạm ứng."
+                  : "Lập đề nghị tại tab Danh sách đề nghị, gồm:"}
+              </p>
+              <ul hidden={settlement}>
                 {[
                   "Đề nghị trả tiền nhà cung cấp",
                   "Đề nghị tạm ứng nhân viên",
                   "Đề nghị thanh toán hóa đơn",
                   "Đề nghị thanh toán khác",
-                  "Đề nghị quyết toán tạm ứng",
                 ].map((text) => (
                   <li key={text}>{text}</li>
                 ))}
               </ul>
-              <footer>Tạo đề nghị nhanh chóng trên web và mobile</footer>
+              <footer>Danh sách đề nghị</footer>
             </article>
             <article>
               <span>BƯỚC 2</span>
-              <small>Quy trình Sổ Việt</small>
-              <h2>Giám đốc/Kế toán phê duyệt</h2>
+              <small>Sổ Việt ERP</small>
+              <h2>{settlement ? "Kế toán kiểm tra" : "Phê duyệt"}</h2>
               <p>
-                Đề nghị được chuyển đến đúng người phụ trách để kiểm tra, trao
-                đổi, bổ sung thông tin và phê duyệt trực tiếp trên Quy trình Sổ Việt.
+                {settlement
+                  ? "Kế toán đối chiếu số đã tạm ứng với chứng từ quyết toán và xác định phần chênh lệch."
+                  : "Đề nghị được gửi duyệt; người có thẩm quyền phê duyệt hoặc từ chối kèm lý do. Chỉ đề nghị đã duyệt mới được chi."}
               </p>
-              <footer>Tạo đề nghị nhanh chóng trên web và mobile</footer>
+              <footer>{settlement ? "Đối chiếu tạm ứng" : "Chờ duyệt → Đã duyệt / Bị từ chối"}</footer>
             </article>
             <article>
               <span>BƯỚC 3</span>
               <small>Sổ Việt ERP</small>
-              <h2>Đồng bộ đề nghị về Sổ Việt ERP</h2>
+              <h2>{settlement ? "Ghi nhận quyết toán" : "Lập chứng từ chi"}</h2>
               <p>
-                Kế toán kế thừa thông tin từ {variant === "settlement" ? "đề nghị quyết toán tạm ứng" : "đề nghị chi"} đã duyệt để lập chứng
-                từ hạch toán nhanh chóng, không cần nhập lại thủ công.
+                {settlement
+                  ? "Ghi nhận quyết toán và lập phiếu thu/chi cho phần chênh lệch nếu có."
+                  : "Kế toán lập phiếu chi hoặc ủy nhiệm chi từ đề nghị đã duyệt; thông tin được kế thừa, không cần nhập lại."}
               </p>
-              <footer>Kế thừa dữ liệu &amp; tự động sinh hạch toán</footer>
+              <footer>Kế thừa dữ liệu &amp; hạch toán</footer>
             </article>
           </div>
         </>
