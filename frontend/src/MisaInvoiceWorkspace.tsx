@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { FileText, Monitor } from "lucide-react";
 import "./misa-invoice-workspace.css";
 const flowNodes = [
-  ["Đăng ký/ Thay đổi thông tin sử dụng HĐĐT", "", 10, 28],
+  // Đăng ký mẫu 01/ĐKTĐ-HĐĐT thực hiện trên cổng của cơ quan thuế, không có màn hình trong ERP.
+  ["Đăng ký/ Thay đổi thông tin sử dụng HĐĐT", "https://hoadondientu.gdt.gov.vn/", 10, 28],
   ["Khởi tạo mẫu", "outgoing", 10, 68],
   ["Xuất và gửi hóa đơn", "outgoing", 29, 49],
   ["Thông báo hóa đơn lập sai", "adjustments", 57, 20],
@@ -243,15 +244,15 @@ export default function MisaInvoiceWorkspace({
                   <span>{label}</span>
                 </>
               );
-              // Bước không có màn hình trong ERP (thực hiện trên phần mềm HĐĐT / cổng thuế): không gắn liên kết.
-              return path ? (
+              // Bước không có màn hình trong ERP: mở trang bên ngoài nơi thực hiện bước đó.
+              return path.startsWith("https://") ? (
+                <a key={label} href={path} target="_blank" rel="noreferrer" title="Mở Cổng hóa đơn điện tử của Tổng cục Thuế (tab mới)" style={{ left: `${left}%`, top: `${top}%` }}>
+                  {content}
+                </a>
+              ) : (
                 <Link key={label} to={href("/invoices/" + path)} style={{ left: `${left}%`, top: `${top}%` }}>
                   {content}
                 </Link>
-              ) : (
-                <a key={label} title="Thực hiện trên phần mềm hóa đơn điện tử hoặc cổng của cơ quan thuế" style={{ left: `${left}%`, top: `${top}%`, cursor: "default" }}>
-                  {content}
-                </a>
               );
             })}
           </div>
