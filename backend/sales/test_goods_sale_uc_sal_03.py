@@ -552,6 +552,43 @@ class GoodsSaleUcSal03Tests(TestCase):
         bal_restored = StockBalance.objects.get(company=self.company, warehouse=self.warehouse, item=self.item_goods)
         self.assertEqual(bal_restored.quantity, Decimal("50"))
 
+    def test_07b_unpost_goes_through_ledger_and_repost_reissues_stock(self):
+        """Unposting reverses balances through the GL and keeps the entry and its history; reposting
+        reuses that entry and issues the stock again."""
+        from general_ledger.models import JournalPostingHistory
+
+        def debit_131():
+            return sum((b.period_debit for b in AccountBalance.objects.filter(account=self.acc_131)), Decimal("0"))
+
+        res = self.client.post(self.base_url, self.build_payload(), format="json")
+        sale_id = res.data["id"]
+        detail_url = f"/api/v1/sales/goods-sales/{sale_id}/?company_id={self.company.pk}"
+        self.client.post(f"{detail_url}&action=submit".replace("?", "submit/?"), format="json")
+        self.client.post(f"{detail_url}&action=app".replace("?", "approve/?"), format="json")
+        debit_before = debit_131()
+
+        self.assertEqual(self.client.post(f"{detail_url}&action=post".replace("?", "post/?"), format="json").status_code, 200)
+        journal = GoodsSale.objects.get(pk=sale_id).journal_entry
+        self.assertEqual(debit_131(), debit_before + Decimal("49500000"))
+
+        res_unpost = self.client.post(f"{detail_url}&action=unpost".replace("?", "unpost/?"), {"reason": "Kiểm tra"}, format="json")
+        self.assertEqual(res_unpost.status_code, 200, res_unpost.data)
+        journal.refresh_from_db()
+        self.assertEqual(journal.status, "DRAFT")
+        self.assertEqual(debit_131(), debit_before)
+        self.assertEqual(
+            set(JournalPostingHistory.objects.filter(entry=journal).values_list("action", flat=True)), {"POST", "UNPOST"}
+        )
+
+        res_repost = self.client.post(f"{detail_url}&action=post".replace("?", "post/?"), format="json")
+        self.assertEqual(res_repost.status_code, 200, res_repost.data)
+        sale = GoodsSale.objects.get(pk=sale_id)
+        self.assertEqual(sale.journal_entry_id, journal.pk)
+        self.assertEqual(debit_131(), debit_before + Decimal("49500000"))
+        self.assertEqual(sale.inventory_transaction.number, f"{sale.number}-XK-2")
+        stock = StockBalance.objects.get(company=self.company, warehouse=self.warehouse, item=self.item_goods)
+        self.assertEqual(stock.quantity, Decimal("45"))
+
     def test_08_post_cash_and_bank_payment(self):
         """AF-03: Cash and Bank direct payment debits 111 / 112 directly, does not create Receivable."""
         # 1. CASH

@@ -34,12 +34,23 @@ from approval_workflows.submission import configured_snapshot
 from audit_log.services import record_audit
 from common_services.models import DocumentNumberingRule
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import post as post_journal, source_module_request
+from general_ledger.services import gl_request, post as post_journal, source_module_request
 from inventory.models import InventoryTransaction, InventoryTransactionLine
 from inventory.services import post as post_inventory, reverse as reverse_inventory
 from accounts_receivable.models import Receivable, ReceivableStatus
 from master_data.models import Currency, DocumentType, Item, Party, TaxRate, UnitOfMeasure, Warehouse
 from . import models
+from .posting_helpers import (
+    apply_order_delivery,
+    check_adjustment_invoice,
+    base_quantity,
+    convert_to_accounting_currency,
+    free_inventory_number,
+    issued_unit_cost,
+    posted_allowance_totals,
+    source_journal,
+    unpost_source_journal,
+)
 
 MONEY = Decimal("0.0001")
 
@@ -107,14 +118,10 @@ def generate_sales_return_number(company, branch=None, document_date=None):
 
 def resolve_default_accounts(company):
     """Resolve default postable accounts for sales return operations."""
-    # Revenue deduction account (5212 or 521, fallback to 511)
-    revenue_deduction_acc = Account.objects.filter(
-        company=company, code__startswith="521", is_postable=True, status="ACTIVE"
-    ).order_by("-code").first()
-    if not revenue_deduction_acc:
-        revenue_deduction_acc = Account.objects.filter(
-            company=company, code__startswith="511", is_postable=True, status="ACTIVE"
-        ).order_by("code").first()
+    # Revenue deduction account: 5212 (hàng bán bị trả lại) when the chart has it, else another 521x.
+    # Charts without 521 (TT133) reduce the revenue account of the returned line instead, chosen per line.
+    deductions = Account.objects.filter(company=company, code__startswith="521", is_postable=True, status="ACTIVE")
+    revenue_deduction_acc = deductions.filter(code__startswith="5212").order_by("code").first() or deductions.order_by("code").first()
 
     # Tax output account (33311)
     tax_acc = Account.objects.filter(
@@ -251,9 +258,9 @@ def prepare_from_goods_sale(company, goods_sale_id):
                 "discount_rate": str(line.discount_rate),
                 "tax_rate_id": str(line.tax_rate_id) if line.tax_rate_id else None,
                 "unit_cost": str(line.unit_cost),
-                "revenue_deduction_account": str(default_accs["revenue_deduction_account"].id) if default_accs["revenue_deduction_account"] else None,
+                "revenue_deduction_account": str((default_accs["revenue_deduction_account"] or line.revenue_account).id) if (default_accs["revenue_deduction_account"] or line.revenue_account) else None,
                 "tax_account": str(line.tax_account_id or (default_accs["tax_account"].id if default_accs["tax_account"] else None)),
-                "receivable_account": str(line.receivable_or_payment_account_id or (default_accs["receivable_account"].id if default_accs["receivable_account"] else None)),
+                "receivable_account": str(line.receivable_or_payment_account_id if line.receivable_or_payment_account and line.receivable_or_payment_account.code.startswith("131") else (default_accs["receivable_account"].id if default_accs["receivable_account"] else None)),
                 "inventory_account": str(line.inventory_account_id or (default_accs["inventory_account"].id if default_accs["inventory_account"] else None)),
                 "cogs_account": str(line.cogs_account_id or (default_accs["cogs_account"].id if default_accs["cogs_account"] else None)),
             })
@@ -306,7 +313,8 @@ def calculate_and_validate_return_lines(
             raise ValidationError(f"Dòng {idx}: Dòng bán hàng nguồn đã được chọn trước đó trên cùng chứng từ.")
         seen_source_lines.add(source_line_id)
 
-        source_line = models.GoodsSaleLine.objects.filter(
+        # Locked so concurrent returns on the same line see each other's quantities.
+        source_line = models.GoodsSaleLine.objects.select_for_update(of=("self",)).filter(
             sale=goods_sale, id=source_line_id
         ).select_related("item", "uom", "warehouse", "tax_rate").first()
 
@@ -383,11 +391,35 @@ def calculate_and_validate_return_lines(
                 line_discount = Decimal("0")
                 line_tax = Decimal("0")
 
+        # Allowances already posted on the source line reduced its value; a return refunds only
+        # what remains, spread over the quantity not yet returned (the last return takes the rest).
+        allowed_net, allowed_tax = posted_allowance_totals(source_line)
+        if allowed_net or allowed_tax:
+            posted_returns = models.SalesReturnLine.objects.filter(
+                goods_sale_line=source_line, sale_return__status=models.DocumentStatus.POSTED
+            ).exclude(sale_return_id=current_return_id).aggregate(
+                q=Sum("return_quantity"), d=Sum("discount_amount"), t=Sum("tax_amount"),
+                v=Sum(F("return_quantity") * F("unit_price")),
+            )
+            returned_net = (posted_returns["v"] or Decimal("0")) - (posted_returns["d"] or Decimal("0"))
+            remaining_qty = sold_qty - (posted_returns["q"] or Decimal("0"))
+            source_net = (sold_qty * unit_price) - source_line.discount_amount
+            remaining_net = max(Decimal("0"), source_net - returned_net - allowed_net)
+            remaining_tax = max(Decimal("0"), source_line.tax_amount - (posted_returns["t"] or Decimal("0")) - allowed_tax)
+            share = Decimal("1") if return_qty >= remaining_qty else return_qty / remaining_qty
+            line_discount = line_subtotal - round_money(remaining_net * share, currency)
+            line_tax = round_money(remaining_tax * share, currency)
+
         line_total = line_subtotal - line_discount + line_tax
 
-        # Cost and COGS (BR-SAL-05-09)
-        unit_cost = source_line.unit_cost
-        line_cogs = round_money(return_qty * unit_cost, currency)
+        # Cost and COGS (BR-SAL-05-09): the cost the goods actually left stock at, per base unit
+        qty_base = base_quantity(item, source_line.uom, return_qty)
+        cost_per_base = issued_unit_cost(source_line)
+        if cost_per_base is None:
+            source_base = base_quantity(item, source_line.uom, sold_qty)
+            cost_per_base = source_line.cogs_amount / source_base if source_base else Decimal("0")
+        line_cogs = round_money(qty_base * cost_per_base, currency)
+        unit_cost = line_cogs / return_qty
 
         # Warehouse validation for ATTACH_INWARD
         warehouse = None
@@ -405,17 +437,23 @@ def calculate_and_validate_return_lines(
 
         # Resolve accounts
         rev_acc_id = raw.get("revenue_deduction_account") or raw.get("revenue_deduction_account_id")
-        rev_acc = Account.objects.filter(company=company, id=rev_acc_id, status="ACTIVE", is_postable=True).first() if rev_acc_id else default_accs["revenue_deduction_account"]
+        rev_acc = Account.objects.filter(company=company, id=rev_acc_id, status="ACTIVE", is_postable=True).first() if rev_acc_id else (default_accs["revenue_deduction_account"] or source_line.revenue_account)
         if not rev_acc:
             raise ValidationError(f"Dòng {idx}: Chưa xác định tài khoản giảm trừ doanh thu.")
 
         tax_acc_id = raw.get("tax_account") or raw.get("tax_account_id") or source_line.tax_account_id
         tax_acc = Account.objects.filter(company=company, id=tax_acc_id, status="ACTIVE", is_postable=True).first() if tax_acc_id else default_accs["tax_account"]
 
-        rec_acc_id = raw.get("receivable_account") or raw.get("receivable_account_id") or source_line.receivable_or_payment_account_id
+        # The return is owed back to the customer through receivables; paying it out happens only in
+        # the refund step, so a cash/bank sale must not credit 111/112 here as well.
+        rec_acc_id = raw.get("receivable_account") or raw.get("receivable_account_id")
+        if not rec_acc_id and source_line.receivable_or_payment_account and source_line.receivable_or_payment_account.code.startswith("131"):
+            rec_acc_id = source_line.receivable_or_payment_account_id
         rec_acc = Account.objects.filter(company=company, id=rec_acc_id, status="ACTIVE", is_postable=True).first() if rec_acc_id else default_accs["receivable_account"]
         if not rec_acc:
             raise ValidationError(f"Dòng {idx}: Chưa xác định tài khoản công nợ khách hàng.")
+        if not rec_acc.code.startswith("131"):
+            raise ValidationError(f"Dòng {idx}: Tài khoản đối ứng của trả hàng phải là tài khoản phải thu khách hàng (131), không phải {rec_acc.code}.")
 
         inv_acc_id = raw.get("inventory_account") or raw.get("inventory_account_id") or source_line.inventory_account_id
         inv_acc = Account.objects.filter(company=company, id=inv_acc_id, status="ACTIVE", is_postable=True).first() if inv_acc_id else default_accs["inventory_account"]
@@ -464,6 +502,31 @@ def calculate_and_validate_return_lines(
     }
 
 
+def _validate_return_source(company, goods_sale, customer, inventory_handling, inventory_transaction, current_return_id=None):
+    """Source sale and linked stock receipt checks shared by create and update."""
+    if goods_sale.company_id != company.id:
+        raise ValidationError("Chứng từ bán hàng nguồn không thuộc cùng doanh nghiệp.")
+    if goods_sale.status != models.DocumentStatus.POSTED:
+        raise ValidationError("Chứng từ bán hàng nguồn phải ở trạng thái Đã ghi sổ (POSTED).")
+    if customer.company_id != company.id or customer.id != goods_sale.customer_id:
+        raise ValidationError("Khách hàng không khớp với khách hàng trên chứng từ bán hàng nguồn.")
+    if inventory_handling != models.SalesReturn.InventoryHandling.LINK_EXISTING:
+        return
+    if not inventory_transaction:
+        raise ValidationError({"inventory_transaction": "Bắt buộc chọn phiếu nhập kho liên kết khi chọn liên kết phiếu đã có."})
+    if (
+        inventory_transaction.company_id != company.id
+        or inventory_transaction.transaction_type not in ("RECEIPT", "RETURN")
+        or inventory_transaction.status != "POSTED"
+    ):
+        raise ValidationError({"inventory_transaction": "Phiếu liên kết phải là phiếu nhập kho đã ghi sổ của doanh nghiệp."})
+    used = models.SalesReturn.objects.filter(inventory_transaction=inventory_transaction).exclude(status=models.DocumentStatus.CANCELLED)
+    if current_return_id:
+        used = used.exclude(pk=current_return_id)
+    if used.exists():
+        raise ValidationError({"inventory_transaction": f"Phiếu nhập kho {inventory_transaction.number} đã được liên kết với phiếu trả hàng khác."})
+
+
 @transaction.atomic
 def create_sales_return(request, validated_data, lines_data):
     """Create a new SalesReturn record and lines in DRAFT status (Luồng chính Bước 7)."""
@@ -471,21 +534,12 @@ def create_sales_return(request, validated_data, lines_data):
     goods_sale = validated_data["goods_sale"]
     customer = validated_data["customer"]
 
-    if goods_sale.company_id != company.id:
-        raise ValidationError("Chứng từ bán hàng nguồn không thuộc cùng doanh nghiệp.")
-    if goods_sale.status != models.DocumentStatus.POSTED:
-        raise ValidationError("Chứng từ bán hàng nguồn phải ở trạng thái Đã ghi sổ (POSTED).")
-    if customer.company_id != company.id or customer.id != goods_sale.customer_id:
-        raise ValidationError("Khách hàng không khớp với khách hàng trên chứng từ bán hàng nguồn.")
-
     return_reason = validated_data.get("return_reason", "").strip()
     if not return_reason:
         raise ValidationError({"return_reason": "Bắt buộc nhập lý do trả lại hàng."})
 
     inventory_handling = validated_data.get("inventory_handling", models.SalesReturn.InventoryHandling.ATTACH_INWARD)
-    if inventory_handling == models.SalesReturn.InventoryHandling.LINK_EXISTING:
-        if not validated_data.get("inventory_transaction"):
-            raise ValidationError({"inventory_transaction": "Bắt buộc chọn phiếu nhập kho liên kết khi chọn liên kết phiếu đã có."})
+    _validate_return_source(company, goods_sale, customer, inventory_handling, validated_data.get("inventory_transaction"))
 
     currency = validated_data.get("currency") or goods_sale.currency
     exchange_rate = validated_data.get("exchange_rate") or (Decimal("1") if currency.code == "VND" else goods_sale.exchange_rate)
@@ -569,6 +623,10 @@ def update_sales_return(request, sale_return, validated_data, lines_data):
     company = sale_return.company
     goods_sale = validated_data.get("goods_sale") or sale_return.goods_sale
     inventory_handling = validated_data.get("inventory_handling", sale_return.inventory_handling)
+    _validate_return_source(
+        company, goods_sale, validated_data.get("customer") or sale_return.customer, inventory_handling,
+        validated_data.get("inventory_transaction", sale_return.inventory_transaction), current_return_id=sale_return.pk,
+    )
 
     currency = validated_data.get("currency") or sale_return.currency
     exchange_rate = validated_data.get("exchange_rate") or sale_return.exchange_rate
@@ -790,7 +848,7 @@ def _validate_return_posting_preconditions(sale_return):
 
     # 3. Re-verify source remaining balances in atomic lock (BR-SAL-05-03, EF-03)
     for line in lines:
-        source_line = line.goods_sale_line
+        source_line = models.GoodsSaleLine.objects.select_for_update().get(pk=line.goods_sale_line_id)
         sold_qty = source_line.quantity
         other_posted = models.SalesReturnLine.objects.filter(
             goods_sale_line=source_line,
@@ -825,6 +883,9 @@ def post_sales_return(request, sale_return):
 
     # 1. Handle Inward Stock Transaction if ATTACH_INWARD (BR-SAL-05-09)
     if sale_return.inventory_handling == models.SalesReturn.InventoryHandling.ATTACH_INWARD and not sale_return.inventory_transaction_id:
+        for line in lines:
+            if line.item.track_inventory and line.cogs_amount <= 0:
+                raise ValidationError(f"Dòng {line.line_no}: Chưa xác định được giá vốn đã xuất của hàng {line.item.code}; hãy tính giá xuất kho trước khi nhập lại.")
         primary_wh = lines[0].warehouse
         orig_issue = sale_return.goods_sale.inventory_transaction
 
@@ -833,7 +894,7 @@ def post_sales_return(request, sale_return):
                 company=sale_return.company,
                 branch=sale_return.branch,
                 supplier=sale_return.customer,
-                number=f"{sale_return.number}-NK",
+                number=free_inventory_number(sale_return.company, f"{sale_return.number}-NK"),
                 transaction_type="RETURN",
                 transaction_date=sale_return.posting_date,
                 original_transaction=orig_issue,
@@ -848,7 +909,7 @@ def post_sales_return(request, sale_return):
                 company=sale_return.company,
                 branch=sale_return.branch,
                 supplier=sale_return.customer,
-                number=f"{sale_return.number}-NK",
+                number=free_inventory_number(sale_return.company, f"{sale_return.number}-NK"),
                 transaction_type="RECEIPT",
                 transaction_date=sale_return.posting_date,
                 destination_warehouse=primary_wh,
@@ -859,14 +920,16 @@ def post_sales_return(request, sale_return):
             )
 
         for line in lines:
+            qty_base = base_quantity(line.item, line.uom, line.return_quantity)
             InventoryTransactionLine.objects.create(
                 transaction=inward_trx,
                 line_no=line.line_no,
                 item=line.item,
                 uom=line.uom,
                 quantity=line.return_quantity,
-                base_quantity=line.return_quantity,
-                unit_cost=line.unit_cost,
+                base_quantity=qty_base,
+                destination_warehouse=line.warehouse,
+                unit_cost=line.cogs_amount / qty_base,
                 line_value=line.cogs_amount,
                 movement_direction="IN",
             )
@@ -875,12 +938,28 @@ def post_sales_return(request, sale_return):
         sale_return.inventory_transaction = inward_trx
         sale_return.inventory_created = True
 
+    # A linked receipt slip that put value back into stock without booking its own entry is reversed
+    # here at the slip's value; a slip without value or with its own entry needs nothing more.
+    reverses_cogs = sale_return.inventory_handling == models.SalesReturn.InventoryHandling.ATTACH_INWARD
+    if sale_return.inventory_handling == models.SalesReturn.InventoryHandling.LINK_EXISTING:
+        slip = sale_return.inventory_transaction
+        for line in lines:
+            value = Decimal("0")
+            if slip.gl_status != "POSTED":
+                received = slip.lines.filter(item=line.item).aggregate(q=Sum("base_quantity"), v=Sum("line_value"))
+                if received["q"] and received["v"]:
+                    value = round_money(received["v"] * base_quantity(line.item, line.uom, line.return_quantity) / received["q"], sale_return.currency)
+            if line.cogs_amount != value:
+                line.cogs_amount = value
+                line.save(update_fields=["cogs_amount"])
+            reverses_cogs = reverses_cogs or value > 0
+
     # 2. Create and Post JournalEntry (BR-SAL-05-08, BR-SAL-05-09)
-    total_cogs = sum(line.cogs_amount for line in lines) if sale_return.inventory_handling == models.SalesReturn.InventoryHandling.ATTACH_INWARD else Decimal("0")
+    total_cogs = sum(line.cogs_amount for line in lines) if reverses_cogs else Decimal("0")
     total_debit = sale_return.total_amount + total_cogs
     total_credit = sale_return.total_amount + total_cogs
 
-    journal = JournalEntry.objects.create(
+    journal = source_journal(
         company=sale_return.company,
         branch=sale_return.branch,
         period=period,
@@ -906,7 +985,7 @@ def post_sales_return(request, sale_return):
 
     # Debits: Revenue Deductions (5212/521)
     for line in lines:
-        line_net = (line.return_quantity * line.unit_price) - line.discount_amount
+        line_net = round_money(line.return_quantity * line.unit_price, sale_return.currency) - line.discount_amount
         if line_net > 0:
             gl_line_no += 1
             JournalLine.objects.create(
@@ -949,8 +1028,8 @@ def post_sales_return(request, sale_return):
         party=sale_return.customer,
     )
 
-    # Inventory Return & COGS Reversal (Nợ 156 / Có 632) when ATTACH_INWARD
-    if sale_return.inventory_handling == models.SalesReturn.InventoryHandling.ATTACH_INWARD:
+    # Inventory Return & COGS Reversal (Nợ 156 / Có 632)
+    if reverses_cogs:
         for line in lines:
             if line.cogs_amount > 0 and line.inventory_account and line.cogs_account:
                 gl_line_no += 1
@@ -961,7 +1040,7 @@ def post_sales_return(request, sale_return):
                     description=f"Nhập lại kho hàng trả {line.item.code} - {sale_return.number}",
                     debit=line.cogs_amount,
                     credit=Decimal("0"),
-                    currency=sale_return.currency,
+                    currency=sale_return.company.accounting_currency or sale_return.currency,
                     warehouse=line.warehouse,
                 )
                 gl_line_no += 1
@@ -972,11 +1051,12 @@ def post_sales_return(request, sale_return):
                     description=f"Hoàn giảm giá vốn hàng bán {line.item.code} - {sale_return.number}",
                     debit=Decimal("0"),
                     credit=line.cogs_amount,
-                    currency=sale_return.currency,
+                    currency=sale_return.company.accounting_currency or sale_return.currency,
                     party=sale_return.customer,
                     warehouse=line.warehouse,
                 )
 
+    convert_to_accounting_currency(journal, sale_return.exchange_rate)
     post_journal(journal, source_module_request(request))
     sale_return.journal_entry = journal
 
@@ -987,8 +1067,7 @@ def post_sales_return(request, sale_return):
         if rec.balance >= sale_return.total_amount:
             rec.adjustment_amount += sale_return.total_amount
             rec.balance -= sale_return.total_amount
-            if rec.balance == Decimal("0"):
-                rec.status = ReceivableStatus.PAID
+            rec.status = ReceivableStatus.PAID if rec.balance == Decimal("0") else ReceivableStatus.PARTIALLY_PAID
             rec.save(update_fields=["adjustment_amount", "balance", "status", "updated_at"])
             sale_return.refundable_amount = Decimal("0")
         else:
@@ -1002,6 +1081,9 @@ def post_sales_return(request, sale_return):
     else:
         # If no receivable (e.g. paid in CASH / BANK upfront), full amount is refundable
         sale_return.refundable_amount = sale_return.total_amount
+
+    if sale_return.goods_sale.inventory_handling == models.GoodsSale.InventoryHandling.ATTACH_ISSUE:
+        apply_order_delivery([(line.goods_sale_line.order_line_id, line.return_quantity) for line in lines], -1)
 
     sale_return.status = models.DocumentStatus.POSTED
     sale_return.posted_at = timezone.now()
@@ -1025,13 +1107,13 @@ def unpost_sales_return(request, sale_return, reason=""):
             f"Không thể bỏ ghi sổ khi đã phát sinh hoàn tiền cho khách ({sale_return.refunded_amount}). Vui lòng xử lý chứng từ hoàn tiền trước."
         )
 
-    # 1. Reverse and delete JournalEntry
+    reason = reason or "Bỏ ghi sổ chứng từ trả hàng"
+
+    # 1. Unpost the journal entry through the general ledger
     if sale_return.journal_entry:
-        journal = sale_return.journal_entry
+        unpost_source_journal(request, sale_return.journal_entry, reason)
         sale_return.journal_entry = None
         sale_return.save(update_fields=["journal_entry"])
-        journal.lines.all().delete()
-        journal.delete()
 
     # 2. Reverse Inventory Transaction if attached
     if sale_return.inventory_created and sale_return.inventory_transaction:
@@ -1041,9 +1123,7 @@ def unpost_sales_return(request, sale_return, reason=""):
         sale_return.save(update_fields=["inventory_transaction", "inventory_created"])
         inward_trx.gl_status = "NOT_REQUIRED"
         inward_trx.save(update_fields=["gl_status"])
-        if hasattr(request, "data") and isinstance(request.data, dict) and not request.data.get("reason"):
-            request.data["reason"] = reason or "Bỏ ghi sổ chứng từ trả hàng"
-        reverse_inventory(inward_trx, request)
+        reverse_inventory(inward_trx, gl_request(request, {"reason": reason}))
 
     # 3. Revert Receivable adjustment
     goods_sale = sale_return.goods_sale
@@ -1055,6 +1135,11 @@ def unpost_sales_return(request, sale_return, reason=""):
             rec.balance += adjusted_amount
             rec.status = ReceivableStatus.OPEN if rec.balance == rec.original_amount else ReceivableStatus.PARTIALLY_PAID
             rec.save(update_fields=["adjustment_amount", "balance", "status", "updated_at"])
+
+    if goods_sale.inventory_handling == models.GoodsSale.InventoryHandling.ATTACH_ISSUE:
+        apply_order_delivery(
+            [(line.goods_sale_line.order_line_id, line.return_quantity) for line in sale_return.lines.select_related("goods_sale_line")], 1
+        )
 
     sale_return.refundable_amount = Decimal("0")
     sale_return.status = models.DocumentStatus.DRAFT
@@ -1102,7 +1187,9 @@ def refund_sales_return(request, sale_return, data):
         raise ValidationError("Kỳ kế toán đã bị khóa hoặc chưa mở cho ngày hoàn tiền.")
 
     # Debit 131 / Credit 111 or 112
-    rec_acc = Account.objects.filter(company=company, code__startswith="131", is_postable=True, status="ACTIVE").first()
+    # Debit the receivable account the document credited when it was posted.
+    first_line = sale_return.lines.select_related("receivable_account").order_by("line_no").first()
+    rec_acc = first_line.receivable_account if first_line and first_line.receivable_account_id else None
     if not rec_acc:
         raise ValidationError("Không tìm thấy tài khoản công nợ phải thu (131).")
 
@@ -1158,8 +1245,10 @@ def refund_sales_return(request, sale_return, data):
         credit=amount,
         currency=sale_return.currency,
         party=sale_return.customer,
+        dimensions={"bank_account": str(bank_acc_id), "bank_account_id": str(bank_acc_id)} if payment_method == "BANK" and bank_acc_id else {},
     )
 
+    convert_to_accounting_currency(refund_journal, sale_return.exchange_rate)
     post_journal(refund_journal, source_module_request(request))
 
     sale_return.refunded_amount += amount
@@ -1188,8 +1277,7 @@ def link_tax_invoice(request, sale_return, data):
     if not invoice:
         raise ValidationError("Hóa đơn không tồn tại hoặc không thuộc doanh nghiệp.")
 
-    if invoice.buyer_name and sale_return.customer.name not in invoice.buyer_name and invoice.tax_code != sale_return.customer.tax_code:
-        raise ValidationError("Thông tin người mua trên hóa đơn không khớp với khách hàng của chứng từ.")
+    check_adjustment_invoice(sale_return, invoice)
 
     before = str(sale_return.tax_invoice_id) if sale_return.tax_invoice_id else None
     sale_return.tax_invoice = invoice

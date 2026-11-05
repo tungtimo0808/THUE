@@ -84,10 +84,10 @@ def _sync_ledger(period, fingerprint):
         for line in invoice.lines.all():
             key = f"INVOICE_LINE:{line.id}"
             seen.add(key)
-            tax = line.tax_amount * sign
+            tax = services.in_accounting_currency(invoice, line.tax_amount) * sign
             models.VatLedgerEntry.objects.update_or_create(period=period, source_key=key, defaults={
                 "company": period.company, "invoice": invoice, "invoice_line": line,
-                "direction": invoice.direction, "taxable_amount": line.taxable_amount * sign,
+                "direction": invoice.direction, "taxable_amount": services.in_accounting_currency(invoice, line.taxable_amount) * sign,
                 "tax_amount": tax, "deductible_tax_amount": tax if invoice.direction == "INPUT" and decision == "INCLUDED" else ZERO,
                 "tax_rate": line.tax_rate, "decision": decision, "reason": reason, "source_fingerprint": fingerprint,
             })

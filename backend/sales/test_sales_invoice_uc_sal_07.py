@@ -633,6 +633,13 @@ class SalesInvoiceUcSal07Tests(TestCase):
         inv_obj.status = SalesInvoice.Status.PENDING_APPROVAL
         inv_obj.save(update_fields=["status"])
 
+        # The creator may not approve their own invoice unless the workflow allows it.
+        r_self = self.client.post(f"/api/v1/sales/sales-invoices/{inv_id}/approve/", {"comment": "Tự duyệt"})
+        self.assertEqual(r_self.status_code, status.HTTP_400_BAD_REQUEST)
+        inv_obj.refresh_from_db()
+        inv_obj.workflow_snapshot = {**(inv_obj.workflow_snapshot or {}), "allow_self_approval": True}
+        inv_obj.save(update_fields=["workflow_snapshot"])
+
         r4 = self.client.post(f"/api/v1/sales/sales-invoices/{inv_id}/approve/", {"comment": "Đã duyệt hóa đơn"})
         self.assertEqual(r4.status_code, status.HTTP_200_OK)
         self.assertEqual(r4.data["status"], "APPROVED")

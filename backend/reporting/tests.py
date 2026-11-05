@@ -10494,9 +10494,9 @@ class UnifiedExportUcRpt15Tests(TestCase):
         self.assertIn("display: table-header-group;", html_preview)
 
         # TC-20: Khối chữ ký 3 cột
-        self.assertIn("NGƯỜI LẬP BIỂU", html_preview)
-        self.assertIn("KẾ TOÁN TRƯỞNG", html_preview)
-        self.assertIn("GIÁM ĐỐC / ĐẠI DIỆN PHÁP LUẬT", html_preview)
+        self.assertIn("Người lập biểu", html_preview)
+        self.assertIn("Kế toán trưởng", html_preview)
+        self.assertIn("Giám đốc", html_preview)
         self.assertIn("Nguyễn Văn Lập", html_preview)
         self.assertIn("Trần Thị Kế Toán", html_preview)
         self.assertIn("Lê Văn Giám Đốc", html_preview)

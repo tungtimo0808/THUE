@@ -9,7 +9,6 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 
 from audit_log.services import record_audit
 from approval_workflows.submission import configured_snapshot
-from approval_workflows.execution import approval_progress
 from master_data.models import Bank, CompanyBankAccount, Currency, Item, Party, TaxRate, UnitOfMeasure
 from . import models
 
@@ -129,7 +128,9 @@ def calculate_source_order_line_usage(order_line, current_invoice_id=None):
     )
     held_qty = held_lines.aggregate(s=Sum("quantity"))["s"] or Decimal("0")
 
-    remaining_qty = max(Decimal("0"), ordered_qty - used_qty - held_qty)
+    # VAT invoices made from the order or from sale vouchers of this order line use the same goods.
+    from sales.sales_invoice_services import vat_invoiced_on_order_line
+    remaining_qty = max(Decimal("0"), ordered_qty - used_qty - held_qty - vat_invoiced_on_order_line(order_line))
 
     return {
         "ordered_quantity": ordered_qty,
@@ -631,7 +632,6 @@ def submit_commercial_invoice_approval(request, invoice):
     invoice.save()
 
     # Record approval progress / submission
-    approval_progress(invoice, actor_for(request), "SUBMITTED", comment="Gửi phê duyệt hóa đơn thương mại")
     audit_commercial_invoice(request, invoice, "SUBMIT_APPROVAL", after={"status": invoice.status})
     return invoice
 
@@ -646,7 +646,6 @@ def withdraw_commercial_invoice_approval(request, invoice, reason=""):
     invoice.status = models.CommercialInvoiceStatus.DRAFT
     invoice.withdrawal_reason = reason
     invoice.save()
-    approval_progress(invoice, actor_for(request), "WITHDRAWN", comment=reason)
     audit_commercial_invoice(request, invoice, "WITHDRAW_APPROVAL", reason=reason)
     return invoice
 
@@ -657,11 +656,13 @@ def approve_commercial_invoice(request, invoice, comment=""):
     invoice = models.SalesCommercialInvoice.objects.select_for_update().get(pk=invoice.pk)
     if invoice.status != models.CommercialInvoiceStatus.PENDING_APPROVAL:
         raise ValidationError("Chỉ có thể phê duyệt hóa đơn đang Chờ duyệt.")
+    actor = actor_for(request)
+    if actor and invoice.created_by_id == actor.id and not (invoice.workflow_snapshot or {}).get("allow_self_approval"):
+        raise ValidationError("Không được tự phê duyệt chứng từ do chính mình lập.")
 
     invoice.status = models.CommercialInvoiceStatus.APPROVED
     invoice.approved_at = timezone.now()
     invoice.save()
-    approval_progress(invoice, actor_for(request), "APPROVED", comment=comment)
     audit_commercial_invoice(request, invoice, "APPROVE", reason=comment)
     return invoice
 
@@ -678,7 +679,6 @@ def request_revision_commercial_invoice(request, invoice, comment=""):
     invoice.status = models.CommercialInvoiceStatus.REVISION_REQUIRED
     invoice.rejection_reason = comment
     invoice.save()
-    approval_progress(invoice, actor_for(request), "REVISION_REQUIRED", comment=comment)
     audit_commercial_invoice(request, invoice, "REQUEST_REVISION", reason=comment)
     return invoice
 
@@ -695,7 +695,6 @@ def reject_commercial_invoice(request, invoice, comment=""):
     invoice.status = models.CommercialInvoiceStatus.REJECTED
     invoice.rejection_reason = comment
     invoice.save()
-    approval_progress(invoice, actor_for(request), "REJECTED", comment=comment)
     audit_commercial_invoice(request, invoice, "REJECT", reason=comment)
     return invoice
 
@@ -766,6 +765,8 @@ def issue_commercial_invoice(request, invoice):
     Issue an ELECTRONIC form Commercial Invoice (AF-04, BR-SAL-14-02, BR-SAL-14-10, BR-SAL-14-11).
     Validates customs timing, connector config, and calls e-invoice integration.
     """
+    from sales.sales_invoice_services import require_einvoice_simulation
+    require_einvoice_simulation()
     invoice = models.SalesCommercialInvoice.objects.select_for_update().get(pk=invoice.pk)
     if invoice.invoice_form != models.CommercialInvoiceForm.ELECTRONIC:
         raise ValidationError("Chức năng Phát hành chỉ áp dụng cho Hóa đơn thương mại điện tử (BR-SAL-14-02).")

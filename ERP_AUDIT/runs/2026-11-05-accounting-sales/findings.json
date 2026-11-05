@@ -1,0 +1,1251 @@
+{
+  "run": {
+    "date": "2026-11-05",
+    "branch": "tanh",
+    "commit": "c2451f8",
+    "scope": "accounting-vn-audit sales: bán hàng, giá vốn, giảm trừ doanh thu, hóa đơn, công nợ phải thu"
+  },
+  "findings": [
+    {
+      "id": "ACC-101",
+      "module": "sales/general_ledger",
+      "severity": "Critical",
+      "confidence": "CONFIRMED",
+      "status": "VERIFIED",
+      "title": "Bỏ ghi sổ chứng từ bán, bán dịch vụ, trả hàng, giảm giá xóa thẳng bút toán GL thay vì gọi general_ledger.unpost/reverse",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 1004,
+          "symbol": "unpost_goods_sale"
+        },
+        {
+          "file": "backend/sales/service_sale_services.py",
+          "line": 806,
+          "symbol": "unpost_service_sale"
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 1028,
+          "symbol": "unpost_sales_return"
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 951,
+          "symbol": "unpost_sales_allowance"
+        }
+      ],
+      "actual": "Bán hàng/dịch vụ: trừ tay period_debit/credit của kỳ đó với max(...,0), không gọi _cascade_subsequent_balances, rồi entry.delete(). Trả hàng/giảm giá: journal.lines.all().delete(); journal.delete() mà không hoàn AccountBalance. JournalPostingHistory on_delete=CASCADE nên lịch sử POST mất. Không gọi assert_not_locked, không kiểm tra ClosingRun/AllocationRun, không đánh dấu BCTC STALE.",
+      "expected": "GL-3, GL-4, GL-6, CT-2: chứng từ đã ghi sổ chỉ thay đổi qua unpost/reverse của GL; số dư được hoàn và cập nhật dây chuyền sang kỳ sau; kiểm tra khóa; giữ nhật ký.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Gọi general_ledger.services.unpost(entry, source_module_request(...)) hoặc reverse khi kỳ đã khóa; không xóa JournalEntry đã ghi sổ; đánh dấu Receivable REVERSED thay vì xóa.",
+      "verification": "Sau ghi sổ → bỏ ghi: AccountBalance mọi kỳ bằng trước khi ghi sổ; opening kỳ sau = closing kỳ trước; có JournalPostingHistory POST và UNPOST; bỏ ghi trong khoảng ngày khóa hoặc kỳ CLOSED trả 400.",
+      "duplicates": [
+        "ACC-201",
+        "ACC-305"
+      ],
+      "repro_test": "backend/sales/test_goods_sale_uc_sal_03.py::test_07b_unpost_goes_through_ledger_and_repost_reissues_stock"
+    },
+    {
+      "id": "ACC-202",
+      "module": "sales",
+      "severity": "Critical",
+      "confidence": "CONFIRMED",
+      "status": "VERIFIED",
+      "title": "Trả hàng/giảm giá cho đơn bán thu tiền ngay ghi giảm tiền (111/112) hai lần",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 415
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 1138,
+          "symbol": "refund"
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 433
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 1016
+        }
+      ],
+      "actual": "Tài khoản đối ứng mặc định = source_line.receivable_or_payment_account; với đơn CASH/BANK là 111/112 nên ghi sổ trả hàng ghi Có 111/112. Đơn không có Receivable nên refundable_amount = total_amount; bước hoàn tiền ghi tiếp Nợ 131 / Có 111/112.",
+      "expected": "Tiền chỉ giảm một lần; đối ứng của trả hàng/giảm giá là phải thu khách hàng, việc chi tiền chỉ đi qua hoàn tiền.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Đối ứng luôn là tài khoản 131x (độc lập tài khoản thanh toán của đơn bán); hoặc ghi Có tiền ngay và cấm hoàn tiền tiếp.",
+      "verification": "Đơn CASH 100, trả toàn bộ, hoàn 100: 111 giảm đúng 100, 131 của khách = 0.",
+      "duplicates": [],
+      "repro_test": "backend/sales/test_sales_return_uc_sal_05.py::test_08_customer_refund_for_excess_or_paid_sale"
+    },
+    {
+      "id": "ACC-102",
+      "module": "sales/inventory",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "VERIFIED",
+      "title": "Ghi sổ lại chứng từ bán ATTACH_ISSUE sau khi bỏ ghi: ghi Có 156 mà không xuất kho lại",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 792
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 1001
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 904
+        }
+      ],
+      "actual": "Bỏ ghi đảo phiếu xuất nhưng không xóa sale.inventory_transaction/inventory_created; khi ghi sổ lại điều kiện 'not sale.inventory_transaction_id' sai nên không tạo phiếu xuất mới, trong khi bút toán vẫn Nợ 632/Có 156.",
+      "expected": "SA-2, IN-3: giảm kho và giá vốn đi cùng nhau.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Reset inventory_transaction/inventory_created khi bỏ ghi (hoặc kiểm tra phiếu còn POSTED); ghi sổ lại tạo phiếu mới với số không trùng.",
+      "verification": "Chu trình ghi sổ → bỏ ghi → ghi lại: giá trị tồn kho = số dư 156.",
+      "duplicates": [],
+      "repro_test": "backend/sales/test_goods_sale_uc_sal_03.py::test_07b_unpost_goes_through_ledger_and_repost_reissues_stock"
+    },
+    {
+      "id": "ACC-103",
+      "module": "sales/accounts_receivable",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Bỏ ghi sổ chứng từ bán không chặn khi đã có trả hàng/giảm giá đã ghi sổ hoặc hóa đơn đã phát hành",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 991,
+          "symbol": "unpost_goods_sale"
+        }
+      ],
+      "actual": "Chỉ chặn khi collected_amount hoặc netted_amount > 0; trả hàng thay đổi adjustment_amount nên không bị bắt. Receivable bị xóa, bút toán trả hàng (Có 131) vẫn POSTED; TaxInvoice đã phát hành vẫn lên tờ khai.",
+      "expected": "SA-3, SA-4, TX-2: không bỏ ghi chứng từ gốc khi còn chứng từ phụ thuộc đã ghi sổ/phát hành.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Chặn khi tồn tại SalesReturn/SalesAllowance POSTED, SalesInvoice ISSUED, tax_invoice đã gắn, hoặc adjustment_amount khác 0.",
+      "verification": "Bỏ ghi chứng từ bán đã có trả hàng hoặc hóa đơn phát hành trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-104",
+      "module": "sales/general_ledger",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Chứng từ bán, bán dịch vụ, trả hàng, giảm giá bằng ngoại tệ không quy đổi VND: bút toán bị chặn, hoặc ghi nguyên tệ như VND nếu thiếu accounting_currency",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 861
+        },
+        {
+          "file": "backend/sales/service_sale_services.py",
+          "line": 700
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 912
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 862
+        },
+        {
+          "file": "backend/general_ledger/services.py",
+          "line": 117,
+          "symbol": "_validate_entry"
+        }
+      ],
+      "actual": "JournalLine debit/credit = số nguyên tệ, currency theo chứng từ, không gán foreign_amount/exchange_rate; _validate_entry yêu cầu hai trường này nên trả 400. Nếu doanh nghiệp chưa đặt accounting_currency thì nguyên tệ ghi thẳng như VND. Dòng giá vốn (VND) cũng gắn ngoại tệ.",
+      "expected": "GL-1: cân theo VND và theo từng nguyên tệ; debit/credit theo VND quy đổi.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Quy đổi theo exchange_rate của chứng từ, điền foreign_amount/exchange_rate, ghi dòng giá vốn bằng đồng tiền hạch toán, xử lý chênh lệch làm tròn.",
+      "verification": "Chứng từ USD tỷ giá 25.000 ghi sổ được; Nợ = Có theo VND và theo USD.",
+      "duplicates": [
+        "ACC-210",
+        "ACC-316"
+      ]
+    },
+    {
+      "id": "ACC-105",
+      "module": "sales",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Chứng từ giá vốn (UC-SAL-10) có thể ghi trùng Nợ 632/Có 156 cho phiếu xuất đã có giá vốn",
+      "locations": [
+        {
+          "file": "backend/sales/cogs_services.py",
+          "line": 77,
+          "symbol": "get_eligible_outward_lines"
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 808
+        },
+        {
+          "file": "backend/sales/cogs_services.py",
+          "line": 664,
+          "symbol": "post_cogs_voucher"
+        }
+      ],
+      "actual": "Dòng xuất ISSUE/POSTED đủ điều kiện nếu không có GoodsSaleLine.inventory_transaction_line trỏ tới; phiếu ATTACH_ISSUE tạo InventoryTransactionLine nhưng không gắn ngược nên bị coi là chưa có giá vốn. Phiếu INV_SALE_ISSUE/INV_OTHER_ISSUE đã tự hạch toán cũng đủ điều kiện.",
+      "expected": "SA-2, IN-3: mỗi lần xuất chỉ có một bút toán giá vốn.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Chỉ nhận dòng xuất chưa có giá vốn trên GL (theo gl_status/source_module); gắn liên kết dòng xuất với dòng bán khi tạo phiếu ATTACH_ISSUE.",
+      "verification": "Phiếu -XK của chứng từ bán ATTACH_ISSUE không có trong danh sách đủ điều kiện; tổng Nợ 632 = tổng giá trị dòng xuất bán.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-106",
+      "module": "sales/inventory",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Chứng từ bán ATTACH_ISSUE nhiều kho: mọi dòng bị trừ ở kho của dòng đầu",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 793
+        },
+        {
+          "file": "backend/inventory/services.py",
+          "line": 334
+        }
+      ],
+      "actual": "Phiếu xuất có source_warehouse=lines[0].warehouse, dòng không có kho riêng; kho dùng obj.source_warehouse cho module SAL. Kiểm tra tồn và chiều kho trên 156 lại theo line.warehouse.",
+      "expected": "IN-1, IN-3: xuất đúng kho từng dòng; tồn theo kho khớp 156 theo kho.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Đặt kho theo dòng hoặc tách phiếu theo kho.",
+      "verification": "Chứng từ 2 dòng kho A/B: mỗi kho giảm đúng số của dòng mình.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-107",
+      "module": "sales/inventory",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Xuất kho bán hàng và trả hàng không quy đổi đơn vị tính về đơn vị cơ sở",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 249
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 813
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 868
+        }
+      ],
+      "actual": "base_quantity = quantity theo ĐVT bán, không áp ItemUomConversion; giá vốn = quantity × average_cost (theo đơn vị cơ sở); kiểm tra tồn so khác đơn vị.",
+      "expected": "SA-2: số lượng và giá trị giảm kho bằng số bán quy đổi.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Quy đổi về ĐVT cơ sở trước khi kiểm tra tồn, tính giá vốn, tạo dòng kho.",
+      "verification": "Bán 1 thùng = 24 cái: kho giảm 24 cái, giá vốn = 24 × giá bình quân.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-108",
+      "module": "sales/inventory",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Giá vốn ATTACH_ISSUE lấy lúc lập nháp, không theo phương pháp tính giá lúc ghi sổ; có trường hợp kho giảm giá trị mà không ghi 632/156",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 254
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 904
+        },
+        {
+          "file": "backend/inventory/services.py",
+          "line": 209
+        },
+        {
+          "file": "backend/inventory/services.py",
+          "line": 338
+        }
+      ],
+      "actual": "unit_cost = StockBalance...first().average_cost lúc tạo/sửa nháp, không tính lại khi ghi sổ; kho dùng line.unit_cost cho SAL. Nếu nháp có unit_cost = 0 thì bút toán không có 632/156 nhưng kho vẫn giảm giá trị theo giá bình quân hiện tại. Thiếu tài khoản 632/156 không bị chặn.",
+      "expected": "IN-2, IN-3, SA-2: giá xuất theo phương pháp tại thời điểm xuất; giá trị giảm kho = Có 156.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Ghi sổ kho trước, lấy line_value thực tế để sinh 632/156; bắt buộc có tài khoản 632/156 khi có xuất kho.",
+      "verification": "Tổng StockMovement.value_delta của phiếu = Có 156 trên bút toán bán, kể cả khi giá đổi giữa lúc lập nháp và lúc ghi sổ.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-109",
+      "module": "sales/accounts_receivable",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Loại thanh toán và tài khoản Nợ của chứng từ bán không ràng buộc nhau; bút toán chỉ dùng tài khoản của dòng 1",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 264
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 855
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 935
+        },
+        {
+          "file": "backend/sales/service_sale_services.py",
+          "line": 236
+        }
+      ],
+      "actual": "receivable_or_payment_account nhận mọi tài khoản chi tiết; Receivable chỉ tạo khi payment_type=UNPAID; Nợ toàn bộ total_amount vào tài khoản của lines[0]. CASH + 131 → 131 tăng mà không có công nợ chi tiết; UNPAID + 111 → Receivable với account=111.",
+      "expected": "SA-4: tổng công nợ chi tiết = số dư 131.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Kiểm tra nhóm tài khoản theo payment_type; một tài khoản Nợ cho cả chứng từ hoặc sinh từng dòng Nợ.",
+      "verification": "CASH + 131 và UNPAID + 111 đều trả 400.",
+      "duplicates": [
+        "ACC-309"
+      ]
+    },
+    {
+      "id": "ACC-203",
+      "module": "sales",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Trả hàng không trừ phần đã giảm giá: tổng giảm trừ có thể vượt doanh thu và thuế gốc",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 329,
+          "symbol": "calculate_and_validate_return_lines"
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 356
+        }
+      ],
+      "actual": "Trả hàng chỉ giới hạn theo số lượng, giá trị = số lượng × đơn giá gốc; SalesAllowanceLine đã ghi sổ không được trừ. Giảm giá có trừ trả hàng nhưng chỉ phần POSTED.",
+      "expected": "SA-3: tổng giảm trừ và thuế điều chỉnh của một dòng bán không vượt doanh thu thuần và thuế gốc.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Phân bổ phần đã giảm giá theo số lượng khi tính trả hàng; kiểm tra chéo tổng giá trị lúc ghi sổ.",
+      "verification": "Bán 100 + thuế 10, giảm giá 100, rồi trả 1 đơn vị: bị chặn hoặc giá trị trả = 0.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-204",
+      "module": "sales/inventory",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Trả hàng cho đơn bán SEPARATE_ISSUE/LINK_EXISTING nhập lại kho giá 0 và không đảo giá vốn",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 255
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 389
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 953
+        }
+      ],
+      "actual": "GoodsSaleLine.unit_cost/cogs_amount chỉ có với ATTACH_ISSUE; trả hàng lấy unit_cost của dòng bán (= 0) nên phiếu nhập giá trị 0, bút toán Nợ 156/Có 632 bị bỏ vì cogs_amount = 0.",
+      "expected": "SA-3, IN-2, IN-3: hàng nhập lại mang giá vốn thực tế đã xuất và đảo 632.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Lấy giá vốn từ dòng phiếu xuất gốc hoặc chứng từ giá vốn đã ghi sổ; chặn nếu chưa có giá vốn gốc.",
+      "verification": "Trả 1 đơn vị đã xuất giá vốn X: kho tăng X, 632 giảm X.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-205",
+      "module": "sales/inventory",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Ghi sổ lại phiếu trả hàng sau khi bỏ ghi lỗi 500 do trùng số phiếu nhập kho",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 836
+        },
+        {
+          "file": "backend/inventory/models.py",
+          "line": 158
+        }
+      ],
+      "actual": "Phiếu '{number}-NK' cũ chuyển REVERSED nhưng còn trong DB; ghi sổ lại tạo cùng số, vi phạm uq_inv_transaction_number.",
+      "expected": "CT-3; vòng đời ghi sổ, bỏ ghi, ghi lại phải chạy được.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Cấp số phiếu kho có hậu tố phiên bản, hoặc tái sử dụng/hủy phiếu cũ rõ ràng.",
+      "verification": "Ghi sổ → bỏ ghi → ghi lại phiếu trả hàng ATTACH_INWARD thành công, tồn kho tăng một lần.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-206",
+      "module": "sales/tax_management",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "VERIFIED",
+      "title": "Hóa đơn chiết khấu thương mại giảm thuế đầu ra trên tờ khai nhưng không sinh bút toán và không giảm công nợ",
+      "locations": [
+        {
+          "file": "backend/sales/discount_invoice_services.py",
+          "line": 827,
+          "symbol": "issue_discount_invoice"
+        },
+        {
+          "file": "backend/tax_management/vat.py",
+          "line": 83
+        }
+      ],
+      "actual": "Phát hành tạo TaxInvoice ADJUSTMENT/DECREASE (tờ khai giảm thuế) nhưng không tạo JournalEntry (Nợ 5211, Nợ 33311 / Có 131) và không điều chỉnh Receivable; accounting_document_ref là chuỗi tự do.",
+      "expected": "SA-3, TX-1: chiết khấu đảo doanh thu, thuế, công nợ; tờ khai khớp 33311. Nếu thiết kế cố ý để kế toán lập bút toán tay thì phải có liên kết bắt buộc (cần kế toán trưởng quyết định hướng).",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Sinh bút toán và điều chỉnh công nợ khi phát hành, hoặc bắt buộc liên kết JournalEntry đã ghi sổ.",
+      "verification": "Sau phát hành: thuế ADJUSTMENT/DECREASE trong kỳ = phát sinh Nợ 33311 từ chiết khấu; 131 của khách giảm đúng tổng tiền.",
+      "duplicates": [],
+      "fix_note": "Phát hành hóa đơn chiết khấu ghi Nợ 5211 (TT133: TK doanh thu của dòng gốc) / Nợ 33311 / Có 131 và giảm công nợ. Lựa chọn hạch toán tự động cần kế toán trưởng xác nhận.",
+      "repro_test": "backend/sales/test_sales_discount_invoice_uc_sal_13.py::test_13_issue_discount_invoice_success"
+    },
+    {
+      "id": "ACC-207",
+      "module": "sales/tax_management",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Trả hàng/giảm giá giảm 33311 trên sổ cái mà không bắt buộc hóa đơn điều chỉnh; liên kết hóa đơn không kiểm tra loại và số tiền",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 1179,
+          "symbol": "link_tax_invoice"
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 1088
+        }
+      ],
+      "actual": "Ghi sổ Nợ 33311 không cần tax_invoice; link_tax_invoice nhận mọi TaxInvoice của công ty, không kiểm tra direction/invoice_type/adjustment_effect/original_invoice/số tiền; so khớp người mua chỉ cần tên hoặc MST.",
+      "expected": "TX-1, TX-2: sổ 33311 khớp sổ thuế. Yêu cầu pháp lý về hóa đơn điều chỉnh chưa xác minh (cần người xem).",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Kiểm tra loại, chiều, hiệu ứng, hóa đơn gốc, số tiền khi liên kết; cảnh báo hoặc chặn đóng kỳ thuế khi còn chứng từ chưa có hóa đơn điều chỉnh.",
+      "verification": "Liên kết hóa đơn ORIGINAL hoặc sai số tiền trả 400; có cảnh báo khi đóng kỳ thuế.",
+      "duplicates": [],
+      "fix_note": "Kiểm tra hóa đơn điều chỉnh khi liên kết; tổng hợp thuế/tờ khai cảnh báo trả hàng/giảm giá chưa có hóa đơn điều chỉnh (không chặn)."
+    },
+    {
+      "id": "ACC-301",
+      "module": "sales",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Hóa đơn ở REVISION_REQUIRED/REJECTED/ISSUE_FAILED nhả số lượng giữ chỗ nhưng vẫn phát hành lại được: xuất hóa đơn vượt số đã bán",
+      "locations": [
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 237,
+          "symbol": "sale_invoice_pending_filter"
+        },
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 836,
+          "symbol": "issue_sales_invoice"
+        }
+      ],
+      "actual": "Tập giữ chỗ chỉ gồm DRAFT/PENDING_APPROVAL/APPROVED/ISSUING; gửi duyệt và phát hành không kiểm tra lại số còn lại.",
+      "expected": "TX-1: một dòng hàng chỉ xuất hóa đơn một lần.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Mọi trạng thái khác CANCELLED giữ chỗ; kiểm tra lại (có khóa dòng nguồn) khi gửi duyệt và phát hành.",
+      "verification": "Kịch bản A bị yêu cầu sửa → B phát hành → A phát hành: lần phát hành thứ hai trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-302",
+      "module": "sales/tax_management",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Cùng một hàng hóa có thể xuất hóa đơn nhiều lần qua các nguồn khác nhau (đơn hàng, chứng từ bán, hóa đơn thương mại, TaxInvoice gắn tay)",
+      "locations": [
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 228
+        },
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 891
+        },
+        {
+          "file": "backend/sales/commercial_invoice_services.py",
+          "line": 103
+        }
+      ],
+      "actual": "Mỗi nguồn đếm số đã xuất theo khóa riêng (order_line / goods_sale_line / service_sale_line / source_order_line), không loại trừ lẫn nhau; issue_sales_invoice luôn tạo TaxInvoice mới kể cả khi chứng từ bán đã có tax_invoice.",
+      "expected": "TX-1.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Một nguồn duy nhất cho số đã xuất hóa đơn theo dòng đơn hàng/dòng chứng từ bán (gồm gián tiếp và hóa đơn thương mại); chặn phát hành khi chứng từ đã có tax_invoice.",
+      "verification": "Ba kịch bản (đơn hàng→chứng từ bán, đơn hàng→hóa đơn thương mại, link_tax_invoice rồi phát hành) trả 400 ở lần thứ hai.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-306",
+      "module": "sales/tax_management",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Hóa đơn thương mại điện tử được phát hành giả lập ngay cả khi EINVOICE_SIMULATION=False và lên tờ khai",
+      "locations": [
+        {
+          "file": "backend/sales/commercial_invoice_services.py",
+          "line": 763,
+          "symbol": "issue_commercial_invoice"
+        }
+      ],
+      "actual": "Không gọi require_einvoice_simulation() như hóa đơn GTGT và hóa đơn chiết khấu; tự cấp số, tạo TaxInvoice ISSUED với URL einvoice.internal.",
+      "expected": "TX-1, TX-2: chỉ ghi nhận đã phát hành khi có bằng chứng từ nhà cung cấp hóa đơn.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Thêm guard mô phỏng; đường thật đi qua tích hợp tax_management.",
+      "verification": "EINVOICE_SIMULATION=False: issue trả 400, không tạo TaxInvoice.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-307",
+      "module": "accounts_receivable",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Khoản phải thu sinh từ chứng từ bán có thể được ghi nhận công nợ lần hai từ dòng GL 131",
+      "locations": [
+        {
+          "file": "backend/accounts_receivable/services.py",
+          "line": 123,
+          "symbol": "get_unrecognized_sources"
+        },
+        {
+          "file": "backend/accounts_receivable/services.py",
+          "line": 212,
+          "symbol": "recognize_receivable"
+        }
+      ],
+      "actual": "Danh sách nguồn chưa ghi nhận lấy mọi dòng GL 131 Nợ có đối tượng, chỉ loại dòng đã có Receivable loại JOURNAL_ENTRY; Receivable của chứng từ bán có loại GOODS_SALE nên dòng đó vẫn hiện ra, và recognize tạo Receivable thứ hai.",
+      "expected": "SA-4: mỗi dòng 131 ứng với một khoản phải thu.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Loại dòng GL có entry_id đã nằm trong Receivable.journal_entry hoặc thuộc phân hệ tự ghi nhận công nợ.",
+      "verification": "Sau ghi sổ chứng từ bán, get_unrecognized_sources không chứa dòng của bút toán đó; recognize trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-308",
+      "module": "accounts_receivable",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "'Bỏ ghi nhận' khoản phải thu của chứng từ bán đưa sổ chi tiết về 0 nhưng 131 trên GL giữ nguyên",
+      "locations": [
+        {
+          "file": "backend/accounts_receivable/services.py",
+          "line": 591,
+          "symbol": "reverse_receivable"
+        }
+      ],
+      "actual": "reverse_receivable đặt balance = 0, status = REVERSED cho mọi loại nguồn; với GOODS_SALE/SERVICE_SALE bút toán 131 vẫn còn, chứng từ vẫn POSTED.",
+      "expected": "SA-4.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Chặn reverse_receivable khi nguồn là chứng từ phân hệ; hướng người dùng sang bỏ ghi chứng từ nguồn.",
+      "verification": "Reverse receivable có nguồn GOODS_SALE trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-317",
+      "module": "tax_management",
+      "severity": "High",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Tổng hợp thuế GTGT cộng số nguyên tệ của hóa đơn ngoại tệ như VND",
+      "locations": [
+        {
+          "file": "backend/tax_management/services.py",
+          "line": 296,
+          "symbol": "build_summary"
+        },
+        {
+          "file": "backend/tax_management/vat.py",
+          "line": 87
+        }
+      ],
+      "actual": "TaxInvoice lưu subtotal/tax_amount theo loại tiền hóa đơn kèm exchange_rate; build_summary và vat.py cộng thẳng, không nhân tỷ giá.",
+      "expected": "TX-1: tờ khai bằng VND.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Lưu số VND trên TaxInvoice/TaxInvoiceLine hoặc quy đổi khi tổng hợp.",
+      "verification": "Hóa đơn USD 10.000: output_taxable_amount tăng 10.000 × tỷ giá.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-110",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "SUSPECTED",
+      "status": "FIXED",
+      "title": "Dòng Có doanh thu không làm tròn trong khi dòng Nợ dùng tổng đã làm tròn",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 875
+        },
+        {
+          "file": "backend/sales/service_sale_services.py",
+          "line": 714
+        }
+      ],
+      "actual": "Có line_net = quantity × unit_price − discount không quantize; Nợ = total_amount đã quantize. Cân hay không phụ thuộc cách DB làm tròn khi lưu.",
+      "expected": "GL-1.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Lưu net_amount đã làm tròn trên dòng và dùng cho GL.",
+      "verification": "Test số lẻ PASS trên SQLite và PostgreSQL.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-112",
+      "module": "inventory",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Đảo phiếu kho khi bỏ ghi chứng từ bán/trả hàng ghi ngày hôm nay và không kiểm tra kỳ kho đã đóng",
+      "locations": [
+        {
+          "file": "backend/inventory/services.py",
+          "line": 617,
+          "symbol": "reverse"
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 1002
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 1046
+        }
+      ],
+      "actual": "StockMovement đảo có movement_date = timezone.localdate(), không gọi _period_is_closed; gán request.data['reason'] lỗi khi request.data là QueryDict.",
+      "expected": "GL-3, IN-2: không đổi số liệu kỳ kho đã đóng; đảo cùng ngày với phát sinh gốc.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Đảo theo ngày phiếu gốc, kiểm tra kỳ kho, truyền lý do qua tham số.",
+      "verification": "Đảo phiếu thuộc kỳ kho CLOSED trả 400; movement đảo cùng ngày phiếu gốc.",
+      "duplicates": [
+        "ACC-214"
+      ]
+    },
+    {
+      "id": "ACC-113",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "SUSPECTED",
+      "status": "FIXED",
+      "title": "post_cogs_voucher truyền nguyên request nguồn vào GL và cho ghi sổ từ DRAFT",
+      "locations": [
+        {
+          "file": "backend/sales/cogs_services.py",
+          "line": 692
+        },
+        {
+          "file": "backend/sales/cogs_services.py",
+          "line": 603
+        }
+      ],
+      "actual": "Gọi post_journal(journal, request) thay vì source_module_request (cùng mẫu BL-01); cho ghi sổ khi DRAFT.",
+      "expected": "GL-5, CT-1.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Dùng source_module_request; chỉ ghi sổ khi APPROVED hoặc cấu hình không yêu cầu duyệt.",
+      "verification": "Body có version vẫn ghi sổ được; DRAFT khi có yêu cầu duyệt trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-208",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Tài khoản giảm trừ mặc định cho trả hàng là 5213 thay vì 5212; với TT133 luôn rơi về 5111",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 110,
+          "symbol": "resolve_default_accounts"
+        }
+      ],
+      "actual": "Lọc mã bắt đầu 521, order_by('-code').first() → 5213; không có 521 thì lấy 511 nhỏ nhất (5111), không dùng source_line.revenue_account.",
+      "expected": "Quy tắc 9 trong .claude/rules/accounting.md: tài khoản theo nghiệp vụ và chế độ. Ánh xạ cụ thể cần đối chiếu văn bản đã xác minh.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Ánh xạ cấu hình theo nghiệp vụ RETURN/ALLOWANCE/DISCOUNT; TT133 dùng tài khoản doanh thu của dòng gốc.",
+      "verification": "TT200/TT99: trả hàng mặc định 5212; TT133: trả hàng của dòng 5113 ghi Nợ 5113.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-209",
+      "module": "sales/inventory",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Trả hàng nhiều kho: mọi dòng nhập vào kho của dòng đầu, sổ cái ghi theo kho từng dòng",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 828
+        },
+        {
+          "file": "backend/inventory/services.py",
+          "line": 330
+        }
+      ],
+      "actual": "destination_warehouse = lines[0].warehouse; kho dùng kho của header; Nợ 156 gắn kho theo dòng.",
+      "expected": "IN-3.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Tách phiếu nhập theo kho hoặc đặt kho đích trên từng dòng.",
+      "verification": "Trả 2 dòng kho A/B: mỗi kho tăng đúng dòng của mình.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-211",
+      "module": "sales/cash_management",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Bút toán hoàn tiền chọn tài khoản 131 tùy ý, bỏ qua tài khoản ngân hàng, không tạo phiếu chi",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 1105
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 1016
+        }
+      ],
+      "actual": "Account.filter(mã bắt đầu 131).first() không order_by và không dùng tài khoản đã ghi Có; company_bank_account đọc nhưng không dùng; không tạo CashTransaction/chứng từ ngân hàng; ngày luôn là hôm nay.",
+      "expected": "SA-4, CB-1, CB-3.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Ghi Nợ đúng tài khoản 131 gốc; bắt buộc chọn quỹ/tài khoản ngân hàng và sinh chứng từ chi.",
+      "verification": "Sau hoàn tiền, 131 chi tiết của khách = 0 trên cùng tài khoản con; có chứng từ chi tương ứng.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-212",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Sửa phiếu trả hàng cho đổi chứng từ bán gốc mà không kiểm tra lại; phiếu kho LINK_EXISTING không được kiểm tra và bỏ đảo giá vốn",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 570,
+          "symbol": "update_sales_return"
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 486
+        }
+      ],
+      "actual": "update nhận goods_sale mới không kiểm tra công ty/trạng thái/khách hàng; LINK_EXISTING chỉ cần inventory_transaction khác rỗng; total_cogs = 0.",
+      "expected": "SA-3.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Áp lại kiểm tra của bước tạo khi sửa; kiểm tra chặt phiếu kho liên kết và hạch toán đảo giá vốn theo giá trị phiếu.",
+      "verification": "PATCH sang chứng từ bán của khách khác và liên kết phiếu kho sai đều trả 400.",
+      "duplicates": [],
+      "fix_note": "Kiểm tra lại nguồn khi sửa, kiểm tra phiếu LINK_EXISTING; đảo giá vốn theo giá trị phiếu liên kết nếu phiếu đó có giá trị và chưa tự hạch toán."
+    },
+    {
+      "id": "ACC-213",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "SUSPECTED",
+      "status": "FIXED",
+      "title": "Ghi sổ đồng thời trả hàng/giảm giá có thể vượt số lượng hoặc giá trị còn lại",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 792
+        },
+        {
+          "file": "backend/sales/sales_allowance_services.py",
+          "line": 790
+        }
+      ],
+      "actual": "Chỉ select_for_update trên chính chứng từ, không khóa GoodsSaleLine nguồn.",
+      "expected": "SA-3 khi chạy đồng thời.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "select_for_update trên dòng bán nguồn ở bước tạo và ghi sổ.",
+      "verification": "Test đồng thời trên PostgreSQL: chỉ một phiếu thành công.",
+      "duplicates": [],
+      "fix_note": "Khóa dòng bán nguồn khi tạo/sửa/ghi sổ. Chưa chạy được test đồng thời trên PostgreSQL (máy dev không có PostgreSQL)."
+    },
+    {
+      "id": "ACC-215",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "SUSPECTED",
+      "status": "FIXED",
+      "title": "Hóa đơn chiết khấu tính doanh số đủ điều kiện không trừ trả hàng/giảm giá; làm tròn 0,01 cho VND",
+      "locations": [
+        {
+          "file": "backend/sales/discount_invoice_services.py",
+          "line": 162
+        },
+        {
+          "file": "backend/sales/discount_invoice_services.py",
+          "line": 434
+        }
+      ],
+      "actual": "Doanh số còn lại tính trên SalesInvoiceLine, không trừ SalesReturn/SalesAllowance; quantize 0.01 cho mọi loại tiền.",
+      "expected": "SA-3; quy tắc 5 làm tròn theo loại tiền.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Trừ phần đã trả/giảm; làm tròn theo số lẻ của loại tiền.",
+      "verification": "Hóa đơn đã trả hết không còn doanh số đủ điều kiện; VND là số nguyên.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-303",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Hóa đơn có thể mang đơn giá/thuế suất khác chứng từ bán đã ghi sổ, hoặc không có nguồn",
+      "locations": [
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 433
+        },
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 458
+        }
+      ],
+      "actual": "unit_price và tax_rate lấy từ dữ liệu gửi lên, không so với dòng nguồn đã ghi sổ; hóa đơn không nguồn vẫn sinh TaxInvoice ISSUED.",
+      "expected": "TX-1. Việc cho phép hóa đơn không nguồn cần quyết định nghiệp vụ.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Khóa đơn giá/thuế suất theo dòng nguồn khi có nguồn.",
+      "verification": "Hóa đơn có nguồn với thuế suất khác trả 400.",
+      "duplicates": [],
+      "fix_note": "Khóa đơn giá/thuế suất theo chứng từ bán đã ghi sổ; hóa đơn không gắn chứng từ bán vẫn được phép nhưng hiện cảnh báo trên tổng hợp thuế/tờ khai."
+    },
+    {
+      "id": "ACC-304",
+      "module": "sales/tax_management",
+      "severity": "Medium",
+      "confidence": "SUSPECTED",
+      "status": "FIXED",
+      "title": "Chứng từ bán đã ghi 3331 nhưng không có hóa đơn thì không lên tờ khai, và không có cảnh báo",
+      "locations": [
+        {
+          "file": "backend/tax_management/services.py",
+          "line": 293,
+          "symbol": "build_summary"
+        }
+      ],
+      "actual": "Tờ khai chỉ tổng hợp TaxInvoice; post_goods_sale không tạo TaxInvoice; đối soát chỉ so tổng.",
+      "expected": "TX-1.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Báo cáo ngoại lệ 'chứng từ bán đã ghi sổ chưa có hóa đơn' hoặc chặn khóa kỳ thuế.",
+      "verification": "Chứng từ ghi sổ chưa có hóa đơn xuất hiện trong danh sách ngoại lệ.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-310",
+      "module": "reporting/accounts_receivable",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Báo cáo tuổi nợ tính cả khoản phải thu REVERSED và có thể bỏ qua cấn trừ/điều chỉnh",
+      "locations": [
+        {
+          "file": "backend/reporting/debt_report_services.py",
+          "line": 1199,
+          "symbol": "_reconstruct_as_of_ar_debt"
+        }
+      ],
+      "actual": "Không lọc status; số còn lại = original_amount − tổng ReceiptAllocation (phần cấn trừ/điều chỉnh: SUSPECTED).",
+      "expected": "SA-4.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Loại REVERSED; trừ cấn trừ/điều chỉnh theo ngày hiệu lực.",
+      "verification": "Tổng báo cáo theo ngày = tổng balance còn hiệu lực = số dư 131 theo khách.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-311",
+      "module": "accounts_receivable",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Phân bổ thu tiền nhận dòng số tiền âm",
+      "locations": [
+        {
+          "file": "backend/accounts_receivable/services.py",
+          "line": 878,
+          "symbol": "allocate"
+        }
+      ],
+      "actual": "Chỉ kiểm tra tổng > 0 và amount ≤ balance, không kiểm tra từng dòng > 0; dòng âm làm giảm collected_amount của khoản khác.",
+      "expected": "SA-5.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Từ chối amount ≤ 0 trên từng dòng.",
+      "verification": "Dòng âm trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-312",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Liên kết chứng từ không kiểm tra dòng thuộc chứng từ đã chọn; tách rời giữ chỗ của hóa đơn",
+      "locations": [
+        {
+          "file": "backend/sales/link_services.py",
+          "line": 276,
+          "symbol": "get_document_line_info"
+        },
+        {
+          "file": "backend/sales/link_services.py",
+          "line": 647
+        }
+      ],
+      "actual": "line_model.filter(pk=line_id) không lọc theo chứng từ cha hay công ty; sức chứa liên kết độc lập với SalesInvoiceLine; so giá trị trên hai cơ sở khác nhau; người tạo dự phòng là UserAccount.objects.first().",
+      "expected": "CT-2; tính đúng của theo dõi chứng từ.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Lọc dòng theo chứng từ và công ty; thống nhất cơ sở giá trị; bỏ người tạo dự phòng.",
+      "verification": "Dòng của chứng từ khác trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-313",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Số đã xuất hóa đơn trên dòng đơn hàng bị cộng trùng giữa đề nghị hóa đơn và hóa đơn phát hành, không giảm khi trả hàng",
+      "locations": [
+        {
+          "file": "backend/sales/services.py",
+          "line": 145,
+          "symbol": "submit_invoice_request"
+        },
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 941
+        }
+      ],
+      "actual": "Cả đề nghị hóa đơn và phát hành hóa đơn đều cộng invoiced_quantity; không có đường giảm; không khóa dòng.",
+      "expected": "Theo dõi đơn hàng đúng.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Tính lại từ một nguồn, có khóa dòng.",
+      "verification": "Đề nghị 10 rồi phát hành 10: invoiced_quantity = 10 hoặc lần hai trả 400.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-314",
+      "module": "sales",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Ghi sổ/bỏ ghi chứng từ bán và trả hàng không cập nhật số đã giao và trạng thái đơn hàng",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 740
+        },
+        {
+          "file": "backend/sales/services.py",
+          "line": 127
+        }
+      ],
+      "actual": "delivered_quantity chỉ tăng ở confirm_delivery; đề nghị hóa đơn theo chính sách DELIVERY lại dùng delivered_quantity.",
+      "expected": "Quy trình đơn hàng nhất quán (chọn chứng từ nào là nguồn 'đã giao' cần kế toán trưởng quyết định).",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Đồng bộ delivered_quantity khi ghi sổ, bỏ ghi, trả hàng.",
+      "verification": "Ghi sổ rồi bỏ ghi chứng từ bán có order_line: delivered_quantity và trạng thái đơn hàng đổi tương ứng.",
+      "duplicates": [],
+      "fix_note": "Chứng từ bán có xuất kho kèm được tính là giao hàng: cập nhật số đã giao và trạng thái đơn khi ghi sổ/bỏ ghi; trả hàng trừ lại. Lựa chọn nguồn 'đã giao' cần kế toán trưởng xác nhận."
+    },
+    {
+      "id": "ACC-315",
+      "module": "sales/approval_workflows",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "status": "VERIFIED",
+      "title": "Duyệt hóa đơn trực tiếp lỗi 500 khi có workflow và không chặn người lập tự duyệt; hóa đơn thương mại gọi sai chữ ký approval_progress",
+      "locations": [
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 743,
+          "symbol": "decide_sales_invoice"
+        },
+        {
+          "file": "backend/approval_workflows/execution.py",
+          "line": 23
+        },
+        {
+          "file": "backend/sales/commercial_invoice_services.py",
+          "line": 634
+        }
+      ],
+      "actual": "Truyền list vào approval_progress (hàm gọi .filter) → AttributeError; không kiểm tra created_by == actor; hóa đơn thương mại gọi approval_progress(invoice, actor, 'SUBMITTED', comment=...) trong khi hàm nhận (obj, actor, approved, decisions) → TypeError.",
+      "expected": "CT-1.",
+      "evidence": "accounting-auditor lần theo đường code; người điều phối đã đọc lại code tại các vị trí trên.",
+      "remediation": "Truyền QuerySet; gọi check_approver_assignment_and_limit; sửa lời gọi ở hóa đơn thương mại.",
+      "verification": "Có workflow: người lập tự duyệt trả 400/403, người duyệt hợp lệ trả 200; gửi duyệt hóa đơn thương mại trả 200.",
+      "duplicates": [],
+      "repro_test": "backend/sales/test_sales_invoice_uc_sal_07.py::test_08_approval_workflow_lifecycle"
+    },
+    {
+      "id": "ACC-111",
+      "module": "sales/tax_management",
+      "severity": "Low",
+      "confidence": "NEEDS_HUMAN_REVIEW",
+      "status": "FIXED",
+      "title": "Thuế GTGT đầu ra làm tròn theo dòng 4 chữ số, không đối chiếu tổng thuế trên hóa đơn",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 232
+        },
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 1045
+        }
+      ],
+      "actual": "Thuế dòng quantize 0.0001, tổng = tổng các dòng; link_tax_invoice chỉ so tổng thanh toán, cho lệch ≤ 1.",
+      "expected": "TX-1; quy tắc làm tròn thuế cần kế toán trưởng quyết định.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Định nghĩa quy tắc làm tròn theo đồng tiền; so cả tiền thuế khi liên kết hóa đơn.",
+      "verification": "Tổng thuế trên GL = thuế trên hóa đơn với hóa đơn nhiều dòng.",
+      "duplicates": [],
+      "fix_note": "Giữ cách làm tròn thuế theo dòng; khi gắn hóa đơn đối chiếu riêng tiền thuế (lệch > 1 bị chặn). Quy tắc làm tròn cuối cùng cần kế toán trưởng xác nhận."
+    },
+    {
+      "id": "ACC-114",
+      "module": "sales",
+      "severity": "Low",
+      "confidence": "SUSPECTED",
+      "status": "FIXED",
+      "title": "Cấp số chứng từ bán nuốt lỗi quy tắc đánh số; số do client nhập trùng gây lỗi 500",
+      "locations": [
+        {
+          "file": "backend/sales/goods_sale_services.py",
+          "line": 75
+        },
+        {
+          "file": "backend/sales/service_sale_services.py",
+          "line": 64
+        },
+        {
+          "file": "backend/sales/cogs_services.py",
+          "line": 43
+        }
+      ],
+      "actual": "except Exception: pass quanh generate_document_number; get_or_create bộ đếm lần đầu có thể va chạm; số client gửi chỉ vấp ràng buộc unique dưới DB.",
+      "expected": "CT-3.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Không nuốt lỗi; kiểm tra số trùng và trả ValidationError; thử lại khi gặp IntegrityError.",
+      "verification": "Nhập số trùng trả 400; tạo đồng thời không lỗi.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-216",
+      "module": "sales",
+      "severity": "Low",
+      "confidence": "CONFIRMED",
+      "status": "FIXED",
+      "title": "Trạng thái công nợ không chuyển PARTIALLY_PAID khi trả hàng một phần; dòng doanh thu trả hàng không làm tròn",
+      "locations": [
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 987
+        },
+        {
+          "file": "backend/sales/sales_return_services.py",
+          "line": 909
+        }
+      ],
+      "actual": "Receivable.status giữ OPEN khi giảm một phần; line_net không làm tròn trong khi total_amount có làm tròn, có thể làm bút toán lệch và bị chặn.",
+      "expected": "SA-5, GL-1.",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Dùng giá trị đã làm tròn; cập nhật trạng thái như phía giảm giá.",
+      "verification": "Đơn giá lẻ ghi sổ được; trạng thái PARTIALLY_PAID khi 0 < balance < original.",
+      "duplicates": []
+    },
+    {
+      "id": "ACC-318",
+      "module": "sales",
+      "severity": "Low",
+      "confidence": "NEEDS_HUMAN_REVIEW",
+      "status": "FIXED",
+      "title": "Số hóa đơn chính thức dùng chung bộ đếm với số nội bộ và hóa đơn chiết khấu, không tách theo ký hiệu",
+      "locations": [
+        {
+          "file": "backend/sales/sales_invoice_services.py",
+          "line": 92
+        },
+        {
+          "file": "backend/sales/discount_invoice_services.py",
+          "line": 872
+        }
+      ],
+      "actual": "SalesInvoiceCounter(company, year) dùng cho số nội bộ HD, số chính thức và hóa đơn chiết khấu; không tách theo invoice_series; hủy được hóa đơn đang ISSUING.",
+      "expected": "Tính liên tục số hóa đơn theo ký hiệu (văn bản về hóa đơn điện tử, chưa xác minh).",
+      "evidence": "accounting-auditor lần theo đường code. Chưa có test tái hiện.",
+      "remediation": "Bộ đếm riêng theo (công ty, ký hiệu, năm).",
+      "verification": "Phát hành M hóa đơn: số chính thức liên tục 1..M theo ký hiệu.",
+      "duplicates": [],
+      "fix_note": "Số hóa đơn chính thức cấp liên tục theo ký hiệu, dùng chung cho hóa đơn GTGT và chiết khấu cùng ký hiệu, tách khỏi số nội bộ."
+    }
+  ],
+  "coverage": [
+    {
+      "module": "sales",
+      "process": "Ghi nhận doanh thu + thuế + phải thu/tiền (VND)",
+      "verdict": "PASS",
+      "note": "Một bút toán, cân; rủi ro làm tròn ACC-110"
+    },
+    {
+      "module": "sales",
+      "process": "Bán ngoại tệ (bán, trả hàng, giảm giá)",
+      "verdict": "FAIL",
+      "note": "ACC-104"
+    },
+    {
+      "module": "sales",
+      "process": "Chiết khấu thương mại trên dòng",
+      "verdict": "PASS",
+      "note": ""
+    },
+    {
+      "module": "sales",
+      "process": "Giá vốn khớp giảm kho (ATTACH_ISSUE)",
+      "verdict": "FAIL",
+      "note": "ACC-106, ACC-107, ACC-108"
+    },
+    {
+      "module": "sales",
+      "process": "Chứng từ giá vốn riêng (UC-SAL-10)",
+      "verdict": "FAIL",
+      "note": "ACC-105, ACC-113"
+    },
+    {
+      "module": "sales",
+      "process": "Bán dịch vụ không sinh giá vốn/kho",
+      "verdict": "PASS",
+      "note": ""
+    },
+    {
+      "module": "sales",
+      "process": "Bỏ ghi sổ / ghi sổ lại chứng từ bán, trả hàng, giảm giá",
+      "verdict": "FAIL",
+      "note": "ACC-101, ACC-102, ACC-103, ACC-205, ACC-112"
+    },
+    {
+      "module": "sales",
+      "process": "Chống ghi sổ lặp (GL-5)",
+      "verdict": "PASS",
+      "note": "select_for_update + kiểm tra trạng thái; chưa test đồng thời trên PostgreSQL"
+    },
+    {
+      "module": "sales",
+      "process": "Kỳ khóa — đường ghi sổ",
+      "verdict": "PASS",
+      "note": ""
+    },
+    {
+      "module": "sales",
+      "process": "Kỳ khóa — đường bỏ ghi sổ",
+      "verdict": "FAIL",
+      "note": "ACC-101, ACC-112"
+    },
+    {
+      "module": "sales",
+      "process": "Trả hàng: định khoản, giới hạn, nhập lại kho",
+      "verdict": "PARTIAL",
+      "note": "ACC-203, ACC-204, ACC-208, ACC-209, ACC-212, ACC-213"
+    },
+    {
+      "module": "sales",
+      "process": "Trả hàng/giảm giá cho đơn bán thu tiền ngay, hoàn tiền",
+      "verdict": "FAIL",
+      "note": "ACC-202, ACC-211"
+    },
+    {
+      "module": "sales",
+      "process": "Hóa đơn chiết khấu thương mại",
+      "verdict": "FAIL",
+      "note": "ACC-206, ACC-215"
+    },
+    {
+      "module": "sales",
+      "process": "Hóa đơn GTGT: giữ chỗ, phát hành, đồng bộ tờ khai",
+      "verdict": "FAIL",
+      "note": "ACC-301, ACC-302, ACC-303, ACC-304, ACC-306, ACC-317"
+    },
+    {
+      "module": "sales",
+      "process": "Thuế điều chỉnh cho trả hàng/giảm giá",
+      "verdict": "PARTIAL",
+      "note": "ACC-207"
+    },
+    {
+      "module": "sales",
+      "process": "Sổ chi tiết công nợ khớp 131 (SA-4)",
+      "verdict": "FAIL",
+      "note": "ACC-101, ACC-103, ACC-109, ACC-307, ACC-308, ACC-310"
+    },
+    {
+      "module": "sales",
+      "process": "Phân bổ thu tiền",
+      "verdict": "PARTIAL",
+      "note": "ACC-311; chưa lần hết phiếu thu/phân bổ"
+    },
+    {
+      "module": "sales",
+      "process": "Tồn kho khớp 156 (IN-3)",
+      "verdict": "FAIL",
+      "note": "ACC-102, ACC-105, ACC-106, ACC-108, ACC-204, ACC-209"
+    },
+    {
+      "module": "sales",
+      "process": "Theo dõi đơn hàng (đã giao, đã xuất hóa đơn)",
+      "verdict": "FAIL",
+      "note": "ACC-313, ACC-314"
+    },
+    {
+      "module": "sales",
+      "process": "Phân bổ hợp đồng",
+      "verdict": "PASS",
+      "note": "Chỉ đọc dữ liệu đơn hàng"
+    },
+    {
+      "module": "sales",
+      "process": "Duyệt, chặn tự duyệt (CT-1)",
+      "verdict": "PARTIAL",
+      "note": "Đường duyệt chung đạt; đường trực tiếp lỗi ACC-315"
+    },
+    {
+      "module": "sales",
+      "process": "Cấp số chứng từ (CT-3)",
+      "verdict": "PARTIAL",
+      "note": "ACC-114, ACC-205, ACC-318; BL-08 đã sửa trong code, chưa test đồng thời"
+    }
+  ]
+}
