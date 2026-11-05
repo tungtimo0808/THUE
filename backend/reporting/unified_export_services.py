@@ -835,6 +835,20 @@ def _ensure_pdf_fonts_registered() -> str:
 
     font_configs = [
         {
+            "name": "TimesNewRoman",
+            "regular": "/usr/share/fonts/truetype/msttcorefonts/times.ttf",
+            "bold": "/usr/share/fonts/truetype/msttcorefonts/timesbd.ttf",
+            "italic": "/usr/share/fonts/truetype/msttcorefonts/timesi.ttf",
+            "boldItalic": "/usr/share/fonts/truetype/msttcorefonts/timesbi.ttf",
+        },
+        {
+            "name": "TimesNewRoman",
+            "regular": "C:/Windows/Fonts/times.ttf",
+            "bold": "C:/Windows/Fonts/timesbd.ttf",
+            "italic": "C:/Windows/Fonts/timesi.ttf",
+            "boldItalic": "C:/Windows/Fonts/timesbi.ttf",
+        },
+        {
             "name": "LiberationSerif",
             "regular": "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
             "bold": "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
@@ -1013,10 +1027,10 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     doc = SimpleDocTemplate(
         buffer,
         pagesize=page_size,
-        leftMargin=25,
-        rightMargin=25,
-        topMargin=25,
-        bottomMargin=25,
+        leftMargin=35,
+        rightMargin=35,
+        topMargin=30,
+        bottomMargin=30,
     )
 
     styles = getSampleStyleSheet()
@@ -1024,8 +1038,8 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "ReportTitle",
         parent=styles["Heading1"],
         fontName=font_bold,
-        fontSize=14,
-        leading=18,
+        fontSize=15,
+        leading=19,
         alignment=1,  # Center
         textColor=colors.black,
     )
@@ -1033,7 +1047,7 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "ReportSubtitle",
         parent=styles["Normal"],
         fontName=font_bold_italic,
-        fontSize=10,
+        fontSize=10.5,
         leading=14,
         alignment=1,  # Center
         textColor=colors.black,
@@ -1042,8 +1056,8 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "ReportUnit",
         parent=styles["Normal"],
         fontName=font_italic,
-        fontSize=9,
-        leading=12,
+        fontSize=9.5,
+        leading=13,
         alignment=2,  # Right
         textColor=colors.black,
     )
@@ -1051,24 +1065,24 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "CompanyHeaderName",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=10,
-        leading=13,
-        textColor=colors.HexColor("#0F172A"),
+        fontSize=10.5,
+        leading=14,
+        textColor=colors.black,
     )
     header_company_sub_style = ParagraphStyle(
         "CompanyHeaderSub",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=9,
-        leading=12,
-        textColor=colors.HexColor("#334155"),
+        fontSize=9.5,
+        leading=13,
+        textColor=colors.black,
     )
     th_style = ParagraphStyle(
         "TableHeader",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=8.5,
-        leading=11,
+        fontSize=9,
+        leading=11.5,
         alignment=1,  # Center
         textColor=colors.black,
     )
@@ -1076,16 +1090,16 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "TableCellLeft",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=8,
-        leading=10.5,
+        fontSize=8.5,
+        leading=11.5,
         alignment=0,
     )
     td_style_code = ParagraphStyle(
         "TableCellCode",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=8,
-        leading=10.5,
+        fontSize=8.5,
+        leading=11.5,
         alignment=0,
         textColor=colors.HexColor("#1D4ED8"),
     )
@@ -1093,24 +1107,24 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "TableCellCenter",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=8,
-        leading=10.5,
+        fontSize=8.5,
+        leading=11.5,
         alignment=1,
     )
     td_style_right = ParagraphStyle(
         "TableCellRight",
         parent=styles["Normal"],
         fontName=font_family,
-        fontSize=8,
-        leading=10.5,
+        fontSize=8.5,
+        leading=11.5,
         alignment=2,
     )
     sig_title_style = ParagraphStyle(
         "SignatureTitle",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=9.5,
-        leading=13,
+        fontSize=10,
+        leading=13.5,
         alignment=1,
         textColor=colors.black,
     )
@@ -1118,17 +1132,17 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "SignatureSubtitle",
         parent=styles["Normal"],
         fontName=font_italic,
-        fontSize=8.5,
-        leading=11,
+        fontSize=9,
+        leading=12,
         alignment=1,
-        textColor=colors.HexColor("#1E293B"),
+        textColor=colors.black,
     )
     sig_name_style = ParagraphStyle(
         "SignatureName",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=9.5,
-        leading=13,
+        fontSize=10,
+        leading=13.5,
         alignment=1,
         textColor=colors.black,
     )
@@ -1244,7 +1258,7 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         table_data.append(gt_cells)
 
     # Tính độ rộng cột tự động và hài hòa
-    total_avail_width = page_size[0] - 50  # margins 25 + 25
+    total_avail_width = page_size[0] - 70  # margins 35 + 35
     num_cols = len(columns)
     weights = []
     for c in columns:
