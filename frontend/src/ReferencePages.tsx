@@ -258,32 +258,6 @@ export function ReferenceProcess({
             );
           })}
         </div>
-        <div className="ref-integration">
-          <span className="ref-integration-icon">
-            <Grip size={18} />
-          </span>
-          <strong>
-            {moduleId === "sales" ? "Sổ Việt CRM" : "Quy trình Sổ Việt"}
-          </strong>
-          <span>
-            {moduleId === "sales"
-              ? "Kết nối dữ liệu giữa bộ phận bán hàng và kế toán"
-              : "Phê duyệt và tự động hóa quy trình chi tiền, tạm ứng"}
-          </span>
-          <button
-            className="ref-link"
-            onClick={() => onInfo("Kết nối ứng dụng")}
-          >
-            <Lightbulb size={16} />
-            Xem tính năng
-          </button>
-          <button
-            className="ref-button"
-            onClick={() => onInfo("Kết nối ứng dụng")}
-          >
-            Kết nối ngay
-          </button>
-        </div>
       </div>
     </div>
   );

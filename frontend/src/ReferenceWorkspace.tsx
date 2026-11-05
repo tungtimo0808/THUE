@@ -75,7 +75,6 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
-import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
 import type { ComponentType } from "react";
 
@@ -869,7 +868,6 @@ function ReferenceWorkspace() {
     "Cập nhật số dư dữ liệu năm trước": href("/opening"),
     "Nhập dữ liệu": href("/opening"),
     "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế": href("/purchases/invoice-processing/supplier-risk"),
-    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/sync"),
     "Kiểm soát hồ sơ và hạch toán": href("/invoices/unposted"),
     "Nhật ký truy cập": "/audit-logs",
     "Thông tin công ty": "/admin?tab=overview",
@@ -877,8 +875,6 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
-    "Thiết lập kết nối Ngân hàng điện tử (mBank)": href("/bank/ebanking"),
-    "Thiết lập ký số từ xa (SmartCA / eSign)": href("/invoices/meinvoice"),
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
     "Chuyển kho": href("/inventory/transfers"),
@@ -1015,11 +1011,8 @@ function ReferenceWorkspace() {
           </>
         );
       }
-      if (["process", "meinvoice", "error-guide"].includes(activeTab)) {
+      if (["process", "error-guide"].includes(activeTab)) {
         return <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} company={company} />;
-      }
-      if (activeTab === "sync") {
-        return <TaxInvoiceSyncPanel companyId={company.id} token={apiToken} href={href} />;
       }
       if (activeTab === "incoming" && (!childTab || childTab === "inbox")) {
         return <IncomingInvoiceWorkspace notify={setNotice} />;

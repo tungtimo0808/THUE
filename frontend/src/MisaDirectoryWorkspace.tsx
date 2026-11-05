@@ -725,7 +725,6 @@ export default function MisaDirectoryWorkspace({
                 </>
               )}
             </div>
-            {definition.name==="Tài khoản ngân hàng"&&<div style={{padding:"12px 18px",display:"flex",gap:12,alignItems:"center"}}><span>Tự động thêm nhiều tài khoản ngân hàng cùng lúc chỉ trong 15 giây với Ngân hàng điện tử</span><button type="button" onClick={()=>directoryNavigate("/bank/ebanking"+window.location.search)}>Kết nối ngay</button></div>}
             {error && (
               <p role="alert" className="md-error">
                 {error}
