@@ -14,6 +14,9 @@ from . import models
 ISSUE_MODULES = {"INV_OTHER_ISSUE", "INV_SALE_ISSUE"}
 # Vouchers recorded with "Cất" (submit + post in one step) and their own UC messages.
 WAREHOUSE_VOUCHER_MODULES = ISSUE_MODULES | {"INV_TRANSFER"}
+# Issues priced by the valuation method from each line's own warehouse. Sales vouchers ("SAL") post
+# their own COGS entry, so they are not in ISSUE_MODULES (which also drives the inventory GL entry).
+VALUED_ISSUE_MODULES = ISSUE_MODULES | {"SAL"}
 JOURNAL_MODULES = {"INV_OTHER", "INV_COUNT_RESOLUTION"} | WAREHOUSE_VOUCHER_MODULES
 TRANSFER_KINDS = {"INTERNAL": "Xuất chuyển kho nội bộ", "TRANSPORT": "Xuất kho kiêm vận chuyển nội bộ", "CONSIGNMENT": "Xuất kho gửi bán đại lý"}
 VOUCHER_MESSAGES = {
@@ -328,14 +331,16 @@ def post(obj, request):
             value, warning = _post_transfer_line(obj, line, transit)
             total += value
         elif kind in {"RECEIPT", "RETURN", "ADJUSTMENT_IN"}:
-            value, warning = _apply(obj, line, obj.destination_warehouse, line.base_quantity, line.unit_cost, destination=True)
+            # Sales returns put each line back into its own warehouse.
+            receipt_warehouse = line.destination_warehouse if obj.source_module == "SAL" and line.destination_warehouse_id else obj.destination_warehouse
+            value, warning = _apply(obj, line, receipt_warehouse, line.base_quantity, line.unit_cost, destination=True)
             total += abs(value)
         elif kind in {"ISSUE", "ADJUSTMENT_OUT"}:
-            issue_warehouse = line.source_warehouse if obj.source_module in {"INV_OTHER_ISSUE", "INV_SALE_ISSUE"} and line.source_warehouse_id else obj.source_warehouse
+            issue_warehouse = line.source_warehouse if obj.source_module in VALUED_ISSUE_MODULES and line.source_warehouse_id else obj.source_warehouse
             policy = _policy(obj.company, issue_warehouse, line.item)
             # BR08/BR14: the issue cost comes from the valuation method; only specific identification keeps the entered price.
             method = policy.valuation_method if policy else line.item.valuation_method
-            cost = line.unit_cost if obj.source_module not in {"INV_OTHER_ISSUE", "INV_SALE_ISSUE"} or method == "SPECIFIC" else Decimal("0")
+            cost = line.unit_cost if obj.source_module not in VALUED_ISSUE_MODULES or method == "SPECIFIC" else Decimal("0")
             try:
                 value, warning = _apply(obj, line, issue_warehouse, -line.base_quantity, cost)
             except StockShortageError:
@@ -622,6 +627,8 @@ def reverse(obj, request):
         raise ValidationError("Chỉ giao dịch đã ghi nhận và có lý do mới được đảo.")
     if obj.gl_status == "POSTED":
         raise ValidationError("Phải xử lý bút toán GL trước khi đảo giao dịch kho.")
+    if _period_is_closed(obj):
+        raise ValidationError("Kỳ kho của giao dịch đã đóng, không thể đảo.")
     original_movements = list(obj.movements.order_by("-created_at"))
     for movement in original_movements:
         line = movement.line
@@ -636,7 +643,7 @@ def reverse(obj, request):
         balance.save(update_fields=("quantity", "inventory_value", "average_cost", "updated_at"))
         models.StockMovement.objects.create(
             company=obj.company, transaction=obj, line=line, warehouse=movement.warehouse, item=movement.item,
-            location=movement.location, lot_serial=movement.lot_serial, movement_date=timezone.localdate(),
+            location=movement.location, lot_serial=movement.lot_serial, movement_date=movement.movement_date,
             quantity_delta=-movement.quantity_delta, value_delta=-movement.value_delta,
             balance_quantity=balance.quantity, balance_value=balance.inventory_value,
         )

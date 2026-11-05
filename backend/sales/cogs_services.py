@@ -6,9 +6,10 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
+from approval_workflows.submission import configured_snapshot
 from audit_log.services import record_audit
 from general_ledger.models import Account, AccountingPeriod, JournalEntry, JournalLine
-from general_ledger.services import post as post_journal
+from general_ledger.services import post as post_journal, source_module_request
 from inventory.models import InventoryTransaction, InventoryTransactionLine, TransactionStatus, TransactionType
 from master_data.models import DocumentType
 from sales import models
@@ -45,13 +46,14 @@ def generate_cogs_number(company, branch=None, document_date=None):
     ref_date = document_date or timezone.localdate()
     try:
         from common_services.numbering_services import generate_document_number
-        doc_type = DocumentType.objects.filter(code__in=["SAL.COGS", "GV", "COGS"]).first()
-        if doc_type:
-            num = generate_document_number(company, doc_type, branch=branch, document_date=ref_date)
-            if num:
-                return num
+        with transaction.atomic():
+            doc_type = DocumentType.objects.filter(code__in=["SAL.COGS", "GV", "COGS"]).first()
+            if doc_type:
+                num = generate_document_number(company, doc_type, branch=branch, document_date=ref_date)
+                if num:
+                    return num
     except Exception:
-        pass
+        logger.exception("Không cấp được số theo quy tắc đánh số; dùng bộ đếm mặc định.")
 
     year = ref_date.year
     with transaction.atomic():
@@ -78,6 +80,8 @@ def get_eligible_outward_lines(company, branch=None, warehouse=None, costing_per
         transaction__company=company,
         transaction__transaction_type=TransactionType.ISSUE,
         transaction__status=TransactionStatus.POSTED,
+    ).exclude(
+        transaction__gl_status="POSTED"  # the stock voucher already booked its own 632/156 entry
     ).select_related(
         "transaction", "transaction__source_warehouse", "item", "uom", "location"
     )
@@ -221,6 +225,8 @@ def create_cogs_voucher(request, data):
         # 2. Kiểm tra phiếu xuất có hiệu lực và loại ISSUE (EF-04)
         if inv_line.transaction.transaction_type != TransactionType.ISSUE or inv_line.transaction.status != TransactionStatus.POSTED:
             raise ValidationError({"lines": f"Phiếu xuất kho {inv_line.transaction.number} không phải là phiếu xuất bán có hiệu lực."})
+        if inv_line.transaction.gl_status == "POSTED":
+            raise ValidationError({"lines": f"Phiếu xuất kho {inv_line.transaction.number} đã tự hạch toán giá vốn khi ghi sổ kho."})
 
         # 3. Kiểm tra kết quả tính giá (EF-02, BR-SAL-10-04)
         if not inv_line.unit_cost or inv_line.unit_cost <= Decimal("0") or not inv_line.line_value or inv_line.line_value <= Decimal("0"):
@@ -602,6 +608,10 @@ def post_cogs_voucher(request, cogs):
         raise ValidationError("Chứng từ này đã được ghi sổ trước đó.")
     if cogs.status not in [models.DocumentStatus.APPROVED, models.DocumentStatus.DRAFT]:
         raise ValidationError(f"Chứng từ ở trạng thái {cogs.status} không được phép ghi sổ. Cần phê duyệt hoặc hoàn tất nháp (BR-SAL-10-06).")
+    if cogs.status == models.DocumentStatus.DRAFT and cogs.approval_required:
+        snapshot = configured_snapshot(cogs, "SAL.COGS")
+        if snapshot and snapshot.get("version_id"):
+            raise ValidationError("Chứng từ giá vốn cần được phê duyệt trước khi ghi sổ.")
 
     lines = list(cogs.lines.select_related("inventory_transaction_line", "item", "warehouse", "cogs_account", "inventory_account").all())
     if not lines:
@@ -689,7 +699,7 @@ def post_cogs_voucher(request, cogs):
         )
 
     # Post journal entry into GL
-    post_journal(journal, request)
+    post_journal(journal, source_module_request(request))
 
     # 6. Cập nhật trạng thái chứng từ COGS và dòng nguồn
     cogs.journal_entry = journal

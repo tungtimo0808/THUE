@@ -36,6 +36,7 @@ from general_ledger.services import post as post_journal, source_module_request
 from accounts_receivable.models import Receivable, ReceivableStatus
 from master_data.models import Currency, DocumentType, Item, Party, TaxRate, UnitOfMeasure
 from . import models
+from .posting_helpers import check_adjustment_invoice, convert_to_accounting_currency, source_journal, unpost_source_journal
 
 MONEY = Decimal("0.0001")
 
@@ -268,7 +269,7 @@ def prepare_from_sale(company, goods_sale_id=None, service_sale_id=None):
                 "tax_rate_id": str(line.tax_rate_id) if line.tax_rate_id else None,
                 "revenue_deduction_account": str(default_accs["revenue_deduction_account"].id) if default_accs["revenue_deduction_account"] else None,
                 "tax_account": str(line.tax_account_id or (default_accs["tax_account"].id if default_accs["tax_account"] else None)),
-                "receivable_account": str(line.receivable_or_payment_account_id or (default_accs["receivable_account"].id if default_accs["receivable_account"] else None)),
+                "receivable_account": str(line.receivable_or_payment_account_id if line.receivable_or_payment_account and line.receivable_or_payment_account.code.startswith("131") else (default_accs["receivable_account"].id if default_accs["receivable_account"] else None)),
             })
 
     if not lines_out:
@@ -340,10 +341,9 @@ def calculate_and_validate_allowance_lines(
             raise ValidationError(f"Dòng {idx}: Dòng bán nguồn đã được chọn trước đó trên cùng chứng từ.")
         seen_source_lines.add(str(source_line_id))
 
-        if source_type == "GOODS_SALE":
-            source_line = models.GoodsSaleLine.objects.filter(sale=source_doc, id=source_line_id).select_related("item", "uom", "tax_rate").first()
-        else:
-            source_line = models.ServiceSaleLine.objects.filter(sale=source_doc, id=source_line_id).select_related("item", "uom", "tax_rate").first()
+        # Locked so concurrent allowances on the same line see each other's amounts.
+        line_model = models.GoodsSaleLine if source_type == "GOODS_SALE" else models.ServiceSaleLine
+        source_line = line_model.objects.select_for_update(of=("self",)).filter(sale=source_doc, id=source_line_id).select_related("item", "uom", "tax_rate").first()
 
         if not source_line:
             raise ValidationError(f"Dòng {idx}: Dòng bán nguồn không thuộc chứng từ bán {source_doc.number}.")
@@ -430,10 +430,16 @@ def calculate_and_validate_allowance_lines(
         tax_acc_id = raw.get("tax_account") or raw.get("tax_account_id") or source_line.tax_account_id
         tax_acc = Account.objects.filter(company=company, id=tax_acc_id, status="ACTIVE", is_postable=True).first() if tax_acc_id else default_accs["tax_account"]
 
-        rec_acc_id = raw.get("receivable_account") or raw.get("receivable_account_id") or source_line.receivable_or_payment_account_id
+        # The allowance is owed back to the customer through receivables; paying it out happens only in
+        # the refund step, so a cash/bank sale must not credit 111/112 here as well.
+        rec_acc_id = raw.get("receivable_account") or raw.get("receivable_account_id")
+        if not rec_acc_id and source_line.receivable_or_payment_account and source_line.receivable_or_payment_account.code.startswith("131"):
+            rec_acc_id = source_line.receivable_or_payment_account_id
         rec_acc = Account.objects.filter(company=company, id=rec_acc_id, status="ACTIVE", is_postable=True).first() if rec_acc_id else default_accs["receivable_account"]
         if not rec_acc:
             raise ValidationError(f"Dòng {idx}: Chưa xác định tài khoản công nợ khách hàng.")
+        if not rec_acc.code.startswith("131"):
+            raise ValidationError(f"Dòng {idx}: Tài khoản đối ứng của giảm giá phải là tài khoản phải thu khách hàng (131), không phải {rec_acc.code}.")
 
         line_record = {
             "line_no": idx,
@@ -790,7 +796,10 @@ def _validate_allowance_posting_preconditions(sale_allowance):
     # 3. Source Remaining Balance Check in atomic lock (BR-SAL-06-04, EF-06)
     source_type = "GOODS_SALE" if sale_allowance.goods_sale else "SERVICE_SALE"
     for line in lines:
-        source_line = line.goods_sale_line if source_type == "GOODS_SALE" else line.service_sale_line
+        if source_type == "GOODS_SALE":
+            source_line = models.GoodsSaleLine.objects.select_for_update().get(pk=line.goods_sale_line_id)
+        else:
+            source_line = models.ServiceSaleLine.objects.select_for_update().get(pk=line.service_sale_line_id)
         net_sales = (source_line.quantity * source_line.unit_price) - source_line.discount_amount
         returned_val = Decimal("0")
         if source_type == "GOODS_SALE":
@@ -831,7 +840,7 @@ def post_sales_allowance(request, sale_allowance):
     total_debit = sale_allowance.total_amount
     total_credit = sale_allowance.total_amount
 
-    journal = JournalEntry.objects.create(
+    journal = source_journal(
         company=sale_allowance.company,
         branch=sale_allowance.branch,
         period=period,
@@ -898,6 +907,7 @@ def post_sales_allowance(request, sale_allowance):
         party=sale_allowance.customer,
     )
 
+    convert_to_accounting_currency(journal, sale_allowance.exchange_rate)
     post_journal(journal, source_module_request(request))
     sale_allowance.journal_entry = journal
 
@@ -948,13 +958,11 @@ def unpost_sales_allowance(request, sale_allowance, reason=""):
             f"Không thể bỏ ghi sổ khi đã phát sinh hoàn tiền cho khách ({sale_allowance.refunded_amount}). Vui lòng xử lý chứng từ hoàn tiền trước."
         )
 
-    # 1. Reverse and delete JournalEntry
+    # 1. Unpost the journal entry through the general ledger
     if sale_allowance.journal_entry:
-        journal = sale_allowance.journal_entry
+        unpost_source_journal(request, sale_allowance.journal_entry, reason or "Bỏ ghi sổ chứng từ giảm giá")
         sale_allowance.journal_entry = None
         sale_allowance.save(update_fields=["journal_entry"])
-        journal.lines.all().delete()
-        journal.delete()
 
     # 2. Revert Receivable adjustment
     source_doc = sale_allowance.goods_sale or sale_allowance.service_sale
@@ -1013,7 +1021,9 @@ def refund_sales_allowance(request, sale_allowance, data):
     if not period:
         raise ValidationError("Kỳ kế toán đã bị khóa hoặc chưa mở cho ngày hoàn tiền.")
 
-    rec_acc = Account.objects.filter(company=company, code__startswith="131", is_postable=True, status="ACTIVE").first()
+    # Debit the receivable account the document credited when it was posted.
+    first_line = sale_allowance.lines.select_related("receivable_account").order_by("line_no").first()
+    rec_acc = first_line.receivable_account if first_line and first_line.receivable_account_id else None
     if not rec_acc:
         raise ValidationError("Không tìm thấy tài khoản công nợ phải thu (131).")
 
@@ -1067,8 +1077,10 @@ def refund_sales_allowance(request, sale_allowance, data):
         credit=amount,
         currency=sale_allowance.currency,
         party=sale_allowance.customer,
+        dimensions={"bank_account": str(bank_acc_id), "bank_account_id": str(bank_acc_id)} if payment_method == "BANK" and bank_acc_id else {},
     )
 
+    convert_to_accounting_currency(refund_journal, sale_allowance.exchange_rate)
     post_journal(refund_journal, source_module_request(request))
 
     sale_allowance.refunded_amount += amount
@@ -1098,8 +1110,7 @@ def link_tax_invoice(request, sale_allowance, data):
     if not invoice:
         raise ValidationError("Hóa đơn không tồn tại hoặc không thuộc doanh nghiệp.")
 
-    if invoice.buyer_name and sale_allowance.customer.name not in invoice.buyer_name and invoice.tax_code != sale_allowance.customer.tax_code:
-        raise ValidationError("Thông tin người mua trên hóa đơn không khớp với khách hàng của chứng từ.")
+    check_adjustment_invoice(sale_allowance, invoice)
 
     before = str(sale_allowance.tax_invoice_id) if sale_allowance.tax_invoice_id else None
     sale_allowance.tax_invoice = invoice

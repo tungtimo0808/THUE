@@ -11,6 +11,14 @@ from audit_log.services import record_audit
 from . import models
 
 
+def in_accounting_currency(invoice, amount):
+    """Tờ khai GTGT lập bằng đồng tiền hạch toán: quy đổi số tiền hóa đơn ngoại tệ theo tỷ giá trên hóa đơn."""
+    accounting_currency_id = invoice.company.accounting_currency_id
+    if accounting_currency_id and invoice.currency_id != accounting_currency_id and invoice.exchange_rate:
+        return (amount * invoice.exchange_rate).quantize(Decimal("0.0001"))
+    return amount
+
+
 def actor(request):
     if hasattr(request.user, "iam_account"):
         return request.user.iam_account
@@ -304,21 +312,62 @@ def build_summary(period, request):
         total = Decimal("0")
         for invoice in rows:
             sign = Decimal("-1") if invoice.invoice_type == "ADJUSTMENT" and invoice.adjustment_effect == "DECREASE" else Decimal("1")
-            total += getattr(invoice, field) * sign
+            total += in_accounting_currency(invoice, getattr(invoice, field)) * sign
         return total
     version = (models.TaxSummary.objects.filter(period=period).order_by("-version").values_list("version", flat=True).first() or 0) + 1
     input_base, input_tax = signed(input_rows, "subtotal"), signed(input_rows, "tax_amount")
     output_base, output_tax = signed(output_rows, "subtotal"), signed(output_rows, "tax_amount")
     excluded = invoices.exclude(pk__in=included.values("pk"))
+    exceptions = sales_tax_exceptions(period)
     obj = models.TaxSummary.objects.create(
         company=period.company, period=period, version=version,
         input_taxable_amount=input_base, input_tax_amount=input_tax,
         output_taxable_amount=output_base, output_tax_amount=output_tax,
         tax_difference=output_tax - input_tax, exception_count=excluded.count(),
-        details={"included_invoices": included.count(), "excluded_invoices": excluded.count()}, created_by=actor(request),
+        details={"included_invoices": included.count(), "excluded_invoices": excluded.count(), **exceptions},
+        created_by=actor(request),
     )
     audit(request, obj, "SUMMARIZE", after={"version": version, "tax_difference": str(obj.tax_difference)})
     return obj
+
+
+def sales_without_invoice(period):
+    """Posted sales with output VAT in the period that have no VAT invoice: their 3331 is on the ledger
+    but cannot reach the declaration until an invoice is issued or recorded."""
+    from sales.models import DocumentStatus, GoodsSale, ServiceSale
+
+    numbers = []
+    for model in (GoodsSale, ServiceSale):
+        numbers += list(
+            model.objects.filter(
+                company=period.company, status=DocumentStatus.POSTED, tax_amount__gt=0, tax_invoice__isnull=True,
+                posting_date__range=(period.start_date, period.end_date),
+            ).values_list("number", flat=True)
+        )
+    return sorted(numbers)
+
+
+def sales_tax_exceptions(period):
+    """Sales documents whose output VAT on the ledger and on the declaration can disagree."""
+    from sales.models import DocumentStatus, SalesAllowance, SalesInvoice, SalesReturn
+
+    in_period = {"company": period.company, "status": DocumentStatus.POSTED, "posting_date__range": (period.start_date, period.end_date)}
+    return {
+        "sales_without_invoice": sales_without_invoice(period),
+        # A return/allowance reduces 3331 on posting; the declaration only sees it through an adjustment invoice.
+        "adjustments_without_invoice": sorted(
+            list(SalesReturn.objects.filter(**in_period, tax_amount__gt=0, tax_invoice__isnull=True).values_list("number", flat=True))
+            + list(SalesAllowance.objects.filter(**in_period, tax_amount__gt=0, tax_invoice__isnull=True).values_list("number", flat=True))
+        ),
+        # An issued invoice not made from a posted sale has output VAT with no revenue entry behind it.
+        "invoices_without_sale": sorted(
+            SalesInvoice.objects.filter(
+                company=period.company, status=SalesInvoice.Status.ISSUED,
+                invoice_date__range=(period.start_date, period.end_date),
+                goods_sale__isnull=True, service_sale__isnull=True,
+            ).values_list("number", flat=True)
+        ),
+    }
 
 
 @transaction.atomic
@@ -328,6 +377,15 @@ def create_filing(data, request):
     warnings = []
     if summary.exception_count:
         warnings.append(f"Có {summary.exception_count} hóa đơn chưa đủ điều kiện tổng hợp.")
+    details = summary.details or {}
+    for key, label in (
+        ("sales_without_invoice", "chứng từ bán đã ghi thuế đầu ra nhưng chưa có hóa đơn"),
+        ("adjustments_without_invoice", "phiếu trả hàng/giảm giá đã giảm thuế trên sổ nhưng chưa có hóa đơn điều chỉnh"),
+        ("invoices_without_sale", "hóa đơn đã phát hành không gắn chứng từ bán đã ghi sổ doanh thu"),
+    ):
+        numbers = details.get(key) or []
+        if numbers:
+            warnings.append(f"Có {len(numbers)} {label}: {', '.join(numbers[:10])}.")
     indicators = data.pop("indicators", None) or {
         "input_taxable_amount": str(summary.input_taxable_amount), "input_tax_amount": str(summary.input_tax_amount),
         "output_taxable_amount": str(summary.output_taxable_amount), "output_tax_amount": str(summary.output_tax_amount),

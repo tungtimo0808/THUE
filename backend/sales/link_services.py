@@ -273,13 +273,16 @@ def get_document_info(doc_type: str, doc_id: Any, company: Optional[Company] = N
     }
 
 
-def get_document_line_info(doc_type: str, line_id: Any) -> Optional[Dict[str, Any]]:
-    """Resolve line instance and common item/qty metadata."""
+def get_document_line_info(doc_type: str, line_id: Any, document_id: Any = None) -> Optional[Dict[str, Any]]:
+    """Resolve line instance and common item/qty metadata; with `document_id`, only a line of that document."""
     cfg = DOC_CONFIG.get(doc_type)
     if not cfg:
         return None
 
-    line = cfg["line_model"].objects.filter(pk=line_id).first()
+    lines = cfg["line_model"].objects.filter(pk=line_id)
+    if document_id is not None:
+        lines = lines.filter(**{f"{cfg['line_fk']}_id": document_id})
+    line = lines.first()
     if not line:
         return None
 
@@ -524,13 +527,13 @@ def create_document_link(request, data: Dict[str, Any]) -> models.SalesDocumentL
             if not t_line_id:
                 raise ValidationError(f"Dòng {idx}: Dòng đích là bắt buộc.")
 
-        s_line_info = get_document_line_info(source_type, s_line_id) if s_line_id else None
-        t_line_info = get_document_line_info(target_type, t_line_id) if t_line_id else None
+        s_line_info = get_document_line_info(source_type, s_line_id, document_id=source_id) if s_line_id else None
+        t_line_info = get_document_line_info(target_type, t_line_id, document_id=target_id) if t_line_id else None
 
         if s_line_id and not s_line_info:
-            raise ValidationError(f"Dòng {idx}: Không tìm thấy dòng nguồn '{s_line_id}'.")
+            raise ValidationError(f"Dòng {idx}: Không tìm thấy dòng nguồn '{s_line_id}' trên chứng từ nguồn.")
         if t_line_id and not t_line_info:
-            raise ValidationError(f"Dòng {idx}: Không tìm thấy dòng đích '{t_line_id}'.")
+            raise ValidationError(f"Dòng {idx}: Không tìm thấy dòng đích '{t_line_id}' trên chứng từ đích.")
 
         # BR-SAL-11-05: Item match
         if s_line_info and t_line_info:
@@ -644,7 +647,8 @@ def create_document_link(request, data: Dict[str, Any]) -> models.SalesDocumentL
             else:
                 from iam.models import UserAccount
                 actor = UserAccount.objects.filter(user=request.user).first()
-    if not actor:
+    if not actor and request is None:
+        # Internal calls without a request (document generation) are recorded under the system account.
         from iam.models import UserAccount
         actor = UserAccount.objects.first()
     if not actor:

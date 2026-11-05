@@ -1199,6 +1199,10 @@ def _reconstruct_as_of_ar_debt(company_id: str, as_of_date: date, partner_id: st
     qs = Receivable.objects.filter(company_id=company_id)
     if as_of_date:
         qs = qs.filter(Q(document_date__lte=as_of_date) | Q(posting_date__lte=as_of_date))
+        # A receivable reversed by that date no longer exists as debt.
+        qs = qs.exclude(Q(status="REVERSED") & (Q(reversed_at__isnull=True) | Q(reversed_at__date__lte=as_of_date)))
+    else:
+        qs = qs.exclude(status="REVERSED")
     if partner_id:
         qs = qs.filter(customer_id=partner_id)
 

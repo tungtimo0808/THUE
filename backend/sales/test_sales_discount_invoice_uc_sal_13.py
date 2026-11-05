@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from general_ledger.models import Account, AccountingPeriod, ChartOfAccounts
 from iam.models import CompanyMembership, Permission, Role, RolePermission, UserRoleAssignment
 from master_data.models import Currency, Item, ItemCategory, Party, TaxRate, UnitOfMeasure
 from organization.models import Branch, Company, Department, Employee, Position
@@ -55,6 +56,15 @@ class SalesDiscountInvoiceUcSal13Tests(TestCase):
         # 2. Người dùng & Phân quyền IAM
         auth_user = get_user_model().objects.create_user(username="disc-invoice-mgr", password="password")
         self.user_account = auth_user.iam_account
+        # Issuing a discount invoice books Nợ 5211 / Nợ 33311 / Có 131 in an open period.
+        chart = ChartOfAccounts.objects.create(company=self.company, code="COA_SAL13", name="Hệ thống tài khoản", effective_from=date(2020, 1, 1))
+        for code, name, kind in (("5211", "Chiết khấu thương mại", "REVENUE"), ("33311", "Thuế GTGT đầu ra", "LIABILITY"), ("131", "Phải thu của khách hàng", "ASSET")):
+            Account.objects.create(company=self.company, chart_of_accounts=chart, code=code, name=name, account_type=kind, is_postable=True, status="ACTIVE")
+        AccountingPeriod.objects.create(
+            company=self.company, code="SAL13", fiscal_year=timezone.localdate().year, period_number=1,
+            start_date=date(2000, 1, 1), end_date=date(2099, 12, 31), status="OPEN",
+        )
+
         self.membership = CompanyMembership.objects.create(
             company=self.company, user=self.user_account, created_by=self.user_account
         )
@@ -710,6 +720,14 @@ class SalesDiscountInvoiceUcSal13Tests(TestCase):
 
         self.assertEqual(data["status"], "ISSUED")
         self.assertTrue(len(data["invoice_number"]) > 0)
+
+        # The issued discount is on the ledger: Nợ 5211 + Nợ 33311 = Có 131 (ACC-206).
+        from general_ledger.models import JournalEntry
+        invoice = models.SalesDiscountInvoice.objects.get(pk=inv_id)
+        entry = JournalEntry.objects.get(company=self.company, number=f"{invoice.number}-GL")
+        self.assertEqual(entry.status, "POSTED")
+        self.assertEqual(sum(l.debit for l in entry.lines.filter(account__code="5211")), invoice.total_discount_before_tax)
+        self.assertEqual(sum(l.credit for l in entry.lines.filter(account__code="131")), invoice.total_adjusted_amount)
         self.assertTrue(data["transaction_code"].startswith("TX-"))
         self.assertTrue(data["xml_file_url"].endswith(".xml"))
         self.assertTrue(data["pdf_file_url"].endswith(".pdf"))

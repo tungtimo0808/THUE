@@ -78,6 +78,32 @@ def get_line_tax_rate_percentage(invoice_line):
     return Decimal(str(rate_val or 0))
 
 
+def _money(value, currency):
+    """Round to the currency's minor unit (VND: whole đồng); 2 decimals when no currency is given."""
+    if currency is None:
+        return value.quantize(Decimal("0.01"))
+    from sales.sales_invoice_services import round_money
+    return round_money(value, currency)
+
+
+def returned_and_allowed_value(invoice_line):
+    """Value already taken off the sale behind an invoice line by posted returns and allowances."""
+    total = Decimal("0")
+    if invoice_line.goods_sale_line_id:
+        for ret in models.SalesReturnLine.objects.filter(
+            goods_sale_line_id=invoice_line.goods_sale_line_id, sale_return__status=models.DocumentStatus.POSTED
+        ):
+            total += (ret.return_quantity * ret.unit_price) - ret.discount_amount
+        total += models.SalesAllowanceLine.objects.filter(
+            goods_sale_line_id=invoice_line.goods_sale_line_id, allowance__status=models.DocumentStatus.POSTED
+        ).aggregate(t=Sum("allowance_amount"))["t"] or Decimal("0")
+    elif invoice_line.service_sale_line_id:
+        total += models.SalesAllowanceLine.objects.filter(
+            service_sale_line_id=invoice_line.service_sale_line_id, allowance__status=models.DocumentStatus.POSTED
+        ).aggregate(t=Sum("allowance_amount"))["t"] or Decimal("0")
+    return total
+
+
 def get_eligible_invoices_and_lines(company, customer_id, period_start, period_end, currency_id=None, exclude_invoice_id=None):
     """
     Query issued sales invoices for the customer within the period and calculate eligible revenue per line.
@@ -163,7 +189,7 @@ def get_eligible_invoices_and_lines(company, customer_id, period_start, period_e
         line_rev = Decimal(str(line.amount or 0)) - Decimal(str(line.discount_amount or 0))
         used = used_map.get(line.id, Decimal("0"))
         held = held_map.get(line.id, Decimal("0"))
-        rem_rev = max(Decimal("0"), line_rev - used - held)
+        rem_rev = max(Decimal("0"), line_rev - used - held - returned_and_allowed_value(line))
 
         if rem_rev > Decimal("0"):
             tax_pct = get_line_tax_rate_percentage(line)
@@ -199,7 +225,7 @@ def get_eligible_invoices_and_lines(company, customer_id, period_start, period_e
     }
 
 
-def calculate_allocation(total_discount_before_tax, lines_data):
+def calculate_allocation(total_discount_before_tax, lines_data, currency=None):
     """
     Proportionately allocate total discount to lines based on eligible revenue (BR-SAL-13-04, BR-SAL-13-05).
     Rounding difference is assigned to the line with the largest eligible revenue (BR-SAL-13-05).
@@ -234,7 +260,7 @@ def calculate_allocation(total_discount_before_tax, lines_data):
             max_rev_index = idx
 
         # Line allocated discount = round(total_disc * rev / total_eligible, 2)
-        prop_disc = (total_disc * rev / total_eligible).quantize(Decimal("0.01"))
+        prop_disc = _money(total_disc * rev / total_eligible, currency)
         running_disc_sum += prop_disc
         allocated_lines.append({
             "row": row,
@@ -254,7 +280,7 @@ def calculate_allocation(total_discount_before_tax, lines_data):
         row = item["row"]
         alloc_amt = item["allocated_discount_amount"]
         tax_pct = Decimal(str(row.get("tax_rate_percentage") or 0))
-        adj_tax = (alloc_amt * tax_pct / Decimal("100")).quantize(Decimal("0.01"))
+        adj_tax = _money(alloc_amt * tax_pct / Decimal("100"), currency)
         line_tot = alloc_amt + adj_tax
 
         total_tax += adj_tax
@@ -457,7 +483,7 @@ def validate_discount_invoice_data(company, data, instance=None):
             held_qs = held_qs.exclude(invoice=instance)
         held_amt = held_qs.aggregate(t=Sum("allocated_discount_amount"))["t"] or Decimal("0")
 
-        rem_rev = max(Decimal("0"), line_rev - used_amt - held_amt)
+        rem_rev = max(Decimal("0"), line_rev - used_amt - held_amt - returned_and_allowed_value(orig_line))
         total_eligible_rev += rem_rev
 
         tax_pct = get_line_tax_rate_percentage(orig_line)
@@ -488,7 +514,7 @@ def validate_discount_invoice_data(company, data, instance=None):
     if calc_method == models.DiscountInvoiceCalculationMethod.PERCENTAGE:
         if discount_rate <= 0 or discount_rate > 100:
             raise ValidationError({"discount_rate": "Tỷ lệ chiết khấu phải lớn hơn 0 và không vượt quá 100% (BR-SAL-13-04)."})
-        total_discount_before_tax = (total_eligible_rev * discount_rate / Decimal("100")).quantize(Decimal("0.01"))
+        total_discount_before_tax = _money(total_eligible_rev * discount_rate / Decimal("100"), currency)
     else:
         raw_total = data.get("total_discount_before_tax") or (instance.total_discount_before_tax if instance else None)
         if raw_total is None:
@@ -525,7 +551,7 @@ def validate_discount_invoice_data(company, data, instance=None):
                 })
             sum_manual += alloc_amt
             tax_pct = p["tax_rate_percentage"]
-            adj_tax = (alloc_amt * tax_pct / Decimal("100")).quantize(Decimal("0.01"))
+            adj_tax = _money(alloc_amt * tax_pct / Decimal("100"), currency)
             line_tot = alloc_amt + adj_tax
             total_tax_amount += adj_tax
 
@@ -540,7 +566,7 @@ def validate_discount_invoice_data(company, data, instance=None):
             })
     else:
         # Automatic allocation (BR-SAL-13-05)
-        alloc_res = calculate_allocation(total_discount_before_tax, parsed_lines)
+        alloc_res = calculate_allocation(total_discount_before_tax, parsed_lines, currency)
         total_tax_amount = alloc_res["total_tax_amount"]
         final_lines = alloc_res["lines"]
 
@@ -824,6 +850,88 @@ def return_approved_discount_invoice_to_draft(request, invoice):
     return invoice
 
 
+def post_discount_invoice_entry(request, invoice):
+    """Book an issued trade-discount invoice: Nợ 5211 / Nợ 33311 / Có 131, and reduce the buyer's receivables.
+
+    Without a 521 account (TT133) the discount reduces the revenue account of the discounted sale line.
+    """
+    from accounts_receivable.models import ReceivableStatus
+    from general_ledger.models import Account, AccountingPeriod, JournalLine
+    from general_ledger.services import post as post_journal, source_module_request
+    from .posting_helpers import convert_to_accounting_currency, source_journal
+
+    company = invoice.company
+    period = AccountingPeriod.objects.filter(
+        company=company, start_date__lte=invoice.invoice_date, end_date__gte=invoice.invoice_date, status="OPEN"
+    ).first()
+    if not period:
+        raise ValidationError("Kỳ kế toán của ngày hóa đơn chiết khấu đã khóa hoặc chưa mở.")
+    active = Account.objects.filter(company=company, is_postable=True, status="ACTIVE")
+    discount_account = active.filter(code__startswith="5211").order_by("code").first()
+    default_tax_account = active.filter(code__startswith="33311").order_by("code").first()
+    default_receivable_account = active.filter(code__startswith="131").order_by("code").first()
+
+    actor = actor_for(request)
+    journal = source_journal(
+        company=company, branch=invoice.branch, period=period, number=f"{invoice.number}-GL", entry_type="SUBLEDGER",
+        posting_date=invoice.invoice_date, document_date=invoice.invoice_date,
+        description=f"Chiết khấu thương mại - {invoice.number}", source_module="SAL",
+        source_event_id=f"SAL.DISCOUNT:{invoice.pk}:{invoice.version}", source_entity_type="SalesDiscountInvoice",
+        source_entity_id=invoice.pk, status="APPROVED", total_debit=invoice.total_adjusted_amount,
+        total_credit=invoice.total_adjusted_amount, workflow_snapshot={"allow_creator_posting": True},
+        created_by=actor, approved_by=actor, approved_at=timezone.now(),
+    )
+    line_no = 0
+    credit_by_invoice = {}
+    lines = invoice.lines.select_related(
+        "original_invoice__goods_sale__receivable", "original_invoice__service_sale__receivable",
+        "original_invoice_line__goods_sale_line", "original_invoice_line__service_sale_line",
+    )
+    for line in lines:
+        sale_line = line.original_invoice_line.goods_sale_line or line.original_invoice_line.service_sale_line
+        deduction_account = discount_account or (sale_line.revenue_account if sale_line else None)
+        tax_account = (sale_line.tax_account if sale_line else None) or default_tax_account
+        if not deduction_account:
+            raise ValidationError(f"Dòng {line.line_no}: Chưa xác định tài khoản giảm trừ doanh thu (5211).")
+        line_no += 1
+        JournalLine.objects.create(
+            entry=journal, line_no=line_no, account=deduction_account, debit=line.allocated_discount_amount,
+            description=f"Chiết khấu thương mại {line.item_name} - {invoice.number}", currency=invoice.currency, party=invoice.customer,
+        )
+        if line.adjusted_tax_amount > 0:
+            if not tax_account:
+                raise ValidationError(f"Dòng {line.line_no}: Chưa xác định tài khoản thuế GTGT đầu ra (33311).")
+            line_no += 1
+            JournalLine.objects.create(
+                entry=journal, line_no=line_no, account=tax_account, debit=line.adjusted_tax_amount,
+                description=f"Giảm thuế GTGT đầu ra - {invoice.number}", currency=invoice.currency, party=invoice.customer,
+            )
+        credit_by_invoice.setdefault(line.original_invoice, Decimal("0"))
+        credit_by_invoice[line.original_invoice] += line.allocated_discount_amount + line.adjusted_tax_amount
+
+    for original_invoice, amount in credit_by_invoice.items():
+        sale = original_invoice.goods_sale or original_invoice.service_sale
+        receivable = getattr(sale, "receivable", None) if sale else None
+        receivable_account = receivable.account if receivable else default_receivable_account
+        if not receivable_account:
+            raise ValidationError("Chưa xác định tài khoản phải thu khách hàng (131).")
+        line_no += 1
+        JournalLine.objects.create(
+            entry=journal, line_no=line_no, account=receivable_account, credit=amount,
+            description=f"Giảm công nợ do chiết khấu - {invoice.number}", currency=invoice.currency, party=invoice.customer,
+        )
+        if receivable and receivable.balance > 0:
+            reduction = min(amount, receivable.balance)
+            receivable.adjustment_amount += reduction
+            receivable.balance -= reduction
+            receivable.status = ReceivableStatus.PAID if receivable.balance == 0 else ReceivableStatus.PARTIALLY_PAID
+            receivable.save(update_fields=["adjustment_amount", "balance", "status", "updated_at"])
+
+    convert_to_accounting_currency(journal, invoice.exchange_rate)
+    post_journal(journal, source_module_request(request))
+    invoice.accounting_document_ref = journal.number
+
+
 def issue_discount_invoice(request, invoice, force_fail=False, error_message=""):
     """
     Issue the electronic discount invoice (Luồng chính Bước 9-10, BR-SAL-13-11, EF-08, EF-09).
@@ -868,16 +976,13 @@ def issue_discount_invoice(request, invoice, force_fail=False, error_message="")
         return invoice
 
     with transaction.atomic():
-        counter_year = invoice.invoice_date.year
-        c, _ = models.SalesInvoiceCounter.objects.select_for_update().get_or_create(company=invoice.company, year=counter_year)
-        c.value += 1
-        c.save(update_fields=["value"])
-        official_number = f"{c.value:07d}"
+        from sales.sales_invoice_services import next_official_invoice_number
+        official_number = next_official_invoice_number(invoice.company, invoice.invoice_series)
 
         transaction_code = f"TX-{invoice.issue_control_code}"
         lookup_code = uuid.uuid4().hex[:10].upper()
-        xml_url = f"/media/invoices/{invoice.company.code}/{counter_year}/{invoice.invoice_series}_{official_number}.xml"
-        pdf_url = f"/media/invoices/{invoice.company.code}/{counter_year}/{invoice.invoice_series}_{official_number}.pdf"
+        xml_url = f"/media/invoices/{invoice.company.code}/{invoice.invoice_date.year}/{invoice.invoice_series}_{official_number}.xml"
+        pdf_url = f"/media/invoices/{invoice.company.code}/{invoice.invoice_date.year}/{invoice.invoice_series}_{official_number}.pdf"
         lookup_url = f"https://hoadondientu.gdt.gov.vn/tra-cuu?code={lookup_code}"
 
         # Create TaxInvoice in tax_management (BR-SAL-13-11)
@@ -933,6 +1038,7 @@ def issue_discount_invoice(request, invoice, force_fail=False, error_message="")
         pdf_url = pdf_url
         invoice.pdf_file_url = pdf_url
         invoice.tax_invoice = tax_inv
+        post_discount_invoice_entry(request, invoice)
         invoice.status = models.DiscountInvoiceStatus.ISSUED
         invoice.issued_at = timezone.now()
         invoice.issued_by = actor_for(request)
@@ -964,16 +1070,13 @@ def check_issue_status(request, invoice):
     if invoice.status != models.DiscountInvoiceStatus.ISSUING:
         return {"status": invoice.status, "message": "Hóa đơn không ở trạng thái Đang phát hành."}
 
-    counter_year = invoice.invoice_date.year
-    c, _ = models.SalesInvoiceCounter.objects.select_for_update().get_or_create(company=invoice.company, year=counter_year)
-    c.value += 1
-    c.save(update_fields=["value"])
-    official_number = f"{c.value:07d}"
+    from sales.sales_invoice_services import next_official_invoice_number
+    official_number = invoice.invoice_number or next_official_invoice_number(invoice.company, invoice.invoice_series)
 
     transaction_code = f"TX-{invoice.issue_control_code or uuid.uuid4().hex[:8].upper()}"
     lookup_code = uuid.uuid4().hex[:10].upper()
-    xml_url = f"/media/invoices/{invoice.company.code}/{counter_year}/{invoice.invoice_series}_{official_number}.xml"
-    pdf_url = f"/media/invoices/{invoice.company.code}/{counter_year}/{invoice.invoice_series}_{official_number}.pdf"
+    xml_url = f"/media/invoices/{invoice.company.code}/{invoice.invoice_date.year}/{invoice.invoice_series}_{official_number}.xml"
+    pdf_url = f"/media/invoices/{invoice.company.code}/{invoice.invoice_date.year}/{invoice.invoice_series}_{official_number}.pdf"
     lookup_url = f"https://hoadondientu.gdt.gov.vn/tra-cuu?code={lookup_code}"
 
     tax_branch = invoice.branch or invoice.company.branches.first()
@@ -1027,6 +1130,7 @@ def check_issue_status(request, invoice):
     invoice.xml_file_url = xml_url
     invoice.pdf_file_url = pdf_url
     invoice.tax_invoice = tax_inv
+    post_discount_invoice_entry(request, invoice)
     invoice.status = models.DiscountInvoiceStatus.ISSUED
     invoice.issued_at = timezone.now()
     invoice.issued_by = actor_for(request)

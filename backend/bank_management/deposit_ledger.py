@@ -122,8 +122,9 @@ def ledger(request):
             raw = list(merged.values())
         raw.sort(key=lambda event: (event["posting_date"],
             0 if receipt_first and event["receipt"] else 1 if receipt_first else 0,
-            str(event["created_at"]) if order_created else event["voucher_number"],
-            event["line_no"], event["journal_line_ids"][0]))
+            str(event["created_at"]) if order_created else "",
+            # Vouchers created in the same instant would otherwise fall back to a random UUID order.
+            event["voucher_number"], event["line_no"], event["journal_line_ids"][0]))
         running = opening
         receipt_total = payment_total = ZERO
         rows = []
