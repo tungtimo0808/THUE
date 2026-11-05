@@ -1081,8 +1081,8 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         "TableHeader",
         parent=styles["Normal"],
         fontName=font_bold,
-        fontSize=9,
-        leading=11.5,
+        fontSize=8,
+        leading=10,
         alignment=1,  # Center
         textColor=colors.black,
     )
@@ -1179,7 +1179,10 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     table_data = []
 
     # Dòng Header bảng
-    col_headers = [Paragraph(f"<b>{html.escape(c.get('label', c.get('key', '')))}</b>", th_style) for c in columns]
+    col_headers = [
+        Paragraph(f"<b>{html.escape(c.get('label', c.get('key', ''))).replace(' ', '&nbsp;')}</b>", th_style)
+        for c in columns
+    ]
     table_data.append(col_headers)
 
     amount_keywords = {
@@ -1244,7 +1247,7 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         for idx, col in enumerate(columns):
             k = col.get("key", "")
             if idx == 0:
-                gt_cells.append(Paragraph("<b>TỔNG CỘNG</b>", td_style_left))
+                gt_cells.append(Paragraph("<b>TỔNG&nbsp;CỘNG</b>", td_style_left))
             else:
                 gt_v = grand_total.get(k)
                 if gt_v is not None and gt_v != "":
@@ -1266,23 +1269,27 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         lbl = (c.get("label") or "").lower()
         combined = f"{k} {lbl}"
         if any(w in combined for w in ["unit", "dvt", "don_vi", "uom"]):
-            weights.append(0.55)
+            weights.append(0.6)
         elif any(w in combined for w in ["stt", "thu_tu"]):
-            weights.append(0.5)
+            weights.append(0.6)
         elif any(w in combined for w in ["code", "ma_hang", "mahang", "so_ct", "so_chung_tu", "so_hd"]):
-            weights.append(1.05)
+            weights.append(1.35)
         elif any(w in combined for w in ["date", "ngay"]):
-            weights.append(1.1)
-        elif any(w in combined for w in ["giam_gia", "tra_lai", "net_purchase", "net_amount", "tong_gia_tri"]):
-            weights.append(1.25)
-        elif any(w in combined for w in ["amount", "price", "cost", "total", "gia_tri", "thanh_tien"]):
-            weights.append(1.2)
-        elif any(w in combined for w in ["qty", "quantity", "so_luong"]):
-            weights.append(1.1)
+            weights.append(1.3)
         elif any(w in combined for w in ["item_name", "product_name", "description", "title", "diengiai", "ten_hang", "tenhang", "ten_ncc", "ten_kh", "ten_doi_tuong"]) or "name" in combined:
-            weights.append(5.0 if num_cols >= 8 else 3.5)
+            weights.append(3.7 if num_cols >= 8 else 3.0)
+        elif any(w in combined for w in ["tong_gia_tri", "net_purchase", "net_amount"]):
+            weights.append(1.4)
+        elif any(w in combined for w in ["giam_gia", "tra_lai", "return", "reduction"]):
+            weights.append(1.35)
+        elif any(w in combined for w in ["so_luong", "qty", "quantity", "purchased"]):
+            weights.append(1.3)
+        elif any(w in combined for w in ["amount", "price", "cost", "total", "gia_tri", "thanh_tien"]):
+            weights.append(1.3)
+        elif any(w in combined for w in ["chiet_khau", "discount"]):
+            weights.append(1.25)
         else:
-            weights.append(1.1)
+            weights.append(1.3)
 
     total_weight = sum(weights) or 1
     col_widths = [(w / total_weight) * total_avail_width for w in weights]
@@ -1295,8 +1302,8 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("LEFTPADDING", (0, 0), (-1, -1), 3),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 2.5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 2.5),
     ]
     if grand_total and options.get("include_grand_total", True):
         table_style_commands.append(("LINEABOVE", (0, -1), (-1, -1), 0.75, colors.HexColor("#000000")))
