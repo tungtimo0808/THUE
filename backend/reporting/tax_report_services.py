@@ -48,6 +48,7 @@ from tax_management.models import (
     TaxSummary,
 )
 
+from .run_numbering import create_run_with_unique_number
 from .report_access import granted_report_permissions, report_company
 from .models import (
     ReportDefinition,
@@ -4838,11 +4839,12 @@ def query_tax_report_payload(
     snap_meta = compute_tax_source_snapshot_meta(company_id, d_from, d_to, schema["tax_type"])
     rpt_def = ReportDefinition.objects.filter(code=report_code).first()
     seq = TaxReportRun.objects.filter(report_code=report_code, company_id=company_id, tax_period_code=tax_period_code).count() + 1
-    run_number = f"{report_code}-{company_id}-{tax_period_code}-V{seq}"
 
     with transaction.atomic():
-        run = TaxReportRun.objects.create(
-            run_number=run_number,
+        run = create_run_with_unique_number(
+            TaxReportRun,
+            seq,
+            lambda n: f"{report_code}-{company_id}-{tax_period_code}-V{n}",
             report_definition=rpt_def,
             report_code=report_code,
             report_name=schema["report_name"],

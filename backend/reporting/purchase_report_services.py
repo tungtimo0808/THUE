@@ -38,6 +38,7 @@ from purchases.models import (
     PurchaseReturnLine,
 )
 
+from .run_numbering import create_run_with_unique_number
 from .report_access import granted_report_permissions, report_company
 from .models import (
     PurchaseReportRow,
@@ -2229,11 +2230,12 @@ def query_purchase_report_payload(
     snap_meta = compute_purchase_source_snapshot_meta(company_id, d_from, d_to)
     rpt_def = ReportDefinition.objects.filter(code=report_code).first()
     seq = PurchaseReportRun.objects.filter(report_code=report_code, company_id=company_id).count() + 1
-    run_number = f"{report_code}-{company_id}-{fiscal_year}-V{seq}"
 
     with transaction.atomic():
-        run = PurchaseReportRun.objects.create(
-            run_number=run_number,
+        run = create_run_with_unique_number(
+            PurchaseReportRun,
+            seq,
+            lambda n: f"{report_code}-{company_id}-{fiscal_year}-V{n}",
             report_definition=rpt_def,
             report_code=report_code,
             report_name=schema["report_name"],
