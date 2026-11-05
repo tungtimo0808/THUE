@@ -467,13 +467,7 @@ function ReferenceWorkspace() {
       const overflowCount = (n - k) + explicitHiddenTabs.length;
       let requiredWidth = navWidth;
       if (overflowCount > 0) {
-        const activeInVisible = candidateTabs.slice(0, k).some(([id]) => id === tab);
-        const activeInOverflow =
-          !activeInVisible &&
-          (candidateTabs.slice(k).some(([id]) => id === tab) ||
-            explicitHiddenTabs.some(([id]) => id === tab));
-        const moreWidth = activeInOverflow ? moreActiveWidth : moreBaseWidth;
-        requiredWidth = navWidth + barGap + moreWidth;
+        requiredWidth = navWidth + barGap + moreBaseWidth;
       }
       if (requiredWidth <= availableWidth) {
         bestK = k;
@@ -1814,7 +1808,7 @@ function ReferenceWorkspace() {
               <ChevronDown size={13} />
             </span>
             <span ref={measureMoreActiveRef} className="ref-tab-more-btn active">
-              <span>{activeTabLabel ? `Khác: ${activeTabLabel}` : "Khác"}</span>
+              <span>Khác</span>
               <ChevronDown size={13} />
             </span>
           </div>
@@ -1858,7 +1852,7 @@ function ReferenceWorkspace() {
                 }}
                 title="Xem thêm các tab chức năng khác"
               >
-                <span>{activeSecondaryTab ? `Khác: ${activeSecondaryTab[1]}` : "Khác"}</span>
+                <span>Khác</span>
                 <ChevronDown size={13} className={`ref-tab-more-caret ${tabMoreOpen ? "rotated" : ""}`} />
               </button>
               {tabMoreOpen && (

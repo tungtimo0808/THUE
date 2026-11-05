@@ -68,6 +68,9 @@ select:has(~ svg),
   letter-spacing: 0;
   font-size: 13px;
 }
+html {
+  scrollbar-gutter: stable;
+}
 .ref-header {
   height: var(--ref-header);
   position: fixed;
@@ -85,9 +88,7 @@ select:has(~ svg),
   max-width: 100vw;
   min-width: 0;
   transition: background-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              gap 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-mobile-trigger {
   display: none;
@@ -956,7 +957,7 @@ select:has(~ svg),
 .ref-module-bar {
   position: sticky;
   top: var(--ref-header);
-  z-index: 30;
+  z-index: 100;
   background: #ffffff;
   min-height: 40px;
   height: 40px;
@@ -970,7 +971,7 @@ select:has(~ svg),
   margin: 0 -16px;
   padding: 0 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: padding 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+  transition: background-color 0.2s ease;
   overflow: visible !important;
 }
 .ref-module-menu {
@@ -1028,7 +1029,7 @@ select:has(~ svg),
   flex-shrink: 0;
 }
 .ref-module-bar-measure > .ref-measure-tab {
-  font-weight: 600;
+  font-weight: 500;
 }
 .ref-module-bar > nav > a:hover {
   background: #f0f9ff;
@@ -1038,10 +1039,10 @@ select:has(~ svg),
   background: transparent;
   border-bottom-color: #0284c7;
   color: #0284c7;
-  font-weight: 600;
+  font-weight: 500;
 }
 .ref-module-bar > nav > a:active {
-  transform: scale(0.98);
+  transform: none;
 }
 .ref-module-bar small {
   background: #e88137;
@@ -1094,7 +1095,7 @@ select:has(~ svg),
   color: #0284c7;
   background: #f0f9ff;
   border-bottom-color: #0284c7;
-  font-weight: 600;
+  font-weight: 500;
 }
 .ref-tab-more-caret {
   transition: transform 0.2s ease;
@@ -4084,7 +4085,7 @@ select:has(~ svg),
    ========================================================================== */
 html.ref-process-scroll-lock,
 body.ref-process-scroll-lock {
-  overflow: hidden !important;
+  overflow-y: hidden !important;
   height: 100vh !important;
   height: 100dvh !important;
   max-height: 100vh !important;
@@ -4112,11 +4113,14 @@ body.ref-process-scroll-lock {
 
 .ref-main.ref-process-fixed .ref-module-bar {
   flex: 0 0 40px !important;
-  position: relative !important;
+  position: sticky !important;
   top: 0 !important;
+  margin: 0 -16px !important;
+  padding: 0 16px !important;
   height: 40px !important;
   min-height: 40px !important;
   max-height: 40px !important;
+  z-index: 100 !important;
 }
 
 .ref-main.ref-process-fixed .ref-process-wrapper {
