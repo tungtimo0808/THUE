@@ -89,9 +89,51 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
   const pageCount = Math.max(1, Math.ceil((result?.count || 0) / (result?.page_size || 20)));
   const selected = detail?.invoice;
   return <div className="il-workspace">
-    <header className="il-header"><div><h1>{modeNames[mode]}</h1><p>Dữ liệu hóa đơn của doanh nghiệp đang chọn</p></div>
-      <button type="button" onClick={() => setRevision((value) => value + 1)}><RefreshCw size={15} /> Làm mới</button></header>
-    {mode === "unposted" && <p className="il-note">Chưa có nguồn trạng thái hạch toán được xác minh cho bảng kê này. Hệ thống không suy ra đã hạch toán từ trạng thái phát hành hoặc liên kết.</p>}
+    <header className="il-header">
+      <div>
+        <h1>{modeNames[mode]}</h1>
+        <p>
+          {mode === "unposted"
+            ? "Bảng kê tổng hợp hóa đơn đầu vào chưa liên kết chứng từ hạch toán"
+            : mode === "issuance"
+              ? "Theo dõi tiến trình ký số, gửi cơ quan thuế cấp mã và phát hành"
+              : mode === "errors"
+                ? "Danh sách hóa đơn điều chỉnh, thay thế và sai sót cần xử lý"
+                : "Dữ liệu hóa đơn của doanh nghiệp đang chọn"}
+        </p>
+      </div>
+      <button type="button" onClick={() => setRevision((value) => value + 1)}><RefreshCw size={15} /> Làm mới</button>
+    </header>
+
+    {mode === "unposted" && (
+      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "12px 16px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <strong>Bảng kê hóa đơn chưa hạch toán:</strong> Danh sách hóa đơn đầu vào đã tiếp nhận hợp lệ nhưng chưa được liên kết với chứng từ mua hàng / hạch toán sổ sách kế toán.
+        </div>
+        <Link to={href("/invoices/incoming/unprocessed")} style={{ color: "#166534", fontWeight: 700, textDecoration: "underline", fontSize: 13 }}>
+          Hạch toán ngay →
+        </Link>
+      </div>
+    )}
+
+    {mode === "errors" && (
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "12px 16px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <strong>Xử lý sai sót theo NĐ 123/2020/NĐ-CP & TT 78/2021/TT-BTC:</strong> Quản lý danh sách các hóa đơn có sai sót, điều chỉnh tăng/giảm, thay thế hoặc hủy bỏ.
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Link to={href("/sales/invoices", { create: "adjustment" })} style={{ background: "#2563eb", color: "#fff", padding: "4px 10px", borderRadius: 4, textDecoration: "none", fontSize: 12.5, fontWeight: 600 }}>
+            + Lập HĐ điều chỉnh
+          </Link>
+          <Link to={href("/sales/invoices", { create: "replacement" })} style={{ background: "#0284c7", color: "#fff", padding: "4px 10px", borderRadius: 4, textDecoration: "none", fontSize: 12.5, fontWeight: 600 }}>
+            + Lập HĐ thay thế
+          </Link>
+          <Link to={href("/invoices/error-guide")} style={{ color: "#1d4ed8", fontWeight: 600, padding: "4px 8px", textDecoration: "underline", fontSize: 12.5 }}>
+            Hướng dẫn xử lý
+          </Link>
+        </div>
+      </div>
+    )}
     <div className="il-filters">
       <label><Search size={15} /><input aria-label="Tìm hóa đơn" placeholder="Số, ký hiệu, MST, tên đối tượng..." value={params.get("q") || ""} onChange={(e) => update("q", e.target.value)} /></label>
       <input aria-label="Số hóa đơn" placeholder="Số hóa đơn" value={params.get("number") || ""} onChange={(e) => update("number", e.target.value)} />
@@ -119,7 +161,7 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
           <td>{statusNames[row.status] || row.status}</td><td>{row.direction === "INPUT" ? `${validationNames[row.validation_status] || row.validation_status} · ${linkNames[row.link_status] || row.link_status}` : row.pending_reasons.join(", ") || "—"}</td>
         </tr>)}</tbody></table></div>
       {!loading && !result?.results.length && <p className="il-empty">{mode === "unposted"
-        ? "Chưa thể lập bảng kê vì chưa có nguồn trạng thái hạch toán được xác minh."
+        ? "Hiện tại tất cả hóa đơn đầu vào hợp lệ đã được liên kết với chứng từ mua hàng và hạch toán sổ cái."
         : "Không có hóa đơn phù hợp."}</p>}
       <footer className="il-pagination"><span>Trang {result?.page || 1}/{pageCount}</span><button disabled={(result?.page || 1) <= 1} onClick={() => update("page", String((result?.page || 1) - 1))}>Trước</button>
         <button disabled={(result?.page || 1) >= pageCount} onClick={() => update("page", String((result?.page || 1) + 1))}>Sau</button></footer>

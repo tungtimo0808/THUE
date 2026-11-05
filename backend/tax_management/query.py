@@ -104,22 +104,24 @@ def query_invoices(queryset, params):
         raise ValidationError({"mode": "Khu vực tra cứu không hợp lệ."})
     if mode in {"outgoing", "issuance"}:
         queryset = queryset.filter(direction="OUTPUT")
+    elif mode == "unposted":
+        queryset = queryset.filter(direction="INPUT")
     queryset = queryset.prefetch_related("document_links", Prefetch("integration_requests",
         queryset=models.IntegrationRequest.objects.order_by("-created_at"))).order_by("-invoice_date", "-created_at", "-id")
     page = _positive_int(params.get("page", "1"), "page", 1000000)
     page_size = _positive_int(params.get("page_size", "20"), "page_size", 100)
-    if mode == "unposted":
-        return {"count": 0, "page": page, "page_size": page_size, "total_amount": "0",
-                "accounting_status_available": False, "results": []}
     rows = [_row(invoice) for invoice in queryset]
     if mode == "pending":
         rows = [row for row in rows if row["pending_reasons"]]
     elif mode == "errors":
         rows = [row for row in rows if row["invoice_type"] != "ORIGINAL" or
             row["status"] in {"ADJUSTED", "REPLACED", "CANCELLED"} or row["integration_task"] == "CANCEL"]
+    elif mode == "unposted":
+        rows = [row for row in rows if row["link_status"] in {"UNLINKED", "PARTIALLY_LINKED", "NOT_APPLICABLE"} and
+            row["status"] not in {"CANCELLED", "BLOCKED"}]
     count = len(rows)
     offset = (page - 1) * page_size
     return {"count": count, "page": page, "page_size": page_size,
             "total_amount": str(sum((Decimal(row["total_amount"]) for row in rows), Decimal("0"))),
-            "accounting_status_available": False,
+            "accounting_status_available": mode == "unposted",
             "results": rows[offset:offset + page_size]}

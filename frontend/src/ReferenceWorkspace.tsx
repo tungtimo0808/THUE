@@ -116,6 +116,7 @@ const MisaOpeningBalanceWorkspace = lazyWithRetry(() => import("./MisaOpeningBal
 const MisaDashboardOverview = lazyWithRetry(() => import("./MisaDashboardOverview"));
 const MisaInvoiceWorkspace = lazyWithRetry(() => import("./MisaInvoiceWorkspace"));
 const InvoiceLookupWorkspace = lazyWithRetry(() => import("./InvoiceLookupWorkspace"));
+const CashPaymentLimitWarningWorkspace = lazyWithRetry(() => import("./CashPaymentLimitWarningWorkspace"));
 
 const WorkspaceLoader = () => (
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 360, gap: 12, width: "100%" }}>
@@ -872,7 +873,7 @@ function ReferenceWorkspace() {
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
     "Thiết lập kết nối Ngân hàng điện tử (mBank)": href("/bank/ebanking"),
-    "Thiết lập ký số từ xa (SmartCA / eSign)": href("/invoices/meinvoice"),
+    "Thiết lập ký số từ xa (SmartCA / eSign)": href("/invoices/sync"),
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
     "Chuyển kho": href("/inventory/transfers"),
@@ -1002,14 +1003,9 @@ function ReferenceWorkspace() {
 
     if (targetModuleId === "invoices") {
       if (activeTab === "adjustments") {
-        return (
-          <>
-            <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} />
-            <InvoiceLookupWorkspace mode="errors" href={href} />
-          </>
-        );
+        return <InvoiceLookupWorkspace mode="errors" href={href} />;
       }
-      if (["process", "meinvoice", "error-guide"].includes(activeTab)) {
+      if (["process", "error-guide"].includes(activeTab)) {
         return <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} company={company} />;
       }
       if (activeTab === "sync") {
@@ -1026,7 +1022,7 @@ function ReferenceWorkspace() {
           return <InvoiceLookupWorkspace mode="errors" href={href} />;
         }
         if (childTab === "cash-limit") {
-          return <InvoiceLookupWorkspace mode="pending" href={href} />;
+          return <CashPaymentLimitWarningWorkspace companyId={company.id} notify={setNotice} href={href} />;
         }
         return <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />;
       }

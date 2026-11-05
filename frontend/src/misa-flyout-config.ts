@@ -85,7 +85,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Biểu đồ", path: "/sales/chart" },
     ],
     utilities: [
-      { label: "Lấy hóa đơn từ meInvoice", path: "/sales/meinvoice" },
+      { label: "Lấy hóa đơn từ TCT", path: "/invoices/sync" },
       { label: "Đối trừ chứng từ", path: "/sales/offset" },
       { label: "Đối trừ chứng từ nhiều đối tượng", path: "/sales/multi-offset" },
       { label: "Bỏ đối trừ", path: "/sales/un-offset" },
