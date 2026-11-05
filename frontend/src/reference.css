@@ -1977,7 +1977,7 @@ html {
   font-size: 10px;
 }
 .ref-overview {
-  padding: 0 0 15px;
+  padding: 14px 0 20px;
 }
 .ref-overview .ref-branch {
   display: flex;
@@ -3450,7 +3450,7 @@ html {
     min-width: 230px;
   }
   .ref-overview {
-    padding: 0;
+    padding: 12px 0 16px;
   }
   .ref-branch {
     gap: 9px;

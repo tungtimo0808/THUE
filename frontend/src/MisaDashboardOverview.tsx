@@ -480,7 +480,7 @@ export function MisaDashboardOverview({
   const filterInfo = overviewData?.filters || overviewData?.context || {};
 
   return (
-    <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 14 }}>
       {/* Thanh điều khiển & Bộ lọc ngữ cảnh Dashboard (DR-RPT-01, AF-01..AF-05) */}
       <div
         className="card"
