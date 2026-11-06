@@ -1074,12 +1074,24 @@ class CompanySettingView(APIView):
     iam_permissions = {"GET": "COM.SETTING.VIEW", "PATCH": "COM.SETTING.CONFIGURE"}
 
     def get(self, request):
-        setting, _ = CoreCompanySetting.objects.get_or_create(company_id=request.query_params.get("company_id"))
+        company_id = request.query_params.get("company_id") or request.query_params.get("company")
+        setting, _ = CoreCompanySetting.objects.get_or_create(company_id=company_id)
         return Response(CompanySettingSerializer(setting).data)
 
     def patch(self, request):
-        setting, _ = CoreCompanySetting.objects.get_or_create(company_id=request.data.get("company"))
-        serializer = CompanySettingSerializer(setting, data=request.data, partial=True)
+        company_id = (
+            request.data.get("company")
+            or request.data.get("company_id")
+            or request.query_params.get("company_id")
+            or request.query_params.get("company")
+        )
+        setting, _ = CoreCompanySetting.objects.get_or_create(company_id=company_id)
+        payload = dict(request.data) if isinstance(request.data, dict) else request.data.copy()
+        if isinstance(payload.get("configuration"), dict) and isinstance(setting.configuration, dict):
+            merged_cfg = dict(setting.configuration)
+            merged_cfg.update(payload["configuration"])
+            payload["configuration"] = merged_cfg
+        serializer = CompanySettingSerializer(setting, data=payload, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

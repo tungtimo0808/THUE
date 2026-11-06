@@ -156,8 +156,13 @@ export function MisaDashboardOverview({
     return "";
   });
   const [comparisonMode, setComparisonMode] = useState<string>("PREVIOUS_PERIOD");
+  const isManagementBook = String(propDataset || "").startsWith("management");
+  const datasetFiscalYear =
+    String(propDataset || "").match(/20\d{2}/)?.[0] ||
+    String(urlPeriod || "").match(/20\d{2}/)?.[0] ||
+    "2026";
   const [revenueBasis, setRevenueBasis] = useState<string>(() =>
-    propDataset === "management-2026" ? "SAL" : "GL"
+    isManagementBook ? "SAL" : "GL"
   );
   const [recentModuleFilter, setRecentModuleFilter] = useState<string>("");
   const [recentStatusFilter, setRecentStatusFilter] = useState<string>("");
@@ -198,7 +203,7 @@ export function MisaDashboardOverview({
 
   useEffect(() => {
     if (!propDataset) return;
-    const targetBasis = propDataset === "management-2026" ? "SAL" : "GL";
+    const targetBasis = String(propDataset).startsWith("management") ? "SAL" : "GL";
     if (revenueBasis !== targetBasis) {
       setRevenueBasis(targetBasis);
     }
@@ -343,27 +348,26 @@ export function MisaDashboardOverview({
         status: String(p.status || "OPEN"),
       };
     });
+    const activeYr =
+      String(selectedPeriod || "").match(/20\d{2}/)?.[0] || datasetFiscalYear || "2026";
     const defaults = [
-      { period_code: "2026-12", name: "Tháng 12/2026", status: "OPEN" },
-      { period_code: "2026-11", name: "Tháng 11/2026", status: "OPEN" },
-      { period_code: "2026-10", name: "Tháng 10/2026", status: "OPEN" },
-      { period_code: "2026-09", name: "Tháng 09/2026", status: "OPEN" },
-      { period_code: "2026-08", name: "Tháng 08/2026", status: "OPEN" },
-      { period_code: "2026-07", name: "Tháng 07/2026", status: "OPEN" },
-      { period_code: "2026-06", name: "Tháng 06/2026", status: "OPEN" },
-      { period_code: "2026-05", name: "Tháng 05/2026", status: "OPEN" },
-      { period_code: "2026-04", name: "Tháng 04/2026", status: "OPEN" },
-      { period_code: "2026-03", name: "Tháng 03/2026", status: "OPEN" },
-      { period_code: "2026-02", name: "Tháng 02/2026", status: "OPEN" },
-      { period_code: "2026-01", name: "Tháng 01/2026", status: "OPEN" },
-      { period_code: "2026", name: "Năm tài chính 2026", status: "OPEN" },
+      ...Array.from({ length: 12 }, (_, idx) => {
+        const m = 12 - idx;
+        const mm = String(m).padStart(2, "0");
+        return {
+          period_code: `${activeYr}-${mm}`,
+          name: `Tháng ${mm}/${activeYr}`,
+          status: "OPEN",
+        };
+      }),
+      { period_code: `${activeYr}`, name: `Năm tài chính ${activeYr}`, status: "OPEN" },
     ];
     const map = new Map<string, { period_code: string; name: string; status: string }>();
+    for (const d of defaults) {
+      map.set(d.period_code, d);
+    }
     for (const p of normalized) {
       if (p.period_code) map.set(p.period_code, p);
-    }
-    for (const d of defaults) {
-      if (!map.has(d.period_code)) map.set(d.period_code, d);
     }
     if (selectedPeriod && !map.has(selectedPeriod)) {
       map.set(selectedPeriod, {
@@ -373,7 +377,7 @@ export function MisaDashboardOverview({
       });
     }
     return Array.from(map.values());
-  }, [configData, selectedPeriod]);
+  }, [configData, selectedPeriod, datasetFiscalYear]);
 
   const branchesList: Array<{ id: string; code: string; name: string }> =
     configData?.available_branches || configData?.branches || [];
@@ -514,6 +518,33 @@ export function MisaDashboardOverview({
       ? dash09.top_items
       : dash09.by_warehouse || dash09.warehouse_summary) || [];
   const filterInfo = overviewData?.filters || overviewData?.context || {};
+  const displayDateRange = useMemo(() => {
+    const p = String(selectedPeriod || "").trim();
+    const ym = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(p);
+    if (ym) {
+      const yr = Number(ym[1]);
+      const mo = Number(ym[2]);
+      const lastDay = new Date(yr, mo, 0).getDate();
+      return {
+        from_date: `${ym[1]}-${ym[2]}-01`,
+        to_date: `${ym[1]}-${ym[2]}-${String(lastDay).padStart(2, "0")}`,
+      };
+    }
+    const yOnly = /^(\d{4})$/.exec(p);
+    if (yOnly) {
+      return {
+        from_date: `${yOnly[1]}-01-01`,
+        to_date: `${yOnly[1]}-12-31`,
+      };
+    }
+    if (filterInfo.from_date && filterInfo.to_date) {
+      return {
+        from_date: String(filterInfo.from_date),
+        to_date: String(filterInfo.to_date),
+      };
+    }
+    return null;
+  }, [selectedPeriod, filterInfo.from_date, filterInfo.to_date]);
 
   return (
     <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 14 }}>
@@ -587,17 +618,17 @@ export function MisaDashboardOverview({
                 padding: "2px 10px",
                 borderRadius: 999,
                 fontWeight: 600,
-                background: propDataset === "management-2026" ? "#f3e8ff" : "#eff6ff",
-                color: propDataset === "management-2026" ? "#6b21a8" : "#1d4ed8",
-                border: propDataset === "management-2026" ? "1px solid #d8b4fe" : "1px solid #bfdbfe",
+                background: isManagementBook ? "#f3e8ff" : "#eff6ff",
+                color: isManagementBook ? "#6b21a8" : "#1d4ed8",
+                border: isManagementBook ? "1px solid #d8b4fe" : "1px solid #bfdbfe",
               }}
             >
-              {propDataset === "management-2026" ? "Sổ quản trị 2026" : "Sổ kế toán 2026"}
+              {isManagementBook ? `Sổ quản trị ${datasetFiscalYear}` : `Sổ kế toán ${datasetFiscalYear}`}
             </span>
-            {filterInfo.from_date && (
+            {displayDateRange && (
               <span style={{ fontSize: 12, color: "#475569" }}>
-                Kỳ: <strong>{selectedPeriod || filterInfo.fiscal_period_code}</strong> ({filterInfo.from_date} →{" "}
-                {filterInfo.to_date})
+                Kỳ: <strong>{selectedPeriod || filterInfo.fiscal_period_code}</strong> ({displayDateRange.from_date} →{" "}
+                {displayDateRange.to_date})
               </span>
             )}
           </div>
