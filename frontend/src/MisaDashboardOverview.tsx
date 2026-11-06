@@ -664,16 +664,19 @@ export function MisaDashboardOverview({
                 padding: "0 12px",
                 borderRadius: 999,
                 fontSize: 12.5,
-                minWidth: 230,
-                maxWidth: 320,
+                minWidth: 210,
               }}
               popoverStyle={{ borderRadius: 12, padding: 6 }}
               options={[
-                { value: "", label: `Toàn doanh nghiệp (${companyName})` },
-                ...branchesList.map((b) => ({
-                  value: b.id,
-                  label: `${b.code} - ${b.name}`,
-                })),
+                { value: "", label: "Toàn doanh nghiệp (Tất cả chi nhánh)" },
+                ...branchesList.map((b) => {
+                  const cleanBranchName =
+                    b.name.replace(/\s*[-–—]\s*(?:công\s+ty|cty|doanh\s+nghiệp).*$/i, "").trim() || b.name;
+                  return {
+                    value: b.id,
+                    label: `${b.code} - ${cleanBranchName}`,
+                  };
+                }),
               ]}
             />
           </div>

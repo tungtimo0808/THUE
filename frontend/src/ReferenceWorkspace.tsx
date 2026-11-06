@@ -608,7 +608,7 @@ function ReferenceWorkspace() {
       : activeCompanyRegime === "TT200"
       ? "TT200/2014"
       : "TT99/2025";
-  const datasetLabel = `${dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026"} · ${activeRegimeShortBadge}`;
+  const datasetLabel = dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026";
 
   const [companyBranches, setCompanyBranches] = useState<BranchData[]>([]);
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
@@ -711,7 +711,9 @@ function ReferenceWorkspace() {
   const branchLabel = useMemo(() => {
     if (branch === "all" || !branch) return "Toàn doanh nghiệp";
     const found = companyBranches.find((b) => b.id === branch || b.code === branch);
-    if (found) return found.name;
+    if (found) {
+      return found.name.replace(/\s*[-–—]\s*(?:công\s+ty|cty|doanh\s+nghiệp).*$/i, "").trim() || found.name;
+    }
     if (branch === "head-office") return "Trụ sở chính";
     if (branch === "hcm") return "Chi nhánh TP. HCM";
     return "Trụ sở chính";
@@ -1442,7 +1444,7 @@ function ReferenceWorkspace() {
               type="button"
               className="ref-cluster-trigger"
               onClick={() => setActiveClusterMenu(activeClusterMenu === "company" ? null : "company")}
-              title="Doanh nghiệp làm việc"
+              title={`Doanh nghiệp: ${company.name} (${activeRegimeShortBadge})`}
             >
               <Building2 size={13} className="ref-cluster-icon" />
               <span className="ref-cluster-label ref-cluster-company-label">{company.name}</span>
@@ -1514,7 +1516,7 @@ function ReferenceWorkspace() {
               type="button"
               className="ref-cluster-trigger"
               onClick={() => setActiveClusterMenu(activeClusterMenu === "dataset" ? null : "dataset")}
-              title="Dữ liệu kế toán"
+              title={`Dữ liệu kế toán: ${datasetLabel} · ${activeRegimeShortBadge}`}
             >
               <Database size={13} className="ref-cluster-icon" />
               <span className="ref-cluster-label ref-cluster-dataset-label">{datasetLabel}</span>
@@ -1522,7 +1524,7 @@ function ReferenceWorkspace() {
             </button>
             {activeClusterMenu === "dataset" && (
               <div className="ref-cluster-popover">
-                <div className="ref-cluster-popover-header">Dữ liệu kế toán</div>
+                <div className="ref-cluster-popover-header">Dữ liệu kế toán · {activeRegimeShortBadge}</div>
                 <div className="ref-cluster-popover-list">
                   {[
                     { id: "accounting-2026", label: "Dữ liệu kế toán 2026" },
@@ -1566,7 +1568,7 @@ function ReferenceWorkspace() {
               type="button"
               className="ref-cluster-trigger"
               onClick={() => setActiveClusterMenu(activeClusterMenu === "branch" ? null : "branch")}
-              title="Chi nhánh, đơn vị"
+              title={`Chi nhánh, đơn vị: ${branchLabel}`}
             >
               <MapPin size={13} className="ref-cluster-icon" />
               <span className="ref-cluster-label ref-cluster-branch-label">{branchLabel}</span>
@@ -1773,7 +1775,7 @@ function ReferenceWorkspace() {
               <input
                 id="reference-search"
                 aria-label="Tìm kiếm thông minh"
-                placeholder="Tìm kiếm thông minh…"
+                placeholder="Tìm kiếm…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
