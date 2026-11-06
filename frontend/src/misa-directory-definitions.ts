@@ -728,19 +728,41 @@ export const MISA_DIRECTORY_DEFINITIONS: DirectoryDefinition[] = [
     headers: [
       "Mã đơn vị",
       "Tên đơn vị",
-      "Đơn vị cha",
+      "Mã số thuế",
       "Địa chỉ",
       "Cấp tổ chức",
       "Trạng thái",
       "Chức năng",
     ],
-    fields: [],
+    fields: [
+      {
+        kind: "text",
+        label: "Mã đơn vị",
+      },
+      {
+        kind: "text",
+        label: "Tên đơn vị",
+      },
+      {
+        kind: "text",
+        label: "Mã số thuế",
+      },
+      {
+        kind: "textarea",
+        label: "Địa chỉ",
+      },
+      {
+        kind: "combo",
+        label: "Cấp tổ chức",
+        options: ["Chi nhánh", "Trụ sở chính", "Văn phòng đại diện"],
+      },
+    ],
     tabs: [],
     tabData: {},
     checks: [],
     radios: [],
     canAdd: true,
-    formObserved: false,
+    formObserved: true,
   },
   {
     name: "Loại công cụ dụng cụ",

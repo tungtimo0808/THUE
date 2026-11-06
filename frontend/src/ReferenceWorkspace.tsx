@@ -53,6 +53,7 @@ import {
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
 import { MisaSystemUtilitiesModal } from "./MisaSystemUtilitiesModal";
+import MisaBranchManagementModal, { BranchData } from "./MisaBranchManagementModal";
 import {
   referenceNav,
   referenceTabHierarchy,
@@ -599,7 +600,37 @@ function ReferenceWorkspace() {
       ? "TT200/2014"
       : "TT99/2025";
   const datasetLabel = `${dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026"} · ${activeRegimeShortBadge}`;
-  const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
+
+  const [companyBranches, setCompanyBranches] = useState<BranchData[]>([]);
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
+
+  const fetchBranches = useCallback(async () => {
+    if (!apiToken || !company?.id) return;
+    try {
+      const res = await request<BranchData[] | { results: BranchData[] }>(
+        `/api/v1/organization/branches/?company_id=${encodeURIComponent(company.id)}`,
+        apiToken
+      );
+      const list = Array.isArray(res) ? res : res.results || [];
+      setCompanyBranches(list);
+    } catch {
+      // Keep fallback
+    }
+  }, [apiToken, company?.id]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  const branchLabel = useMemo(() => {
+    if (branch === "all" || !branch) return "Toàn doanh nghiệp";
+    const found = companyBranches.find((b) => b.id === branch || b.code === branch);
+    if (found) return found.name;
+    if (branch === "head-office") return "Trụ sở chính";
+    if (branch === "hcm") return "Chi nhánh TP. HCM";
+    return "Trụ sở chính";
+  }, [branch, companyBranches]);
+
   const periodLabel = period.startsWith("2026-") ? `K${Number(period.slice(5))}.2026` : "Năm 2026";
   const [items, setItems] = useState(readTransactions);
   const scoped = useMemo(
@@ -1444,13 +1475,55 @@ function ReferenceWorkspace() {
             </button>
             {activeClusterMenu === "branch" && (
               <div className="ref-cluster-popover">
-                <div className="ref-cluster-popover-header">Chi nhánh, đơn vị</div>
+                <div className="ref-cluster-popover-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>Chi nhánh, đơn vị</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveClusterMenu(null);
+                      setIsBranchModalOpen(true);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#0284c7",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    + Quản lý chi nhánh
+                  </button>
+                </div>
                 <div className="ref-cluster-popover-list">
-                  {[
-                    { id: "head-office", label: "Trụ sở chính" },
-                    { id: "hcm", label: "Chi nhánh TP. HCM" },
-                  ].map((item) => {
-                    const isSelected = branch === item.id;
+                  <button
+                    type="button"
+                    className={`ref-cluster-popover-item ${branch === "all" ? "active" : ""}`}
+                    onClick={() => {
+                      setBranch("all");
+                      try {
+                        localStorage.setItem("ref_branch", "all");
+                      } catch {}
+                      setActiveClusterMenu(null);
+                      triggerSwitchFeedback("branch", "✓ Đã chuyển sang: Toàn doanh nghiệp");
+                    }}
+                  >
+                    <span className="ref-cluster-item-name">🏢 Toàn doanh nghiệp (Tất cả)</span>
+                    {branch === "all" && <Check size={14} className="ref-cluster-check" />}
+                  </button>
+
+                  {(companyBranches.length > 0
+                    ? companyBranches
+                    : [
+                        { id: "head-office", name: "Trụ sở chính", is_head_office: true },
+                        { id: "hcm", name: "Chi nhánh TP. HCM", is_head_office: false },
+                      ]
+                  ).map((item: any) => {
+                    const isSelected =
+                      branch === item.id ||
+                      (branch === "head-office" && item.is_head_office);
                     return (
                       <button
                         key={item.id}
@@ -1462,14 +1535,76 @@ function ReferenceWorkspace() {
                             localStorage.setItem("ref_branch", item.id);
                           } catch {}
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${item.label}`);
+                          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${item.name}`);
                         }}
                       >
-                        <span className="ref-cluster-item-name">{item.label}</span>
+                        <span className="ref-cluster-item-name">
+                          {item.name} {item.is_head_office ? "(Trụ sở chính)" : ""}
+                        </span>
                         {isSelected && <Check size={14} className="ref-cluster-check" />}
                       </button>
                     );
                   })}
+                </div>
+
+                <div
+                  style={{
+                    borderTop: "1px solid #e2e8f0",
+                    marginTop: 4,
+                    paddingTop: 6,
+                    paddingBottom: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setIsBranchModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "#f0f9ff",
+                      color: "#0284c7",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Plus size={13} /> Thêm chi nhánh mới
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setIsBranchModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "transparent",
+                      color: "#475569",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Settings size={13} /> Quản lý danh sách chi nhánh
+                  </button>
                 </div>
               </div>
             )}
@@ -2609,6 +2744,24 @@ function ReferenceWorkspace() {
           notify={setNotice}
         />
       )}
+      <MisaBranchManagementModal
+        isOpen={isBranchModalOpen}
+        onClose={() => setIsBranchModalOpen(false)}
+        companyId={company.id}
+        companyName={company.name}
+        companyTaxCode={(company as any).tax_code || ""}
+        token={apiToken}
+        activeBranchId={branch}
+        onSelectBranch={(bId, bName) => {
+          setBranch(bId);
+          try {
+            localStorage.setItem("ref_branch", bId);
+          } catch {}
+          setIsBranchModalOpen(false);
+          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${bName}`);
+        }}
+        onBranchesUpdated={fetchBranches}
+      />
       {createKind && (
         <DocumentForm
           kind={createKind}

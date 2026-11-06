@@ -47,11 +47,13 @@ const directoryApiPaths: Record<string, string> = {
   "Hồ sơ tín dụng KH": "/api/v1/master-data/customer-profiles/",
   "Vị trí lưu kho": "/api/v1/master-data/inventory-locations/",
   "Quy tắc đánh số": "/api/v1/master-data/document-numbering-rules/",
+  "Cơ cấu tổ chức": "/api/v1/organization/branches/",
 };
 const writableDirectories = new Set([
   "Kho", "Khoản mục chi phí", "Mã thống kê", "Ngân hàng",
   "Nhóm vật tư, hàng hóa, dịch vụ", "Điều khoản thanh toán", "Loại tiền",
   "Nhà cung cấp", "Khách hàng", "Đơn vị tính", "Vật tư hàng hóa", "Tài khoản ngân hàng", "Nhân viên",
+  "Cơ cấu tổ chức",
 ]);
 const directoryValue = (row: Record<string, any>, header: string): string => {
   if (/^Mã số thuế/.test(header)) return String(row.tax_code || "");
@@ -63,7 +65,9 @@ const directoryValue = (row: Record<string, any>, header: string): string => {
   if (/^Điện thoại/.test(header)) return String(row.phone || row.contacts?.[0]?.phone || "");
   if (/^Mô tả|^Diễn giải/.test(header)) return String(row.description || row.notes || "");
   if (/^Đơn vị tính/.test(header)) return String(row.name || row.code || "");
-  if (/^Trạng thái/.test(header)) return String(row.status || "");
+  if (/^Cấp tổ chức/.test(header)) return row.is_head_office ? "Trụ sở chính" : "Chi nhánh";
+  if (/^Đơn vị cha/.test(header)) return row.parent_name || (row.is_head_office ? "Trụ sở chính (Gốc)" : "Đơn vị trực thuộc");
+  if (/^Trạng thái/.test(header)) return row.status === "ACTIVE" || !row.status ? "Đang sử dụng" : "Ngừng sử dụng";
   return "";
 };
 const seedRows = (definition: DirectoryDefinition): DirectoryRow[] =>
@@ -317,6 +321,12 @@ export default function MisaDirectoryWorkspace({
         };
         if (definition.name === "Kho") Object.assign(baseInput, {
           address: values["Địa chỉ"] || "", warehouse_type: "PHYSICAL", warehouse_scope: "COMPANY_SHARED",
+        });
+        if (definition.name === "Cơ cấu tổ chức") Object.assign(baseInput, {
+          address: values["Địa chỉ"] || "",
+          tax_code: values["Mã số thuế"] || "",
+          is_head_office: (values["Cấp tổ chức"] || "").includes("Trụ sở"),
+          status: "ACTIVE",
         });
         if (definition.name === "Nhà cung cấp" || definition.name === "Khách hàng") {
           const rawTax = String(values["Mã số thuế"] || values["Mã số thuế/CCCD chủ hộ"] || "").trim().replace(/[\s-]/g, "");
