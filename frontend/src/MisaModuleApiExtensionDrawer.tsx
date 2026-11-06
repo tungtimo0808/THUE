@@ -795,14 +795,14 @@ export const MODULE_EXTENDED_APIS: Record<string, ApiEndpointConfig[]> = {
       id: "tax-connectors",
       label: "Cổng kết nối Hóa đơn điện tử & Thuế",
       path: "/api/v1/tax/connectors/",
-      description: "Cấu hình kết nối MISA meInvoice, Viettel SInvoice, VNPT Invoice và Cổng Thuế điện tử.",
+      description: "Cấu hình kết nối Hóa đơn điện tử (Viettel SInvoice, VNPT Invoice, BKAV eHoadon) và Cổng Thuế điện tử.",
       columns: [
         { key: "provider", label: "Nhà cung cấp" },
         { key: "tax_code", label: "Mã số thuế" },
         { key: "status", label: "Trạng thái kết nối" },
       ],
       createFields: [
-        { key: "provider", label: "Nhà cung cấp HĐĐT", defaultValue: "MISA meInvoice", required: true },
+        { key: "provider", label: "Nhà cung cấp HĐĐT", defaultValue: "Cổng HĐĐT Tổng cục Thuế", required: true },
         { key: "tax_code", label: "Mã số thuế DN", defaultValue: "109876543", required: true },
       ],
     },

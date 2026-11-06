@@ -453,11 +453,11 @@ export function SaleVoucherModal({
         ? (isService ? "Thu tiền cung ứng dịch vụ tư vấn và kỹ thuật" : "Thu tiền bán thiết bị điện công nghiệp và phụ kiện theo chứng từ bán hàng")
         : (isService ? "Cung ứng dịch vụ tư vấn và hỗ trợ kỹ thuật" : "Bán thiết bị điện công nghiệp kèm phiếu xuất kho và hóa đơn GTGT");
     setDescription(text);
-    notify("Sổ Việt AI đã tạo tự động diễn giải nghiệp vụ!");
+    notify("Đã điền diễn giải nghiệp vụ tiêu chuẩn!");
   };
 
   const handleAIAssistProfile = () => {
-    notify("Sổ Việt AI: Đã kiểm tra hồ sơ, áp dụng chính sách giảm thuế và định khoản chuẩn theo Thông tư 99/2025/TT-BTC!");
+    notify("Đã kiểm tra hồ sơ, áp dụng chính sách thuế và định khoản chuẩn theo Thông tư 99/2025/TT-BTC!");
   };
 
   const handleSave = async (andPrint = false) => {
@@ -1390,7 +1390,7 @@ export function SaleVoucherModal({
                         <button
                           type="button"
                           onClick={handleAIAssistDescription}
-                          title="Sổ Việt AI gợi ý diễn giải tự động"
+                          title="Điền nhanh diễn giải chuẩn"
                           style={{ background: "none", border: "none", color: "#8b5cf6", cursor: "pointer", padding: "2px" }}
                         >
                           <Sparkles size={14} />
@@ -2834,7 +2834,7 @@ export function SaleVoucherModal({
                   >
                     🤖
                   </div>
-                  <span>{isService ? "Sổ Việt AI" : "Gợi ý hồ sơ"}</span>
+                  <span>"Kiểm tra hồ sơ"</span>
                   {isService && <ChevronDown size={12} />}
                 </button>
 

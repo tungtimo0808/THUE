@@ -636,7 +636,7 @@ export default function MisaTrialBalanceManagementReport({
             type="button"
             disabled={exportingFormat !== null}
             style={{ height: 30, padding: "0 10px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#334155", fontSize: 12.5, cursor: "pointer" }}
-            title="In báo cáo chuẩn mẫu MISA"
+            title="In báo cáo chuẩn kế toán"
             onClick={() => void handleExportReport("PRINT")}
           >
             <Printer size={14} />
@@ -648,7 +648,7 @@ export default function MisaTrialBalanceManagementReport({
             type="button"
             disabled={exportingFormat !== null}
             style={{ height: 30, padding: "0 10px", border: "1px solid #86efac", background: "#f0fdf4", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#166534", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-            title="Kết xuất tệp Excel (.xlsx) chuẩn MISA"
+            title="Kết xuất tệp Excel (.xlsx)"
             onClick={() => void handleExportReport("XLSX")}
           >
             <Download size={14} />
@@ -659,7 +659,7 @@ export default function MisaTrialBalanceManagementReport({
             type="button"
             disabled={exportingFormat !== null}
             style={{ height: 30, padding: "0 10px", border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 4, display: "flex", alignItems: "center", gap: 4, color: "#1d4ed8", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-            title="Kết xuất tệp PDF (.pdf) chuẩn MISA"
+            title="Kết xuất tệp PDF (.pdf)"
             onClick={() => void handleExportReport("PDF")}
           >
             <Download size={14} />

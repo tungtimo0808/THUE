@@ -1729,7 +1729,7 @@ export function MisaSystemUtilitiesModal({
                         Kết nối Hóa đơn điện tử & Tổng cục Thuế
                       </div>
                       <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                        Đồng bộ hóa đơn đầu vào/đầu ra và ký số eSign
+                        Đồng bộ hóa đơn điện tử đầu vào/đầu ra và ký số
                       </div>
                     </div>
                     <button
@@ -1789,7 +1789,7 @@ export function MisaSystemUtilitiesModal({
                         cursor: "pointer",
                       }}
                     >
-                      Mở mBank →
+                      Mở Ngân hàng điện tử →
                     </button>
                   </div>
                 </div>

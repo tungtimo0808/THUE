@@ -334,7 +334,7 @@ export function LoanContractModal({
                   type="text"
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="Nhập mục đích vay hoặc dùng AI gợi ý..."
+                  placeholder="Nhập mục đích vay vốn..."
                   style={{
                     width: "100%",
                     height: 32,
@@ -347,7 +347,7 @@ export function LoanContractModal({
                 />
                 <button
                   type="button"
-                  title="Gợi ý bằng AI"
+                  title="Điền mẫu nhanh"
                   onClick={() => setPurpose("Bổ sung vốn lưu động phục vụ hoạt động sản xuất kinh doanh")}
                   style={{
                     position: "absolute",
@@ -1471,7 +1471,7 @@ export function BorrowingContractModal({
                   type="text"
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="Nhập mục đích vay hoặc dùng AI gợi ý..."
+                  placeholder="Nhập mục đích vay vốn..."
                   style={{
                     width: "100%",
                     height: 32,
@@ -1484,7 +1484,7 @@ export function BorrowingContractModal({
                 />
                 <button
                   type="button"
-                  title="Gợi ý bằng AI"
+                  title="Điền mẫu nhanh"
                   onClick={() => setPurpose("Bổ sung vốn lưu động thanh toán tiền hàng cho nhà cung cấp")}
                   style={{
                     position: "absolute",
@@ -2437,7 +2437,7 @@ export function CreditContractModal({
                 />
                 <button
                   type="button"
-                  title="Gợi ý AI"
+                  title="Điền mẫu nhanh"
                   onClick={() => setPurpose("Bổ sung vốn kinh doanh theo hạn mức hợp đồng tín dụng")}
                   style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", color: "#8b5cf6", cursor: "pointer" }}
                 >
@@ -2808,7 +2808,7 @@ export function CreditOverviewView({
 
           {/* Action buttons row (Image 5) */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-            {/* Button 1: Thêm bằng AI */}
+            {/* Button 1: Nhập nhanh */}
             <button
               type="button"
               onClick={onOpenAIModal}
@@ -2840,7 +2840,7 @@ export function CreditOverviewView({
               >
                 <Sparkles size={11} />
               </div>
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Button 2: Thêm hợp đồng tín dụng cho vay / Thêm hợp đồng tín dụng */}

@@ -21,8 +21,8 @@ export default function TaxConnectorPanel({ company, token }: {
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [code, setCode] = useState("MEINVOICE");
-  const [provider, setProvider] = useState("meInvoice");
+  const [code, setCode] = useState("EINVOICE_PORTAL");
+  const [provider, setProvider] = useState("Hóa đơn điện tử");
   const [channel, setChannel] = useState("EINVOICE");
   const [reference, setReference] = useState("");
   const [version, setVersion] = useState("");
@@ -51,7 +51,7 @@ export default function TaxConnectorPanel({ company, token }: {
       setReference(found.config?.credential_reference || "");
       setVersion(found.config?.connector_version || "");
       setCapabilities(found.config?.capabilities || []);
-    } else { setCode("MEINVOICE"); setProvider("meInvoice"); setChannel("EINVOICE");
+    } else { setCode("EINVOICE_PORTAL"); setProvider("Hóa đơn điện tử"); setChannel("EINVOICE");
       setReference(""); setVersion(""); setCapabilities([]); }
   };
   const save = async (event: React.FormEvent) => {
@@ -83,7 +83,7 @@ export default function TaxConnectorPanel({ company, token }: {
   };
   return <div className="iw-connect">
     <section>
-      <div className="iw-brand">meInvoice</div>
+      <div className="iw-brand">Hóa đơn điện tử</div>
       <h1>Kết nối phần mềm<br />Hóa đơn điện tử</h1>
       <p>Doanh nghiệp: <strong>{company.name}</strong>{company.tax_code && ` · MST ${company.tax_code}`}</p>
       <p>Chọn cấu hình đã lưu hoặc tạo cấu hình mới. Chỉ nhập mã tham chiếu credential, không nhập mật khẩu hay token.</p>

@@ -72,7 +72,7 @@ class Command(BaseCommand):
             company=company,
             code="MEINVOICE",
             defaults={
-                "provider": "MISA meInvoice.VN",
+                "provider": "Cổng HĐĐT Tổng cục Thuế",
                 "channel": "EINVOICE",
                 "config": {
                     "tax_code": company.tax_code or "0110888999",
@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
         # 2. Tạo Đối tác Nhà cung cấp / Khách hàng nếu chưa có
         supplier_fpt = self._get_or_create_party(company, "NCC-FPT", "Công ty TNHH Công nghệ Viễn thông FPT", "0101248141")
-        supplier_misa = self._get_or_create_party(company, "NCC-MISA", "Công ty Cổ phần Phần mềm MISA", "0101243150")
+        supplier_misa = self._get_or_create_party(company, "NCC-SOVIET", "Công ty Cổ phần Giải pháp Số Việt", "0101243150")
         supplier_tienphat = self._get_or_create_party(company, "NCC-TIENPHAT", "Công ty TNHH Thiết bị Văn phòng Tiến Phát", "0102345678")
         supplier_thanglong = self._get_or_create_party(company, "NCC-THANGLONG", "Công ty Cổ phần Dịch vụ Bảo vệ Thăng Long", "0103456789")
         supplier_hoangha = self._get_or_create_party(company, "NCC-HOANGHA", "Công ty TNHH Xây dựng & Thương mại Hoàng Hà", "0109876543")

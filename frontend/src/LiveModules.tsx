@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -28,7 +28,7 @@ export default function LiveModules() {
     if (!token || !companyId) { setModules([]); return; }
     let active = true;
     request<Module[]>(`/api/v1/common/modules/?company_id=${companyId}`, token)
-      .then(value => { if (active) { setModules(value); setSelected(current => value.find(item => item.code === current?.code) || null); } })
+      .then(value => { if (active) { const filtered = value.filter(item => item.code !== "AI"); setModules(filtered); setSelected(current => filtered.find(item => item.code === current?.code) || null); } })
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Không tải được phân hệ."); });
     return () => { active = false; };
   }, [token, companyId, reload]);

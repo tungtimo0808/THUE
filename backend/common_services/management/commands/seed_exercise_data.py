@@ -647,7 +647,7 @@ class Command(BaseCommand):
                 ("156", 1158000000, 0, "Số dư đầu kỳ Hàng hóa (12 mặt hàng tồn kho đầu kỳ)"),
                 ("211", 513600000, 0, "Số dư đầu kỳ TSCĐ hữu hình - Máy móc, thiết bị (LT001, PD001, DH002, MPD001)"),
                 ("2113", 816000000, 0, "Số dư đầu kỳ Phương tiện vận tải, truyền dẫn (OT002 - Xe ô tô Ford Transit 2023)"),
-                ("213", 48000000, 0, "Số dư đầu kỳ TSCĐ vô hình (PM002 - Phần mềm kế toán Misa)"),
+                ("213", 48000000, 0, "Số dư đầu kỳ TSCĐ vô hình (PM002 - Phần mềm kế toán doanh nghiệp)"),
                 ("2141", 0, 354400000, "Số dư đầu kỳ Hao mòn TSCĐ hữu hình"),
                 ("2143", 0, 9000000, "Số dư đầu kỳ Hao mòn TSCĐ vô hình"),
                 ("221", 150000000, 0, "Số dư đầu kỳ Đầu tư vào công ty con"),

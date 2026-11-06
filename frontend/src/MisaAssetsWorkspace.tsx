@@ -175,7 +175,7 @@ export const SAMPLE_ASSETS_DATA = [
   },
   {
     code: "PM002",
-    name: "Phần mềm kế toán Misa",
+    name: "Phần mềm kế toán doanh nghiệp",
     category: "Tài sản cố định vô hình",
     dept: "Phòng Kế toán",
     startDate: "01/04/2024",
@@ -270,7 +270,7 @@ export const SAMPLE_INCREASE_VOUCHERS = [
     voucherNo: "GTTS00006",
     date: "01/04/2024",
     assetCode: "PM002",
-    assetName: "Phần mềm kế toán Misa",
+    assetName: "Phần mềm kế toán doanh nghiệp",
     originalCost: 48000000,
     dept: "Phòng Kế toán",
     status: "Đã ghi sổ",
@@ -8983,7 +8983,7 @@ ${entries.length
             <div style={{ height: 46, padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #f0fdf4 0%, #ede9fe 100%)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={18} style={{ color: "#7c3aed" }} />
-                <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Sổ Việt AI: Thêm tài sản bằng AI</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>Tự động bóc tách hồ sơ tài sản</span>
               </div>
               <button type="button" onClick={() => setShowAiModal(false)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer" }}>
                 <X size={18} />
@@ -8993,7 +8993,7 @@ ${entries.length
               <div style={{ border: "2px solid #cbd5e1", borderRadius: 8, padding: "24px 20px", textAlign: "center", background: "#f8fafc" }}>
                 <FileText size={32} style={{ color: "#7c3aed", margin: "0 auto 8px auto" }} />
                 <p style={{ margin: "0 0 6px 0", fontSize: 13, fontWeight: 600, color: "#1e293b" }}>Kéo thả hoặc tải lên Hóa đơn / Hợp đồng mua sắm TSCĐ</p>
-                <p style={{ margin: 0, fontSize: 11.5, color: "#64748b" }}>Định dạng hỗ trợ: PDF, XML, Ảnh hóa đơn (JPG, PNG). AI sẽ tự bóc tách số liệu.</p>
+                <p style={{ margin: 0, fontSize: 11.5, color: "#64748b" }}>Định dạng hỗ trợ: PDF, XML, Ảnh hóa đơn (JPG, PNG). Hệ thống sẽ tự động bóc tách số liệu.</p>
               </div>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 5 }}>Hoặc nhập mô tả bằng văn bản tự nhiên:</label>
@@ -9016,11 +9016,11 @@ ${entries.length
                   setIncName("Xe ô tô Hyundai SantaFe 2.5 HTRAC");
                   setIncOriginalCost(1250000000);
                   setIncUseDuration(8);
-                  notify("Sổ Việt AI đã phân tích hóa đơn và điền sẵn thông tin vào chứng từ ghi tăng!");
+                  notify("Đã bóc tách hóa đơn và điền sẵn thông tin vào chứng từ ghi tăng!");
                 }}
                 style={{ height: 32, padding: "0 20px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
               >
-                AI Phân tích & Điền mẫu
+                Tự động điền mẫu
               </button>
             </div>
           </div>
@@ -9259,8 +9259,8 @@ ${entries.length
                     />
                     <button
                       type="button"
-                      onClick={() => notify("Sổ Việt AI: Đã tối ưu hóa diễn giải chứng từ tính khấu hao")}
-                      title="Trợ lý Sổ Việt AI"
+                      onClick={() => notify("Đã chuẩn hóa diễn giải chứng từ tính khấu hao")}
+                      title="Kiểm tra chứng từ"
                       style={{
                         position: "absolute",
                         right: 6,
@@ -14255,7 +14255,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <div style={{ height: 44, padding: "0 18px", background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 13.5 }}>
                 <Sparkles size={15} />
-                <span>AVA Kế toán – Tìm kiếm nhanh báo cáo TSCĐ</span>
+                <span>Tìm kiếm nhanh báo cáo TSCĐ</span>
               </div>
               <button type="button" onClick={() => setShowAvaReportModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={17} /></button>
             </div>
@@ -14699,7 +14699,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -14779,7 +14779,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 10px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
             <div style={{ position: "relative", width: 200 }}>
               <Search size={14} style={{ position: "absolute", left: 9, top: 8, color: "#64748b" }} />
@@ -15049,7 +15049,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -15143,7 +15143,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 12px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
             <button
               type="button"
@@ -15283,7 +15283,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -15351,7 +15351,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 12px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
 
@@ -15541,7 +15541,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 style={{ height: 34, padding: "0 20px", borderRadius: 6, background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -15584,7 +15584,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 12px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
 
@@ -15684,7 +15684,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 style={{ height: 34, padding: "0 20px", borderRadius: 6, background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -15727,7 +15727,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 12px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
 
@@ -15829,7 +15829,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 style={{ height: 34, padding: "0 20px", borderRadius: 6, background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -15872,7 +15872,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 12px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
 
@@ -15975,7 +15975,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 style={{ height: 34, padding: "0 20px", borderRadius: 6, background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}
               >
                 <Sparkles size={14} />
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
               <button
                 type="button"
@@ -16018,7 +16018,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               style={{ height: 30, padding: "0 12px", background: "linear-gradient(135deg, #2563eb, #7c3aed)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Sparkles size={13} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
 
@@ -16133,7 +16133,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               onClick={() => setShowAvaReportModal(true)}
               style={{ height: 30, padding: "0 10px", border: "none", background: "transparent", fontSize: 12.5, color: "#7c3aed", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 500 }}
             >
-              <span>{isEn ? "Quick report search with AVA Accounting" : "Tìm kiếm nhanh báo cáo với AVA Kế toán"}</span>
+              <span>{isEn ? "Quick report search" : "Tìm kiếm nhanh báo cáo"}</span>
               <Sparkles size={14} style={{ color: "#7c3aed" }} />
             </button>
           </div>

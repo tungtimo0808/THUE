@@ -1104,7 +1104,7 @@ export function SaleReturnModal({
                           color: "#8b5cf6",
                           cursor: "pointer",
                         }}
-                        onClick={() => notify("AI: Diễn giải đề xuất 'Trả lại hàng bán - giảm trừ công nợ'")}
+                        onClick={() => notify("Diễn giải đề xuất 'Trả lại hàng bán - giảm trừ công nợ'")}
                       />
                     </div>
                   </div>
@@ -2517,7 +2517,7 @@ export function SaleReturnModal({
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               type="button"
-              onClick={() => notify("AI gợi ý hồ sơ chứng từ giảm trừ...")}
+              onClick={() => notify("Đã kiểm tra hồ sơ chứng từ giảm trừ.")}
               style={{
                 height: 24,
                 padding: "0 10px",

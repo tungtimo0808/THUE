@@ -534,7 +534,7 @@ const FEATURE_NAMES_VI: Record<string, string> = {
   ADVANCE_SETTLEMENT: "Quyết toán tạm ứng",
   COUNT: "Kiểm kê thực tế định kỳ",
   FUND: "Danh mục quỹ & Tồn quỹ tiền mặt",
-  AI: "Trợ lý thông minh AI Kế toán",
+  AI: "Tự động hóa & Gợi ý nghiệp vụ",
   DASHBOARD: "Bảng điều khiển & Chỉ số tài chính",
   JOIN_REQUEST: "Phê duyệt yêu cầu gia nhập công ty",
   NOTIFICATION: "Thông báo nghiệp vụ hệ thống",
@@ -1189,7 +1189,8 @@ export default function CompanyAdminWorkspace() {
       ]).then(([modRes, periodRes, ruleRes]) => {
         if (modRes.status === "fulfilled") {
           const val = modRes.value;
-          setModules(Array.isArray(val) ? val : val.results || []);
+          const list = Array.isArray(val) ? val : val.results || [];
+          setModules(list.filter((m) => m.code !== "AI"));
         }
         if (periodRes.status === "fulfilled") {
           const val = periodRes.value;

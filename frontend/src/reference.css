@@ -4538,6 +4538,19 @@ body.ref-process-scroll-lock {
   animation: ref-progress-sweep 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Hide legacy AI / AVA buttons and triggers across all workspaces */
+button:has(.misa-hidden-ai-marker),
+button:has(img[src*="ava_avatar"]),
+button[title="Gợi ý & Kiểm tra nhanh"],
+.misa-voucher-ava-pill,
+.misa-voucher-drawer-handle,
+.misa-sidebar-ava,
+.ref-ai-button,
+.misa-hidden-ai-marker {
+  display: none !important;
+}
+
+
 
 
 

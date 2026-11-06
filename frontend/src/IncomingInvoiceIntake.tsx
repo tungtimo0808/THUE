@@ -237,7 +237,7 @@ export default function IncomingInvoiceIntake({
             ? "Hóa đơn đầu vào - Chưa hạch toán"
             : childTab === "processed"
               ? "Hóa đơn đầu vào - Đã hạch toán"
-              : "Hộp thư hóa đơn & Tiếp nhận AI OCR"}
+              : "Hộp thư hóa đơn đầu vào"}
         </h2>
         <p>
           {childTab === "unprocessed"

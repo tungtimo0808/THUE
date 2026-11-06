@@ -704,11 +704,11 @@ export default function MisaPurchaseWorkspace({
         supplierDebt: 23650000,
         bookDebt: 23650000,
         difference: 0,
-        status: "Sổ Việt AI đã đối chiếu xong",
+        status: "Đã đối chiếu hoàn tất",
       },
       ...reconciliations,
     ]);
-    notify(`Sổ Việt AI đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
+    notify(`Đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
   };
 
   const handleSaveSupplier = async (data: any, andNew = false): Promise<boolean> => {
@@ -931,7 +931,7 @@ export default function MisaPurchaseWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`Sổ Việt AI đã phân tích hóa đơn mua hàng ${doc.code}.`);
+            notify(`Đã nạp dữ liệu hóa đơn mua hàng ${doc.code}.`);
           }}
         />
       )}
@@ -2260,7 +2260,7 @@ export default function MisaPurchaseWorkspace({
               }}
             >
               <Sparkles size={14} />
-              <span>Sổ Việt AI đối chiếu</span>
+              <span>Đối chiếu tự động</span>
             </button>
           </div>
 
@@ -2425,7 +2425,7 @@ export default function MisaPurchaseWorkspace({
               style={{ height: 32, padding: "0 12px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <Sparkles size={14} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
         </div>
@@ -2565,7 +2565,7 @@ export default function MisaPurchaseWorkspace({
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
         <div style={{ padding: "10px 16px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
-            {/* Button 1: Thêm bằng AI */}
+            {/* Button 1: Nhập nhanh */}
             <button
               type="button"
               onClick={() => setShowAIModal(true)}
@@ -2603,7 +2603,7 @@ export default function MisaPurchaseWorkspace({
               >
                 <Sparkles size={13} style={{ color: "#8b5cf6" }} />
               </div>
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Button 2: Split Button "Thêm ▾" */}
@@ -2710,10 +2710,10 @@ export default function MisaPurchaseWorkspace({
                         },
                       },
                       {
-                        label: "Lập từ hóa đơn đầu vào meInvoice",
+                        label: "Lập từ hóa đơn đầu vào điện tử",
                         onClick: () => {
                           setShowAddPurchaseMenu(false);
-                          notify("Đang kết nối dịch vụ Hóa đơn điện tử meInvoice để tải hóa đơn đầu vào...");
+                          notify("Đang đồng bộ dữ liệu Hóa đơn điện tử đầu vào...");
                         },
                       },
                     ].map((item, idx) => (
@@ -2937,7 +2937,7 @@ export default function MisaPurchaseWorkspace({
                         Chưa có chứng từ mua hàng trong kỳ kế toán này
                       </strong>
                       <span style={{ fontSize: 12.5, color: "#64748b" }}>
-                        Nhấn nút <b>"Thêm"</b> hoặc <b>"Thêm bằng AI"</b> trên thanh công cụ để tạo mới
+                        Nhấn nút <b>"Thêm"</b> trên thanh công cụ để tạo mới
                       </span>
                     </div>
                   </td>

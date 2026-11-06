@@ -92,12 +92,6 @@ function ListToolbar({ title, notify }: { title: string; notify: Notify }) {
       </label>
       <span className="erp3-toolbar-spacer" />
       <button
-        aria-label="Trợ lý AI"
-        onClick={() => notify("Trợ lý đang phân tích dữ liệu mẫu.")}
-      >
-        <Sparkles size={15} />
-      </button>
-      <button
         aria-label="Nhập dữ liệu"
         onClick={() => notify("Sẵn sàng nhận tệp Excel mẫu.")}
       >
@@ -787,7 +781,7 @@ function getSpecializedWorkspaceData(moduleId: string, title: string) {
             "0",
             "48 GD",
             "Online Open Banking",
-            "✓ Khớp 100% (Sổ Việt AI Verified)",
+            "✓ Khớp 100% (Đã đối soát)",
           ],
           [
             "1121-VCB-02",
@@ -797,7 +791,7 @@ function getSpecializedWorkspaceData(moduleId: string, title: string) {
             "0",
             "32 GD",
             "Online Open Banking",
-            "✓ Khớp 100% (Sổ Việt AI Verified)",
+            "✓ Khớp 100% (Đã đối soát)",
           ],
           [
             "1122-TCB-01",
@@ -1124,7 +1118,7 @@ function getSpecializedWorkspaceData(moduleId: string, title: string) {
         "Thuế phát sinh",
         "Thuế được khấu trừ",
         "Hạn nộp hồ sơ",
-        "Trạng thái mTax",
+        "Trạng thái Thuế điện tử",
         "Đối chiếu CQT",
       ],
       rows: [

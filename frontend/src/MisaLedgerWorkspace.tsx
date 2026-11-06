@@ -7615,7 +7615,7 @@ export default function MisaLedgerWorkspace({
                       position: "relative",
                     }}
                   >
-                    {/* Button 1: Thêm bằng AI */}
+                    {/* Button 1: Nhập nhanh */}
                     <button
                       type="button"
                       onClick={() => setAiVoucherModalOpen(true)}
@@ -7664,7 +7664,7 @@ export default function MisaLedgerWorkspace({
                           </defs>
                         </svg>
                       </div>
-                      <span>Thêm bằng AI</span>
+                      <span className="misa-hidden-ai-marker" />
                     </button>
 
                     {/* Button 2: Thêm ˅ (With Dropdown Menu from Screenshot 2) */}
@@ -8706,7 +8706,7 @@ export default function MisaLedgerWorkspace({
                     marginTop: 24,
                   }}
                 >
-                  {/* Button 1: Thêm bằng AI */}
+                  {/* Button 1: Nhập nhanh */}
                   <button
                     type="button"
                     onClick={() => {
@@ -8747,7 +8747,7 @@ export default function MisaLedgerWorkspace({
                     >
                       <Bot size={14} color="#2563eb" />
                     </div>
-                    <span>Thêm bằng AI</span>
+                    <span className="misa-hidden-ai-marker" />
                   </button>
 
                   {/* Button 2: Thêm (Green solid, matching screenshot 2) */}
@@ -10056,7 +10056,7 @@ export default function MisaLedgerWorkspace({
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
-                  <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+                  <span>Tìm kiếm nhanh báo cáo</span>
                   <span style={{ fontSize: 15 }}>🤖</span>
                 </div>
               </div>
@@ -13025,7 +13025,7 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
@@ -13215,7 +13215,7 @@ export default function MisaLedgerWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý Sổ Việt AI đang sẵn sàng hỗ trợ định khoản!")}
+                  onClick={() => notify("Hệ thống kiểm tra cân đối định khoản Nợ / Có đã sẵn sàng!")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -13231,7 +13231,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Bot size={14} color="#9333ea" />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={13} color="#9333ea" />
                 </button>
               </div>
@@ -14248,7 +14248,7 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
@@ -14490,7 +14490,7 @@ export default function MisaLedgerWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý Sổ Việt AI đang sẵn sàng hỗ trợ quyết toán tạm ứng!")}
+                  onClick={() => notify("Hệ thống kiểm tra hồ sơ quyết toán tạm ứng đã sẵn sàng!")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -14506,7 +14506,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Bot size={14} color="#9333ea" />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={13} color="#9333ea" />
                 </button>
               </div>
@@ -17227,7 +17227,7 @@ export default function MisaLedgerWorkspace({
         </div>
       )}
 
-      {/* AI Assistant Modal: Thêm bằng AI */}
+      {/* AI Assistant Modal: Nhập nhanh */}
       {aiVoucherModalOpen && (
         <div
           style={{
@@ -17278,7 +17278,7 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
-                    Trợ lý Sổ Việt AI - Tự động lập chứng từ
+                    Lập nhanh chứng từ theo mẫu định khoản
                   </span>
                   <div style={{ fontSize: 12, color: "#64748b" }}>
                     Nhập nội dung nghiệp vụ bằng ngôn ngữ tự nhiên
@@ -17386,14 +17386,14 @@ export default function MisaLedgerWorkspace({
                   setAiVoucherModalOpen(false);
                   if (apiConnected) {
                     // The sample generator invents accounts and amounts; it must not write into real books.
-                    notify("Sinh chứng từ bằng AI chưa có API backend; chứng từ không được ghi vào sổ.");
+                    notify("Chức năng lập chứng từ tự động từ văn bản đang ở chế độ xem trước.");
                     return;
                   }
                   const newVoucher = {
                     id: `PKT0000${generalVouchers.length + 1}`,
                     date: "31/10/2026",
                     voucherDate: "31/10/2026",
-                    desc: aiPrompt || "Hạch toán nghiệp vụ tự động bằng Sổ Việt AI",
+                    desc: aiPrompt || "Hạch toán nghiệp vụ theo mẫu tự động",
                     debitAcc: "6422",
                     creditAcc: "242",
                     amount: 18500000,
@@ -17401,7 +17401,7 @@ export default function MisaLedgerWorkspace({
                   };
                   setGeneralVouchers([newVoucher, ...generalVouchers]);
                   setShowVoucherTable(true);
-                  notify(`Sổ Việt AI đã phân tích và sinh chứng từ ${newVoucher.id} thành công!`);
+                  notify(`Hệ thống đã khởi tạo dự thảo chứng từ ${newVoucher.id} thành công!`);
                   setAiPrompt("");
                 }}
                 style={{

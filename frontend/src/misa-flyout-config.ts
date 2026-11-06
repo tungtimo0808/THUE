@@ -240,7 +240,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Chỉ số tài chính ngành", path: "/analysis/ratios" },
     ],
     utilities: [
-      { label: "Phân tích tài chính thông minh (AI)", path: "/analysis/ai-insight" },
+      { label: "Phân tích tài chính chuyên sâu", path: "/analysis/overview" },
       { label: "Dự báo tài chính đa kịch bản", path: "/analysis/scenario" },
     ],
   },

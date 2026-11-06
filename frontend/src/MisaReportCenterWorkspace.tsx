@@ -225,7 +225,7 @@ export const CATEGORY_STRUCTURES: Record<string, CategoryStructure> = {
   financial: {
     banner: {
       title: "Phân tích báo cáo tài chính kỳ tháng 9 bởi",
-      botHighlight: "Sổ Việt AI",
+      botHighlight: "Báo cáo",
       linkText: "Xem chi tiết →",
     },
     groups: [

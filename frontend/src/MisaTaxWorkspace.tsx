@@ -996,7 +996,7 @@ export default function MisaTaxWorkspace({
           </div>
 
           <div
-            onClick={() => notify("Mở trợ lý Sổ Việt AI để tìm kiếm và lập báo cáo thuế thông minh")}
+            onClick={() => notify("Kiểm tra nhanh định khoản để tìm kiếm và lập báo cáo thuế thông minh")}
             style={{
               color: "#2563eb",
               fontSize: 13,
@@ -1007,7 +1007,7 @@ export default function MisaTaxWorkspace({
               fontWeight: 500,
             }}
           >
-            <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+            <span>Tìm kiếm nhanh báo cáo</span>
             <span style={{ fontSize: 14 }}>🤖</span>
           </div>
         </div>

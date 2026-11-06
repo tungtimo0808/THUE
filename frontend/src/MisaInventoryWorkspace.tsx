@@ -2036,12 +2036,12 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
           </h2>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Button: Thêm bằng AI */}
+            {/* Button: Nhập nhanh */}
             <button
               type="button"
               onClick={() => {
                 setShowReceiptModal(true);
-                notify("Sổ Việt AI đã sẵn sàng hỗ trợ khởi tạo phiếu nhập kho!");
+                notify("Đã khởi tạo mẫu phiếu nhập kho nhanh!");
               }}
               style={{
                 height: 36,
@@ -2059,7 +2059,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Button: Thêm */}
@@ -2276,7 +2276,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               type="button"
               onClick={() => {
                 openNewIssue();
-                notify("Sổ Việt AI đã phân tích số lượng tồn kho khả dụng để xuất hàng!");
+                notify("Đã kiểm tra số lượng tồn kho khả dụng để xuất hàng!");
               }}
               style={{
                 height: 36,
@@ -2294,7 +2294,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             <button
@@ -2536,7 +2536,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               type="button"
               onClick={() => {
                 openNewTransfer();
-                notify("Sổ Việt AI đã phân tích tuyến điều chuyển kho tối ưu!");
+                notify("Đã kiểm tra tồn kho các kho để điều chuyển!");
               }}
               style={{
                 height: 36,
@@ -2554,7 +2554,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             <button
@@ -2801,7 +2801,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               type="button"
               onClick={() => {
                 setShowProductionOrderModal(true);
-                notify("Sổ Việt AI đã phân tích kế hoạch và định mức nguyên vật liệu sản xuất!");
+                notify("Đã nạp định mức nguyên vật liệu sản xuất!");
               }}
               style={{
                 height: 36,
@@ -2819,7 +2819,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             <button
@@ -3042,7 +3042,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               type="button"
               onClick={() => {
                 setShowAssemblyModal(true);
-                notify("Sổ Việt AI đã phân tích cấu trúc linh kiện thành phẩm!");
+                notify("Đã nạp cấu trúc định mức linh kiện thành phẩm!");
               }}
               style={{
                 height: 36,
@@ -3060,7 +3060,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             <button
@@ -3307,7 +3307,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               type="button"
               onClick={() => {
                 openStocktake();
-                notify("Sổ Việt AI đã đồng bộ số liệu sổ sách sẵn sàng đối chiếu kiểm kê!");
+                notify("Đã đồng bộ số liệu sổ sách sẵn sàng đối chiếu kiểm kê!");
               }}
               style={{
                 height: 36,
@@ -3325,7 +3325,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             <button
@@ -3484,10 +3484,10 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             </div>
 
             <div
-              onClick={() => notify("Sổ Việt AI: Bạn có thể gõ 'Tồn kho theo kho', 'Hàng sắp hết', 'Thẻ kho 152' để tìm tức thì!")}
+              onClick={() => notify("Bạn có thể gõ 'Tồn kho theo kho', 'Hàng sắp hết', 'Thẻ kho 152' để tìm tức thì!")}
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#7c3aed", fontWeight: 600, cursor: "pointer" }}
             >
-              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+              <span>Tìm kiếm nhanh báo cáo</span>
               <span>🤖</span>
             </div>
           </div>
@@ -4372,7 +4372,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               placeholder="Nhập kho thành phẩm sản xuất"
                               style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                             />
-                            <span title="Sổ Việt AI gợi ý diễn giải kế toán thông minh" style={{ display: "inline-flex" }}>
+                            <span title="Điền nhanh diễn giải kế toán" style={{ display: "inline-flex" }}>
                               <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -4679,7 +4679,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   {/* Button Gợi ý hồ sơ */}
                   <button
                     type="button"
-                    onClick={() => notify("Sổ Việt AI đang phân tích hồ sơ chứng từ để gợi ý...")}
+                    onClick={() => notify("Đang kiểm tra tính hợp lệ của hồ sơ chứng từ...")}
                     style={{
                       height: 28,
                       padding: "0 12px",
@@ -5387,7 +5387,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                 onChange={(e) => setIssueReason(e.target.value)}
                                 style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                               />
-                              <span title="Sổ Việt AI gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
+                              <span title="Điền nhanh lý do xuất kho" style={{ display: "inline-flex" }}>
                                 <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                               </span>
                             </div>
@@ -5466,7 +5466,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                 onChange={(e) => setIssueReason(e.target.value)}
                                 style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                               />
-                              <span title="Sổ Việt AI gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
+                              <span title="Điền nhanh lý do xuất kho" style={{ display: "inline-flex" }}>
                                 <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                               </span>
                             </div>
@@ -5566,7 +5566,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                 onChange={(e) => setIssueReason(e.target.value)}
                                 style={{ flex: 1, border: "none", fontSize: 12.5, outline: "none" }}
                               />
-                              <span title="Sổ Việt AI gợi ý lý do xuất kho" style={{ display: "inline-flex" }}>
+                              <span title="Điền nhanh lý do xuất kho" style={{ display: "inline-flex" }}>
                                 <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                               </span>
                             </div>
@@ -5660,7 +5660,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   {/* Button Gợi ý hồ sơ */}
                   <button
                     type="button"
-                    onClick={() => notify("Sổ Việt AI đang phân tích gợi ý hồ sơ xuất kho...")}
+                    onClick={() => notify("Đang kiểm tra định mức và tồn kho xuất...")}
                     style={{
                       height: 28,
                       padding: "0 12px",
@@ -6639,7 +6639,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               onChange={(e) => setTransferPurpose(e.target.value)}
                               style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                             />
-                            <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                            <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                               <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -6939,7 +6939,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               onChange={(e) => setTransferExplanation(e.target.value)}
                               style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                             />
-                            <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                            <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                               <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -7000,7 +7000,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               onChange={(e) => setTransferExplanation(e.target.value)}
                               style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                             />
-                            <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                            <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                               <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                             </span>
                           </div>
@@ -7152,7 +7152,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Sổ Việt AI đang kiểm tra hồ sơ chuyển kho...")}
+                    onClick={() => notify("Đang kiểm tra hồ sơ điều chuyển kho...")}
                     style={{
                       height: 28,
                       padding: "0 12px",
@@ -7977,7 +7977,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             >
               {/* Collapsible right sidebar trigger */}
               <div
-                onClick={() => notify("Sổ Việt AI: Trợ lý lệnh sản xuất")}
+                onClick={() => notify("Kiểm tra định mức lệnh sản xuất")}
                 title="Mở trợ lý sản xuất"
                 style={{
                   position: "absolute",
@@ -8125,7 +8125,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           }}
                         />
                         <div style={{ position: "absolute", right: 8, bottom: 8, display: "flex", alignItems: "center" }}>
-                          <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                          <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                             <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                           </span>
                         </div>
@@ -8738,7 +8738,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             >
               {/* Collapsible right sidebar trigger */}
               <div
-                onClick={() => notify("Sổ Việt AI: Trợ lý lắp ráp")}
+                onClick={() => notify("Kiểm tra định mức lắp ráp")}
                 title="Mở trợ lý lắp ráp"
                 style={{
                   position: "absolute",
@@ -8854,7 +8854,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           }}
                         />
                         <div style={{ position: "absolute", right: 8, bottom: 8, display: "flex", alignItems: "center" }}>
-                          <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                          <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                             <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                           </span>
                         </div>
@@ -9396,7 +9396,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             >
               {/* Collapsible right sidebar trigger */}
               <div
-                onClick={() => notify("Sổ Việt AI: Trợ lý tháo dỡ")}
+                onClick={() => notify("Kiểm tra định mức tháo dỡ")}
                 title="Mở trợ lý tháo dỡ"
                 style={{
                   position: "absolute",
@@ -9512,7 +9512,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           }}
                         />
                         <div style={{ position: "absolute", right: 8, bottom: 8, display: "flex", alignItems: "center" }}>
-                          <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                          <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                             <Sparkles size={14} style={{ color: "#a855f7", cursor: "pointer" }} />
                           </span>
                         </div>

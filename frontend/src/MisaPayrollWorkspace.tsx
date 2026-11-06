@@ -932,7 +932,7 @@ export default function MisaPayrollWorkspace({
                       void apiSave(async () => {
                         const settings = await request<any>(`/api/v1/payroll/settings/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
                           method: "PUT", body: JSON.stringify({
-                            integration_mode: payrollOption === "AMIS Tiền lương đám mây" ? "CLOUD" : "LOCAL",
+                            integration_mode: payrollOption === "Tiền lương đám mây" ? "CLOUD" : "LOCAL",
                             accounting_rule: accountingRule, standard_days: standardDaysOption,
                           }),
                         });
@@ -5071,7 +5071,7 @@ export default function MisaPayrollWorkspace({
             {/* Dòng link Sổ Việt AI cùng 1 hàng */}
             <div
               onClick={() => {
-                notify("Trợ lý Sổ Việt AI: Sẵn sàng tra cứu, phân tích quỹ lương và đề xuất biểu mẫu phù hợp");
+                notify("Sẵn sàng tra cứu, tổng hợp quỹ lương và biểu mẫu báo cáo tiền lương");
               }}
               style={{
                 display: "inline-flex",
@@ -5086,7 +5086,7 @@ export default function MisaPayrollWorkspace({
               onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
             >
-              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+              <span>Tìm kiếm nhanh báo cáo</span>
               <div
                 style={{
                   width: 17,

@@ -62,7 +62,7 @@ export default function LiveCommonHub() {
         request<Page<AIInteraction> | AIInteraction[]>(`/api/v1/common/ai-conversations/?company_id=${encodeURIComponent(companyId)}`, token)
           .then(value => { if (active) setInteractions(Array.isArray(value) ? value : value.results); })
       )
-      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Không tải được lịch sử AI."); });
+      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Không tải được lịch sử tra cứu."); });
     return () => { active = false; };
   }, [token, companyId, tab]);
 
@@ -143,7 +143,7 @@ export default function LiveCommonHub() {
         method: "POST", body: JSON.stringify({ company: companyId, question: question.trim(), request_type: requestType }),
       });
       setInteractions(current => [result, ...current]); setQuestion("");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "AI Assistant không trả lời được."); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Hệ thống tra cứu đang bận."); }
     finally { setBusy(false); }
   }
 
@@ -153,7 +153,7 @@ export default function LiveCommonHub() {
       if (action === "confirm") {
         const result = await request<AIInteraction>(`/api/v1/common/ai/${item.id}/confirm/?company_id=${encodeURIComponent(companyId)}`, token, { method: "POST", body: "{}" });
         setInteractions(current => current.map(row => row.id === item.id ? result : row));
-        setMessage("Đã xác nhận kết quả AI.");
+        setMessage("Đã xác nhận kết quả.");
       } else {
         const feedback = await request<{ helpful: boolean }>(`/api/v1/common/ai/${item.id}/feedback/?company_id=${encodeURIComponent(companyId)}`, token, {
           method: "POST", body: JSON.stringify({ helpful }),
@@ -161,7 +161,7 @@ export default function LiveCommonHub() {
         setInteractions(current => current.map(row => row.id === item.id ? { ...row, feedback } : row));
         setMessage("Đã gửi đánh giá.");
       }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Không cập nhật được kết quả AI."); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Không cập nhật được kết quả."); }
     finally { setBusy(false); }
   }
 
@@ -213,7 +213,6 @@ export default function LiveCommonHub() {
                 ["notifications", "Thông báo"],
                 ["search", "Tìm kiếm"],
                 ["work", "Việc cần xử lý"],
-                ["ai", "AI Assistant"],
               ] as const).map(([id, label]) => (
                 <button
                   type="button"
@@ -231,7 +230,6 @@ export default function LiveCommonHub() {
                   {id === "notifications" && <Bell size={14} />}
                   {id === "search" && <Search size={14} />}
                   {id === "work" && <CheckSquare size={14} />}
-                  {id === "ai" && <Bot size={14} />}
                   <span>{label}</span>
                 </button>
               ))}

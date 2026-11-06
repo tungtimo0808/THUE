@@ -3964,7 +3964,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4022,7 +4022,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4091,7 +4091,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4309,7 +4309,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason}${partnerName}`
@@ -4420,7 +4420,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason.trim()} ${partnerName}`
@@ -4567,7 +4567,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4665,7 +4665,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4801,8 +4801,8 @@ export function CreateVoucherModal({
             {/* Drawer side toggle button matching MISA assistant */}
             <div
               className="misa-voucher-drawer-handle"
-              title="Mở trợ lý Sổ Việt AI"
-              onClick={() => alert("Trợ lý Sổ Việt AI Sổ Việt ERP")}
+              title="Kiểm tra nhanh định khoản"
+              onClick={() => alert("Hệ thống kiểm tra định khoản Sổ Việt ERP")}
             >
               <ChevronLeft size={14} />
             </div>
@@ -4860,16 +4860,16 @@ export function CreateVoucherModal({
                   className="misa-voucher-ava-pill"
                   onClick={() => {
                     alert(
-                      `Sổ Việt AI: Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
+                      `Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
                     );
                   }}
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="Sổ Việt AI"
+                    alt="Biểu tượng"
                     style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }}
                   />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={12} />
                 </button>
               </div>
@@ -5583,7 +5583,7 @@ export function AIAssistantModal({
               <Sparkles size={16} />
             </div>
             <div>
-              <h2 style={{ fontSize: 16 }}>Sổ Việt AI — Thêm chứng từ bằng AI</h2>
+              <h2 style={{ fontSize: 16 }}>Nhập nhanh chứng từ từ tệp đính kèm</h2>
               <small style={{ color: "#6b7280" }}>
                 Nhập câu lệnh tự nhiên, quét hóa đơn hoặc dán nội dung tin nhắn
               </small>
@@ -6713,7 +6713,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             onClick={() => setShowAdvisorModal(true)}
           >
             <Sparkles size={15} style={{ color: "#8b5cf6" }} />
-            <span>Sổ Việt AI Phân tích</span>
+            <span>Phân tích dòng tiền</span>
           </button>
 
           <button
@@ -6794,7 +6794,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
         <div className="misa-forecast-advisor-body" style={{ flex: 1 }}>
           <h4>
-            <span>Khuyến nghị thông minh từ Trợ lý Sổ Việt AI:</span>
+            <span>Nhận định & Khuyến nghị quản trị dòng tiền:</span>
             <span style={{ fontSize: 11, background: "#dcfce7", color: "#15803d", padding: "1px 6px", borderRadius: 4 }}>
               Độ tin cậy 96%
             </span>
@@ -7143,7 +7143,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
       )}
 
-      {/* 7. Modal Sổ Việt AI Phân tích dòng tiền */}
+      {/* 7. Modal Phân tích dòng tiền dòng tiền */}
       {showAdvisorModal && (
         <div className="misa-modal-backdrop" onClick={() => setShowAdvisorModal(false)}>
           <div
@@ -7154,7 +7154,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             <div className="misa-modal-header">
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={18} style={{ color: "#8b5cf6" }} />
-                <span>Báo cáo tư vấn dòng tiền từ Trợ lý Sổ Việt AI</span>
+                <span>Báo cáo phân tích & dự báo thanh khoản dòng tiền</span>
               </h3>
               <button
                 type="button"
@@ -7185,7 +7185,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
               </div>
 
               <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                3 Điểm lưu ý trọng yếu từ Sổ Việt AI:
+                3 Điểm lưu ý trọng yếu về thanh khoản:
               </h4>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#334155", display: "flex", flexDirection: "column", gap: 8, lineHeight: 1.45 }}>
                 <li>
@@ -9702,7 +9702,7 @@ export default function MisaCashWorkspace({
             <button
               type="button"
               className="misa-tax-icon-btn"
-              title="Gợi ý thông minh / AI Insights"
+              title="Gợi ý & Kiểm tra nhanh"
               onClick={() => setShowAIModal(true)}
               style={{
                 width: 32,
@@ -9885,9 +9885,9 @@ export default function MisaCashWorkspace({
             </button>
           </div>
 
-          {/* Right Buttons: Thêm bằng AI, Thêm thu tiền, Thêm chi tiền (Screenshot 3 & 4) */}
+          {/* Right Buttons: Nhập nhanh, Thêm thu tiền, Thêm chi tiền (Screenshot 3 & 4) */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {/* Thêm bằng AI Button */}
+            {/* Nhập nhanh Button */}
             <button
               type="button"
               onClick={() => setShowAIModal(true)}
@@ -9909,7 +9909,7 @@ export default function MisaCashWorkspace({
             >
               <img
                 src="/ava_avatar.jpg"
-                alt="Sổ Việt AI"
+                alt="Biểu tượng"
                 style={{
                   width: 22,
                   height: 22,
@@ -9919,7 +9919,7 @@ export default function MisaCashWorkspace({
                   flexShrink: 0,
                 }}
               />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Thêm thu tiền Dropdown Button (Screenshot 3) */}

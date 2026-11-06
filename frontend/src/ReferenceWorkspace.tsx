@@ -1078,7 +1078,7 @@ function ReferenceWorkspace() {
       kindLabel: "Dự báo dòng tiền",
       kind: "alert" as const,
       description: "Dự kiến số dư quỹ tiền mặt giảm dưới ngưỡng an toàn (25.000.000 đ) vào ngày 28/09. Đề xuất gửi nhắc nợ đối tác sớm.",
-      partner: "Sổ Việt AI",
+      partner: "Hệ thống cảnh báo",
       amount: 18250000,
       date: "25/09/2026 14:15",
       actionUrl: "/cash/cashflow",
@@ -1222,8 +1222,8 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
-    "Thiết lập kết nối Ngân hàng điện tử (mBank)": href("/bank/ebanking"),
-    "Thiết lập ký số từ xa (SmartCA / eSign)": href("/invoices/sync"),
+    "Thiết lập kết nối Ngân hàng điện tử": href("/bank/ebanking"),
+    "Thiết lập chữ ký số (USB Token / SmartCA)": href("/invoices/sync"),
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
     "Chuyển kho": href("/inventory/transfers"),
@@ -1240,10 +1240,6 @@ function ReferenceWorkspace() {
     }
     if (name === "Gợi ý, nhắc nhở thông minh") {
       setPanel("notifications");
-      return;
-    }
-    if (name === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán") {
-      setNotice("Trợ lý Sổ Việt AI đã sẵn sàng.");
       return;
     }
     const targetRoute = quickAccessRoutes[name];
@@ -2173,7 +2169,6 @@ function ReferenceWorkspace() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
-              <span>AI</span>
             </form>
             {!apiToken && <SmartSearchResults
               query={query}
@@ -2385,10 +2380,6 @@ function ReferenceWorkspace() {
           href={href}
           allowedModules={activeRoleSpec.allowedModules}
           onNavigate={() => setMobileOpen(false)}
-          onOpenAI={() => {
-            navigate(href("/cash/transactions"));
-            setNotice("Trợ lý Sổ Việt AI đã sẵn sàng.");
-          }}
           onExchangeRate={() => {
             navigate(href("/cash/transactions"));
             setNotice("Tính năng Tính tỷ giá xuất quỹ ngoại tệ (USD, EUR) theo phương pháp Bình quân gia quyền.");
@@ -2842,8 +2833,7 @@ function ReferenceWorkspace() {
                     const isQuickRoute =
                       Boolean(quickAccessRoutes[label]) ||
                       label === "Thiết lập màu sắc và hiển thị" ||
-                      label === "Gợi ý, nhắc nhở thông minh" ||
-                      label === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán";
+                      label === "Gợi ý, nhắc nhở thông minh";
                     return (
                       <button
                         key={label}

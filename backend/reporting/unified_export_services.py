@@ -115,7 +115,7 @@ def normalize_columns(columns: Any) -> List[Dict[str, Any]]:
 
 
 def _resolve_col_grouping(col: Dict[str, Any]) -> Tuple[Optional[str], str]:
-    """Tách nhóm cột cha (group) và tiêu đề con (sublabel) theo chuẩn biểu mẫu MISA."""
+    """Tách nhóm cột cha (group) và tiêu đề con (sublabel) theo chuẩn biểu mẫu kế toán."""
     grp = col.get("group")
     sub = col.get("sublabel")
     raw_label = str(col.get("label") or col.get("key") or "").strip()
@@ -396,7 +396,7 @@ def generate_csv(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
 def generate_xlsx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> bytes:
     """
     TC-RPT-15-33..48, BR-RPT-EXP-50, 53, 54, 57:
-    Tạo tệp bảng tính Excel (.xlsx) chuẩn biểu mẫu báo cáo MISA / Doanh nghiệp:
+    Tạo tệp bảng tính Excel (.xlsx) chuẩn biểu mẫu báo cáo Doanh nghiệp:
     - Bố cục trang trọng: Thông tin công ty, tiêu đề căn giữa theo độ rộng bảng, đơn vị tính.
     - Màu sắc hài hòa: Header xám nhạt thanh lịch (#F1F5F9), viền đen/xám mảnh, không chói mắt.
     - Định dạng số kế toán: #,##0;(#,##0);"" (ẩn số 0 trống trải, dễ nhìn).
@@ -990,7 +990,7 @@ def generate_pdf(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = No
     Tạo tài liệu PDF chính thức với ReportLab:
     - Bố cục trang theo khổ giấy (A4/A3) và hướng giấy thông minh (tự động Landscape khi > 6 cột).
     - Hỗ trợ đầy đủ tiếng Việt UTF-8 không lỗi font (TrueType Unicode).
-    - Header bảng lặp lại trên từng trang (repeatRows=1), giao diện trắng đen chuẩn MISA.
+    - Header bảng lặp lại trên từng trang (repeatRows=1), giao diện trắng đen chuẩn kế toán.
     - Màu sắc mã hàng xanh dương link (#1D4ED8) đồng bộ với bản xem trước.
     - Đánh số trang "1/1" hoặc "X/Y".
     - Khối chữ ký pháp lý chuẩn 3 cột: Người lập biểu, Kế toán trưởng, Giám đốc.
@@ -1440,7 +1440,7 @@ def generate_docx(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = N
 def generate_print_html(dataset: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> str:
     """
     TC-RPT-15-11..24, BR-RPT-EXP-37..48:
-    Tạo bản xem trước in (HTML Print Preview) chuẩn CSS paged media theo mẫu báo cáo MISA.
+    Tạo bản xem trước in (HTML Print Preview) chuẩn CSS paged media theo mẫu báo cáo kế toán.
     Hỗ trợ lặp header (@media print table-header-group), khổ giấy A4/A3, xoay ngang/dọc,
     tiêu đề nhóm 2 tầng (rowspan/colspan), khối chữ ký 3 cột và watermark trạng thái.
     """

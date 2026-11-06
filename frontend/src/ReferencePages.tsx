@@ -886,13 +886,6 @@ export function ReferenceTransactions({
               Thêm chứng từ
             </button>
           )}
-          <button
-            className="ref-ai-button"
-            onClick={() => onInfo("Thêm bằng AI")}
-          >
-            <Bot size={17} />
-            Thêm bằng AI
-          </button>
         </div>
         {filterOpen && (
           <form

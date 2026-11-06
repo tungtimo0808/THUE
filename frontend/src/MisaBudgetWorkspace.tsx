@@ -1194,9 +1194,9 @@ export default function MisaBudgetWorkspace({
               <button
                 type="button"
                 className="misa-budget-ava-ai-btn"
-                onClick={() => notify?.("Đang khởi tạo trợ lý Sổ Việt AI cho báo cáo ngân sách...")}
+                onClick={() => notify?.("Đang tra cứu nhanh danh mục báo cáo ngân sách...")}
               >
-                <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+                <span>Tìm kiếm nhanh báo cáo</span>
                 <span style={{ fontSize: 14 }}>🤖</span>
               </button>
             </div>

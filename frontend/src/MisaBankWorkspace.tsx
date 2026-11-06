@@ -232,7 +232,7 @@ export default function MisaBankWorkspace({
   const [bankFilterOpen,setBankFilterOpen]=useState(false);
   const [bankPage,setBankPage]=useState(1);
   const [bankPageSize,setBankPageSize]=useState(20);
-  const [showAvaBanner, setShowAvaBanner] = useState(true);
+  const [showAvaBanner, setShowAvaBanner] = useState(false);
   const [detailExpanded, setDetailExpanded] = useState(true);
   const [bankDetailTab,setBankDetailTab]=useState("accounting");
   const [kpiCollapsed, setKpiCollapsed] = useState(false);
@@ -1431,7 +1431,7 @@ export default function MisaBankWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`Sổ Việt AI đã tạo dự thảo chứng từ chuyển khoản ${doc.code}.`);
+            notify(`Hệ thống đã tạo dự thảo chứng từ chuyển khoản ${doc.code}.`);
           }}
         />
       )}
@@ -1531,7 +1531,7 @@ export default function MisaBankWorkspace({
                 >
                   <Sparkles size={13} />
                 </div>
-                <strong style={{ fontSize: 13, color: "#4338ca" }}>Sổ Việt AI</strong>
+                <strong style={{ fontSize: 13, color: "#4338ca" }}>Phân tích dòng tiền</strong>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: "#6b7280" }}>
@@ -1817,7 +1817,7 @@ export default function MisaBankWorkspace({
             <button
               type="button"
               className="misa-tax-icon-btn"
-              title="Gợi ý thông minh / AI Insights"
+              title="Gợi ý & Kiểm tra nhanh"
               onClick={() => setShowAIModal(true)}
               style={{
                 width: 32,
@@ -2021,9 +2021,9 @@ export default function MisaBankWorkspace({
             </button>
           </div>
 
-          {/* Right Buttons: Thêm bằng AI, Thu tiền, Chi tiền */}
+          {/* Right Buttons: Nhập nhanh, Thu tiền, Chi tiền */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {/* Thêm bằng AI Button */}
+            {/* Nhập nhanh Button */}
             <button
               type="button"
               onClick={() => setShowAIModal(true)}
@@ -2055,7 +2055,7 @@ export default function MisaBankWorkspace({
               >
                 <Sparkles size={12} />
               </div>
-              Thêm bằng AI
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Thêm thu tiền Dropdown Button (Matching Screenshot 3) */}
