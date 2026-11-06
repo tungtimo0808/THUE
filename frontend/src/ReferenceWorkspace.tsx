@@ -554,6 +554,19 @@ function ReferenceWorkspace() {
   });
   const [recentlyChangedCluster, setRecentlyChangedCluster] = useState<string | null>(null);
   const [isSwitchingContext, setIsSwitchingContext] = useState(false);
+  const [contextTransition, setContextTransition] = useState<{
+    type: "company" | "dataset" | "branch" | "period";
+    title: string;
+    fromLabel: string;
+    toLabel: string;
+    subTitle: string;
+    companyName: string;
+    datasetName: string;
+    branchName: string;
+    periodName: string;
+    phase: "entering" | "done";
+  } | null>(null);
+  const transitionTimersRef = useRef<number[]>([]);
 
   // High-performance Keep-Alive LRU cache for instant tab/workspace switching
   const [visitedModules, setVisitedModules] = useState<string[]>(() => [moduleId]);
@@ -591,13 +604,69 @@ function ReferenceWorkspace() {
     return visitedModules;
   }, [visitedModules, moduleId]);
 
-  const triggerSwitchFeedback = (type: string, message: string) => {
-    setRecentlyChangedCluster(type);
-    setIsSwitchingContext(true);
-    setRawNotice(message);
-    setTimeout(() => setRecentlyChangedCluster(null), 1200);
-    setTimeout(() => setIsSwitchingContext(false), 280);
-  };
+  const triggerSwitchFeedback = useCallback(
+    (
+      type: "company" | "dataset" | "branch" | "period",
+      message: string,
+      details?: {
+        fromLabel?: string;
+        toLabel?: string;
+        subTitle?: string;
+        companyName?: string;
+        datasetName?: string;
+        branchName?: string;
+        periodName?: string;
+      }
+    ) => {
+      transitionTimersRef.current.forEach((id) => window.clearTimeout(id));
+      transitionTimersRef.current = [];
+
+      setRecentlyChangedCluster(type);
+      setIsSwitchingContext(true);
+      setRawNotice(message);
+
+      const titleMap: Record<"company" | "dataset" | "branch" | "period", string> = {
+        company: "CHUYỂN ĐỔI DOANH NGHIỆP LÀM VIỆC",
+        dataset: "CHUYỂN ĐỔI BỘ DỮ LIỆU KẾ TOÁN",
+        branch: "CHUYỂN ĐỔI CHI NHÁNH & ĐƠN VỊ",
+        period: "CHUYỂN ĐỔI KỲ KẾ TOÁN LÀM VIỆC",
+      };
+
+      const defaultSubMap: Record<"company" | "dataset" | "branch" | "period", string> = {
+        company: "Đang tải hệ thống tài khoản, danh mục và sổ kế toán của doanh nghiệp...",
+        dataset: "Đang nạp hệ thống sổ sách, chứng từ và báo cáo theo bộ dữ liệu mới...",
+        branch: "Đang đồng bộ chứng từ, sổ quỹ, tồn kho và công nợ theo phạm vi chi nhánh...",
+        period: "Đang kết xuất số dư đầu kỳ, phát sinh trong kỳ và lũy kế theo kỳ kế toán...",
+      };
+
+      setContextTransition({
+        type,
+        title: titleMap[type],
+        fromLabel: details?.fromLabel || "Phiên trước",
+        toLabel: details?.toLabel || message.replace(/^✓\s*Đã\s*(chuyển sang|chọn)[^:]*:\s*/i, ""),
+        subTitle: details?.subTitle || defaultSubMap[type],
+        companyName: details?.companyName || company?.name || "Doanh nghiệp",
+        datasetName: details?.datasetName || "Dữ liệu kế toán 2026",
+        branchName: details?.branchName || "Trụ sở chính",
+        periodName: details?.periodName || period,
+        phase: "entering",
+      });
+
+      const t1 = window.setTimeout(() => {
+        setContextTransition((prev) => (prev ? { ...prev, phase: "done" } : null));
+      }, 420);
+      const t2 = window.setTimeout(() => {
+        setContextTransition(null);
+        setIsSwitchingContext(false);
+      }, 950);
+      const t3 = window.setTimeout(() => {
+        setRecentlyChangedCluster(null);
+      }, 1800);
+
+      transitionTimersRef.current = [t1, t2, t3];
+    },
+    [company?.name, period]
+  );
 
   const activeCompanyRegime = useMemo(() => {
     const raw = String((company as any)?.accounting_regime || "TT99").toUpperCase();
@@ -734,9 +803,38 @@ function ReferenceWorkspace() {
     return branch;
   }, [branch, companyBranches]);
 
+  const branchLabel = useMemo(() => {
+    if (branch === "all" || !branch) return "Toàn doanh nghiệp";
+    const found = companyBranches.find((b) => b.id === branch || b.code === branch);
+    if (found) {
+      return found.name.replace(/\s*[-–—]\s*(?:công\s+ty|cty|doanh\s+nghiệp).*$/i, "").trim() || found.name;
+    }
+    if (branch === "head-office") return "Trụ sở chính";
+    if (branch === "hcm") return "Chi nhánh TP. HCM";
+    return "Trụ sở chính";
+  }, [branch, companyBranches]);
+
+  const periodLabel = useMemo(() => {
+    const matchMonth = period.match(/^(20\d{2})-(\d{2})$/);
+    if (matchMonth) {
+      return `K${Number(matchMonth[2])}.${matchMonth[1]}`;
+    }
+    const matchYear = period.match(/^(20\d{2})$/);
+    if (matchYear) {
+      return `Năm ${matchYear[1]}`;
+    }
+    return `Năm ${activeDatasetYear}`;
+  }, [period, activeDatasetYear]);
+
   const applyBranchSwitch = useCallback(
     (nextBranchId: string, displayLabel?: string) => {
       const normalized = !nextBranchId || nextBranchId === "all" ? "all" : nextBranchId;
+      const prevBranchLabel = branchLabel;
+      const targetLabel =
+        displayLabel ||
+        (normalized === "all"
+          ? "Toàn doanh nghiệp"
+          : companyBranches.find((b) => b.id === normalized || b.code === normalized)?.name || "Chi nhánh");
       setBranch(normalized);
       try {
         localStorage.setItem("ref_branch", normalized);
@@ -757,11 +855,20 @@ function ReferenceWorkspace() {
           detail: { branch: normalized, dataset, period, companyId: company?.id },
         })
       );
-      if (displayLabel) {
-        triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${displayLabel}`);
-      }
+      triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${targetLabel}`, {
+        fromLabel: prevBranchLabel,
+        toLabel: targetLabel,
+        subTitle:
+          normalized === "all"
+            ? "Đang hợp nhất số liệu toàn doanh nghiệp (Trụ sở chính & tất cả Chi nhánh)..."
+            : `Đang cô lập chứng từ, sổ quỹ, công nợ và tồn kho riêng của ${targetLabel}...`,
+        companyName: company?.name,
+        datasetName: datasetLabel,
+        branchName: targetLabel,
+        periodName: periodLabel,
+      });
     },
-    [apiToken, company?.id, dataset, period]
+    [apiToken, company?.id, company?.name, companyBranches, branchLabel, dataset, datasetLabel, period, periodLabel, triggerSwitchFeedback]
   );
 
   useEffect(() => {
@@ -781,19 +888,9 @@ function ReferenceWorkspace() {
     return () => window.removeEventListener("erp_context_changed", syncFromStorage);
   }, []);
 
-  const branchLabel = useMemo(() => {
-    if (branch === "all" || !branch) return "Toàn doanh nghiệp";
-    const found = companyBranches.find((b) => b.id === branch || b.code === branch);
-    if (found) {
-      return found.name.replace(/\s*[-–—]\s*(?:công\s+ty|cty|doanh\s+nghiệp).*$/i, "").trim() || found.name;
-    }
-    if (branch === "head-office") return "Trụ sở chính";
-    if (branch === "hcm") return "Chi nhánh TP. HCM";
-    return "Trụ sở chính";
-  }, [branch, companyBranches]);
-
   const applyDatasetSwitch = useCallback(
     (item: AccountingDatasetItem) => {
+      const prevDatasetLabel = datasetLabel;
       setDataset(item.id);
       try {
         localStorage.setItem("ref_dataset", item.id);
@@ -817,6 +914,11 @@ function ReferenceWorkspace() {
         setParams(nextParams);
       }
 
+      const nextPeriodFormatted = /^20\d{2}-\d{2}$/.test(nextPeriod)
+        ? `K${Number(nextPeriod.slice(5))}.${nextPeriod.slice(0, 4)}`
+        : `Năm ${targetYear}`;
+      const isMgmt = item.book_type === "MANAGEMENT" || item.id.startsWith("management");
+
       window.dispatchEvent(
         new CustomEvent("erp_context_changed", {
           detail: {
@@ -827,22 +929,20 @@ function ReferenceWorkspace() {
           },
         })
       );
-      triggerSwitchFeedback("dataset", `✓ Đã chuyển sang: ${item.label}`);
+      triggerSwitchFeedback("dataset", `✓ Đã chuyển sang: ${item.label}`, {
+        fromLabel: prevDatasetLabel,
+        toLabel: item.label,
+        subTitle: isMgmt
+          ? `Đang nạp Sổ Quản trị nội bộ (Năm tài chính ${targetYear}) — Tách biệt hoàn toàn với Sổ Thuế...`
+          : `Đang nạp Sổ Tài chính & Thuế chính thức (Năm tài chính ${targetYear}) theo chuẩn ${item.regime || activeCompanyRegime}...`,
+        companyName: company?.name,
+        datasetName: item.label,
+        branchName: branchLabel,
+        periodName: nextPeriodFormatted,
+      });
     },
-    [period, params, setParams, effectiveBranchId, company?.id]
+    [period, params, setParams, effectiveBranchId, company?.id, company?.name, datasetLabel, branchLabel, activeCompanyRegime, triggerSwitchFeedback]
   );
-
-  const periodLabel = useMemo(() => {
-    const matchMonth = period.match(/^(20\d{2})-(\d{2})$/);
-    if (matchMonth) {
-      return `K${Number(matchMonth[2])}.${matchMonth[1]}`;
-    }
-    const matchYear = period.match(/^(20\d{2})$/);
-    if (matchYear) {
-      return `Năm ${matchYear[1]}`;
-    }
-    return `Năm ${activeDatasetYear}`;
-  }, [period, activeDatasetYear]);
 
   const [items, setItems] = useState(readTransactions);
   const scoped = useMemo(
@@ -1610,7 +1710,15 @@ function ReferenceWorkspace() {
                           }
                           context("company", c.id);
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name} (${cReg})`);
+                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name} (${cReg})`, {
+                            fromLabel: company.name,
+                            toLabel: `${c.name} (${cReg})`,
+                            subTitle: `Đang khởi tạo hệ thống tài khoản, danh mục và sổ kế toán của ${c.name} theo chế độ ${cReg}...`,
+                            companyName: c.name,
+                            datasetName: datasetLabel,
+                            branchName: "Trụ sở chính",
+                            periodName: periodLabel,
+                          });
                         }}
                       >
                         <span className="ref-cluster-item-name" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -1989,9 +2097,18 @@ function ReferenceWorkspace() {
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
+                          const prevPeriod = periodLabel;
                           context("period", item.id);
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("period", `✓ Đã chọn kỳ kế toán: ${item.label}`);
+                          triggerSwitchFeedback("period", `✓ Đã chọn kỳ kế toán: ${item.label}`, {
+                            fromLabel: prevPeriod,
+                            toLabel: item.label,
+                            subTitle: `Đang kết xuất số dư đầu kỳ, phát sinh trong kỳ và báo cáo cho ${item.label}...`,
+                            companyName: company?.name,
+                            datasetName: datasetLabel,
+                            branchName: branchLabel,
+                            periodName: item.label.split(" ")[0],
+                          });
                         }}
                       >
                         <span className="ref-cluster-item-name">{item.label}</span>
@@ -3118,6 +3235,84 @@ function ReferenceWorkspace() {
           onNavigate={(url) => navigate(url)}
           notify={setNotice}
         />
+      )}
+      {contextTransition && (
+        <div
+          className={`ref-context-transition-overlay ${contextTransition.phase === "done" ? "is-done" : "is-entering"}`}
+          role="status"
+          aria-live="polite"
+          data-testid="context-switch-overlay"
+        >
+          <div className="ref-context-transition-card">
+            <div className="ref-context-transition-top-bar" />
+            <div className="ref-context-transition-body">
+              <div className="ref-context-transition-header">
+                <div className={`ref-context-transition-icon-ring type-${contextTransition.type} ${contextTransition.phase === "done" ? "done" : ""}`}>
+                  {contextTransition.phase === "done" ? (
+                    <Check size={24} strokeWidth={3} />
+                  ) : contextTransition.type === "branch" ? (
+                    <MapPin size={22} />
+                  ) : contextTransition.type === "dataset" ? (
+                    <Database size={22} />
+                  ) : contextTransition.type === "company" ? (
+                    <Building2 size={22} />
+                  ) : (
+                    <Calendar size={22} />
+                  )}
+                </div>
+                <div className="ref-context-transition-titles">
+                  <span className="ref-context-transition-kicker">
+                    {contextTransition.phase === "done" ? "✓ ĐÃ CHUYỂN ĐỔI THÀNH CÔNG" : contextTransition.title}
+                  </span>
+                  <p className="ref-context-transition-sub">{contextTransition.subTitle}</p>
+                </div>
+              </div>
+
+              <div className="ref-context-transition-flow">
+                <div className="ref-context-flow-box from">
+                  <span className="ref-context-flow-tag">TRƯỚC ĐÓ</span>
+                  <strong className="ref-context-flow-val">{contextTransition.fromLabel}</strong>
+                </div>
+
+                <div className="ref-context-flow-arrow" aria-hidden="true">
+                  <span className="arrow-dot" />
+                  <span className="arrow-dot" />
+                  <ChevronRight size={20} strokeWidth={2.5} />
+                </div>
+
+                <div className="ref-context-flow-box to">
+                  <span className="ref-context-flow-tag">
+                    <span className="live-pulse-dot" /> ĐANG MỞ DỮ LIỆU
+                  </span>
+                  <strong className="ref-context-flow-val">{contextTransition.toLabel}</strong>
+                </div>
+              </div>
+
+              <div className="ref-context-transition-meta">
+                <div className={`ref-context-meta-chip ${contextTransition.type === "company" ? "active" : ""}`}>
+                  <Building2 size={12} />
+                  <span>{contextTransition.companyName}</span>
+                </div>
+                <div className={`ref-context-meta-chip ${contextTransition.type === "dataset" ? "active" : ""}`}>
+                  <Database size={12} />
+                  <span>{contextTransition.datasetName}</span>
+                </div>
+                <div className={`ref-context-meta-chip ${contextTransition.type === "branch" ? "active" : ""}`}>
+                  <MapPin size={12} />
+                  <span>{contextTransition.branchName}</span>
+                </div>
+                <div className={`ref-context-meta-chip ${contextTransition.type === "period" ? "active" : ""}`}>
+                  <Calendar size={12} />
+                  <span>{contextTransition.periodName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="ref-context-transition-progress">
+              <div className="ref-context-transition-progress-fill" />
+            </div>
+          </div>
+        </div>
       )}
       <MisaBranchManagementModal
         isOpen={isBranchModalOpen}
