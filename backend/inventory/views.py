@@ -16,6 +16,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelV
 
 from . import costing, count_resolution, models, sale_issue, serializers, services, stock_alerts, stock_summary
 from .permissions import InventoryPermission
+from iam.permissions import filter_queryset_by_branch
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,10 @@ class CompanyViewSet(ModelViewSet):
     def get_queryset(self):
         company_id = self.request.query_params.get("company_id")
         queryset = super().get_queryset()
-        return queryset.filter(company_id=company_id) if company_id else queryset.none()
+        if not company_id:
+            return queryset.none()
+        queryset = queryset.filter(company_id=company_id)
+        return filter_queryset_by_branch(queryset, self.request, company_id)
 
     def perform_create(self, serializer):
         obj = serializer.save(created_by=services.actor(self.request)) if "created_by" in [f.name for f in serializer.Meta.model._meta.fields] else serializer.save()

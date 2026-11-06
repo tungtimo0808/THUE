@@ -881,7 +881,7 @@ export default function MisaCashFlowIndirectReport({
               cursor: "pointer",
             }}
             title="Trợ giúp"
-            onClick={() => notify?.("Hệ thống trợ giúp Sổ Việt AI.")}
+            onClick={() => notify?.("Hệ thống hướng dẫn nghiệp vụ kế toán.")}
           >
             <MessageCircle size={14} />
           </button>
@@ -934,7 +934,7 @@ export default function MisaCashFlowIndirectReport({
           <Sparkles size={20} color="#7c3aed" style={{ flexShrink: 0, marginTop: 2 }} />
           <div style={{ flex: 1, fontSize: 13, color: "#4c1d95", lineHeight: 1.6 }}>
             <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13.5 }}>
-              Cơ chế điều chỉnh lưu chuyển tiền thuần từ Lợi nhuận (Sổ Việt AI):
+              Cơ chế điều chỉnh lưu chuyển tiền thuần từ Lợi nhuận:
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 8 }}>
               <div style={{ background: "#ffffff", padding: 10, borderRadius: 6, border: "1px solid #ddd6fe" }}>

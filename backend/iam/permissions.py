@@ -390,3 +390,112 @@ class HasIamPermission(BasePermission):
             if permission_code == "SYS.USER.VIEW_SECURITY":
                 return has_effective_permission(request.user.iam_account, company, "SYS.USER.VIEW")
         return has_perm
+
+
+def get_user_allowed_branch_ids(request, company_id):
+    """
+    Returns None if the user has full-company access (superuser, company admin,
+    or has an assignment with allow_all_company_data=True / data_scope_set=None).
+    Otherwise returns a set of allowed branch UUID strings for this user in company_id.
+    """
+    if not request.user or not request.user.is_authenticated or getattr(request.user, "is_superuser", False):
+        return None
+    account = getattr(request.user, "iam_account", None)
+    if not account or not company_id:
+        return set()
+    from organization.models import Company
+    try:
+        company = Company.objects.filter(pk=company_id).first()
+    except (ValueError, TypeError, DjangoValidationError):
+        company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+    if not company:
+        return set()
+    if is_company_admin_member(account, company):
+        return None
+    assignments = list(effective_assignments(account, company))
+    if not assignments:
+        membership = CompanyMembership.objects.filter(
+            user=account, company=company, membership_status=ActiveStatus.ACTIVE
+        ).select_related("employee").first()
+        if membership and membership.employee_id and membership.employee.branch_id:
+            return {str(membership.employee.branch_id)}
+        return set()
+    if any(a.data_scope_set_id is None or a.data_scope_set.allow_all_company_data for a in assignments):
+        return None
+    branch_ids = set()
+    for a in assignments:
+        if a.data_scope_set_id:
+            branch_ids.update(str(bid) for bid in a.data_scope_set.branch_scopes.values_list("branch_id", flat=True))
+    if not branch_ids:
+        membership = CompanyMembership.objects.filter(
+            user=account, company=company, membership_status=ActiveStatus.ACTIVE
+        ).select_related("employee").first()
+        if membership and membership.employee_id and membership.employee.branch_id:
+            branch_ids.add(str(membership.employee.branch_id))
+    return branch_ids
+
+
+def filter_queryset_by_branch(queryset, request, company_id=None, *, filter_branch_model=False):
+    """
+    Filters a model queryset by:
+    1) explicit `branch_id` query parameter (when selected on the top taskbar), AND
+    2) the user's allowed branch scope (if the user is branch-restricted, preventing cross-branch leakage).
+    """
+    if not hasattr(request, "query_params"):
+        return queryset
+    cid = company_id or request.query_params.get("company_id") or getattr(request, "_validated_company_id", None)
+    raw_branch = (request.query_params.get("branch_id") or "").strip()
+    explicit_branch_id = None
+    if raw_branch and raw_branch.lower() not in ("all", "head-office"):
+        explicit_branch_id = raw_branch
+    elif raw_branch.lower() == "head-office" and cid:
+        from organization.models import Branch
+        hq = Branch.objects.filter(company_id=cid, is_head_office=True).values_list("id", flat=True).first()
+        if hq:
+            explicit_branch_id = str(hq)
+
+    allowed_branch_ids = get_user_allowed_branch_ids(request, cid) if cid else None
+    model = queryset.model
+    field_names = {f.name for f in model._meta.fields}
+
+    if explicit_branch_id:
+        if allowed_branch_ids is not None and explicit_branch_id not in allowed_branch_ids:
+            return queryset.none()
+        try:
+            if filter_branch_model and model.__name__ == "Branch":
+                return queryset.filter(pk=explicit_branch_id)
+            if "branch" in field_names:
+                return queryset.filter(branch_id=explicit_branch_id)
+            if "fund" in field_names:
+                return queryset.filter(fund__branch_id=explicit_branch_id)
+            if "warehouse" in field_names:
+                return queryset.filter(warehouse__branch_id=explicit_branch_id)
+            if model.__name__ == "AccountProfile":
+                return queryset.filter(account__branch_id=explicit_branch_id)
+            if model.__name__ == "BankTransaction":
+                return queryset.filter(Q(account__account__branch_id=explicit_branch_id) | Q(payment_details__branch=explicit_branch_id))
+            if model.__name__ == "SalesDelivery":
+                return queryset.filter(order__branch_id=explicit_branch_id)
+        except (ValueError, TypeError, DjangoValidationError):
+            return queryset.none()
+
+    if allowed_branch_ids is not None:
+        if not allowed_branch_ids:
+            return queryset.none()
+        if model.__name__ == "Branch":
+            return queryset.filter(pk__in=allowed_branch_ids)
+        if "branch" in field_names:
+            return queryset.filter(branch_id__in=allowed_branch_ids)
+        if "fund" in field_names:
+            return queryset.filter(fund__branch_id__in=allowed_branch_ids)
+        if "warehouse" in field_names:
+            return queryset.filter(warehouse__branch_id__in=allowed_branch_ids)
+        if model.__name__ == "AccountProfile":
+            return queryset.filter(account__branch_id__in=allowed_branch_ids)
+        if model.__name__ == "BankTransaction":
+            return queryset.filter(Q(account__account__branch_id__in=allowed_branch_ids) | Q(payment_details__branch__in=list(allowed_branch_ids)))
+        if model.__name__ == "SalesDelivery":
+            return queryset.filter(order__branch_id__in=allowed_branch_ids)
+
+    return queryset
+

@@ -932,7 +932,7 @@ export default function MisaPayrollWorkspace({
                       void apiSave(async () => {
                         const settings = await request<any>(`/api/v1/payroll/settings/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
                           method: "PUT", body: JSON.stringify({
-                            integration_mode: payrollOption === "AMIS Tiền lương đám mây" ? "CLOUD" : "LOCAL",
+                            integration_mode: payrollOption === "Tiền lương đám mây" ? "CLOUD" : "LOCAL",
                             accounting_rule: accountingRule, standard_days: standardDaysOption,
                           }),
                         });
@@ -2755,9 +2755,9 @@ export default function MisaPayrollWorkspace({
   // =========================================================================
   if (tab === "process") {
     return (
-      <div className="ref-process-wrapper" style={{ background: "#edf1f5", height: "100%", padding: "10px 16px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
+      <div className="ref-process-wrapper" style={{ background: "#edf1f5", height: "100%", padding: "10px 16px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", overflowX: "hidden" }}>
         {/* Row 1: 2 Main Cards (Quy trình + Báo cáo) */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16, alignItems: "stretch" }}>
+        <div className="ref-process-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 16, alignItems: "stretch" }}>
           
           {/* Card Trái: NGHIỆP VỤ TIỀN LƯƠNG */}
           <div
@@ -3362,6 +3362,125 @@ export default function MisaPayrollWorkspace({
           </div>
         </div>
 
+        {/* Row 3: Banner AMIS Chân Trang */}
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 8,
+            border: "1px solid #e2e8f0",
+            padding: "14px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5, maxWidth: "72%" }}>
+            <span>
+              <strong>Tự động hóa chấm công, quản lý và tính lương nâng cao</strong> cùng bộ ứng dụng{" "}
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  notify("Mở liên kết Sổ Việt Chấm công");
+                }}
+                style={{ color: "#0073e6", fontWeight: 600, textDecoration: "none" }}
+              >
+                Sổ Việt Chấm công
+              </a>
+              ,{" "}
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  notify("Mở liên kết Sổ Việt Tiền lương");
+                }}
+                style={{ color: "#0073e6", fontWeight: 600, textDecoration: "none" }}
+              >
+                Sổ Việt Tiền lương
+              </a>
+              .{" "}
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  notify("Kết nối API tự động hóa giữa Sổ Việt Tiền lương và Kế toán...");
+                }}
+                style={{ color: "#0073e6", fontWeight: 600, textDecoration: "none" }}
+              >
+                Kết nối ngay
+              </a>{" "}
+              với Sổ Việt Tiền lương để nhận dữ liệu hạch toán
+            </span>
+          </div>
+
+          {/* Right Visual Flow Diagram */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Chấm công */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#ea580c",
+                  display: "grid",
+                  placeItems: "center",
+                  color: "#ffffff",
+                }}
+              >
+                <Clock size={16} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "#475569" }}>Chấm công</span>
+            </div>
+
+            <div style={{ color: "#10b981", fontSize: 12, letterSpacing: 2, fontWeight: 700 }}>
+              ·······▶
+            </div>
+
+            {/* Tiền lương */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#00a862",
+                  display: "grid",
+                  placeItems: "center",
+                  color: "#ffffff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                $
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "#475569" }}>Tiền lương</span>
+            </div>
+
+            <div style={{ color: "#10b981", fontSize: 12, letterSpacing: 2, fontWeight: 700 }}>
+              ·······▶
+            </div>
+
+            {/* Kế toán */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #0284c7 0%, #10b981 100%)",
+                  display: "grid",
+                  placeItems: "center",
+                  color: "#ffffff",
+                }}
+              >
+                <Calculator size={16} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "#475569" }}>Kế toán</span>
+            </div>
+          </div>
+        </div>
 
         {renderModals()}
       </div>
@@ -3588,6 +3707,13 @@ export default function MisaPayrollWorkspace({
               style={{ height: 30, padding: "0 12px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Plus size={14} /> Thêm bảng chấm công
+            </button>
+            <button
+              type="button"
+              onClick={() => notify("Đang đồng bộ dữ liệu từ máy chấm công vân tay...")}
+              style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+            >
+              <RotateCw size={13} /> Đồng bộ máy chấm công
             </button>
             <button
               type="button"
@@ -4945,7 +5071,7 @@ export default function MisaPayrollWorkspace({
             {/* Dòng link Sổ Việt AI cùng 1 hàng */}
             <div
               onClick={() => {
-                notify("Trợ lý Sổ Việt AI: Sẵn sàng tra cứu, phân tích quỹ lương và đề xuất biểu mẫu phù hợp");
+                notify("Sẵn sàng tra cứu, tổng hợp quỹ lương và biểu mẫu báo cáo tiền lương");
               }}
               style={{
                 display: "inline-flex",
@@ -4960,7 +5086,7 @@ export default function MisaPayrollWorkspace({
               onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
               onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
             >
-              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+              <span>Tìm kiếm nhanh báo cáo</span>
               <div
                 style={{
                   width: 17,

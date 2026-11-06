@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import "./misa-payment-workflow.css";
 
-// Toàn bộ luồng chạy trong Sổ Việt ERP. Chưa có ứng dụng duyệt bên ngoài nên không mô tả bước "đồng bộ".
 export default function MisaPaymentWorkflow({
   children,
   variant = "payment",
@@ -11,17 +10,17 @@ export default function MisaPaymentWorkflow({
   variant?: "payment" | "settlement";
   notify?: (text: string) => void;
 }) {
-  const [view, setView] = useState("workflow");
+  const [view, setView] = useState<"list" | "workflow">("list");
   const settlement = variant === "settlement";
   const subject = settlement ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền";
   return (
     <div className="pw-workspace">
       <nav aria-label={settlement ? "Đề nghị quyết toán tạm ứng" : "Đề nghị chi tiền"}>
-        <button className={view === "workflow" ? "active" : ""} onClick={() => setView("workflow")}>
-          Quy trình
-        </button>
         <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}>
           Danh sách đề nghị
+        </button>
+        <button className={view === "workflow" ? "active" : ""} onClick={() => setView("workflow")}>
+          Quy trình phê duyệt
         </button>
       </nav>
       {view === "list" ? (
@@ -31,7 +30,7 @@ export default function MisaPaymentWorkflow({
           <header>
             <div>
               <h1>QUY TRÌNH {subject.toUpperCase()}</h1>
-              <p>Lập, kiểm tra và hạch toán {subject} ngay trong Sổ Việt ERP</p>
+              <p>Lập, phê duyệt và kế thừa hạch toán {subject} trực tiếp trên Sổ Việt ERP</p>
             </div>
             <button onClick={() => setView("list")}>Mở danh sách đề nghị</button>
           </header>
@@ -42,42 +41,42 @@ export default function MisaPaymentWorkflow({
               <h2>Lập {subject}</h2>
               <p>
                 {settlement
-                  ? "Sau khi tổng hợp hóa đơn, chứng từ đã chi, nhân viên lập đề nghị quyết toán tạm ứng."
-                  : "Lập đề nghị tại tab Danh sách đề nghị, gồm:"}
+                  ? "Sau khi tổng hợp hóa đơn, chứng từ đã chi, nhân viên lập bảng quyết toán tạm ứng (Mẫu 04-TT)."
+                  : "Nhân viên hoặc kế toán lập giấy đề nghị chi tiền kèm chứng từ gốc tại tab Danh sách đề nghị, gồm:"}
               </p>
               <ul hidden={settlement}>
                 {[
                   "Đề nghị trả tiền nhà cung cấp",
                   "Đề nghị tạm ứng nhân viên",
-                  "Đề nghị thanh toán hóa đơn",
-                  "Đề nghị thanh toán khác",
+                  "Đề nghị thanh toán hóa đơn dịch vụ",
+                  "Đề nghị thanh toán chi phí vận hành khác",
                 ].map((text) => (
                   <li key={text}>{text}</li>
                 ))}
               </ul>
-              <footer>Danh sách đề nghị</footer>
+              <footer>Lưu trữ trực tiếp theo Chi nhánh &amp; Kỳ kế toán</footer>
             </article>
             <article>
               <span>BƯỚC 2</span>
               <small>Sổ Việt ERP</small>
-              <h2>{settlement ? "Kế toán kiểm tra" : "Phê duyệt"}</h2>
+              <h2>{settlement ? "Kế toán đối chiếu & duyệt" : "Kế toán trưởng / Giám đốc phê duyệt"}</h2>
               <p>
                 {settlement
-                  ? "Kế toán đối chiếu số đã tạm ứng với chứng từ quyết toán và xác định phần chênh lệch."
-                  : "Đề nghị được gửi duyệt; người có thẩm quyền phê duyệt hoặc từ chối kèm lý do. Chỉ đề nghị đã duyệt mới được chi."}
+                  ? "Kế toán đối chiếu số tiền đã tạm ứng với chứng từ quyết toán thực tế và xác nhận phần chênh lệch hoàn ứng hoặc chi thêm."
+                  : "Đề nghị được kiểm tra hạn mức, chứng từ gốc và phê duyệt hoặc từ chối trực tiếp trên hệ thống. Chỉ đề nghị Đã duyệt mới được lập phiếu chi."}
               </p>
-              <footer>{settlement ? "Đối chiếu tạm ứng" : "Chờ duyệt → Đã duyệt / Bị từ chối"}</footer>
+              <footer>{settlement ? "Đối chiếu tạm ứng ↔ thực chi" : "Chờ duyệt → Đã duyệt / Từ chối"}</footer>
             </article>
             <article>
               <span>BƯỚC 3</span>
               <small>Sổ Việt ERP</small>
-              <h2>{settlement ? "Ghi nhận quyết toán" : "Lập chứng từ chi"}</h2>
+              <h2>{settlement ? "Ghi nhận quyết toán & Hoàn ứng" : "Lập Phiếu chi / Ủy nhiệm chi"}</h2>
               <p>
                 {settlement
-                  ? "Ghi nhận quyết toán và lập phiếu thu/chi cho phần chênh lệch nếu có."
-                  : "Kế toán lập phiếu chi hoặc ủy nhiệm chi từ đề nghị đã duyệt; thông tin được kế thừa, không cần nhập lại."}
+                  ? "Ghi nhận hoàn tất quyết toán và tự động liên kết Phiếu thu hoàn ứng (hoặc Phiếu chi bổ sung) cho phần chênh lệch."
+                  : "Kế toán bấm Chi tiền ngay trên dòng đề nghị đã duyệt để sinh Phiếu chi tiền mặt hoặc Ủy nhiệm chi ngân hàng mà không phải nhập lại."}
               </p>
-              <footer>Kế thừa dữ liệu &amp; hạch toán</footer>
+              <footer>Kế thừa dữ liệu &amp; tự động liên kết chứng từ</footer>
             </article>
           </div>
         </>

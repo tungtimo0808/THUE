@@ -4444,22 +4444,29 @@
 /* Uniform Row Height for Cash & Bank Tables */
 .misa-tax-table tbody tr,
 .misa-table tbody tr {
-  height: 40px;
+  min-height: 42px;
 }
 
 .misa-tax-table th,
-.misa-tax-table td,
-.misa-table th,
-.misa-table td {
-  height: 40px;
-  max-height: 40px;
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
+.misa-table th {
+  min-height: 40px;
+  padding: 9px 10px !important;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   vertical-align: middle;
   box-sizing: border-box;
+}
+
+.misa-tax-table td,
+.misa-table td {
+  min-height: 42px;
+  padding: 8px 10px !important;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.misa-tax-table td.numeric,
+.misa-table td.numeric {
+  white-space: nowrap;
 }
 
 .misa-tax-table td:has(.misa-row-action-cell),

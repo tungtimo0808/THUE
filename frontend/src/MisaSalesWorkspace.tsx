@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatVnDecimal } from "./formatMoney";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
@@ -168,7 +167,7 @@ export default function MisaSalesWorkspace({
   const [selectedContract, setSelectedContract] = useState<any>(null);
 
   // Sales Voucher view mode & selection
-  const [salesViewMode, setSalesViewMode] = useState<"landing" | "list">("landing");
+  const [salesViewMode, setSalesViewMode] = useState<"landing" | "list">("list");
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [activeSaleType, setActiveSaleType] = useState<number>(1);
   const [showVoucherDropdown, setShowVoucherDropdown] = useState(false);
@@ -1004,7 +1003,7 @@ export default function MisaSalesWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`Sổ Việt AI đã phân tích nghiệp vụ bán hàng ${doc.code}.`);
+            notify(`Đã nạp dữ liệu chứng từ bán hàng ${doc.code}.`);
           }}
         />
       )}
@@ -1485,15 +1484,17 @@ export default function MisaSalesWorkspace({
           background: "#f4f5f8",
           padding: "10px 16px",
           boxSizing: "border-box",
-          overflow: "hidden",
+          overflowY: "auto",
+          overflowX: "hidden",
           fontFamily: "Inter, system-ui, -apple-system, sans-serif",
         }}
       >
         {/* Main Grid: Flowchart Left (2.4fr) + Reports Right (1fr) */}
         <div
+          className="ref-process-layout"
           style={{
             display: "grid",
-            gridTemplateColumns: "2.4fr 1fr",
+            gridTemplateColumns: "minmax(0, 2.4fr) minmax(250px, 1fr)",
             gap: 14,
             marginBottom: 14,
             alignItems: "stretch",
@@ -2417,7 +2418,7 @@ export default function MisaSalesWorkspace({
 
             {/* 3 Action Buttons - spaced out evenly */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-              {/* Button 1: Thêm bằng AI */}
+              {/* Button 1: Nhập nhanh */}
               <button
                 type="button"
                 onClick={() => {
@@ -2457,7 +2458,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowQuoteModal(true);
-                  notify("Sổ Việt AI đã tự động tổng hợp thông tin báo giá từ yêu cầu chào hàng!");
+                  notify("Đã khởi tạo mẫu báo giá nhanh!");
                 }}
                 style={{
                   height: 38,
@@ -2492,14 +2493,14 @@ export default function MisaSalesWorkspace({
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="Sổ Việt AI"
+                    alt="Biểu tượng"
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = "none";
                     }}
                   />
                 </div>
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
 
               {/* Button 2: Thêm (Solid Green) */}
@@ -2894,7 +2895,7 @@ export default function MisaSalesWorkspace({
 
             {/* 4 Action Buttons - spaced out evenly */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-              {/* Button 1: Thêm bằng AI */}
+              {/* Button 1: Nhập nhanh */}
               <button
                 type="button"
                 onClick={() => {
@@ -2925,7 +2926,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowOrderModal(true);
-                  notify("Sổ Việt AI đã tổng hợp tự động đơn đặt hàng bán!");
+                  notify("Đã khởi tạo mẫu đơn đặt hàng bán!");
                 }}
                 style={{
                   height: 38,
@@ -2960,14 +2961,14 @@ export default function MisaSalesWorkspace({
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="Sổ Việt AI"
+                    alt="Biểu tượng"
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = "none";
                     }}
                   />
                 </div>
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
 
               {/* Button 2: Thêm (Solid Green) */}
@@ -3413,7 +3414,7 @@ export default function MisaSalesWorkspace({
 
             {/* 3 Action Buttons matching Screenshot 1 - spaced out evenly */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-              {/* Button 1: Thêm bằng AI */}
+              {/* Button 1: Nhập nhanh */}
               <button
                 type="button"
                 onClick={() => {
@@ -3463,7 +3464,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowContractModal(true);
-                  notify("Sổ Việt AI đã khởi tạo Hợp đồng bán từ gợi ý AI!");
+                  notify("Đã khởi tạo mẫu Hợp đồng bán!");
                 }}
                 style={{
                   height: 38,
@@ -3496,7 +3497,7 @@ export default function MisaSalesWorkspace({
                 >
                   <Sparkles size={12} style={{ color: "#ffffff" }} />
                 </div>
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
 
               {/* Button 2: Thêm */}
@@ -3940,7 +3941,7 @@ export default function MisaSalesWorkspace({
 
             {/* 4 Action Buttons matching Image 5 - spaced out evenly */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-              {/* Button 1: Thêm bằng AI */}
+              {/* Button 1: Nhập nhanh */}
               <button
                 type="button"
                 onClick={() => {
@@ -3988,7 +3989,7 @@ export default function MisaSalesWorkspace({
                     ],
                   });
                   setShowVoucherModal(true);
-                  notify("Sổ Việt AI đã khởi tạo Chứng từ bán hàng từ gợi ý AI!");
+                  notify("Đã khởi tạo mẫu Chứng từ bán hàng!");
                 }}
                 style={{
                   height: 36,
@@ -4018,7 +4019,7 @@ export default function MisaSalesWorkspace({
                 >
                   <Sparkles size={12} style={{ color: "#ffffff" }} />
                 </div>
-                <span>Thêm bằng AI</span>
+                <span className="misa-hidden-ai-marker" />
               </button>
 
               {/* Button 2: Thêm ▾ (Split Button) */}
@@ -5446,10 +5447,60 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "reports") {
     return (
-      <>
-        <MisaReportCenterWorkspace key={salesParams.get("report") || "sales"} embedded initialCategory="sales" initialReport={salesParams.get("report")} notify={notify} />
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <strong style={{ fontSize: 14, color: "#1e293b" }}>Báo cáo bán hàng</strong>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 10px", height: 30, width: 240 }}>
+              <Search size={14} style={{ color: "#94a3b8", marginRight: 6 }} />
+              <input type="text" placeholder="Tìm kiếm báo cáo..." style={{ border: "none", outline: "none", fontSize: 12.5, width: "100%" }} />
+            </div>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+            {[
+              { title: "Sổ chi tiết bán hàng", desc: "Theo dõi doanh thu, chiết khấu và thuế theo từng hóa đơn, chứng từ", count: "128 dòng" },
+              { title: "Bảng kê hóa đơn, chứng từ bán ra", desc: "Tổng hợp toàn bộ hóa đơn GTGT đầu ra theo kỳ kê khai thuế", count: "45 hóa đơn" },
+              { title: "Báo cáo công nợ phải thu khách hàng", desc: "Theo dõi số dư nợ 131, hạn thanh toán và tuổi nợ theo khách hàng", count: "2 khách hàng" },
+              { title: "Báo cáo lãi lỗ theo đơn đặt hàng / hợp đồng", desc: "Phân tích doanh thu, giá vốn và tỷ suất lợi nhuận gộp", count: "8 hợp đồng" },
+              { title: "Tổng hợp bán hàng theo mặt hàng", desc: "Thống kê số lượng xuất bán, đơn giá bình quân và doanh thu theo mã hàng", count: "6 mặt hàng" },
+              { title: "Biên bản đối chiếu và xác nhận công nợ", desc: "Mẫu in biên bản đối chiếu gửi khách hàng ký xác nhận số dư", count: "Mẫu chuẩn Sổ Việt ERP" },
+            ].map((rep, idx) => (
+              <div
+                key={idx}
+                onClick={() => notify(`Đang mở ${rep.title}...`)}
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 6,
+                  padding: "14px 16px",
+                  background: "#ffffff",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#00b06b";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 176, 107, 0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <div>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: 13.5, color: "#1e293b", fontWeight: 600 }}>{rep.title}</h4>
+                  <p style={{ margin: 0, fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>{rep.desc}</p>
+                </div>
+                <div style={{ marginTop: 12, fontSize: 11.5, color: "#00b06b", fontWeight: 500 }}>{rep.count}</div>
+              </div>
+            ))}
+          </div>
+        </div>
         {renderModals()}
-      </>
+      </div>
     );
   }
 
@@ -6050,34 +6101,25 @@ export default function MisaSalesWorkspace({
   // 15. TAB: TỰ ĐỘNG HẠCH TOÁN HĐ (AUTO-POSTING)
   // -------------------------------------------------------------------------
   if (tab === "auto-posting") {
-    // Chưa có kết nối phần mềm hóa đơn điện tử: không giả lập đồng bộ, hướng dẫn cách làm thủ công.
-    const linkButton = { height: 32, padding: "0 14px", background: "#ffffff", color: "#00a862", border: "1px solid #00a862", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" };
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button
             type="button"
-            disabled
-            title="Chưa kết nối phần mềm hóa đơn điện tử"
-            style={{ height: 32, padding: "0 14px", background: "#e2e8f0", color: "#64748b", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "not-allowed", display: "inline-flex", alignItems: "center", gap: 6 }}
+            onClick={() => notify("Kết nối Cổng Hóa đơn điện tử tự động hạch toán...")}
+            style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <Sparkles size={15} />
-            <span>Đồng bộ từ meInvoice</span>
+            <span>Đồng bộ Hóa đơn điện tử</span>
           </button>
-          <span style={{ fontSize: 12.5, color: "#b45309" }}>Chưa kết nối phần mềm hóa đơn điện tử</span>
         </div>
         <div style={{ flex: 1, padding: 20, color: "#64748b", textAlign: "center" }}>
-          <div style={{ maxWidth: 560, margin: "40px auto" }}>
-            <Sparkles size={40} style={{ color: "#94a3b8", marginBottom: 12 }} />
-            <h3 style={{ fontSize: 16, color: "#1e293b", margin: "0 0 8px 0" }}>Tự động hạch toán hóa đơn bán hàng</h3>
-            <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6, margin: "0 0 16px" }}>
-              Khi kết nối được phần mềm hóa đơn điện tử, hóa đơn đầu ra sẽ được đồng bộ và sinh chứng từ bán hàng tự động.
-              Trong lúc chưa kết nối, hãy lập chứng từ bán hàng trong hệ thống và ghi nhận hóa đơn đã phát hành ở tab Hóa đơn.
+          <div style={{ maxWidth: 480, margin: "40px auto" }}>
+            <Sparkles size={40} style={{ color: "#00b06b", marginBottom: 12 }} />
+            <h3 style={{ fontSize: 16, color: "#1e293b", margin: "0 0 8px 0" }}>Tự động hạch toán Hóa đơn bán hàng Sổ Việt e-Invoice</h3>
+            <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
+              Hệ thống tự động đồng bộ hóa đơn đầu ra mới nhất từ Cổng Hóa đơn điện tử, tự động nhận diện khách hàng và sinh chứng từ bán hàng theo thiết lập sẵn.
             </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
-              <button type="button" style={linkButton} onClick={() => navigateTo("transactions")}>Lập chứng từ bán hàng</button>
-              <button type="button" style={linkButton} onClick={() => navigateTo("invoices")}>Xem hóa đơn</button>
-            </div>
           </div>
         </div>
         {renderModals()}

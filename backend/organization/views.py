@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from iam.models import ActiveStatus, CompanyMembership
-from iam.permissions import has_effective_permission
+from iam.permissions import filter_queryset_by_branch, has_effective_permission
 
 from .models import Branch, Company, Department, Employee, EmployeeAssignment, EmployeeBankAccount, OrganizationUnit, Position
 from .serializers import (
@@ -74,7 +74,7 @@ class CompanyScopedViewSet(ProtectedModelViewSet):
                         membership_status=ActiveStatus.ACTIVE,
                     ).exists():
                         return queryset.none()
-            return queryset
+            return filter_queryset_by_branch(queryset, self.request, company_id, filter_branch_model=False)
         if getattr(self.request.user, "is_superuser", False):
             return queryset
         account = getattr(self.request.user, "iam_account", None)
@@ -326,10 +326,11 @@ class EmployeeViewSet(CompanyScopedViewSet):
             return self.queryset.none()
         company_id = self.request.query_params.get("company_id")
         queryset = self.queryset.filter(company_id=company_id) if company_id else self.queryset.none()
-        for field in ("status", "branch_id", "department_id", "position_id"):
+        for field in ("status", "department_id", "position_id"):
             value = self.request.query_params.get(field)
             if value:
                 queryset = queryset.filter(**{field: value})
+        queryset = filter_queryset_by_branch(queryset, self.request, company_id)
         return queryset.filter(pk__in=[item.pk for item in queryset if self._allowed(item, "MD.EMPLOYEE.VIEW")])
 
     def list(self, request, *args, **kwargs):

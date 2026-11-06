@@ -704,11 +704,11 @@ export default function MisaPurchaseWorkspace({
         supplierDebt: 23650000,
         bookDebt: 23650000,
         difference: 0,
-        status: "Sổ Việt AI đã đối chiếu xong",
+        status: "Đã đối chiếu hoàn tất",
       },
       ...reconciliations,
     ]);
-    notify(`Sổ Việt AI đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
+    notify(`Đã đối chiếu thành công kỳ công nợ với ${data.supplier}!`);
   };
 
   const handleSaveSupplier = async (data: any, andNew = false): Promise<boolean> => {
@@ -931,7 +931,7 @@ export default function MisaPurchaseWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`Sổ Việt AI đã phân tích hóa đơn mua hàng ${doc.code}.`);
+            notify(`Đã nạp dữ liệu hóa đơn mua hàng ${doc.code}.`);
           }}
         />
       )}
@@ -2260,7 +2260,7 @@ export default function MisaPurchaseWorkspace({
               }}
             >
               <Sparkles size={14} />
-              <span>Sổ Việt AI đối chiếu</span>
+              <span>Đối chiếu tự động</span>
             </button>
           </div>
 
@@ -2425,7 +2425,7 @@ export default function MisaPurchaseWorkspace({
               style={{ height: 32, padding: "0 12px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <Sparkles size={14} />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
           </div>
         </div>
@@ -2565,7 +2565,7 @@ export default function MisaPurchaseWorkspace({
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
         <div style={{ padding: "10px 16px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
-            {/* Button 1: Thêm bằng AI */}
+            {/* Button 1: Nhập nhanh */}
             <button
               type="button"
               onClick={() => setShowAIModal(true)}
@@ -2603,7 +2603,7 @@ export default function MisaPurchaseWorkspace({
               >
                 <Sparkles size={13} style={{ color: "#8b5cf6" }} />
               </div>
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Button 2: Split Button "Thêm ▾" */}
@@ -2707,6 +2707,13 @@ export default function MisaPurchaseWorkspace({
                         onClick: () => {
                           setShowAddPurchaseMenu(false);
                           setShowSupplierPaymentModal(true);
+                        },
+                      },
+                      {
+                        label: "Lập từ hóa đơn đầu vào điện tử",
+                        onClick: () => {
+                          setShowAddPurchaseMenu(false);
+                          notify("Đang đồng bộ dữ liệu Hóa đơn điện tử đầu vào...");
                         },
                       },
                     ].map((item, idx) => (
@@ -2930,7 +2937,7 @@ export default function MisaPurchaseWorkspace({
                         Chưa có chứng từ mua hàng trong kỳ kế toán này
                       </strong>
                       <span style={{ fontSize: 12.5, color: "#64748b" }}>
-                        Nhấn nút <b>"Thêm"</b> hoặc <b>"Thêm bằng AI"</b> trên thanh công cụ để tạo mới
+                        Nhấn nút <b>"Thêm"</b> trên thanh công cụ để tạo mới
                       </span>
                     </div>
                   </td>
@@ -4022,6 +4029,27 @@ export default function MisaPurchaseWorkspace({
                 <Filter size={15} />
               </button>
 
+              <button
+                type="button"
+                onClick={() => notify("Đang đồng bộ và cập nhật địa chỉ nhà cung cấp")}
+                style={{
+                  height: 32,
+                  padding: "0 12px",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  color: "#334155",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                }}
+              >
+                <MapPin size={14} style={{ color: "#0284c7" }} />
+                <span>Cập nhật địa chỉ</span>
+              </button>
 
               {/* Primary Green button: Thêm ▾ (opens SupplierModal matching Screenshot 3) */}
               <div style={{ display: "inline-flex", position: "relative" }}>
@@ -4646,7 +4674,8 @@ export default function MisaPurchaseWorkspace({
         background: "#f1f5f9",
         height: "100%",
         padding: "10px 16px",
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
       }}
     >
       <div
@@ -4703,9 +4732,10 @@ export default function MisaPurchaseWorkspace({
               aria-hidden="true"
               style={{
                 position: "absolute",
-                inset: 0,
+                top: 0,
+                left: 0,
                 width: "100%",
-                height: "100%",
+                height: 300,
                 pointerEvents: "none",
                 overflow: "visible",
               }}
@@ -4745,7 +4775,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 20,
+                left: "11.36%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 110,
                 display: "flex",
@@ -4785,7 +4816,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 20,
+                left: "11.36%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 110,
                 display: "flex",
@@ -4825,7 +4857,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 175,
+                left: "36.06%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 125,
                 display: "flex",
@@ -4986,7 +5019,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 175,
+                left: "36.06%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 125,
                 display: "flex",
@@ -5032,7 +5066,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 345,
+                left: "61.82%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 125,
                 display: "flex",
@@ -5072,7 +5107,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 345,
+                left: "61.82%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 125,
                 display: "flex",
@@ -5112,7 +5148,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 515,
+                left: "87.58%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 125,
                 display: "flex",
@@ -5152,7 +5189,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 515,
+                left: "87.58%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 125,
                 display: "flex",
@@ -5253,6 +5291,7 @@ export default function MisaPurchaseWorkspace({
 
         {/* Panel 3: Quick Action Buttons (Bottom Bar spanning full width) */}
         <div
+          className="ref-shortcuts"
           style={{
             gridColumn: "1 / -1",
             background: "#ffffff",

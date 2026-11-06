@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -63,7 +63,7 @@ export default function LiveRoles() {
   }
 
   return <main className="account-page"><section className="account-card account-wide">
-    <Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">PHÂN QUYỀN HỆ THỐNG</p><h1>Quản lý Role</h1>
+    <Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">PHÂN QUYỀN HỆ THỐNG</p><h1>Quản lý Role</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setMode(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       <div className="account-actions"><label>Trạng thái<select value={status} onChange={event => setStatus(event.target.value)}><option value="">Tất cả</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng</option></select></label><label>Tìm Role<input value={query} onChange={event => setQuery(event.target.value)} /></label><button type="button" onClick={() => open("create")}>Tạo Role</button><button type="button" onClick={() => setReload(value => value + 1)}>Tải lại</button></div>

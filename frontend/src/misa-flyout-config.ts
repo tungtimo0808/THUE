@@ -26,7 +26,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Thu, chi tiền", path: "/bank/transactions" },
       { label: "Đối chiếu ngân hàng", path: "/bank/reconciliation" },
       { label: "Dự báo dòng tiền", path: "/bank/cashflow" },
-      { label: "Quy tắc hạch toán ngân hàng", path: "/bank/ebanking" },
+      { label: "Ngân hàng điện tử", path: "/bank/ebanking" },
       { label: "Khế ước đi vay", path: "/bank/borrowings" },
     ],
     utilities: [
@@ -43,6 +43,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Tra cứu hóa đơn", path: "/invoices/lookup" },
     ],
     utilities: [
+      { label: "Tự động lấy hóa đơn từ TCT", path: "/invoices/sync" },
       { label: "Kiểm tra tính hợp lệ", path: "/invoices/validate" },
       { label: "Bảng kê hóa đơn chưa hạch toán", path: "/invoices/unposted" },
     ],
@@ -84,6 +85,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Biểu đồ", path: "/sales/chart" },
     ],
     utilities: [
+      { label: "Lấy hóa đơn từ TCT", path: "/invoices/sync" },
       { label: "Đối trừ chứng từ", path: "/sales/offset" },
       { label: "Đối trừ chứng từ nhiều đối tượng", path: "/sales/multi-offset" },
       { label: "Bỏ đối trừ", path: "/sales/un-offset" },
@@ -238,7 +240,7 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Chỉ số tài chính ngành", path: "/analysis/ratios" },
     ],
     utilities: [
-      { label: "Phân tích tài chính thông minh (AI)", path: "/analysis/ai-insight" },
+      { label: "Phân tích tài chính chuyên sâu", path: "/analysis/overview" },
       { label: "Dự báo tài chính đa kịch bản", path: "/analysis/scenario" },
     ],
   },

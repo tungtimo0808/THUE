@@ -7,6 +7,7 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 from . import approval_serializers, approval_services, models, serializers, services
 from .permissions import PurchasePermission
+from iam.permissions import filter_queryset_by_branch
 from organization.models import Company
 
 
@@ -39,9 +40,9 @@ class PurchaseViewSet(
         if not company_id:
             return super().get_queryset().none()
         queryset = super().get_queryset().filter(company_id=company_id)
-        for parameter in ("status", "branch_id"):
-            if value := self.request.query_params.get(parameter):
-                queryset = queryset.filter(**{parameter: value})
+        if status_val := self.request.query_params.get("status"):
+            queryset = queryset.filter(status=status_val)
+        queryset = filter_queryset_by_branch(queryset, self.request, company_id)
         if date_from := self.request.query_params.get("date_from"):
             queryset = queryset.filter(document_date__gte=date_from)
         if date_to := self.request.query_params.get("date_to"):

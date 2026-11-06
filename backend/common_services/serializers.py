@@ -694,7 +694,7 @@ class CompanySwitchSerializer(serializers.Serializer):
     company = serializers.UUIDField(required=False)
     company_id = serializers.UUIDField(required=False)
     branch = serializers.UUIDField(required=False, allow_null=True)
-    all_branches = serializers.BooleanField(default=False)
+    all_branches = serializers.BooleanField(default=True)
     confirm_discard = serializers.BooleanField(default=False)
 
     def validate(self, attrs):

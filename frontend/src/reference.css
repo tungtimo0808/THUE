@@ -68,6 +68,9 @@ select:has(~ svg),
   letter-spacing: 0;
   font-size: 13px;
 }
+html {
+  scrollbar-gutter: stable;
+}
 .ref-header {
   height: var(--ref-header);
   position: fixed;
@@ -78,16 +81,14 @@ select:has(~ svg),
   background: #ffffff;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 14px;
+  gap: 6px;
+  padding: 0 10px;
   border-bottom: 1px solid #e2e8f0;
   box-sizing: border-box;
   max-width: 100vw;
   min-width: 0;
   transition: background-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              gap 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-mobile-trigger {
   display: none;
@@ -102,8 +103,8 @@ select:has(~ svg),
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
@@ -111,7 +112,7 @@ select:has(~ svg),
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  margin-right: 2px;
+  margin-right: 0;
 }
 .ref-sidebar-toggle:hover {
   background: #eff6ff;
@@ -125,18 +126,18 @@ select:has(~ svg),
 .ref-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   flex-shrink: 0;
   text-decoration: none;
-  padding-right: 6px;
+  padding-right: 2px;
   transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ref-brand:hover {
   opacity: 0.92;
 }
 .ref-brand-logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   border-radius: 8px;
   display: flex;
@@ -157,14 +158,14 @@ select:has(~ svg),
   transition: opacity 0.2s ease;
 }
 .ref-brand-name {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
 .ref-brand-sub {
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 700;
   color: #64748b;
   letter-spacing: 0.04em;
@@ -175,35 +176,28 @@ select:has(~ svg),
 .ref-options-cluster {
   display: flex;
   align-items: center;
-  background: #f8fafc;
+  background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 2px 4px;
-  gap: 2px;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 3px;
   flex-shrink: 1;
   min-width: 0;
-  height: 32px;
+  height: 34px;
   box-sizing: border-box;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .ref-options-cluster:hover {
   border-color: #cbd5e1;
-  background: #f1f5f9;
 }
 .ref-cluster-divider {
-  width: 1px;
-  height: 14px;
-  background: #cbd5e1;
-  margin: 0 2px;
-  flex-shrink: 0;
-  transition: opacity 0.2s ease;
+  display: none;
 }
 .ref-cluster-item {
   position: relative;
   display: inline-flex;
   align-items: center;
-  flex-shrink: 1;
+  flex-shrink: 0;
   min-width: 0;
   height: 100%;
 }
@@ -211,26 +205,29 @@ select:has(~ svg),
 .ref-cluster-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   height: 26px;
   padding: 0 7px;
-  border-radius: 5px;
-  border: 1px solid transparent;
-  background: transparent;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #1e293b;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 11.5px;
   max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
 .ref-cluster-trigger:hover,
 .ref-cluster-item.open .ref-cluster-trigger {
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-color: #f0f9ff;
+  border-color: #7dd3fc;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.08);
   color: #0284c7;
 }
 
@@ -285,36 +282,45 @@ select:has(~ svg),
 
 .ref-cluster-label {
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
-  line-height: 26px;
+  line-height: 24px;
   white-space: nowrap;
-  transition: color 0.18s ease, max-width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.18s ease;
 }
 
 .ref-cluster-company-label {
-  max-width: clamp(85px, 11vw, 210px);
+  max-width: none;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #0284c7;
+  font-weight: 700;
 }
 
 .ref-cluster-dataset-label {
-  max-width: clamp(70px, 9vw, 140px);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: none;
   white-space: nowrap;
 }
 
 .ref-cluster-branch-label {
-  max-width: clamp(55px, 7vw, 105px);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: none;
   white-space: nowrap;
 }
 
 .ref-cluster-period-label {
   white-space: nowrap;
+}
+
+.ref-cluster-item-company {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.ref-cluster-item-dataset,
+.ref-cluster-item-branch,
+.ref-cluster-item-period {
+  flex-shrink: 0;
 }
 
 .ref-cluster-caret {
@@ -427,7 +433,7 @@ select:has(~ svg),
 .ref-header-tools {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 4px;
   margin-left: auto;
   flex-shrink: 0;
   min-width: 0;
@@ -435,21 +441,25 @@ select:has(~ svg),
 }
 .ref-search-shell {
   position: relative;
-  flex-shrink: 0;
-  width: 210px;
+  flex-shrink: 1;
+  width: 96px;
+  transition: width 0.2s ease;
+}
+.ref-search-shell:focus-within {
+  width: 185px;
 }
 .ref-global-search {
   display: flex;
   align-items: center;
-  height: 32px;
-  width: 210px;
+  height: 30px;
+  width: 100%;
   box-sizing: border-box;
   border: 1px solid #d1d5db;
-  border-radius: 16px;
-  padding: 0 10px;
+  border-radius: 15px;
+  padding: 0 9px;
   background: #f8fafc;
   color: #64748b;
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
   transition: border-color 0.2s ease,
               background-color 0.2s ease,
@@ -466,27 +476,28 @@ select:has(~ svg),
 }
 .ref-global-search input {
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #0f172a;
   padding: 0;
   border: 0;
-  width: 135px;
+  width: 100%;
   flex: 1;
   min-width: 0;
   border-radius: 0;
-  height: 28px;
+  height: 26px;
   background: transparent;
   outline: none;
   box-sizing: border-box;
 }
 .ref-global-search:focus-within input {
-  width: 135px;
+  width: 100%;
 }
 .ref-global-search input::placeholder {
   color: #94a3b8;
   font-style: normal;
 }
 .ref-global-search > span {
+  display: none;
   font-size: 10px;
   font-weight: 700;
   background: #eff6ff;
@@ -496,6 +507,9 @@ select:has(~ svg),
   border-radius: 4px;
   letter-spacing: 0.03em;
   transition: all 0.15s ease;
+}
+.ref-global-search:focus-within > span {
+  display: inline-block;
 }
 .ref-help {
   display: inline-flex;
@@ -956,7 +970,7 @@ select:has(~ svg),
 .ref-module-bar {
   position: sticky;
   top: var(--ref-header);
-  z-index: 30;
+  z-index: 100;
   background: #ffffff;
   min-height: 40px;
   height: 40px;
@@ -970,7 +984,7 @@ select:has(~ svg),
   margin: 0 -16px;
   padding: 0 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: padding 0.22s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+  transition: background-color 0.2s ease;
   overflow: visible !important;
 }
 .ref-module-menu {
@@ -1028,7 +1042,7 @@ select:has(~ svg),
   flex-shrink: 0;
 }
 .ref-module-bar-measure > .ref-measure-tab {
-  font-weight: 600;
+  font-weight: 500;
 }
 .ref-module-bar > nav > a:hover {
   background: #f0f9ff;
@@ -1038,10 +1052,10 @@ select:has(~ svg),
   background: transparent;
   border-bottom-color: #0284c7;
   color: #0284c7;
-  font-weight: 600;
+  font-weight: 500;
 }
 .ref-module-bar > nav > a:active {
-  transform: scale(0.98);
+  transform: none;
 }
 .ref-module-bar small {
   background: #e88137;
@@ -1094,7 +1108,7 @@ select:has(~ svg),
   color: #0284c7;
   background: #f0f9ff;
   border-bottom-color: #0284c7;
-  font-weight: 600;
+  font-weight: 500;
 }
 .ref-tab-more-caret {
   transition: transform 0.2s ease;
@@ -1829,8 +1843,8 @@ select:has(~ svg),
 }
 .ref-process-reports {
   background: white;
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-column: auto;
+  grid-row: auto;
   display: flex;
   flex-direction: column;
 }
@@ -1976,7 +1990,7 @@ select:has(~ svg),
   font-size: 10px;
 }
 .ref-overview {
-  padding: 0 0 15px;
+  padding: 14px 0 20px;
 }
 .ref-overview .ref-branch {
   display: flex;
@@ -3042,37 +3056,52 @@ select:has(~ svg),
 /* Smooth, progressive responsiveness across all zoom levels and viewports */
 @media (max-width: 1580px) {
   .ref-header {
-    gap: 6px;
-    padding: 0 10px;
+    gap: 5px;
+    padding: 0 8px;
   }
   .ref-header-tools {
-    gap: 5px;
+    gap: 3px;
   }
-  .ref-header-tools .secondary-tool:nth-of-type(2) {
+  .ref-header-tools .secondary-tool {
     display: none;
   }
 }
 @media (max-width: 1420px) {
+  .ref-header {
+    gap: 4px;
+    padding: 0 6px;
+  }
+  .ref-brand {
+    gap: 5px;
+    padding-right: 0;
+  }
+  .ref-cluster-trigger {
+    padding: 0 6px;
+    gap: 3px;
+  }
   .ref-header-tools .secondary-tool {
     display: none;
   }
-  .ref-cluster-item-branch {
-    max-width: 95px;
+  .ref-search-shell {
+    width: 78px;
+  }
+  .ref-header-tools .ref-icon {
+    width: 26px;
+    height: 26px;
+  }
+  .ref-header-divider {
+    margin: 0 1px;
   }
 }
 @media (max-width: 1280px) {
   .ref-header-tools {
     gap: 4px;
   }
-  .ref-cluster-company-label {
-    max-width: 140px;
-  }
-  .ref-cluster-item-branch,
-  .ref-cluster-divider-branch {
-    display: none;
+  .ref-search-shell {
+    width: 96px;
   }
   .ref-user-name {
-    max-width: 80px;
+    max-width: 85px;
   }
   .ref-header-tools .secondary-tool {
     display: none;
@@ -3449,7 +3478,7 @@ select:has(~ svg),
     min-width: 230px;
   }
   .ref-overview {
-    padding: 0;
+    padding: 12px 0 16px;
   }
   .ref-branch {
     gap: 9px;
@@ -3933,10 +3962,10 @@ select:has(~ svg),
 .ref-user-badge-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 32px;
-  padding: 0 10px 0 4px;
-  border-radius: 16px;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px 0 3px;
+  border-radius: 15px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
   color: #0f172a;
@@ -3973,13 +4002,11 @@ select:has(~ svg),
 }
 
 .ref-user-name {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: #1e293b;
-  max-width: clamp(55px, 8vw, 115px);
+  max-width: none;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   transition: max-width 0.2s ease, opacity 0.2s ease;
 }
 
@@ -4084,7 +4111,7 @@ select:has(~ svg),
    ========================================================================== */
 html.ref-process-scroll-lock,
 body.ref-process-scroll-lock {
-  overflow: hidden !important;
+  overflow-y: hidden !important;
   height: 100vh !important;
   height: 100dvh !important;
   max-height: 100vh !important;
@@ -4112,19 +4139,23 @@ body.ref-process-scroll-lock {
 
 .ref-main.ref-process-fixed .ref-module-bar {
   flex: 0 0 40px !important;
-  position: relative !important;
+  position: sticky !important;
   top: 0 !important;
+  margin: 0 -16px !important;
+  padding: 0 16px !important;
   height: 40px !important;
   min-height: 40px !important;
   max-height: 40px !important;
+  z-index: 100 !important;
 }
 
 .ref-main.ref-process-fixed .ref-process-wrapper {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   max-height: 100% !important;
-  overflow: hidden !important;
-  padding: 18px 24px 16px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 14px 18px 16px !important;
   box-sizing: border-box !important;
 }
 
@@ -4141,9 +4172,385 @@ body.ref-process-scroll-lock {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   max-height: 100% !important;
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 8px 16px !important;
   box-sizing: border-box !important;
 }
+
+/* ==========================================================================
+   RESPONSIVE PROCESS DIAGRAM & WORKSPACE ADAPTATION FOR ALL VIEWPORT SIZES
+   ========================================================================== */
+.ref-process-panel {
+  min-width: 0 !important;
+}
+
+.ref-process-canvas {
+  width: calc(100% - 20px) !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 1180px) {
+  .ref-process-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(210px, 0.95fr) !important;
+    gap: 12px !important;
+  }
+  .ref-main.ref-process-fixed .ref-process-wrapper {
+    padding: 10px 12px 14px !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .ref-process-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+  .ref-process-panel,
+  .ref-process-reports,
+  .ref-shortcuts {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+  .ref-shortcuts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .ref-shortcuts > button {
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .ref-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .ref-process-canvas {
+    margin: 0 4px !important;
+    width: calc(100% - 8px) !important;
+  }
+}
+
+/* ==========================================================================
+   FULL-SCREEN CONTEXT SWITCH TRANSITION OVERLAY & WORKSPACE MORPH ANIMATION
+   ========================================================================== */
+@keyframes ref-overlay-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes ref-card-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ref-progress-sweep {
+  0% {
+    width: 0%;
+  }
+  55% {
+    width: 72%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes ref-arrow-pulse {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateX(5px);
+    opacity: 1;
+  }
+}
+
+@keyframes ref-workspace-morph {
+  0% {
+    opacity: 0.28;
+    transform: translateY(12px) scale(0.988);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.ref-main.ref-switching-context {
+  animation: ref-workspace-morph 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.ref-cluster-item.recently-changed .ref-cluster-trigger {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  box-shadow: 0 0 0 2px #10b981, 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+  border-radius: 6px !important;
+  transition: all 0.25s ease !important;
+}
+
+.ref-context-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  animation: ref-overlay-fade-in 0.18s ease-out forwards;
+  pointer-events: none;
+}
+
+.ref-context-transition-card {
+  width: min(600px, 94vw);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 25px 65px -12px rgba(15, 23, 42, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  overflow: hidden;
+  animation: ref-card-pop-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ref-context-transition-top-bar {
+  height: 5px;
+  width: 100%;
+  background: linear-gradient(90deg, #00a862 0%, #0284c7 50%, #10b981 100%);
+}
+
+.ref-context-transition-body {
+  padding: 22px 26px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ref-context-transition-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.ref-context-transition-icon-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.28);
+  transition: all 0.25s ease;
+}
+
+.ref-context-transition-icon-ring.type-branch {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+.ref-context-transition-icon-ring.type-dataset {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  box-shadow: 0 8px 18px rgba(109, 40, 217, 0.28);
+}
+
+.ref-context-transition-icon-ring.type-company {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.28);
+}
+
+.ref-context-transition-icon-ring.done {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35) !important;
+  transform: scale(1.06);
+}
+
+.ref-context-transition-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ref-context-transition-kicker {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #0f172a;
+  text-transform: uppercase;
+}
+
+.ref-context-transition-overlay.is-done .ref-context-transition-kicker {
+  color: #047857;
+}
+
+.ref-context-transition-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.ref-context-transition-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr);
+  align-items: center;
+  gap: 12px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.ref-context-flow-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  min-width: 0;
+}
+
+.ref-context-flow-box.from {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  opacity: 0.82;
+}
+
+.ref-context-flow-box.to {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+  border: 1.5px solid #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+}
+
+.ref-context-flow-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ref-context-flow-box.to .ref-context-flow-tag {
+  color: #047857;
+}
+
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.ref-context-flow-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ref-context-flow-box.to .ref-context-flow-val {
+  color: #065f46;
+  font-size: 14px;
+}
+
+.ref-context-flow-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #0284c7;
+  animation: ref-arrow-pulse 0.7s ease-in-out infinite;
+}
+
+.ref-context-flow-arrow .arrow-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #38bdf8;
+}
+
+.ref-context-transition-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.ref-context-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #475569;
+  max-width: 100%;
+}
+
+.ref-context-meta-chip span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 190px;
+}
+
+.ref-context-meta-chip.active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.ref-context-transition-progress {
+  height: 5px;
+  width: 100%;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.ref-context-transition-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7 0%, #10b981 100%);
+  animation: ref-progress-sweep 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Hide legacy AI / AVA buttons and triggers across all workspaces */
+button:has(.misa-hidden-ai-marker),
+button:has(img[src*="ava_avatar"]),
+button[title="Gợi ý & Kiểm tra nhanh"],
+.misa-voucher-ava-pill,
+.misa-voucher-drawer-handle,
+.misa-sidebar-ava,
+.ref-ai-button,
+.misa-hidden-ai-marker {
+  display: none !important;
+}
+
+
+
 
 

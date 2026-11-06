@@ -1712,6 +1712,87 @@ export function MisaSystemUtilitiesModal({
                   </button>
                 </div>
 
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div
+                    style={{
+                      padding: 14,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      background: "#f8fafc",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        Kết nối Hóa đơn điện tử & Tổng cục Thuế
+                      </div>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                        Đồng bộ hóa đơn điện tử đầu vào/đầu ra và ký số
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onNavigate("/invoices/sync");
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#0284c7",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Mở kết nối →
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: 14,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      background: "#f8fafc",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        Kết nối Ngân hàng điện tử (JetPay / OpenBanking)
+                      </div>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                        Tự động lấy sổ phụ và đối chiếu giao dịch ngân hàng
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onNavigate("/bank/ebanking");
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#0284c7",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Mở Ngân hàng điện tử →
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

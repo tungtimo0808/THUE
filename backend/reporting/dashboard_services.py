@@ -187,6 +187,10 @@ def compute_comparison_delta(current_val: Decimal | None, comparison_val: Decima
 def _user_permission_codes(iam_account, company: Company) -> set[str]:
     if not iam_account:
         return set()
+    cache_attr = f"_dash_perm_codes_{company.id}"
+    cached = getattr(iam_account, cache_attr, None)
+    if cached is not None:
+        return cached
     codes: set[str] = set()
     if is_company_admin_member(iam_account, company):
         codes.update({"RPT.DASHBOARD.VIEW", "RPT.DASHBOARD.REFRESH", "RPT.DASHBOARD.CONFIG", "RPT.CENTER.VIEW", "VIEW_DASHBOARD"})
@@ -205,11 +209,15 @@ def _user_permission_codes(iam_account, company: Company) -> set[str]:
         revoked_at__isnull=True,
         valid_from__lte=now,
     ).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now)).select_related("permission")
+    deny_codes: set[str] = set()
     for ov in overrides:
         if ov.effect == "GRANT":
             codes.add(ov.permission.code)
         elif ov.effect == "DENY":
             codes.discard(ov.permission.code)
+            deny_codes.add(ov.permission.code)
+    setattr(iam_account, cache_attr, codes)
+    setattr(iam_account, f"_dash_deny_codes_{company.id}", deny_codes)
     return codes
 
 
@@ -453,11 +461,17 @@ def resolve_dashboard_context(request, *, require_refresh_perm: bool = False) ->
     start_date_bound = getattr(company, "start_date", None) or (earliest_period.start_date if earliest_period else None)
     is_before_start_date = False
     if start_date_bound and to_date < start_date_bound:
-        is_before_start_date = True
-        warnings.append({
-            "code": "BEFORE_ACCOUNTING_START_DATE",
-            "message": f"Kỳ được chọn ({from_date} đến {to_date}) nằm trước ngày bắt đầu hạch toán ({start_date_bound}).",
-        })
+        has_historical_entries = JournalEntry.objects.filter(
+            company=company,
+            status="POSTED",
+            posting_date__range=(from_date, to_date),
+        ).exists()
+        if not has_historical_entries:
+            is_before_start_date = True
+            warnings.append({
+                "code": "BEFORE_ACCOUNTING_START_DATE",
+                "message": f"Kỳ được chọn ({from_date} đến {to_date}) nằm trước ngày bắt đầu hạch toán ({start_date_bound}).",
+            })
 
     as_of_date = _parse_date(params.get("as_of_date"), "as_of_date") or to_date
 
@@ -543,23 +557,16 @@ def is_widget_permitted(ctx: DashboardContext, metric_code: str) -> bool:
     if not ctx.iam_account:
         return False
 
-    now = timezone.now()
+    perm_codes = _user_permission_codes(ctx.iam_account, ctx.company)
+    deny_codes = getattr(ctx.iam_account, f"_dash_deny_codes_{ctx.company.id}", set())
     alias_codes = WIDGET_PERMISSION_ALIASES.get(metric_code, {metric_code})
     # Check explicit DENY override on any alias
-    if UserPermissionOverride.objects.filter(
-        company_membership__user=ctx.iam_account,
-        company_membership__company=ctx.company,
-        permission__code__in=alias_codes,
-        effect="DENY",
-        revoked_at__isnull=True,
-        valid_from__lte=now,
-    ).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now)).exists():
+    if deny_codes & alias_codes:
         return False
 
     if metric_code == "DASH-12":
         return True
 
-    perm_codes = _user_permission_codes(ctx.iam_account, ctx.company)
     # If the user has been granted specific module/widget permissions beyond general dashboard view,
     # enforce granular widget permissions so partial-permission roles only see their allowed widgets (TC-RPT-01-06).
     non_dashboard_perms = perm_codes - {"RPT.DASHBOARD.VIEW", "RPT.DASHBOARD.REFRESH", "RPT.DASHBOARD.CONFIG", "RPT.CENTER.VIEW", "VIEW_DASHBOARD"}
@@ -825,13 +832,8 @@ def _calculate_revenue_for_range(ctx: DashboardContext, start_date: date, end_da
         "entry__branch_id",
         ctx.effective_branch_ids,
     )
-    if getattr(ctx, "revenue_basis", "GL") == "SAL":
-        period_lines = period_lines.filter(
-            Q(entry__source_module="SAL")
-            | Q(entry__number__startswith="BH")
-            | Q(entry__number__startswith="HD")
-            | Q(entry__number__startswith="GL-BH")
-        )
+    if getattr(ctx, "revenue_basis", "GL") != "SAL":
+        period_lines = period_lines.exclude(entry__number__startswith="QT-")
     if linked_je_ids:
         period_lines = period_lines.exclude(entry_id__in=linked_je_ids)
     if linked_doc_ids:
@@ -2008,12 +2010,15 @@ def _calculate_pnl_for_range(ctx: DashboardContext, start_date: date, end_date: 
     net_rev = rev_info["net_revenue"]
 
     # Query GL operational lines (excluding OPENING and 911 closing entries - TC-RPT-01-22)
+    base_period_qs = JournalLine.objects.filter(
+        entry__company=ctx.company,
+        entry__status="POSTED",
+        entry__posting_date__range=(start_date, end_date),
+    ).exclude(entry__entry_type="OPENING")
+    if getattr(ctx, "revenue_basis", "GL") != "SAL":
+        base_period_qs = base_period_qs.exclude(entry__number__startswith="QT-")
     period_lines = _filter_branches(
-        JournalLine.objects.filter(
-            entry__company=ctx.company,
-            entry__status="POSTED",
-            entry__posting_date__range=(start_date, end_date),
-        ).exclude(entry__entry_type="OPENING"),
+        base_period_qs,
         "entry__branch_id",
         ctx.effective_branch_ids,
     )
@@ -3340,22 +3345,15 @@ def compute_dash_12_recent_documents(
         sort_field = "created_at"
 
     perm_codes = _user_permission_codes(ctx.iam_account, ctx.company) if not ctx.user.is_superuser else set()
+    deny_codes: set[str] = getattr(ctx.iam_account, f"_dash_deny_codes_{ctx.company.id}", set()) if ctx.iam_account else set()
     non_dash_perms = perm_codes - {"RPT.DASHBOARD.VIEW", "RPT.DASHBOARD.REFRESH", "RPT.DASHBOARD.CONFIG", "RPT.CENTER.VIEW", "VIEW_DASHBOARD"}
     enforce_module_masking = (not ctx.user.is_superuser) and bool(non_dash_perms)
 
     def _can_view_module(mod: str) -> bool:
         if ctx.user.is_superuser:
             return True
-        now = timezone.now()
         mod_perms = MODULE_VIEW_PERMISSIONS.get(mod, set())
-        if UserPermissionOverride.objects.filter(
-            company_membership__user=ctx.iam_account,
-            company_membership__company=ctx.company,
-            permission__code__in=mod_perms,
-            effect="DENY",
-            revoked_at__isnull=True,
-            valid_from__lte=now,
-        ).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now)).exists():
+        if deny_codes & mod_perms:
             return False
         if enforce_module_masking:
             return bool(perm_codes & mod_perms)
@@ -3389,6 +3387,8 @@ def compute_dash_12_recent_documents(
             )
         # Filter within period or up to to_date
         qs = qs.filter(**{f"{date_field}__range": (ctx.from_date, ctx.to_date)})
+        if dtype == "JOURNAL_ENTRY" and getattr(ctx, "revenue_basis", "GL") != "SAL":
+            qs = qs.exclude(number__startswith="QT-")
         qs = qs.order_by(f"-{date_field}", "-created_at")[: max_items * 2]
 
         can_view = _can_view_module(mod)

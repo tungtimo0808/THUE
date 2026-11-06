@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -91,7 +91,7 @@ export default function LiveApprovalTasks() {
     await run(() => request(`${base}/delegations/?company_id=${companyId}`, token, { method: "POST", body: JSON.stringify({ company: companyId, delegate, start_date: delegationDate, end_date: delegationEnd || null, reason: delegationReason.trim() }) }), "Đã tạo ủy quyền phê duyệt.");
   }
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">QUY TRÌNH PHÊ DUYỆT</p><h1>Xử lý yêu cầu phê duyệt</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">QUY TRÌNH PHÊ DUYỆT</p><h1>Xử lý yêu cầu phê duyệt</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setDetail(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

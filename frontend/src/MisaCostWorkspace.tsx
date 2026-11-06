@@ -1395,7 +1395,8 @@ if (apiConnected) {
         height: currentTab === "process" ? "100%" : undefined,
         minHeight: currentTab === "process" ? undefined : "100%",
         padding: currentTab === "process" ? "10px 16px" : 16,
-        overflow: currentTab === "process" ? "hidden" : undefined,
+        overflowY: currentTab === "process" ? "auto" : undefined,
+        overflowX: currentTab === "process" ? "hidden" : undefined,
       }}
     >
       {/* ==================================================================== */}
@@ -1450,9 +1451,10 @@ if (apiConnected) {
 
           {/* Main 2-column Grid: Left = S-curve Flowchart, Right = Video Guide & Reports */}
           <div
+            className="ref-process-layout"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 340px",
+              gridTemplateColumns: "minmax(0, 1fr) 320px",
               gap: 16,
               alignItems: "stretch",
             }}
@@ -2390,7 +2392,7 @@ if (apiConnected) {
             }}
           >
             <div style={{ fontSize: 13.5, color: "#1e293b", fontWeight: 500 }}>
-              Bạn chưa chọn được phương pháp tính giá phù hợp? Hãy để Sổ Việt AI gợi ý cho bạn nhé!
+              Bạn chưa chọn được phương pháp tính giá phù hợp? Hãy để Điền nhanh mẫu chuẩn cho bạn nhé!
             </div>
 
             <button
@@ -7209,7 +7211,7 @@ if (apiConnected) {
               {/* Sổ Việt AI button */}
               <button
                 type="button"
-                onClick={() => notify("Sổ Việt AI: Đang tìm kiếm các báo cáo giá thành tối ưu cho bạn...")}
+                onClick={() => notify("Đang lọc danh mục báo cáo giá thành...")}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -7225,7 +7227,7 @@ if (apiConnected) {
                 }}
               >
                 <Sparkles size={14} color="#6366f1" />
-                <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+                <span>Tìm kiếm nhanh báo cáo</span>
               </button>
 
               {/* Language Selector */}
@@ -8200,7 +8202,7 @@ if (apiConnected) {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={20} color="#7c3aed" />
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#5b21b6" }}>
-                  Trợ lý Sổ Việt AI: Gợi ý Phương pháp Tính giá thành Tối ưu
+                  Tư vấn lựa chọn Phương pháp Tính giá thành phù hợp
                 </h3>
               </div>
               <button
@@ -8213,7 +8215,7 @@ if (apiConnected) {
             </div>
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
               <p style={{ margin: 0, fontSize: 13.5, color: "#374151" }}>
-                Dựa trên loại hình sản xuất kinh doanh của bạn, Sổ Việt AI khuyến nghị các phương pháp phù hợp nhất:
+                Dựa trên loại hình sản xuất kinh doanh của doanh nghiệp, hệ thống khuyến nghị các phương pháp phù hợp nhất:
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ border: "1px solid #a7f3d0", background: "#f0fdf4", padding: "12px 14px", borderRadius: 6 }}>
@@ -9720,7 +9722,7 @@ if (apiConnected) {
                     }}
                   >
                     <Sparkles size={14} />
-                    <span>Trợ lý số Sổ Việt AI đã có thể gợi ý Thuế suất GTGT</span>
+                    <span>Hệ thống hỗ trợ tra cứu nhanh mức Thuế suất GTGT theo danh mục hàng hóa</span>
                   </div>
                 </div>
 
@@ -10787,7 +10789,7 @@ if (apiConnected) {
                         boxSizing: "border-box",
                       }}
                     />
-                    <span title="Sổ Việt AI Gợi ý diễn giải chứng từ" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Điền nhanh diễn giải chứng từ" style={{ display: "inline-flex" }}><Sparkles
                       size={16}
                       color="#7c3aed"
                       style={{ position: "absolute", right: 10, top: 9, cursor: "pointer" }}
@@ -10957,7 +10959,7 @@ if (apiConnected) {
                 </label>
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý Sổ Việt AI: Kiểm tra chứng từ hợp lệ")}
+                  onClick={() => notify("Đã kiểm tra tính hợp lệ của chứng từ")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -10973,7 +10975,7 @@ if (apiConnected) {
                   }}
                 >
                   <Sparkles size={13} />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={12} />
                 </button>
               </div>

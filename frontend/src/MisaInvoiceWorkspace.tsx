@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Monitor } from "lucide-react";
+import { useApiSession } from "./ApiSession";
+import { FileText, Monitor, BookOpen, X, CheckCircle2 } from "lucide-react";
+import { apiClient } from "./apiClient";
 import "./misa-invoice-workspace.css";
 const flowNodes = [
-  // Đăng ký mẫu 01/ĐKTĐ-HĐĐT thực hiện trên cổng của cơ quan thuế, không có màn hình trong ERP.
-  ["Đăng ký/ Thay đổi thông tin sử dụng HĐĐT", "https://hoadondientu.gdt.gov.vn/", 10, 28],
-  ["Khởi tạo mẫu", "outgoing", 10, 68],
+  ["Tự động lấy hóa đơn từ TCT", "sync", 10, 28],
+  ["Khởi tạo mẫu & Đăng ký", "outgoing", 10, 68],
   ["Xuất và gửi hóa đơn", "outgoing", 29, 49],
   ["Thông báo hóa đơn lập sai", "adjustments", 57, 20],
   ["Xử lý hóa đơn không hợp lệ", "adjustments", 45, 68],
@@ -34,10 +35,13 @@ export default function MisaInvoiceWorkspace({
   notify: (text: string) => void;
   company?: { id: string; name: string; tax_code?: string };
 }) {
+  const { token } = useApiSession();
   const [kind, setKind] = useState(""),
     [sent, setSent] = useState(""),
     [fault, setFault] = useState(""),
     [action, setAction] = useState("");
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+
   const steps =
     fault === faults[0]
       ? [
@@ -64,16 +68,114 @@ export default function MisaInvoiceWorkspace({
             ],
           ]
         : [];
-  if (tab === "error-guide" || tab === "adjustments")
+
+  const renderLegalModal = () => (
+    legalModalOpen && (
+      <div className="ce-overlay" style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", zIndex: 9999, display: "grid", placeItems: "center", padding: 20 }}>
+        <div style={{ background: "#fff", borderRadius: 10, maxWidth: 680, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+              <BookOpen size={18} color="#2563eb" />
+              Quy chuẩn xử lý HĐĐT (NĐ 123/2020/NĐ-CP & TT 78/2021/TT-BTC)
+            </h3>
+            <button type="button" onClick={() => setLegalModalOpen(false)} style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}>
+              <X size={18} />
+            </button>
+          </div>
+          <div style={{ padding: "20px", fontSize: 13.5, lineHeight: 1.6, color: "#334155" }}>
+            <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: 8, marginBottom: 16, borderLeft: "4px solid #2563eb" }}>
+              <b>Căn cứ pháp lý:</b> Điều 19 Nghị định số 123/2020/NĐ-CP và Điều 7 Thông tư số 78/2021/TT-BTC về xử lý hóa đơn điện tử đã lập có sai sót.
+            </div>
+
+            <h4 style={{ color: "#1e293b", margin: "14px 0 6px" }}>1. Người bán tự phát hiện sai sót chưa gửi người mua</h4>
+            <p style={{ margin: "0 0 10px" }}>Người bán thực hiện hủy hóa đơn đã lập có sai sót và lập hóa đơn điện tử mới, ký số gửi cơ quan thuế để cấp mã hóa đơn mới thay thế hóa đơn đã lập.</p>
+
+            <h4 style={{ color: "#1e293b", margin: "14px 0 6px" }}>2. Sai tên, địa chỉ người mua nhưng không sai mã số thuế & số tiền</h4>
+            <p style={{ margin: "0 0 10px" }}>Người bán thông báo cho người mua về việc hóa đơn có sai sót và <b>không phải lập lại hóa đơn</b>. Người bán thực hiện thông báo với CQT theo <b>Mẫu số 04/SS-HĐĐT</b>.</p>
+
+            <h4 style={{ color: "#1e293b", margin: "14px 0 6px" }}>3. Sai mã số thuế, số tiền, thuế suất hoặc quy cách hàng hóa</h4>
+            <p style={{ margin: "0 0 6px" }}>Người bán được lựa chọn 1 trong 2 phương án:</p>
+            <ul style={{ margin: "0 0 10px", paddingLeft: 20 }}>
+              <li><b>Lập hóa đơn điều chỉnh:</b> Ghi rõ 'Điều chỉnh (tăng/giảm) số lượng, đơn giá, thuế suất... cho hóa đơn Mẫu số... Ký hiệu... Số... Ngày...'. Hóa đơn điều chỉnh ghi dấu (+) hoặc (-) tương ứng.</li>
+              <li><b>Lập hóa đơn thay thế:</b> Ghi rõ 'Thay thế cho hóa đơn Mẫu số... Ký hiệu... Số... Ngày...'. Hai bên lập văn bản thỏa thuận trước khi phát hành hóa đơn thay thế.</li>
+            </ul>
+
+            <h4 style={{ color: "#1e293b", margin: "14px 0 6px" }}>4. Xử lý khi nhận được Thông báo rà soát từ Cơ quan thuế</h4>
+            <p style={{ margin: "0 0 10px" }}>Khi cơ quan thuế gửi Mẫu 01/TB-RSĐT, doanh nghiệp cần rà soát và nộp Mẫu 04/SS-HĐĐT theo đúng thời hạn ghi trên thông báo để giải trình hoặc hủy/điều chỉnh kịp thời.</p>
+          </div>
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={() => setLegalModalOpen(false)}
+              style={{
+                padding: "8px 20px",
+                borderRadius: 6,
+                border: "none",
+                background: "#0284c7",
+                color: "#ffffff",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
+              }}
+            >
+              Đã hiểu & Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  );
+
+  if (tab === "error-guide")
     return (
       <div className="iw-guide">
+        {renderLegalModal()}
         <header>
           <h1>Tra cứu cách xử lý HĐ đã lập sai</h1>
           <p>
             Cung cấp thông tin về hóa đơn đã lập sai của bạn, hệ thống sẽ hướng
             dẫn cách xử lý phù hợp.
           </p>
-          <Link to={href("/sales/invoices")}>Xem hóa đơn đã phát hành và xử lý hủy</Link>
+          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+            <Link
+              to={href("/sales/invoices")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: 6,
+                color: "#334155",
+                fontSize: 12.5,
+                fontWeight: 500,
+                textDecoration: "none",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              }}
+            >
+              Xem hóa đơn đã phát hành & xử lý hủy
+            </Link>
+            <Link
+              to={href("/invoices/adjustments")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: 6,
+                color: "#1d4ed8",
+                fontSize: 12.5,
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Đến màn hình HĐ điều chỉnh / thay thế →
+            </Link>
+          </div>
         </header>
         <div className="iw-guide-columns">
           <section>
@@ -184,15 +286,27 @@ export default function MisaInvoiceWorkspace({
                     <b>Lưu ý: Không cần lập lại hóa đơn</b>
                   </p>
                 )}
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert("Tài liệu hướng dẫn xử lý hóa đơn điện tử Sổ Việt e-Invoice");
+                <button
+                  type="button"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 6,
+                    color: "#1d4ed8",
+                    cursor: "pointer",
+                    padding: "7px 14px",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    marginTop: 12,
+                    boxShadow: "0 1px 2px rgba(37,99,235,0.05)",
                   }}
+                  onClick={() => setLegalModalOpen(true)}
                 >
-                  Xem hướng dẫn chi tiết
-                </a>
+                  <BookOpen size={14} /> Xem hướng dẫn quy chuẩn Nghị định 123 & Thông tư 78
+                </button>
               </>
             )}
           </section>
@@ -201,9 +315,30 @@ export default function MisaInvoiceWorkspace({
     );
   return (
     <div className="iw-process">
+      {renderLegalModal()}
       <div className="iw-rule">
         Quản lý và phát hành hóa đơn theo:{" "}
-        <button>Nghị định 254/2026/NĐ-CP</button>
+        <button
+          type="button"
+          onClick={() => setLegalModalOpen(true)}
+          style={{
+            cursor: "pointer",
+            background: "#eff6ff",
+            color: "#1d4ed8",
+            border: "1px solid #bfdbfe",
+            borderRadius: 6,
+            padding: "4px 10px",
+            fontWeight: 600,
+            fontSize: 12.5,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          }}
+          title="Bấm để xem chi tiết căn cứ pháp lý NĐ 123 và TT 78"
+        >
+          <BookOpen size={13} /> Nghị định 123/2020/NĐ-CP & TT 78/2021/TT-BTC
+        </button>
       </div>
       <div className="iw-process-grid">
         <section className="iw-business">
@@ -234,27 +369,19 @@ export default function MisaInvoiceWorkspace({
                 markerEnd="url(#iw-arrow)"
               />
             </svg>
-            {flowNodes.map(([label, path, left, top]) => {
-              const content = (
-                <>
-                  <span className="iw-flow-icon">
-                    <Monitor size={35} />
-                    <FileText size={21} />
-                  </span>
-                  <span>{label}</span>
-                </>
-              );
-              // Bước không có màn hình trong ERP: mở trang bên ngoài nơi thực hiện bước đó.
-              return path.startsWith("https://") ? (
-                <a key={label} href={path} target="_blank" rel="noreferrer" title="Mở Cổng hóa đơn điện tử của Tổng cục Thuế (tab mới)" style={{ left: `${left}%`, top: `${top}%` }}>
-                  {content}
-                </a>
-              ) : (
-                <Link key={label} to={href("/invoices/" + path)} style={{ left: `${left}%`, top: `${top}%` }}>
-                  {content}
-                </Link>
-              );
-            })}
+            {flowNodes.map(([label, path, left, top]) => (
+              <Link
+                key={label}
+                to={href("/invoices/" + path)}
+                style={{ left: `${left}%`, top: `${top}%` }}
+              >
+                <span className="iw-flow-icon">
+                  <Monitor size={35} />
+                  <FileText size={21} />
+                </span>
+                <span>{label}</span>
+              </Link>
+            ))}
           </div>
         </section>
         <aside className="iw-reports">
@@ -276,7 +403,10 @@ export default function MisaInvoiceWorkspace({
       </div>
       <footer>
         {[
-          ["Tùy chọn", "/invoices/lookup"],
+          ["Tự động lấy hóa đơn từ TCT", "/invoices/sync"],
+          ["Hộp thư hóa đơn đầu vào", "/invoices/incoming/inbox"],
+          ["Hóa đơn điều chỉnh & Thay thế", "/invoices/adjustments"],
+          ["Tra cứu hóa đơn điện tử", "/invoices/lookup"],
         ].map(([label, targetPath]) => (
           <Link key={label} to={href(targetPath)}>
             <FileText size={18} />

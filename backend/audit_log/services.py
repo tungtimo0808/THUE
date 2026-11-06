@@ -430,7 +430,7 @@ def generate_audit_ai_summary(queryset):
             "summary": "Không có sự kiện nào trong phạm vi được chọn.",
             "total_events": 0,
             "anomalies": [],
-            "disclaimer": "Kết quả phân tích AI là nhận định hỗ trợ tham khảo, không thay thế bằng chứng Audit Log gốc (BR-AUD-52).",
+            "disclaimer": "Kết quả phân tích tự động là nhận định hỗ trợ tham khảo, không thay thế bằng chứng Audit Log gốc (BR-AUD-52).",
         }
 
     # Group counts
@@ -475,5 +475,5 @@ def generate_audit_ai_summary(queryset):
         "category_breakdown": category_counts,
         "result_breakdown": result_counts,
         "anomalies": anomalies,
-        "disclaimer": "Kết quả phân tích AI là nhận định hỗ trợ tham khảo, không thay thế bằng chứng Audit Log gốc (BR-AUD-52).",
+        "disclaimer": "Kết quả phân tích tự động là nhận định hỗ trợ tham khảo, không thay thế bằng chứng Audit Log gốc (BR-AUD-52).",
     }

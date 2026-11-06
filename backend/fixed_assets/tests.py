@@ -10362,7 +10362,7 @@ class FixedAssetApiTests(TestCase):
     def test_uc_fa_16_main_flow_b_all_reports_example_4_7_and_reconciliation(self):
         """
         UC-FA-16 Main Flow B (Steps 1-14), Section 4.7 Example, AF08-AF28, BR15-BR40:
-        - Danh mục báo cáo CCDC, Tìm kiếm nhanh với AVA (AF21), Đánh dấu Yêu thích (AF17, AF18), Ẩn/hiện báo cáo (AF20), Ngôn ngữ báo cáo (AF19)
+        - Danh mục báo cáo CCDC, Tìm kiếm nhanh báo cáo (AF21), Đánh dấu Yêu thích (AF17, AF18), Ẩn/hiện báo cáo (AF20), Ngôn ngữ báo cáo (AF19)
         - Ví dụ minh họa 4.7: CCDC001 (Nguyên giá 12,000,000, 12 kỳ, Đã PB đến 08/2026 = 4,000,000, PB tháng 09/2026 = 1,000,000, Lũy kế = 5,000,000, Còn lại = 7,000,000)
         - Đối chiếu TK 242 khớp (7,000,000 -> Chênh lệch = 0) và lệch (6,000,000 -> Chênh lệch = 1,000,000, cảnh báo EF15)
         - Báo cáo Tổng hợp phân bổ CCDC theo năm 12 tháng (AF12, Formula 4.4)

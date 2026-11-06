@@ -824,7 +824,13 @@ export default function LiveReportScreen({
                         color: "#1e293b",
                         fontWeight: 700,
                         whiteSpace: "nowrap",
-                        textAlign: column.numeric ? "right" : "left",
+                        textAlign: column.numeric
+                          ? "right"
+                          : ["unit", "dvt", "don_vi", "uom"].some((k) =>
+                              column.code.toLowerCase().includes(k),
+                            )
+                            ? "center"
+                            : "left",
                         height: 38,
                       }}
                     >
@@ -860,7 +866,13 @@ export default function LiveReportScreen({
                           borderBottom: "1px solid #f1f5f9",
                           borderRight: "1px solid #f1f5f9",
                           padding: "7px 10px",
-                          textAlign: column.numeric ? "right" : "left",
+                          textAlign: column.numeric
+                          ? "right"
+                          : ["unit", "dvt", "don_vi", "uom"].some((k) =>
+                              column.code.toLowerCase().includes(k),
+                            )
+                            ? "center"
+                            : "left",
                           color: "#0f172a",
                           whiteSpace: "nowrap",
                         }}

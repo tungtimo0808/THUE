@@ -522,6 +522,23 @@ export const MODULE_EXTENDED_APIS: Record<string, ApiEndpointConfig[]> = {
   ],
   bank: [
     {
+      id: "bank-integrations",
+      label: "Kết nối Ngân hàng điện tử (eBanking)",
+      path: "/api/v1/bank/integrations/",
+      description: "Quản lý kết nối API trực tiếp với ngân hàng để đồng bộ sao kê và lệnh chi.",
+      columns: [
+        { key: "provider_name", label: "Ngân hàng" },
+        { key: "account_number", label: "Số tài khoản" },
+        { key: "connection_status", label: "Trạng thái kết nối" },
+        { key: "last_synced_at", label: "Đồng bộ gần nhất" },
+      ],
+      createFields: [
+        { key: "provider_name", label: "Tên ngân hàng", defaultValue: "Techcombank", required: true },
+        { key: "account_number", label: "Số tài khoản kết nối", defaultValue: "1903888999001", required: true },
+        { key: "connection_status", label: "Trạng thái", defaultValue: "ACTIVE" },
+      ],
+    },
+    {
       id: "bank-revaluations",
       label: "Đánh giá lại ngoại tệ ngân hàng",
       path: "/api/v1/bank/revaluations/",
@@ -771,6 +788,32 @@ export const MODULE_EXTENDED_APIS: Record<string, ApiEndpointConfig[]> = {
         { key: "document_number", label: "Số chứng từ" },
         { key: "invoice_number", label: "Số hóa đơn" },
         { key: "tax_amount", label: "Tiền thuế" },
+        { key: "status", label: "Trạng thái" },
+      ],
+    },
+    {
+      id: "tax-connectors",
+      label: "Cổng kết nối Hóa đơn điện tử & Thuế",
+      path: "/api/v1/tax/connectors/",
+      description: "Cấu hình kết nối Hóa đơn điện tử (Viettel SInvoice, VNPT Invoice, BKAV eHoadon) và Cổng Thuế điện tử.",
+      columns: [
+        { key: "provider", label: "Nhà cung cấp" },
+        { key: "tax_code", label: "Mã số thuế" },
+        { key: "status", label: "Trạng thái kết nối" },
+      ],
+      createFields: [
+        { key: "provider", label: "Nhà cung cấp HĐĐT", defaultValue: "Cổng HĐĐT Tổng cục Thuế", required: true },
+        { key: "tax_code", label: "Mã số thuế DN", defaultValue: "109876543", required: true },
+      ],
+    },
+    {
+      id: "tax-integrations",
+      label: "Đồng bộ dữ liệu Tổng cục Thuế",
+      path: "/api/v1/tax/integrations/",
+      description: "Lịch sử đồng bộ hóa đơn mua vào/bán ra từ hệ thống Hóa đơn điện tử Tổng cục Thuế.",
+      columns: [
+        { key: "provider_name", label: "Cổng kết nối" },
+        { key: "last_sync_at", label: "Thời gian đồng bộ" },
         { key: "status", label: "Trạng thái" },
       ],
     },

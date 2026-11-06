@@ -176,7 +176,7 @@ export function LegalPolicyModal({
               <ul style={{ margin: "6px 0 12px 18px", padding: 0 }}>
                 <li>Hệ thống <strong>không sử dụng</strong> cookie quảng cáo hay script theo dõi hành vi bên thứ ba (Google Analytics, Facebook Pixel, TikTok Pixel).</li>
                 <li>Hệ thống cam kết <strong>không mua bán, trao đổi trái phép dữ liệu cá nhân</strong> dưới mọi hình thức (Điều 7 Luật 91/2025/QH15).</li>
-                <li>Khi sử dụng tính năng Trợ lý AI nội bộ, các trường nhạy cảm (mật khẩu, mã OTP, token, khóa bí mật) được tự động lọc và che dấu (<code>[REDACTED]</code>) trước khi xử lý.</li>
+                <li>Các trường nhạy cảm (mật khẩu, mã OTP, token, khóa bí mật) được tự động lọc và che dấu (<code>[REDACTED]</code>) trong nhật ký hệ thống.</li>
                 <li>Thời hạn lưu trữ: Nhật ký hệ thống lưu tối thiểu 12 tháng (Nghị định 333/2026/NĐ-CP); tài liệu, sổ sách kế toán điện tử lưu trữ tối thiểu 10 năm theo Luật Kế toán.</li>
               </ul>
 
@@ -205,7 +205,7 @@ export function LegalPolicyModal({
               <ul style={{ margin: "6px 0 12px 18px", padding: 0 }}>
                 <li><strong>Trách nhiệm tài khoản & phân quyền:</strong> Người dùng có trách nhiệm bảo mật thông tin xác thực (mật khẩu, mã OTP) và chỉ thao tác trong đúng phạm vi vai trò, chi nhánh, phòng ban được Quản trị viên doanh nghiệp phân công.</li>
                 <li><strong>Giá trị pháp lý của chứng từ điện tử & chữ ký số:</strong> Các thao tác lập, trình duyệt, phê duyệt, ký số và ghi sổ cái trên hệ thống được ghi nhận vào Nhật ký kiểm toán bất biến (Append-only Audit Log) kèm mã băm SHA-256 làm căn cứ đối chiếu nội bộ và kiểm toán.</li>
-                <li><strong>Minh bạch Trí tuệ nhân tạo (Luật AI số 134/2025/QH15 & NĐ 142/2026/NĐ-CP):</strong> Các gợi ý phân tích từ Trợ lý AI trong hệ thống chỉ mang tính chất hỗ trợ tham khảo; kế toán viên và người có thẩm quyền phê duyệt chịu trách nhiệm kiểm tra, đối chiếu chứng từ gốc trước khi ghi sổ hoặc kê khai thuế.</li>
+                <li><strong>Trách nhiệm kiểm soát chứng từ:</strong> Kế toán viên và người có thẩm quyền phê duyệt chịu trách nhiệm kiểm tra, đối chiếu chứng từ gốc trước khi ghi sổ hoặc kê khai thuế.</li>
                 <li><strong>Bản quyền & giới hạn sử dụng:</strong> Nghiêm cấm mọi hành vi can thiệp trái phép vào cơ chế phân quyền, giả mạo chứng từ, hoặc trích xuất dữ liệu của doanh nghiệp khác.</li>
               </ul>
             </div>

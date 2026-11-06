@@ -1510,7 +1510,7 @@ class ExpenseItemViewSet(mixins.DestroyModelMixin, MasterDataViewSet):
         company = get_object_or_404(Company, pk=company_id)
         name = request.data.get("name", "")
         if not name or not name.strip():
-            raise ValidationError({"name": "Cần cung cấp tên khoản mục để AI phân tích và gợi ý."})
+            raise ValidationError({"name": "Cần cung cấp tên khoản mục để hệ thống phân loại và gợi ý."})
         description = request.data.get("description", "")
         suggestion = expense_item_services.ai_suggest_expense_item(company, name, description)
         return Response(suggestion)

@@ -1324,7 +1324,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   }}
                 >
                   <Bot size={14} />
-                  <span>Trợ lý số Sổ Việt AI đã có thể gợi ý Thuế suất GTGT</span>
+                  <span>Hệ thống hỗ trợ tra cứu nhanh mức Thuế suất GTGT theo danh mục hàng hóa</span>
                 </span>
               </div>
             </div>

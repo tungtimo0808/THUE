@@ -9064,7 +9064,7 @@ def _get_fixed_asset_register_uc09(request, data=None) -> dict:
 def get_fixed_asset_report_catalog_uc09(request, data=None) -> dict:
     """
     UC-FA-09 – Main Flow B Steps 2–4, AF10 (Tìm theo tên báo cáo),
-    AF12 (Tìm kiếm nhanh báo cáo với AVA Kế toán), AF13 (Ngôn ngữ báo cáo),
+    AF12 (Tìm kiếm nhanh báo cáo), AF13 (Ngôn ngữ báo cáo),
     AF14 (Ẩn/hiện báo cáo).
     """
     payload = data if isinstance(data, dict) else {}
@@ -14003,7 +14003,7 @@ def setup_allocation_period_uc11(request, data=None):
 
     if ai_assisted:
         result["ai_summary"] = (
-            f"Sổ Việt AI đã đề xuất kỳ phân bổ {month:02d}/{year} với {len(tabs_data['identify_rows'])} khoản đủ điều kiện."
+            f"Hệ thống đã đề xuất kỳ phân bổ {month:02d}/{year} với {len(tabs_data['identify_rows'])} khoản đủ điều kiện."
         )
 
     if cache_key:
@@ -22964,7 +22964,7 @@ def get_tool_report_catalog_uc16(request, data=None) -> dict:
     UC-FA-16 – Main Flow B Steps 1–4, AF08–AF10, AF17–AF21, EF02, EF10, EF17, EF24, EF25, BR30–BR33, Section 5.3–5.4:
     Returns the CCDC, Prepaid Expense, and Reconciliation report catalog, user favorites (`Yêu thích`),
     show/hide configuration (`Ẩn/hiện báo cáo`), report language (`Tiếng Việt` / `English`),
-    and AVA natural-language report lookup (`Tìm kiếm nhanh báo cáo với AVA Kế toán`).
+    and AVA natural-language report lookup (`Tìm kiếm nhanh báo cáo`).
     """
     payload = data if isinstance(data, dict) else {}
     qp = request.query_params if hasattr(request, "query_params") else {}

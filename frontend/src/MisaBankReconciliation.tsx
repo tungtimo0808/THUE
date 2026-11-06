@@ -231,7 +231,7 @@ export default function MisaBankReconciliation({
         {[
           ["online", "Đối chiếu online"],
           ["offline", "Đối chiếu offline"],
-          ["ava", "Đối chiếu với Sổ Việt AI"],
+          ["ava", "Đối chiếu tự động"],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -435,7 +435,7 @@ export default function MisaBankReconciliation({
         </>
       ) : (
         <section className="br-intro">
-          <h2>{tab === "online" ? "Đối chiếu online" : "Đối chiếu với Sổ Việt AI"}</h2>
+          <h2>{tab === "online" ? "Đối chiếu online" : "Đối chiếu tự động"}</h2>
           {tab === "ava" && connected && <button className="br-primary" onClick={() => setShowImport(true)}>Thêm kỳ đối chiếu · Tải tệp sao kê</button>}
           <p>
             Hệ thống tự động đối chiếu sổ phụ ngân hàng với sổ kế toán tiền gửi

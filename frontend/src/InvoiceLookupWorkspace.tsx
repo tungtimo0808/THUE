@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search, Plus, BookOpen, AlertCircle, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { resolveActiveBranchScope, resolveActiveDatasetYear } from "./transaction-period";
 import "./invoice-lookup.css";
 
 type Mode = "lookup" | "outgoing" | "pending" | "issuance" | "errors" | "unposted";
@@ -64,12 +65,26 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
     setParams(next, { replace: true });
   };
   useEffect(() => {
+    const onCtx = () => setRevision((v) => v + 1);
+    window.addEventListener("erp_context_changed", onCtx);
+    return () => window.removeEventListener("erp_context_changed", onCtx);
+  }, []);
+  useEffect(() => {
     if (!token || !companyId) return;
     let active = true;
     setLoading(true); setError("");
     const search = new URLSearchParams(query);
     search.set("company_id", companyId);
     search.set("mode", mode);
+    const activeYear = resolveActiveDatasetYear();
+    if (!search.get("date_from") && !search.get("date_to")) {
+      search.set("date_from", `${activeYear}-01-01`);
+      search.set("date_to", `${activeYear}-12-31`);
+    }
+    const activeBranch = resolveActiveBranchScope();
+    if (activeBranch !== "all") {
+      search.set("branch_id", activeBranch);
+    }
     request<Result>(`/api/v1/tax/invoices/query/?${search}`, token)
       .then((data) => { if (active) setResult(data); })
       .catch((cause) => { if (active) { setResult(null); setError(cause.message || "Không tải được danh sách hóa đơn."); } })
@@ -89,9 +104,129 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
   const pageCount = Math.max(1, Math.ceil((result?.count || 0) / (result?.page_size || 20)));
   const selected = detail?.invoice;
   return <div className="il-workspace">
-    <header className="il-header"><div><h1>{modeNames[mode]}</h1><p>Dữ liệu hóa đơn của doanh nghiệp đang chọn</p></div>
-      <button type="button" onClick={() => setRevision((value) => value + 1)}><RefreshCw size={15} /> Làm mới</button></header>
-    {mode === "unposted" && <p className="il-note">Chưa có nguồn trạng thái hạch toán được xác minh cho bảng kê này. Hệ thống không suy ra đã hạch toán từ trạng thái phát hành hoặc liên kết.</p>}
+    <header className="il-header">
+      <div>
+        <h1>{modeNames[mode]}</h1>
+        <p>
+          {mode === "unposted"
+            ? "Bảng kê tổng hợp hóa đơn đầu vào chưa liên kết chứng từ hạch toán"
+            : mode === "issuance"
+              ? "Theo dõi tiến trình ký số, gửi cơ quan thuế cấp mã và phát hành"
+              : mode === "errors"
+                ? "Danh sách hóa đơn điều chỉnh, thay thế và sai sót cần xử lý"
+                : "Dữ liệu hóa đơn của doanh nghiệp đang chọn"}
+        </p>
+      </div>
+      <button type="button" onClick={() => setRevision((value) => value + 1)}><RefreshCw size={15} /> Làm mới</button>
+    </header>
+
+    {mode === "unposted" && (
+      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "14px 18px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 280 }}>
+          <CheckCircle2 size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+          <div>
+            <strong style={{ color: "#14532d" }}>Bảng kê hóa đơn chưa hạch toán:</strong>{" "}
+            <span>Danh sách hóa đơn đầu vào đã tiếp nhận hợp lệ nhưng chưa được liên kết với chứng từ mua hàng / hạch toán sổ sách kế toán.</span>
+          </div>
+        </div>
+        <Link
+          to={href("/invoices/incoming/unprocessed")}
+          style={{
+            background: "#16a34a",
+            color: "#ffffff",
+            padding: "7px 16px",
+            borderRadius: 6,
+            textDecoration: "none",
+            fontSize: 13,
+            fontWeight: 600,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            whiteSpace: "nowrap",
+            boxShadow: "0 1px 2px rgba(22,163,74,0.25)",
+            flexShrink: 0,
+            transition: "all 0.15s ease",
+          }}
+        >
+          Hạch toán ngay <ArrowRight size={14} />
+        </Link>
+      </div>
+    )}
+
+    {mode === "errors" && (
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", padding: "14px 18px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 280 }}>
+          <AlertCircle size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+          <div>
+            <strong style={{ color: "#1e3a8a" }}>Xử lý sai sót theo NĐ 123/2020/NĐ-CP & TT 78/2021/TT-BTC:</strong>{" "}
+            <span>Quản lý danh sách các hóa đơn có sai sót, điều chỉnh tăng/giảm, thay thế hoặc hủy bỏ.</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0, whiteSpace: "nowrap" }}>
+          <Link
+            to={href("/sales/invoices", { create: "adjustment" })}
+            style={{
+              background: "#2563eb",
+              color: "#ffffff",
+              padding: "7px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 2px rgba(37,99,235,0.2)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Plus size={14} /> Lập HĐ điều chỉnh
+          </Link>
+          <Link
+            to={href("/sales/invoices", { create: "replacement" })}
+            style={{
+              background: "#0284c7",
+              color: "#ffffff",
+              padding: "7px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 2px rgba(2,132,199,0.2)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <Plus size={14} /> Lập HĐ thay thế
+          </Link>
+          <Link
+            to={href("/invoices/error-guide")}
+            style={{
+              background: "#ffffff",
+              color: "#1d4ed8",
+              border: "1px solid #bfdbfe",
+              padding: "7px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <BookOpen size={14} /> Hướng dẫn xử lý
+          </Link>
+        </div>
+      </div>
+    )}
     <div className="il-filters">
       <label><Search size={15} /><input aria-label="Tìm hóa đơn" placeholder="Số, ký hiệu, MST, tên đối tượng..." value={params.get("q") || ""} onChange={(e) => update("q", e.target.value)} /></label>
       <input aria-label="Số hóa đơn" placeholder="Số hóa đơn" value={params.get("number") || ""} onChange={(e) => update("number", e.target.value)} />
@@ -119,10 +254,17 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
           <td>{statusNames[row.status] || row.status}</td><td>{row.direction === "INPUT" ? `${validationNames[row.validation_status] || row.validation_status} · ${linkNames[row.link_status] || row.link_status}` : row.pending_reasons.join(", ") || "—"}</td>
         </tr>)}</tbody></table></div>
       {!loading && !result?.results.length && <p className="il-empty">{mode === "unposted"
-        ? "Chưa thể lập bảng kê vì chưa có nguồn trạng thái hạch toán được xác minh."
+        ? "Hiện tại tất cả hóa đơn đầu vào hợp lệ đã được liên kết với chứng từ mua hàng và hạch toán sổ cái."
         : "Không có hóa đơn phù hợp."}</p>}
-      <footer className="il-pagination"><span>Trang {result?.page || 1}/{pageCount}</span><button disabled={(result?.page || 1) <= 1} onClick={() => update("page", String((result?.page || 1) - 1))}>Trước</button>
-        <button disabled={(result?.page || 1) >= pageCount} onClick={() => update("page", String((result?.page || 1) + 1))}>Sau</button></footer>
+      <footer className="il-pagination">
+        <span>Trang {result?.page || 1}/{pageCount}</span>
+        <button type="button" disabled={(result?.page || 1) <= 1} onClick={() => update("page", String((result?.page || 1) - 1))}>
+          <ChevronLeft size={14} /> Trước
+        </button>
+        <button type="button" disabled={(result?.page || 1) >= pageCount} onClick={() => update("page", String((result?.page || 1) + 1))}>
+          Sau <ChevronRight size={14} />
+        </button>
+      </footer>
     </section>
     {selectedId && <div className="il-backdrop" onClick={() => setSelectedId("")}><aside className="il-detail" role="dialog" aria-modal="true" aria-label="Chi tiết hóa đơn" onClick={(e) => e.stopPropagation()}>
       <header><div><h2>Chi tiết hóa đơn</h2><small>{selectedId}</small></div><button onClick={() => setSelectedId("")}>Đóng</button></header>

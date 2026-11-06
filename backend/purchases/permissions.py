@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import company_identifiers_agree, has_effective_permission
+from iam.permissions import company_identifiers_agree, get_user_allowed_branch_ids, has_effective_permission
 from organization.models import Company
 
 
@@ -94,14 +94,20 @@ class PurchasePermission(BasePermission):
         if not permission_code:
             self.message = "Bạn không có quyền thực hiện thao tác này."
             return False
+        raw_branch = request.query_params.get("branch_id") or (request.data.get("branch") if isinstance(request.data, dict) else None)
+        branch_id = None if (not raw_branch or str(raw_branch).lower() in ("all", "head-office")) else raw_branch
         has_perm = has_effective_permission(
             request.user.iam_account,
             company,
             permission_code,
-            branch_id=request.query_params.get("branch_id") or request.data.get("branch"),
-            department_id=request.query_params.get("department_id") or request.data.get("department"),
-            warehouse_id=request.query_params.get("warehouse_id") or request.data.get("warehouse") or request.data.get("receiving_warehouse"),
+            branch_id=branch_id,
+            department_id=request.query_params.get("department_id") or (request.data.get("department") if isinstance(request.data, dict) else None),
+            warehouse_id=request.query_params.get("warehouse_id") or (request.data.get("warehouse") if isinstance(request.data, dict) else None) or (request.data.get("receiving_warehouse") if isinstance(request.data, dict) else None),
         )
+        if not has_perm and not branch_id and request.method == "GET" and getattr(view, "action", None) == "list":
+            allowed = get_user_allowed_branch_ids(request, company.id)
+            if allowed and any(has_effective_permission(request.user.iam_account, company, permission_code, branch_id=bid) for bid in allowed):
+                has_perm = True
         if not has_perm and permission_code == "PUR.APPROVAL.VIEW":
             if has_effective_permission(request.user.iam_account, company, "PUR.APPROVAL.APPROVE"):
                 has_perm = True

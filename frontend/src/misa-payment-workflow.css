@@ -11,13 +11,28 @@
   border-bottom: 1px solid #e0e3e7;
   margin-bottom: 20px;
 }
-.pw-workspace button {
+.pw-workspace > nav button,
+.pw-workspace > header button {
   font: inherit;
   cursor: pointer;
   border: 1px solid #d1d5db;
   padding: 8px 14px;
   background: white;
-  border-radius: 3px;
+  border-radius: 6px;
+}
+.pw-workspace .misa-btn-primary {
+  background: #00a862;
+  color: #ffffff;
+  border: 1px solid #00a862;
+  font-weight: 600;
+  border-radius: 6px;
+}
+.pw-workspace .misa-btn-secondary {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  font-weight: 600;
+  border-radius: 6px;
 }
 .pw-workspace > nav button {
   background: transparent;

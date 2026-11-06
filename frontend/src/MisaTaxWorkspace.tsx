@@ -7,19 +7,22 @@ import TaxObligationPanel, { type TaxObligationRow } from "./TaxObligationPanel"
 import TaxPaymentOrderModal from "./TaxPaymentOrderModal";
 import TaxReconciliationModal from "./TaxReconciliationModal";
 import TaxExportPanel from "./TaxExportPanel";
-import SupplierRiskPanel from "./SupplierRiskPanel";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { useLocation } from "react-router-dom";
 import { MisaTaxReportModal } from "./MisaTaxReportModal";
 import {
   Search,
+  RotateCw,
+  Printer,
   ChevronDown,
   ChevronUp,
   X,
   SlidersHorizontal,
   Building2,
   Download,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import "./misa-cash.css";
 
@@ -129,8 +132,13 @@ export default function MisaTaxWorkspace({
   };
 
   // State: Tab 2 (Giấy nộp tiền)
+  const [taxCode, setTaxCode] = useState("0108923456");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // State: Tab 3 (Danh sách NCC có rủi ro)
+  const [riskSearch, setRiskSearch] = useState("");
 
   // State: Tab 4 (Báo cáo)
   const [reportSearch, setReportSearch] = useState("");
@@ -467,17 +475,298 @@ export default function MisaTaxWorkspace({
           reloadKey={obligationReloadKey} onPay={(obligation, candidates) => {
             setPaymentCandidates(candidates); setPaymentInitialId(obligation.id); setShowTaxPaymentModal(true);
           }} />
-        {/* Chưa có dịch vụ nộp thuế điện tử tích hợp: hướng dẫn nộp thủ công */}
-        <div style={{ gridColumn: "1 / -1", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: "20px 24px", fontSize: 13, color: "#334155", lineHeight: 1.6 }}>
-          <h3 style={{ margin: "0 0 6px", fontSize: 15, color: "#1e293b" }}>Nộp thuế điện tử</h3>
-          <p style={{ margin: "0 0 10px", color: "#64748b" }}>
-            Hệ thống chưa kết nối với dịch vụ nộp thuế điện tử, nên giấy nộp tiền không được gửi tự động. Cách nộp hiện tại:
+        {/* Left Card: Form Kết nối Sổ Việt eTax */}
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 8,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            padding: "48px 40px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Logo Sổ Việt eTax */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* MISA round logo icon */}
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background: "#0284c7",
+                display: "grid",
+                placeItems: "center",
+                color: "#ffffff",
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 16 L4 18 C4 19.1 4.9 20 6 20 L6 20" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M9 12 L9 18 C9 19.1 9.9 20 11 20 L11 20" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M14 8 L14 18 C14 19.1 14.9 20 16 20 L16 20" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M19 4 L19 18 C19 19.1 19.9 20 20 20 L20 20" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.5px" }}>
+              Sổ Việt eTax
+            </span>
+          </div>
+
+          {/* Heading */}
+          <h2
+            style={{
+              margin: "24px 0 28px 0",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "#1e293b",
+              textAlign: "center",
+              letterSpacing: 0.2,
+            }}
+          >
+            Kết nối Sổ Việt eTax
+          </h2>
+
+          {/* Input Form */}
+          <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Input 1: Mã số thuế */}
+            <div>
+              <input
+                type="text"
+                placeholder="Mã số thuế"
+                value={taxCode}
+                onChange={(e) => setTaxCode(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 38,
+                  padding: "0 12px",
+                  border: "1px solid #10b981",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Input 2: Email hoặc số điện thoại */}
+            <div>
+              <input
+                type="text"
+                placeholder="Email hoặc số điện thoại"
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 38,
+                  padding: "0 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Input 3: Mật khẩu */}
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Mật khẩu"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 38,
+                  padding: "0 36px 0 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 4,
+                  fontSize: 13,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: 10,
+                  border: "none",
+                  background: "none",
+                  cursor: "pointer",
+                  color: "#64748b",
+                  padding: 0,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
+            {/* Subtext */}
+            <div style={{ fontSize: 12.5, color: "#374151", textAlign: "center", marginTop: 4 }}>
+              Bạn chưa có tài khoản <em>Sổ Việt eTax</em>? Mua ngay{" "}
+              <a
+                href="#buy"
+                onClick={(e) => {
+                  e.preventDefault();
+                  notify("Chuyển tới trang đăng ký dịch vụ Sổ Việt eTax");
+                }}
+                style={{ color: "#0073e6", textDecoration: "underline", fontWeight: 500 }}
+              >
+                tại đây
+              </a>
+            </div>
+
+            {/* Button Kết nối */}
+            <button
+              type="button"
+              onClick={() => {
+                notify("Dịch vụ thuế điện tử Sổ Việt eTax đang ở chế độ xem trước.");
+              }}
+              style={{
+                width: "100%",
+                height: 38,
+                background: "#00a862",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: 4,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                marginTop: 6,
+                boxShadow: "0 2px 4px rgba(0, 168, 98, 0.25)",
+              }}
+            >
+              Kết nối
+            </button>
+          </div>
+        </div>
+
+        {/* Right Card: Giới thiệu dịch vụ thuế điện tử */}
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 8,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            padding: "36px 32px",
+            display: "flex",
+            flexDirection: "column",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* 3D Isometric Illustration */}
+          <div style={{ width: "100%", height: 180, display: "grid", placeItems: "center" }}>
+            <svg width="220" height="160" viewBox="0 0 220 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Floating connection lines */}
+              <path d="M40 70 L90 50 M180 70 L130 50" stroke="#bae6fd" strokeWidth="1.5" strokeDasharray="3 3" />
+              <path d="M110 50 L110 110" stroke="#bae6fd" strokeWidth="1.5" strokeDasharray="3 3" />
+
+              {/* Central Laptop (3D view) */}
+              <g transform="translate(68, 20)">
+                {/* Screen frame */}
+                <polygon points="42,0 84,20 42,42 0,22" fill="#0284c7" />
+                <polygon points="42,2 80,20 42,39 4,21" fill="#38bdf8" />
+                {/* Stand / Keyboard base */}
+                <polygon points="0,22 42,42 84,20 42,3" fill="#0369a1" opacity="0.2" />
+                <polygon points="42,42 84,20 84,26 42,48 0,28 0,22" fill="#0284c7" />
+              </g>
+
+              {/* Left Server Node */}
+              <g transform="translate(18, 62)">
+                <ellipse cx="22" cy="10" rx="18" ry="8" fill="#7dd3fc" />
+                <path d="M4 10 L4 20 C4 24 12 28 22 28 C32 28 40 24 40 20 L40 10 Z" fill="#0284c7" />
+                <ellipse cx="22" cy="20" rx="18" ry="8" fill="#38bdf8" />
+                <path d="M4 20 L4 30 C4 34 12 38 22 38 C32 38 40 34 40 30 L40 20 Z" fill="#0369a1" />
+                <ellipse cx="22" cy="30" rx="18" ry="8" fill="#0284c7" />
+              </g>
+
+              {/* Right Server Node */}
+              <g transform="translate(158, 62)">
+                <ellipse cx="22" cy="10" rx="18" ry="8" fill="#7dd3fc" />
+                <path d="M4 10 L4 20 C4 24 12 28 22 28 C32 28 40 24 40 20 L40 10 Z" fill="#0284c7" />
+                <ellipse cx="22" cy="20" rx="18" ry="8" fill="#38bdf8" />
+                <path d="M4 20 L4 30 C4 34 12 38 22 38 C32 38 40 34 40 30 L40 20 Z" fill="#0369a1" />
+                <ellipse cx="22" cy="30" rx="18" ry="8" fill="#0284c7" />
+              </g>
+
+              {/* Center Main Database Stack */}
+              <g transform="translate(85, 85)">
+                <ellipse cx="26" cy="12" rx="26" ry="10" fill="#e0f2fe" />
+                <ellipse cx="26" cy="12" rx="22" ry="8" fill="#38bdf8" />
+                <path d="M4 12 L4 26 C4 32 14 36 26 36 C38 36 48 32 48 26 L48 12 Z" fill="#0284c7" />
+                <ellipse cx="26" cy="26" rx="22" ry="8" fill="#7dd3fc" />
+                <path d="M4 26 L4 40 C4 46 14 50 26 50 C38 50 48 46 48 40 L48 26 Z" fill="#0369a1" />
+                <ellipse cx="26" cy="40" rx="22" ry="8" fill="#0284c7" />
+              </g>
+
+              {/* Small floating sparkles */}
+              <circle cx="34" cy="48" r="3" fill="#f59e0b" />
+              <circle cx="186" cy="45" r="2.5" fill="#f59e0b" />
+              <circle cx="108" cy="148" r="2" fill="#0284c7" />
+            </svg>
+          </div>
+
+          {/* Heading */}
+          <h3
+            style={{
+              margin: "16px 0 8px 0",
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#1e293b",
+            }}
+          >
+            Dịch vụ thuế điện tử Sổ Việt eTax
+          </h3>
+
+          {/* Subtitle */}
+          <p style={{ margin: "0 0 16px 0", fontSize: 13, color: "#475569", lineHeight: 1.45 }}>
+            Kê khai, nộp thuế thuận tiện, nhanh chóng hơn với Sổ Việt eTax
           </p>
-          <ol style={{ margin: 0, paddingLeft: 20 }}>
-            <li>Bấm <strong>Nộp thuế</strong> ở bảng nghĩa vụ phía trên để lập giấy nộp tiền.</li>
-            <li>Nộp tiền trên Cổng thuế điện tử của cơ quan thuế hoặc qua ngân hàng, dùng thông tin trên giấy nộp tiền.</li>
-            <li>Sau khi được xác nhận, ghi nhận chứng từ nộp tiền trong hệ thống để cập nhật số đã nộp.</li>
-          </ol>
+
+          {/* Bullets */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13, color: "#334155", lineHeight: 1.5 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
+              <span>
+                Đáp ứng đầy đủ mọi nghiệp vụ kê khai, nộp thuế cho Doanh nghiệp và Cá nhân (doanh nghiệp kê khai hộ)
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
+              <span>Tích hợp ngay trên phần mềm kế toán Sổ Việt ERP</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
+              <span>Đã được Tổng Cục Thuế cấp phép</span>
+            </div>
+          </div>
+
+          {/* Link Xem thêm */}
+          <div style={{ marginTop: 18 }}>
+            <span
+              onClick={() => notify("Mở trang thông tin giới thiệu chi tiết Sổ Việt eTax")}
+              style={{
+                color: "#0073e6",
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: "pointer",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+            >
+              Xem thêm
+            </span>
+          </div>
         </div>
 
         {renderModals()}
@@ -490,10 +779,171 @@ export default function MisaTaxWorkspace({
   // =========================================================================
   if (tab === "risk-suppliers") {
     return (
-      <>
-        <SupplierRiskPanel companyId={company.id} token={apiToken} notify={notify} />
+      <div
+        style={{
+          background: "#ffffff",
+          minHeight: "100%",
+          padding: "16px 20px 24px 20px",
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Toolbar */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          {/* Left search */}
+          <div style={{ position: "relative", width: 220 }}>
+            <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "#94a3b8" }} />
+            <input
+              type="text"
+              placeholder="Tìm kiếm"
+              value={riskSearch}
+              onChange={(e) => setRiskSearch(e.target.value)}
+              style={{
+                width: "100%",
+                height: 32,
+                padding: "0 10px 0 30px",
+                border: "1px solid #cbd5e1",
+                borderRadius: 4,
+                fontSize: 13,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          {/* Right action icons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => notify("Đang đồng bộ dữ liệu tra cứu rủi ro nhà cung cấp từ Tổng cục Thuế...")}
+              title="Lấy lại dữ liệu"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 4,
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+                color: "#475569",
+              }}
+            >
+              <RotateCw size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => notify("Xuất danh sách nhà cung cấp rủi ro ra Excel")}
+              title="In / Xuất dữ liệu"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 4,
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+                color: "#475569",
+              }}
+            >
+              <Printer size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* Table container */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: "calc(100vh - 180px)",
+            border: "1px solid #cbd5e1",
+            borderRadius: 4,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Header Row */}
+          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#e2ede6", height: 36, borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>
+                <th style={{ textAlign: "left", padding: "8px 12px", width: 150, fontWeight: 700 }}>
+                  Mã nhà cung cấp
+                </th>
+                <th style={{ textAlign: "left", padding: "8px 12px", width: 240, fontWeight: 700 }}>
+                  Tên nhà cung cấp
+                </th>
+                <th style={{ textAlign: "left", padding: "8px 12px", fontWeight: 700 }}>
+                  Địa chỉ
+                </th>
+                <th style={{ textAlign: "left", padding: "8px 12px", width: 140, fontWeight: 700 }}>
+                  Mã số thuế
+                </th>
+                <th style={{ textAlign: "left", padding: "8px 12px", width: 160, fontWeight: 700 }}>
+                  Rủi ro về hóa đơn
+                </th>
+                <th style={{ textAlign: "center", padding: "8px 12px", width: 100, fontWeight: 700 }}>
+                  Chức năng
+                </th>
+              </tr>
+            </thead>
+          </table>
+
+          {/* Empty Body with Magnifying Glass Illustration (matching Image 4) */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "60px 20px",
+              background: "#ffffff",
+            }}
+          >
+            {/* SVG Magnifying Glass Illustration */}
+            <div style={{ width: 140, height: 100, position: "relative" }}>
+              <svg width="140" height="100" viewBox="0 0 140 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Background soft shadow lines */}
+                <line x1="30" y1="35" x2="110" y2="35" stroke="#f1f5f9" strokeWidth="6" strokeLinecap="round" />
+                <line x1="20" y1="50" x2="90" y2="50" stroke="#f1f5f9" strokeWidth="6" strokeLinecap="round" />
+                <line x1="40" y1="65" x2="120" y2="65" stroke="#f1f5f9" strokeWidth="6" strokeLinecap="round" />
+
+                {/* Sparkling green dots */}
+                <circle cx="28" cy="28" r="1.5" fill="#00a862" opacity="0.6" />
+                <circle cx="112" cy="38" r="2" fill="#00a862" opacity="0.7" />
+                <circle cx="106" cy="68" r="1.5" fill="#00a862" opacity="0.6" />
+
+                {/* Magnifying Glass Outer Rim */}
+                <circle cx="68" cy="44" r="20" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2.5" />
+                {/* Lens lines (document preview) */}
+                <line x1="61" y1="38" x2="75" y2="38" stroke="#00a862" strokeWidth="2" strokeLinecap="round" />
+                <line x1="61" y1="44" x2="75" y2="44" stroke="#00a862" strokeWidth="2" strokeLinecap="round" />
+                <line x1="61" y1="50" x2="71" y2="50" stroke="#00a862" strokeWidth="2" strokeLinecap="round" />
+
+                {/* Magnifier Handle */}
+                <path d="M82 58 L92 72" stroke="#00a862" strokeWidth="4.5" strokeLinecap="round" />
+              </svg>
+            </div>
+
+            {/* Text */}
+            <div style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
+              Không có dữ liệu
+            </div>
+          </div>
+        </div>
+
         {renderModals()}
-      </>
+      </div>
     );
   }
 
@@ -546,7 +996,7 @@ export default function MisaTaxWorkspace({
           </div>
 
           <div
-            onClick={() => notify("Mở trợ lý Sổ Việt AI để tìm kiếm và lập báo cáo thuế thông minh")}
+            onClick={() => notify("Kiểm tra nhanh định khoản để tìm kiếm và lập báo cáo thuế thông minh")}
             style={{
               color: "#2563eb",
               fontSize: 13,
@@ -557,7 +1007,7 @@ export default function MisaTaxWorkspace({
               fontWeight: 500,
             }}
           >
-            <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+            <span>Tìm kiếm nhanh báo cáo</span>
             <span style={{ fontSize: 14 }}>🤖</span>
           </div>
         </div>

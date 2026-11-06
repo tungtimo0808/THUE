@@ -988,7 +988,7 @@ export function SaleDiscountModal({
                         }}
                         onClick={() => {
                           setReasonDebt("Giảm giá hàng bán");
-                          notify("AI: Đã điền diễn giải 'Giảm giá hàng bán'");
+                          notify("Đã điền diễn giải 'Giảm giá hàng bán'");
                         }}
                       />
                     </div>
@@ -1429,7 +1429,7 @@ export function SaleDiscountModal({
                           color: "#8b5cf6",
                           cursor: "pointer",
                         }}
-                        onClick={() => notify("AI: Diễn giải đề xuất 'Chi tiền giảm giá hàng bán'")}
+                        onClick={() => notify("Diễn giải đề xuất 'Chi tiền giảm giá hàng bán'")}
                       />
                     </div>
                   </div>
@@ -2075,7 +2075,7 @@ export function SaleDiscountModal({
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               type="button"
-              onClick={() => notify("AI gợi ý hồ sơ chứng từ giảm giá...")}
+              onClick={() => notify("Đã kiểm tra hồ sơ chứng từ giảm giá.")}
               style={{
                 height: 24,
                 padding: "0 10px",

@@ -1879,7 +1879,7 @@ export default function MisaToolsWorkspace({
                         onChange={(e) => setSingleReason(e.target.value)}
                         style={{ flex: 1, border: "none", fontSize: 12, outline: "none" }}
                       />
-                      <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}>
+                      <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}>
                         <Sparkles size={13} style={{ color: "#a855f7", cursor: "pointer" }} />
                       </span>
                     </div>
@@ -3865,8 +3865,8 @@ export default function MisaToolsWorkspace({
                     />
                     <button
                       type="button"
-                      onClick={() => notify("Sổ Việt AI: Đã tối ưu hóa diễn giải chứng từ phân bổ CCDC")}
-                      title="Trợ lý Sổ Việt AI"
+                      onClick={() => notify("Đã chuẩn hóa diễn giải chứng từ phân bổ CCDC")}
+                      title="Kiểm tra chứng từ"
                       style={{
                         position: "absolute",
                         right: 6,
@@ -7745,8 +7745,8 @@ export default function MisaToolsWorkspace({
 
   if (tab === "process") {
     return (
-      <div style={{ background: "#f1f5f9", minHeight: "100%", padding: "30px 24px", boxSizing: "border-box" }}>
-        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 340px", gap: 24, alignItems: "start" }}>
+      <div className="ref-process-wrapper" style={{ background: "#f1f5f9", minHeight: "100%", padding: "20px 16px", boxSizing: "border-box", overflowY: "auto", overflowX: "hidden" }}>
+        <div className="ref-process-layout" style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 20, alignItems: "start" }}>
           
           <div style={{ background: "#ffffff", borderRadius: 10, border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)", overflow: "hidden" }}>
             <div style={{ padding: "16px 24px 12px 24px", textAlign: "center", borderBottom: "1px solid #f1f5f9" }}>
@@ -7755,8 +7755,8 @@ export default function MisaToolsWorkspace({
               </h2>
             </div>
 
-            <div style={{ padding: "35px 30px 45px 30px", position: "relative" }}>
-              <div style={{ position: "absolute", left: 95, right: 40, top: 145, height: 2, background: "#cbd5e1", zIndex: 1 }}>
+            <div style={{ padding: "35px 24px 45px 24px", position: "relative" }}>
+              <div style={{ position: "absolute", left: "12%", right: "8%", top: 145, height: 2, background: "#cbd5e1", zIndex: 1 }}>
                 <div style={{ position: "absolute", right: -2, top: -4, width: 0, height: 0, borderTop: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: "8px solid #cbd5e1" }} />
               </div>
 
@@ -7767,7 +7767,7 @@ export default function MisaToolsWorkspace({
                     navigateTo("management");
                     setManagementSubtab("increase");
                   }}
-                  style={{ position: "absolute", left: 20, top: 110, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
+                  style={{ position: "absolute", left: "8%", transform: "translateX(-50%)", top: 110, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <span className="ref-business-icon increase" style={{ marginBottom: 6 }}>
                     <span
@@ -7796,7 +7796,7 @@ export default function MisaToolsWorkspace({
                     navigateTo("management");
                     setManagementSubtab("transfer");
                   }}
-                  style={{ position: "absolute", left: 170, top: 25, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
+                  style={{ position: "absolute", left: "28%", transform: "translateX(-50%)", top: 25, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <span className="ref-business-icon transfer" style={{ marginBottom: 6 }}>
                     <span
@@ -7826,7 +7826,7 @@ export default function MisaToolsWorkspace({
                     navigateTo("management");
                     setManagementSubtab("allocation");
                   }}
-                  style={{ position: "absolute", left: 310, top: 25, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
+                  style={{ position: "absolute", left: "57%", transform: "translateX(-50%)", top: 25, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <span className="ref-business-icon allocate" style={{ marginBottom: 6 }}>
                     <span
@@ -7856,7 +7856,7 @@ export default function MisaToolsWorkspace({
                     navigateTo("management");
                     setManagementSubtab("adjustment");
                   }}
-                  style={{ position: "absolute", left: 240, top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
+                  style={{ position: "absolute", left: "43%", transform: "translateX(-50%)", top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
                   <span className="ref-business-icon adjust" style={{ marginBottom: 6 }}>
@@ -7886,7 +7886,7 @@ export default function MisaToolsWorkspace({
                     navigateTo("management");
                     setManagementSubtab("decrease");
                   }}
-                  style={{ position: "absolute", left: 380, top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
+                  style={{ position: "absolute", left: "72%", transform: "translateX(-50%)", top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
                   <span className="ref-business-icon decrease" style={{ marginBottom: 6 }}>
@@ -7916,7 +7916,7 @@ export default function MisaToolsWorkspace({
                     navigateTo("management");
                     setManagementSubtab("stocktake");
                   }}
-                  style={{ position: "absolute", left: 460, top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
+                  style={{ position: "absolute", left: "88%", transform: "translateX(-50%)", top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
                   <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
                   <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
@@ -11082,13 +11082,13 @@ export default function MisaToolsWorkspace({
                 Lập chứng từ phân bổ chi phí trả trước để phân bổ và hạch toán các khoản chi phí trả trước vào chi phí từng tháng
               </h2>
 
-              {/* 2 Nút hành động: Thêm bằng AI và Thêm */}
+              {/* 2 Nút hành động: Nhập nhanh và Thêm */}
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button
                   type="button"
                   onClick={() => {
                     setShowPrepaidDateModal(true);
-                    notify("Sổ Việt AI: Sẵn sàng tự động tổng hợp & phân bổ chi phí trả trước theo kỳ được chọn");
+                    notify("Đã tổng hợp & tính phân bổ chi phí trả trước theo kỳ được chọn");
                   }}
                   style={{
                     height: 34,
@@ -11107,7 +11107,7 @@ export default function MisaToolsWorkspace({
                   }}
                 >
                   <Sparkles size={15} style={{ color: "#facc15" }} />
-                  <span>Thêm bằng AI</span>
+                  <span className="misa-hidden-ai-marker" />
                 </button>
 
                 <button
@@ -11160,12 +11160,12 @@ export default function MisaToolsWorkspace({
                     type="button"
                     onClick={() => {
                       setShowPrepaidDateModal(true);
-                      notify("Sổ Việt AI: Sẵn sàng tự động tổng hợp & phân bổ chi phí trả trước theo kỳ được chọn");
+                      notify("Đã tổng hợp & tính phân bổ chi phí trả trước theo kỳ được chọn");
                     }}
                     style={{ height: 30, padding: "0 14px", background: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Sparkles size={13} style={{ color: "#facc15" }} />
-                    <span>Thêm bằng AI</span>
+                    <span className="misa-hidden-ai-marker" />
                   </button>
 
                   <button
@@ -13129,7 +13129,7 @@ export default function MisaToolsWorkspace({
                         style={{ accentColor: "#00a862" }}
                       />
                       <label htmlFor="prepaid-excel-ava" style={{ fontSize: 12.5, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>Tự động ghép cột với Sổ Việt AI</span>
+                        <span>Tự động ghép cột dữ liệu</span>
                         <Sparkles size={14} style={{ color: "#7c3aed" }} />
                       </label>
                     </div>
@@ -13142,7 +13142,7 @@ export default function MisaToolsWorkspace({
                       <Check size={28} />
                     </div>
                     <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", margin: "0 0 8px 0" }}>
-                      Ghép cột dữ liệu tự động với Sổ Việt AI hoàn tất
+                      Ghép cột dữ liệu tự động hoàn tất
                     </h3>
                     <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
                       Hệ thống đã nhận diện chính xác 10/10 trường thông tin cần thiết từ tệp Excel.
@@ -13177,7 +13177,7 @@ export default function MisaToolsWorkspace({
                   onClick={() => {
                     if (excelStep === 1) {
                       setExcelStep(2);
-                      notify("Sổ Việt AI: Đã tự động phân tích & ánh xạ các cột dữ liệu");
+                      notify("Đã tự động phân tích & ánh xạ các cột dữ liệu");
                     } else {
                       if (apiConnected) {
                         void apiSave((writer) => importPrepaidExpensesExcel(writer, {
@@ -13358,8 +13358,8 @@ export default function MisaToolsWorkspace({
                       />
                       <button
                         type="button"
-                        onClick={() => notify("Sổ Việt AI: Đã tối ưu hóa diễn giải chứng từ phân bổ chi phí trả trước")}
-                        title="Trợ lý Sổ Việt AI"
+                        onClick={() => notify("Đã chuẩn hóa diễn giải chứng từ phân bổ chi phí trả trước")}
+                        title="Kiểm tra chứng từ"
                         style={{
                           position: "absolute",
                           right: 6,
@@ -14554,15 +14554,15 @@ export default function MisaToolsWorkspace({
                     if (res?.ava_suggestion?.matched_report_name) {
                       setSelectedReportForPreview(String(res.ava_suggestion.matched_report_name));
                     }
-                    return { message: res?.ava_suggestion?.message || "Sổ Việt AI đã tìm kiếm báo cáo phù hợp." };
+                    return { message: res?.ava_suggestion?.message || "Đã lọc danh sách báo cáo phù hợp." };
                   });
                   return;
                 }
-                notify("Sổ Việt AI: Bạn có thể nhập yêu cầu 'Xem bảng phân bổ CCDC tháng này' để mở báo cáo tức thì.");
+                notify("Bạn có thể nhập tên báo cáo cần tra cứu để lọc nhanh.");
               }}
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#6366f1", cursor: "pointer", fontWeight: 500 }}
             >
-              <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+              <span>Tìm kiếm nhanh báo cáo</span>
               <Sparkles size={14} style={{ color: "#a855f7" }} />
             </div>
           </div>

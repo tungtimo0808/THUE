@@ -24,6 +24,7 @@ import {
   Clock,
   Database,
   Download,
+  KeyRound,
   Landmark,
   Lightbulb,
   LogIn,
@@ -52,6 +53,12 @@ import {
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
 import { MisaSystemUtilitiesModal } from "./MisaSystemUtilitiesModal";
+import MisaBranchManagementModal, { BranchData } from "./MisaBranchManagementModal";
+import MisaDatasetManagementModal, {
+  type AccountingDatasetItem,
+  loadStoredDatasets,
+  saveStoredDatasets,
+} from "./MisaDatasetManagementModal";
 import {
   referenceNav,
   referenceTabHierarchy,
@@ -75,6 +82,7 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
+import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
 import type { ComponentType } from "react";
 
@@ -115,6 +123,7 @@ const MisaOpeningBalanceWorkspace = lazyWithRetry(() => import("./MisaOpeningBal
 const MisaDashboardOverview = lazyWithRetry(() => import("./MisaDashboardOverview"));
 const MisaInvoiceWorkspace = lazyWithRetry(() => import("./MisaInvoiceWorkspace"));
 const InvoiceLookupWorkspace = lazyWithRetry(() => import("./InvoiceLookupWorkspace"));
+const CashPaymentLimitWarningWorkspace = lazyWithRetry(() => import("./CashPaymentLimitWarningWorkspace"));
 
 const WorkspaceLoader = () => (
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 360, gap: 12, width: "100%" }}>
@@ -134,6 +143,8 @@ const KeepAliveModuleSlot = memo(
     activeTab: string;
     companyId: string;
     period: string;
+    branchId: string;
+    dataset: string;
     childTab: string | null;
     directoryParam: string | null;
     payrollOption: string;
@@ -154,13 +165,20 @@ const KeepAliveModuleSlot = memo(
   },
   (prev, next) => {
     if (!prev.isCurrent && !next.isCurrent) {
-      return prev.companyId === next.companyId && prev.period === next.period;
+      return (
+        prev.companyId === next.companyId &&
+        prev.period === next.period &&
+        prev.branchId === next.branchId &&
+        prev.dataset === next.dataset
+      );
     }
     return (
       prev.isCurrent === next.isCurrent &&
       prev.activeTab === next.activeTab &&
       prev.companyId === next.companyId &&
       prev.period === next.period &&
+      prev.branchId === next.branchId &&
+      prev.dataset === next.dataset &&
       prev.childTab === next.childTab &&
       prev.directoryParam === next.directoryParam &&
       prev.payrollOption === next.payrollOption
@@ -176,6 +194,7 @@ import LiveCompanySelect from "./LiveCompanySelect";
 import LivePasswordReset from "./LivePasswordReset";
 import LiveProfile from "./LiveProfile";
 import LiveScope from "./LiveScope";
+import LiveSession from "./LiveSession";
 import LiveCommonHub from "./LiveCommonHub";
 import LiveCompanyBootstrap from "./LiveCompanyBootstrap";
 import LiveCompanyProfile from "./LiveCompanyProfile";
@@ -466,13 +485,7 @@ function ReferenceWorkspace() {
       const overflowCount = (n - k) + explicitHiddenTabs.length;
       let requiredWidth = navWidth;
       if (overflowCount > 0) {
-        const activeInVisible = candidateTabs.slice(0, k).some(([id]) => id === tab);
-        const activeInOverflow =
-          !activeInVisible &&
-          (candidateTabs.slice(k).some(([id]) => id === tab) ||
-            explicitHiddenTabs.some(([id]) => id === tab));
-        const moreWidth = activeInOverflow ? moreActiveWidth : moreBaseWidth;
-        requiredWidth = navWidth + barGap + moreWidth;
+        requiredWidth = navWidth + barGap + moreBaseWidth;
       }
       if (requiredWidth <= availableWidth) {
         bestK = k;
@@ -520,10 +533,6 @@ function ReferenceWorkspace() {
     apiCompanies.find((c) => c.id === apiCompanyId) ||
     apiCompanies[0];
   const company = matchedApiCompany || companies[0];
-  const rawUrlPeriod = params.get("period") || "";
-  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
-    ? rawUrlPeriod
-    : "2026-12";
   const [dataset, setDataset] = useState(() => {
     try {
       return localStorage.getItem("ref_dataset") || "accounting-2026";
@@ -531,6 +540,11 @@ function ReferenceWorkspace() {
       return "accounting-2026";
     }
   });
+  const rawUrlPeriod = params.get("period") || "";
+  const defaultYearFromDataset = dataset.match(/(20\d{2})/)?.[1] || "2026";
+  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
+    ? rawUrlPeriod
+    : `${defaultYearFromDataset}-12`;
   const [branch, setBranch] = useState(() => {
     try {
       return localStorage.getItem("ref_branch") || "head-office";
@@ -540,6 +554,19 @@ function ReferenceWorkspace() {
   });
   const [recentlyChangedCluster, setRecentlyChangedCluster] = useState<string | null>(null);
   const [isSwitchingContext, setIsSwitchingContext] = useState(false);
+  const [contextTransition, setContextTransition] = useState<{
+    type: "company" | "dataset" | "branch" | "period";
+    title: string;
+    fromLabel: string;
+    toLabel: string;
+    subTitle: string;
+    companyName: string;
+    datasetName: string;
+    branchName: string;
+    periodName: string;
+    phase: "entering" | "done";
+  } | null>(null);
+  const transitionTimersRef = useRef<number[]>([]);
 
   // High-performance Keep-Alive LRU cache for instant tab/workspace switching
   const [visitedModules, setVisitedModules] = useState<string[]>(() => [moduleId]);
@@ -577,13 +604,69 @@ function ReferenceWorkspace() {
     return visitedModules;
   }, [visitedModules, moduleId]);
 
-  const triggerSwitchFeedback = (type: string, message: string) => {
-    setRecentlyChangedCluster(type);
-    setIsSwitchingContext(true);
-    setNotice(message);
-    setTimeout(() => setRecentlyChangedCluster(null), 1200);
-    setTimeout(() => setIsSwitchingContext(false), 280);
-  };
+  const triggerSwitchFeedback = useCallback(
+    (
+      type: "company" | "dataset" | "branch" | "period",
+      message: string,
+      details?: {
+        fromLabel?: string;
+        toLabel?: string;
+        subTitle?: string;
+        companyName?: string;
+        datasetName?: string;
+        branchName?: string;
+        periodName?: string;
+      }
+    ) => {
+      transitionTimersRef.current.forEach((id) => window.clearTimeout(id));
+      transitionTimersRef.current = [];
+
+      setRecentlyChangedCluster(type);
+      setIsSwitchingContext(true);
+      setRawNotice(message);
+
+      const titleMap: Record<"company" | "dataset" | "branch" | "period", string> = {
+        company: "CHUYỂN ĐỔI DOANH NGHIỆP LÀM VIỆC",
+        dataset: "CHUYỂN ĐỔI BỘ DỮ LIỆU KẾ TOÁN",
+        branch: "CHUYỂN ĐỔI CHI NHÁNH & ĐƠN VỊ",
+        period: "CHUYỂN ĐỔI KỲ KẾ TOÁN LÀM VIỆC",
+      };
+
+      const defaultSubMap: Record<"company" | "dataset" | "branch" | "period", string> = {
+        company: "Đang tải hệ thống tài khoản, danh mục và sổ kế toán của doanh nghiệp...",
+        dataset: "Đang nạp hệ thống sổ sách, chứng từ và báo cáo theo bộ dữ liệu mới...",
+        branch: "Đang đồng bộ chứng từ, sổ quỹ, tồn kho và công nợ theo phạm vi chi nhánh...",
+        period: "Đang kết xuất số dư đầu kỳ, phát sinh trong kỳ và lũy kế theo kỳ kế toán...",
+      };
+
+      setContextTransition({
+        type,
+        title: titleMap[type],
+        fromLabel: details?.fromLabel || "Phiên trước",
+        toLabel: details?.toLabel || message.replace(/^✓\s*Đã\s*(chuyển sang|chọn)[^:]*:\s*/i, ""),
+        subTitle: details?.subTitle || defaultSubMap[type],
+        companyName: details?.companyName || company?.name || "Doanh nghiệp",
+        datasetName: details?.datasetName || "Dữ liệu kế toán 2026",
+        branchName: details?.branchName || "Trụ sở chính",
+        periodName: details?.periodName || period,
+        phase: "entering",
+      });
+
+      const t1 = window.setTimeout(() => {
+        setContextTransition((prev) => (prev ? { ...prev, phase: "done" } : null));
+      }, 420);
+      const t2 = window.setTimeout(() => {
+        setContextTransition(null);
+        setIsSwitchingContext(false);
+      }, 950);
+      const t3 = window.setTimeout(() => {
+        setRecentlyChangedCluster(null);
+      }, 1800);
+
+      transitionTimersRef.current = [t1, t2, t3];
+    },
+    [company?.name, period]
+  );
 
   const activeCompanyRegime = useMemo(() => {
     const raw = String((company as any)?.accounting_regime || "TT99").toUpperCase();
@@ -600,12 +683,275 @@ function ReferenceWorkspace() {
       : activeCompanyRegime === "TT200"
       ? "TT200/2014"
       : "TT99/2025";
-  const datasetLabel = `${dataset === "accounting-2026" ? "Dữ liệu kế toán 2026" : "Dữ liệu quản trị 2026"} · ${activeRegimeShortBadge}`;
-  const branchLabel = branch === "head-office" ? "Trụ sở chính" : "Chi nhánh TP. HCM";
-  const periodLabel = period.startsWith("2026-") ? `K${Number(period.slice(5))}.2026` : "Năm 2026";
+  const [companyDatasets, setCompanyDatasets] = useState<AccountingDatasetItem[]>(() =>
+    loadStoredDatasets(company?.id || "default", activeCompanyRegime)
+  );
+  const [isDatasetModalOpen, setIsDatasetModalOpen] = useState(false);
+  const [datasetModalCreateMode, setDatasetModalCreateMode] = useState(false);
+
+  const fetchDatasets = useCallback(async () => {
+    const compId = company?.id || "default";
+    const localList = loadStoredDatasets(compId, activeCompanyRegime);
+    setCompanyDatasets(localList);
+    if (!apiToken || !company?.id) return;
+    try {
+      const res = await request<any>(
+        `/api/v1/common/settings/?company_id=${encodeURIComponent(company.id)}`,
+        apiToken
+      );
+      const remoteList = res?.configuration?.accounting_datasets;
+      if (Array.isArray(remoteList) && remoteList.length > 0) {
+        setCompanyDatasets(remoteList);
+        saveStoredDatasets(company.id, remoteList);
+      }
+    } catch {
+      // Keep local fallback
+    }
+  }, [apiToken, company?.id, activeCompanyRegime]);
+
+  useEffect(() => {
+    fetchDatasets();
+  }, [fetchDatasets]);
+
+  const activeDatasetObj = useMemo(
+    () =>
+      companyDatasets.find((d) => d.id === dataset || d.label === dataset) ||
+      companyDatasets.find((d) => d.id === "accounting-2026") ||
+      companyDatasets[0],
+    [companyDatasets, dataset]
+  );
+
+  const datasetLabel = useMemo(() => {
+    if (activeDatasetObj?.label) return activeDatasetObj.label;
+    const matchedYear = dataset.match(/20\d{2}/)?.[0] || "2026";
+    return dataset.startsWith("management")
+      ? `Dữ liệu quản trị ${matchedYear}`
+      : `Dữ liệu kế toán ${matchedYear}`;
+  }, [activeDatasetObj, dataset]);
+
+  const activeDatasetYear = useMemo(() => {
+    if (activeDatasetObj?.fiscal_year) return Number(activeDatasetObj.fiscal_year);
+    const matched = dataset.match(/20\d{2}/)?.[0];
+    return matched ? Number(matched) : 2026;
+  }, [activeDatasetObj, dataset]);
+
+  const [companyBranches, setCompanyBranches] = useState<BranchData[]>([]);
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
+
+  const fetchBranches = useCallback(async () => {
+    if (!apiToken || !company?.id) return;
+    try {
+      const res = await request<BranchData[] | { results: BranchData[] }>(
+        `/api/v1/organization/branches/?company_id=${encodeURIComponent(company.id)}`,
+        apiToken
+      );
+      const list = Array.isArray(res) ? res : res.results || [];
+      setCompanyBranches(list);
+      if (list.length === 1) {
+        const onlyBranch = list[0];
+        setBranch((prev) => {
+          if (prev !== onlyBranch.id && prev !== "all") {
+            try {
+              localStorage.setItem("ref_branch", onlyBranch.id);
+            } catch {}
+            return onlyBranch.id;
+          }
+          if (prev === "head-office" || !onlyBranch.is_head_office) {
+            try {
+              localStorage.setItem("ref_branch", onlyBranch.id);
+            } catch {}
+            return onlyBranch.id;
+          }
+          return prev;
+        });
+      } else if (list.length > 1) {
+        setBranch((prev) => {
+          if (prev === "head-office") {
+            const hq = list.find((b) => b.is_head_office) || list[0];
+            try {
+              localStorage.setItem("ref_branch", hq.id);
+            } catch {}
+            return hq.id;
+          }
+          if (prev && prev !== "all" && !list.some((b) => b.id === prev || b.code === prev)) {
+            const hq = list.find((b) => b.is_head_office) || list[0];
+            try {
+              localStorage.setItem("ref_branch", hq.id);
+            } catch {}
+            return hq.id;
+          }
+          return prev;
+        });
+      }
+    } catch {
+      // Keep fallback
+    }
+  }, [apiToken, company?.id]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  const effectiveBranchId = useMemo(() => {
+    if (!branch || branch === "all") return "all";
+    const found = companyBranches.find((b) => b.id === branch || b.code === branch);
+    if (found) return found.id;
+    if (branch === "head-office") {
+      const hq = companyBranches.find((b) => b.is_head_office) || companyBranches[0];
+      return hq ? hq.id : "all";
+    }
+    return branch;
+  }, [branch, companyBranches]);
+
+  const branchLabel = useMemo(() => {
+    if (branch === "all" || !branch) return "Toàn doanh nghiệp";
+    const found = companyBranches.find((b) => b.id === branch || b.code === branch);
+    if (found) {
+      return found.name.replace(/\s*[-–—]\s*(?:công\s+ty|cty|doanh\s+nghiệp).*$/i, "").trim() || found.name;
+    }
+    if (branch === "head-office") return "Trụ sở chính";
+    if (branch === "hcm") return "Chi nhánh TP. HCM";
+    return "Trụ sở chính";
+  }, [branch, companyBranches]);
+
+  const periodLabel = useMemo(() => {
+    const matchMonth = period.match(/^(20\d{2})-(\d{2})$/);
+    if (matchMonth) {
+      return `K${Number(matchMonth[2])}.${matchMonth[1]}`;
+    }
+    const matchYear = period.match(/^(20\d{2})$/);
+    if (matchYear) {
+      return `Năm ${matchYear[1]}`;
+    }
+    return `Năm ${activeDatasetYear}`;
+  }, [period, activeDatasetYear]);
+
+  const applyBranchSwitch = useCallback(
+    (nextBranchId: string, displayLabel?: string) => {
+      const normalized = !nextBranchId || nextBranchId === "all" ? "all" : nextBranchId;
+      const prevBranchLabel = branchLabel;
+      const targetLabel =
+        displayLabel ||
+        (normalized === "all"
+          ? "Toàn doanh nghiệp"
+          : companyBranches.find((b) => b.id === normalized || b.code === normalized)?.name || "Chi nhánh");
+      setBranch(normalized);
+      try {
+        localStorage.setItem("ref_branch", normalized);
+      } catch {}
+      if (apiToken && company?.id) {
+        void request("/api/v1/common/scopes/switch/", apiToken, {
+          method: "POST",
+          body: JSON.stringify({
+            company: company.id,
+            company_id: company.id,
+            branch: normalized === "all" ? null : normalized,
+            all_branches: normalized === "all",
+          }),
+        }).catch(() => {});
+      }
+      window.dispatchEvent(
+        new CustomEvent("erp_context_changed", {
+          detail: { branch: normalized, dataset, period, companyId: company?.id },
+        })
+      );
+      triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${targetLabel}`, {
+        fromLabel: prevBranchLabel,
+        toLabel: targetLabel,
+        subTitle:
+          normalized === "all"
+            ? "Đang hợp nhất số liệu toàn doanh nghiệp (Trụ sở chính & tất cả Chi nhánh)..."
+            : `Đang cô lập chứng từ, sổ quỹ, công nợ và tồn kho riêng của ${targetLabel}...`,
+        companyName: company?.name,
+        datasetName: datasetLabel,
+        branchName: targetLabel,
+        periodName: periodLabel,
+      });
+    },
+    [apiToken, company?.id, company?.name, companyBranches, branchLabel, dataset, datasetLabel, period, periodLabel, triggerSwitchFeedback]
+  );
+
+  useEffect(() => {
+    const syncFromStorage = () => {
+      try {
+        const storedBranch = localStorage.getItem("ref_branch");
+        if (storedBranch) {
+          setBranch((prev) => (prev !== storedBranch ? storedBranch : prev));
+        }
+        const storedDataset = localStorage.getItem("ref_dataset");
+        if (storedDataset) {
+          setDataset((prev) => (prev !== storedDataset ? storedDataset : prev));
+        }
+      } catch {}
+    };
+    window.addEventListener("erp_context_changed", syncFromStorage);
+    return () => window.removeEventListener("erp_context_changed", syncFromStorage);
+  }, []);
+
+  const applyDatasetSwitch = useCallback(
+    (item: AccountingDatasetItem) => {
+      const prevDatasetLabel = datasetLabel;
+      setDataset(item.id);
+      try {
+        localStorage.setItem("ref_dataset", item.id);
+      } catch {}
+
+      const targetYear = String(item.fiscal_year || 2026);
+      let nextPeriod = period;
+      if (/^20\d{2}-\d{2}$/.test(period)) {
+        const monthPart = period.slice(5);
+        nextPeriod = `${targetYear}-${monthPart}`;
+      } else if (/^20\d{2}$/.test(period)) {
+        nextPeriod = targetYear;
+      } else {
+        nextPeriod = `${targetYear}-12`;
+      }
+
+      if (nextPeriod !== period) {
+        const nextParams = new URLSearchParams(params);
+        nextParams.set("period", nextPeriod);
+        nextParams.delete("page");
+        setParams(nextParams);
+      }
+
+      const nextPeriodFormatted = /^20\d{2}-\d{2}$/.test(nextPeriod)
+        ? `K${Number(nextPeriod.slice(5))}.${nextPeriod.slice(0, 4)}`
+        : `Năm ${targetYear}`;
+      const isMgmt = item.book_type === "MANAGEMENT" || item.id.startsWith("management");
+
+      window.dispatchEvent(
+        new CustomEvent("erp_context_changed", {
+          detail: {
+            branch: effectiveBranchId,
+            dataset: item.id,
+            period: nextPeriod,
+            companyId: company?.id,
+          },
+        })
+      );
+      triggerSwitchFeedback("dataset", `✓ Đã chuyển sang: ${item.label}`, {
+        fromLabel: prevDatasetLabel,
+        toLabel: item.label,
+        subTitle: isMgmt
+          ? `Đang nạp Sổ Quản trị nội bộ (Năm tài chính ${targetYear}) — Tách biệt hoàn toàn với Sổ Thuế...`
+          : `Đang nạp Sổ Tài chính & Thuế chính thức (Năm tài chính ${targetYear}) theo chuẩn ${item.regime || activeCompanyRegime}...`,
+        companyName: company?.name,
+        datasetName: item.label,
+        branchName: branchLabel,
+        periodName: nextPeriodFormatted,
+      });
+    },
+    [period, params, setParams, effectiveBranchId, company?.id, company?.name, datasetLabel, branchLabel, activeCompanyRegime, triggerSwitchFeedback]
+  );
+
   const [items, setItems] = useState(readTransactions);
   const scoped = useMemo(
-    () => items.filter((t) => t.company === company.id && (period === "2026" ? t.date.startsWith("2026") : t.date.startsWith(period))),
+    () =>
+      items.filter(
+        (t) =>
+          t.company === company.id &&
+          (/^(20\d{2})$/.test(period) ? t.date.startsWith(period) : t.date.startsWith(period))
+      ),
     [items, company.id, period]
   );
   const [collapsed, setCollapsed] = useState(() => {
@@ -732,7 +1078,7 @@ function ReferenceWorkspace() {
       kindLabel: "Dự báo dòng tiền",
       kind: "alert" as const,
       description: "Dự kiến số dư quỹ tiền mặt giảm dưới ngưỡng an toàn (25.000.000 đ) vào ngày 28/09. Đề xuất gửi nhắc nợ đối tác sớm.",
-      partner: "Sổ Việt AI",
+      partner: "Hệ thống cảnh báo",
       amount: 18250000,
       date: "25/09/2026 14:15",
       actionUrl: "/cash/cashflow",
@@ -868,6 +1214,7 @@ function ReferenceWorkspace() {
     "Cập nhật số dư dữ liệu năm trước": href("/opening"),
     "Nhập dữ liệu": href("/opening"),
     "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế": href("/purchases/invoice-processing/supplier-risk"),
+    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/sync"),
     "Kiểm soát hồ sơ và hạch toán": href("/invoices/unposted"),
     "Nhật ký truy cập": "/audit-logs",
     "Thông tin công ty": "/admin?tab=overview",
@@ -875,6 +1222,8 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
+    "Thiết lập kết nối Ngân hàng điện tử": href("/bank/ebanking"),
+    "Thiết lập chữ ký số (USB Token / SmartCA)": href("/invoices/sync"),
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
     "Chuyển kho": href("/inventory/transfers"),
@@ -891,10 +1240,6 @@ function ReferenceWorkspace() {
     }
     if (name === "Gợi ý, nhắc nhở thông minh") {
       setPanel("notifications");
-      return;
-    }
-    if (name === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán") {
-      setNotice("Trợ lý Sổ Việt AI đã sẵn sàng.");
       return;
     }
     const targetRoute = quickAccessRoutes[name];
@@ -996,42 +1341,60 @@ function ReferenceWorkspace() {
           companyId={matchedApiCompany?.id || apiCompanyId}
           companyName={company.name}
           period={period}
+          branchId={effectiveBranchId}
+          dataset={dataset}
+          onBranchChange={(nextId) => {
+            const found = companyBranches.find((b) => b.id === nextId);
+            applyBranchSwitch(nextId, nextId === "all" ? "Toàn doanh nghiệp" : found?.name);
+          }}
           href={href}
           notify={setNotice}
         />
       );
     }
 
+    const ctxKey = `${company.id}-${effectiveBranchId}-${dataset}-${period}`;
+
     if (targetModuleId === "invoices") {
       if (activeTab === "adjustments") {
-        return (
-          <>
-            <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} />
-            <InvoiceLookupWorkspace mode="errors" href={href} />
-          </>
-        );
+        return <InvoiceLookupWorkspace key={`inv-adj-${ctxKey}`} mode="errors" href={href} />;
       }
       if (["process", "error-guide"].includes(activeTab)) {
-        return <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} company={company} />;
+        return <MisaInvoiceWorkspace key={`inv-proc-${ctxKey}`} tab={activeTab} href={href} notify={setNotice} company={company} />;
       }
-      if (activeTab === "incoming" && (!childTab || childTab === "inbox")) {
-        return <IncomingInvoiceWorkspace notify={setNotice} />;
+      if (activeTab === "sync") {
+        return <TaxInvoiceSyncPanel key={`inv-sync-${ctxKey}`} companyId={company.id} token={apiToken} href={href} />;
+      }
+      if (activeTab === "incoming") {
+        return <IncomingInvoiceWorkspace key={`inv-in-${ctxKey}`} notify={setNotice} childTab={childTab} />;
       }
       if (["outgoing", "pending", "lookup", "issuance", "unposted"].includes(activeTab)) {
-        return <InvoiceLookupWorkspace mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
+        return <InvoiceLookupWorkspace key={`inv-out-${activeTab}-${ctxKey}`} mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
+      }
+      if (activeTab === "risk-warning") {
+        if (childTab === "xml-errors") {
+          return <InvoiceLookupWorkspace key={`inv-xml-${ctxKey}`} mode="errors" href={href} />;
+        }
+        if (childTab === "cash-limit") {
+          return <CashPaymentLimitWarningWorkspace key={`inv-cash-${ctxKey}`} companyId={company.id} notify={setNotice} href={href} />;
+        }
+        return <MisaSupplierRiskWorkspace key={`inv-risk-${ctxKey}`} companyId={company.id} notify={setNotice} />;
+      }
+      if (activeTab === "reports") {
+        return <MisaReportCenterWorkspace key={`inv-rpt-${ctxKey}`} initialCategory="tax" notify={setNotice} />;
       }
     }
 
     if (targetModuleId === "purchases") {
       if (activeTab === "invoice-processing" && childTab === "supplier-risk") {
-        return <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />;
+        return <MisaSupplierRiskWorkspace key={`pur-risk-${ctxKey}`} companyId={company.id} notify={setNotice} />;
       }
       if (activeTab === "invoice-processing") {
-        return <IncomingInvoiceWorkspace notify={setNotice} />;
+        return <IncomingInvoiceWorkspace key={`pur-in-${ctxKey}`} notify={setNotice} />;
       }
       return (
         <MisaPurchaseWorkspace
-          key={`purchases-${company.id}-${period}`}
+          key={`purchases-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1042,13 +1405,13 @@ function ReferenceWorkspace() {
     }
 
     if (targetModuleId === "reports") {
-      return <MisaReportCenterWorkspace notify={setNotice} />;
+      return <MisaReportCenterWorkspace key={`reports-${ctxKey}`} notify={setNotice} />;
     }
 
     if (targetModuleId === "directory") {
       return (
         <MisaDirectoryWorkspace
-          key={params.get("directory") || "menu"}
+          key={`${params.get("directory") || "menu"}-${ctxKey}`}
           initialName={params.get("directory")}
           notify={setNotice}
           legacy={<DirectoryWorkspace notify={setNotice} />}
@@ -1057,13 +1420,13 @@ function ReferenceWorkspace() {
     }
 
     if (targetModuleId === "opening") {
-      return <MisaOpeningBalanceWorkspace notify={setNotice} />;
+      return <MisaOpeningBalanceWorkspace key={`opening-${ctxKey}`} notify={setNotice} />;
     }
 
     if (targetModuleId === "cash") {
       return (
         <MisaCashWorkspace
-          key={`cash-${company.id}-${period}`}
+          key={`cash-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1076,7 +1439,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "bank") {
       return (
         <MisaBankWorkspace
-          key={`bank-${company.id}-${period}`}
+          key={`bank-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1089,7 +1452,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "sales") {
       return (
         <MisaSalesWorkspace
-          key={`sales-${company.id}-${period}`}
+          key={`sales-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1102,7 +1465,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "inventory") {
       return (
         <MisaInventoryWorkspace
-          key={`inventory-${company.id}-${period}`}
+          key={`inventory-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1115,7 +1478,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "tools") {
       return (
         <MisaToolsWorkspace
-          key={`tools-${company.id}-${period}`}
+          key={`tools-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1128,7 +1491,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "assets") {
       return (
         <MisaAssetsWorkspace
-          key={`assets-${company.id}-${period}`}
+          key={`assets-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1141,7 +1504,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "payroll") {
       return (
         <MisaPayrollWorkspace
-          key={`payroll-${company.id}-${period}`}
+          key={`payroll-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1154,7 +1517,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "cost") {
       return (
         <MisaCostWorkspace
-          key={`cost-${company.id}-${period}`}
+          key={`cost-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "process"}
@@ -1167,7 +1530,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "ledger") {
       return (
         <MisaLedgerWorkspace
-          key={`ledger-${company.id}-${period}`}
+          key={`ledger-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "process"}
@@ -1180,7 +1543,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "budget") {
       return (
         <MisaBudgetWorkspace
-          key={`budget-${company.id}-${period}`}
+          key={`budget-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "charts"}
@@ -1193,7 +1556,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "tax") {
       return (
         <MisaTaxWorkspace
-          key={`tax-${company.id}-${period}`}
+          key={`tax-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "declarations"}
@@ -1306,7 +1669,7 @@ function ReferenceWorkspace() {
               type="button"
               className="ref-cluster-trigger"
               onClick={() => setActiveClusterMenu(activeClusterMenu === "company" ? null : "company")}
-              title="Doanh nghiệp làm việc"
+              title={`Doanh nghiệp: ${company.name} (${activeRegimeShortBadge})`}
             >
               <Building2 size={13} className="ref-cluster-icon" />
               <span className="ref-cluster-label ref-cluster-company-label">{company.name}</span>
@@ -1334,10 +1697,24 @@ function ReferenceWorkspace() {
                         onClick={() => {
                           if (apiCompanies.some((ac) => ac.id === c.id)) {
                             apiSelectCompany(c.id);
+                            if (apiToken) {
+                              void request("/api/v1/common/companies/switch/", apiToken, {
+                                method: "POST",
+                                body: JSON.stringify({ company: c.id, company_id: c.id, all_branches: true }),
+                              }).catch(() => {});
+                            }
                           }
                           context("company", c.id);
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name} (${cReg})`);
+                          triggerSwitchFeedback("company", `✓ Đã chuyển sang làm việc tại: ${c.name} (${cReg})`, {
+                            fromLabel: company.name,
+                            toLabel: `${c.name} (${cReg})`,
+                            subTitle: `Đang khởi tạo hệ thống tài khoản, danh mục và sổ kế toán của ${c.name} theo chế độ ${cReg}...`,
+                            companyName: c.name,
+                            datasetName: datasetLabel,
+                            branchName: "Trụ sở chính",
+                            periodName: periodLabel,
+                          });
                         }}
                       >
                         <span className="ref-cluster-item-name" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -1372,40 +1749,158 @@ function ReferenceWorkspace() {
               type="button"
               className="ref-cluster-trigger"
               onClick={() => setActiveClusterMenu(activeClusterMenu === "dataset" ? null : "dataset")}
-              title="Dữ liệu kế toán"
+              title={`Dữ liệu kế toán: ${datasetLabel} · ${activeRegimeShortBadge}`}
             >
               <Database size={13} className="ref-cluster-icon" />
               <span className="ref-cluster-label ref-cluster-dataset-label">{datasetLabel}</span>
               <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "dataset" ? "rotated" : ""}`} />
             </button>
             {activeClusterMenu === "dataset" && (
-              <div className="ref-cluster-popover">
-                <div className="ref-cluster-popover-header">Dữ liệu kế toán</div>
-                <div className="ref-cluster-popover-list">
-                  {[
-                    { id: "accounting-2026", label: "Dữ liệu kế toán 2026" },
-                    { id: "management-2026", label: "Dữ liệu quản trị 2026" },
-                  ].map((item) => {
+              <div className="ref-cluster-popover" style={{ minWidth: 340 }}>
+                <div
+                  className="ref-cluster-popover-header"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 12,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span>Dữ liệu kế toán · {activeRegimeShortBadge}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveClusterMenu(null);
+                      setDatasetModalCreateMode(false);
+                      setIsDatasetModalOpen(true);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#0284c7",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      padding: 0,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    + Quản lý dữ liệu
+                  </button>
+                </div>
+                <div className="ref-cluster-popover-list" style={{ maxHeight: 280, overflowY: "auto" }}>
+                  {companyDatasets.map((item) => {
                     const isSelected = dataset === item.id;
+                    const isMgmt = item.book_type === "MANAGEMENT" || item.id.startsWith("management");
+                    const isLocked = item.status === "LOCKED";
                     return (
                       <button
                         key={item.id}
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
-                          setDataset(item.id);
-                          try {
-                            localStorage.setItem("ref_dataset", item.id);
-                          } catch {}
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("dataset", `✓ Đã chuyển sang: ${item.label}`);
+                          applyDatasetSwitch(item);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 8,
+                          padding: "7px 10px",
                         }}
                       >
-                        <span className="ref-cluster-item-name">{item.label}</span>
-                        {isSelected && <Check size={14} className="ref-cluster-check" />}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
+                            <span className="ref-cluster-item-name" style={{ fontWeight: isSelected ? 700 : 600 }}>
+                              {item.label}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                padding: "1px 6px",
+                                borderRadius: 999,
+                                background: isLocked ? "#fef3c7" : "#dcfce7",
+                                color: isLocked ? "#b45309" : "#15803d",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {isLocked ? "Khóa sổ" : "Đang mở"}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 11, color: "#64748b", whiteSpace: "nowrap" }}>
+                            {isMgmt ? "Sổ Quản trị nội bộ" : "Sổ Tài chính & Thuế"} · Năm {item.fiscal_year}
+                          </span>
+                        </div>
+                        {isSelected && <Check size={14} className="ref-cluster-check" style={{ flexShrink: 0 }} />}
                       </button>
                     );
                   })}
+                </div>
+
+                <div
+                  style={{
+                    borderTop: "1px solid #e2e8f0",
+                    marginTop: 4,
+                    paddingTop: 6,
+                    paddingBottom: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setDatasetModalCreateMode(true);
+                      setIsDatasetModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "#f0f9ff",
+                      color: "#0284c7",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Plus size={13} /> Tạo dữ liệu kế toán mới (Năm mới / Sổ mới)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setDatasetModalCreateMode(false);
+                      setIsDatasetModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "transparent",
+                      color: "#475569",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Settings size={13} /> Quản lý dữ liệu kế toán các năm
+                  </button>
                 </div>
               </div>
             )}
@@ -1419,7 +1914,7 @@ function ReferenceWorkspace() {
               type="button"
               className="ref-cluster-trigger"
               onClick={() => setActiveClusterMenu(activeClusterMenu === "branch" ? null : "branch")}
-              title="Chi nhánh, đơn vị"
+              title={`Chi nhánh, đơn vị: ${branchLabel}`}
             >
               <MapPin size={13} className="ref-cluster-icon" />
               <span className="ref-cluster-label ref-cluster-branch-label">{branchLabel}</span>
@@ -1427,32 +1922,131 @@ function ReferenceWorkspace() {
             </button>
             {activeClusterMenu === "branch" && (
               <div className="ref-cluster-popover">
-                <div className="ref-cluster-popover-header">Chi nhánh, đơn vị</div>
+                <div className="ref-cluster-popover-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>Chi nhánh, đơn vị</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveClusterMenu(null);
+                      setIsBranchModalOpen(true);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#0284c7",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    + Quản lý chi nhánh
+                  </button>
+                </div>
                 <div className="ref-cluster-popover-list">
-                  {[
-                    { id: "head-office", label: "Trụ sở chính" },
-                    { id: "hcm", label: "Chi nhánh TP. HCM" },
-                  ].map((item) => {
-                    const isSelected = branch === item.id;
+                  {(companyBranches.length !== 1 || companyBranches[0]?.is_head_office) && (
+                    <button
+                      type="button"
+                      className={`ref-cluster-popover-item ${branch === "all" ? "active" : ""}`}
+                      onClick={() => {
+                        setActiveClusterMenu(null);
+                        applyBranchSwitch("all", "Toàn doanh nghiệp");
+                      }}
+                    >
+                      <span className="ref-cluster-item-name">🏢 Toàn doanh nghiệp (Tất cả)</span>
+                      {branch === "all" && <Check size={14} className="ref-cluster-check" />}
+                    </button>
+                  )}
+
+                  {(companyBranches.length > 0
+                    ? companyBranches
+                    : [
+                        { id: "head-office", name: "Trụ sở chính", is_head_office: true },
+                        { id: "hcm", name: "Chi nhánh TP. HCM", is_head_office: false },
+                      ]
+                  ).map((item: any) => {
+                    const isSelected =
+                      branch === item.id ||
+                      effectiveBranchId === item.id ||
+                      (branch === "head-office" && item.is_head_office);
                     return (
                       <button
                         key={item.id}
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
-                          setBranch(item.id);
-                          try {
-                            localStorage.setItem("ref_branch", item.id);
-                          } catch {}
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${item.label}`);
+                          applyBranchSwitch(item.id, item.name);
                         }}
                       >
-                        <span className="ref-cluster-item-name">{item.label}</span>
+                        <span className="ref-cluster-item-name">
+                          {item.name} {item.is_head_office ? "(Trụ sở chính)" : ""}
+                        </span>
                         {isSelected && <Check size={14} className="ref-cluster-check" />}
                       </button>
                     );
                   })}
+                </div>
+
+                <div
+                  style={{
+                    borderTop: "1px solid #e2e8f0",
+                    marginTop: 4,
+                    paddingTop: 6,
+                    paddingBottom: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setIsBranchModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "#f0f9ff",
+                      color: "#0284c7",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Plus size={13} /> Thêm chi nhánh mới
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setIsBranchModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "transparent",
+                      color: "#475569",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Settings size={13} /> Quản lý danh sách chi nhánh
+                  </button>
                 </div>
               </div>
             )}
@@ -1473,23 +2067,24 @@ function ReferenceWorkspace() {
               <ChevronDown size={11} className={`ref-cluster-caret ${activeClusterMenu === "period" ? "rotated" : ""}`} />
             </button>
             {activeClusterMenu === "period" && (
-              <div className="ref-cluster-popover">
-                <div className="ref-cluster-popover-header">Kỳ làm việc</div>
+              <div className="ref-cluster-popover" style={{ minWidth: 260 }}>
+                <div
+                  className="ref-cluster-popover-header"
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}
+                >
+                  <span>Kỳ làm việc · Năm {activeDatasetYear}</span>
+                </div>
                 <div className="ref-cluster-popover-list">
                   {[
-                    { id: "2026-12", label: "K12.2026 (Tháng 12/2026)" },
-                    { id: "2026-11", label: "K11.2026 (Tháng 11/2026)" },
-                    { id: "2026-10", label: "K10.2026 (Tháng 10/2026)" },
-                    { id: "2026-09", label: "K9.2026 (Tháng 09/2026)" },
-                    { id: "2026-08", label: "K8.2026 (Tháng 08/2026)" },
-                    { id: "2026-07", label: "K7.2026 (Tháng 07/2026)" },
-                    { id: "2026-06", label: "K6.2026 (Tháng 06/2026)" },
-                    { id: "2026-05", label: "K5.2026 (Tháng 05/2026)" },
-                    { id: "2026-04", label: "K4.2026 (Tháng 04/2026)" },
-                    { id: "2026-03", label: "K3.2026 (Tháng 03/2026)" },
-                    { id: "2026-02", label: "K2.2026 (Tháng 02/2026)" },
-                    { id: "2026-01", label: "K1.2026 (Tháng 01/2026)" },
-                    { id: "2026", label: "Năm 2026 (Cả năm)" },
+                    ...Array.from({ length: 12 }, (_, idx) => {
+                      const m = 12 - idx;
+                      const mm = String(m).padStart(2, "0");
+                      return {
+                        id: `${activeDatasetYear}-${mm}`,
+                        label: `K${m}.${activeDatasetYear} (Tháng ${mm}/${activeDatasetYear})`,
+                      };
+                    }),
+                    { id: `${activeDatasetYear}`, label: `Năm ${activeDatasetYear} (Cả năm)` },
                   ].map((item) => {
                     const isSelected = period === item.id;
                     return (
@@ -1498,9 +2093,18 @@ function ReferenceWorkspace() {
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
+                          const prevPeriod = periodLabel;
                           context("period", item.id);
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("period", `✓ Đã chọn kỳ kế toán: ${item.label}`);
+                          triggerSwitchFeedback("period", `✓ Đã chọn kỳ kế toán: ${item.label}`, {
+                            fromLabel: prevPeriod,
+                            toLabel: item.label,
+                            subTitle: `Đang kết xuất số dư đầu kỳ, phát sinh trong kỳ và báo cáo cho ${item.label}...`,
+                            companyName: company?.name,
+                            datasetName: datasetLabel,
+                            branchName: branchLabel,
+                            periodName: item.label.split(" ")[0],
+                          });
                         }}
                       >
                         <span className="ref-cluster-item-name">{item.label}</span>
@@ -1508,6 +2112,40 @@ function ReferenceWorkspace() {
                       </button>
                     );
                   })}
+                </div>
+                <div
+                  style={{
+                    borderTop: "1px solid #e2e8f0",
+                    marginTop: 4,
+                    paddingTop: 6,
+                    paddingBottom: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveClusterMenu(null);
+                      setDatasetModalCreateMode(false);
+                      setIsDatasetModalOpen(true);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                      padding: "6px 8px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "#f8fafc",
+                      color: "#0284c7",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Settings size={13} /> Đổi năm tài chính / Tập dữ liệu
+                  </button>
                 </div>
               </div>
             )}
@@ -1527,11 +2165,10 @@ function ReferenceWorkspace() {
               <input
                 id="reference-search"
                 aria-label="Tìm kiếm thông minh"
-                placeholder="Tìm kiếm thông minh…"
+                placeholder="Tìm kiếm…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
-              <span>AI</span>
             </form>
             {!apiToken && <SmartSearchResults
               query={query}
@@ -1650,6 +2287,18 @@ function ReferenceWorkspace() {
                     <span>Đổi / Quản lý doanh nghiệp</span>
                   </button>
 
+                  <button
+                    type="button"
+                    className="ref-user-dropdown-item"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      navigate("/session");
+                    }}
+                  >
+                    <KeyRound size={15} />
+                    <span>Phiên làm việc hiện tại</span>
+                  </button>
+
                   {(Boolean(apiSession?.user?.is_superuser) || Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") && (
                     <button
                       type="button"
@@ -1731,10 +2380,6 @@ function ReferenceWorkspace() {
           href={href}
           allowedModules={activeRoleSpec.allowedModules}
           onNavigate={() => setMobileOpen(false)}
-          onOpenAI={() => {
-            navigate(href("/cash/transactions"));
-            setNotice("Trợ lý Sổ Việt AI đã sẵn sàng.");
-          }}
           onExchangeRate={() => {
             navigate(href("/cash/transactions"));
             setNotice("Tính năng Tính tỷ giá xuất quỹ ngoại tệ (USD, EUR) theo phương pháp Bình quân gia quyền.");
@@ -1807,7 +2452,7 @@ function ReferenceWorkspace() {
               <ChevronDown size={13} />
             </span>
             <span ref={measureMoreActiveRef} className="ref-tab-more-btn active">
-              <span>{activeTabLabel ? `Khác: ${activeTabLabel}` : "Khác"}</span>
+              <span>Khác</span>
               <ChevronDown size={13} />
             </span>
           </div>
@@ -1851,7 +2496,7 @@ function ReferenceWorkspace() {
                 }}
                 title="Xem thêm các tab chức năng khác"
               >
-                <span>{activeSecondaryTab ? `Khác: ${activeSecondaryTab[1]}` : "Khác"}</span>
+                <span>Khác</span>
                 <ChevronDown size={13} className={`ref-tab-more-caret ${tabMoreOpen ? "rotated" : ""}`} />
               </button>
               {tabMoreOpen && (
@@ -2123,6 +2768,8 @@ function ReferenceWorkspace() {
               activeTab={activeTabForSlot}
               companyId={company.id}
               period={period}
+              branchId={effectiveBranchId}
+              dataset={dataset}
               childTab={isCurrent ? childTab : null}
               directoryParam={isCurrent ? params.get("directory") : null}
               payrollOption={payrollOption}
@@ -2186,8 +2833,7 @@ function ReferenceWorkspace() {
                     const isQuickRoute =
                       Boolean(quickAccessRoutes[label]) ||
                       label === "Thiết lập màu sắc và hiển thị" ||
-                      label === "Gợi ý, nhắc nhở thông minh" ||
-                      label === "Trợ lý AI Sổ Việt AI: Cấu hình gợi ý hạch toán";
+                      label === "Gợi ý, nhắc nhở thông minh";
                     return (
                       <button
                         key={label}
@@ -2580,6 +3226,119 @@ function ReferenceWorkspace() {
           notify={setNotice}
         />
       )}
+      {contextTransition && (
+        <div
+          className={`ref-context-transition-overlay ${contextTransition.phase === "done" ? "is-done" : "is-entering"}`}
+          role="status"
+          aria-live="polite"
+          data-testid="context-switch-overlay"
+        >
+          <div className="ref-context-transition-card">
+            <div className="ref-context-transition-top-bar" />
+            <div className="ref-context-transition-body">
+              <div className="ref-context-transition-header">
+                <div className={`ref-context-transition-icon-ring type-${contextTransition.type} ${contextTransition.phase === "done" ? "done" : ""}`}>
+                  {contextTransition.phase === "done" ? (
+                    <Check size={24} strokeWidth={3} />
+                  ) : contextTransition.type === "branch" ? (
+                    <MapPin size={22} />
+                  ) : contextTransition.type === "dataset" ? (
+                    <Database size={22} />
+                  ) : contextTransition.type === "company" ? (
+                    <Building2 size={22} />
+                  ) : (
+                    <Calendar size={22} />
+                  )}
+                </div>
+                <div className="ref-context-transition-titles">
+                  <span className="ref-context-transition-kicker">
+                    {contextTransition.phase === "done" ? "✓ ĐÃ CHUYỂN ĐỔI THÀNH CÔNG" : contextTransition.title}
+                  </span>
+                  <p className="ref-context-transition-sub">{contextTransition.subTitle}</p>
+                </div>
+              </div>
+
+              <div className="ref-context-transition-flow">
+                <div className="ref-context-flow-box from">
+                  <span className="ref-context-flow-tag">TRƯỚC ĐÓ</span>
+                  <strong className="ref-context-flow-val">{contextTransition.fromLabel}</strong>
+                </div>
+
+                <div className="ref-context-flow-arrow" aria-hidden="true">
+                  <span className="arrow-dot" />
+                  <span className="arrow-dot" />
+                  <ChevronRight size={20} strokeWidth={2.5} />
+                </div>
+
+                <div className="ref-context-flow-box to">
+                  <span className="ref-context-flow-tag">
+                    <span className="live-pulse-dot" /> ĐANG MỞ DỮ LIỆU
+                  </span>
+                  <strong className="ref-context-flow-val">{contextTransition.toLabel}</strong>
+                </div>
+              </div>
+
+              <div className="ref-context-transition-meta">
+                <div className={`ref-context-meta-chip ${contextTransition.type === "company" ? "active" : ""}`}>
+                  <Building2 size={12} />
+                  <span>{contextTransition.companyName}</span>
+                </div>
+                <div className={`ref-context-meta-chip ${contextTransition.type === "dataset" ? "active" : ""}`}>
+                  <Database size={12} />
+                  <span>{contextTransition.datasetName}</span>
+                </div>
+                <div className={`ref-context-meta-chip ${contextTransition.type === "branch" ? "active" : ""}`}>
+                  <MapPin size={12} />
+                  <span>{contextTransition.branchName}</span>
+                </div>
+                <div className={`ref-context-meta-chip ${contextTransition.type === "period" ? "active" : ""}`}>
+                  <Calendar size={12} />
+                  <span>{contextTransition.periodName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="ref-context-transition-progress">
+              <div className="ref-context-transition-progress-fill" />
+            </div>
+          </div>
+        </div>
+      )}
+      <MisaBranchManagementModal
+        isOpen={isBranchModalOpen}
+        onClose={() => setIsBranchModalOpen(false)}
+        companyId={company.id}
+        companyName={company.name}
+        companyTaxCode={(company as any).tax_code || ""}
+        token={apiToken}
+        activeBranchId={effectiveBranchId}
+        onSelectBranch={(bId, bName) => {
+          setIsBranchModalOpen(false);
+          applyBranchSwitch(bId, bName);
+        }}
+        onBranchesUpdated={fetchBranches}
+      />
+      <MisaDatasetManagementModal
+        isOpen={isDatasetModalOpen}
+        onClose={() => {
+          setIsDatasetModalOpen(false);
+          setDatasetModalCreateMode(false);
+        }}
+        companyId={company.id}
+        companyName={company.name}
+        companyTaxCode={(company as any).tax_code || ""}
+        defaultRegime={activeCompanyRegime}
+        token={apiToken}
+        activeDatasetId={dataset}
+        datasets={companyDatasets}
+        onDatasetsUpdated={(nextList) => setCompanyDatasets(nextList)}
+        onSelectDataset={(selectedItem) => {
+          setIsDatasetModalOpen(false);
+          setDatasetModalCreateMode(false);
+          applyDatasetSwitch(selectedItem);
+        }}
+        initialCreateMode={datasetModalCreateMode}
+      />
       {createKind && (
         <DocumentForm
           kind={createKind}
@@ -2610,6 +3369,7 @@ function AppRoute() {
   if (location.pathname === "/reset-password") return <LivePasswordReset />;
   if (location.pathname === "/profile") return <LiveProfile />;
   if (location.pathname === "/scope") return <LiveScope />;
+  if (location.pathname === "/session" || location.pathname === "/session/") return <LiveSession />;
   if (location.pathname === "/common") return <LiveCommonHub />;
   if (location.pathname === "/company-setup") return <LiveCompanyBootstrap />;
   if (location.pathname === "/company-profile") return <LiveCompanyProfile />;

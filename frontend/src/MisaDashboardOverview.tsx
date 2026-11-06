@@ -35,6 +35,9 @@ interface MisaDashboardOverviewProps {
   companyId?: string;
   companyName?: string;
   period?: string;
+  branchId?: string;
+  dataset?: string;
+  onBranchChange?: (branchId: string) => void;
   href: DashboardHref;
   notify?: (text: string) => void;
   onSelectTransaction?: (t: Transaction) => void;
@@ -59,6 +62,9 @@ export function MisaDashboardOverview({
   companyId: propCompanyId,
   companyName = "Doanh nghiệp",
   period: propPeriod,
+  branchId: propBranchId,
+  dataset: propDataset,
+  onBranchChange,
   href,
   notify,
 }: MisaDashboardOverviewProps) {
@@ -143,9 +149,21 @@ export function MisaDashboardOverview({
 
   const urlPeriod = searchParams.get("period") || propPeriod || "2026-12";
   const [selectedPeriod, setSelectedPeriod] = useState<string>(urlPeriod);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(searchParams.get("branch_id") || "");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    const fromUrl = searchParams.get("branch_id") || "";
+    if (fromUrl) return fromUrl;
+    if (propBranchId && propBranchId !== "all" && propBranchId !== "head-office") return propBranchId;
+    return "";
+  });
   const [comparisonMode, setComparisonMode] = useState<string>("PREVIOUS_PERIOD");
-  const [revenueBasis, setRevenueBasis] = useState<string>("GL");
+  const isManagementBook = String(propDataset || "").startsWith("management");
+  const datasetFiscalYear =
+    String(propDataset || "").match(/20\d{2}/)?.[0] ||
+    String(urlPeriod || "").match(/20\d{2}/)?.[0] ||
+    "2026";
+  const [revenueBasis, setRevenueBasis] = useState<string>(() =>
+    isManagementBook ? "SAL" : "GL"
+  );
   const [recentModuleFilter, setRecentModuleFilter] = useState<string>("");
   const [recentStatusFilter, setRecentStatusFilter] = useState<string>("");
 
@@ -170,6 +188,27 @@ export function MisaDashboardOverview({
     }
   }, [urlPeriod]);
 
+  useEffect(() => {
+    if (!propBranchId || propBranchId === "all") {
+      if (selectedBranchId !== "") setSelectedBranchId("");
+    } else if (propBranchId === "head-office") {
+      const avail: any[] = configData?.available_branches || configData?.branches || [];
+      const hq = avail.find((b: any) => b.is_head_office || b.code === "HQ") || avail[0];
+      const targetId = hq ? String(hq.id) : "";
+      if (targetId && selectedBranchId !== targetId) setSelectedBranchId(targetId);
+    } else if (propBranchId !== selectedBranchId) {
+      setSelectedBranchId(propBranchId);
+    }
+  }, [propBranchId, configData]);
+
+  useEffect(() => {
+    if (!propDataset) return;
+    const targetBasis = String(propDataset).startsWith("management") ? "SAL" : "GL";
+    if (revenueBasis !== targetBasis) {
+      setRevenueBasis(targetBasis);
+    }
+  }, [propDataset]);
+
   const writer = useMemo(() => {
     if (!effectiveToken || !effectiveCompanyId) return null;
     return createApiWriter(effectiveCompanyId, (path, init) => request(path, effectiveToken, init));
@@ -188,7 +227,8 @@ export function MisaDashboardOverview({
           : Array.isArray(res?.periods)
             ? res.periods
             : [];
-        if (rawList.length > 0 && selectedPeriod !== "2026") {
+        const isStandardPeriod = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/i.test(selectedPeriod || "");
+        if (rawList.length > 0 && !isStandardPeriod) {
           const exists = rawList.some((p: any) => (p.code || p.period_code) === selectedPeriod);
           if (!exists) {
             const fallback = res.default_period_code || rawList[0].code || rawList[0].period_code;
@@ -266,6 +306,7 @@ export function MisaDashboardOverview({
     if (newBranchId) next.set("branch_id", newBranchId);
     else next.delete("branch_id");
     setSearchParams(next, { replace: true });
+    onBranchChange?.(newBranchId || "all");
   };
 
   const openMetricDrilldown = async (metricCode: string) => {
@@ -307,27 +348,26 @@ export function MisaDashboardOverview({
         status: String(p.status || "OPEN"),
       };
     });
+    const activeYr =
+      String(selectedPeriod || "").match(/20\d{2}/)?.[0] || datasetFiscalYear || "2026";
     const defaults = [
-      { period_code: "2026-12", name: "Tháng 12/2026", status: "OPEN" },
-      { period_code: "2026-11", name: "Tháng 11/2026", status: "OPEN" },
-      { period_code: "2026-10", name: "Tháng 10/2026", status: "OPEN" },
-      { period_code: "2026-09", name: "Tháng 09/2026", status: "OPEN" },
-      { period_code: "2026-08", name: "Tháng 08/2026", status: "OPEN" },
-      { period_code: "2026-07", name: "Tháng 07/2026", status: "OPEN" },
-      { period_code: "2026-06", name: "Tháng 06/2026", status: "OPEN" },
-      { period_code: "2026-05", name: "Tháng 05/2026", status: "OPEN" },
-      { period_code: "2026-04", name: "Tháng 04/2026", status: "OPEN" },
-      { period_code: "2026-03", name: "Tháng 03/2026", status: "OPEN" },
-      { period_code: "2026-02", name: "Tháng 02/2026", status: "OPEN" },
-      { period_code: "2026-01", name: "Tháng 01/2026", status: "OPEN" },
-      { period_code: "2026", name: "Năm tài chính 2026", status: "OPEN" },
+      ...Array.from({ length: 12 }, (_, idx) => {
+        const m = 12 - idx;
+        const mm = String(m).padStart(2, "0");
+        return {
+          period_code: `${activeYr}-${mm}`,
+          name: `Tháng ${mm}/${activeYr}`,
+          status: "OPEN",
+        };
+      }),
+      { period_code: `${activeYr}`, name: `Năm tài chính ${activeYr}`, status: "OPEN" },
     ];
     const map = new Map<string, { period_code: string; name: string; status: string }>();
+    for (const d of defaults) {
+      map.set(d.period_code, d);
+    }
     for (const p of normalized) {
       if (p.period_code) map.set(p.period_code, p);
-    }
-    for (const d of defaults) {
-      if (!map.has(d.period_code)) map.set(d.period_code, d);
     }
     if (selectedPeriod && !map.has(selectedPeriod)) {
       map.set(selectedPeriod, {
@@ -337,7 +377,7 @@ export function MisaDashboardOverview({
       });
     }
     return Array.from(map.values());
-  }, [configData, selectedPeriod]);
+  }, [configData, selectedPeriod, datasetFiscalYear]);
 
   const branchesList: Array<{ id: string; code: string; name: string }> =
     configData?.available_branches || configData?.branches || [];
@@ -478,9 +518,36 @@ export function MisaDashboardOverview({
       ? dash09.top_items
       : dash09.by_warehouse || dash09.warehouse_summary) || [];
   const filterInfo = overviewData?.filters || overviewData?.context || {};
+  const displayDateRange = useMemo(() => {
+    const p = String(selectedPeriod || "").trim();
+    const ym = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(p);
+    if (ym) {
+      const yr = Number(ym[1]);
+      const mo = Number(ym[2]);
+      const lastDay = new Date(yr, mo, 0).getDate();
+      return {
+        from_date: `${ym[1]}-${ym[2]}-01`,
+        to_date: `${ym[1]}-${ym[2]}-${String(lastDay).padStart(2, "0")}`,
+      };
+    }
+    const yOnly = /^(\d{4})$/.exec(p);
+    if (yOnly) {
+      return {
+        from_date: `${yOnly[1]}-01-01`,
+        to_date: `${yOnly[1]}-12-31`,
+      };
+    }
+    if (filterInfo.from_date && filterInfo.to_date) {
+      return {
+        from_date: String(filterInfo.from_date),
+        to_date: String(filterInfo.to_date),
+      };
+    }
+    return null;
+  }, [selectedPeriod, filterInfo.from_date, filterInfo.to_date]);
 
   return (
-    <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 14 }}>
       {/* Thanh điều khiển & Bộ lọc ngữ cảnh Dashboard (DR-RPT-01, AF-01..AF-05) */}
       <div
         className="card"
@@ -544,10 +611,24 @@ export function MisaDashboardOverview({
             >
               Chế độ: {circularFullLabel}
             </span>
-            {filterInfo.from_date && (
+            <span
+              data-testid="dashboard-dataset-badge"
+              style={{
+                fontSize: 11.5,
+                padding: "2px 10px",
+                borderRadius: 999,
+                fontWeight: 600,
+                background: isManagementBook ? "#f3e8ff" : "#eff6ff",
+                color: isManagementBook ? "#6b21a8" : "#1d4ed8",
+                border: isManagementBook ? "1px solid #d8b4fe" : "1px solid #bfdbfe",
+              }}
+            >
+              {isManagementBook ? `Sổ quản trị ${datasetFiscalYear}` : `Sổ kế toán ${datasetFiscalYear}`}
+            </span>
+            {displayDateRange && (
               <span style={{ fontSize: 12, color: "#475569" }}>
-                Kỳ: <strong>{selectedPeriod || filterInfo.fiscal_period_code}</strong> ({filterInfo.from_date} →{" "}
-                {filterInfo.to_date})
+                Kỳ: <strong>{selectedPeriod || filterInfo.fiscal_period_code}</strong> ({displayDateRange.from_date} →{" "}
+                {displayDateRange.to_date})
               </span>
             )}
           </div>
@@ -614,16 +695,19 @@ export function MisaDashboardOverview({
                 padding: "0 12px",
                 borderRadius: 999,
                 fontSize: 12.5,
-                minWidth: 230,
-                maxWidth: 320,
+                minWidth: 210,
               }}
               popoverStyle={{ borderRadius: 12, padding: 6 }}
               options={[
-                { value: "", label: `Toàn doanh nghiệp (${companyName})` },
-                ...branchesList.map((b) => ({
-                  value: b.id,
-                  label: `${b.code} - ${b.name}`,
-                })),
+                { value: "", label: "Toàn doanh nghiệp (Tất cả chi nhánh)" },
+                ...branchesList.map((b) => {
+                  const cleanBranchName =
+                    b.name.replace(/\s*[-–—]\s*(?:công\s+ty|cty|doanh\s+nghiệp).*$/i, "").trim() || b.name;
+                  return {
+                    value: b.id,
+                    label: `${b.code} - ${cleanBranchName}`,
+                  };
+                }),
               ]}
             />
           </div>

@@ -34,7 +34,7 @@ import MisaCashReportView from './MisaCashReportView';
 import MisaCashInventoryWorkspace from './MisaCashInventoryWorkspace';
 import MisaCashForecastWorkspace from './MisaCashForecastWorkspace';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod} from './transaction-period';
+import {matchesTransactionPeriod, resolveActiveBranchScope, resolveActiveDatasetYear} from './transaction-period';
 import {
   Filter,
   Plus,
@@ -3964,7 +3964,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4022,7 +4022,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4091,7 +4091,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4309,7 +4309,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason}${partnerName}`
@@ -4420,7 +4420,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason.trim()} ${partnerName}`
@@ -4567,7 +4567,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4665,7 +4665,7 @@ export function CreateVoucherModal({
                             />
                             <div
                               className="misa-voucher-ava-spark"
-                              title="Sổ Việt AI Gợi ý lý do tự động"
+                              title="Điền nhanh lý do chuẩn"
                               onClick={() => {
                                 const suggested = partnerName
                                   ? `${currentType.defaultReason} ${partnerName}`
@@ -4801,8 +4801,8 @@ export function CreateVoucherModal({
             {/* Drawer side toggle button matching MISA assistant */}
             <div
               className="misa-voucher-drawer-handle"
-              title="Mở trợ lý Sổ Việt AI"
-              onClick={() => alert("Trợ lý Sổ Việt AI Sổ Việt ERP")}
+              title="Kiểm tra nhanh định khoản"
+              onClick={() => alert("Hệ thống kiểm tra định khoản Sổ Việt ERP")}
             >
               <ChevronLeft size={14} />
             </div>
@@ -4860,16 +4860,16 @@ export function CreateVoucherModal({
                   className="misa-voucher-ava-pill"
                   onClick={() => {
                     alert(
-                      `Sổ Việt AI: Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
+                      `Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
                     );
                   }}
                 >
                   <img
                     src="/ava_avatar.jpg"
-                    alt="Sổ Việt AI"
+                    alt="Biểu tượng"
                     style={{ width: 18, height: 18, borderRadius: "50%", objectFit: "cover" }}
                   />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={12} />
                 </button>
               </div>
@@ -5583,7 +5583,7 @@ export function AIAssistantModal({
               <Sparkles size={16} />
             </div>
             <div>
-              <h2 style={{ fontSize: 16 }}>Sổ Việt AI — Thêm chứng từ bằng AI</h2>
+              <h2 style={{ fontSize: 16 }}>Nhập nhanh chứng từ từ tệp đính kèm</h2>
               <small style={{ color: "#6b7280" }}>
                 Nhập câu lệnh tự nhiên, quét hóa đơn hoặc dán nội dung tin nhắn
               </small>
@@ -6713,7 +6713,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             onClick={() => setShowAdvisorModal(true)}
           >
             <Sparkles size={15} style={{ color: "#8b5cf6" }} />
-            <span>Sổ Việt AI Phân tích</span>
+            <span>Phân tích dòng tiền</span>
           </button>
 
           <button
@@ -6794,7 +6794,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
         <div className="misa-forecast-advisor-body" style={{ flex: 1 }}>
           <h4>
-            <span>Khuyến nghị thông minh từ Trợ lý Sổ Việt AI:</span>
+            <span>Nhận định & Khuyến nghị quản trị dòng tiền:</span>
             <span style={{ fontSize: 11, background: "#dcfce7", color: "#15803d", padding: "1px 6px", borderRadius: 4 }}>
               Độ tin cậy 96%
             </span>
@@ -7143,7 +7143,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
       )}
 
-      {/* 7. Modal Sổ Việt AI Phân tích dòng tiền */}
+      {/* 7. Modal Phân tích dòng tiền dòng tiền */}
       {showAdvisorModal && (
         <div className="misa-modal-backdrop" onClick={() => setShowAdvisorModal(false)}>
           <div
@@ -7154,7 +7154,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             <div className="misa-modal-header">
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
                 <Sparkles size={18} style={{ color: "#8b5cf6" }} />
-                <span>Báo cáo tư vấn dòng tiền từ Trợ lý Sổ Việt AI</span>
+                <span>Báo cáo phân tích & dự báo thanh khoản dòng tiền</span>
               </h3>
               <button
                 type="button"
@@ -7185,7 +7185,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
               </div>
 
               <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                3 Điểm lưu ý trọng yếu từ Sổ Việt AI:
+                3 Điểm lưu ý trọng yếu về thanh khoản:
               </h4>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#334155", display: "flex", flexDirection: "column", gap: 8, lineHeight: 1.45 }}>
                 <li>
@@ -7219,6 +7219,21 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
 // ----------------------------------------------------------------------
 // 4A. PAYMENT REQUESTS TAB ("Đề nghị chi tiền")
 // ----------------------------------------------------------------------
+export type PaymentRequestDoc = {
+  id: string;
+  code: string;
+  date: string;
+  requester: string;
+  dept: string;
+  beneficiary?: string;
+  paymentMethod?: string;
+  purpose: string;
+  amount: number;
+  status: "pending" | "approved" | "paid" | "rejected";
+  voucherCode: string;
+  branchId?: string;
+};
+
 export function PaymentRequestsTab({
   notify,
   onOpenCreatePayment,
@@ -7226,16 +7241,19 @@ export function PaymentRequestsTab({
   notify: (msg: string) => void;
   onOpenCreatePayment: () => void;
 }) {
+  const { token, companyId: sessionCompanyId } = useApiSession();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-
-  const [requests] = useState([
+  const [branchScope, setBranchScope] = useState<string>(() => resolveActiveBranchScope());
+  const [requests, setRequests] = useState<PaymentRequestDoc[]>([
     {
       id: "dnc-01",
       code: "ĐNC00012",
-      date: "25/09/2026",
+      date: "18/12/2026",
       requester: "Nguyễn Văn Hải",
       dept: "Phòng Kinh doanh",
+      beneficiary: "Công ty CP Minh Khang",
+      paymentMethod: "Tiền mặt",
       purpose: "Chi tiếp khách đoàn đối tác Công ty CP Minh Khang ký kết HĐ",
       amount: 4500000,
       status: "approved",
@@ -7244,10 +7262,12 @@ export function PaymentRequestsTab({
     {
       id: "dnc-02",
       code: "ĐNC00011",
-      date: "22/09/2026",
+      date: "15/12/2026",
       requester: "Lê Hoàng Yến",
       dept: "Phòng Hành chính - Nhân sự",
-      purpose: "Mua văn phòng phẩm và vật dụng tiêu hao quý 3/2026",
+      beneficiary: "Công ty VPP Hồng Hà",
+      paymentMethod: "Tiền mặt",
+      purpose: "Mua văn phòng phẩm và vật dụng tiêu hao quý 4/2026",
       amount: 3200000,
       status: "paid",
       voucherCode: "PC00004",
@@ -7255,9 +7275,11 @@ export function PaymentRequestsTab({
     {
       id: "dnc-03",
       code: "ĐNC00010",
-      date: "18/09/2026",
+      date: "12/12/2026",
       requester: "Trần Quốc Tuấn",
       dept: "Phòng Kỹ thuật",
+      beneficiary: "Trung tâm Kỹ thuật Điện lạnh",
+      paymentMethod: "Tiền mặt",
       purpose: "Bảo dưỡng sửa chữa đột xuất hệ thống máy in và điều hòa",
       amount: 5800000,
       status: "pending",
@@ -7266,9 +7288,11 @@ export function PaymentRequestsTab({
     {
       id: "dnc-04",
       code: "ĐNC00009",
-      date: "15/09/2026",
+      date: "10/12/2026",
       requester: "Phạm Hải Đăng",
       dept: "Ban Giám đốc",
+      beneficiary: "Phạm Hải Đăng",
+      paymentMethod: "Chuyển khoản",
       purpose: "Chi phí công tác phí dự hội thảo chuyển đổi số tại TP.HCM",
       amount: 12000000,
       status: "approved",
@@ -7277,9 +7301,11 @@ export function PaymentRequestsTab({
     {
       id: "dnc-05",
       code: "ĐNC00008",
-      date: "10/09/2026",
+      date: "05/12/2026",
       requester: "Vũ Thị Mai",
       dept: "Phòng Kế toán",
+      beneficiary: "Ngân hàng TMCP Ngoại thương",
+      paymentMethod: "Tiền mặt",
       purpose: "Chi nộp phí dịch vụ ngân hàng và chứng thư số điện tử",
       amount: 1540000,
       status: "paid",
@@ -7287,15 +7313,116 @@ export function PaymentRequestsTab({
     },
   ]);
 
+  const [editingDoc, setEditingDoc] = useState<PaymentRequestDoc | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+
+  const effectiveCompanyId = useMemo(() => {
+    try {
+      return localStorage.getItem("ref_company_id") || sessionCompanyId || "";
+    } catch {
+      return sessionCompanyId || "";
+    }
+  }, [sessionCompanyId]);
+
+  useEffect(() => {
+    const onCtxChange = () => setBranchScope(resolveActiveBranchScope());
+    window.addEventListener("erp_context_changed", onCtxChange);
+    window.addEventListener("popstate", onCtxChange);
+    return () => {
+      window.removeEventListener("erp_context_changed", onCtxChange);
+      window.removeEventListener("popstate", onCtxChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!token || !effectiveCompanyId) return;
+    let active = true;
+    const branchParam = branchScope && branchScope !== "all" ? `&branch_id=${encodeURIComponent(branchScope)}` : "";
+    request<{ docs?: PaymentRequestDoc[]; results?: PaymentRequestDoc[] }>(
+      `/api/v1/cash/payment-requests/?company_id=${encodeURIComponent(effectiveCompanyId)}${branchParam}`,
+      token,
+    )
+      .then((res) => {
+        if (!active) return;
+        const list = res?.docs || res?.results;
+        if (Array.isArray(list) && list.length > 0) {
+          setRequests(list);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [token, effectiveCompanyId, branchScope]);
+
+  const persistDoc = async (doc: PaymentRequestDoc, successMsg: string) => {
+    setRequests((prev) => {
+      const idx = prev.findIndex((item) => item.id === doc.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = doc;
+        return next;
+      }
+      return [doc, ...prev];
+    });
+    if (token && effectiveCompanyId) {
+      const branchParam = branchScope && branchScope !== "all" ? `&branch_id=${encodeURIComponent(branchScope)}` : "";
+      try {
+        const res = await request<{ docs?: PaymentRequestDoc[] }>(
+          `/api/v1/cash/payment-requests/?company_id=${encodeURIComponent(effectiveCompanyId)}${branchParam}`,
+          token,
+          {
+            method: "POST",
+            body: JSON.stringify({ doc }),
+          },
+        );
+        if (Array.isArray(res?.docs)) {
+          setRequests(res.docs);
+        }
+      } catch {}
+    }
+    notify(successMsg);
+  };
+
+  const openNewModal = () => {
+    const nextNum = requests.length + 13;
+    setEditingDoc({
+      id: `dnc-${Date.now()}`,
+      code: `ĐNC${String(nextNum).padStart(5, "0")}`,
+      date: "20/12/2026",
+      requester: "Đỗ Đức Tùng",
+      dept: "Phòng Kế toán",
+      beneficiary: "Công ty TNHH Giải pháp Số Việt",
+      paymentMethod: "Tiền mặt",
+      purpose: "Chi thanh toán chi phí dịch vụ vận hành văn phòng tháng 12/2026",
+      amount: 6500000,
+      status: "pending",
+      voucherCode: "",
+      branchId: branchScope !== "all" ? branchScope : undefined,
+    });
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
+
   const filtered = requests.filter((r) => {
     const matchSearch =
       !search ||
       r.code.toLowerCase().includes(search.toLowerCase()) ||
       r.requester.toLowerCase().includes(search.toLowerCase()) ||
-      r.purpose.toLowerCase().includes(search.toLowerCase());
+      r.purpose.toLowerCase().includes(search.toLowerCase()) ||
+      (r.beneficiary || "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = filterStatus === "all" || r.status === filterStatus;
     return matchSearch && matchStatus;
   });
+
+  const kpiStats = useMemo(() => {
+    const totalAmt = requests.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const pendingCount = requests.filter((r) => r.status === "pending").length;
+    const approvedCount = requests.filter((r) => r.status === "approved").length;
+    const paidCount = requests.filter((r) => r.status === "paid").length;
+    return { totalAmt, pendingCount, approvedCount, paidCount };
+  }, [requests]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc", padding: 14 }}>
@@ -7303,30 +7430,30 @@ export function PaymentRequestsTab({
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Tổng tiền đề nghị</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>27.040.000 đ</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{formatVND(kpiStats.totalAmt)} đ</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Chờ duyệt</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b" }}>1 đề nghị</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b" }}>{kpiStats.pendingCount} đề nghị</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Đã duyệt (Chờ chi)</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7" }}>2 đề nghị</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7" }}>{kpiStats.approvedCount} đề nghị</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Đã chi tiền</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>2 đề nghị</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>{kpiStats.paidCount} đề nghị</div>
         </div>
       </div>
 
       {/* Toolbar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ position: "relative", width: 220 }}>
+          <div style={{ position: "relative", width: 240 }}>
             <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
             <input
               type="text"
-              placeholder="Tìm kiếm đề nghị chi..."
+              placeholder="Tìm theo số đề nghị, người lập, nội dung..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -7356,8 +7483,9 @@ export function PaymentRequestsTab({
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
+            <option value="approved">Đã duyệt (Chờ chi)</option>
             <option value="paid">Đã chi tiền</option>
+            <option value="rejected">Từ chối</option>
           </select>
         </div>
 
@@ -7365,8 +7493,8 @@ export function PaymentRequestsTab({
           <button
             type="button"
             className="misa-btn-primary"
-            style={{ height: 32, fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
-            onClick={() => notify("Đã mở form lập Giấy đề nghị chi tiền...")}
+            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            onClick={openNewModal}
           >
             <Plus size={14} />
             Thêm đề nghị chi
@@ -7374,7 +7502,7 @@ export function PaymentRequestsTab({
           <button
             type="button"
             className="misa-btn-secondary"
-            style={{ height: 32, fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#1e293b", border: "1px solid #cbd5e1", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             onClick={onOpenCreatePayment}
           >
             Lập phiếu chi từ đề nghị
@@ -7383,46 +7511,459 @@ export function PaymentRequestsTab({
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-        <table className="misa-tax-table">
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+        <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
-              <th style={{ width: 40, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
-              <th style={{ width: 110 }}>Số đề nghị</th>
-              <th style={{ width: 100 }}>Ngày đề nghị</th>
-              <th style={{ width: 140 }}>Người đề nghị</th>
-              <th style={{ width: 150 }}>Bộ phận</th>
+              <th style={{ width: 32, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
+              <th style={{ whiteSpace: "nowrap" }}>Số / Ngày ĐN</th>
+              <th style={{ whiteSpace: "nowrap" }}>Người đề nghị / Bộ phận</th>
               <th>Nội dung chi</th>
-              <th className="numeric" style={{ width: 130 }}>Số tiền đề nghị</th>
-              <th style={{ width: 120, textAlign: "center" }}>Trạng thái</th>
-              <th style={{ width: 110 }}>Số chứng từ chi</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Số tiền đề nghị</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
+              <th style={{ whiteSpace: "nowrap" }}>Chứng từ chi</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id}>
                 <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`Chọn ${r.code}`} /></td>
-                <td><strong style={{ color: "#00b06b", cursor: "pointer" }} onClick={() => notify(`Xem chi tiết đề nghị: ${r.code}`)}>{r.code}</strong></td>
-                <td>{r.date}</td>
-                <td><strong>{r.requester}</strong></td>
-                <td>{r.dept}</td>
-                <td>{r.purpose}</td>
-                <td className="numeric"><strong>{formatVND(r.amount)} đ</strong></td>
-                <td style={{ textAlign: "center" }}>
-                  {r.status === "paid" ? (
-                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>Đã chi tiền</span>
-                  ) : r.status === "approved" ? (
-                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>Đã duyệt</span>
-                  ) : (
-                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>Chờ duyệt</span>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <strong
+                    style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                    onClick={() => {
+                      setEditingDoc({ ...r });
+                      setModalMode("view");
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    {r.code}
+                  </strong>
+                  <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1 }}>{r.date}</div>
+                </td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <strong>{r.requester}</strong>
+                  <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1 }}>{r.dept}</div>
+                </td>
+                <td style={{ whiteSpace: "normal", lineHeight: 1.45, color: "#1e293b", padding: "9px 10px" }}>
+                  <div>{r.purpose}</div>
+                  {r.beneficiary && (
+                    <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
+                      Đơn vị nhận: <strong style={{ fontWeight: 600, color: "#475569" }}>{r.beneficiary}</strong> · {r.paymentMethod || "Tiền mặt"}
+                    </div>
                   )}
                 </td>
-                <td>{r.voucherCode ? <strong style={{ color: "#0284c7" }}>{r.voucherCode}</strong> : <span style={{ color: "#94a3b8" }}>-</span>}</td>
+                <td className="numeric" style={{ whiteSpace: "nowrap" }}><strong>{formatVND(r.amount)} đ</strong></td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  {r.status === "paid" ? (
+                    <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
+                  ) : r.status === "approved" ? (
+                    <span style={{ display: "inline-block", background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
+                  ) : r.status === "rejected" ? (
+                    <span style={{ display: "inline-block", background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
+                  ) : (
+                    <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                  )}
+                </td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  {r.voucherCode ? (
+                    <strong
+                      style={{ color: "#0284c7", cursor: "pointer" }}
+                      onClick={() => {
+                        setEditingDoc({ ...r });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      {r.voucherCode}
+                    </strong>
+                  ) : (
+                    <span style={{ color: "#94a3b8" }}>-</span>
+                  )}
+                </td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {r.status === "pending" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void persistDoc({ ...r, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${r.code}`)}
+                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
+                        >
+                          Duyệt
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void persistDoc({ ...r, status: "rejected" }, `Đã từ chối đề nghị chi ${r.code}`)}
+                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
+                        >
+                          Từ chối
+                        </button>
+                      </>
+                    )}
+                    {r.status === "approved" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const autoVoucher = r.paymentMethod === "Chuyển khoản" ? `UNC-${r.code.replace(/[^0-9]/g, "").slice(-4) || "001"}` : `PC-${r.code.replace(/[^0-9]/g, "").slice(-4) || "001"}`;
+                          void persistDoc(
+                            { ...r, status: "paid", voucherCode: autoVoucher },
+                            `✓ Đã sinh chứng từ chi ${autoVoucher} từ đề nghị ${r.code}`,
+                          );
+                          onOpenCreatePayment();
+                        }}
+                        style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                      >
+                        Lập phiếu chi
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDoc({ ...r });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                    >
+                      Xem chi tiết
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modal Xem chi tiết / Thêm / Sửa Giấy Đề Nghị Chi Tiền */}
+      {isModalOpen && editingDoc && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 740,
+              background: "#ffffff",
+              borderRadius: 12,
+              boxShadow: "0 20px 50px rgba(15,23,42,0.22)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>
+                    Giấy đề nghị chi tiền — {editingDoc.code}
+                  </h3>
+                  {editingDoc.status === "paid" ? (
+                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã chi tiền</span>
+                  ) : editingDoc.status === "approved" ? (
+                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã phê duyệt</span>
+                  ) : editingDoc.status === "rejected" ? (
+                    <span style={{ background: "#fee2e2", color: "#b91c1c", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Từ chối</span>
+                  ) : (
+                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Chờ phê duyệt</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
+                  Biểu mẫu đề nghị thanh toán nội bộ &amp; kiểm soát hạn mức chi quỹ (Thông tư 99/2025/TT-BTC)
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {modalMode === "view" ? (
+              <div style={{ padding: "18px 22px" }}>
+                {/* Tiến trình phê duyệt 3 bước */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+                  <div style={{ padding: "10px 12px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#15803d", textTransform: "uppercase" }}>Bước 1 · Đã lập đề nghị</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>{editingDoc.requester}</div>
+                    <div style={{ fontSize: 11.5, color: "#64748b" }}>{editingDoc.dept} · {editingDoc.date}</div>
+                  </div>
+                  <div style={{ padding: "10px 12px", borderRadius: 8, background: editingDoc.status === "pending" ? "#fffbeb" : editingDoc.status === "rejected" ? "#fef2f2" : "#f0f9ff", border: `1px solid ${editingDoc.status === "pending" ? "#fde68a" : editingDoc.status === "rejected" ? "#fecaca" : "#bae6fd"}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: editingDoc.status === "pending" ? "#b45309" : editingDoc.status === "rejected" ? "#dc2626" : "#0369a1", textTransform: "uppercase" }}>
+                      Bước 2 · {editingDoc.status === "pending" ? "Đang chờ phê duyệt" : editingDoc.status === "rejected" ? "Đã từ chối" : "Kế toán trưởng đã duyệt"}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>
+                      {editingDoc.status === "pending" ? "Chờ Kế toán trưởng / Giám đốc" : "Đỗ Đức Tùng (Kế toán trưởng)"}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "#64748b" }}>Kiểm soát ngân sách &amp; chứng từ gốc</div>
+                  </div>
+                  <div style={{ padding: "10px 12px", borderRadius: 8, background: editingDoc.status === "paid" ? "#f0fdf4" : "#f8fafc", border: `1px solid ${editingDoc.status === "paid" ? "#bbf7d0" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: editingDoc.status === "paid" ? "#15803d" : "#64748b", textTransform: "uppercase" }}>
+                      Bước 3 · {editingDoc.status === "paid" ? "Đã lập chứng từ chi" : "Chưa giải ngân"}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>
+                      {editingDoc.voucherCode ? `Chứng từ: ${editingDoc.voucherCode}` : "Chờ Thủ quỹ / Ngân hàng chi"}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "#64748b" }}>Hình thức: {editingDoc.paymentMethod || "Tiền mặt"}</div>
+                  </div>
+                </div>
+
+                {/* Thông tin chi tiết đầy đủ */}
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px", fontSize: 13 }}>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Số giấy đề nghị chi</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.code}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Ngày lập đề nghị</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.date}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Người đề nghị thanh toán</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.requester}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Bộ phận / Đơn vị công tác</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.dept}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Đơn vị / Cá nhân nhận tiền</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.beneficiary || editingDoc.requester}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Phương thức chi trả &amp; Chứng từ</span>
+                      <strong style={{ color: "#0284c7" }}>
+                        {editingDoc.paymentMethod || "Tiền mặt"} {editingDoc.voucherCode ? `· Mã CT: ${editingDoc.voucherCode}` : ""}
+                      </strong>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1", paddingTop: 6, borderTop: "1px dashed #cbd5e1" }}>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5, marginBottom: 3 }}>Nội dung chi tiết khoản đề nghị thanh toán</span>
+                      <div style={{ color: "#0f172a", fontWeight: 600, fontSize: 13.5, lineHeight: 1.5 }}>{editingDoc.purpose}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bảng định khoản & chi tiết số tiền */}
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                  <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 42, textAlign: "center" }}>STT</th>
+                        <th>Diễn giải chi tiết khoản chi</th>
+                        <th style={{ width: 85, textAlign: "center" }}>TK Nợ</th>
+                        <th style={{ width: 85, textAlign: "center" }}>TK Có</th>
+                        <th className="numeric" style={{ width: 150 }}>Số tiền (VND)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ textAlign: "center" }}>1</td>
+                        <td style={{ whiteSpace: "normal", lineHeight: 1.45 }}>{editingDoc.purpose}</td>
+                        <td style={{ textAlign: "center", fontWeight: 600 }}>6422</td>
+                        <td style={{ textAlign: "center", fontWeight: 600 }}>{editingDoc.paymentMethod === "Chuyển khoản" ? "1121" : "1111"}</td>
+                        <td className="numeric" style={{ fontWeight: 700, color: "#0f172a" }}>{formatVND(editingDoc.amount)} đ</td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: "right", fontWeight: 700 }}>Tổng số tiền đề nghị thanh toán:</td>
+                        <td className="numeric" style={{ fontWeight: 800, color: "#00a862", fontSize: 14 }}>{formatVND(editingDoc.amount)} đ</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số đề nghị *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.code}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, code: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày đề nghị *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.date}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, date: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Người đề nghị *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.requester}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, requester: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Bộ phận / Phòng ban *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.dept}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, dept: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Đơn vị / Người nhận tiền</label>
+                  <input
+                    type="text"
+                    value={editingDoc.beneficiary || ""}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, beneficiary: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Hình thức thanh toán</label>
+                  <select
+                    value={editingDoc.paymentMethod || "Tiền mặt"}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, paymentMethod: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, background: "#ffffff" }}
+                  >
+                    <option value="Tiền mặt">Tiền mặt (Phiếu chi)</option>
+                    <option value="Chuyển khoản">Chuyển khoản (Ủy nhiệm chi)</option>
+                  </select>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Nội dung đề nghị chi *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.purpose}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, purpose: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số tiền đề nghị (VND) *</label>
+                  <input
+                    type="number"
+                    value={editingDoc.amount}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, amount: Number(e.target.value) || 0 })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Trạng thái phê duyệt</label>
+                  <select
+                    value={editingDoc.status}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, status: e.target.value as PaymentRequestDoc["status"] })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, background: "#ffffff" }}
+                  >
+                    <option value="pending">Chờ duyệt</option>
+                    <option value="approved">Đã duyệt (Chờ chi)</option>
+                    <option value="paid">Đã chi tiền</option>
+                    <option value="rejected">Từ chối</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div>
+                {modalMode === "view" && (
+                  <button
+                    type="button"
+                    className="misa-btn-secondary"
+                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                    onClick={() => setModalMode("edit")}
+                  >
+                    ✎ Chỉnh sửa thông tin
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  className="misa-btn-secondary"
+                  style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Đóng
+                </button>
+                {modalMode === "edit" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        void persistDoc(editingDoc, `✓ Đã lưu giấy đề nghị chi ${editingDoc.code}`);
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu đề nghị
+                    </button>
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã lưu và phê duyệt đề nghị chi ${editingDoc.code}`);
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu &amp; Phê duyệt ngay
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {editingDoc.status === "pending" && (
+                      <button
+                        type="button"
+                        className="misa-btn-primary"
+                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#0284c7", color: "#ffffff", border: "1px solid #0284c7", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => {
+                          void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${editingDoc.code}`);
+                          setIsModalOpen(false);
+                        }}
+                      >
+                        Phê duyệt đề nghị
+                      </button>
+                    )}
+                    {editingDoc.status === "approved" && (
+                      <button
+                        type="button"
+                        className="misa-btn-primary"
+                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => {
+                          const autoVoucher = editingDoc.paymentMethod === "Chuyển khoản" ? `UNC-${editingDoc.code.replace(/[^0-9]/g, "").slice(-4) || "001"}` : `PC-${editingDoc.code.replace(/[^0-9]/g, "").slice(-4) || "001"}`;
+                          void persistDoc(
+                            { ...editingDoc, status: "paid", voucherCode: autoVoucher },
+                            `✓ Đã sinh chứng từ chi ${autoVoucher} từ đề nghị ${editingDoc.code}`,
+                          );
+                          setIsModalOpen(false);
+                          onOpenCreatePayment();
+                        }}
+                      >
+                        Lập phiếu chi ngay
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -7430,6 +7971,21 @@ export function PaymentRequestsTab({
 // ----------------------------------------------------------------------
 // 4B. ADVANCE SETTLEMENT TAB ("Đề nghị quyết toán tạm ứng")
 // ----------------------------------------------------------------------
+export type AdvanceSettlementDoc = {
+  id: string;
+  code: string;
+  date: string;
+  person: string;
+  dept?: string;
+  reason: string;
+  advanceAmount: number;
+  spentAmount: number;
+  refundAmount: number;
+  status: "pending" | "settled";
+  receiptCode: string;
+  branchId?: string;
+};
+
 export function AdvanceSettlementTab({
   notify,
   onOpenCreateReceipt,
@@ -7437,14 +7993,16 @@ export function AdvanceSettlementTab({
   notify: (msg: string) => void;
   onOpenCreateReceipt: () => void;
 }) {
+  const { token, companyId: sessionCompanyId } = useApiSession();
   const [search, setSearch] = useState("");
-
-  const settlements = [
+  const [branchScope, setBranchScope] = useState<string>(() => resolveActiveBranchScope());
+  const [settlements, setSettlements] = useState<AdvanceSettlementDoc[]>([
     {
       id: "qt-01",
       code: "QT00005",
-      date: "03/09/2026",
+      date: "16/12/2026",
       person: "Hoàng Thiên Bảo",
+      dept: "Phòng Triển khai",
       reason: "Quyết toán tạm ứng công tác phí triển khai dự án miền Trung",
       advanceAmount: 25000000,
       spentAmount: 20000000,
@@ -7455,8 +8013,9 @@ export function AdvanceSettlementTab({
     {
       id: "qt-02",
       code: "QT00004",
-      date: "28/08/2026",
+      date: "12/12/2026",
       person: "Nguyễn Văn Hải",
+      dept: "Phòng Kỹ thuật",
       reason: "Tạm ứng mua sắm vật tư linh kiện thay thế phòng lab",
       advanceAmount: 15000000,
       spentAmount: 15000000,
@@ -7467,16 +8026,111 @@ export function AdvanceSettlementTab({
     {
       id: "qt-03",
       code: "QT00003",
-      date: "15/08/2026",
-      person: "Trương Thị B",
+      date: "08/12/2026",
+      person: "Trương Thị Bích",
+      dept: "Phòng Kinh doanh",
       reason: "Tạm ứng chi phí tiếp khách và hội nghị khách hàng thường niên",
       advanceAmount: 30000000,
       spentAmount: 28500000,
       refundAmount: 1500000,
-      status: "settled",
-      receiptCode: "PT00001",
+      status: "pending",
+      receiptCode: "",
     },
-  ];
+  ]);
+
+  const [editingDoc, setEditingDoc] = useState<AdvanceSettlementDoc | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+
+  const effectiveCompanyId = useMemo(() => {
+    try {
+      return localStorage.getItem("ref_company_id") || sessionCompanyId || "";
+    } catch {
+      return sessionCompanyId || "";
+    }
+  }, [sessionCompanyId]);
+
+  useEffect(() => {
+    const onCtxChange = () => setBranchScope(resolveActiveBranchScope());
+    window.addEventListener("erp_context_changed", onCtxChange);
+    window.addEventListener("popstate", onCtxChange);
+    return () => {
+      window.removeEventListener("erp_context_changed", onCtxChange);
+      window.removeEventListener("popstate", onCtxChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!token || !effectiveCompanyId) return;
+    let active = true;
+    const branchParam = branchScope && branchScope !== "all" ? `&branch_id=${encodeURIComponent(branchScope)}` : "";
+    request<{ docs?: AdvanceSettlementDoc[]; results?: AdvanceSettlementDoc[] }>(
+      `/api/v1/cash/advance-settlement-docs/?company_id=${encodeURIComponent(effectiveCompanyId)}${branchParam}`,
+      token,
+    )
+      .then((res) => {
+        if (!active) return;
+        const list = res?.docs || res?.results;
+        if (Array.isArray(list) && list.length > 0) {
+          setSettlements(list);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [token, effectiveCompanyId, branchScope]);
+
+  const persistSettlement = async (doc: AdvanceSettlementDoc, successMsg: string) => {
+    const computedRefund = Math.max(0, (Number(doc.advanceAmount) || 0) - (Number(doc.spentAmount) || 0));
+    const normalized: AdvanceSettlementDoc = { ...doc, refundAmount: computedRefund };
+    setSettlements((prev) => {
+      const idx = prev.findIndex((item) => item.id === normalized.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = normalized;
+        return next;
+      }
+      return [normalized, ...prev];
+    });
+    if (token && effectiveCompanyId) {
+      const branchParam = branchScope && branchScope !== "all" ? `&branch_id=${encodeURIComponent(branchScope)}` : "";
+      try {
+        const res = await request<{ docs?: AdvanceSettlementDoc[] }>(
+          `/api/v1/cash/advance-settlement-docs/?company_id=${encodeURIComponent(effectiveCompanyId)}${branchParam}`,
+          token,
+          {
+            method: "POST",
+            body: JSON.stringify({ doc: normalized }),
+          },
+        );
+        if (Array.isArray(res?.docs)) {
+          setSettlements(res.docs);
+        }
+      } catch {}
+    }
+    notify(successMsg);
+  };
+
+  const openNewModal = () => {
+    const nextNum = settlements.length + 6;
+    setEditingDoc({
+      id: `qt-${Date.now()}`,
+      code: `QT${String(nextNum).padStart(5, "0")}`,
+      date: "20/12/2026",
+      person: "Đỗ Đức Tùng",
+      dept: "Phòng Kinh doanh",
+      reason: "Quyết toán tạm ứng công tác phí & tiếp khách hợp đồng T12/2026",
+      advanceAmount: 20000000,
+      spentAmount: 16500000,
+      refundAmount: 3500000,
+      status: "pending",
+      receiptCode: "",
+      branchId: branchScope !== "all" ? branchScope : undefined,
+    });
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
 
   const filtered = settlements.filter(
     (s) =>
@@ -7486,27 +8140,34 @@ export function AdvanceSettlementTab({
       s.reason.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const kpiStats = useMemo(() => {
+    const totalAdvance = settlements.reduce((sum, s) => sum + (Number(s.advanceAmount) || 0), 0);
+    const totalSpent = settlements.reduce((sum, s) => sum + (Number(s.spentAmount) || 0), 0);
+    const totalRefund = settlements.reduce((sum, s) => sum + (Number(s.refundAmount) || 0), 0);
+    return { totalAdvance, totalSpent, totalRefund };
+  }, [settlements]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc", padding: 14 }}>
       {/* KPI Header */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 14 }}>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Tổng số tiền tạm ứng</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>70.000.000 đ</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{formatVND(kpiStats.totalAdvance)} đ</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Đã chi thực tế</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7" }}>63.500.000 đ</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7" }}>{formatVND(kpiStats.totalSpent)} đ</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Thu hồi hoàn ứng</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>6.500.000 đ</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>{formatVND(kpiStats.totalRefund)} đ</div>
         </div>
       </div>
 
       {/* Toolbar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
-        <div style={{ position: "relative", width: 240 }}>
+        <div style={{ position: "relative", width: 250 }}>
           <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
           <input
             type="text"
@@ -7530,8 +8191,8 @@ export function AdvanceSettlementTab({
           <button
             type="button"
             className="misa-btn-primary"
-            style={{ height: 32, fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
-            onClick={() => notify("Đã mở form lập Bảng quyết toán tạm ứng...")}
+            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            onClick={openNewModal}
           >
             <Plus size={14} />
             Lập quyết toán tạm ứng
@@ -7539,7 +8200,7 @@ export function AdvanceSettlementTab({
           <button
             type="button"
             className="misa-btn-secondary"
-            style={{ height: 32, fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#1e293b", border: "1px solid #cbd5e1", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             onClick={onOpenCreateReceipt}
           >
             Lập phiếu thu hoàn ứng
@@ -7548,42 +8209,384 @@ export function AdvanceSettlementTab({
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-        <table className="misa-tax-table">
+      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+        <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
-              <th style={{ width: 40, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
-              <th style={{ width: 110 }}>Số quyết toán</th>
-              <th style={{ width: 100 }}>Ngày quyết toán</th>
-              <th style={{ width: 140 }}>Người tạm ứng</th>
+              <th style={{ width: 32, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
+              <th style={{ whiteSpace: "nowrap" }}>Số / Ngày QT</th>
+              <th style={{ whiteSpace: "nowrap" }}>Người tạm ứng</th>
               <th>Nội dung thanh toán tạm ứng</th>
-              <th className="numeric" style={{ width: 130 }}>Số tiền tạm ứng</th>
-              <th className="numeric" style={{ width: 130 }}>Số chi thực tế</th>
-              <th className="numeric" style={{ width: 130 }}>Chênh lệch hoàn ứng</th>
-              <th style={{ width: 120, textAlign: "center" }}>Trạng thái</th>
-              <th style={{ width: 110 }}>Số phiếu thu</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Số tạm ứng</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Chi thực tế</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Hoàn ứng</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái / Phiếu thu</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((s) => (
               <tr key={s.id}>
                 <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`Chọn ${s.code}`} /></td>
-                <td><strong style={{ color: "#00b06b", cursor: "pointer" }} onClick={() => notify(`Xem quyết toán: ${s.code}`)}>{s.code}</strong></td>
-                <td>{s.date}</td>
-                <td><strong>{s.person}</strong></td>
-                <td>{s.reason}</td>
-                <td className="numeric">{formatVND(s.advanceAmount)} đ</td>
-                <td className="numeric" style={{ color: "#ea580c", fontWeight: 600 }}>{formatVND(s.spentAmount)} đ</td>
-                <td className="numeric" style={{ color: "#00b06b", fontWeight: 700 }}>{formatVND(s.refundAmount)} đ</td>
-                <td style={{ textAlign: "center" }}>
-                  <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>Đã thanh toán hết</span>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <strong
+                    style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                    onClick={() => {
+                      setEditingDoc({ ...s });
+                      setModalMode("view");
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    {s.code}
+                  </strong>
+                  <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1 }}>{s.date}</div>
                 </td>
-                <td>{s.receiptCode !== "-" ? <strong style={{ color: "#0284c7" }}>{s.receiptCode}</strong> : <span style={{ color: "#94a3b8" }}>-</span>}</td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <strong>{s.person}</strong>
+                  {s.dept && <div style={{ fontSize: 11.5, color: "#64748b" }}>{s.dept}</div>}
+                </td>
+                <td style={{ whiteSpace: "normal", lineHeight: 1.45, color: "#1e293b", padding: "9px 10px" }}>{s.reason}</td>
+                <td className="numeric" style={{ whiteSpace: "nowrap" }}>{formatVND(s.advanceAmount)} đ</td>
+                <td className="numeric" style={{ color: "#ea580c", fontWeight: 600, whiteSpace: "nowrap" }}>{formatVND(s.spentAmount)} đ</td>
+                <td className="numeric" style={{ color: "#00b06b", fontWeight: 700, whiteSpace: "nowrap" }}>{formatVND(s.refundAmount)} đ</td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  <div>
+                    {s.status === "settled" ? (
+                      <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
+                    ) : (
+                      <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                    )}
+                  </div>
+                  {s.receiptCode && s.receiptCode !== "-" && (
+                    <div style={{ marginTop: 3 }}>
+                      <strong
+                        style={{ color: "#0284c7", cursor: "pointer", fontSize: 11.5 }}
+                        onClick={() => {
+                          setEditingDoc({ ...s });
+                          setModalMode("view");
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        PT: {s.receiptCode}
+                      </strong>
+                    </div>
+                  )}
+                </td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {s.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const autoReceipt = s.refundAmount > 0 ? `PT-HU-${s.code.replace(/[^0-9]/g, "").slice(-3) || "001"}` : "-";
+                          void persistSettlement(
+                            { ...s, status: "settled", receiptCode: autoReceipt },
+                            `✓ Đã duyệt quyết toán ${s.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
+                          );
+                        }}
+                        style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                      >
+                        Duyệt
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDoc({ ...s });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                    >
+                      Xem chi tiết
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modal Xem chi tiết / Lập Bảng Quyết Toán Tạm Ứng (Mẫu 04-TT) */}
+      {isModalOpen && editingDoc && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 740,
+              background: "#ffffff",
+              borderRadius: 12,
+              boxShadow: "0 20px 50px rgba(15,23,42,0.22)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>
+                    Bảng thanh toán tiền tạm ứng — {editingDoc.code}
+                  </h3>
+                  {editingDoc.status === "settled" ? (
+                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã quyết toán</span>
+                  ) : (
+                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Chờ phê duyệt</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
+                  Mẫu số 04-TT (Ban hành theo Thông tư 99/2025/TT-BTC) · Đối chiếu TK 141
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {modalMode === "view" ? (
+              <div style={{ padding: "18px 22px" }}>
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px", fontSize: 13 }}>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Số chứng từ quyết toán</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.code}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Ngày lập quyết toán</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.date}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Họ và tên người thanh toán tạm ứng</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.person}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Bộ phận / Phòng ban</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.dept || "Phòng Kinh doanh"}</strong>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1", paddingTop: 6, borderTop: "1px dashed #cbd5e1" }}>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5, marginBottom: 3 }}>Nội dung thanh toán tạm ứng</span>
+                      <div style={{ color: "#0f172a", fontWeight: 600, fontSize: 13.5, lineHeight: 1.5 }}>{editingDoc.reason}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bảng đối chiếu I - II - III chuẩn Mẫu 04-TT */}
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                  <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 55, textAlign: "center" }}>Mục</th>
+                        <th>Chỉ tiêu thanh toán tạm ứng (Mẫu 04-TT)</th>
+                        <th style={{ width: 95, textAlign: "center" }}>Định khoản</th>
+                        <th className="numeric" style={{ width: 160 }}>Số tiền (VND)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ textAlign: "center", fontWeight: 700 }}>I</td>
+                        <td>Số tiền tạm ứng đã nhận (dư Nợ TK 141)</td>
+                        <td style={{ textAlign: "center", color: "#475569" }}>Nợ 141 / Có 111</td>
+                        <td className="numeric" style={{ fontWeight: 700 }}>{formatVND(editingDoc.advanceAmount)} đ</td>
+                      </tr>
+                      <tr>
+                        <td style={{ textAlign: "center", fontWeight: 700 }}>II</td>
+                        <td style={{ whiteSpace: "normal", lineHeight: 1.45 }}>Số tiền đã chi theo chứng từ gốc đính kèm ({editingDoc.reason})</td>
+                        <td style={{ textAlign: "center", color: "#ea580c", fontWeight: 600 }}>Nợ 642 / Có 141</td>
+                        <td className="numeric" style={{ fontWeight: 700, color: "#ea580c" }}>{formatVND(editingDoc.spentAmount)} đ</td>
+                      </tr>
+                      <tr style={{ background: "#f0fdf4" }}>
+                        <td style={{ textAlign: "center", fontWeight: 700, color: "#15803d" }}>III</td>
+                        <td style={{ fontWeight: 700, color: "#166534" }}>
+                          Chênh lệch tạm ứng thu hồi nhập lại quỹ (I - II) {editingDoc.receiptCode && editingDoc.receiptCode !== "-" ? `· Phiếu thu: ${editingDoc.receiptCode}` : ""}
+                        </td>
+                        <td style={{ textAlign: "center", color: "#15803d", fontWeight: 700 }}>Nợ 1111 / Có 141</td>
+                        <td className="numeric" style={{ fontWeight: 800, color: "#15803d", fontSize: 14 }}>{formatVND(editingDoc.refundAmount)} đ</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số quyết toán *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.code}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, code: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày quyết toán *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.date}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, date: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Người tạm ứng *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.person}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, person: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Bộ phận / Phòng ban</label>
+                  <input
+                    type="text"
+                    value={editingDoc.dept || ""}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, dept: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Nội dung thanh toán tạm ứng *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.reason}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, reason: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>I. Số tiền đã tạm ứng (VND) *</label>
+                  <input
+                    type="number"
+                    value={editingDoc.advanceAmount}
+                    onChange={(e) => {
+                      const adv = Number(e.target.value) || 0;
+                      setEditingDoc({
+                        ...editingDoc,
+                        advanceAmount: adv,
+                        refundAmount: Math.max(0, adv - (Number(editingDoc.spentAmount) || 0)),
+                      });
+                    }}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>II. Số tiền đã chi theo CT (VND) *</label>
+                  <input
+                    type="number"
+                    value={editingDoc.spentAmount}
+                    onChange={(e) => {
+                      const spent = Number(e.target.value) || 0;
+                      setEditingDoc({
+                        ...editingDoc,
+                        spentAmount: spent,
+                        refundAmount: Math.max(0, (Number(editingDoc.advanceAmount) || 0) - spent),
+                      });
+                    }}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700, color: "#ea580c" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#166534" }}>
+                    III. Chênh lệch tạm ứng thu hồi hoàn quỹ (I - II):
+                  </span>
+                  <strong style={{ fontSize: 15, color: "#15803d" }}>
+                    {formatVND(Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0)))} đ
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div>
+                {modalMode === "view" && (
+                  <button
+                    type="button"
+                    className="misa-btn-secondary"
+                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                    onClick={() => setModalMode("edit")}
+                  >
+                    ✎ Chỉnh sửa bảng quyết toán
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  className="misa-btn-secondary"
+                  style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Đóng
+                </button>
+                {modalMode === "edit" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        void persistSettlement(editingDoc, `✓ Đã lưu bảng quyết toán tạm ứng ${editingDoc.code}`);
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu nháp
+                    </button>
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
+                        const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
+                        void persistSettlement(
+                          { ...editingDoc, status: "settled", receiptCode: autoReceipt },
+                          `✓ Đã ghi nhận quyết toán ${editingDoc.code}`,
+                        );
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu &amp; Ghi nhận quyết toán
+                    </button>
+                  </>
+                ) : (
+                  editingDoc.status === "pending" && (
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
+                        const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
+                        void persistSettlement(
+                          { ...editingDoc, status: "settled", receiptCode: autoReceipt },
+                          `✓ Đã duyệt quyết toán ${editingDoc.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
+                        );
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Duyệt &amp; Hoàn ứng ngay
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -7798,12 +8801,14 @@ export default function MisaCashWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  const cachedCash = company?.id ? cashDataCache.get(company.id) : undefined;
+  const [activeBranchScope, setActiveBranchScope] = useState<string>(() => resolveActiveBranchScope());
+  const cashCacheKey = company?.id ? `${company.id}::${activeBranchScope}` : "";
+  const cachedCash = cashCacheKey ? cashDataCache.get(cashCacheKey) : undefined;
   const [transactions, setTransactions] = useState<any[]>(() => cachedCash?.transactions || []);
   const [cashBalance, setCashBalance] = useState(() => cachedCash?.cashBalance || 0);
   const [cashApiRevision, setCashApiRevision] = useState(0);
   const reloadCashApi = () => {
-    if (company?.id) cashDataCache.delete(company.id);
+    if (cashCacheKey) cashDataCache.delete(cashCacheKey);
     setCashApiRevision((value) => value + 1);
   };
   const apiSave = useMisaApiSave(company?.id || "", notify, reloadCashApi);
@@ -7829,14 +8834,20 @@ export default function MisaCashWorkspace({
       return;
     }
     let active = true;
-    const hasCache = cashDataCache.has(company.id);
+    const branchParam = activeBranchScope !== "all" ? `&branch_id=${encodeURIComponent(activeBranchScope)}` : "";
+    const hasCache = cashDataCache.has(cashCacheKey);
     if (!hasCache) {
       setTransactions([]);
       setCashBalance(0);
       setCashFunds([]);
+    } else {
+      const hit = cashDataCache.get(cashCacheKey)!;
+      setTransactions(hit.transactions);
+      setCashBalance(hit.cashBalance);
+      setCashFunds(hit.cashFunds);
     }
     request<ApiCashFund[] | { results: ApiCashFund[] }>(
-      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}&page_size=100`,
+      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`,
       token,
     ).then((response) => {
       if (!active) return;
@@ -7844,8 +8855,8 @@ export default function MisaCashWorkspace({
       const totalBalance = funds.reduce((total, fund) => total + Number(fund.balance), 0);
       setCashFunds(funds);
       setCashBalance(totalBalance);
-      const prev = cashDataCache.get(company.id);
-      cashDataCache.set(company.id, {
+      const prev = cashDataCache.get(cashCacheKey);
+      cashDataCache.set(cashCacheKey, {
         transactions: prev?.transactions || [],
         cashBalance: totalBalance,
         cashFunds: funds,
@@ -7855,15 +8866,15 @@ export default function MisaCashWorkspace({
       if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được số dư quỹ tiền mặt.");
     });
     request<ApiCashTransaction[] | { results: ApiCashTransaction[] }>(
-      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}&page_size=100`,
+      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`,
       token,
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
       const mapped = records.map(mapCashTransaction);
       setTransactions(mapped);
-      const prev = cashDataCache.get(company.id);
-      cashDataCache.set(company.id, {
+      const prev = cashDataCache.get(cashCacheKey);
+      cashDataCache.set(cashCacheKey, {
         transactions: mapped,
         cashBalance: prev?.cashBalance || 0,
         cashFunds: prev?.cashFunds || [],
@@ -7878,7 +8889,7 @@ export default function MisaCashWorkspace({
             description: row.description || "Chuyển tiền nội bộ", amount: Number(row.amount), kind: "payment",
             debit: "", credit: "", status: String(row.status || "").toLowerCase(), reasonLabel: "Chuyển tiền nội bộ",
           }))];
-          const curr = cashDataCache.get(company.id);
+          const curr = cashDataCache.get(cashCacheKey);
           if (curr) curr.transactions = next;
           return next;
         });
@@ -7887,7 +8898,7 @@ export default function MisaCashWorkspace({
       if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được giao dịch tiền mặt.");
     });
     return () => { active = false; };
-  }, [token, company?.id, notify, cashApiRevision]);
+  }, [token, company?.id, activeBranchScope, cashCacheKey, notify, cashApiRevision]);
 
   // Selected row for inline detail
   const [selectedRowId, setSelectedRowId] = useState<string>("pt-05");
@@ -7896,7 +8907,21 @@ export default function MisaCashWorkspace({
   const [cashPendingDeletion,setCashPendingDeletion]=useState<string[]|null>(null);
 
   // Filtered list
+  const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
+  useEffect(() => {
+    const syncCtx = () => {
+      setActiveDatasetYear(resolveActiveDatasetYear());
+      setActiveBranchScope(resolveActiveBranchScope());
+    };
+    window.addEventListener("erp_context_changed", syncCtx);
+    window.addEventListener("popstate", syncCtx);
+    return () => {
+      window.removeEventListener("erp_context_changed", syncCtx);
+      window.removeEventListener("popstate", syncCtx);
+    };
+  }, []);
   const filteredList = useMemo(() => {
+    const refToday = new Date(activeDatasetYear, 11, 31);
     return transactions.filter((item) => {
       const matchQuery =
         !searchQuery ||
@@ -7908,10 +8933,10 @@ export default function MisaCashWorkspace({
       const matchKind =
         voucherTypeFilter === "all" || item.kind === voucherTypeFilter;
       const matchReason=cashFilter.reason==='all'||(item.reasonLabel||cashReason(item.kind,item.description)).replace(/^\d+\.\s*/,'')===cashFilter.reason;
-      const matchDate=filterPeriod==='custom'?isCashDateInRange(item.date,cashFilter.from,cashFilter.to):matchesTransactionPeriod(item.date,filterPeriod);
+      const matchDate=filterPeriod==='custom'?isCashDateInRange(item.date,cashFilter.from,cashFilter.to):matchesTransactionPeriod(item.date,filterPeriod,refToday);
       return matchQuery && matchStatus && matchKind && matchReason && matchDate;
     }).sort((a,b)=>(cashDateValue(a.date)-cashDateValue(b.date))*(cashSortAscending?1:-1));
-  }, [transactions, searchQuery, statusFilter, voucherTypeFilter,filterPeriod,cashFilter,cashSortAscending]);
+  }, [transactions, searchQuery, statusFilter, voucherTypeFilter,filterPeriod,cashFilter,cashSortAscending,activeDatasetYear]);
   const cashPageCount = Math.max(1, Math.ceil(filteredList.length / cashPageSize));
   const visibleCashPage = Math.min(cashPage, cashPageCount);
   const selectedTransaction = useMemo(
@@ -7921,7 +8946,7 @@ export default function MisaCashWorkspace({
   const cashDetailRows:VoucherDetailRow[]=selectedTransaction?.rows?.length ? selectedTransaction.rows : selectedTransaction ? [{id:selectedTransaction.id,description:selectedTransaction.description,debit:selectedTransaction.debit||"1111",credit:selectedTransaction.credit||"141",amount:selectedTransaction.amount,partnerCode:selectedTransaction.partnerCode||selectedTransaction.partner,partnerName:selectedTransaction.partner}] : [];
   const cashDetailPages=Math.max(1,Math.ceil(cashDetailRows.length/cashDetailSize));
   const cashDetailVisiblePage=Math.min(cashDetailPage,cashDetailPages);
-  const cashCurrentLedger=useMemo(()=>cashLedger(transactions.map(row=>({...row,date:parseReportDate(row.date)})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate())),[transactions]);
+  const cashCurrentLedger=useMemo(()=>cashLedger(transactions.map(row=>({...row,date:parseReportDate(row.date)})),`${activeDatasetYear}-01-01`,`${activeDatasetYear}-12-31`),[transactions, activeDatasetYear]);
   useEffect(()=>{setCheckedCashRows(ids=>ids.filter(id=>filteredList.some(row=>row.id===id)));},[filteredList]);
   useEffect(() => {
     if (!viewingCashVoucher) return;
@@ -8677,7 +9702,7 @@ export default function MisaCashWorkspace({
             <button
               type="button"
               className="misa-tax-icon-btn"
-              title="Gợi ý thông minh / AI Insights"
+              title="Gợi ý & Kiểm tra nhanh"
               onClick={() => setShowAIModal(true)}
               style={{
                 width: 32,
@@ -8860,9 +9885,9 @@ export default function MisaCashWorkspace({
             </button>
           </div>
 
-          {/* Right Buttons: Thêm bằng AI, Thêm thu tiền, Thêm chi tiền (Screenshot 3 & 4) */}
+          {/* Right Buttons: Nhập nhanh, Thêm thu tiền, Thêm chi tiền (Screenshot 3 & 4) */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {/* Thêm bằng AI Button */}
+            {/* Nhập nhanh Button */}
             <button
               type="button"
               onClick={() => setShowAIModal(true)}
@@ -8884,7 +9909,7 @@ export default function MisaCashWorkspace({
             >
               <img
                 src="/ava_avatar.jpg"
-                alt="Sổ Việt AI"
+                alt="Biểu tượng"
                 style={{
                   width: 22,
                   height: 22,
@@ -8894,7 +9919,7 @@ export default function MisaCashWorkspace({
                   flexShrink: 0,
                 }}
               />
-              <span>Thêm bằng AI</span>
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Thêm thu tiền Dropdown Button (Screenshot 3) */}
@@ -10472,7 +11497,8 @@ export default function MisaCashWorkspace({
         background: "#f1f5f9",
         height: "100%",
         padding: "10px 16px",
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
       }}
     >
       <div
@@ -10525,14 +11551,15 @@ export default function MisaCashWorkspace({
             {/* SVG Connecting Flow Lines with Arrows */}
             <svg
               className="ref-flow-lines"
-              viewBox="0 0 600 300"
+              viewBox="0 0 650 300"
+              preserveAspectRatio="none"
               aria-hidden="true"
               style={{
                 position: "absolute",
                 top: 0,
                 left: 0,
-                width: 660,
-                height: 280,
+                width: "100%",
+                height: 300,
                 pointerEvents: "none",
                 overflow: "visible",
               }}
@@ -10550,9 +11577,9 @@ export default function MisaCashWorkspace({
                 </marker>
               </defs>
 
-              {/* 1. Horizontal arrow from Đề nghị chi tiền to Chi tiền */}
+              {/* 1. Horizontal arrow from Đề nghị chi tiền (13% = 85) to Chi tiền (38% = 247) */}
               <path
-                d="M 125 188 L 195 188"
+                d="M 125 188 L 200 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -10561,30 +11588,30 @@ export default function MisaCashWorkspace({
 
               {/* 2. Vertical T-junction line between Thu tiền and Chi tiền */}
               <path
-                d="M 295 75 L 295 188"
+                d="M 305 75 L 305 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
               <path
-                d="M 285 75 L 295 75 M 285 188 L 295 188"
+                d="M 290 75 L 305 75 M 290 188 L 305 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
 
-              {/* 3. Horizontal branch from midpoint between Thu and Chi to Kiểm kê quỹ */}
+              {/* 3. Horizontal branch from midpoint between Thu and Chi to Kiểm kê quỹ (63% = 410) */}
               <path
-                d="M 295 136 L 365 136"
+                d="M 305 136 L 365 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-cash)"
               />
 
-              {/* 4. Horizontal arrow going right from Kiểm kê quỹ to Dự báo dòng tiền */}
+              {/* 4. Horizontal arrow going right from Kiểm kê quỹ to Dự báo dòng tiền (87% = 566) */}
               <path
-                d="M 460 136 L 535 136"
+                d="M 455 136 L 520 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -10604,7 +11631,8 @@ export default function MisaCashWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 30,
+                left: "13%",
+                transform: "translateX(-50%)",
                 top: 145,
                 width: 100,
                 display: "flex",
@@ -10646,7 +11674,8 @@ export default function MisaCashWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 195,
+                left: "38%",
+                transform: "translateX(-50%)",
                 top: 25,
                 width: 100,
                 display: "flex",
@@ -10802,7 +11831,8 @@ export default function MisaCashWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 195,
+                left: "38%",
+                transform: "translateX(-50%)",
                 top: 145,
                 width: 100,
                 display: "flex",
@@ -11000,7 +12030,8 @@ export default function MisaCashWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 365,
+                left: "63%",
+                transform: "translateX(-50%)",
                 top: 96,
                 width: 100,
                 display: "flex",
@@ -11050,7 +12081,8 @@ export default function MisaCashWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 535,
+                left: "87%",
+                transform: "translateX(-50%)",
                 top: 96,
                 width: 110,
                 display: "flex",

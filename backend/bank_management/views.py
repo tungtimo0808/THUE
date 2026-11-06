@@ -10,7 +10,7 @@ from django.http import HttpResponse
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import mixins,serializers as drf_serializers
 from rest_framework.decorators import action
-from iam.permissions import CompanyMemberMixin
+from iam.permissions import CompanyMemberMixin, filter_queryset_by_branch
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
@@ -24,7 +24,7 @@ class Base(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveModelMix
     def get_queryset(self):
         c=self.request.query_params.get("company_id");qs=super().get_queryset().filter(company_id=c) if c else super().get_queryset().none()
         if s:=self.request.query_params.get("status"):qs=qs.filter(status=s)
-        return qs
+        return filter_queryset_by_branch(qs, self.request, c)
     def perform_create(self,s):o=s.save(created_by=services.actor(self.request));services.audit(self.request,o,"CREATE",after=s.data)
     def perform_update(self,s):b=self.get_serializer(s.instance).data;o=s.save();services.audit(self.request,o,"EDIT",b,s.data)
 class ProfileViewSet(Base):

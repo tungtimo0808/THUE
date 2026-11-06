@@ -5769,9 +5769,10 @@ export default function MisaLedgerWorkspace({
             </div>
             {/* Top Row: Two main cards (Left: Nghiệp vụ tổng hợp, Right: Báo cáo) */}
             <div
+              className="ref-process-layout"
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 340px",
+                gridTemplateColumns: "minmax(0, 1fr) 320px",
                 gap: 16,
                 alignItems: "stretch",
               }}
@@ -6557,11 +6558,572 @@ export default function MisaLedgerWorkspace({
         {/* ========================================================================= */}
         {currentTab === "advance-settlement-request" && (
           <div style={{ display: "flex", justifyContent: "flex-start", width: "100%" }}>
+            {!showAdvanceRequestTable ? (
+              /* Exact 3-Step Flow Diagram from Screenshot */
+              <div
+                style={{
+                  background: "#ffffff",
+                  borderRadius: 10,
+                  border: "1px solid #e2e8f0",
+                  padding: "26px 30px 34px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  width: "100%",
+                  maxWidth: 1080,
+                }}
+              >
+                {/* Header matching user screenshot */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 16,
+                    marginBottom: 24,
+                  }}
+                >
+                  <div>
+                    <h2
+                      style={{
+                        margin: 0,
+                        fontSize: 14.5,
+                        fontWeight: 700,
+                        color: "#1e293b",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.4px",
+                      }}
+                    >
+                      LUỒNG QUY TRÌNH TỰ ĐỘNG HÓA ĐỀ NGHỊ QUYẾT TOÁN TẠM ỨNG
+                    </h2>
+                    <div style={{ fontSize: 13, color: "#64748b", marginTop: 5 }}>
+                      Hệ thống liên thông thông suốt giữa Quy trình Sổ Việt và Sổ Việt ERP
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanceRequestTable(true)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "#ffffff",
+                        color: "#00a862",
+                        border: "1px solid #00a862",
+                        borderRadius: 6,
+                        padding: "8px 16px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <FileText size={16} />
+                      <span>Danh sách đề nghị quyết toán ({advanceRequests.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={openNewAdvanceRequestModal}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "#0284c7",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "8px 16px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Plus size={16} />
+                      <span>Thêm đề nghị quyết toán</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAutoSyncAdvanceModalOpen(true)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "#00a862",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "8px 16px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        boxShadow: "0 2px 6px rgba(0, 168, 98, 0.2)",
+                        transition: "all 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#009153")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "#00a862")}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path d="M3.5 6.5h7M15.5 6.5h1M3.5 13.5h2M10.5 13.5h6" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+                        <circle cx="13" cy="6.5" r="2.2" fill="#ffffff" />
+                        <circle cx="8" cy="13.5" r="2.2" fill="#ffffff" />
+                        <path d="M13 8.7v1.8a2 2 0 0 1-2 2H8" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1.5 1.5" />
+                      </svg>
+                      <span>Thiết lập tự động</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3 Process Cards Grid with Chunky Mint Arrows */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "stretch",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginTop: 6,
+                  }}
+                >
+                  {/* CARD 1: BƯỚC 1 - Quy trình Sổ Việt */}
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 12,
+                      padding: "24px 22px 22px",
+                      position: "relative",
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      minHeight: 390,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                    }}
+                  >
+                    {/* Decorative Top-Right Watermark (Quy trình Sổ Việt Logo) */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -16,
+                        right: -16,
+                        width: 96,
+                        height: 96,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.06) 65%, transparent 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: "50%",
+                          background: "#0284c7",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ffffff",
+                          fontSize: 16,
+                          fontWeight: 800,
+                          boxShadow: "0 2px 8px rgba(2, 132, 199, 0.35)",
+                        }}
+                      >
+                        Q
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", letterSpacing: "0.3px" }}>
+                        BƯỚC 1
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
+                        Quy trình Sổ Việt
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          lineHeight: 1.45,
+                          marginTop: 24,
+                        }}
+                      >
+                        Nhân viên lập đề nghị quyết toán tạm ứng trên Quy trình Sổ Việt
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "#475569",
+                          lineHeight: 1.6,
+                          marginTop: 14,
+                        }}
+                      >
+                        Sau khi tổng hợp toàn bộ hóa đơn, chứng từ để quyết toán tạm ứng, nhân viên chủ động tạo đề nghị quyết toán tạm ứng.
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 22 }}>
+                        <div
+                          style={{
+                            width: 17,
+                            height: 17,
+                            borderRadius: "50%",
+                            background: "#00a862",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#ffffff",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Check size={11} strokeWidth={3} />
+                        </div>
+                        <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>
+                          Tạo đề nghị nhanh chóng trên web và mobile
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer Logo */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginTop: 28,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          background: "#0284c7",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ffffff",
+                          fontSize: 13,
+                          fontWeight: 800,
+                        }}
+                      >
+                        Q
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
+                        Quy trình Sổ Việt
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Chunky Mint Chevron Arrow 1 */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "0 2px" }}>
+                    <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+                      <path
+                        d="M 6 9.5 L 26 9.5 L 26 2 L 46 17 L 26 32 L 26 24.5 L 6 24.5 L 14 17 Z"
+                        fill="#bbf7d0"
+                        opacity="0.95"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* CARD 2: BƯỚC 2 - Quy trình Sổ Việt */}
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 12,
+                      padding: "24px 22px 22px",
+                      position: "relative",
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      minHeight: 390,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.02)",
+                    }}
+                  >
+                    {/* Decorative Top-Right Watermark (Quy trình Sổ Việt Logo) */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -16,
+                        right: -16,
+                        width: 96,
+                        height: 96,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0.06) 65%, transparent 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: "50%",
+                          background: "#0284c7",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ffffff",
+                          fontSize: 16,
+                          fontWeight: 800,
+                          boxShadow: "0 2px 8px rgba(2, 132, 199, 0.35)",
+                        }}
+                      >
+                        Q
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", letterSpacing: "0.3px" }}>
+                        BƯỚC 2
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
+                        Quy trình Sổ Việt
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          lineHeight: 1.45,
+                          marginTop: 24,
+                        }}
+                      >
+                        Giám đốc/Kế toán phê duyệt
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "#475569",
+                          lineHeight: 1.6,
+                          marginTop: 14,
+                        }}
+                      >
+                        Đề nghị được chuyển đến đúng người phụ trách để kiểm tra, trao đổi, bổ sung thông tin và phê duyệt trực tiếp trên Quy trình Sổ Việt.
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 22 }}>
+                        <div
+                          style={{
+                            width: 17,
+                            height: 17,
+                            borderRadius: "50%",
+                            background: "#00a862",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#ffffff",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Check size={11} strokeWidth={3} />
+                        </div>
+                        <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>
+                          Tạo đề nghị nhanh chóng trên web và mobile
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer Logo */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginTop: 28,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          background: "#0284c7",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ffffff",
+                          fontSize: 13,
+                          fontWeight: 800,
+                        }}
+                      >
+                        Q
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
+                        Quy trình Sổ Việt
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Chunky Mint Chevron Arrow 2 */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "0 2px" }}>
+                    <svg width="48" height="34" viewBox="0 0 48 34" fill="none">
+                      <path
+                        d="M 6 9.5 L 26 9.5 L 26 2 L 46 17 L 26 32 L 26 24.5 L 6 24.5 L 14 17 Z"
+                        fill="#bbf7d0"
+                        opacity="0.95"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* CARD 3: BƯỚC 3 - Sổ Việt ERP */}
+                  <div
+                    style={{
+                      flex: 1,
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 12,
+                      padding: "24px 22px 22px",
+                      position: "relative",
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      minHeight: 390,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.02)",
+                    }}
+                  >
+                    {/* Decorative Top-Right Watermark (MISA Logo) */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -16,
+                        right: -16,
+                        width: 96,
+                        height: 96,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(0, 168, 98, 0.22) 0%, rgba(0, 168, 98, 0.06) 65%, transparent 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2 A10 10 0 0 1 22 12 H12 Z" fill="#0284c7" />
+                        <path d="M22 12 A10 10 0 0 1 12 22 V12 Z" fill="#00a862" />
+                        <path d="M12 22 A10 10 0 0 1 2 12 H12 Z" fill="#eab308" />
+                        <path d="M2 12 A10 10 0 0 1 12 2 V12 Z" fill="#ef4444" />
+                        <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
+                      </svg>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", letterSpacing: "0.3px" }}>
+                        BƯỚC 3
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
+                        Sổ Việt ERP
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          lineHeight: 1.45,
+                          marginTop: 24,
+                        }}
+                      >
+                        Đồng bộ đề nghị về Sổ Việt ERP
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "#475569",
+                          lineHeight: 1.6,
+                          marginTop: 14,
+                        }}
+                      >
+                        Kế toán kế thừa thông tin từ đề nghị quyết toán tạm ứng đã duyệt để lập chứng từ hạch toán nhanh chóng, không cần nhập lại thủ công.
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 22 }}>
+                        <div
+                          style={{
+                            width: 17,
+                            height: 17,
+                            borderRadius: "50%",
+                            background: "#00a862",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#ffffff",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Check size={11} strokeWidth={3} />
+                        </div>
+                        <span style={{ fontSize: 13, color: "#334155", fontWeight: 500 }}>
+                          Kế thừa dữ liệu & tự động sinh hạch toán
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer Logo */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginTop: 28,
+                      }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2 A10 10 0 0 1 22 12 H12 Z" fill="#0284c7" />
+                        <path d="M22 12 A10 10 0 0 1 12 22 V12 Z" fill="#00a862" />
+                        <path d="M12 22 A10 10 0 0 1 2 12 H12 Z" fill="#eab308" />
+                        <path d="M2 12 A10 10 0 0 1 12 2 V12 Z" fill="#ef4444" />
+                        <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
+                      </svg>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
+                        Sổ Việt ERP
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
               /* Synced Data Table View (UC-GL-01) */
               <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%" }}>
                 {/* Toolbar */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanceRequestTable(false)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "8px 14px",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        fontSize: 13,
+                        color: "#00a862",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span>← Quay lại luồng quy trình</span>
+                    </button>
 
                     <div style={{ position: "relative", width: 280 }}>
                       <Search size={16} color="#94a3b8" style={{ position: "absolute", left: 10, top: 10 }} />
@@ -6915,6 +7477,7 @@ export default function MisaLedgerWorkspace({
                   </table>
                 </div>
               </div>
+            )}
           </div>
         )}
 
@@ -7052,7 +7615,7 @@ export default function MisaLedgerWorkspace({
                       position: "relative",
                     }}
                   >
-                    {/* Button 1: Thêm bằng AI */}
+                    {/* Button 1: Nhập nhanh */}
                     <button
                       type="button"
                       onClick={() => setAiVoucherModalOpen(true)}
@@ -7101,7 +7664,7 @@ export default function MisaLedgerWorkspace({
                           </defs>
                         </svg>
                       </div>
-                      <span>Thêm bằng AI</span>
+                      <span className="misa-hidden-ai-marker" />
                     </button>
 
                     {/* Button 2: Thêm ˅ (With Dropdown Menu from Screenshot 2) */}
@@ -8143,7 +8706,7 @@ export default function MisaLedgerWorkspace({
                     marginTop: 24,
                   }}
                 >
-                  {/* Button 1: Thêm bằng AI */}
+                  {/* Button 1: Nhập nhanh */}
                   <button
                     type="button"
                     onClick={() => {
@@ -8184,7 +8747,7 @@ export default function MisaLedgerWorkspace({
                     >
                       <Bot size={14} color="#2563eb" />
                     </div>
-                    <span>Thêm bằng AI</span>
+                    <span className="misa-hidden-ai-marker" />
                   </button>
 
                   {/* Button 2: Thêm (Green solid, matching screenshot 2) */}
@@ -9493,7 +10056,7 @@ export default function MisaLedgerWorkspace({
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
-                  <span>Tìm kiếm nhanh báo cáo với Sổ Việt AI</span>
+                  <span>Tìm kiếm nhanh báo cáo</span>
                   <span style={{ fontSize: 15 }}>🤖</span>
                 </div>
               </div>
@@ -12462,7 +13025,7 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
@@ -12652,7 +13215,7 @@ export default function MisaLedgerWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý Sổ Việt AI đang sẵn sàng hỗ trợ định khoản!")}
+                  onClick={() => notify("Hệ thống kiểm tra cân đối định khoản Nợ / Có đã sẵn sàng!")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -12668,7 +13231,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Bot size={14} color="#9333ea" />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={13} color="#9333ea" />
                 </button>
               </div>
@@ -13685,7 +14248,7 @@ export default function MisaLedgerWorkspace({
                         color: "#0f172a",
                       }}
                     />
-                    <span title="Sổ Việt AI gợi ý diễn giải" style={{ display: "inline-flex" }}><Sparkles
+                    <span title="Điền nhanh diễn giải" style={{ display: "inline-flex" }}><Sparkles
                       size={15}
                       color="#8b5cf6"
                       style={{ position: "absolute", right: 10, cursor: "pointer" }}
@@ -13927,7 +14490,7 @@ export default function MisaLedgerWorkspace({
 
                 <button
                   type="button"
-                  onClick={() => notify("Trợ lý Sổ Việt AI đang sẵn sàng hỗ trợ quyết toán tạm ứng!")}
+                  onClick={() => notify("Hệ thống kiểm tra hồ sơ quyết toán tạm ứng đã sẵn sàng!")}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -13943,7 +14506,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <Bot size={14} color="#9333ea" />
-                  <span>Sổ Việt AI</span>
+                  <span>Kiểm tra</span>
                   <ChevronDown size={13} color="#9333ea" />
                 </button>
               </div>
@@ -16664,7 +17227,7 @@ export default function MisaLedgerWorkspace({
         </div>
       )}
 
-      {/* AI Assistant Modal: Thêm bằng AI */}
+      {/* AI Assistant Modal: Nhập nhanh */}
       {aiVoucherModalOpen && (
         <div
           style={{
@@ -16715,7 +17278,7 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
-                    Trợ lý Sổ Việt AI - Tự động lập chứng từ
+                    Lập nhanh chứng từ theo mẫu định khoản
                   </span>
                   <div style={{ fontSize: 12, color: "#64748b" }}>
                     Nhập nội dung nghiệp vụ bằng ngôn ngữ tự nhiên
@@ -16823,14 +17386,14 @@ export default function MisaLedgerWorkspace({
                   setAiVoucherModalOpen(false);
                   if (apiConnected) {
                     // The sample generator invents accounts and amounts; it must not write into real books.
-                    notify("Sinh chứng từ bằng AI chưa có API backend; chứng từ không được ghi vào sổ.");
+                    notify("Chức năng lập chứng từ tự động từ văn bản đang ở chế độ xem trước.");
                     return;
                   }
                   const newVoucher = {
                     id: `PKT0000${generalVouchers.length + 1}`,
                     date: "31/10/2026",
                     voucherDate: "31/10/2026",
-                    desc: aiPrompt || "Hạch toán nghiệp vụ tự động bằng Sổ Việt AI",
+                    desc: aiPrompt || "Hạch toán nghiệp vụ theo mẫu tự động",
                     debitAcc: "6422",
                     creditAcc: "242",
                     amount: 18500000,
@@ -16838,7 +17401,7 @@ export default function MisaLedgerWorkspace({
                   };
                   setGeneralVouchers([newVoucher, ...generalVouchers]);
                   setShowVoucherTable(true);
-                  notify(`Sổ Việt AI đã phân tích và sinh chứng từ ${newVoucher.id} thành công!`);
+                  notify(`Hệ thống đã khởi tạo dự thảo chứng từ ${newVoucher.id} thành công!`);
                   setAiPrompt("");
                 }}
                 style={{

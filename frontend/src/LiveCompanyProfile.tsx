@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { ApiError, request } from "./live-api";
@@ -83,7 +83,7 @@ export default function LiveCompanyProfile() {
   }
 
   return <main className="account-page"><section className="account-card account-wide">
-    <Link to="/login">← Phiên làm việc</Link>
+    <Link to="/session">← Phiên làm việc</Link>
     <p className="account-eyebrow">HỒ SƠ DOANH NGHIỆP</p>
     <h1>Thông tin doanh nghiệp</h1>
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp. <Link to="/company-setup">Khởi tạo doanh nghiệp</Link>.</p> : <>

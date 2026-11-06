@@ -28,7 +28,7 @@ export default function LiveModules() {
     if (!token || !companyId) { setModules([]); return; }
     let active = true;
     request<Module[]>(`/api/v1/common/modules/?company_id=${companyId}`, token)
-      .then(value => { if (active) { setModules(value); setSelected(current => value.find(item => item.code === current?.code) || null); } })
+      .then(value => { if (active) { const filtered = value.filter(item => item.code !== "AI"); setModules(filtered); setSelected(current => filtered.find(item => item.code === current?.code) || null); } })
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : "Không tải được phân hệ."); });
     return () => { active = false; };
   }, [token, companyId, reload]);
@@ -61,7 +61,7 @@ export default function LiveModules() {
     finally { setBusy(false); }
   }
 
-  return <main className="account-page"><section className="account-card account-wide"><Link to="/login">← Phiên làm việc</Link><p className="account-eyebrow">CẤU HÌNH HỆ THỐNG</p><h1>Cấu hình phân hệ sử dụng</h1>
+  return <main className="account-page"><section className="account-card account-wide"><Link to="/session">← Phiên làm việc</Link><p className="account-eyebrow">CẤU HÌNH HỆ THỐNG</p><h1>Cấu hình phân hệ sử dụng</h1>
     {!token ? <p>Vui lòng <Link to="/login">đăng nhập</Link>.</p> : !companies.length ? <p>Chưa có doanh nghiệp.</p> : <>
       <label>Doanh nghiệp<select value={companyId} onChange={event => { selectCompany(event.target.value); setSelected(null); }}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
       {error && <p className="account-error" role="alert">{error}</p>}{message && <p className="account-message" role="status">{message}</p>}

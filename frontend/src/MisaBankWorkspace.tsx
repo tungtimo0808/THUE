@@ -79,7 +79,7 @@ import {
 import "./misa-cash.css";
 import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod} from './transaction-period';
+import {matchesTransactionPeriod, resolveActiveBranchScope, resolveActiveDatasetYear} from './transaction-period';
 
 type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; rawPaymentDetails?:Record<string,any>; bankAccount?:string;branchId?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
 type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; gl_account_id?: string; gl_code?: string; currency_code: string; balance: string | number };
@@ -232,7 +232,7 @@ export default function MisaBankWorkspace({
   const [bankFilterOpen,setBankFilterOpen]=useState(false);
   const [bankPage,setBankPage]=useState(1);
   const [bankPageSize,setBankPageSize]=useState(20);
-  const [showAvaBanner, setShowAvaBanner] = useState(true);
+  const [showAvaBanner, setShowAvaBanner] = useState(false);
   const [detailExpanded, setDetailExpanded] = useState(true);
   const [bankDetailTab,setBankDetailTab]=useState("accounting");
   const [kpiCollapsed, setKpiCollapsed] = useState(false);
@@ -253,7 +253,9 @@ export default function MisaBankWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  const cachedBank = company?.id ? bankDataCache.get(company.id) : undefined;
+  const [activeBranchScope, setActiveBranchScope] = useState<string>(() => resolveActiveBranchScope());
+  const bankCacheKey = company?.id ? `${company.id}::${activeBranchScope}` : "";
+  const cachedBank = bankCacheKey ? bankDataCache.get(bankCacheKey) : undefined;
   const [transactions, setTransactions] = useState<BankTransaction[]>(() => cachedBank?.transactions || []);
   const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>(() => cachedBank?.bankAccounts || []);
   const [bankProfiles, setBankProfiles] = useState<ApiBankProfile[]>(() => cachedBank?.bankProfiles || []);
@@ -261,7 +263,7 @@ export default function MisaBankWorkspace({
 
   const [bankApiRevision, setBankApiRevision] = useState(0);
   const reloadBankApi = () => {
-    if (company?.id) bankDataCache.delete(company.id);
+    if (bankCacheKey) bankDataCache.delete(bankCacheKey);
     setBankApiRevision((value) => value + 1);
   };
   const apiSaveBank = useMisaApiSave(company.id, notify, reloadBankApi);
@@ -289,17 +291,24 @@ export default function MisaBankWorkspace({
       return;
     }
     let active = true;
-    const hasCache = bankDataCache.has(company.id);
+    const branchParam = activeBranchScope !== "all" ? `&branch_id=${encodeURIComponent(activeBranchScope)}` : "";
+    const hasCache = bankDataCache.has(bankCacheKey);
     if (!hasCache) {
       setTransactions([]);
       setBankTransferRecords([]);
       setBankAccounts([]);
       setBankProfiles([]);
       setBankBalance(0);
+    } else {
+      const hit = bankDataCache.get(bankCacheKey)!;
+      setTransactions(hit.transactions);
+      setBankAccounts(hit.bankAccounts);
+      setBankProfiles(hit.bankProfiles);
+      setBankBalance(hit.bankBalance);
     }
-    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}&page_size=100`;
+    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`;
     request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
-      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}&page_size=100`, token,
+      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`, token,
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
@@ -311,8 +320,8 @@ export default function MisaBankWorkspace({
       setBankProfiles(records);
       setBankBalance(totalBalance);
       setBankAccounts(accounts);
-      const prev = bankDataCache.get(company.id);
-      bankDataCache.set(company.id, {
+      const prev = bankDataCache.get(bankCacheKey);
+      bankDataCache.set(bankCacheKey, {
         transactions: prev?.transactions || [],
         bankAccounts: accounts,
         bankProfiles: records,
@@ -328,8 +337,8 @@ export default function MisaBankWorkspace({
         const records = Array.isArray(response) ? response : response.results;
         const mapped = records.map(mapBankTransaction);
         setTransactions(mapped);
-        const prev = bankDataCache.get(company.id);
-        bankDataCache.set(company.id, {
+        const prev = bankDataCache.get(bankCacheKey);
+        bankDataCache.set(bankCacheKey, {
           transactions: mapped,
           bankAccounts: prev?.bankAccounts || [],
           bankProfiles: prev?.bankProfiles || [],
@@ -349,7 +358,7 @@ export default function MisaBankWorkspace({
               status: row.status === "CONFIRMED" ? "posted" : row.status === "CANCELLED" ? "cancelled" : row.status === "REVERSED" ? "reversed" : "draft",
               bankAccount: row.source_account_number || "", debit: row.destination_gl_code || "", credit: row.source_gl_code || "", items: [],
             }) as BankTransaction)];
-            const curr = bankDataCache.get(company.id);
+            const curr = bankDataCache.get(bankCacheKey);
             if (curr) curr.transactions = next;
             return next;
           });
@@ -359,7 +368,7 @@ export default function MisaBankWorkspace({
         if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được giao dịch ngân hàng.");
       });
     return () => { active = false; };
-  }, [token, company.id, notify, bankApiRevision]);
+  }, [token, company.id, activeBranchScope, bankCacheKey, notify, bankApiRevision]);
 
   const [bankRowMenu,setBankRowMenu]=useState<string|null>(null);
   const [bankExcelMenuOpen, setBankExcelMenuOpen] = useState(false);
@@ -368,7 +377,20 @@ export default function MisaBankWorkspace({
   const [bankDeletePending,setBankDeletePending]=useState(false);
   const [bankDeletedRows,setBankDeletedRows]=useState<BankTransaction[]>([]);
 
-  const bankLedger=useMemo(()=>cashLedger(transactions.filter(transaction=>transaction.kind!=="transfer").map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),0),[transactions]);
+  const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
+  useEffect(() => {
+    const syncCtx = () => {
+      setActiveDatasetYear(resolveActiveDatasetYear());
+      setActiveBranchScope(resolveActiveBranchScope());
+    };
+    window.addEventListener("erp_context_changed", syncCtx);
+    window.addEventListener("popstate", syncCtx);
+    return () => {
+      window.removeEventListener("erp_context_changed", syncCtx);
+      window.removeEventListener("popstate", syncCtx);
+    };
+  }, []);
+  const bankLedger=useMemo(()=>cashLedger(transactions.filter(transaction=>transaction.kind!=="transfer").map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${activeDatasetYear}-01-01`,`${activeDatasetYear}-12-31`,0),[transactions, activeDatasetYear]);
   const totalPayment = bankLedger.payment;
 
   const totalReceipt = bankLedger.receipt;
@@ -376,6 +398,7 @@ export default function MisaBankWorkspace({
   const currentBalance = bankBalance;
 
   const filteredTransactions = useMemo(() => {
+    const refToday = new Date(activeDatasetYear, 11, 31);
     return transactions.filter((t) => {
       const matchQuery =
         !searchQuery ||
@@ -387,13 +410,13 @@ export default function MisaBankWorkspace({
         (filterType === "receipt" && t.kind === "receipt") ||
         (filterType === "payment" && t.kind === "payment") ||
         (filterType === "transfer" && t.kind === "transfer");
-      const matchDate=filterPeriod==='custom'?isCashDateInRange(t.dateHachToan,bankFilter.from,bankFilter.to):matchesTransactionPeriod(t.dateHachToan,filterPeriod);
+      const matchDate=filterPeriod==='custom'?isCashDateInRange(t.dateHachToan,bankFilter.from,bankFilter.to):matchesTransactionPeriod(t.dateHachToan,filterPeriod,refToday);
       const matchStatus=bankFilter.status==='all'||t.status===bankFilter.status;
       const matchReason=bankFilter.reason==='all'||t.reasonLabel===bankFilter.reason;
       const matchAccount=!bankFilter.bankAccount||bankFilter.bankAccount==='all'||t.bankAccount===bankFilter.bankAccount;
       return matchQuery && matchType && matchDate && matchStatus && matchReason && matchAccount;
     });
-  }, [transactions, searchQuery, filterType,filterPeriod,bankFilter]);
+  }, [transactions, searchQuery, filterType,filterPeriod,bankFilter,activeDatasetYear]);
   const bankPages=Math.max(1,Math.ceil(filteredTransactions.length/bankPageSize));
   const bankVisiblePage=Math.min(bankPage,bankPages);
   const bankVisibleRows=filteredTransactions.slice((bankVisiblePage-1)*bankPageSize,bankVisiblePage*bankPageSize);
@@ -1408,7 +1431,7 @@ export default function MisaBankWorkspace({
           onClose={() => setShowAIModal(false)}
           onApply={(doc) => {
             setShowAIModal(false);
-            notify(`Sổ Việt AI đã tạo dự thảo chứng từ chuyển khoản ${doc.code}.`);
+            notify(`Hệ thống đã tạo dự thảo chứng từ chuyển khoản ${doc.code}.`);
           }}
         />
       )}
@@ -1508,7 +1531,7 @@ export default function MisaBankWorkspace({
                 >
                   <Sparkles size={13} />
                 </div>
-                <strong style={{ fontSize: 13, color: "#4338ca" }}>Sổ Việt AI</strong>
+                <strong style={{ fontSize: 13, color: "#4338ca" }}>Phân tích dòng tiền</strong>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: "#6b7280" }}>
@@ -1794,7 +1817,7 @@ export default function MisaBankWorkspace({
             <button
               type="button"
               className="misa-tax-icon-btn"
-              title="Gợi ý thông minh / AI Insights"
+              title="Gợi ý & Kiểm tra nhanh"
               onClick={() => setShowAIModal(true)}
               style={{
                 width: 32,
@@ -1998,9 +2021,9 @@ export default function MisaBankWorkspace({
             </button>
           </div>
 
-          {/* Right Buttons: Thêm bằng AI, Thu tiền, Chi tiền */}
+          {/* Right Buttons: Nhập nhanh, Thu tiền, Chi tiền */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {/* Thêm bằng AI Button */}
+            {/* Nhập nhanh Button */}
             <button
               type="button"
               onClick={() => setShowAIModal(true)}
@@ -2032,7 +2055,7 @@ export default function MisaBankWorkspace({
               >
                 <Sparkles size={12} />
               </div>
-              Thêm bằng AI
+              <span className="misa-hidden-ai-marker" />
             </button>
 
             {/* Thêm thu tiền Dropdown Button (Matching Screenshot 3) */}
@@ -2815,7 +2838,8 @@ export default function MisaBankWorkspace({
         background: "#f1f5f9",
         height: "100%",
         padding: "10px 16px",
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
       }}
     >
       <div
@@ -2868,15 +2892,15 @@ export default function MisaBankWorkspace({
             {/* SVG Connecting Flow Lines with Arrows (Image 2 & 3) */}
             <svg
               className="ref-flow-lines"
-              viewBox="0 0 600 300"
+              viewBox="0 0 650 300"
               preserveAspectRatio="none"
               aria-hidden="true"
               style={{
                 position: "absolute",
                 top: 0,
                 left: 0,
-                width: 660,
-                height: 280,
+                width: "100%",
+                height: 300,
                 pointerEvents: "none",
                 overflow: "visible",
               }}
@@ -2894,9 +2918,9 @@ export default function MisaBankWorkspace({
                 </marker>
               </defs>
 
-              {/* 1. Horizontal arrow from Đề nghị chi tiền to Chi tiền */}
+              {/* 1. Horizontal arrow from Đề nghị chi tiền (13% = 85) to Chi tiền (38% = 247) */}
               <path
-                d="M 125 188 L 195 188"
+                d="M 125 188 L 200 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -2905,30 +2929,30 @@ export default function MisaBankWorkspace({
 
               {/* 2. Vertical T-junction line between Thu tiền and Chi tiền */}
               <path
-                d="M 295 75 L 295 188"
+                d="M 305 75 L 305 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
               <path
-                d="M 285 75 L 295 75 M 285 188 L 295 188"
+                d="M 290 75 L 305 75 M 290 188 L 305 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
 
-              {/* 3. Horizontal branch from midpoint between Thu and Chi to Đối chiếu ngân hàng */}
+              {/* 3. Horizontal branch from midpoint between Thu and Chi to Đối chiếu ngân hàng (63% = 410) */}
               <path
-                d="M 295 136 L 365 136"
+                d="M 305 136 L 365 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-bank)"
               />
 
-              {/* 4. Horizontal arrow going right from Đối chiếu ngân hàng to Dự báo dòng tiền */}
+              {/* 4. Horizontal arrow going right from Đối chiếu ngân hàng to Dự báo dòng tiền (87% = 566) */}
               <path
-                d="M 460 136 L 535 136"
+                d="M 455 136 L 520 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -2948,7 +2972,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 30,
+                left: "13%",
+                transform: "translateX(-50%)",
                 top: 145,
                 width: 100,
                 display: "flex",
@@ -2990,7 +3015,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 195,
+                left: "38%",
+                transform: "translateX(-50%)",
                 top: 25,
                 width: 100,
                 display: "flex",
@@ -3092,7 +3118,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 195,
+                left: "38%",
+                transform: "translateX(-50%)",
                 top: 145,
                 width: 100,
                 display: "flex",
@@ -3213,7 +3240,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 365,
+                left: "63%",
+                transform: "translateX(-50%)",
                 top: 96,
                 width: 100,
                 display: "flex",
@@ -3259,7 +3287,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 535,
+                left: "87%",
+                transform: "translateX(-50%)",
                 top: 96,
                 width: 110,
                 display: "flex",

@@ -172,7 +172,7 @@ def generate_ai_assistance(item, source):
         "summary": summary,
         "warnings": warnings,
         "checkpoints": checkpoints,
-        "disclaimer": "AI chỉ hỗ trợ tóm tắt và cảnh báo tham khảo, không tự động đưa ra quyết định thay cho Approver (BR-APR-39, BR-APR-41)."
+        "disclaimer": "Hệ thống chỉ hỗ trợ tóm tắt và cảnh báo tham khảo, không tự động đưa ra quyết định thay cho Approver (BR-APR-39, BR-APR-41)."
     }
 
 

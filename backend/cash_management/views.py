@@ -4,7 +4,7 @@ from django.db.models import Sum
 from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
-from iam.permissions import CompanyMemberMixin
+from iam.permissions import CompanyMemberMixin, filter_queryset_by_branch
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet,ReadOnlyModelViewSet
@@ -19,7 +19,7 @@ class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveM
         if not company:return super().get_queryset().none()
         qs=super().get_queryset().filter(company_id=company)
         if status:=self.request.query_params.get("status"):qs=qs.filter(status=status)
-        return qs
+        return filter_queryset_by_branch(qs, self.request, company)
     def perform_create(self,s):obj=s.save(created_by=services.actor(self.request));services.audit(self.request,obj,"CREATE",after=s.data)
     def perform_update(self,s):before=self.get_serializer(s.instance).data;obj=s.save();services.audit(self.request,obj,"EDIT",before,s.data)
 class FundViewSet(BaseViewSet):
@@ -227,3 +227,311 @@ class DenominationCountViewSet(CompanyMemberMixin, GenericViewSet):
             setting.configuration = config
             setting.save(update_fields=["configuration", "updated_at"])
         return Response({"docs": existing, "results": existing})
+
+
+def _default_payment_requests(company):
+    from organization.models import Branch
+    branches = list(Branch.objects.filter(company=company).order_by("-is_head_office", "code"))
+    hq_id = str(branches[0].id) if branches else ""
+    hcm = next((b for b in branches if "HCM" in b.code.upper()), None)
+    dn = next((b for b in branches if "DN" in b.code.upper()), None)
+    hcm_id = str(hcm.id) if hcm else hq_id
+    dn_id = str(dn.id) if dn else hq_id
+    return [
+        {
+            "id": "dnc-01",
+            "code": "ĐNC00012",
+            "date": "18/12/2026",
+            "requester": "Nguyễn Văn Hải",
+            "dept": "Phòng Kinh doanh",
+            "beneficiary": "Công ty CP Minh Khang",
+            "paymentMethod": "Tiền mặt",
+            "purpose": "Chi tiếp khách đoàn đối tác Công ty CP Minh Khang ký kết HĐ",
+            "amount": 4500000,
+            "status": "approved",
+            "voucherCode": "",
+            "branchId": hq_id,
+        },
+        {
+            "id": "dnc-02",
+            "code": "ĐNC00011",
+            "date": "15/12/2026",
+            "requester": "Lê Hoàng Yến",
+            "dept": "Phòng Hành chính - Nhân sự",
+            "beneficiary": "Công ty VPP Hồng Hà",
+            "paymentMethod": "Tiền mặt",
+            "purpose": "Mua văn phòng phẩm và vật dụng tiêu hao quý 4/2026",
+            "amount": 3200000,
+            "status": "paid",
+            "voucherCode": "PC00004",
+            "branchId": hq_id,
+        },
+        {
+            "id": "dnc-03",
+            "code": "ĐNC00010",
+            "date": "12/12/2026",
+            "requester": "Trần Quốc Tuấn",
+            "dept": "Phòng Kỹ thuật",
+            "beneficiary": "Trung tâm Kỹ thuật Điện lạnh",
+            "paymentMethod": "Tiền mặt",
+            "purpose": "Bảo dưỡng sửa chữa đột xuất hệ thống máy in và điều hòa",
+            "amount": 5800000,
+            "status": "pending",
+            "voucherCode": "",
+            "branchId": hq_id,
+        },
+        {
+            "id": "dnc-04",
+            "code": "ĐNC00009",
+            "date": "10/12/2026",
+            "requester": "Phạm Hải Đăng",
+            "dept": "Ban Giám đốc",
+            "beneficiary": "Phạm Hải Đăng",
+            "paymentMethod": "Chuyển khoản",
+            "purpose": "Chi phí công tác phí dự hội thảo chuyển đổi số tại TP.HCM",
+            "amount": 12000000,
+            "status": "approved",
+            "voucherCode": "",
+            "branchId": hq_id,
+        },
+        {
+            "id": "dnc-05",
+            "code": "ĐNC00008",
+            "date": "05/12/2026",
+            "requester": "Vũ Thị Mai",
+            "dept": "Phòng Kế toán",
+            "beneficiary": "Ngân hàng TMCP Ngoại thương",
+            "paymentMethod": "Tiền mặt",
+            "purpose": "Chi nộp phí dịch vụ ngân hàng và chứng thư số điện tử",
+            "amount": 1540000,
+            "status": "paid",
+            "voucherCode": "PC00002",
+            "branchId": hq_id,
+        },
+        {
+            "id": "dnc-hcm-01",
+            "code": "ĐNC-HCM-001",
+            "date": "18/12/2026",
+            "requester": "Trần Minh Khoa",
+            "dept": "Chi nhánh TP. Hồ Chí Minh",
+            "beneficiary": "Ban quản lý tòa nhà Nguyễn Huệ",
+            "paymentMethod": "Tiền mặt",
+            "purpose": "Đề nghị chi thanh toán tiền thuê mặt bằng & điện nước CN TP.HCM T12/2026",
+            "amount": 48000000,
+            "status": "paid",
+            "voucherCode": "PC-HCM-2026-001",
+            "branchId": hcm_id,
+        },
+        {
+            "id": "dnc-hcm-02",
+            "code": "ĐNC-HCM-002",
+            "date": "20/12/2026",
+            "requester": "Lê Thảo Vy",
+            "dept": "Kinh doanh CN TP.HCM",
+            "beneficiary": "Công ty TNHH Quảng cáo Sài Gòn",
+            "paymentMethod": "Chuyển khoản",
+            "purpose": "Đề nghị chi phí tổ chức sự kiện tri ân khách hàng khu vực miền Nam",
+            "amount": 18500000,
+            "status": "approved",
+            "voucherCode": "",
+            "branchId": hcm_id,
+        },
+        {
+            "id": "dnc-dn-01",
+            "code": "ĐNC-DN-001",
+            "date": "18/12/2026",
+            "requester": "Nguyễn Hữu Phước",
+            "dept": "Chi nhánh Đà Nẵng",
+            "beneficiary": "Ban quản lý tòa nhà Đà Nẵng",
+            "paymentMethod": "Tiền mặt",
+            "purpose": "Đề nghị chi thanh toán mặt bằng & điện nước Chi nhánh Đà Nẵng T12/2026",
+            "amount": 31200000,
+            "status": "paid",
+            "voucherCode": "PC-DN-2026-001",
+            "branchId": dn_id,
+        },
+    ]
+
+
+def _default_advance_settlements(company):
+    from organization.models import Branch
+    branches = list(Branch.objects.filter(company=company).order_by("-is_head_office", "code"))
+    hq_id = str(branches[0].id) if branches else ""
+    hcm = next((b for b in branches if "HCM" in b.code.upper()), None)
+    dn = next((b for b in branches if "DN" in b.code.upper()), None)
+    hcm_id = str(hcm.id) if hcm else hq_id
+    dn_id = str(dn.id) if dn else hq_id
+    return [
+        {
+            "id": "qt-01",
+            "code": "QT00005",
+            "date": "16/12/2026",
+            "person": "Hoàng Thiên Bảo",
+            "dept": "Phòng Triển khai",
+            "reason": "Quyết toán tạm ứng công tác phí triển khai dự án miền Trung",
+            "advanceAmount": 25000000,
+            "spentAmount": 20000000,
+            "refundAmount": 5000000,
+            "status": "settled",
+            "receiptCode": "PT00005",
+            "branchId": hq_id,
+        },
+        {
+            "id": "qt-02",
+            "code": "QT00004",
+            "date": "12/12/2026",
+            "person": "Nguyễn Văn Hải",
+            "dept": "Phòng Kỹ thuật",
+            "reason": "Tạm ứng mua sắm vật tư linh kiện thay thế phòng lab",
+            "advanceAmount": 15000000,
+            "spentAmount": 15000000,
+            "refundAmount": 0,
+            "status": "settled",
+            "receiptCode": "-",
+            "branchId": hq_id,
+        },
+        {
+            "id": "qt-03",
+            "code": "QT00003",
+            "date": "08/12/2026",
+            "person": "Trương Thị Bích",
+            "dept": "Phòng Kinh doanh",
+            "reason": "Tạm ứng chi phí tiếp khách và hội nghị khách hàng thường niên",
+            "advanceAmount": 30000000,
+            "spentAmount": 28500000,
+            "refundAmount": 1500000,
+            "status": "pending",
+            "receiptCode": "",
+            "branchId": hq_id,
+        },
+        {
+            "id": "qt-hcm-01",
+            "code": "QT-HCM-001",
+            "date": "17/12/2026",
+            "person": "Trần Minh Khoa",
+            "dept": "Chi nhánh TP. Hồ Chí Minh",
+            "reason": "Quyết toán tạm ứng chi phí khảo sát & lắp đặt thiết bị tại TP.HCM",
+            "advanceAmount": 20000000,
+            "spentAmount": 17500000,
+            "refundAmount": 2500000,
+            "status": "settled",
+            "receiptCode": "PT-HCM-2026-002",
+            "branchId": hcm_id,
+        },
+        {
+            "id": "qt-dn-01",
+            "code": "QT-DN-001",
+            "date": "17/12/2026",
+            "person": "Nguyễn Hữu Phước",
+            "dept": "Chi nhánh Đà Nẵng",
+            "reason": "Quyết toán tạm ứng công tác phí triển khai khách hàng Đà Nẵng",
+            "advanceAmount": 12000000,
+            "spentAmount": 10500000,
+            "refundAmount": 1500000,
+            "status": "settled",
+            "receiptCode": "PT-DN-2026-002",
+            "branchId": dn_id,
+        },
+    ]
+
+
+class PaymentRequestViewSet(CompanyMemberMixin, GenericViewSet):
+    """API quản lý Đề nghị chi tiền lưu trữ trực tiếp trong PostgreSQL (CoreCompanySetting.configuration)."""
+    def list(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"docs": [], "results": []})
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
+        config = dict(setting.configuration or {})
+        docs = config.get("payment_requests")
+        if not docs:
+            docs = _default_payment_requests(company)
+            config["payment_requests"] = docs
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        branch_id = (request.query_params.get("branch_id") or "").strip()
+        if branch_id and branch_id != "all":
+            filtered = [d for d in docs if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+        else:
+            filtered = docs
+        return Response({"docs": filtered, "results": filtered})
+
+    def create(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
+        with transaction.atomic():
+            setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
+            config = dict(setting.configuration or {})
+            existing = list(config.get("payment_requests") or _default_payment_requests(company))
+            if isinstance(request.data.get("docs"), list):
+                existing = request.data["docs"]
+            elif isinstance(request.data.get("doc"), dict):
+                doc = request.data["doc"]
+                idx = next((i for i, d in enumerate(existing) if d.get("id") == doc.get("id")), -1)
+                if idx >= 0:
+                    existing[idx] = doc
+                else:
+                    existing.insert(0, doc)
+            config["payment_requests"] = existing
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        branch_id = (request.query_params.get("branch_id") or "").strip()
+        if branch_id and branch_id != "all":
+            filtered = [d for d in existing if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+        else:
+            filtered = existing
+        return Response({"docs": filtered, "results": filtered})
+
+
+class AdvanceSettlementDocViewSet(CompanyMemberMixin, GenericViewSet):
+    """API quản lý Đề nghị quyết toán tạm ứng lưu trữ trực tiếp trong PostgreSQL."""
+    def list(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"docs": [], "results": []})
+        setting, _ = CoreCompanySetting.objects.get_or_create(company=company)
+        config = dict(setting.configuration or {})
+        docs = config.get("advance_settlement_docs")
+        if not docs:
+            docs = _default_advance_settlements(company)
+            config["advance_settlement_docs"] = docs
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        branch_id = (request.query_params.get("branch_id") or "").strip()
+        if branch_id and branch_id != "all":
+            filtered = [d for d in docs if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+        else:
+            filtered = docs
+        return Response({"docs": filtered, "results": filtered})
+
+    def create(self, request):
+        from common_services.models import CoreCompanySetting
+        company = self._resolve_company(request)
+        if not company:
+            return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
+        with transaction.atomic():
+            setting, _ = CoreCompanySetting.objects.select_for_update().get_or_create(company=company)
+            config = dict(setting.configuration or {})
+            existing = list(config.get("advance_settlement_docs") or _default_advance_settlements(company))
+            if isinstance(request.data.get("docs"), list):
+                existing = request.data["docs"]
+            elif isinstance(request.data.get("doc"), dict):
+                doc = request.data["doc"]
+                idx = next((i for i, d in enumerate(existing) if d.get("id") == doc.get("id")), -1)
+                if idx >= 0:
+                    existing[idx] = doc
+                else:
+                    existing.insert(0, doc)
+            config["advance_settlement_docs"] = existing
+            setting.configuration = config
+            setting.save(update_fields=["configuration", "updated_at"])
+        branch_id = (request.query_params.get("branch_id") or "").strip()
+        if branch_id and branch_id != "all":
+            filtered = [d for d in existing if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+        else:
+            filtered = existing
+        return Response({"docs": filtered, "results": filtered})

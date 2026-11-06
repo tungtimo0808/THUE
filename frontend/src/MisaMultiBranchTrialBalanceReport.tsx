@@ -455,7 +455,7 @@ export default function MisaMultiBranchTrialBalanceReport({
               cursor: "pointer",
             }}
             title="Trợ giúp"
-            onClick={() => notify?.("Hệ thống trợ giúp Sổ Việt AI.")}
+            onClick={() => notify?.("Hệ thống hướng dẫn nghiệp vụ kế toán.")}
           >
             <MessageCircle size={14} />
           </button>
