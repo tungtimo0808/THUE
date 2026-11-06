@@ -533,10 +533,6 @@ function ReferenceWorkspace() {
     apiCompanies.find((c) => c.id === apiCompanyId) ||
     apiCompanies[0];
   const company = matchedApiCompany || companies[0];
-  const rawUrlPeriod = params.get("period") || "";
-  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
-    ? rawUrlPeriod
-    : "2026-12";
   const [dataset, setDataset] = useState(() => {
     try {
       return localStorage.getItem("ref_dataset") || "accounting-2026";
@@ -544,6 +540,11 @@ function ReferenceWorkspace() {
       return "accounting-2026";
     }
   });
+  const rawUrlPeriod = params.get("period") || "";
+  const defaultYearFromDataset = dataset.match(/(20\d{2})/)?.[1] || "2026";
+  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
+    ? rawUrlPeriod
+    : `${defaultYearFromDataset}-12`;
   const [branch, setBranch] = useState(() => {
     try {
       return localStorage.getItem("ref_branch") || "head-office";

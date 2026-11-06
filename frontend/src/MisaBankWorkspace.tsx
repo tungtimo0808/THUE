@@ -79,7 +79,7 @@ import {
 import "./misa-cash.css";
 import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod} from './transaction-period';
+import {matchesTransactionPeriod, resolveActiveDatasetYear} from './transaction-period';
 
 type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; rawPaymentDetails?:Record<string,any>; bankAccount?:string;branchId?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
 type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; gl_account_id?: string; gl_code?: string; currency_code: string; balance: string | number };
@@ -368,7 +368,17 @@ export default function MisaBankWorkspace({
   const [bankDeletePending,setBankDeletePending]=useState(false);
   const [bankDeletedRows,setBankDeletedRows]=useState<BankTransaction[]>([]);
 
-  const bankLedger=useMemo(()=>cashLedger(transactions.filter(transaction=>transaction.kind!=="transfer").map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${new Date().getFullYear()}-01-01`,parseReportDate(currentCashDate()),0),[transactions]);
+  const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
+  useEffect(() => {
+    const syncYear = () => setActiveDatasetYear(resolveActiveDatasetYear());
+    window.addEventListener("erp_context_changed", syncYear);
+    window.addEventListener("popstate", syncYear);
+    return () => {
+      window.removeEventListener("erp_context_changed", syncYear);
+      window.removeEventListener("popstate", syncYear);
+    };
+  }, []);
+  const bankLedger=useMemo(()=>cashLedger(transactions.filter(transaction=>transaction.kind!=="transfer").map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${activeDatasetYear}-01-01`,`${activeDatasetYear}-12-31`,0),[transactions, activeDatasetYear]);
   const totalPayment = bankLedger.payment;
 
   const totalReceipt = bankLedger.receipt;
@@ -376,6 +386,7 @@ export default function MisaBankWorkspace({
   const currentBalance = bankBalance;
 
   const filteredTransactions = useMemo(() => {
+    const refToday = new Date(activeDatasetYear, 11, 31);
     return transactions.filter((t) => {
       const matchQuery =
         !searchQuery ||
@@ -387,13 +398,13 @@ export default function MisaBankWorkspace({
         (filterType === "receipt" && t.kind === "receipt") ||
         (filterType === "payment" && t.kind === "payment") ||
         (filterType === "transfer" && t.kind === "transfer");
-      const matchDate=filterPeriod==='custom'?isCashDateInRange(t.dateHachToan,bankFilter.from,bankFilter.to):matchesTransactionPeriod(t.dateHachToan,filterPeriod);
+      const matchDate=filterPeriod==='custom'?isCashDateInRange(t.dateHachToan,bankFilter.from,bankFilter.to):matchesTransactionPeriod(t.dateHachToan,filterPeriod,refToday);
       const matchStatus=bankFilter.status==='all'||t.status===bankFilter.status;
       const matchReason=bankFilter.reason==='all'||t.reasonLabel===bankFilter.reason;
       const matchAccount=!bankFilter.bankAccount||bankFilter.bankAccount==='all'||t.bankAccount===bankFilter.bankAccount;
       return matchQuery && matchType && matchDate && matchStatus && matchReason && matchAccount;
     });
-  }, [transactions, searchQuery, filterType,filterPeriod,bankFilter]);
+  }, [transactions, searchQuery, filterType,filterPeriod,bankFilter,activeDatasetYear]);
   const bankPages=Math.max(1,Math.ceil(filteredTransactions.length/bankPageSize));
   const bankVisiblePage=Math.min(bankPage,bankPages);
   const bankVisibleRows=filteredTransactions.slice((bankVisiblePage-1)*bankPageSize,bankVisiblePage*bankPageSize);

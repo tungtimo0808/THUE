@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { RefreshCw, Search, Plus, BookOpen, AlertCircle, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { resolveActiveDatasetYear } from "./transaction-period";
 import "./invoice-lookup.css";
 
 type Mode = "lookup" | "outgoing" | "pending" | "issuance" | "errors" | "unposted";
@@ -64,12 +65,22 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
     setParams(next, { replace: true });
   };
   useEffect(() => {
+    const onCtx = () => setRevision((v) => v + 1);
+    window.addEventListener("erp_context_changed", onCtx);
+    return () => window.removeEventListener("erp_context_changed", onCtx);
+  }, []);
+  useEffect(() => {
     if (!token || !companyId) return;
     let active = true;
     setLoading(true); setError("");
     const search = new URLSearchParams(query);
     search.set("company_id", companyId);
     search.set("mode", mode);
+    const activeYear = resolveActiveDatasetYear();
+    if (!search.get("date_from") && !search.get("date_to")) {
+      search.set("date_from", `${activeYear}-01-01`);
+      search.set("date_to", `${activeYear}-12-31`);
+    }
     request<Result>(`/api/v1/tax/invoices/query/?${search}`, token)
       .then((data) => { if (active) setResult(data); })
       .catch((cause) => { if (active) { setResult(null); setError(cause.message || "Không tải được danh sách hóa đơn."); } })
