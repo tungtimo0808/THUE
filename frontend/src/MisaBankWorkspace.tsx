@@ -79,7 +79,7 @@ import {
 import "./misa-cash.css";
 import MisaBankReconciliation from './MisaBankReconciliation';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod, resolveActiveDatasetYear} from './transaction-period';
+import {matchesTransactionPeriod, resolveActiveBranchScope, resolveActiveDatasetYear} from './transaction-period';
 
 type BankTransaction = { id:string; dateHachToan:string; dateChungTu:string; code:string; description:string; amount:number; partner:string; kind:string; status:string; rawPaymentDetails?:Record<string,any>; bankAccount?:string;branchId?:string;partnerCode?:string;beneficiaryAccount?:string;beneficiaryBank?:string;address?:string;employee?:string;bankName?:string;combinedInvoices?:string;settled?:string;extended1?:string;extended2?:string;extended3?:string;extended4?:string;extended5?:string;extended6?:string;extended7?:string;extended8?:string;extended9?:string;extended10?:string;createdBy?:string;createdAt?:string;updatedBy?:string;updatedAt?:string; reasonLabel?:string; documentType?:string; rows?:VoucherDetailRow[]; debit?:string; credit?:string; items:{code?:string;name:string;taxDesc:string;taxRate:number;taxAmount:number;taxAccount:string;invoiceCode:string;invoiceDate:string}[]; };
 type ApiBankProfile = { id: string; currency_id: string; account_number: string; account_name: string; bank_name: string; bank_branch?: string; branch_id?: string; branch_name?: string; gl_account_id?: string; gl_code?: string; currency_code: string; balance: string | number };
@@ -253,7 +253,9 @@ export default function MisaBankWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  const cachedBank = company?.id ? bankDataCache.get(company.id) : undefined;
+  const [activeBranchScope, setActiveBranchScope] = useState<string>(() => resolveActiveBranchScope());
+  const bankCacheKey = company?.id ? `${company.id}::${activeBranchScope}` : "";
+  const cachedBank = bankCacheKey ? bankDataCache.get(bankCacheKey) : undefined;
   const [transactions, setTransactions] = useState<BankTransaction[]>(() => cachedBank?.transactions || []);
   const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>(() => cachedBank?.bankAccounts || []);
   const [bankProfiles, setBankProfiles] = useState<ApiBankProfile[]>(() => cachedBank?.bankProfiles || []);
@@ -261,7 +263,7 @@ export default function MisaBankWorkspace({
 
   const [bankApiRevision, setBankApiRevision] = useState(0);
   const reloadBankApi = () => {
-    if (company?.id) bankDataCache.delete(company.id);
+    if (bankCacheKey) bankDataCache.delete(bankCacheKey);
     setBankApiRevision((value) => value + 1);
   };
   const apiSaveBank = useMisaApiSave(company.id, notify, reloadBankApi);
@@ -289,17 +291,24 @@ export default function MisaBankWorkspace({
       return;
     }
     let active = true;
-    const hasCache = bankDataCache.has(company.id);
+    const branchParam = activeBranchScope !== "all" ? `&branch_id=${encodeURIComponent(activeBranchScope)}` : "";
+    const hasCache = bankDataCache.has(bankCacheKey);
     if (!hasCache) {
       setTransactions([]);
       setBankTransferRecords([]);
       setBankAccounts([]);
       setBankProfiles([]);
       setBankBalance(0);
+    } else {
+      const hit = bankDataCache.get(bankCacheKey)!;
+      setTransactions(hit.transactions);
+      setBankAccounts(hit.bankAccounts);
+      setBankProfiles(hit.bankProfiles);
+      setBankBalance(hit.bankBalance);
     }
-    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}&page_size=100`;
+    const path = `/api/v1/bank/transactions/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`;
     request<ApiBankProfile[] | { results: ApiBankProfile[] }>(
-      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}&page_size=100`, token,
+      `/api/v1/bank/accounts/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`, token,
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
@@ -311,8 +320,8 @@ export default function MisaBankWorkspace({
       setBankProfiles(records);
       setBankBalance(totalBalance);
       setBankAccounts(accounts);
-      const prev = bankDataCache.get(company.id);
-      bankDataCache.set(company.id, {
+      const prev = bankDataCache.get(bankCacheKey);
+      bankDataCache.set(bankCacheKey, {
         transactions: prev?.transactions || [],
         bankAccounts: accounts,
         bankProfiles: records,
@@ -328,8 +337,8 @@ export default function MisaBankWorkspace({
         const records = Array.isArray(response) ? response : response.results;
         const mapped = records.map(mapBankTransaction);
         setTransactions(mapped);
-        const prev = bankDataCache.get(company.id);
-        bankDataCache.set(company.id, {
+        const prev = bankDataCache.get(bankCacheKey);
+        bankDataCache.set(bankCacheKey, {
           transactions: mapped,
           bankAccounts: prev?.bankAccounts || [],
           bankProfiles: prev?.bankProfiles || [],
@@ -349,7 +358,7 @@ export default function MisaBankWorkspace({
               status: row.status === "CONFIRMED" ? "posted" : row.status === "CANCELLED" ? "cancelled" : row.status === "REVERSED" ? "reversed" : "draft",
               bankAccount: row.source_account_number || "", debit: row.destination_gl_code || "", credit: row.source_gl_code || "", items: [],
             }) as BankTransaction)];
-            const curr = bankDataCache.get(company.id);
+            const curr = bankDataCache.get(bankCacheKey);
             if (curr) curr.transactions = next;
             return next;
           });
@@ -359,7 +368,7 @@ export default function MisaBankWorkspace({
         if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được giao dịch ngân hàng.");
       });
     return () => { active = false; };
-  }, [token, company.id, notify, bankApiRevision]);
+  }, [token, company.id, activeBranchScope, bankCacheKey, notify, bankApiRevision]);
 
   const [bankRowMenu,setBankRowMenu]=useState<string|null>(null);
   const [bankExcelMenuOpen, setBankExcelMenuOpen] = useState(false);
@@ -370,12 +379,15 @@ export default function MisaBankWorkspace({
 
   const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
   useEffect(() => {
-    const syncYear = () => setActiveDatasetYear(resolveActiveDatasetYear());
-    window.addEventListener("erp_context_changed", syncYear);
-    window.addEventListener("popstate", syncYear);
+    const syncCtx = () => {
+      setActiveDatasetYear(resolveActiveDatasetYear());
+      setActiveBranchScope(resolveActiveBranchScope());
+    };
+    window.addEventListener("erp_context_changed", syncCtx);
+    window.addEventListener("popstate", syncCtx);
     return () => {
-      window.removeEventListener("erp_context_changed", syncYear);
-      window.removeEventListener("popstate", syncYear);
+      window.removeEventListener("erp_context_changed", syncCtx);
+      window.removeEventListener("popstate", syncCtx);
     };
   }, []);
   const bankLedger=useMemo(()=>cashLedger(transactions.filter(transaction=>transaction.kind!=="transfer").map(transaction=>({date:parseReportDate(transaction.dateHachToan),kind:transaction.kind,amount:transaction.amount,status:transaction.status})),`${activeDatasetYear}-01-01`,`${activeDatasetYear}-12-31`,0),[transactions, activeDatasetYear]);

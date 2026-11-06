@@ -645,7 +645,10 @@ function ReferenceWorkspace() {
   }, [fetchDatasets]);
 
   const activeDatasetObj = useMemo(
-    () => companyDatasets.find((d) => d.id === dataset) || companyDatasets[0],
+    () =>
+      companyDatasets.find((d) => d.id === dataset || d.label === dataset) ||
+      companyDatasets.find((d) => d.id === "accounting-2026") ||
+      companyDatasets[0],
     [companyDatasets, dataset]
   );
 
@@ -760,6 +763,23 @@ function ReferenceWorkspace() {
     },
     [apiToken, company?.id, dataset, period]
   );
+
+  useEffect(() => {
+    const syncFromStorage = () => {
+      try {
+        const storedBranch = localStorage.getItem("ref_branch");
+        if (storedBranch) {
+          setBranch((prev) => (prev !== storedBranch ? storedBranch : prev));
+        }
+        const storedDataset = localStorage.getItem("ref_dataset");
+        if (storedDataset) {
+          setDataset((prev) => (prev !== storedDataset ? storedDataset : prev));
+        }
+      } catch {}
+    };
+    window.addEventListener("erp_context_changed", syncFromStorage);
+    return () => window.removeEventListener("erp_context_changed", syncFromStorage);
+  }, []);
 
   const branchLabel = useMemo(() => {
     if (branch === "all" || !branch) return "Toàn doanh nghiệp";

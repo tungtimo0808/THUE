@@ -62,6 +62,9 @@ def _row(invoice):
 
 
 def query_invoices(queryset, params):
+    branch_id = params.get("branch_id", "").strip()
+    if branch_id and branch_id != "all":
+        queryset = queryset.filter(branch_id=branch_id)
     direction = params.get("direction", "")
     if direction and direction not in {"INPUT", "OUTPUT"}:
         raise ValidationError({"direction": "Chiều hóa đơn không hợp lệ."})

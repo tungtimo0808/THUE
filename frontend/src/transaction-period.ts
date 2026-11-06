@@ -28,6 +28,16 @@ export function resolveActiveDatasetBookType(): "accounting" | "management" {
   return "accounting";
 }
 
+export function resolveActiveBranchScope(): string {
+  if (typeof window === "undefined") return "all";
+  try {
+    const val = (window.localStorage.getItem("ref_branch") || "all").trim();
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? val : "all";
+  } catch {
+    return "all";
+  }
+}
+
 export function matchesTransactionPeriod(
   value: string,
   period: string,

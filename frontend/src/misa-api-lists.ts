@@ -109,7 +109,7 @@ const ROW_DATE_FIELDS = [
   "contract_date",
 ];
 
-function filterRowsForDataset(path: string, rawRows: ApiRow[]): ApiRow[] {
+function filterRowsForDataset(path: string, rawRows: ApiRow[], branchScope: string): ApiRow[] {
   if (!Array.isArray(rawRows) || rawRows.length === 0) return rawRows;
   if (CATALOG_PATH_PATTERNS.some((p) => path.includes(p))) {
     return rawRows;
@@ -119,6 +119,14 @@ function filterRowsForDataset(path: string, rawRows: ApiRow[]): ApiRow[] {
 
   return rawRows.filter((row) => {
     if (!row || typeof row !== "object") return true;
+
+    // 0. Check branch scope if row explicitly embeds branch UUID
+    if (branchScope && branchScope !== "all") {
+      const rowBranch = row.branch || row.branch_id;
+      if (typeof rowBranch === "string" && rowBranch.length >= 30 && rowBranch !== branchScope) {
+        return false;
+      }
+    }
 
     // 1. Check bookType: exclude QT- internal management vouchers when on financial/tax book
     const docNum = String(row.number || row.voucher_no || row.invoice_number || row.code || "").trim().toUpperCase();
@@ -308,10 +316,10 @@ export function useMisaApiLists(
     const out: Record<string, ApiRow[]> = {};
     for (const [name, rawList] of Object.entries(rows)) {
       const path = resourceMap[name] || "";
-      out[name] = filterRowsForDataset(path, rawList);
+      out[name] = filterRowsForDataset(path, rawList, branchScope);
     }
     return out;
-  }, [rows, key, datasetScope]);
+  }, [rows, key, datasetScope, branchScope]);
 
   return {
     rows: datasetFilteredRows,

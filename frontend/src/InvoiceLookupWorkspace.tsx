@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { RefreshCw, Search, Plus, BookOpen, AlertCircle, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
-import { resolveActiveDatasetYear } from "./transaction-period";
+import { resolveActiveBranchScope, resolveActiveDatasetYear } from "./transaction-period";
 import "./invoice-lookup.css";
 
 type Mode = "lookup" | "outgoing" | "pending" | "issuance" | "errors" | "unposted";
@@ -80,6 +80,10 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
     if (!search.get("date_from") && !search.get("date_to")) {
       search.set("date_from", `${activeYear}-01-01`);
       search.set("date_to", `${activeYear}-12-31`);
+    }
+    const activeBranch = resolveActiveBranchScope();
+    if (activeBranch !== "all") {
+      search.set("branch_id", activeBranch);
     }
     request<Result>(`/api/v1/tax/invoices/query/?${search}`, token)
       .then((data) => { if (active) setResult(data); })

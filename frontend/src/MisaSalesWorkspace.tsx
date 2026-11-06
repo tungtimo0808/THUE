@@ -167,7 +167,7 @@ export default function MisaSalesWorkspace({
   const [selectedContract, setSelectedContract] = useState<any>(null);
 
   // Sales Voucher view mode & selection
-  const [salesViewMode, setSalesViewMode] = useState<"landing" | "list">("landing");
+  const [salesViewMode, setSalesViewMode] = useState<"landing" | "list">("list");
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [activeSaleType, setActiveSaleType] = useState<number>(1);
   const [showVoucherDropdown, setShowVoucherDropdown] = useState(false);

@@ -34,7 +34,7 @@ import MisaCashReportView from './MisaCashReportView';
 import MisaCashInventoryWorkspace from './MisaCashInventoryWorkspace';
 import MisaCashForecastWorkspace from './MisaCashForecastWorkspace';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod, resolveActiveDatasetYear} from './transaction-period';
+import {matchesTransactionPeriod, resolveActiveBranchScope, resolveActiveDatasetYear} from './transaction-period';
 import {
   Filter,
   Plus,
@@ -7798,12 +7798,14 @@ export default function MisaCashWorkspace({
     director: "Nguyễn Văn A",
   });
 
-  const cachedCash = company?.id ? cashDataCache.get(company.id) : undefined;
+  const [activeBranchScope, setActiveBranchScope] = useState<string>(() => resolveActiveBranchScope());
+  const cashCacheKey = company?.id ? `${company.id}::${activeBranchScope}` : "";
+  const cachedCash = cashCacheKey ? cashDataCache.get(cashCacheKey) : undefined;
   const [transactions, setTransactions] = useState<any[]>(() => cachedCash?.transactions || []);
   const [cashBalance, setCashBalance] = useState(() => cachedCash?.cashBalance || 0);
   const [cashApiRevision, setCashApiRevision] = useState(0);
   const reloadCashApi = () => {
-    if (company?.id) cashDataCache.delete(company.id);
+    if (cashCacheKey) cashDataCache.delete(cashCacheKey);
     setCashApiRevision((value) => value + 1);
   };
   const apiSave = useMisaApiSave(company?.id || "", notify, reloadCashApi);
@@ -7829,14 +7831,20 @@ export default function MisaCashWorkspace({
       return;
     }
     let active = true;
-    const hasCache = cashDataCache.has(company.id);
+    const branchParam = activeBranchScope !== "all" ? `&branch_id=${encodeURIComponent(activeBranchScope)}` : "";
+    const hasCache = cashDataCache.has(cashCacheKey);
     if (!hasCache) {
       setTransactions([]);
       setCashBalance(0);
       setCashFunds([]);
+    } else {
+      const hit = cashDataCache.get(cashCacheKey)!;
+      setTransactions(hit.transactions);
+      setCashBalance(hit.cashBalance);
+      setCashFunds(hit.cashFunds);
     }
     request<ApiCashFund[] | { results: ApiCashFund[] }>(
-      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}&page_size=100`,
+      `/api/v1/cash/funds/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`,
       token,
     ).then((response) => {
       if (!active) return;
@@ -7844,8 +7852,8 @@ export default function MisaCashWorkspace({
       const totalBalance = funds.reduce((total, fund) => total + Number(fund.balance), 0);
       setCashFunds(funds);
       setCashBalance(totalBalance);
-      const prev = cashDataCache.get(company.id);
-      cashDataCache.set(company.id, {
+      const prev = cashDataCache.get(cashCacheKey);
+      cashDataCache.set(cashCacheKey, {
         transactions: prev?.transactions || [],
         cashBalance: totalBalance,
         cashFunds: funds,
@@ -7855,15 +7863,15 @@ export default function MisaCashWorkspace({
       if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được số dư quỹ tiền mặt.");
     });
     request<ApiCashTransaction[] | { results: ApiCashTransaction[] }>(
-      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}&page_size=100`,
+      `/api/v1/cash/transactions/?company_id=${encodeURIComponent(company.id)}${branchParam}&page_size=100`,
       token,
     ).then((response) => {
       if (!active) return;
       const records = Array.isArray(response) ? response : response.results;
       const mapped = records.map(mapCashTransaction);
       setTransactions(mapped);
-      const prev = cashDataCache.get(company.id);
-      cashDataCache.set(company.id, {
+      const prev = cashDataCache.get(cashCacheKey);
+      cashDataCache.set(cashCacheKey, {
         transactions: mapped,
         cashBalance: prev?.cashBalance || 0,
         cashFunds: prev?.cashFunds || [],
@@ -7878,7 +7886,7 @@ export default function MisaCashWorkspace({
             description: row.description || "Chuyển tiền nội bộ", amount: Number(row.amount), kind: "payment",
             debit: "", credit: "", status: String(row.status || "").toLowerCase(), reasonLabel: "Chuyển tiền nội bộ",
           }))];
-          const curr = cashDataCache.get(company.id);
+          const curr = cashDataCache.get(cashCacheKey);
           if (curr) curr.transactions = next;
           return next;
         });
@@ -7887,7 +7895,7 @@ export default function MisaCashWorkspace({
       if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được giao dịch tiền mặt.");
     });
     return () => { active = false; };
-  }, [token, company?.id, notify, cashApiRevision]);
+  }, [token, company?.id, activeBranchScope, cashCacheKey, notify, cashApiRevision]);
 
   // Selected row for inline detail
   const [selectedRowId, setSelectedRowId] = useState<string>("pt-05");
@@ -7898,12 +7906,15 @@ export default function MisaCashWorkspace({
   // Filtered list
   const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
   useEffect(() => {
-    const syncYear = () => setActiveDatasetYear(resolveActiveDatasetYear());
-    window.addEventListener("erp_context_changed", syncYear);
-    window.addEventListener("popstate", syncYear);
+    const syncCtx = () => {
+      setActiveDatasetYear(resolveActiveDatasetYear());
+      setActiveBranchScope(resolveActiveBranchScope());
+    };
+    window.addEventListener("erp_context_changed", syncCtx);
+    window.addEventListener("popstate", syncCtx);
     return () => {
-      window.removeEventListener("erp_context_changed", syncYear);
-      window.removeEventListener("popstate", syncYear);
+      window.removeEventListener("erp_context_changed", syncCtx);
+      window.removeEventListener("popstate", syncCtx);
     };
   }, []);
   const filteredList = useMemo(() => {
