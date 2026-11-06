@@ -1224,14 +1224,15 @@ export default function CompanyAdminWorkspace() {
   // Handle Seeding 21 Standard Business Roles & Applying Regime Role Presets
   const handleSeedStandardRoles = async (presetKey?: string) => {
     if (!token || !companyId) return;
+    const cleanPreset = typeof presetKey === "string" ? presetKey : undefined;
     setLoading(true);
     setAlertMsg(null);
     try {
       const res: any = await request(`/api/v1/iam/roles/seed-standard/?company_id=${companyId}`, token, {
         method: "POST",
         body: JSON.stringify(
-          presetKey
-            ? { company_id: companyId, preset: presetKey, force_preset: true }
+          cleanPreset
+            ? { company_id: companyId, preset: cleanPreset, force_preset: true }
             : { company_id: companyId }
         ),
       });
@@ -1268,15 +1269,71 @@ export default function CompanyAdminWorkspace() {
     setMatrixSaving(true);
     setAlertMsg(null);
     try {
+      const permArray = Array.from(selectedPermCodes);
       await request(`/api/v1/iam/roles/${selectedRole.id}/set-matrix/?company_id=${companyId}`, token, {
         method: "POST",
         body: JSON.stringify({
           version: roleMatrix.version,
-          permission_codes: Array.from(selectedPermCodes),
+          permission_codes: permArray,
           bundle_ids: [],
         }),
       });
-      setAlertMsg({ type: "success", text: `Đã cập nhật quyền thành công cho vai trò ${selectedRole.name}.` });
+      // Immediately update left sidebar role permission_count
+      setRoles((prev) =>
+        prev.map((r) => (r.id === selectedRole.id ? { ...r, permission_count: permArray.length } : r))
+      );
+      // Map selected permission prefixes to workspace module IDs for real-time Sidebar sync
+      const derivedModules = new Set<string>(["overview"]);
+      permArray.forEach((code) => {
+        if (code.startsWith("OPENING_BALANCE_")) derivedModules.add("opening");
+        const prefix = code.split(".")[0];
+        if (prefix === "CASH") derivedModules.add("cash");
+        if (prefix === "BANK") {
+          derivedModules.add("bank");
+          derivedModules.add("connections");
+        }
+        if (prefix === "SAL" || prefix === "AR") {
+          derivedModules.add("sales");
+          derivedModules.add("invoices");
+        }
+        if (prefix === "PUR" || prefix === "AP") derivedModules.add("purchases");
+        if (prefix === "INV") derivedModules.add("inventory");
+        if (prefix === "FA") {
+          derivedModules.add("assets");
+          derivedModules.add("tools");
+        }
+        if (prefix === "PAYROLL") {
+          derivedModules.add("payroll");
+          derivedModules.add("insurance");
+        }
+        if (prefix === "COST") derivedModules.add("cost");
+        if (prefix === "TAX") {
+          derivedModules.add("tax");
+          derivedModules.add("invoices");
+        }
+        if (prefix === "GL") {
+          derivedModules.add("ledger");
+          derivedModules.add("budget");
+          derivedModules.add("opening");
+        }
+        if (prefix === "RPT" || code.startsWith("RPT_")) {
+          derivedModules.add("reports");
+          derivedModules.add("analysis");
+        }
+        if (prefix === "MD") derivedModules.add("directory");
+      });
+      try {
+        const key = `sv_role_modules_${companyId}`;
+        const existing = JSON.parse(localStorage.getItem(key) || "{}");
+        existing[selectedRole.code] = Array.from(derivedModules);
+        localStorage.setItem(key, JSON.stringify(existing));
+        window.dispatchEvent(new Event("sv_rbac_updated"));
+      } catch {}
+
+      setAlertMsg({
+        type: "success",
+        text: `Đã cập nhật ${permArray.length} quyền thành công cho vai trò ${formatRoleDisplayName(selectedRole.code, selectedRole.name)} (${derivedModules.size} phân hệ nghiệp vụ được kích hoạt).`,
+      });
       // Reload matrix
       const refreshed = await request<MatrixData>(`/api/v1/iam/roles/${selectedRole.id}/matrix/?company_id=${companyId}`, token);
       setRoleMatrix(refreshed);
@@ -1290,6 +1347,105 @@ export default function CompanyAdminWorkspace() {
 
   const [matrixViewMode, setMatrixViewMode] = useState<"grouped" | "detailed">("grouped");
   const [modalPermViewMode, setModalPermViewMode] = useState<"grouped" | "detailed">("grouped");
+
+  const ERP_MODULE_CATALOG = useMemo(
+    () => [
+      { id: "overview", code: "OVERVIEW", name: "Tổng quan & Chỉ số điều hành", core: true },
+      { id: "invoices", code: "INVOICES", name: "Quản lý Hóa đơn điện tử", core: false },
+      { id: "cash", code: "CASH", name: "Quỹ Tiền mặt (Phiếu thu, Phiếu chi)", core: true },
+      { id: "bank", code: "BANK", name: "Tiền gửi Ngân hàng (Báo có, UNC)", core: true },
+      { id: "purchases", code: "PUR", name: "Mua hàng & Công nợ phải trả", core: false },
+      { id: "sales", code: "SAL", name: "Bán hàng & Công nợ phải thu", core: false },
+      { id: "inventory", code: "INV", name: "Kho & Vật tư hàng hóa", core: false },
+      { id: "tools", code: "TOOLS", name: "Công cụ dụng cụ (CCDC)", core: false },
+      { id: "assets", code: "FA", name: "Tài sản cố định (TSCĐ)", core: false },
+      { id: "payroll", code: "PAYROLL", name: "Tiền lương & Bảo hiểm", core: false },
+      { id: "tax", code: "TAX", name: "Thuế & Tờ khai định kỳ", core: true },
+      { id: "cost", code: "COST", name: "Giá thành Sản xuất & Xây lắp", core: false },
+      { id: "ledger", code: "GL", name: "Tổng hợp & Sổ cái Kế toán", core: true },
+      { id: "budget", code: "BUDGET", name: "Ngân sách & Dự toán thu chi", core: false },
+      { id: "reports", code: "RPT", name: "Báo cáo Tài chính & Quản trị", core: true },
+      { id: "directory", code: "MD", name: "Danh mục dùng chung", core: true },
+      { id: "opening", code: "OPENING", name: "Số dư ban đầu", core: true },
+    ],
+    []
+  );
+
+  const [enabledErpModules, setEnabledErpModules] = useState<string[]>(() => {
+    try {
+      const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
+      const raw = localStorage.getItem(`sv_enabled_modules_${effectiveCompanyId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+      "tools", "assets", "payroll", "tax", "cost", "insurance", "ledger",
+      "budget", "reports", "analysis", "directory", "opening", "connections",
+    ];
+  });
+
+  useEffect(() => {
+    if (!companyId) return;
+    try {
+      const raw = localStorage.getItem(`sv_enabled_modules_${companyId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setEnabledErpModules(parsed);
+        }
+      }
+    } catch {}
+  }, [companyId]);
+
+  const toggleErpModule = (modId: string, isCore?: boolean) => {
+    if (isCore) {
+      setAlertMsg({ type: "success", text: "Phân hệ cốt lõi (Tổng quan, Tiền mặt, Ngân hàng, Tổng hợp, Báo cáo) luôn được duy trì bật để đảm bảo tính toàn vẹn sổ sách." });
+      return;
+    }
+    setEnabledErpModules((prev) => {
+      const next = prev.includes(modId) ? prev.filter((id) => id !== modId) : [...prev, modId];
+      try {
+        const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
+        localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(next));
+        window.dispatchEvent(new Event("sv_modules_updated"));
+      } catch {}
+      return next;
+    });
+  };
+
+  const applyErpModulePreset = (preset: "all" | "commerce" | "manufacturing" | "micro") => {
+    let next: string[] = [];
+    if (preset === "all" || preset === "manufacturing") {
+      next = [
+        "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+        "tools", "assets", "payroll", "tax", "cost", "insurance", "ledger",
+        "budget", "reports", "analysis", "directory", "opening", "connections",
+      ];
+    } else if (preset === "commerce") {
+      next = [
+        "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+        "tools", "assets", "payroll", "tax", "ledger", "reports", "directory", "opening",
+      ];
+    } else if (preset === "micro") {
+      next = [
+        "overview", "invoices", "cash", "bank", "purchases", "sales",
+        "tax", "ledger", "reports", "directory", "opening",
+      ];
+    }
+    setEnabledErpModules(next);
+    try {
+      const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
+      localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(next));
+      window.dispatchEvent(new Event("sv_modules_updated"));
+    } catch {}
+    setAlertMsg({
+      type: "success",
+      text: `Đã áp dụng cấu hình phân hệ (${next.length} phân hệ đang bật) và đồng bộ thanh điều hướng Bàn làm việc!`,
+    });
+  };
 
   // Toggle single permission code
   const togglePermission = (code: string) => {
@@ -1733,10 +1889,10 @@ export default function CompanyAdminWorkspace() {
             </Link>
             <button
               className="admin-btn admin-btn-light"
-              onClick={handleSeedStandardRoles}
-              title="Khởi tạo sẵn 6 vai trò mẫu: Kế toán trưởng, Kế toán bán hàng, Mua hàng, Thủ quỹ, Kế toán kho, NVKD"
+              onClick={() => handleSeedStandardRoles()}
+              title="Đồng bộ danh mục 21 vai trò chuẩn theo chế độ kế toán doanh nghiệp"
             >
-              <Sparkles size={15} /> Khởi tạo 6 vai trò mẫu
+              <Sparkles size={15} /> Đồng bộ 21 vai trò chuẩn
             </button>
             <Link to="/" className="admin-btn admin-btn-light">
               <ExternalLink size={15} /> Bàn làm việc Kế toán
@@ -3127,32 +3283,133 @@ export default function CompanyAdminWorkspace() {
               <div className="admin-card">
                 <div className="admin-card-header">
                   <h3>
-                    <SlidersHorizontal size={18} /> Phân hệ Tính năng Doanh nghiệp
+                    <SlidersHorizontal size={18} /> Phân hệ Tính năng Doanh nghiệp ({ERP_MODULE_CATALOG.filter((m) => enabledErpModules.includes(m.id)).length}/{ERP_MODULE_CATALOG.length})
                   </h3>
-                  <Link to="/modules" className="admin-btn admin-btn-secondary admin-btn-sm">
-                    Quản lý chi tiết
-                  </Link>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary admin-btn-sm"
+                      onClick={() => applyErpModulePreset("commerce")}
+                      title="Bật bộ phân hệ chuẩn Thương mại & Dịch vụ (Tắt Giá thành & Ngân sách)"
+                    >
+                      TM - Dịch vụ
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary admin-btn-sm"
+                      onClick={() => applyErpModulePreset("all")}
+                      title="Bật toàn bộ phân hệ kế toán"
+                    >
+                      Bật tất cả
+                    </button>
+                  </div>
                 </div>
                 <div className="admin-card-body">
-                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.6px", marginBottom: "1rem" }}>
-                    Bật hoặc tắt các phân hệ nghiệp vụ tùy theo mô hình hoạt động (thương mại, dịch vụ, sản xuất).
+                  <p style={{ color: "var(--admin-text-muted)", fontSize: "13.2px", marginBottom: "0.75rem" }}>
+                    Tích chọn hoặc bỏ chọn các phân hệ nghiệp vụ tùy theo mô hình hoạt động. Thay đổi sẽ cập nhật trực tiếp lên thanh menu bên trái của Bàn làm việc.
                   </p>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                    {modules.slice(0, 8).map((mod) => (
-                      <li
-                        key={mod.id || mod.code}
-                        style={{
-                          padding: "0.6rem 0",
-                          borderBottom: "1px solid #f1f5f9",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <strong>{mod.name || mod.code}</strong>
-                        <span className="admin-badge admin-badge-active">Đang bật</span>
-                      </li>
-                    ))}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => applyErpModulePreset("micro")}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        color: "#334155",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Tinh gọn TT58 (11 phân hệ)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyErpModulePreset("commerce")}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        color: "#334155",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Thương mại - Dịch vụ (15 phân hệ)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyErpModulePreset("manufacturing")}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        color: "#334155",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Sản xuất & Đầy đủ (17 phân hệ)
+                    </button>
+                  </div>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, maxHeight: 340, overflowY: "auto" }}>
+                    {ERP_MODULE_CATALOG.map((mod) => {
+                      const isEnabled = enabledErpModules.includes(mod.id);
+                      return (
+                        <li
+                          key={mod.id}
+                          onClick={() => toggleErpModule(mod.id, mod.core)}
+                          style={{
+                            padding: "0.55rem 0.5rem",
+                            borderBottom: "1px solid #f1f5f9",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            cursor: mod.core ? "default" : "pointer",
+                            borderRadius: 6,
+                            background: isEnabled ? "transparent" : "#f8fafc",
+                            opacity: isEnabled ? 1 : 0.65,
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              cursor: mod.core ? "default" : "pointer",
+                              fontSize: 13.2,
+                              margin: 0,
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isEnabled}
+                              disabled={mod.core}
+                              onChange={() => toggleErpModule(mod.id, mod.core)}
+                              style={{ width: 15, height: 15, accentColor: "#00a862", cursor: mod.core ? "not-allowed" : "pointer" }}
+                            />
+                            <strong style={{ color: isEnabled ? "#0f172a" : "#64748b" }}>{mod.name}</strong>
+                          </label>
+                          <span
+                            className={`admin-badge ${isEnabled ? "admin-badge-active" : ""}`}
+                            style={
+                              isEnabled
+                                ? undefined
+                                : { background: "#e2e8f0", color: "#475569", fontWeight: 600 }
+                            }
+                          >
+                            {mod.core ? "Cốt lõi (Luôn bật)" : isEnabled ? "Đang bật" : "Đã tắt"}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>

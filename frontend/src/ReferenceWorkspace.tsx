@@ -1047,7 +1047,45 @@ function ReferenceWorkspace() {
     };
   }, [apiToken, company?.id, apiSession?.user?.email]);
 
-  const activeRoleSpec = useMemo(() => getRoleWorkspaceSpec(workMode), [workMode]);
+  const [moduleSyncTick, setModuleSyncTick] = useState(0);
+  useEffect(() => {
+    const onSync = () => setModuleSyncTick((t) => t + 1);
+    window.addEventListener("sv_modules_updated", onSync);
+    window.addEventListener("sv_rbac_updated", onSync);
+    window.addEventListener("storage", onSync);
+    return () => {
+      window.removeEventListener("sv_modules_updated", onSync);
+      window.removeEventListener("sv_rbac_updated", onSync);
+      window.removeEventListener("storage", onSync);
+    };
+  }, []);
+
+  const activeRoleSpec = useMemo(() => {
+    const baseSpec = getRoleWorkspaceSpec(workMode);
+    let roleModules = baseSpec.allowedModules;
+    try {
+      const roleMapRaw = localStorage.getItem(`sv_role_modules_${company?.id}`);
+      if (roleMapRaw) {
+        const roleMap = JSON.parse(roleMapRaw);
+        if (roleMap && Array.isArray(roleMap[baseSpec.code]) && roleMap[baseSpec.code].length > 0) {
+          roleModules = roleMap[baseSpec.code];
+        }
+      }
+    } catch {}
+    try {
+      const enabledRaw = localStorage.getItem(`sv_enabled_modules_${company?.id}`);
+      if (enabledRaw) {
+        const enabledList: string[] = JSON.parse(enabledRaw);
+        if (Array.isArray(enabledList) && enabledList.length > 0) {
+          roleModules = roleModules.filter((m) => enabledList.includes(m));
+        }
+      }
+    } catch {}
+    return {
+      ...baseSpec,
+      allowedModules: roleModules,
+    };
+  }, [workMode, company?.id, moduleSyncTick]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
