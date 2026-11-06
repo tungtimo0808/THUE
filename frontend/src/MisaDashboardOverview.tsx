@@ -35,6 +35,9 @@ interface MisaDashboardOverviewProps {
   companyId?: string;
   companyName?: string;
   period?: string;
+  branchId?: string;
+  dataset?: string;
+  onBranchChange?: (branchId: string) => void;
   href: DashboardHref;
   notify?: (text: string) => void;
   onSelectTransaction?: (t: Transaction) => void;
@@ -59,6 +62,9 @@ export function MisaDashboardOverview({
   companyId: propCompanyId,
   companyName = "Doanh nghiệp",
   period: propPeriod,
+  branchId: propBranchId,
+  dataset: propDataset,
+  onBranchChange,
   href,
   notify,
 }: MisaDashboardOverviewProps) {
@@ -143,9 +149,16 @@ export function MisaDashboardOverview({
 
   const urlPeriod = searchParams.get("period") || propPeriod || "2026-12";
   const [selectedPeriod, setSelectedPeriod] = useState<string>(urlPeriod);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(searchParams.get("branch_id") || "");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    const fromUrl = searchParams.get("branch_id") || "";
+    if (fromUrl) return fromUrl;
+    if (propBranchId && propBranchId !== "all" && propBranchId !== "head-office") return propBranchId;
+    return "";
+  });
   const [comparisonMode, setComparisonMode] = useState<string>("PREVIOUS_PERIOD");
-  const [revenueBasis, setRevenueBasis] = useState<string>("GL");
+  const [revenueBasis, setRevenueBasis] = useState<string>(() =>
+    propDataset === "management-2026" ? "SAL" : "GL"
+  );
   const [recentModuleFilter, setRecentModuleFilter] = useState<string>("");
   const [recentStatusFilter, setRecentStatusFilter] = useState<string>("");
 
@@ -170,6 +183,27 @@ export function MisaDashboardOverview({
     }
   }, [urlPeriod]);
 
+  useEffect(() => {
+    if (!propBranchId || propBranchId === "all") {
+      if (selectedBranchId !== "") setSelectedBranchId("");
+    } else if (propBranchId === "head-office") {
+      const avail: any[] = configData?.available_branches || configData?.branches || [];
+      const hq = avail.find((b: any) => b.is_head_office || b.code === "HQ") || avail[0];
+      const targetId = hq ? String(hq.id) : "";
+      if (targetId && selectedBranchId !== targetId) setSelectedBranchId(targetId);
+    } else if (propBranchId !== selectedBranchId) {
+      setSelectedBranchId(propBranchId);
+    }
+  }, [propBranchId, configData]);
+
+  useEffect(() => {
+    if (!propDataset) return;
+    const targetBasis = propDataset === "management-2026" ? "SAL" : "GL";
+    if (revenueBasis !== targetBasis) {
+      setRevenueBasis(targetBasis);
+    }
+  }, [propDataset]);
+
   const writer = useMemo(() => {
     if (!effectiveToken || !effectiveCompanyId) return null;
     return createApiWriter(effectiveCompanyId, (path, init) => request(path, effectiveToken, init));
@@ -188,7 +222,8 @@ export function MisaDashboardOverview({
           : Array.isArray(res?.periods)
             ? res.periods
             : [];
-        if (rawList.length > 0 && selectedPeriod !== "2026") {
+        const isStandardPeriod = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/i.test(selectedPeriod || "");
+        if (rawList.length > 0 && !isStandardPeriod) {
           const exists = rawList.some((p: any) => (p.code || p.period_code) === selectedPeriod);
           if (!exists) {
             const fallback = res.default_period_code || rawList[0].code || rawList[0].period_code;
@@ -266,6 +301,7 @@ export function MisaDashboardOverview({
     if (newBranchId) next.set("branch_id", newBranchId);
     else next.delete("branch_id");
     setSearchParams(next, { replace: true });
+    onBranchChange?.(newBranchId || "all");
   };
 
   const openMetricDrilldown = async (metricCode: string) => {
@@ -543,6 +579,20 @@ export function MisaDashboardOverview({
               }}
             >
               Chế độ: {circularFullLabel}
+            </span>
+            <span
+              data-testid="dashboard-dataset-badge"
+              style={{
+                fontSize: 11.5,
+                padding: "2px 10px",
+                borderRadius: 999,
+                fontWeight: 600,
+                background: propDataset === "management-2026" ? "#f3e8ff" : "#eff6ff",
+                color: propDataset === "management-2026" ? "#6b21a8" : "#1d4ed8",
+                border: propDataset === "management-2026" ? "1px solid #d8b4fe" : "1px solid #bfdbfe",
+              }}
+            >
+              {propDataset === "management-2026" ? "Sổ quản trị 2026" : "Sổ kế toán 2026"}
             </span>
             {filterInfo.from_date && (
               <span style={{ fontSize: 12, color: "#475569" }}>

@@ -241,7 +241,7 @@ export default function MisaBranchManagementModal({
       <div
         style={{
           width: "100%",
-          maxWidth: 920,
+          maxWidth: 1120,
           background: "#ffffff",
           borderRadius: 14,
           boxShadow: "0 20px 40px rgba(0,0,0,0.18)",
@@ -603,17 +603,17 @@ export default function MisaBranchManagementModal({
               </div>
 
               {/* Table */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
                   <thead>
-                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 700 }}>
-                      <th style={{ padding: "10px 14px" }}>Mã chi nhánh</th>
-                      <th style={{ padding: "10px 14px" }}>Tên chi nhánh / Đơn vị</th>
-                      <th style={{ padding: "10px 14px" }}>Mã số thuế</th>
-                      <th style={{ padding: "10px 14px" }}>Địa chỉ</th>
-                      <th style={{ padding: "10px 14px" }}>Người đại diện</th>
-                      <th style={{ padding: "10px 14px", textAlign: "center" }}>Trạng thái</th>
-                      <th style={{ padding: "10px 14px", textAlign: "right" }}>Thao tác</th>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 700, whiteSpace: "nowrap" }}>
+                      <th style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>Mã chi nhánh</th>
+                      <th style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>Tên chi nhánh / Đơn vị</th>
+                      <th style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>Mã số thuế</th>
+                      <th style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>Địa chỉ</th>
+                      <th style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>Người đại diện</th>
+                      <th style={{ padding: "10px 10px", textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
+                      <th style={{ padding: "10px 12px", textAlign: "right", whiteSpace: "nowrap" }}>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -625,7 +625,7 @@ export default function MisaBranchManagementModal({
                       </tr>
                     ) : (
                       filteredBranches.map((b) => {
-                        const isCurrentActive = activeBranchId === b.id;
+                        const isCurrentActive = activeBranchId === b.id || (activeBranchId === "head-office" && b.is_head_office);
                         return (
                           <tr
                             key={b.id}
@@ -634,22 +634,26 @@ export default function MisaBranchManagementModal({
                               background: isCurrentActive ? "#f0fdf4" : undefined,
                             }}
                           >
-                            <td style={{ padding: "10px 14px", fontWeight: 700, fontFamily: "monospace", color: "#0284c7" }}>
+                            <td style={{ padding: "10px 10px", fontWeight: 700, fontFamily: "monospace", color: "#0284c7", whiteSpace: "nowrap" }}>
                               {b.code}
                             </td>
-                            <td style={{ padding: "10px 14px" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <strong style={{ color: "#0f172a" }}>{b.name}</strong>
+                            <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
+                                <strong style={{ color: "#0f172a", whiteSpace: "nowrap" }}>{b.name}</strong>
                                 {b.is_head_office && (
                                   <span
                                     style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
                                       fontSize: 11,
                                       fontWeight: 700,
-                                      padding: "1px 6px",
-                                      borderRadius: 4,
+                                      padding: "2px 8px",
+                                      borderRadius: 6,
                                       background: "#fef3c7",
                                       color: "#b45309",
                                       border: "1px solid #fde68a",
+                                      whiteSpace: "nowrap",
+                                      flexShrink: 0,
                                     }}
                                   >
                                     Trụ sở chính
@@ -657,59 +661,67 @@ export default function MisaBranchManagementModal({
                                 )}
                               </div>
                             </td>
-                            <td style={{ padding: "10px 14px", color: "#334155" }}>{b.tax_code || "---"}</td>
-                            <td style={{ padding: "10px 14px", color: "#475569", maxWidth: 220, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={b.address}>
+                            <td style={{ padding: "10px 10px", color: "#334155", whiteSpace: "nowrap" }}>{b.tax_code || "---"}</td>
+                            <td style={{ padding: "10px 10px", color: "#475569", maxWidth: 180, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={b.address}>
                               {b.address || "---"}
                             </td>
-                            <td style={{ padding: "10px 14px", color: "#334155" }}>
+                            <td style={{ padding: "10px 10px", color: "#334155", whiteSpace: "nowrap" }}>
                               {b.representative_name ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
                                   <User size={12} color="#64748b" /> {b.representative_name}
                                 </span>
                               ) : (
                                 "---"
                               )}
                             </td>
-                            <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                            <td style={{ padding: "10px 10px", textAlign: "center", whiteSpace: "nowrap" }}>
                               <span
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
-                                  gap: 4,
-                                  fontSize: 11,
+                                  gap: 5,
+                                  fontSize: 12,
                                   fontWeight: 600,
-                                  padding: "2px 8px",
+                                  padding: "4px 10px",
                                   borderRadius: 999,
                                   background: b.status === "ACTIVE" ? "#ecfdf5" : "#f1f5f9",
                                   color: b.status === "ACTIVE" ? "#047857" : "#64748b",
+                                  border: b.status === "ACTIVE" ? "1px solid #a7f3d0" : "1px solid #e2e8f0",
+                                  whiteSpace: "nowrap",
+                                  flexShrink: 0,
                                 }}
                               >
                                 {b.status === "ACTIVE" ? (
                                   <>
-                                    <CheckCircle2 size={12} /> Hoạt động
+                                    <CheckCircle2 size={13} /> Hoạt động
                                   </>
                                 ) : (
                                   <>
-                                    <XCircle size={12} /> Ngừng
+                                    <XCircle size={13} /> Ngừng
                                   </>
                                 )}
                               </span>
                             </td>
-                            <td style={{ padding: "10px 14px", textAlign: "right" }}>
-                              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <td style={{ padding: "10px 12px", textAlign: "right", whiteSpace: "nowrap" }}>
+                              <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 6, flexWrap: "nowrap" }}>
                                 {onSelectBranch && !isCurrentActive && (
                                   <button
                                     type="button"
                                     onClick={() => onSelectBranch(b.id, b.name)}
                                     title="Chọn làm việc tại chi nhánh này"
                                     style={{
-                                      padding: "4px 8px",
-                                      borderRadius: 4,
-                                      background: "#e0f2fe",
-                                      border: "none",
-                                      color: "#0369a1",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 5,
+                                      padding: "6px 12px",
+                                      borderRadius: 6,
+                                      background: "#eff6ff",
+                                      border: "1px solid #bfdbfe",
+                                      color: "#0284c7",
                                       fontSize: 12,
                                       fontWeight: 600,
+                                      whiteSpace: "nowrap",
+                                      flexShrink: 0,
                                       cursor: "pointer",
                                     }}
                                   >
@@ -717,8 +729,23 @@ export default function MisaBranchManagementModal({
                                   </button>
                                 )}
                                 {isCurrentActive && (
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: "#15803d", display: "inline-flex", alignItems: "center", gap: 2 }}>
-                                    <Check size={12} /> Đang chọn
+                                  <span
+                                    style={{
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      color: "#15803d",
+                                      background: "#dcfce7",
+                                      border: "1px solid #bbf7d0",
+                                      padding: "5px 10px",
+                                      borderRadius: 6,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      whiteSpace: "nowrap",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <Check size={13} /> Đang chọn
                                   </span>
                                 )}
                                 <button
@@ -726,16 +753,22 @@ export default function MisaBranchManagementModal({
                                   onClick={() => openEditForm(b)}
                                   title="Sửa thông tin chi nhánh"
                                   style={{
-                                    padding: "4px 8px",
-                                    borderRadius: 4,
-                                    background: "#f8fafc",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    padding: "6px 12px",
+                                    borderRadius: 6,
+                                    background: "#ffffff",
                                     border: "1px solid #cbd5e1",
                                     color: "#334155",
                                     fontSize: 12,
+                                    fontWeight: 600,
+                                    whiteSpace: "nowrap",
+                                    flexShrink: 0,
                                     cursor: "pointer",
                                   }}
                                 >
-                                  Sửa
+                                  <Edit2 size={12} /> Sửa
                                 </button>
                               </div>
                             </td>
@@ -788,3 +821,4 @@ export default function MisaBranchManagementModal({
     </div>
   );
 }
+

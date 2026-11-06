@@ -158,6 +158,30 @@ def _get_or_create_all_company_scope(company, creator):
     return scope_set
 
 
+def _get_or_create_branch_scope(company, branch, creator):
+    from .models import DataScopeBranch, DataScopeSet
+    code = f"SCOPE_BR_{branch.code}"[:40]
+    scope_set, _ = DataScopeSet.objects.get_or_create(
+        company=company,
+        code=code,
+        defaults={
+            "name": f"Phạm vi Chi nhánh: {branch.name}"[:150],
+            "allow_all_company_data": False,
+            "allow_owned_records": True,
+            "created_by": creator,
+        },
+    )
+    if scope_set.allow_all_company_data:
+        scope_set.allow_all_company_data = False
+        scope_set.save(update_fields=("allow_all_company_data", "updated_at"))
+    DataScopeBranch.objects.get_or_create(
+        data_scope_set=scope_set,
+        branch=branch,
+        defaults={"include_descendants": True},
+    )
+    return scope_set
+
+
 def _resolve_user_account(user_id):
     if not user_id:
         return None
@@ -808,8 +832,36 @@ def assign_member_role_view(request):
     if not role:
         raise ValidationError({"role": "Không tìm thấy vai trò tương ứng trong doanh nghiệp."})
 
+    raw_branch = data.get("branch_id") or data.get("branch")
+    all_branches = bool(data.get("all_branches")) or (str(raw_branch or "").strip().lower() == "all")
+    is_admin_role = bool(role.is_system_admin or role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
+
     with transaction.atomic():
-        scope_set = _get_or_create_all_company_scope(company, actor or membership.user)
+        target_branch = None
+        if raw_branch and not all_branches:
+            target_branch = Branch.objects.filter(company=company, pk=raw_branch).first()
+            if not target_branch:
+                raise ValidationError({"branch_id": "Chi nhánh được chọn không thuộc doanh nghiệp."})
+            if membership.employee_id:
+                Employee.objects.filter(pk=membership.employee_id).update(branch=target_branch)
+
+        if is_admin_role or all_branches:
+            scope_set = _get_or_create_all_company_scope(company, actor or membership.user)
+        elif target_branch:
+            scope_set = _get_or_create_branch_scope(company, target_branch, actor or membership.user)
+        else:
+            existing_assignment = (
+                UserRoleAssignment.objects.filter(company_membership=membership, status=ActiveStatus.ACTIVE)
+                .select_related("data_scope_set")
+                .first()
+            )
+            if existing_assignment and existing_assignment.data_scope_set and not existing_assignment.data_scope_set.allow_all_company_data:
+                scope_set = existing_assignment.data_scope_set
+            elif membership.employee_id and membership.employee.branch_id:
+                scope_set = _get_or_create_branch_scope(company, membership.employee.branch, actor or membership.user)
+            else:
+                scope_set = _get_or_create_all_company_scope(company, actor or membership.user)
+
         UserRoleAssignment.objects.filter(
             company_membership=membership,
             status=ActiveStatus.ACTIVE,
@@ -824,11 +876,28 @@ def assign_member_role_view(request):
             assign_reason=data.get("reason", f"Phân công vai trò {role.name}"),
         )
 
+        from common_services.models import UserPreference
+        pref, _ = UserPreference.objects.get_or_create(user=membership.user)
+        if scope_set.allow_all_company_data:
+            pref.current_company = company
+            pref.all_branches = True
+            pref.save(update_fields=("current_company", "all_branches", "updated_at"))
+        else:
+            scoped_branch = target_branch or (membership.employee.branch if membership.employee_id else None)
+            if scoped_branch:
+                pref.current_company = company
+                pref.current_branch = scoped_branch
+                pref.all_branches = False
+                pref.save(update_fields=("current_company", "current_branch", "all_branches", "updated_at"))
+
     return Response({
-        "message": f"Đã phân vai trò '{role.name}' cho nhân sự {membership.user.display_name}.",
+        "message": f"Đã phân vai trò '{role.name}' ({scope_set.name}) cho nhân sự {membership.user.display_name}.",
         "membership_id": str(membership.id),
         "role_code": role.code,
         "role_name": role.name,
+        "scope_name": scope_set.name,
+        "allow_all_company_data": scope_set.allow_all_company_data,
+        "branch_id": str(target_branch.id) if target_branch else (str(membership.employee.branch_id) if membership.employee_id and membership.employee.branch_id else None),
         "assignment_id": str(assignment.id),
     })
 
@@ -860,6 +929,8 @@ def create_staff_member_view(request):
     full_name = (data.get("full_name") or "").strip()
     email = (data.get("email") or "").strip().lower()
     phone = (data.get("phone") or "").strip()
+    raw_branch = data.get("branch_id") or data.get("branch") or None
+    all_branches = bool(data.get("all_branches")) or (str(raw_branch or "").strip().lower() == "all")
     department_id = data.get("department") or data.get("department_id") or None
     position_id = data.get("position") or data.get("position_id") or None
     role_code = (data.get("role_code") or "").strip()
@@ -871,7 +942,14 @@ def create_staff_member_view(request):
         email = f"{emp_code.lower()}.{company.code.lower()}@soviet.local"
 
     with transaction.atomic():
-        branch = Branch.objects.filter(company=company, status="ACTIVE").order_by("-is_head_office", "created_at").first()
+        branch = None
+        if raw_branch and not all_branches:
+            branch = Branch.objects.filter(company=company, pk=raw_branch).first()
+            if not branch:
+                raise ValidationError({"branch_id": "Chi nhánh được chọn không thuộc doanh nghiệp."})
+
+        if not branch:
+            branch = Branch.objects.filter(company=company, status="ACTIVE").order_by("-is_head_office", "created_at").first()
         if not branch:
             branch = Branch.objects.create(
                 company=company,
@@ -883,7 +961,7 @@ def create_staff_member_view(request):
             )
 
         dept = Department.objects.filter(company=company, pk=department_id).first() if department_id else None
-        if dept and dept.branch_id and dept.branch_id != branch.id:
+        if dept and dept.branch_id and not (raw_branch and not all_branches):
             branch = dept.branch
 
         employee, _ = Employee.objects.update_or_create(
@@ -944,10 +1022,16 @@ def create_staff_member_view(request):
             membership.save(update_fields=("employee", "membership_status", "updated_at"))
 
         assigned_role_name = None
+        scope_name = None
         if role_code:
             role = Role.objects.filter(company=company, code=role_code).first()
             if role:
-                scope_set = _get_or_create_all_company_scope(company, actor or user_account)
+                is_admin_role = bool(role.is_system_admin or role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
+                if is_admin_role or all_branches:
+                    scope_set = _get_or_create_all_company_scope(company, actor or user_account)
+                else:
+                    scope_set = _get_or_create_branch_scope(company, branch, actor or user_account)
+                scope_name = scope_set.name
                 UserRoleAssignment.objects.filter(
                     company_membership=membership,
                     status=ActiveStatus.ACTIVE,
@@ -958,9 +1042,16 @@ def create_staff_member_view(request):
                     data_scope_set=scope_set,
                     status=ActiveStatus.ACTIVE,
                     assigned_by=actor or user_account,
-                    assign_reason=f"Khởi tạo nhân sự với vai trò {role.name}",
+                    assign_reason=f"Khởi tạo nhân sự với vai trò {role.name} ({scope_set.name})",
                 )
                 assigned_role_name = role.name
+
+        from common_services.models import UserPreference
+        pref, _ = UserPreference.objects.get_or_create(user=user_account)
+        pref.current_company = company
+        pref.current_branch = None if all_branches else branch
+        pref.all_branches = bool(all_branches)
+        pref.save(update_fields=("current_company", "current_branch", "all_branches", "updated_at"))
 
     return Response({
         "id": str(employee.id),
@@ -968,6 +1059,9 @@ def create_staff_member_view(request):
         "employee_code": employee.employee_code,
         "full_name": employee.full_name,
         "email": email,
+        "branch_id": str(branch.id),
+        "branch_name": branch.name,
         "role_name": assigned_role_name,
-        "message": f"Đã thêm nhân viên {full_name} ({emp_code}) và tạo tài khoản phân quyền thành công.",
+        "scope_name": scope_name,
+        "message": f"Đã thêm nhân viên {full_name} ({emp_code}) thuộc '{branch.name}' và tạo tài khoản phân quyền thành công.",
     }, status=status.HTTP_201_CREATED)

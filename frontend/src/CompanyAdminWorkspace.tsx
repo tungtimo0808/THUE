@@ -137,6 +137,9 @@ interface MemberRoleAssignment {
   role_id: string;
   role_code: string;
   role_name: string;
+  data_scope_set_id?: string | null;
+  data_scope_set_name?: string | null;
+  allow_all_company_data?: boolean;
 }
 
 interface MemberItem {
@@ -146,6 +149,7 @@ interface MemberItem {
   email: string;
   phone?: string;
   employee_code?: string;
+  employee_branch_id?: string | null;
   employee_branch_name?: string;
   employee_department_name?: string;
   role_assignments: MemberRoleAssignment[];
@@ -963,6 +967,7 @@ export default function CompanyAdminWorkspace() {
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
+  const [branches, setBranches] = useState<Array<{ id: string; code: string; name: string; is_head_office?: boolean }>>([]);
   const [departments, setDepartments] = useState<OrgUnit[]>([]);
   const [positions, setPositions] = useState<OrgUnit[]>([]);
   const [roles, setRoles] = useState<RoleItem[]>([]);
@@ -1000,6 +1005,7 @@ export default function CompanyAdminWorkspace() {
   // Modals
   const [assignModalMember, setAssignModalMember] = useState<MemberItem | null>(null);
   const [targetRoleCode, setTargetRoleCode] = useState<string>("");
+  const [targetBranchScope, setTargetBranchScope] = useState<string>("all");
   const [assignReason, setAssignReason] = useState<string>("");
   const [assignSaving, setAssignSaving] = useState<boolean>(false);
   const [viewingPermsMember, setViewingPermsMember] = useState<MemberItem | null>(null);
@@ -1013,6 +1019,7 @@ export default function CompanyAdminWorkspace() {
     full_name: "",
     email: "",
     phone: "",
+    branch_id: "all",
     department_id: "",
     position_id: "",
     role_code: "ROLE_CHIEF_ACCOUNTANT",
@@ -1104,9 +1111,10 @@ export default function CompanyAdminWorkspace() {
       }
 
       // Load essential personnel & org data
-      const [memRes, empRes, deptRes, posRes, roleRes, joinRes] = await Promise.allSettled([
+      const [memRes, empRes, branchRes, deptRes, posRes, roleRes, joinRes] = await Promise.allSettled([
         request<MemberItem[] | { results: MemberItem[] }>(`/api/v1/iam/memberships/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<EmployeeItem[] | { results: EmployeeItem[] }>(`/api/v1/organization/employees/?company_id=${effectiveCompanyId}`, effectiveToken),
+        request<any[] | { results: any[] }>(`/api/v1/organization/branches/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/departments/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<OrgUnit[] | { results: OrgUnit[] }>(`/api/v1/organization/positions/?company_id=${effectiveCompanyId}`, effectiveToken),
         request<RoleItem[] | { results: RoleItem[] }>(`/api/v1/iam/roles/?company_id=${effectiveCompanyId}`, effectiveToken),
@@ -1120,6 +1128,10 @@ export default function CompanyAdminWorkspace() {
       if (empRes.status === "fulfilled") {
         const val = empRes.value;
         setEmployees(Array.isArray(val) ? val : val.results || []);
+      }
+      if (branchRes.status === "fulfilled") {
+        const val = branchRes.value;
+        setBranches(Array.isArray(val) ? val : val.results || []);
       }
       if (deptRes.status === "fulfilled") {
         const val = deptRes.value;
@@ -1320,6 +1332,8 @@ export default function CompanyAdminWorkspace() {
           full_name: employeeFormData.full_name.trim(),
           email: employeeFormData.email.trim(),
           phone: employeeFormData.phone.trim(),
+          branch_id: employeeFormData.branch_id === "all" ? null : employeeFormData.branch_id,
+          all_branches: employeeFormData.branch_id === "all",
           department_id: employeeFormData.department_id || null,
           position_id: employeeFormData.position_id || null,
           role_code: employeeFormData.role_code || "",
@@ -1335,6 +1349,7 @@ export default function CompanyAdminWorkspace() {
         full_name: "",
         email: "",
         phone: "",
+        branch_id: "all",
         department_id: "",
         position_id: "",
         role_code: "ROLE_CHIEF_ACCOUNTANT",
@@ -1427,6 +1442,8 @@ export default function CompanyAdminWorkspace() {
           company_id: companyId,
           membership_id: assignModalMember.id,
           role_code: targetRoleCode,
+          branch_id: targetBranchScope === "all" ? null : targetBranchScope,
+          all_branches: targetBranchScope === "all",
           reason: assignReason || `Admin đổi vai trò sang ${targetRoleCode}`,
         }),
       });
@@ -2211,15 +2228,53 @@ export default function CompanyAdminWorkspace() {
                               </div>
                             </td>
                             <td>
-                              <div>
-                                <span style={{ fontWeight: 500 }}>
-                                  {m.employee_department_name || "Phòng Kế toán - Tài chính"}
+                              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                                  {m.employee_branch_name || "Trụ sở chính"}
                                 </span>
-                                {m.employee_code && (
-                                  <div style={{ fontSize: "12px", color: "var(--admin-text-muted)" }}>
-                                    Mã NV: {m.employee_code}
-                                  </div>
-                                )}
+                                <span style={{ fontSize: "12px", color: "#475569" }}>
+                                  {m.employee_department_name || "Phòng Kế toán - Tài chính"}
+                                  {m.employee_code ? ` · Mã NV: ${m.employee_code}` : ""}
+                                </span>
+                                <div>
+                                  {isCompanyAdmin || m.role_assignments?.[0]?.allow_all_company_data !== false ? (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        padding: "2px 8px",
+                                        borderRadius: 6,
+                                        background: "#eff6ff",
+                                        color: "#1d4ed8",
+                                        border: "1px solid #bfdbfe",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      🏢 Toàn doanh nghiệp
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        padding: "2px 8px",
+                                        borderRadius: 6,
+                                        background: "#ecfdf5",
+                                        color: "#047857",
+                                        border: "1px solid #a7f3d0",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      📍 Chỉ xem: {m.employee_branch_name || m.role_assignments?.[0]?.data_scope_set_name || "Chi nhánh riêng"}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td>
@@ -2233,6 +2288,10 @@ export default function CompanyAdminWorkspace() {
                                   onClick={() => {
                                     setAssignModalMember(m);
                                     setTargetRoleCode(m.role_assignments[0]?.role_code || "ROLE_CHIEF_ACCOUNTANT");
+                                    const isAll = m.role_assignments?.[0]?.allow_all_company_data !== false;
+                                    setTargetBranchScope(
+                                      !isAll && m.employee_branch_id ? String(m.employee_branch_id) : "all"
+                                    );
                                     setAssignReason(`Admin phân công vai trò cho ${m.full_name || m.email}`);
                                   }}
                                   title="Đổi vai trò và phân quyền nghiệp vụ cho nhân sự này"
@@ -3262,6 +3321,22 @@ export default function CompanyAdminWorkspace() {
                   />
                 </div>
                 <div className="admin-form-group">
+                  <label>Chi nhánh làm việc &amp; Phạm vi dữ liệu (*)</label>
+                  <MisaDropdownSelect
+                    fullWidth
+                    value={employeeFormData.branch_id}
+                    onChange={(val) => setEmployeeFormData({ ...employeeFormData, branch_id: val })}
+                    searchPlaceholder="Tìm chi nhánh..."
+                    options={[
+                      { value: "all", label: "🏢 Toàn doanh nghiệp (Xem tất cả chi nhánh)" },
+                      ...branches.map((b) => ({
+                        value: b.id,
+                        label: `📍 ${b.code} - ${b.name}${b.is_head_office ? " (Trụ sở chính)" : ""} — Chỉ xem dữ liệu chi nhánh này`,
+                      })),
+                    ]}
+                  />
+                </div>
+                <div className="admin-form-group">
                   <label>Phòng ban / Đơn vị trực thuộc</label>
                   <MisaDropdownSelect
                     fullWidth
@@ -3505,6 +3580,23 @@ export default function CompanyAdminWorkspace() {
                     {roles.find((r) => r.code === targetRoleCode)?.description || "Vai trò nghiệp vụ tiêu chuẩn của doanh nghiệp."}
                   </div>
                 )}
+
+                <div className="admin-form-group">
+                  <label>Phạm vi Chi nhánh được phép truy cập dữ liệu (*)</label>
+                  <MisaDropdownSelect
+                    fullWidth
+                    value={targetBranchScope}
+                    onChange={(val) => setTargetBranchScope(val)}
+                    searchPlaceholder="Tìm chi nhánh..."
+                    options={[
+                      { value: "all", label: "🏢 Toàn doanh nghiệp (Tất cả chi nhánh)" },
+                      ...branches.map((b) => ({
+                        value: b.id,
+                        label: `📍 Chỉ Chi nhánh: ${b.code} - ${b.name}${b.is_head_office ? " (Trụ sở chính)" : ""}`,
+                      })),
+                    ]}
+                  />
+                </div>
 
                 <div className="admin-form-group">
                   <label>Lý do phân công / Ghi chú</label>

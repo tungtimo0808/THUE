@@ -65,10 +65,21 @@ export function clearMisaApiCache(companyId?: string, onlyDynamic = false) {
   }
 }
 
-function getInitialRows(companyId: string, resources: Record<string, string>): Record<string, ApiRow[]> {
+function getActiveBranchScope(): string {
+  try {
+    const val = (localStorage.getItem("ref_branch") || "all").trim();
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? val : "all";
+  } catch {
+    return "all";
+  }
+}
+
+function getInitialRows(companyId: string, branchScope: string, resources: Record<string, string>): Record<string, ApiRow[]> {
   const result: Record<string, ApiRow[]> = {};
   for (const [name, path] of Object.entries(resources)) {
-    const cacheKey = `${companyId}::${path}`;
+    const isGlobalCatalog = STATIC_CATALOG_PATTERNS.some((p) => path.includes(p) && !path.includes("/employees/"));
+    const scopeKey = isGlobalCatalog ? "all" : branchScope;
+    const cacheKey = `${companyId}::${scopeKey}::${path}`;
     const cached = cacheGet(cacheKey);
     result[name] = cached ? cached.data : [];
   }
@@ -87,10 +98,25 @@ export function useMisaApiLists(
   const { token } = useApiSession();
   const validCompany = Boolean(token && companyId && isUuidCompany(companyId));
   const key = useMemo(() => JSON.stringify(resources), [resources]);
+  const [branchScope, setBranchScope] = useState<string>(() => getActiveBranchScope());
   const [rows, setRows] = useState<Record<string, ApiRow[]>>(() => {
-    return validCompany ? getInitialRows(companyId, JSON.parse(key)) : {};
+    return validCompany ? getInitialRows(companyId, getActiveBranchScope(), JSON.parse(key)) : {};
   });
   const [revision, setRevision] = useState(0);
+
+  useEffect(() => {
+    const handleContextChange = () => {
+      const nextBranch = getActiveBranchScope();
+      setBranchScope((prev) => {
+        if (prev !== nextBranch) {
+          setRevision((r) => r + 1);
+        }
+        return nextBranch;
+      });
+    };
+    window.addEventListener("erp_context_changed", handleContextChange);
+    return () => window.removeEventListener("erp_context_changed", handleContextChange);
+  }, []);
 
   useEffect(() => {
     if (!validCompany) {
@@ -102,24 +128,15 @@ export function useMisaApiLists(
     const entries = Object.entries(resourceMap);
 
     // Hydrate immediately from cache if available so switching tabs has 0ms delay!
-    const cached = getInitialRows(companyId, resourceMap);
-    setRows((prev) => {
-      let changed = false;
-      const next: Record<string, ApiRow[]> = { ...prev };
-      for (const [name] of entries) {
-        const nextVal = prev[name]?.length ? prev[name] : (cached[name] || []);
-        if (next[name] !== nextVal) {
-          next[name] = nextVal;
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
+    const cached = getInitialRows(companyId, branchScope, resourceMap);
+    setRows(cached);
 
     const FRESH_SW_WINDOW_MS = 60_000;
     const entriesToFetch = entries.filter(([, path]) => {
       if (revision > 0) return true;
-      const entry = apiListCache.get(`${companyId}::${path}`);
+      const isGlobalCatalog = STATIC_CATALOG_PATTERNS.some((p) => path.includes(p) && !path.includes("/employees/"));
+      const scopeKey = isGlobalCatalog ? "all" : branchScope;
+      const entry = apiListCache.get(`${companyId}::${scopeKey}::${path}`);
       if (!entry) return true;
       return Date.now() - entry.timestamp > FRESH_SW_WINDOW_MS;
     });
@@ -133,8 +150,13 @@ export function useMisaApiLists(
     // Fetch needed resources in parallel and commit in ONE batched setRows call to avoid 8-12 cascading re-renders
     void Promise.allSettled(
       entriesToFetch.map(async ([name, path]) => {
+        const isGlobalCatalog = STATIC_CATALOG_PATTERNS.some((p) => path.includes(p) && !path.includes("/employees/"));
+        const scopeKey = isGlobalCatalog ? "all" : branchScope;
         const separator = path.includes("?") ? "&" : "?";
         let nextPath: string | null = `${path}${separator}company_id=${encodeURIComponent(companyId)}`;
+        if (scopeKey !== "all" && !nextPath.includes("branch_id=")) {
+          nextPath += `&branch_id=${encodeURIComponent(scopeKey)}`;
+        }
         if (!nextPath.includes("page_size=")) {
           nextPath += "&page_size=100";
         }
@@ -152,7 +174,7 @@ export function useMisaApiLists(
           nextPath = `${nextUrl.pathname}${nextUrl.search}`;
           pages += 1;
         }
-        return { name, path, collected };
+        return { name, path, scopeKey, collected };
       }),
     ).then((results) => {
       if (!active) return;
@@ -162,18 +184,20 @@ export function useMisaApiLists(
       for (let i = 0; i < results.length; i += 1) {
         const res = results[i];
         const [name, path] = entriesToFetch[i];
+        const isGlobalCatalog = STATIC_CATALOG_PATTERNS.some((p) => path.includes(p) && !path.includes("/employees/"));
+        const scopeKey = isGlobalCatalog ? "all" : branchScope;
         if (res.status === "fulfilled") {
-          cacheSet(`${companyId}::${path}`, res.value.collected);
+          cacheSet(`${companyId}::${scopeKey}::${path}`, res.value.collected);
           batchUpdates[name] = res.value.collected;
           hasUpdates = true;
         } else {
           const error = res.reason;
           if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-            apiListCache.delete(`${companyId}::${path}`);
+            apiListCache.delete(`${companyId}::${scopeKey}::${path}`);
             batchUpdates[name] = [];
             hasUpdates = true;
           } else {
-            const hasData = (apiListCache.get(`${companyId}::${path}`)?.data.length ?? 0) > 0;
+            const hasData = (apiListCache.get(`${companyId}::${scopeKey}::${path}`)?.data.length ?? 0) > 0;
             if (!hasData) {
               notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);
             }
@@ -192,7 +216,7 @@ export function useMisaApiLists(
     return () => {
       active = false;
     };
-  }, [token, companyId, key, revision]);
+  }, [token, companyId, branchScope, key, revision]);
 
   return {
     rows,

@@ -156,6 +156,7 @@ class CompanyUserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.auth_user.email", read_only=True)
     phone = serializers.CharField(source="user.phone", read_only=True)
     employee_code = serializers.CharField(source="employee.employee_code", read_only=True, allow_null=True)
+    employee_branch_id = serializers.UUIDField(source="employee.branch_id", read_only=True, allow_null=True)
     employee_branch_name = serializers.CharField(source="employee.branch.name", read_only=True, allow_null=True)
     employee_department_name = serializers.CharField(source="employee.department.name", read_only=True, allow_null=True)
     organization_unit_name = serializers.CharField(source="organization_unit.name", read_only=True, allow_null=True)
@@ -174,7 +175,7 @@ class CompanyUserSerializer(serializers.ModelSerializer):
             "id", "company", "user_id", "full_name", "email", "phone",
             "account_status", "access_status", "active_lock", "last_login", "membership_status", "joined_at", "left_at",
             "join_source", "internal_display_name", "internal_note", "employee", "employee_code",
-            "employee_branch_name", "employee_department_name", "organization_unit", "organization_unit_name",
+            "employee_branch_id", "employee_branch_name", "employee_department_name", "organization_unit", "organization_unit_name",
             "role_assignments", "effective_permissions", "can_update",
             "created_by", "created_at", "updated_by", "updated_at",
         )
@@ -211,7 +212,8 @@ class CompanyUserSerializer(serializers.ModelSerializer):
         return [
             {"id": str(a.pk), "role_id": str(a.role_id), "role_code": a.role.code,
              "role_name": a.role.name, "data_scope_set_id": str(a.data_scope_set_id) if a.data_scope_set_id else None,
-             "data_scope_set_name": a.data_scope_set.name if a.data_scope_set_id else None}
+             "data_scope_set_name": a.data_scope_set.name if a.data_scope_set_id else None,
+             "allow_all_company_data": bool(a.data_scope_set is None or a.data_scope_set.allow_all_company_data)}
             for a in self._assignments(obj)
         ]
 

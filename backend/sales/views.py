@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from . import models, serializers, services, quotation_services, order_services, contract_views
 from .permissions import SalesPermission
+from iam.permissions import filter_queryset_by_branch
 
 
 def perms(resource): return {"GET":f"{resource}.VIEW","POST":f"{resource}.CREATE","PUT":f"{resource}.EDIT","PATCH":f"{resource}.EDIT","DELETE":f"{resource}.EDIT"}
@@ -21,8 +22,7 @@ class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveM
         if not company: return super().get_queryset().none()
         qs=super().get_queryset().filter(company_id=company)
         if status:=self.request.query_params.get("status"): qs=qs.filter(status=status)
-        if branch_id:=self.request.query_params.get("branch_id"):
-            if any(field.name=="branch" for field in qs.model._meta.fields): qs=qs.filter(branch_id=branch_id)
+        qs=filter_queryset_by_branch(qs, self.request, company)
         if customer:=self.request.query_params.get("customer_id"):
             if any(field.name=="customer" for field in qs.model._meta.fields): qs=qs.filter(customer_id=customer)
             elif qs.model is models.SalesDelivery: qs=qs.filter(order__customer_id=customer)

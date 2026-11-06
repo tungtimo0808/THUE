@@ -4,7 +4,7 @@ from django.db.models import Sum
 from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
-from iam.permissions import CompanyMemberMixin
+from iam.permissions import CompanyMemberMixin, filter_queryset_by_branch
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet,ReadOnlyModelViewSet
@@ -19,7 +19,7 @@ class BaseViewSet(mixins.CreateModelMixin,mixins.ListModelMixin,mixins.RetrieveM
         if not company:return super().get_queryset().none()
         qs=super().get_queryset().filter(company_id=company)
         if status:=self.request.query_params.get("status"):qs=qs.filter(status=status)
-        return qs
+        return filter_queryset_by_branch(qs, self.request, company)
     def perform_create(self,s):obj=s.save(created_by=services.actor(self.request));services.audit(self.request,obj,"CREATE",after=s.data)
     def perform_update(self,s):before=self.get_serializer(s.instance).data;obj=s.save();services.audit(self.request,obj,"EDIT",before,s.data)
 class FundViewSet(BaseViewSet):

@@ -138,6 +138,8 @@ const KeepAliveModuleSlot = memo(
     activeTab: string;
     companyId: string;
     period: string;
+    branchId: string;
+    dataset: string;
     childTab: string | null;
     directoryParam: string | null;
     payrollOption: string;
@@ -158,13 +160,20 @@ const KeepAliveModuleSlot = memo(
   },
   (prev, next) => {
     if (!prev.isCurrent && !next.isCurrent) {
-      return prev.companyId === next.companyId && prev.period === next.period;
+      return (
+        prev.companyId === next.companyId &&
+        prev.period === next.period &&
+        prev.branchId === next.branchId &&
+        prev.dataset === next.dataset
+      );
     }
     return (
       prev.isCurrent === next.isCurrent &&
       prev.activeTab === next.activeTab &&
       prev.companyId === next.companyId &&
       prev.period === next.period &&
+      prev.branchId === next.branchId &&
+      prev.dataset === next.dataset &&
       prev.childTab === next.childTab &&
       prev.directoryParam === next.directoryParam &&
       prev.payrollOption === next.payrollOption
@@ -579,7 +588,7 @@ function ReferenceWorkspace() {
   const triggerSwitchFeedback = (type: string, message: string) => {
     setRecentlyChangedCluster(type);
     setIsSwitchingContext(true);
-    setNotice(message);
+    setRawNotice(message);
     setTimeout(() => setRecentlyChangedCluster(null), 1200);
     setTimeout(() => setIsSwitchingContext(false), 280);
   };
@@ -613,6 +622,42 @@ function ReferenceWorkspace() {
       );
       const list = Array.isArray(res) ? res : res.results || [];
       setCompanyBranches(list);
+      if (list.length === 1) {
+        const onlyBranch = list[0];
+        setBranch((prev) => {
+          if (prev !== onlyBranch.id && prev !== "all") {
+            try {
+              localStorage.setItem("ref_branch", onlyBranch.id);
+            } catch {}
+            return onlyBranch.id;
+          }
+          if (prev === "head-office" || !onlyBranch.is_head_office) {
+            try {
+              localStorage.setItem("ref_branch", onlyBranch.id);
+            } catch {}
+            return onlyBranch.id;
+          }
+          return prev;
+        });
+      } else if (list.length > 1) {
+        setBranch((prev) => {
+          if (prev === "head-office") {
+            const hq = list.find((b) => b.is_head_office) || list[0];
+            try {
+              localStorage.setItem("ref_branch", hq.id);
+            } catch {}
+            return hq.id;
+          }
+          if (prev && prev !== "all" && !list.some((b) => b.id === prev || b.code === prev)) {
+            const hq = list.find((b) => b.is_head_office) || list[0];
+            try {
+              localStorage.setItem("ref_branch", hq.id);
+            } catch {}
+            return hq.id;
+          }
+          return prev;
+        });
+      }
     } catch {
       // Keep fallback
     }
@@ -621,6 +666,47 @@ function ReferenceWorkspace() {
   useEffect(() => {
     fetchBranches();
   }, [fetchBranches]);
+
+  const effectiveBranchId = useMemo(() => {
+    if (!branch || branch === "all") return "all";
+    const found = companyBranches.find((b) => b.id === branch || b.code === branch);
+    if (found) return found.id;
+    if (branch === "head-office") {
+      const hq = companyBranches.find((b) => b.is_head_office) || companyBranches[0];
+      return hq ? hq.id : "all";
+    }
+    return branch;
+  }, [branch, companyBranches]);
+
+  const applyBranchSwitch = useCallback(
+    (nextBranchId: string, displayLabel?: string) => {
+      const normalized = !nextBranchId || nextBranchId === "all" ? "all" : nextBranchId;
+      setBranch(normalized);
+      try {
+        localStorage.setItem("ref_branch", normalized);
+      } catch {}
+      if (apiToken && company?.id) {
+        void request("/api/v1/common/scopes/switch/", apiToken, {
+          method: "POST",
+          body: JSON.stringify({
+            company: company.id,
+            company_id: company.id,
+            branch: normalized === "all" ? null : normalized,
+            all_branches: normalized === "all",
+          }),
+        }).catch(() => {});
+      }
+      window.dispatchEvent(
+        new CustomEvent("erp_context_changed", {
+          detail: { branch: normalized, dataset, period, companyId: company?.id },
+        })
+      );
+      if (displayLabel) {
+        triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${displayLabel}`);
+      }
+    },
+    [apiToken, company?.id, dataset, period]
+  );
 
   const branchLabel = useMemo(() => {
     if (branch === "all" || !branch) return "Toàn doanh nghiệp";
@@ -1028,52 +1114,60 @@ function ReferenceWorkspace() {
           companyId={matchedApiCompany?.id || apiCompanyId}
           companyName={company.name}
           period={period}
+          branchId={effectiveBranchId}
+          dataset={dataset}
+          onBranchChange={(nextId) => {
+            const found = companyBranches.find((b) => b.id === nextId);
+            applyBranchSwitch(nextId, nextId === "all" ? "Toàn doanh nghiệp" : found?.name);
+          }}
           href={href}
           notify={setNotice}
         />
       );
     }
 
+    const ctxKey = `${company.id}-${effectiveBranchId}-${dataset}-${period}`;
+
     if (targetModuleId === "invoices") {
       if (activeTab === "adjustments") {
-        return <InvoiceLookupWorkspace mode="errors" href={href} />;
+        return <InvoiceLookupWorkspace key={`inv-adj-${ctxKey}`} mode="errors" href={href} />;
       }
       if (["process", "error-guide"].includes(activeTab)) {
-        return <MisaInvoiceWorkspace tab={activeTab} href={href} notify={setNotice} company={company} />;
+        return <MisaInvoiceWorkspace key={`inv-proc-${ctxKey}`} tab={activeTab} href={href} notify={setNotice} company={company} />;
       }
       if (activeTab === "sync") {
-        return <TaxInvoiceSyncPanel companyId={company.id} token={apiToken} href={href} />;
+        return <TaxInvoiceSyncPanel key={`inv-sync-${ctxKey}`} companyId={company.id} token={apiToken} href={href} />;
       }
       if (activeTab === "incoming") {
-        return <IncomingInvoiceWorkspace notify={setNotice} childTab={childTab} />;
+        return <IncomingInvoiceWorkspace key={`inv-in-${ctxKey}`} notify={setNotice} childTab={childTab} />;
       }
       if (["outgoing", "pending", "lookup", "issuance", "unposted"].includes(activeTab)) {
-        return <InvoiceLookupWorkspace mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
+        return <InvoiceLookupWorkspace key={`inv-out-${activeTab}-${ctxKey}`} mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
       }
       if (activeTab === "risk-warning") {
         if (childTab === "xml-errors") {
-          return <InvoiceLookupWorkspace mode="errors" href={href} />;
+          return <InvoiceLookupWorkspace key={`inv-xml-${ctxKey}`} mode="errors" href={href} />;
         }
         if (childTab === "cash-limit") {
-          return <CashPaymentLimitWarningWorkspace companyId={company.id} notify={setNotice} href={href} />;
+          return <CashPaymentLimitWarningWorkspace key={`inv-cash-${ctxKey}`} companyId={company.id} notify={setNotice} href={href} />;
         }
-        return <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />;
+        return <MisaSupplierRiskWorkspace key={`inv-risk-${ctxKey}`} companyId={company.id} notify={setNotice} />;
       }
       if (activeTab === "reports") {
-        return <MisaReportCenterWorkspace initialCategory="tax" notify={setNotice} />;
+        return <MisaReportCenterWorkspace key={`inv-rpt-${ctxKey}`} initialCategory="tax" notify={setNotice} />;
       }
     }
 
     if (targetModuleId === "purchases") {
       if (activeTab === "invoice-processing" && childTab === "supplier-risk") {
-        return <MisaSupplierRiskWorkspace companyId={company.id} notify={setNotice} />;
+        return <MisaSupplierRiskWorkspace key={`pur-risk-${ctxKey}`} companyId={company.id} notify={setNotice} />;
       }
       if (activeTab === "invoice-processing") {
-        return <IncomingInvoiceWorkspace notify={setNotice} />;
+        return <IncomingInvoiceWorkspace key={`pur-in-${ctxKey}`} notify={setNotice} />;
       }
       return (
         <MisaPurchaseWorkspace
-          key={`purchases-${company.id}-${period}`}
+          key={`purchases-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1084,13 +1178,13 @@ function ReferenceWorkspace() {
     }
 
     if (targetModuleId === "reports") {
-      return <MisaReportCenterWorkspace notify={setNotice} />;
+      return <MisaReportCenterWorkspace key={`reports-${ctxKey}`} notify={setNotice} />;
     }
 
     if (targetModuleId === "directory") {
       return (
         <MisaDirectoryWorkspace
-          key={params.get("directory") || "menu"}
+          key={`${params.get("directory") || "menu"}-${ctxKey}`}
           initialName={params.get("directory")}
           notify={setNotice}
           legacy={<DirectoryWorkspace notify={setNotice} />}
@@ -1099,13 +1193,13 @@ function ReferenceWorkspace() {
     }
 
     if (targetModuleId === "opening") {
-      return <MisaOpeningBalanceWorkspace notify={setNotice} />;
+      return <MisaOpeningBalanceWorkspace key={`opening-${ctxKey}`} notify={setNotice} />;
     }
 
     if (targetModuleId === "cash") {
       return (
         <MisaCashWorkspace
-          key={`cash-${company.id}-${period}`}
+          key={`cash-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1118,7 +1212,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "bank") {
       return (
         <MisaBankWorkspace
-          key={`bank-${company.id}-${period}`}
+          key={`bank-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1131,7 +1225,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "sales") {
       return (
         <MisaSalesWorkspace
-          key={`sales-${company.id}-${period}`}
+          key={`sales-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1144,7 +1238,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "inventory") {
       return (
         <MisaInventoryWorkspace
-          key={`inventory-${company.id}-${period}`}
+          key={`inventory-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1157,7 +1251,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "tools") {
       return (
         <MisaToolsWorkspace
-          key={`tools-${company.id}-${period}`}
+          key={`tools-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1170,7 +1264,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "assets") {
       return (
         <MisaAssetsWorkspace
-          key={`assets-${company.id}-${period}`}
+          key={`assets-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1183,7 +1277,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "payroll") {
       return (
         <MisaPayrollWorkspace
-          key={`payroll-${company.id}-${period}`}
+          key={`payroll-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab}
@@ -1196,7 +1290,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "cost") {
       return (
         <MisaCostWorkspace
-          key={`cost-${company.id}-${period}`}
+          key={`cost-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "process"}
@@ -1209,7 +1303,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "ledger") {
       return (
         <MisaLedgerWorkspace
-          key={`ledger-${company.id}-${period}`}
+          key={`ledger-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "process"}
@@ -1222,7 +1316,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "budget") {
       return (
         <MisaBudgetWorkspace
-          key={`budget-${company.id}-${period}`}
+          key={`budget-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "charts"}
@@ -1235,7 +1329,7 @@ function ReferenceWorkspace() {
     if (targetModuleId === "tax") {
       return (
         <MisaTaxWorkspace
-          key={`tax-${company.id}-${period}`}
+          key={`tax-${ctxKey}`}
           company={company}
           period={period}
           tab={activeTab || "declarations"}
@@ -1445,6 +1539,11 @@ function ReferenceWorkspace() {
                           try {
                             localStorage.setItem("ref_dataset", item.id);
                           } catch {}
+                          window.dispatchEvent(
+                            new CustomEvent("erp_context_changed", {
+                              detail: { branch: effectiveBranchId, dataset: item.id, period, companyId: company?.id },
+                            })
+                          );
                           setActiveClusterMenu(null);
                           triggerSwitchFeedback("dataset", `✓ Đã chuyển sang: ${item.label}`);
                         }}
@@ -1498,21 +1597,19 @@ function ReferenceWorkspace() {
                   </button>
                 </div>
                 <div className="ref-cluster-popover-list">
-                  <button
-                    type="button"
-                    className={`ref-cluster-popover-item ${branch === "all" ? "active" : ""}`}
-                    onClick={() => {
-                      setBranch("all");
-                      try {
-                        localStorage.setItem("ref_branch", "all");
-                      } catch {}
-                      setActiveClusterMenu(null);
-                      triggerSwitchFeedback("branch", "✓ Đã chuyển sang: Toàn doanh nghiệp");
-                    }}
-                  >
-                    <span className="ref-cluster-item-name">🏢 Toàn doanh nghiệp (Tất cả)</span>
-                    {branch === "all" && <Check size={14} className="ref-cluster-check" />}
-                  </button>
+                  {(companyBranches.length !== 1 || companyBranches[0]?.is_head_office) && (
+                    <button
+                      type="button"
+                      className={`ref-cluster-popover-item ${branch === "all" ? "active" : ""}`}
+                      onClick={() => {
+                        setActiveClusterMenu(null);
+                        applyBranchSwitch("all", "Toàn doanh nghiệp");
+                      }}
+                    >
+                      <span className="ref-cluster-item-name">🏢 Toàn doanh nghiệp (Tất cả)</span>
+                      {branch === "all" && <Check size={14} className="ref-cluster-check" />}
+                    </button>
+                  )}
 
                   {(companyBranches.length > 0
                     ? companyBranches
@@ -1523,6 +1620,7 @@ function ReferenceWorkspace() {
                   ).map((item: any) => {
                     const isSelected =
                       branch === item.id ||
+                      effectiveBranchId === item.id ||
                       (branch === "head-office" && item.is_head_office);
                     return (
                       <button
@@ -1530,12 +1628,8 @@ function ReferenceWorkspace() {
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
-                          setBranch(item.id);
-                          try {
-                            localStorage.setItem("ref_branch", item.id);
-                          } catch {}
                           setActiveClusterMenu(null);
-                          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${item.name}`);
+                          applyBranchSwitch(item.id, item.name);
                         }}
                       >
                         <span className="ref-cluster-item-name">
@@ -2287,6 +2381,8 @@ function ReferenceWorkspace() {
               activeTab={activeTabForSlot}
               companyId={company.id}
               period={period}
+              branchId={effectiveBranchId}
+              dataset={dataset}
               childTab={isCurrent ? childTab : null}
               directoryParam={isCurrent ? params.get("directory") : null}
               payrollOption={payrollOption}
@@ -2751,14 +2847,10 @@ function ReferenceWorkspace() {
         companyName={company.name}
         companyTaxCode={(company as any).tax_code || ""}
         token={apiToken}
-        activeBranchId={branch}
+        activeBranchId={effectiveBranchId}
         onSelectBranch={(bId, bName) => {
-          setBranch(bId);
-          try {
-            localStorage.setItem("ref_branch", bId);
-          } catch {}
           setIsBranchModalOpen(false);
-          triggerSwitchFeedback("branch", `✓ Đã chuyển sang: ${bName}`);
+          applyBranchSwitch(bId, bName);
         }}
         onBranchesUpdated={fetchBranches}
       />
